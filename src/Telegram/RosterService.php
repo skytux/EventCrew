@@ -52,9 +52,8 @@ final class RosterService
     /** Callback data prefix for a day or page button under the roster: rd:<Y-m-d>[:<page>]. */
     public const SELECT_PREFIX = 'rd:';
 
-    /** How many upcoming days the day buttons offer, and how many per row. */
-    private const PICKER_DATES = 6;
-    private const PICKER_PER_ROW = 3;
+    /** How many buttons the date selector takes: ◀, the shown day, ▶. */
+    private const PICKER_DATES = 3;
 
     /** Telegram's limit for inline buttons in one message. */
     private const MAX_BUTTONS = 100;
@@ -362,33 +361,21 @@ final class RosterService
     }
 
     /**
-     * The day buttons under the roster: the next upcoming days with tasks, the
-     * shown one marked with ▶. Someone who is not an organizer gets only the
-     * days they are rostered on, since those are the only ones they may open.
+     * The date selector under the roster (DayPicker): the shown day marked,
+     * with arrows to the days before and after it. Someone who is not an
+     * organizer steps only through the days they are rostered on, since those
+     * are the only ones they may open.
      *
      * @return array<int, array<int, array{text: string, callback_data: string}>>
      */
     private function pickerRows(Person $person, string $shown): array
     {
-        $buttons = [];
-
-        foreach ($this->tasks->upcomingDates(self::PICKER_DATES) as $date) {
-            if (! $person->isOrganizer && ! $this->isRosteredOn($person->id, $date)) {
-                continue;
-            }
-
-            $buttons[] = [
-                'text' => ($date === $shown ? '▶ ' : '') . $this->dateLabel($date),
-                'callback_data' => self::SELECT_PREFIX . $date,
-            ];
-        }
-
-        // One button that is the day already shown switches to nothing.
-        if (1 === count($buttons) && self::SELECT_PREFIX . $shown === $buttons[0]['callback_data']) {
-            return [];
-        }
-
-        return array_chunk($buttons, self::PICKER_PER_ROW);
+        return DayPicker::rows(
+            $this->tasks->datesWithTasks(),
+            $shown,
+            self::SELECT_PREFIX,
+            $person->isOrganizer ? null : fn (string $date): bool => $this->isRosteredOn($person->id, $date)
+        );
     }
 
     /**
@@ -406,18 +393,7 @@ final class RosterService
      */
     private function defaultDate(): string
     {
-        $dates = $this->tasks->datesWithTasks(); // most recent first
-
-        if ([] === $dates) {
-            return '';
-        }
-
-        $today = current_time('Y-m-d');
-        $upcoming = array_values(array_filter($dates, static fn (string $d): bool => $d >= $today));
-
-        // end() of the upcoming subset is the nearest future date; with none,
-        // the most recent past date is the head of the descending list.
-        return [] !== $upcoming ? (string) end($upcoming) : $dates[0];
+        return DayPicker::defaultDate($this->tasks->datesWithTasks(), (string) current_time('Y-m-d'));
     }
 
     /**

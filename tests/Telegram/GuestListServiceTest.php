@@ -359,7 +359,10 @@ final class GuestListServiceTest extends TelegramTestCase
             $sent['text']
         );
         self::assertSame(
-            ['inline_keyboard' => [[['text' => 'Sat 8 Aug', 'callback_data' => 'gl:2026-08-08']]]],
+            ['inline_keyboard' => [[
+                ['text' => '📅 Sat 1 Aug ✓', 'callback_data' => 'gl:2026-08-01'],
+                ['text' => 'Sat 8 Aug ▶', 'callback_data' => 'gl:2026-08-08'],
+            ]]],
             $sent['reply_markup']
         );
     }
@@ -432,7 +435,7 @@ final class GuestListServiceTest extends TelegramTestCase
             );
             // Every page keeps the organizer help and the night buttons.
             self::assertStringEndsWith('Another night: put the date first, e.g. /door add 1.8. Name', $page['text']);
-            self::assertNotNull($this->callbackOf($page, 'Sat 25 Jul'));
+            self::assertNotNull($this->callbackOf($page, '◀ Sat 25 Jul'));
         }
 
         // Each guest is listed once, with the number /door edit and remove take.

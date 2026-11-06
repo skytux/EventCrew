@@ -285,12 +285,97 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         $this->wpdb->nextQueryResults[] = 1;      // the conditional insert wrote a row
         $this->wpdb->nextRows[] = $person;        // people->find(7) for the DM + email
 
-        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'tkt:2026-08-01']);
+        $this->service()->onSelect([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
+            'data' => 'tkt:2026-08-01:y',
+        ]);
 
         self::assertSame(
             'Credit spent — your ticket is in the next message.',
             $this->lastCallTo('answerCallbackQuery')['text']
         );
+        // The question became the answer, without its buttons.
+        $edit = $this->lastCallTo('editMessageText');
+        self::assertSame(42, $edit['message_id']);
+        self::assertStringContainsString('Credit spent on', (string) $edit['text']);
+        self::assertSame([], $edit['reply_markup']['inline_keyboard']);
+    }
+
+    /** The rows the question reads: the tapper, the balance, the date checks, the night's event. */
+    private function queueQuestion(int $completed): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00', 'telegram_user_id' => 555, 'telegram_chat_id' => 555,
+        ];
+        $rows = [];
+        for ($i = 0; $i < $completed; $i++) {
+            $rows[] = ['id' => $i + 1, 'task_id' => $i + 1, 'person_id' => 7, 'status' => 'completed', 'task_date' => '2026-07-01'];
+        }
+        $this->wpdb->nextResults[] = $rows;       // historyFor (balance)
+        $this->wpdb->nextVars[] = 0;              // countFor redemptions
+        $this->wpdb->nextVars[] = 0;              // sumFor grants
+        $this->wpdb->nextCols[] = ['2026-08-01']; // upcomingDates (eligible)
+        $this->wpdb->nextResults[] = [];          // forPerson -> not already redeemed
+        $this->wpdb->nextResults[] = [            // forDate (the night's label)
+            ['id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'clean', 'capacity' => 3, 'event_post_id' => null, 'event_label' => 'Party'],
+        ];
+    }
+
+    public function testTappingANightAsksFirstAndSaysWhatItCosts(): void
+    {
+        $this->queueQuestion(4); // four completions -> two credits
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'tkt:2026-08-01']);
+
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertStringNotContainsString('INSERT', implode("\n", $this->wpdb->queries));
+        $ask = $this->lastCallTo('sendMessage');
+        self::assertStringContainsString('Spend a free-entry credit on', (string) $ask['text']);
+        self::assertStringContainsString('Party', (string) $ask['text']);
+        self::assertStringContainsString('This uses 1 of your 2 free-entry credits.', (string) $ask['text']);
+        $data = array_column(array_merge(...$ask['reply_markup']['inline_keyboard']), 'callback_data');
+        self::assertSame(['tkt:2026-08-01:y', 'tkt:2026-08-01:k'], $data);
+    }
+
+    public function testTheQuestionSaysWhenItIsTheLastCredit(): void
+    {
+        $this->queueQuestion(2); // one credit
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'tkt:2026-08-01']);
+
+        self::assertStringContainsString(
+            'This uses your only free-entry credit.',
+            (string) $this->lastCallTo('sendMessage')['text']
+        );
+    }
+
+    public function testANightThatCannotTakeACreditIsSaidWithoutAQuestion(): void
+    {
+        $this->queueQuestion(0); // no credit
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'tkt:2026-08-01']);
+
+        self::assertNotContains('sendMessage', $this->calledMethods());
+        self::assertSame('You have no free-entry credits to spend.', $this->lastCallTo('answerCallbackQuery')['text']);
+    }
+
+    public function testKeepMyCreditSpendsNothing(): void
+    {
+        $this->queueQuestion(2);
+
+        $this->service()->onSelect([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'message' => ['message_id' => 42, 'chat' => ['id' => 555]],
+            'data' => 'tkt:2026-08-01:k',
+        ]);
+
+        self::assertStringNotContainsString('INSERT', implode("\n", $this->wpdb->queries));
+        self::assertNotContains('sendMessage', $this->calledMethods());
+        self::assertStringContainsString('Kept: you have 1 free-entry credit.', (string) $this->lastCallTo('editMessageText')['text']);
     }
 
     public function testRedeemRefusesWithNoCredit(): void

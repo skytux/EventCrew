@@ -102,6 +102,13 @@ final class BoardService
     public const CANCEL_ASK_PREFIX = 'lc:';
 
     /**
+     * The start payload that asks the cancel question for one task in the
+     * private chat (t.me/<bot>?start=cancel-12): used when a board tap could
+     * not reach someone who never started the bot.
+     */
+    public const CANCEL_START_PREFIX = 'cancel-';
+
+    /**
      * The card format switch, off by default (Settings → Telegram bot). On, the
      * board is two messages: first a photo message for the next event
      * (BoardRenderer::nextCard(): its picture, name, date, price and a short
@@ -1028,11 +1035,13 @@ final class BoardService
 
         // 't' is the toggle a task button now sends: join if not signed up,
         // leave if already. 'j' and 'l' stay understood so a board posted
-        // before this change keeps working until its next refresh.
+        // before this change keeps working until its next refresh. A leave
+        // never acts at once: it asks first, in the person's private chat,
+        // what the cancel costs (askCancel()).
         $changed = match ($action) {
             'j' => $this->handleJoin($callbackId, $taskId, $person),
-            'l' => $this->handleLeave($callbackId, $taskId, $person),
-            default => $this->handleToggle($callbackId, $taskId, $person),
+            'l' => $this->askLeave($callbackQuery, $taskId, $person),
+            default => $this->handleToggle($callbackQuery, $taskId, $person),
         };
 
         // The day shown comes with the tap, so the redraw stays on it.
@@ -1049,15 +1058,33 @@ final class BoardService
      * it cannot show or hide per person - the button looks the same to everyone,
      * but does the right thing for whoever taps it.
      */
-    private function handleToggle(string $callbackId, int $taskId, Person $person): bool
+    private function handleToggle(array $callbackQuery, int $taskId, Person $person): bool
     {
+        $callbackId = (string) ($callbackQuery['id'] ?? '');
         $existing = $this->assignments->findFor($taskId, $person->id);
 
         if (null !== $existing && $existing->isOccupying()) {
-            return $this->handleLeave($callbackId, $taskId, $person);
+            return $this->askLeave($callbackQuery, $taskId, $person);
         }
 
         return $this->handleJoin($callbackId, $taskId, $person);
+    }
+
+    /**
+     * A leave tap on a board: the cancel question goes to the person's
+     * private chat, never into the group. Nothing changes yet, so the board
+     * is not redrawn (false).
+     *
+     * @param array<string, mixed> $callbackQuery
+     */
+    private function askLeave(array $callbackQuery, int $taskId, Person $person): bool
+    {
+        $telegramUserId = (int) ($callbackQuery['from']['id'] ?? 0);
+        $chatId = (int) ($callbackQuery['message']['chat']['id'] ?? 0);
+
+        $this->askCancel((string) ($callbackQuery['id'] ?? ''), $person, $taskId, $telegramUserId, $chatId !== $telegramUserId);
+
+        return false;
     }
 
     private function handleJoin(string $callbackId, int $taskId, Person $person): bool
@@ -1087,11 +1114,6 @@ final class BoardService
         }
 
         return $joined;
-    }
-
-    private function handleLeave(string $callbackId, int $taskId, Person $person): bool
-    {
-        return self::isCancel($this->leave($callbackId, $taskId, $person));
     }
 
     /** True for a status that ended a sign-up: CANCELLED or LATE_CANCEL. */
@@ -1184,11 +1206,18 @@ final class BoardService
         $taskId = (int) $m[1];
         $step = $m[2] ?? '';
         $person = $this->verifiedPerson($callbackId, $telegramUserId);
-        $task = null === $person ? null : $this->tasks->find($taskId);
 
         if (null === $person) {
             return;
         }
+
+        if ('' === $step) {
+            $this->askCancel($callbackId, $person, $taskId, $chatId);
+
+            return;
+        }
+
+        $task = $this->tasks->find($taskId);
 
         if ('y' === $step) {
             $status = $this->leave($callbackId, $taskId, $person);
@@ -1210,10 +1239,7 @@ final class BoardService
                 self::leaveText($outcome),
                 AssignmentRepository::CANCEL_LOCKED === $outcome
             );
-
-            if ('' !== $step) {
-                $this->replaceQuestion($chatId, $messageId, self::leaveText($outcome));
-            }
+            $this->replaceQuestion($chatId, $messageId, self::leaveText($outcome));
 
             return;
         }
@@ -1232,26 +1258,118 @@ final class BoardService
 
         $text = self::cancelQuestion($task, AssignmentStatus::LATE_CANCEL === $outcome);
 
-        if ('f' === $step) {
-            $this->telegram->editMessageText(
-                $chatId,
-                $messageId,
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                $text . "\n\n🔁 " . __('To hand it over, ask someone in the crew to send /me to the bot and tap 🔁 Take over a task. You get a message to say yes, and you stay on it until then.', 'eventcrew'),
-                $this->cancelKeyboard($taskId, false)
+        // 'f': how to hand it over.
+        $this->telegram->editMessageText(
+            $chatId,
+            $messageId,
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            $text . "\n\n🔁 " . __('To hand it over, ask someone in the crew to send /me to the bot and tap 🔁 Take over a task. You get a message to say yes, and you stay on it until then.', 'eventcrew'),
+            $this->cancelKeyboard($taskId, false)
+        );
+    }
+
+    /**
+     * The first step of every Telegram cancel: "Cancel <task>?" with what it
+     * costs (late or not) and the Yes / hand over / Keep buttons, sent to
+     * $chatId. Nothing is cancelled here. When there is nothing to cancel, or
+     * it is too close to cancel, the tap is answered with that instead.
+     * $elsewhere: the tap was in another chat (the group's board), so its
+     * popup says where the question went. When the private chat cannot be
+     * reached (the person never started the bot), the tap opens the bot with
+     * a start link that asks the same question there (openCancel()).
+     */
+    public function askCancel(string $callbackId, Person $person, int $taskId, int $chatId, bool $elsewhere = false): void
+    {
+        $task = $this->tasks->find($taskId);
+        $outcome = $this->signup->dropOutcome($person->id, $taskId);
+
+        if (null === $task || ! self::isCancel($outcome)) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                self::leaveText($outcome),
+                AssignmentRepository::CANCEL_LOCKED === $outcome
             );
 
             return;
         }
 
-        $this->telegram->sendMessage($chatId, $text, $this->cancelKeyboard($taskId, true));
+        $sent = $this->telegram->sendMessage(
+            $chatId,
+            self::cancelQuestion($task, AssignmentStatus::LATE_CANCEL === $outcome),
+            $this->cancelKeyboard($taskId, true)
+        );
+
+        if (null !== $sent) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                $elsewhere ? __('Check your private chat with the bot: it asks there first.', 'eventcrew') : ''
+            );
+
+            return;
+        }
+
+        $username = ltrim(trim((string) get_option(self::USERNAME_OPTION, '')), '@');
+
+        if ('' !== $username) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                '',
+                false,
+                'https://t.me/' . $username . '?start=' . self::CANCEL_START_PREFIX . $taskId
+            );
+
+            return;
+        }
+
+        $this->telegram->answerCallbackQuery(
+            $callbackId,
+            __('Open a private chat with the bot and tap Start first, then tap the task again.', 'eventcrew'),
+            true
+        );
+    }
+
+    /**
+     * /start cancel-<id> in the private chat: the cancel question for that
+     * task, for the person who opened the link. False when the payload is not
+     * a cancel link or the person is not a verified member yet, so the caller
+     * goes on to the sign-up flow.
+     */
+    public function openCancel(int $telegramUserId, int $chatId, string $payload): bool
+    {
+        if (1 !== preg_match('/^' . preg_quote(self::CANCEL_START_PREFIX, '/') . '([1-9]\d{0,18})$/', $payload, $m)) {
+            return false;
+        }
+
+        $person = $this->people->findByTelegramUserId($telegramUserId);
+
+        if (null === $person || ! $person->isEmailVerified()) {
+            return false;
+        }
+
+        $taskId = (int) $m[1];
+        $task = $this->tasks->find($taskId);
+        $outcome = $this->signup->dropOutcome($person->id, $taskId);
+
+        if (null === $task || ! self::isCancel($outcome)) {
+            $this->telegram->sendMessage($chatId, self::leaveText($outcome));
+
+            return true;
+        }
+
+        $this->telegram->sendMessage(
+            $chatId,
+            self::cancelQuestion($task, AssignmentStatus::LATE_CANCEL === $outcome),
+            $this->cancelKeyboard($taskId, true)
+        );
+
+        return true;
     }
 
     /**
      * "Cancel Door at Dance Night, Sat 14 Nov 18:00–20:00?", and whether it
-     * counts against the standing.
+     * counts against the standing. The web page's Cancel asks the same.
      */
-    private static function cancelQuestion(Task $task, bool $late): string
+    public static function cancelQuestion(Task $task, bool $late): string
     {
         return sprintf(
             /* translators: %s: the task, the event and the day, like "Door at Party, Sat 14 Nov 18:00" */

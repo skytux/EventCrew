@@ -302,6 +302,11 @@ final class Admin
         );
 
         add_action(
+            'admin_post_' . MessagesPage::PREVIEW_WRITE_ACTION,
+            [$this->container->get(MessagesPage::class), 'previewWrite']
+        );
+
+        add_action(
             'admin_post_' . AiPromptsPage::PROMPTS_ACTION,
             [$this->container->get(AiPromptsPage::class), 'savePrompts']
         );

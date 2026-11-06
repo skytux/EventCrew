@@ -71,6 +71,26 @@ final class DoorListServiceTest extends TelegramTestCase
         self::assertStringContainsString('Nobody has a ticket yet.', $sent['text']);
     }
 
+    public function testWithoutADateTheNextNightIsShownAndMarked(): void
+    {
+        $this->asker(true);
+        $this->wpdb->nextCols[] = ['2026-08-08', '2026-08-01', '2026-07-10']; // defaultDate
+        $this->wpdb->nextResults[] = [];                                      // render: tasks->forDate
+        $this->wpdb->nextResults[] = [];                                      // render: redemptions->forDate
+        $this->wpdb->nextResults[] = [];                                      // render: guests
+        $this->wpdb->nextCols[] = ['2026-08-08', '2026-08-01', '2026-07-10']; // pickerDates
+
+        $this->doorListService()->onTicketsCommand(555, 555, true);
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertStringContainsString('Tickets — Sat 1 Aug', $sent['text']);
+        $buttons = array_column(array_merge(...$sent['reply_markup']['inline_keyboard']), 'callback_data', 'text');
+        self::assertSame(
+            ['◀ Fri 10 Jul' => 'dl:2026-07-10', '📅 Sat 1 Aug ✓' => 'dl:2026-08-01', 'Sat 8 Aug ▶' => 'dl:2026-08-08'],
+            $buttons
+        );
+    }
+
     public function testAnOrganizerGetsWorkersAndRedeemersWithNightButtons(): void
     {
         $this->asker(true);
@@ -94,9 +114,13 @@ final class DoorListServiceTest extends TelegramTestCase
         self::assertStringContainsString('• Alex — Working: ', $list['text']);
         self::assertStringContainsString('• Bo — Free-entry credit', $list['text']);
 
-        // The shown night is left out; the last past night and the next one are offered.
-        $buttons = array_merge(...$list['reply_markup']['inline_keyboard']);
-        self::assertSame(['dl:2026-07-10', 'dl:2026-08-08'], array_column($buttons, 'callback_data'));
+        // One row: the night before, the shown night marked, the night after.
+        $rows = $list['reply_markup']['inline_keyboard'];
+        self::assertCount(1, $rows);
+        self::assertSame(
+            ['◀ Fri 10 Jul' => 'dl:2026-07-10', '📅 Sat 1 Aug ✓' => 'dl:2026-08-01', 'Sat 8 Aug ▶' => 'dl:2026-08-08'],
+            array_column($rows[0], 'callback_data', 'text')
+        );
     }
 
     public function testGuestsAndTheirPlusOnesCountTowardTheTotal(): void
@@ -201,7 +225,10 @@ final class DoorListServiceTest extends TelegramTestCase
             $sent['text']
         );
         self::assertSame(
-            ['inline_keyboard' => [[['text' => 'Sat 8 Aug', 'callback_data' => 'dl:2026-08-08']]]],
+            ['inline_keyboard' => [[
+                ['text' => '📅 Sat 1 Aug ✓', 'callback_data' => 'dl:2026-08-01'],
+                ['text' => 'Sat 8 Aug ▶', 'callback_data' => 'dl:2026-08-08'],
+            ]]],
             $sent['reply_markup']
         );
     }
@@ -291,8 +318,8 @@ final class DoorListServiceTest extends TelegramTestCase
                 $page['text']
             );
             // Every page keeps the night buttons.
-            self::assertNotNull($this->callbackOf($page, 'Sat 25 Jul'));
-            self::assertNotNull($this->callbackOf($page, 'Sat 8 Aug'));
+            self::assertNotNull($this->callbackOf($page, '◀ Sat 25 Jul'));
+            self::assertNotNull($this->callbackOf($page, 'Sat 8 Aug ▶'));
         }
 
         // Everyone is listed once, on one page or another, and the guests

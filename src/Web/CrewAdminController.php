@@ -747,6 +747,7 @@ final class CrewAdminController
             'roster_past' => $dates['past'],
             'roster_prev' => $dates['prev'],
             'roster_next' => $dates['next'],
+            'roster_picker_label' => $dates['label'],
             'roster_action' => self::ROSTER_ACTION,
             'door_action' => self::DOOR_ACTION,
             'guest_action' => self::GUEST_ACTION,

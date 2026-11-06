@@ -11,6 +11,8 @@
  * @var string $open The kind to show opened, '' for none.
  * @var array{text: array<string, mixed>, reasons: array<string, array<string, mixed>>} $ticket The ticket email's
  *      text and {reason} lines as stored (TicketText, TicketReasons), shown in the Ticket entry.
+ * @var array<string, list<array<string, mixed>>> $samples Each kind's placeholders with their sample
+ *      values (MessagePreview::placeholderSamples()), for the "{ } Insert" link of its fields.
  */
 
 declare(strict_types=1);
@@ -127,7 +129,15 @@ use EventCrew\Support\TranslatedText;
                 <?php endif; ?>
 
                 <?php // With JavaScript the page posts this form to admin-ajax and stays (eventcrew-jobs.js). ?>
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" data-ec-ajax-save>
+                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" data-ec-ajax-save
+                    <?php if ([] !== ($samples[$eventcrew_id] ?? [])) : ?>
+                        data-ec-placeholders="<?php echo esc_attr((string) wp_json_encode([
+                            'insert' => __('{ } Insert', 'eventcrew'),
+                            'hint' => __('Pick a placeholder to put it where the cursor is. The grey text is what it becomes for a sample person.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+                            'empty' => __('empty for this sample', 'eventcrew'),
+                            'items' => $samples[$eventcrew_id],
+                        ])); ?>"
+                    <?php endif; ?>>
                     <input type="hidden" name="action" value="<?php echo esc_attr(MessagesPage::SAVE_ACTION); ?>">
                     <input type="hidden" name="kind" value="<?php echo esc_attr($eventcrew_id); ?>">
                     <?php wp_nonce_field(MessagesPage::SAVE_ACTION); ?>

@@ -355,15 +355,28 @@ final class TelegramClient
     }
 
     /**
+     * $url: a t.me/<bot>?start=... link the tapping person's app opens
+     * instead of showing $text.
+     *
      * @return array<string, mixed>|null
      */
-    public function answerCallbackQuery(string $callbackQueryId, string $text = '', bool $showAlert = false): ?array
-    {
-        return $this->call('answerCallbackQuery', [
+    public function answerCallbackQuery(
+        string $callbackQueryId,
+        string $text = '',
+        bool $showAlert = false,
+        string $url = ''
+    ): ?array {
+        $body = [
             'callback_query_id' => $callbackQueryId,
             'text' => $text,
             'show_alert' => $showAlert,
-        ]);
+        ];
+
+        if ('' !== $url) {
+            $body['url'] = $url;
+        }
+
+        return $this->call('answerCallbackQuery', $body);
     }
 
     /**

@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Admin;
 
 use Brain\Monkey\Functions;
+use EventCrew\Admin\AiPromptsPage;
 use EventCrew\Admin\MessagesPage;
 use EventCrew\Admin\View;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\EventAiText;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\MessagePreview;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\TranslatedText;
+use EventCrew\Tests\Telegram\FakeEvents;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -22,6 +25,8 @@ use EventCrew\Tests\TestCase;
  */
 final class MessagesPagePreviewTest extends TestCase
 {
+    use FakeEvents;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -39,6 +44,19 @@ final class MessagesPagePreviewTest extends TestCase
         Functions\when('wp_nonce_url')->alias(
             static fn (string $url, string $action): string => $url . '&_wpnonce=nonce-' . $action
         );
+        Functions\when('wp_create_nonce')->alias(static fn (string $action): string => 'nonce-' . $action);
+        Functions\when('wp_nonce_field')->alias(static function (string $action): void {
+            echo '<input type="hidden" name="_wpnonce" value="nonce-' . esc_attr($action) . '">';
+        });
+        Functions\when('selected')->alias(static function (mixed $selected, mixed $current = true): string {
+            if ((string) $selected !== (string) $current) {
+                return '';
+            }
+
+            echo " selected='selected'";
+
+            return " selected='selected'";
+        });
         Functions\when('get_permalink')->justReturn('https://site.test/crew/');
         Functions\when('network_home_url')->justReturn('https://site.test/');
         Functions\when('wp_parse_url')->alias(
@@ -153,14 +171,122 @@ final class MessagesPagePreviewTest extends TestCase
         self::assertSame('', $data['kind']);
     }
 
-    private function page(): MessagesPage
+    public function testThePickersShowTheEventAndTaskPickedAndWriteItNowWhenTheAiTextIsMissing(): void
+    {
+        $this->fakeEvents();
+        $this->event(12, '2026-07-25', 'Dance night');
+        $this->event(13, '2026-08-01', 'Next night');
+        $this->aiTickOn('reminder_dm');
+        // find(41), then the event's tasks for the preview, then for the task picker.
+        $this->wpdb->nextRows[] = $this->taskRow(41, 12, 'bar');
+        $this->wpdb->nextResults[] = [$this->taskRow(40, 12, 'door'), $this->taskRow(41, 12, 'bar')];
+        $this->wpdb->nextResults[] = [$this->taskRow(40, 12, 'door'), $this->taskRow(41, 12, 'bar')];
+        $_GET = ['kind' => 'reminder_dm', 'event_id' => '12', 'task_id' => '41'];
+
+        $data = $this->page()->previewData();
+
+        self::assertSame(12, $data['message']['event_id']);
+        self::assertSame(41, $data['message']['task_id']);
+        self::assertSame([12, 13], array_column($data['events'], 'id'));
+        self::assertSame([40, 41], array_map(static fn ($task): int => $task->id, $data['tasks']));
+        self::assertSame(MessagePreview::AI_MISSING, $data['message']['ai']);
+
+        $html = $this->view($data);
+
+        self::assertStringContainsString('name="event_id"', $html);
+        self::assertStringContainsString('name="task_id"', $html);
+        self::assertMatchesRegularExpression('/value="41"\s+selected/', $html);
+        self::assertStringContainsString('value="' . MessagesPage::PREVIEW_WRITE_ACTION . '"', $html);
+        self::assertStringContainsString('Write it now', $html);
+    }
+
+    public function testAKindNotAboutATaskHasNoTaskPickerAndNoWriteItNow(): void
+    {
+        $this->fakeEvents();
+        $this->event(12, '2026-07-25', 'Dance night');
+        $_GET = ['kind' => 'sign_in_link', 'event_id' => '12'];
+
+        $data = $this->page()->previewData();
+        $html = $this->view($data);
+
+        self::assertSame([], $data['tasks']);
+        self::assertStringContainsString('name="event_id"', $html);
+        self::assertStringNotContainsString('name="task_id"', $html);
+        self::assertStringNotContainsString(MessagesPage::PREVIEW_WRITE_ACTION, $html);
+    }
+
+    public function testWriteItNowAsksTheAiForThatKindAndEventAndGoesBackToItsPreview(): void
+    {
+        $this->fakeEvents();
+        $this->event(12, '2026-07-25', 'Dance night');
+        $this->aiTickOn('reminder_dm');
+        Functions\expect('wp_remote_post')->never();
+
+        $url = $this->page(true)->applyPreviewWrite(
+            ['kind' => 'reminder_dm', 'lang' => '', 'event_id' => '12', 'task_id' => '41']
+        );
+
+        self::assertStringContainsString('kind=reminder_dm', $url);
+        self::assertStringContainsString('event_id=12', $url);
+        self::assertStringContainsString('task_id=41', $url);
+        // The AI is not set up in the tests: nothing is written.
+        self::assertStringContainsString('written=failed', $url);
+    }
+
+    public function testWriteItNowChecksItsNonce(): void
+    {
+        Functions\when('current_user_can')->justReturn(true);
+        Functions\expect('check_admin_referer')->once()->with(MessagesPage::PREVIEW_WRITE_ACTION)->andReturnUsing(
+            static function (): void {
+                throw new \RuntimeException('nonce checked');
+            }
+        );
+
+        $this->expectExceptionMessage('nonce checked');
+        $this->page()->previewWrite();
+    }
+
+    public function testTheMessagesTabHasThePlaceholderPickerDataOfEachKind(): void
+    {
+        $data = $this->page()->data(MessagesPage::TAB_MESSAGES);
+
+        self::assertSame(array_column($data['entries'], 'id'), array_keys($data['samples']));
+        self::assertContains('{name}', array_column($data['samples']['reminder'], 'tag'));
+    }
+
+    private function aiTickOn(string $id): void
+    {
+        $options = [MessageTemplates::OPTION_PREFIX . $id => ['settings' => [
+            EventAiText::SETTING_AI_EACH_EVENT => true,
+            EventAiText::SETTING_AI_PROMPT => 'Write the reminder.',
+        ]]];
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => $options[$name] ?? $default
+        );
+    }
+
+    /** @return array<string, mixed> */
+    private function taskRow(int $id, int $eventId, string $role): array
+    {
+        return [
+            'id' => $id,
+            'task_date' => '2026-07-25',
+            'role_slug' => $role,
+            'capacity' => 2,
+            'event_post_id' => $eventId,
+            'starts_at' => '2026-07-25 18:00:00',
+            'ends_at' => '2026-07-25 20:00:00',
+        ];
+    }
+
+    private function page(bool $withAi = false): MessagesPage
     {
         $logger = new Logger();
 
         return new MessagesPage(
             new View(),
             new MessageTemplates(new TranslatedText(new LlmClient($logger), $logger)),
-            null,
+            $withAi ? new AiPromptsPage(new EventAiText(new LlmClient($logger), $logger)) : null,
             null,
             null,
             new MessagePreview($logger, new TaskRepository())

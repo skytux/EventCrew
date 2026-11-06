@@ -580,20 +580,88 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertContains('editMessageText', $this->calledMethods());
     }
 
-    public function testLeaveCancelsTheSlotWithoutDeletingAndRefreshes(): void
+    public function testALeaveTapOnTheGroupBoardAsksInThePrivateChatFirst(): void
     {
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
         $this->verifiedPerson(555);
-        // cancel(): findFor -> an occupying row, then the task's start time.
+        // askCancel(): the task, then dropOutcome(): findFor, the start time.
+        $this->wpdb->nextRows[] = ['starts_at' => '2026-09-01 20:00:00'] + $this->taskRow(5, null, 'Party', '2026-09-01');
         $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
         $this->wpdb->nextRows[] = ['starts_at' => '2026-09-01 20:00:00', 'task_date' => '2026-09-01'];
 
-        $this->board()->onJoinLeave($this->callbackQuery('l:5'));
+        $query = $this->callbackQuery('l:5');
+        $query['message'] = ['message_id' => 5, 'chat' => ['id' => 100, 'type' => 'supergroup']];
+        $this->board()->onJoinLeave($query);
 
-        // The row is updated (status), never deleted.
-        self::assertSame([], $this->wpdb->deletes);
-        self::assertNotSame([], $this->wpdb->updates);
-        self::assertContains('editMessageText', $this->calledMethods());
+        // Nothing changes yet, and the board is not redrawn.
+        self::assertSame([], $this->wpdb->updates);
+        self::assertNotContains('editMessageText', $this->calledMethods());
+        $ask = $this->lastCallTo('sendMessage');
+        self::assertSame(555, $ask['chat_id']);
+        self::assertStringContainsString('Party', (string) $ask['text']);
+        self::assertStringContainsString('does not affect your standing', (string) $ask['text']);
+        self::assertSame('lc:5:y', $this->callbackOf($ask, '✅'));
+        self::assertStringContainsString('private chat', (string) $this->lastCallTo('answerCallbackQuery')['text']);
+    }
+
+    public function testWhenThePrivateChatCannotBeReachedTheTapOpensTheBotOnTheQuestion(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->options[BoardService::USERNAME_OPTION] = '@crew_bot';
+        $this->telegramErrors['sendMessage'] = "Forbidden: bot can't initiate conversation with a user";
+        $this->verifiedPerson(555);
+        $this->wpdb->nextRows[] = ['starts_at' => '2026-09-01 20:00:00'] + $this->taskRow(5, null, 'Party', '2026-09-01');
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = ['starts_at' => '2026-09-01 20:00:00', 'task_date' => '2026-09-01'];
+
+        $query = $this->callbackQuery('l:5');
+        $query['message'] = ['message_id' => 5, 'chat' => ['id' => 100, 'type' => 'supergroup']];
+        $this->board()->onJoinLeave($query);
+
+        // The DM was tried first; the tap then opens the bot on the question,
+        // and does not claim a message is waiting there.
+        self::assertSame(['sendMessage', 'answerCallbackQuery'], $this->calledMethods());
+        $answer = $this->lastCallTo('answerCallbackQuery');
+        self::assertSame('https://t.me/crew_bot?start=cancel-5', $answer['url']);
+        self::assertStringNotContainsString('private chat', (string) $answer['text']);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testWithoutTheBotsNameAFailedPrivateChatSaysToStartTheBotFirst(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->telegramErrors['sendMessage'] = "Forbidden: bot can't initiate conversation with a user";
+        $this->verifiedPerson(555);
+        $this->wpdb->nextRows[] = ['starts_at' => '2026-09-01 20:00:00'] + $this->taskRow(5, null, 'Party', '2026-09-01');
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = ['starts_at' => '2026-09-01 20:00:00', 'task_date' => '2026-09-01'];
+
+        $query = $this->callbackQuery('l:5');
+        $query['message'] = ['message_id' => 5, 'chat' => ['id' => 100, 'type' => 'supergroup']];
+        $this->board()->onJoinLeave($query);
+
+        $answer = $this->lastCallTo('answerCallbackQuery');
+        self::assertArrayNotHasKey('url', $answer);
+        self::assertTrue($answer['show_alert']);
+        self::assertStringContainsString('tap Start first', (string) $answer['text']);
+    }
+
+    public function testTheCancelStartLinkAsksTheQuestionInThePrivateChat(): void
+    {
+        $this->verifiedPerson(555);
+        $this->wpdb->nextRows[] = ['starts_at' => '2026-09-01 20:00:00'] + $this->taskRow(5, null, 'Party', '2026-09-01');
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = ['starts_at' => '2026-09-01 20:00:00', 'task_date' => '2026-09-01'];
+
+        self::assertTrue($this->board()->openCancel(555, 555, 'cancel-5'));
+
+        self::assertSame([], $this->wpdb->updates);
+        $ask = $this->lastCallTo('sendMessage');
+        self::assertSame(555, $ask['chat_id']);
+        self::assertStringContainsString('Party', (string) $ask['text']);
+        self::assertSame('lc:5:y', $this->callbackOf($ask, '✅'));
+        // Any other payload is not a cancel link.
+        self::assertFalse($this->board()->openCancel(555, 555, 'task-5'));
     }
 
     // --- cancel question (lc:) ------------------------------------------------
@@ -783,21 +851,23 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertSame([[100, 5], [555, 42]], $edited);
     }
 
-    public function testToggleCancelsWhenAlreadySignedUp(): void
+    public function testToggleAsksBeforeCancellingWhenAlreadySignedUp(): void
     {
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
         $this->verifiedPerson(555);
         // findFor (toggle occupancy check) -> an occupying row, so it's a cancel.
         $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
-        // cancel() re-reads findFor, then the task's start time.
+        // The question: the task, then findFor and the start time (late: the
+        // tests' now is 2026-07-20 12:00, the notice 48 hours).
+        $this->wpdb->nextRows[] = ['starts_at' => '2026-07-21 10:00:00'] + $this->taskRow(5, null, 'Party', '2026-07-21');
         $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
-        $this->wpdb->nextRows[] = ['starts_at' => '2026-09-01 20:00:00', 'task_date' => '2026-09-01'];
+        $this->wpdb->nextRows[] = ['starts_at' => '2026-07-21 10:00:00', 'task_date' => '2026-07-21'];
 
         $this->board()->onJoinLeave($this->callbackQuery('t:5'));
 
         self::assertSame([], $this->wpdb->deletes);
-        self::assertNotSame([], $this->wpdb->updates);
-        self::assertContains('editMessageText', $this->calledMethods());
+        self::assertSame([], $this->wpdb->updates);
+        self::assertStringContainsString('late cancellation', (string) $this->lastCallTo('sendMessage')['text']);
     }
 
     public function testToggleReactivatesAFreedRow(): void
@@ -862,31 +932,32 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertContains('t:1', array_column($this->buttons($rendered['keyboard']), 'callback_data'));
     }
 
-    public function testEveryDayIsAButtonAndTheShownDayIsMarked(): void
+    public function testTheShownDayIsMarkedBetweenArrowsToTheDaysAround(): void
     {
         $this->queueThreeDays();
 
         $data = array_column($this->buttons($this->board()->render()['keyboard']), 'callback_data', 'text');
 
-        self::assertSame('bd:2026-08-01', $data['▸ Sat 1 Aug'] ?? null);
-        self::assertSame('bd:2026-08-08', $data['Sat 8 Aug'] ?? null);
-        self::assertSame('bd:2026-08-15', $data['Sat 15 Aug'] ?? null);
-        self::assertArrayHasKey('🗓 Dates', $data);
-        self::assertNotContains('bd:', $data);
+        // The first day: no ◀, the day marked, then the next day.
+        self::assertSame('bd:2026-08-01', $data['📅 Sat 1 Aug ✓'] ?? null);
+        self::assertSame('bd:2026-08-08', $data['Sat 8 Aug ▶'] ?? null);
+        self::assertNotContains('bd:2026-08-15', $data);
+        self::assertArrayNotHasKey('🗓 Dates', $data);
     }
 
-    public function testTheDayButtonsStayInTheSamePlacesWhenAnotherDayIsShown(): void
+    public function testTheDaySelectorIsOneRowOfThree(): void
     {
         $this->queueThreeDays();
-        $first = array_column($this->buttons($this->board()->render()['keyboard']), 'callback_data');
-        $this->queueThreeDays();
-        $later = array_column($this->buttons($this->board()->render('2026-08-15')['keyboard']), 'callback_data');
+        $keyboard = $this->board()->render('2026-08-08')['keyboard'];
 
-        $days = static fn (array $data): array => array_values(
-            array_filter($data, static fn (string $d): bool => str_starts_with($d, 'bd:'))
+        $row = array_values(array_filter(
+            $keyboard,
+            static fn (array $r): bool => str_starts_with((string) ($r[0]['callback_data'] ?? ''), 'bd:')
+        ));
+        self::assertSame(
+            [['◀ Sat 1 Aug', 'bd:2026-08-01'], ['📅 Sat 8 Aug ✓', 'bd:2026-08-08'], ['Sat 15 Aug ▶', 'bd:2026-08-15']],
+            array_map(static fn (array $b): array => [$b['text'], $b['callback_data']], $row[0])
         );
-        self::assertSame(['bd:2026-08-01', 'bd:2026-08-08', 'bd:2026-08-15'], $days($first));
-        self::assertSame($days($first), $days($later));
     }
 
     public function testASingleDayHasNoDayButtons(): void
@@ -894,9 +965,9 @@ final class BoardServiceTest extends TelegramTestCase
         $this->wpdb->nextResults[] = [$this->taskRow(1, 100, 'Party A', '2026-08-01')];
         $this->wpdb->nextResults[] = [];
 
-        $labels = array_column($this->buttons($this->board()->render()['keyboard']), 'text');
+        $data = array_column($this->buttons($this->board()->render()['keyboard']), 'callback_data');
 
-        self::assertNotContains('🗓 Dates', $labels);
+        self::assertSame([], array_filter($data, static fn (string $d): bool => str_starts_with($d, 'bd:')));
     }
 
     public function testAPickedDayShowsOnlyThatDayAndIsMarked(): void
@@ -911,8 +982,8 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertArrayNotHasKey('📅 Party C', $data);
         // Its task button carries the day, so a join redraws the same day.
         self::assertContains('t:2:2026-08-08', $data);
-        self::assertSame('bd:2026-08-01', $data['Sat 1 Aug'] ?? null);
-        self::assertSame('bd:2026-08-08', $data['▸ Sat 8 Aug'] ?? null);
+        self::assertSame('bd:2026-08-01', $data['◀ Sat 1 Aug'] ?? null);
+        self::assertSame('bd:2026-08-08', $data['📅 Sat 8 Aug ✓'] ?? null);
         self::assertArrayNotHasKey('⬅ Back to the next event', $data);
     }
 
@@ -923,7 +994,7 @@ final class BoardServiceTest extends TelegramTestCase
         $labels = array_column($this->buttons($this->board()->render('2026-09-30')['keyboard']), 'text');
 
         self::assertContains('📅 Party A', $labels);
-        self::assertContains('▸ Sat 1 Aug', $labels);
+        self::assertContains('📅 Sat 1 Aug ✓', $labels);
     }
 
     public function testTappingADayEditsTheTappedMessageToThatDay(): void

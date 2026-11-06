@@ -36,9 +36,6 @@ final class GuestListService
     /** Callback data of the button that cancels the waiting ticket send. */
     private const CANCEL_DATA = 'gl:cancel';
 
-    /** Night buttons per keyboard row. */
-    private const BUTTONS_PER_ROW = 2;
-
     /** Characters kept free on every page for the page note. */
     private const RESERVED_TEXT = 100;
 
@@ -388,25 +385,21 @@ final class GuestListService
     }
 
     /**
-     * The previous/next row of a paged list ($pages), then buttons for the
-     * other nearby nights this person may see, or null when there is none.
+     * The previous/next row of a paged list ($pages), then the date selector
+     * (DayPicker): the shown night marked, with arrows to the nights before
+     * and after it that this person may see. Null when there is none.
      *
      * @param array<int, array{text: string, callback_data: string}> $pages
      * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}|null
      */
     private function markup(Person $person, string $shown, array $pages = []): ?array
     {
-        $buttons = [];
-
-        foreach ($this->access->nearbyDates() as $date) {
-            if ($date === $shown || ! $this->access->canView($person, $date)) {
-                continue;
-            }
-
-            $buttons[] = ['text' => Dates::dayLabel($date), 'callback_data' => self::SELECT_PREFIX . $date];
-        }
-
-        $rows = array_merge([] === $pages ? [] : [$pages], array_chunk($buttons, self::BUTTONS_PER_ROW));
+        $rows = array_merge([] === $pages ? [] : [$pages], DayPicker::rows(
+            $this->access->dates(),
+            $shown,
+            self::SELECT_PREFIX,
+            fn (string $date): bool => $this->access->canView($person, $date)
+        ));
 
         return [] === $rows ? null : ['inline_keyboard' => $rows];
     }

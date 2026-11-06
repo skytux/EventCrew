@@ -491,7 +491,8 @@ if ($eventcrew_link_expired) {
                     // tickets are.
                     ?>
                     <?php if ('' !== $eventcrew_redeem_action && [] !== $eventcrew_ticket_dates) : ?>
-                        <form class="eventcrew-action eventcrew-redeem" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                        <form class="eventcrew-action eventcrew-redeem" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                            data-eventcrew-confirm="<?php echo esc_attr(\EventCrew\Telegram\TicketRedemptionService::creditQuestion('%s', null === $eventcrew_standing ? 0 : $eventcrew_standing->creditBalance)); ?>">
                             <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_redeem_action); ?>">
                             <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                             <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
@@ -2808,6 +2809,19 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         }
 
         e.preventDefault();
+
+        // A cancel or a spent credit asks first, saying what it costs. %s is
+        // the night chosen in the form's list.
+        var ask = form.getAttribute('data-eventcrew-confirm') || '';
+        var night = form.querySelector('select');
+
+        if (night && night.selectedIndex >= 0) {
+            ask = ask.replace('%s', night.options[night.selectedIndex].text);
+        }
+
+        if (ask && !window.confirm(ask)) {
+            return;
+        }
 
         var button = form.querySelector('button');
         if (button) {

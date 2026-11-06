@@ -509,13 +509,13 @@ final class RosterServiceTest extends TelegramTestCase
         $this->organizer(true);
         $this->wpdb->nextCols[] = ['2026-07-20'];               // defaultDate()
         $this->wpdb->nextResults[] = [];                         // forDate(): no tasks
-        $this->wpdb->nextCols[] = ['2026-07-20', '2026-07-27']; // upcomingDates()
+        $this->wpdb->nextCols[] = ['2026-07-20', '2026-07-27']; // datesWithTasks()
 
         $this->service()->onRosterCommand(555, 555);
 
         $buttons = array_merge(...$this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']);
         self::assertSame(
-            ['▶ Mon 20 Jul' => 'rd:2026-07-20', 'Mon 27 Jul' => 'rd:2026-07-27'],
+            ['📅 Mon 20 Jul ✓' => 'rd:2026-07-20', 'Mon 27 Jul ▶' => 'rd:2026-07-27'],
             array_column($buttons, 'callback_data', 'text')
         );
     }
@@ -543,7 +543,7 @@ final class RosterServiceTest extends TelegramTestCase
             ['id' => 14, 'task_id' => 6, 'person_id' => 8, 'status' => 'signed_up'],
         ];
         $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
-        $this->wpdb->nextCols[] = ['2026-07-20', '2026-07-27']; // upcomingDates()
+        $this->wpdb->nextCols[] = ['2026-07-20', '2026-07-27']; // datesWithTasks()
 
         $this->service()->onSelect([
             'id' => 'cbq',
@@ -557,8 +557,8 @@ final class RosterServiceTest extends TelegramTestCase
         self::assertStringStartsWith('📋 Mon 27 Jul', $edit['text']);
         self::assertStringContainsString('Sam', $edit['text']);
         $buttons = array_column(array_merge(...$edit['reply_markup']['inline_keyboard']), 'callback_data', 'text');
-        self::assertSame('rd:2026-07-27', $buttons['▶ Mon 27 Jul'] ?? null);
-        self::assertSame('rd:2026-07-20', $buttons['Mon 20 Jul'] ?? null);
+        self::assertSame('rd:2026-07-27', $buttons['📅 Mon 27 Jul ✓'] ?? null);
+        self::assertSame('rd:2026-07-20', $buttons['◀ Mon 20 Jul'] ?? null);
     }
 
     public function testPickingADayIsRefusedToSomeoneNotRosteredThatDay(): void
@@ -693,7 +693,7 @@ final class RosterServiceTest extends TelegramTestCase
             ];
         }
 
-        $this->wpdb->nextCols[] = self::BIG_NIGHT_DAYS; // upcomingDates()
+        $this->wpdb->nextCols[] = self::BIG_NIGHT_DAYS; // datesWithTasks()
     }
 
     /**
@@ -827,7 +827,7 @@ final class RosterServiceTest extends TelegramTestCase
         foreach ($pages as $page) {
             $this->assertWithinTelegramLimits($page);
             // Every page keeps the day buttons and the legend.
-            self::assertNotNull($this->pageButton($page, '▶ Mon 20 Jul'));
+            self::assertNotNull($this->pageButton($page, '📅 Mon 20 Jul ✓'));
             self::assertStringContainsString('👋 arrived · ✓ done · ⏰ late · ✗ no-show', $page['text']);
         }
 
