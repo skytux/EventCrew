@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.146
+Stable tag: 1.140.147
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.147 =
+* Swedish translation of every built-in text: Swedish readers no longer get English.
+* A test now fails the release when any built-in text lacks Finnish or Swedish.
 
 = 1.140.146 =
 * A new role, a pass or the team's OK lists the open tasks you can take, each with a Sign up button.
@@ -1655,6 +1659,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.147 =
+No settings change.
 
 = 1.140.146 =
 No settings change.
