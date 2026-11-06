@@ -282,8 +282,10 @@ final class MessageTemplates
     }
 
     /**
-     * Cancel the task. In the DM, the board's own leave callback, so the tap
-     * runs the same drop as the board. In the email, the crew page: for a
+     * Cancel the task. In the DM, the "Cancel?" question first
+     * (BoardService::CANCEL_ASK_PREFIX): it says whether the cancel would be
+     * late and offers to hand the task over; only its Yes runs the board's
+     * drop. In the email, the crew page: for a
      * person with no Telegram chat a sign-in link (CrewPageHelp), as before,
      * for everyone else the page itself; and the bot's board in Telegram.
      */
@@ -301,7 +303,7 @@ final class MessageTemplates
             static fn (): string => CrewPageHelp::webOnly($person) && $person instanceof Person
                 ? $m->manageUrl($person->id)
                 : CrewPageHelp::pageUrl(),
-            $task instanceof Task ? 'l:' . $task->id : '',
+            $task instanceof Task ? BoardService::CANCEL_ASK_PREFIX . $task->id : '',
             'board'
         );
     }
