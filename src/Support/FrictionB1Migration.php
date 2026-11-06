@@ -51,6 +51,10 @@ final class FrictionB1Migration
                 'signup_confirmed' => $signup,
                 'signup_confirmed_dm' => $signup,
             ],
+            'cancel_other_tasks' => [
+                'cancel_confirmed' => self::withOtherTasks(...),
+                'cancel_confirmed_dm' => self::withOtherTasks(...),
+            ],
         ];
     }
 
@@ -97,6 +101,24 @@ final class FrictionB1Migration
         return false === $end
             ? $text . "\n{event_times}"
             : substr($text, 0, $end) . "\n{event_times}" . substr($text, $end);
+    }
+
+    /**
+     * $text with {other_tasks} (which brings its own empty line) right after
+     * the first {note}, else at the end. A text that has {other_tasks}
+     * already, or is empty, comes back as it is.
+     */
+    public static function withOtherTasks(string $text): string
+    {
+        if ('' === trim($text) || str_contains($text, '{other_tasks}')) {
+            return $text;
+        }
+
+        $at = strpos($text, '{note}');
+
+        return false === $at
+            ? rtrim($text) . '{other_tasks}'
+            : substr($text, 0, $at) . '{note}{other_tasks}' . substr($text, $at + strlen('{note}'));
     }
 
     /** $text with "\n\n" and $placeholder after it, unless it has it already or is empty. */

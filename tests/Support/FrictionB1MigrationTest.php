@@ -102,4 +102,21 @@ final class FrictionB1MigrationTest extends TestCase
         self::assertSame("Ilmoittauduttu: {when}.\n{event_times}\n\n{description}", $email['texts']['fi']);
         self::assertSame(1, $this->options[FrictionB1Migration::OPTION]['signup']);
     }
+
+    /** The cancel step puts the other open tasks right after the note, else at the end. */
+    public function testTheCancelStepAddsTheOtherOpenTasksAfterTheNote(): void
+    {
+        $prefix = MessageTemplates::OPTION_PREFIX;
+        $this->options[$prefix . 'cancel_confirmed_dm'] = [MessageTemplates::BODY => "{cancelled}: {role}. {note}\n\n{standing}"];
+        $this->options[$prefix . 'cancel_confirmed'] = [MessageTemplates::BODY => "Hi {name},\n\nCancelled.\n"];
+
+        FrictionB1Migration::run();
+
+        self::assertSame(
+            "{cancelled}: {role}. {note}{other_tasks}\n\n{standing}",
+            $this->options[$prefix . 'cancel_confirmed_dm'][MessageTemplates::BODY]
+        );
+        self::assertSame("Hi {name},\n\nCancelled.{other_tasks}", $this->options[$prefix . 'cancel_confirmed'][MessageTemplates::BODY]);
+        self::assertSame(1, $this->options[FrictionB1Migration::OPTION]['cancel_other_tasks']);
+    }
 }

@@ -7137,6 +7137,12 @@ msgstr "Lähetetään, kun henkilö peruu oman tehtävänsä botissa tai verkkos
 msgid "Cancelled a task (Telegram)"
 msgstr "Perui tehtävän (Telegram)"
 
+msgid "Sign up again"
+msgstr "Ilmoittaudu taas"
+
+msgid "After a late cancellation, the person's standing and free-entry credits, like: Your standing: Beginner · 0 free-entry credits. On a line of its own; the line goes when the cancellation was not late."
+msgstr "Myöhäisen perumisen jälkeen henkilön luotettavuus ja vapaaliput, esim.: Luotettavuutesi: Aloittelija · 0 vapaalippua. Omalla rivillään; rivi jää pois, kun peruminen ei ollut myöhäinen."
+
 msgid "\"❌ Cancelled\", or \"⚠️ Late cancellation\" when the cancellation was late."
 msgstr "\"❌ Peruttu\", tai \"⚠️ Myöhäinen peruutus\", kun peruutus tuli myöhään."
 
