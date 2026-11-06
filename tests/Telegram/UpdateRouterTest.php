@@ -345,6 +345,26 @@ final class UpdateRouterTest extends TelegramTestCase
         );
     }
 
+    public function testABoardStartPayloadSendsTheBoardToThePrivateChat(): void
+    {
+        // A day tap in the group that could not reach the private chat:
+        // t.me/<bot>?start=board-20260808.
+        $this->wpdb->nextResults[] = []; // the board: no tasks
+
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/start board-20260808',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555, 'first_name' => 'Sam'],
+            ],
+        ]);
+
+        self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
+        self::assertSame(['sendMessage'], $this->calledMethods());
+        self::assertSame(555, $this->lastCallTo('sendMessage')['chat_id']);
+        self::assertSame('No open tasks right now. Check back soon!', $this->lastCallTo('sendMessage')['text']);
+    }
+
     /**
      * "Not right? Tell us" (a no-show notice's button or its email link):
      * the bot asks what is wrong and keeps the question in the chat's log,

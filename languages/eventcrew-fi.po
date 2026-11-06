@@ -6108,8 +6108,8 @@ msgstr "Tapahtumakortit"
 msgid "Show the group board as event cards"
 msgstr "Näytä ryhmän taulu tapahtumakortteina"
 
-msgid "Off by default. When on, the board is two messages. First a photo message for the next event, when it is an EventMesh event with a picture: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Below it the text board: the next 3 events, who is signed up for which task, and the task buttons. There are no date buttons."
-msgstr "Oletuksena pois päältä. Kun se on päällä, taulu on kaksi viestiä. Ensin kuvaviesti seuraavasta tapahtumasta, jos se on EventMesh-tapahtuma, jolla on kuva: sen kuva, nimi, päivä, hinta, kielimallin kirjoittamat kaksi lausetta DJ:stä tai juontajasta sekä sen linkit. Sen alla tekstitaulu: seuraavat 3 tapahtumaa, kuka on ilmoittautunut mihinkin tehtävään, ja tehtäväpainikkeet. Päivämääräpainikkeita ei ole."
+msgid "Off by default. When on, the board is two messages. First a photo message for the next event, when it is an EventMesh event with a picture: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Below it the text board: the next event, who is signed up for which task, the task buttons and the date buttons."
+msgstr "Oletuksena pois päältä. Kun se on päällä, taulu on kaksi viestiä. Ensin kuvaviesti seuraavasta tapahtumasta, jos se on EventMesh-tapahtuma, jolla on kuva: sen kuva, nimi, päivä, hinta, kielimallin kirjoittamat kaksi lausetta DJ:stä tai juontajasta sekä sen linkit. Sen alla tekstitaulu: seuraava tapahtuma, kuka on ilmoittautunut mihinkin tehtävään, tehtäväpainikkeet ja päivämääräpainikkeet."
 
 msgid "Cancel sending"
 msgstr "Peru lähetys"
@@ -8548,6 +8548,12 @@ msgstr[1] "Tämä käyttää yhden %d vapaalipustasi."
 
 msgid "Open a private chat with the bot and tap Start first, then tap the task again."
 msgstr "Avaa ensin yksityinen chatti botin kanssa ja paina Aloita, sitten paina tehtävää uudelleen."
+
+msgid "Check your private chat with the bot: that day’s tasks are there."
+msgstr "Katso yksityinen chatti botin kanssa: sen päivän tehtävät ovat siellä."
+
+msgid "Open a private chat with the bot and tap Start first, then tap the date again."
+msgstr "Avaa ensin yksityinen chatti botin kanssa ja paina Aloita, sitten paina päivää uudelleen."
 
 msgid "How many tasks the person who asks has done, like: Sam has done 5 tasks. On a line of its own; the line goes when it is not known."
 msgstr "Montako tehtävää pyytäjä on tehnyt, esim.: Sam on tehnyt 5 tehtävää. Omalla rivillään; rivi jää pois, jos sitä ei tiedetä."

@@ -21,10 +21,10 @@ final class MessageActions
      * The verbs of the start payloads <verb>-<id> that open one screen in
      * the bot (startUrl() with an id): a task with its Sign up button, a
      * takeover request with its two answers, a night to spend a free-entry
-     * credit on, a person's role buttons and a newcomer's OK and No
-     * (organizers only).
+     * credit on, a person's role buttons, a newcomer's OK and No
+     * (organizers only) and one day of the board (board-<Ymd>).
      */
-    public const SCREEN_VERBS = ['task', 'tov', 'tkt', 'who', 'nco', 'door'];
+    public const SCREEN_VERBS = ['task', 'tov', 'tkt', 'who', 'nco', 'door', 'board'];
 
     /**
      * The actions of $id with $context, [] for a kind with none.

@@ -10,6 +10,7 @@ use EventCrew\Support\Language;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\TranslatedText;
+use EventCrew\Support\TranslationRow;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -228,6 +229,101 @@ final class TranslatedTextTest extends TestCase
 
         self::assertSame(TranslatedText::ERROR_BAD_ANSWER, $result['error']);
         self::assertSame(['fi' => 'Hello', 'en' => 'Hello'], $result['value']['texts']);
+    }
+
+    /**
+     * A failed translation copies the source into the empty languages and
+     * marks them as fallbacks; an unchanged save then asks the model again
+     * and the answer replaces the copies and clears the marks.
+     */
+    public function testAFallbackIsTranslatedByTheNextSave(): void
+    {
+        $this->withModel();
+        $this->status = 500;
+
+        $failed = $this->translator()->update(TranslatedText::blank(), 'Hello', [], false, 0, true, 'en');
+
+        self::assertSame('Hello', $failed['value']['texts']['fi']);
+        self::assertTrue(TranslatedText::isFallback($failed['value'], 'fi'));
+        self::assertFalse(TranslatedText::isFallback($failed['value'], 'en'));
+        self::assertSame(['fi'], TranslatedText::fillFor($failed['value'], 'Hello', [], false, 0, true, null));
+
+        $stored = TranslatedText::normalize($failed['value']);
+        self::assertTrue(TranslatedText::isFallback($stored, 'fi'));
+
+        $this->status = 200;
+        $this->answer = '{"lang": "en", "fi": "Hei"}';
+        $again = $this->translator()->update($stored, 'Hello', $stored['texts']);
+
+        self::assertCount(2, $this->requests);
+        self::assertSame('Hei', $again['value']['texts']['fi']);
+        self::assertArrayNotHasKey('fallback', $again['value']);
+    }
+
+    /** "Translate missing" also sends a text that is only a fallback. */
+    public function testTranslateMissingSendsAFallback(): void
+    {
+        $this->withModel();
+        $this->status = 500;
+        $failed = $this->translator()->update(TranslatedText::blank(), 'Hello', [], false, 0, true, 'en');
+        $this->status = 200;
+        $this->answer = '[{"id": "1", "lang": "en", "fi": "Hei"}]';
+
+        $item = ['value' => $failed['value'], 'maxLength' => 0, 'multiline' => true];
+        $result = $this->translator()->fillMany(['a' => $item]);
+
+        self::assertCount(2, $this->requests);
+        self::assertSame('Hei', $result['values']['a']['value']['texts']['fi']);
+        self::assertFalse(TranslatedText::isFallback($result['values']['a']['value'], 'fi'));
+    }
+
+    /**
+     * A fallback edited by hand is a translation: the mark goes. A fallback
+     * follows a new source when the model fails again.
+     */
+    public function testAFallbackEditedByHandOrFollowingANewSource(): void
+    {
+        $this->withModel();
+        $this->status = 500;
+        $failed = $this->translator()->update(TranslatedText::blank(), 'Hello', [], false, 0, true, 'en');
+
+        $edited = $this->translator()->update($failed['value'], 'Hello', ['fi' => 'Moi']);
+        self::assertSame('Moi', $edited['value']['texts']['fi']);
+        self::assertFalse(TranslatedText::isFallback($edited['value'], 'fi'));
+
+        $newSource = $this->translator()->update($failed['value'], 'Good evening', []);
+        self::assertSame('Good evening', $newSource['value']['texts']['fi']);
+        self::assertTrue(TranslatedText::isFallback($newSource['value'], 'fi'));
+    }
+
+    /** The Translations page counts a fallback as missing. */
+    public function testAFallbackRowIsMissing(): void
+    {
+        $value = self::value('Hello', ['fi' => 'Hello', 'en' => 'Hello']);
+        $row = static fn (array $value): TranslationRow => new TranslationRow(
+            'r',
+            'R',
+            'texts',
+            $value,
+            static fn (): bool => true
+        );
+
+        self::assertFalse($row($value)->isMissing());
+
+        $value['fallback'] = ['fi' => true];
+        self::assertTrue($row($value)->isMissing());
+    }
+
+    /** A value without marks keeps its shape: no fallback key. */
+    public function testATranslatedValueHasNoFallbackKey(): void
+    {
+        $this->withModel();
+        $this->answer = '{"lang": "en", "fi": "Hei"}';
+
+        $result = $this->translator()->update(TranslatedText::blank(), 'Hello', []);
+
+        self::assertArrayNotHasKey('fallback', $result['value']);
+        self::assertArrayNotHasKey('fallback', TranslatedText::normalize($result['value']));
     }
 
     /** An unchanged save sends nothing. */

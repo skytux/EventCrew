@@ -38,7 +38,9 @@ namespace EventCrew\Support;
  *
  * The switch AUTO_OPTION ("Translate texts automatically with the language
  * model", on by default) turns the model off for every text: nothing is sent,
- * and an empty language text gets the source as written. The same happens
+ * and an empty language text gets the source as written, marked as a
+ * fallback (isFallback()) so a later save or "Translate missing" still
+ * translates it. The same happens
  * when the model is not set up or its answer cannot be used; update() and
  * translate() then return the error, so the caller can say so.
  *
@@ -200,6 +202,8 @@ final class TranslatedText
             $value['texts'][$lang] = is_string($texts[$lang] ?? null) ? $texts[$lang] : '';
             $value['manual'][$lang] = (bool) ($manual[$lang] ?? false);
         }
+
+        $value = self::withFallbacks($value, is_array($stored['fallback'] ?? null) ? $stored['fallback'] : []);
 
         // Texts of languages taken off the site are kept after them.
         foreach ($texts as $lang => $text) {
@@ -523,7 +527,13 @@ final class TranslatedText
                 $posted !== $before['texts'][$code] => true,
                 default => $before['manual'][$code],
             };
+
+            if ('' === $posted || $posted !== $before['texts'][$code]) {
+                unset($value['fallback'][$code]);
+            }
         }
+
+        $value = self::withFallbacks($value, $value['fallback'] ?? []);
 
         if ('' === $value['source']) {
             // No source: the texts that follow it are emptied with it.
@@ -532,6 +542,8 @@ final class TranslatedText
                     $value['texts'][$code] = '';
                 }
             }
+
+            $value = self::withFallbacks($value, $value['fallback'] ?? []);
 
             return ['value' => $value, 'lang' => $lang, 'detected' => $detected, 'fill' => []];
         }
@@ -547,6 +559,7 @@ final class TranslatedText
                     || $sourceChanged
                     || $langChanged
                     || '' === $value['texts'][$code]
+                    || self::isFallback($value, $code)
                     || in_array($code, $refill, true)
                 )
             ) {
@@ -590,7 +603,10 @@ final class TranslatedText
 
     /**
      * Puts a translate() result into a plan() with languages to fill. When
-     * the translation failed, an empty language text gets the source.
+     * the translation failed, an empty language text gets the source and is
+     * marked as a fallback (isFallback()): readers see the source, and the
+     * next save or "Translate missing" translates it. A text that was itself
+     * a fallback follows the new source.
      *
      * @param array{value: array<string, mixed>, lang: string, detected: bool, fill: list<string>} $plan
      * @param array{ok: bool, lang: string, texts: array<string, string>, error: string} $result
@@ -612,17 +628,25 @@ final class TranslatedText
             foreach ($fill as $code) {
                 if ($code !== $lang) {
                     $value['texts'][$code] = $result['texts'][$code];
+                    unset($value['fallback'][$code]);
                 }
             }
+
+            $value = self::withFallbacks($value, $value['fallback'] ?? []);
 
             return ['value' => self::withSourceLanguage($value, $lang, $detected), 'error' => ''];
         }
 
+        $marks = $value['fallback'] ?? [];
+
         foreach ($fill as $code) {
-            if ('' === $value['texts'][$code]) {
+            if ('' === $value['texts'][$code] || self::isFallback($value, $code)) {
                 $value['texts'][$code] = $value['source'];
+                $marks[$code] = true;
             }
         }
+
+        $value = self::withFallbacks($value, $marks);
 
         return ['value' => self::withSourceLanguage($value, $lang, $detected), 'error' => $result['error']];
     }
@@ -647,6 +671,47 @@ final class TranslatedText
         ) {
             $value['texts'][$lang] = $value['source'];
             $value['manual'][$lang] = false;
+            unset($value['fallback'][$lang]);
+            $value = self::withFallbacks($value, $value['fallback'] ?? []);
+        }
+
+        return $value;
+    }
+
+    /**
+     * Whether $lang's text of a value is only the source copied in after a
+     * failed (or switched off) translation, not a translation.
+     *
+     * @param array<string, mixed> $value A normalized value.
+     */
+    public static function isFallback(array $value, string $lang): bool
+    {
+        return is_array($value['fallback'] ?? null) && true === ($value['fallback'][$lang] ?? false);
+    }
+
+    /**
+     * $value with the fallback marks $marks (by language, kept only for a
+     * site language with a text). The key 'fallback' is there only while a
+     * language is marked, so values without marks keep their old shape.
+     *
+     * @param array<string, mixed> $value
+     * @param array<mixed, mixed> $marks
+     * @return array<string, mixed>
+     */
+    private static function withFallbacks(array $value, array $marks): array
+    {
+        $keep = [];
+
+        foreach (self::languages() as $lang) {
+            if (! empty($marks[$lang]) && '' !== ($value['texts'][$lang] ?? '') && empty($value['manual'][$lang])) {
+                $keep[$lang] = true;
+            }
+        }
+
+        unset($value['fallback']);
+
+        if ([] !== $keep) {
+            $value['fallback'] = $keep;
         }
 
         return $value;

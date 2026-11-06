@@ -71,8 +71,9 @@ final class TranslationRow
     }
 
     /**
-     * Whether a site language has no text yet while there is a source: the
-     * row "Translate missing" fills.
+     * Whether a site language has no text yet (or only the source, copied in
+     * after a failed translation) while there is a source: the row
+     * "Translate missing" fills.
      */
     public function isMissing(): bool
     {
@@ -81,7 +82,7 @@ final class TranslationRow
         }
 
         foreach (TranslatedText::languages() as $lang) {
-            if ('' === trim($this->value['texts'][$lang] ?? '')) {
+            if ('' === trim($this->value['texts'][$lang] ?? '') || TranslatedText::isFallback($this->value, $lang)) {
                 return true;
             }
         }

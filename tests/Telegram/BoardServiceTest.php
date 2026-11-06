@@ -997,24 +997,114 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertContains('📅 Sat 1 Aug ✓', $labels);
     }
 
-    public function testTappingADayEditsTheTappedMessageToThatDay(): void
+    public function testADayTapOnAPrivateCopyEditsThatMessageToThatDay(): void
     {
         $this->queueThreeDays();
 
         $query = $this->callbackQuery('bd:2026-08-15');
-        $query['message'] = ['message_id' => 5, 'chat' => ['id' => 100, 'type' => 'supergroup']];
+        $query['message'] = ['message_id' => 42, 'chat' => ['id' => 555, 'type' => 'private']];
         $this->board()->onPickDate($query);
 
+        self::assertSame(['answerCallbackQuery', 'editMessageText'], $this->calledMethods());
         $edit = $this->lastCallTo('editMessageText');
-        self::assertSame(100, $edit['chat_id']);
-        self::assertSame(5, $edit['message_id']);
+        self::assertSame(555, $edit['chat_id']);
+        self::assertSame(42, $edit['message_id']);
         $labels = array_column($this->buttons($edit['reply_markup']['inline_keyboard']), 'text');
         self::assertContains('📅 Party C', $labels);
         self::assertNotContains('📅 Party A', $labels);
-        self::assertContains('answerCallbackQuery', $this->calledMethods());
     }
 
-    public function testJoiningOnAPickedDayRedrawsTheGroupBoardOnThatDay(): void
+    /**
+     * Lou 2026-11-06: a day tap in the group never moves the group's message;
+     * that day goes to the private chat of the person who tapped, with the
+     * whole row of day buttons.
+     */
+    public function testADayTapInTheGroupSendsThatDayPrivatelyAndLeavesTheGroupBoard(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => -100, 'message_id' => 5];
+        $this->queueThreeDays();
+
+        $query = $this->callbackQuery('bd:2026-08-08');
+        $query['message'] = ['message_id' => 5, 'chat' => ['id' => -100, 'type' => 'supergroup']];
+        $this->board()->onPickDate($query);
+
+        self::assertSame(['sendMessage', 'answerCallbackQuery'], $this->calledMethods());
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(555, $sent['chat_id']);
+        $data = array_column($this->buttons($sent['reply_markup']['inline_keyboard']), 'callback_data', 'text');
+        self::assertArrayHasKey('📅 Party B', $data);
+        self::assertArrayNotHasKey('📅 Party A', $data);
+        self::assertSame('t:2:2026-08-08', $data['🎈 Decorate · 0/2'] ?? null);
+        self::assertSame('bd:2026-08-01', $data['◀ Sat 1 Aug'] ?? null);
+        self::assertSame('bd:2026-08-08', $data['📅 Sat 8 Aug ✓'] ?? null);
+        self::assertSame('bd:2026-08-15', $data['Sat 15 Aug ▶'] ?? null);
+        self::assertStringContainsString('private chat', (string) $this->lastCallTo('answerCallbackQuery')['text']);
+        self::assertSame(['chat_id' => -100, 'message_id' => 5], $this->options[BoardService::BOARD_OPTION]);
+    }
+
+    public function testWhenTheDayCannotReachThePrivateChatTheTapOpensTheBotOnThatDay(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => -100, 'message_id' => 5];
+        $this->options[BoardService::USERNAME_OPTION] = '@crew_bot';
+        $this->telegramErrors['sendMessage'] = "Forbidden: bot can't initiate conversation with a user";
+        $this->queueThreeDays();
+
+        $query = $this->callbackQuery('bd:2026-08-08');
+        $query['message'] = ['message_id' => 5, 'chat' => ['id' => -100, 'type' => 'supergroup']];
+        $this->board()->onPickDate($query);
+
+        self::assertSame(['sendMessage', 'answerCallbackQuery'], $this->calledMethods());
+        $answer = $this->lastCallTo('answerCallbackQuery');
+        self::assertSame('https://t.me/crew_bot?start=board-20260808', $answer['url']);
+        self::assertStringNotContainsString('private chat', (string) ($answer['text'] ?? ''));
+    }
+
+    public function testWithoutTheBotsNameAFailedDayTapSaysToStartTheBotFirst(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => -100, 'message_id' => 5];
+        $this->telegramErrors['sendMessage'] = "Forbidden: bot can't initiate conversation with a user";
+        $this->queueThreeDays();
+
+        $query = $this->callbackQuery('bd:2026-08-08');
+        $query['message'] = ['message_id' => 5, 'chat' => ['id' => -100, 'type' => 'supergroup']];
+        $this->board()->onPickDate($query);
+
+        $answer = $this->lastCallTo('answerCallbackQuery');
+        self::assertArrayNotHasKey('url', $answer);
+        self::assertTrue($answer['show_alert']);
+        self::assertStringContainsString('tap the date again', (string) $answer['text']);
+        self::assertNotContains('editMessageText', $this->calledMethods());
+    }
+
+    public function testTheBoardStartLinkSendsThatDayInThePrivateChat(): void
+    {
+        $this->queueThreeDays();
+
+        self::assertTrue($this->board()->openDay(555, '20260808'));
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(555, $sent['chat_id']);
+        $labels = array_column($this->buttons($sent['reply_markup']['inline_keyboard']), 'text');
+        self::assertContains('📅 Party B', $labels);
+        self::assertFalse($this->board()->openDay(555, 'x'));
+    }
+
+    /**
+     * A private copy is for one person, so it is in their language (the
+     * update runs in it); the group's board stays English.
+     */
+    public function testAPrivateCopyIsInThePersonsLanguage(): void
+    {
+        $this->queueThreeDays();
+        $query = $this->callbackQuery('bd:2026-08-08');
+        $query['message'] = ['message_id' => 42, 'chat' => ['id' => 555, 'type' => 'private']];
+
+        Language::run(Language::FINNISH, fn () => $this->board()->onPickDate($query));
+
+        self::assertStringStartsWith('Avoimet tehtävät', (string) $this->lastCallTo('editMessageText')['text']);
+    }
+
+    public function testJoiningFromTheGroupKeepsTheGroupBoardOnTheNextEvent(): void
     {
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
         $this->verifiedPerson(555);
@@ -1022,14 +1112,16 @@ final class BoardServiceTest extends TelegramTestCase
         $this->wpdb->nextQueryResults[] = 1; // conditional insert
         $this->queueThreeDays(); // the redraw
 
+        // A board posted before 2026-11-06 could show a later day.
         $query = $this->callbackQuery('t:2:2026-08-08');
         $query['message'] = ['message_id' => 5, 'chat' => ['id' => 100, 'type' => 'supergroup']];
         $this->board()->onJoinLeave($query);
 
         self::assertSame('You’re in! See you there.', $this->lastCallTo('answerCallbackQuery')['text']);
+        self::assertSame(['answerCallbackQuery', 'editMessageText'], $this->calledMethods());
         $labels = array_column($this->buttons($this->lastCallTo('editMessageText')['reply_markup']['inline_keyboard']), 'text');
-        self::assertContains('📅 Party B', $labels);
-        self::assertNotContains('📅 Party A', $labels);
+        self::assertContains('📅 Party A', $labels);
+        self::assertNotContains('📅 Party B', $labels);
     }
 
     public function testJoiningOnAPickedDayInADmKeepsTheGroupBoardOnTheNextEvent(): void

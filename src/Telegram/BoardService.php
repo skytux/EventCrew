@@ -14,6 +14,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Dates;
 use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
+use EventCrew\Support\MessageActions;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\SlotFreedNotice;
 
@@ -87,10 +88,20 @@ final class BoardService
 
     /**
      * Callback data prefix for a day button under the board: bd:<Y-m-d>, or a
-     * bare bd: for the next event. In the group it changes the one shared
-     * message for everyone - Telegram has no per-person view of a message.
+     * bare bd: for the next event. In a private chat it redraws that copy. In
+     * the group it never changes the one shared message (Telegram has no
+     * per-person view of a message): that day goes to the private chat of
+     * the person who tapped (onPickDate()).
      */
     public const PICK_PREFIX = 'bd:';
+
+    /**
+     * The start payload verb that sends one day of the board to the private
+     * chat (t.me/<bot>?start=board-20261114, MessageActions::SCREEN_VERBS):
+     * used when a day tap in the group could not reach someone who never
+     * started the bot. Without a day it is the menu's board verb.
+     */
+    public const START_VERB = 'board';
 
     /**
      * Callback data prefix of the Cancel button under a message about one's
@@ -113,8 +124,8 @@ final class BoardService
      * board is two messages: first a photo message for the next event
      * (BoardRenderer::nextCard(): its picture, name, date, price and a short
      * text about its DJ or host, and the card's link buttons), then the text
-     * board (BoardRenderer::crewBoard(): the next three events with who is
-     * signed up and the task buttons, no day buttons). With no next event
+     * board (BoardRenderer::crewBoard(): the next event with who is signed
+     * up, the task buttons and the row of day buttons). With no next event
      * with a picture there is only the text board. BOARD_OPTION then also
      * holds 'card': the photo message's id, its event, its picture, and hashes
      * of its caption and keyboard, so a refresh edits only what changed.
@@ -277,9 +288,10 @@ final class BoardService
      * nobody. An unchanged board counts as success: Telegram's "message is not
      * modified" is a benign error TelegramClient already treats as one.
      *
-     * $date is the day to show; '' (every automatic redraw) is the next event.
+     * The group's board always shows the next event; other days are shown
+     * only in private copies.
      */
-    public function refresh(string $date = ''): bool
+    public function refresh(): bool
     {
         if (! $this->telegram->isConfigured()) {
             return false;
@@ -323,7 +335,7 @@ final class BoardService
             $this->dropCard($chatId, $board);
         }
 
-        $rendered = $this->textBoard($date);
+        $rendered = $this->textBoard();
         $markup = $this->markup($rendered);
 
         if ($messageId > 0) {
@@ -338,19 +350,23 @@ final class BoardService
     }
 
     /**
-     * The text board: with the card format on, the next three events with who
-     * is signed up and no day buttons (the day asked for does not matter);
-     * otherwise the one day $date ('' = the next event) with day buttons.
+     * The text board for the day $date ('' = the next event), with the row of
+     * day buttons: with the card format on, the day with who is signed up
+     * (BoardRenderer::crewBoard()); otherwise render().
+     *
+     * The group's board is English, the whole group reads it. A private copy
+     * ($group false) is for one person, so it is in the language the update
+     * runs in: the person's own (UpdateRouter).
      *
      * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
      */
-    private function textBoard(string $date = ''): array
+    private function textBoard(string $date = '', bool $group = true): array
     {
-        if (self::cardsOn()) {
-            return Language::run(Language::ENGLISH, fn (): array => $this->renderer->crewBoard());
-        }
+        $build = fn (): array => self::cardsOn()
+            ? $this->renderer->crewBoard($date)
+            : $this->renderer->render($date);
 
-        return $this->render($date);
+        return $group ? Language::run(Language::ENGLISH, $build) : $build();
     }
 
     /**
@@ -773,7 +789,8 @@ final class BoardService
      *
      * With the card format on, the copy is the same two messages as the
      * group's: the photo message, then the text board. Neither is stored in
-     * BOARD_OPTION.
+     * BOARD_OPTION. The text board is in the person's language; the photo
+     * message stays as the group's.
      */
     public function sendPrivate(int $chatId): void
     {
@@ -789,9 +806,42 @@ final class BoardService
             }
         }
 
-        $rendered = $this->textBoard();
+        $rendered = $this->textBoard('', false);
 
         $this->telegram->sendMessage($chatId, $rendered['text'], $this->markup($rendered));
+    }
+
+    /**
+     * One day of the board ('' = the next event) as a new message in the
+     * private chat $chatId, in the person's language: the private copy a
+     * day tap in the group asks for, or the start link board-<Ymd> opens.
+     * Returns whether Telegram took it.
+     */
+    public function sendDay(int $chatId, string $date): bool
+    {
+        if (! $this->telegram->isConfigured() || 0 === $chatId) {
+            return false;
+        }
+
+        $rendered = $this->textBoard($date, false);
+
+        return null !== $this->telegram->sendMessage($chatId, $rendered['text'], $this->markup($rendered));
+    }
+
+    /**
+     * /start board-<Ymd> in the private chat: that day of the board (a day
+     * with no open tasks shows the next event). False when the id is not a
+     * date, so the caller goes on.
+     */
+    public function openDay(int $chatId, string $ymd): bool
+    {
+        if (1 !== preg_match('/^(\d{4})(\d{2})(\d{2})$/', $ymd, $m)) {
+            return false;
+        }
+
+        $this->sendDay($chatId, $m[1] . '-' . $m[2] . '-' . $m[3]);
+
+        return true;
     }
 
     /**
@@ -870,14 +920,20 @@ final class BoardService
             return;
         }
 
-        $rendered = $this->textBoard($date);
+        $rendered = $this->textBoard($date, false);
 
         $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], $this->markup($rendered));
     }
 
     /**
-     * A day button tap: redraws the message it was tapped on - the group's
-     * board or a private copy - showing that day ('' = the next event).
+     * A day button tap ('' = the next event). On a private copy it redraws
+     * that message on the day. In the group it never touches the shared
+     * message, which always shows the next event: the day goes as a new
+     * message to the private chat of the person who tapped (sendDay()), and
+     * the tap's popup says so. When that chat cannot be reached (the person
+     * never started the bot), the tap opens the bot with a start link that
+     * sends the same day there (openDay()), or, with no bot name known, says
+     * to start the bot first.
      *
      * @param array<string, mixed> $callbackQuery
      */
@@ -887,23 +943,53 @@ final class BoardService
         $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
         $chatId = (int) ($message['chat']['id'] ?? 0);
         $messageId = (int) ($message['message_id'] ?? 0);
+        $fromId = (int) ($callbackQuery['from']['id'] ?? 0);
         $date = substr((string) ($callbackQuery['data'] ?? ''), strlen(self::PICK_PREFIX));
 
-        $this->telegram->answerCallbackQuery($callbackId);
-
         if (('' !== $date && 1 !== preg_match('#^\d{4}-\d{2}-\d{2}$#', $date)) || 0 === $chatId || 0 === $messageId) {
+            $this->telegram->answerCallbackQuery($callbackId);
+
             return;
         }
 
-        $rendered = $this->textBoard($date);
+        $type = (string) ($message['chat']['type'] ?? ($chatId > 0 ? 'private' : ''));
 
-        $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], $this->markup($rendered));
+        if ('private' === $type && ! $this->isGroupBoard($callbackQuery)) {
+            $this->telegram->answerCallbackQuery($callbackId);
+            $rendered = $this->textBoard($date, false);
+            $this->telegram->editMessageText($chatId, $messageId, $rendered['text'], $this->markup($rendered));
+
+            return;
+        }
+
+        if (0 !== $fromId && $this->sendDay($fromId, $date)) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('Check your private chat with the bot: that day’s tasks are there.', 'eventcrew')
+            );
+
+            return;
+        }
+
+        $link = MessageActions::startUrl(self::START_VERB, str_replace('-', '', $date));
+
+        if ('' !== $link) {
+            $this->telegram->answerCallbackQuery($callbackId, '', false, $link);
+
+            return;
+        }
+
+        $this->telegram->answerCallbackQuery(
+            $callbackId,
+            __('Open a private chat with the bot and tap Start first, then tap the date again.', 'eventcrew'),
+            true
+        );
     }
 
     /**
-     * Whether the tap came from the group's own board message, so a redraw
-     * may keep the day it shows; a tap on a private copy must not move the
-     * group's board off the next event.
+     * Whether the tap came from the group's own board message. A day tap
+     * there goes to the private chat (onPickDate()), whatever kind of chat
+     * the group is.
      *
      * @param array<string, mixed> $callbackQuery
      */
@@ -946,7 +1032,8 @@ final class BoardService
      * kept here so the lifecycle methods (and the tests) call it as before.
      *
      * Always English: the board is one message the whole group reads, and it
-     * is often re-rendered inside a tap by someone who chose Finnish.
+     * is often re-rendered inside a tap by someone who chose Finnish. Private
+     * copies go through textBoard() in the person's language instead.
      *
      * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
      */
@@ -1044,9 +1131,10 @@ final class BoardService
             default => $this->handleToggle($callbackQuery, $taskId, $person),
         };
 
-        // The day shown comes with the tap, so the redraw stays on it.
+        // The group's board always shows the next event. A private copy's
+        // day comes with the tap, so its redraw stays on that day.
         if ($changed) {
-            $this->refresh($this->isGroupBoard($callbackQuery) ? $date : '');
+            $this->refresh();
             $this->refreshPrivateCopy($callbackQuery, $date);
         }
     }
