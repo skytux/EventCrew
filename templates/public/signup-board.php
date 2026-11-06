@@ -220,7 +220,8 @@ endif; ?>
                     <?php
                 elseif ($eventcrew_row['mine']) :
                     ?>
-                    <form class="eventcrew-action" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                    <form class="eventcrew-action" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                        data-eventcrew-confirm="<?php echo esc_attr((string) ($eventcrew_row['cancel_ask'] ?? '')); ?>">
                         <?php
                         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- builder escapes each field.
                         echo $eventcrew_hidden((string) $view['drop_action'], $eventcrew_csrf, $eventcrew_here);

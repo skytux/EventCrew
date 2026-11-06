@@ -25,6 +25,7 @@ use EventCrew\Support\MarkedBy;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\FollowupMail;
+use EventCrew\Telegram\DayPicker;
 use EventCrew\Telegram\TicketRedemptionService;
 
 /**
@@ -70,14 +71,17 @@ final class CrewAdminRoster
      * upcoming date, or the most recent past one when nothing is upcoming.
      *
      * 'prev' and 'next' are the dates with tasks just before and just after
-     * the one shown, for the arrows of the date bar ('' when there is none).
+     * the one shown, for the arrows of the date bar ('' when there is none),
+     * and 'label' is the shown date as the middle of the bar writes it
+     * (DayPicker, the same selector as in Telegram).
      *
      * @return array{
      *     date: string,
      *     upcoming: array<string, string>,
      *     past: array<string, string>,
      *     prev: string,
-     *     next: string
+     *     next: string,
+     *     label: string
      * }
      */
     public function dates(string $requested): array
@@ -88,17 +92,16 @@ final class CrewAdminRoster
         $upcoming = array_reverse(array_values(array_filter($dates, static fn (string $d): bool => $d >= $today)));
         $past = array_values(array_filter($dates, static fn (string $d): bool => $d < $today));
 
-        $selected = in_array($requested, $dates, true) ? $requested : ($upcoming[0] ?? ($past[0] ?? ''));
-
-        $earlier = array_filter($dates, static fn (string $d): bool => '' !== $selected && $d < $selected);
-        $later = array_filter($dates, static fn (string $d): bool => '' !== $selected && $d > $selected);
+        $selected = in_array($requested, $dates, true) ? $requested : DayPicker::defaultDate($dates, $today);
+        $steps = DayPicker::steps($dates, $selected);
 
         return [
             'date' => $selected,
             'upcoming' => self::labelled($upcoming),
             'past' => self::labelled($past),
-            'prev' => [] === $earlier ? '' : max($earlier),
-            'next' => [] === $later ? '' : min($later),
+            'prev' => '' === $selected ? '' : $steps['prev'],
+            'next' => '' === $selected ? '' : $steps['next'],
+            'label' => '' === $selected ? '' : DayPicker::label($selected),
         ];
     }
 

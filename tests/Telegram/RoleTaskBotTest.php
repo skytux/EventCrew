@@ -140,9 +140,9 @@ final class RoleTaskBotTest extends TelegramTestCase
 
         $this->roleTaskBot()->start(555, 555);
 
-        self::assertSame(['rt:s:9', 'x', 'rt:d:2026-07-25', 'rt:d:2026-08-01'], $this->buttonData());
+        self::assertSame(['rt:s:9', 'rt:d:2026-07-25', 'rt:d:2026-08-01'], $this->buttonData());
         $keyboard = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
-        self::assertSame('▸ Sat 25 Jul', $keyboard[2][0]['text']);
+        self::assertSame(['📅 Sat 25 Jul ✓', 'Sat 1 Aug ▶'], array_column($keyboard[1], 'text'));
     }
 
     public function testTappingADayRedrawsTheListOnThatDay(): void
@@ -159,7 +159,7 @@ final class RoleTaskBotTest extends TelegramTestCase
         $edit = $this->lastCallTo('editMessageText');
         self::assertSame(3, $edit['message_id']);
         $data = array_column(array_merge(...$edit['reply_markup']['inline_keyboard']), 'callback_data');
-        self::assertSame(['rt:s:10', 'x', 'rt:d:2026-07-25', 'rt:d:2026-08-01'], $data);
+        self::assertSame(['rt:s:10', 'rt:d:2026-07-25', 'rt:d:2026-08-01'], $data);
     }
 
     public function testTheListIsEmptyForSomeoneWithoutTheRole(): void
@@ -253,6 +253,23 @@ final class RoleTaskBotTest extends TelegramTestCase
      * the credit question, and the person is created, given the role, signed
      * up and emailed.
      */
+    public function testTheCrossAsksBeforeCancellingAndSaysWhatItCosts(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow(7, 'dj');
+        // askCancel(): the task, then dropOutcome(): findFor, the start time.
+        $this->wpdb->nextRows[] = $this->djTask();
+        $this->wpdb->nextRows[] = ['id' => 4, 'task_id' => 9, 'person_id' => 7, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = ['starts_at' => null, 'task_date' => '2026-07-25'];
+
+        $this->roleTaskBot()->onSelect($this->tap('rt:c:9'));
+
+        self::assertSame([], $this->wpdb->updates);
+        $ask = $this->lastCallTo('sendMessage');
+        self::assertStringContainsString('Cancel', (string) $ask['text']);
+        self::assertStringContainsString('does not affect your standing', (string) $ask['text']);
+        self::assertContains('lc:9:y', $this->buttonData());
+    }
+
     public function testAnOrganizerAddsANonMemberWithAnEmail(): void
     {
         $organizer = $this->personRow(1, '', true);

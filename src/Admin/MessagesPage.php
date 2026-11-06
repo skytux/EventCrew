@@ -8,6 +8,7 @@ use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
+use EventCrew\Support\MessageAiText;
 use EventCrew\Support\MessagePreview;
 use EventCrew\Support\MessageTemplate;
 use EventCrew\Support\MessageTemplates;
@@ -35,7 +36,14 @@ use EventCrew\Support\TranslatedText;
  * Each kind also has a Preview link, and the page a "Preview all" link
  * (previewUrl()): an admin-post page of its own that shows the message as
  * it would be sent, with sample data, in each site language
- * (MessagePreview). It sends nothing.
+ * (MessagePreview), for the event and task picked on it. It sends nothing;
+ * its "Write it now" (PREVIEW_WRITE_ACTION) has the AI write the kind's
+ * text for that event.
+ *
+ * Each subject and text field of a kind has a "{ } Insert" link
+ * (eventcrew-jobs.js) that lists the kind's placeholders with their values
+ * for the preview's sample person and task (MessagePreview::placeholderSamples())
+ * and puts the one picked at the cursor.
  */
 final class MessagesPage
 {
@@ -53,6 +61,9 @@ final class MessagesPage
 
     /** Opens the preview page of one kind, or of all of them (admin-post, GET). */
     public const PREVIEW_ACTION = 'eventcrew_preview_message';
+
+    /** "Write it now" on the preview page: the AI text of one kind for one event (admin-post, POST). */
+    public const PREVIEW_WRITE_ACTION = 'eventcrew_preview_write';
 
     public const TAB_MESSAGES = 'messages';
 
@@ -100,9 +111,10 @@ final class MessagesPage
 
     /**
      * The admin-only address of the preview of kind $kind ('' for the list
-     * of every kind) in language $lang ('' for the admin's language).
+     * of every kind) in language $lang ('' for the admin's language), for
+     * event $eventId and task $taskId (0: the default, the next one).
      */
-    public static function previewUrl(string $kind = '', string $lang = ''): string
+    public static function previewUrl(string $kind = '', string $lang = '', int $eventId = 0, int $taskId = 0): string
     {
         $args = ['action' => self::PREVIEW_ACTION];
 
@@ -112,6 +124,14 @@ final class MessagesPage
 
         if ('' !== $lang) {
             $args['lang'] = $lang;
+        }
+
+        if ($eventId > 0) {
+            $args['event_id'] = (string) $eventId;
+        }
+
+        if ($taskId > 0) {
+            $args['task_id'] = (string) $taskId;
         }
 
         return wp_nonce_url(add_query_arg($args, admin_url('admin-post.php')), self::PREVIEW_ACTION);
@@ -136,13 +156,17 @@ final class MessagesPage
     }
 
     /**
-     * What the preview page shows for the kind and language in the address:
-     * the languages to switch to, and either the one kind's preview or the
-     * list of every kind.
+     * What the preview page shows for the kind, language, event and task in
+     * the address: the languages to switch to, and either the one kind's
+     * preview with its event and task pickers or the list of every kind.
+     * written is the outcome of "Write it now" ('ok', 'failed'), '' when
+     * none was asked for.
      *
      * @return array{
      *     lang: string, languages: array<string, string>, kind: string,
-     *     message: ?array<string, mixed>, entries: list<array{id: string, label: string, channel: string}>
+     *     message: ?array<string, mixed>, entries: list<array{id: string, label: string, channel: string}>,
+     *     events: list<array{id: int, title: string, date: string, past: bool}>,
+     *     tasks: list<\EventCrew\Models\Task>, written: string
      * }
      */
     public function previewData(): array
@@ -150,6 +174,9 @@ final class MessagesPage
         // phpcs:disable WordPress.Security.NonceVerification.Recommended -- preview() checks the nonce.
         $kind = isset($_GET['kind']) ? sanitize_key(wp_unslash((string) $_GET['kind'])) : '';
         $lang = isset($_GET['lang']) ? sanitize_key(wp_unslash((string) $_GET['lang'])) : '';
+        $eventId = isset($_GET['event_id']) ? absint(wp_unslash((string) $_GET['event_id'])) : 0;
+        $taskId = isset($_GET['task_id']) ? absint(wp_unslash((string) $_GET['task_id'])) : 0;
+        $written = isset($_GET['written']) ? sanitize_key(wp_unslash((string) $_GET['written'])) : '';
         // phpcs:enable WordPress.Security.NonceVerification.Recommended
         $codes = SiteLanguages::codes();
         $lang = in_array($lang, $codes, true) ? $lang : '';
@@ -167,7 +194,7 @@ final class MessagesPage
 
         $message = '' === $kind || null === $this->preview
             ? null
-            : $this->preview->render($kind, '' === $lang ? null : $lang);
+            : $this->preview->render($kind, '' === $lang ? null : $lang, $eventId, $taskId);
 
         return [
             'lang' => $lang,
@@ -175,7 +202,55 @@ final class MessagesPage
             'kind' => null === $message ? '' : $kind,
             'message' => $message,
             'entries' => $entries,
+            'events' => null === $message || null === $this->preview ? [] : $this->preview->events(),
+            'tasks' => null === $message || null === $this->preview || true !== $message['about_task']
+                ? []
+                : $this->preview->tasksOf((int) $message['event_id']),
+            'written' => in_array($written, ['ok', 'failed'], true) ? $written : '',
         ];
+    }
+
+    /**
+     * admin-post (POST): "Write it now" on the preview page. Has the AI
+     * write the posted kind's text for the posted event at once, the same
+     * request as "Write again" on the Coming events tab, then goes back to
+     * the preview of that event and task. Organizers only, nonce-checked.
+     */
+    public function previewWrite(): never
+    {
+        Admin::assertCanSave(self::PREVIEW_WRITE_ACTION);
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified in assertCanSave(); sanitized per field in applyPreviewWrite().
+        $target = $this->applyPreviewWrite((array) wp_unslash($_POST));
+
+        wp_safe_redirect($target);
+        exit;
+    }
+
+    /**
+     * Writes the AI text of $post's kind for its event_id, when the kind
+     * has an AI text per event; returns the preview address to go back to,
+     * with written=ok or written=failed.
+     *
+     * @param array<string, mixed> $post
+     */
+    public function applyPreviewWrite(array $post): string
+    {
+        $kind = sanitize_key((string) ($post['kind'] ?? ''));
+        $lang = sanitize_key((string) ($post['lang'] ?? ''));
+        $lang = in_array($lang, SiteLanguages::codes(), true) ? $lang : '';
+        $eventId = absint($post['event_id'] ?? 0);
+        $taskId = absint($post['task_id'] ?? 0);
+        $type = 'error';
+
+        if (null !== $this->ai && $eventId > 0 && MessageAiText::offers($kind)) {
+            $this->ai->applyRewrite(['event_id' => $eventId, 'key' => $kind], $type);
+        }
+
+        return add_query_arg(
+            ['written' => 'success' === $type ? 'ok' : 'failed'],
+            self::previewUrl($kind, $lang, $eventId, $taskId)
+        );
     }
 
     /** The tab asked for in the address; Messages when none or unknown. */
@@ -226,6 +301,7 @@ final class MessagesPage
             'entries' => self::entries(),
             'open' => $open,
             'ticket' => ['text' => TicketText::settings(), 'reasons' => TicketReasons::allSettings()],
+            'samples' => null === $this->preview ? [] : $this->preview->placeholderSamples(),
         ];
     }
 

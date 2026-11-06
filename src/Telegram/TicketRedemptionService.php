@@ -126,9 +126,10 @@ final class TicketRedemptionService
     }
 
     /**
-     * A tap on one of those event buttons: spend the credit (re-checking every
-     * rule, never trusting the button) and DM the ticket link, or explain why
-     * not.
+     * A tap on one of those event buttons (tkt:<date>) asks first, in a new
+     * message, what it costs (creditQuestion()). Its buttons: tkt:<date>:y
+     * spends the credit (re-checking every rule, never trusting the button)
+     * and DMs the ticket link, or explains why not; tkt:<date>:k keeps it.
      *
      * @param array<string, mixed> $callbackQuery
      */
@@ -136,7 +137,11 @@ final class TicketRedemptionService
     {
         $callbackId = (string) ($callbackQuery['id'] ?? '');
         $telegramUserId = (int) ($callbackQuery['from']['id'] ?? 0);
-        $date = substr((string) ($callbackQuery['data'] ?? ''), strlen('tkt:'));
+        $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
+        $chatId = (int) ($message['chat']['id'] ?? $telegramUserId);
+        $messageId = (int) ($message['message_id'] ?? 0);
+        $data = substr((string) ($callbackQuery['data'] ?? ''), strlen('tkt:'));
+        [$date, $step] = array_pad(explode(':', $data, 2), 2, '');
 
         $person = 0 === $telegramUserId ? null : $this->people->findByTelegramUserId($telegramUserId);
 
@@ -146,13 +151,26 @@ final class TicketRedemptionService
             return;
         }
 
+        if ('y' !== $step) {
+            $this->askCredit($callbackId, $person->id, $date, $chatId, $messageId, 'k' === $step);
+
+            return;
+        }
+
         $result = $this->redeem($person->id, $date);
 
         if (self::TICKET_READY !== $result['code']) {
             $this->telegram->answerCallbackQuery($callbackId, $this->noticeText($result['code']), true);
+            $this->closeQuestion($chatId, $messageId, $this->noticeText($result['code']));
 
             return;
         }
+
+        $this->closeQuestion($chatId, $messageId, '✅ ' . sprintf(
+            /* translators: %s: the night, like "Sat 14 Nov · Dance Night" */
+            __('Credit spent on %s.', 'eventcrew'),
+            $this->dateLabel($date)
+        ));
 
         // redeem() already sent the ticket link on the channels the person
         // allows. The buttons only appear in the private chat, so when ticket
@@ -164,6 +182,98 @@ final class TicketRedemptionService
                 ? __('Credit spent — your ticket is in the next message.', 'eventcrew')
                 : __('Credit spent — send /me tickets to see your ticket.', 'eventcrew')
         );
+    }
+
+    /**
+     * The question before a credit is spent, or (when $keep) its "kept"
+     * answer in place of the question. A date that can no longer take a
+     * credit is said at once, with no question.
+     */
+    private function askCredit(
+        string $callbackId,
+        int $personId,
+        string $date,
+        int $chatId,
+        int $messageId,
+        bool $keep
+    ): void {
+        $balance = $this->standing->for($personId)->creditBalance;
+
+        if ($keep) {
+            $this->telegram->answerCallbackQuery($callbackId);
+            $this->closeQuestion($chatId, $messageId, '👍 ' . sprintf(
+                /* translators: %d: number of free-entry credits */
+                _n('Kept: you have %d free-entry credit.', 'Kept: you have %d free-entry credits.', $balance, 'eventcrew'),
+                $balance
+            ));
+
+            return;
+        }
+
+        $refusal = $this->refusal($personId, $date, $balance);
+
+        if ('' !== $refusal) {
+            $this->telegram->answerCallbackQuery($callbackId, $this->noticeText($refusal), true);
+
+            return;
+        }
+
+        $this->telegram->answerCallbackQuery($callbackId);
+        $this->telegram->sendMessage(
+            $chatId,
+            self::creditQuestion($this->dateLabel($date), $balance),
+            ['inline_keyboard' => [
+                [['text' => '✅ ' . __('Yes, use a credit', 'eventcrew'), 'callback_data' => 'tkt:' . $date . ':y']],
+                [['text' => '👍 ' . __('Keep my credit', 'eventcrew'), 'callback_data' => 'tkt:' . $date . ':k']],
+            ]]
+        );
+    }
+
+    /**
+     * "Spend a free-entry credit on Sat 14 Nov · Dance Night?" and what it
+     * costs. The same words on the web page's Get my ticket (where $night is
+     * "%s", filled in with the chosen night).
+     */
+    public static function creditQuestion(string $night, int $balance): string
+    {
+        return sprintf(
+            /* translators: %s: the night, like "Sat 14 Nov · Dance Night" */
+            __('Spend a free-entry credit on %s?', 'eventcrew'),
+            $night
+        ) . "\n\n" . sprintf(
+            // phpcs:disable WordPress.WP.I18n.MissingSingularPlaceholder -- the singular is only used for 1.
+            /* translators: %d: the person's free-entry credits now */
+            _n(
+                'This uses your only free-entry credit.',
+                'This uses 1 of your %d free-entry credits.',
+                $balance,
+                'eventcrew'
+            ),
+            // phpcs:enable WordPress.WP.I18n.MissingSingularPlaceholder
+            $balance
+        );
+    }
+
+    /** redeem()'s refusal for this date now, or '' when a credit can be spent on it. */
+    private function refusal(int $personId, string $date, int $balance): string
+    {
+        return match (true) {
+            ! $this->isUpcomingEventDate($date) => self::NOT_ELIGIBLE,
+            $this->freeEntry->isClosed($date) => self::ENTRY_CLOSED,
+            $this->alreadyRedeemed($personId, $date) => self::ALREADY_REDEEMED,
+            $balance < 1 => self::NO_CREDIT,
+            default => '',
+        };
+    }
+
+    /** The question's text becomes $text, and its buttons go. */
+    private function closeQuestion(int $chatId, int $messageId, string $text): void
+    {
+        if (0 === $chatId || 0 === $messageId) {
+            return;
+        }
+
+        $this->telegram->editMessageText($chatId, $messageId, $text, ['inline_keyboard' => []]);
     }
 
     /**

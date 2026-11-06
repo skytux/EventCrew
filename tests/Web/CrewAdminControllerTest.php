@@ -2297,9 +2297,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         $html = $this->renderAs($this->organizerRow(1));
 
-        self::assertStringContainsString('name="roster_date"', $html);
-        self::assertMatchesRegularExpression('/<option value="2026-07-20" selected>/', $html);
-        self::assertStringContainsString('<option value="2026-07-13"', $html);
+        self::assertStringContainsString('aria-current="date"', $html);
+        self::assertStringContainsString('📅 Mon 20 Jul ✓</a>', $html);
+        self::assertStringContainsString('?roster_date=2026-07-13', $html);
         foreach (
             [
                 CrewAdminController::DOOR_ACTION,
@@ -2394,7 +2394,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
     }
 
     /**
-     * One date bar on each of the Roster and Door screens: "‹ date ›", the
+     * One date bar on each of the Roster and Door screens: "◀ date · 📅 date ✓ · date ▶", the
      * arrows to the dates with tasks just before and just after, each back
      * to its own screen.
      */
@@ -2408,8 +2408,10 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         foreach (['roster', 'door'] as $screen) {
             $panel = $this->subpanel($html, $screen);
 
-            self::assertSame(1, substr_count($panel, '<form class="eventcrew-admin-datebar"'), $screen);
-            self::assertStringContainsString('id="eventcrew-admin-' . $screen . '-date" name="roster_date"', $panel);
+            self::assertSame(1, substr_count($panel, '<div class="eventcrew-admin-datebar"'), $screen);
+            // No menu of every date: past dates only by stepping back.
+            $bar = strstr((string) strstr($panel, '<div class="eventcrew-admin-datebar"'), '</div>', true);
+            self::assertStringNotContainsString('<select', (string) $bar, $screen);
             self::assertMatchesRegularExpression(
                 '/data-eventcrew-date-prev\s+href="[^"]*\?roster_date=2026-07-13#eventcrew-admin-' . $screen . '"/',
                 $panel
@@ -2418,7 +2420,13 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
                 '/data-eventcrew-date-next\s+href="[^"]*\?roster_date=2026-07-27#eventcrew-admin-' . $screen . '"/',
                 $panel
             );
-            self::assertMatchesRegularExpression('/<option value="2026-07-20" selected>/', $panel);
+            // The shown date in the middle, marked, as in Telegram.
+            self::assertMatchesRegularExpression(
+                '/aria-current="date"\s+href="[^"]*\?roster_date=2026-07-20#eventcrew-admin-' . $screen . '">📅 Mon 20 Jul ✓<\/a>/',
+                $panel
+            );
+            self::assertStringContainsString('◀ Mon 13 Jul</a>', $panel);
+            self::assertStringContainsString('Mon 27 Jul ▶</a>', $panel);
         }
     }
 
@@ -2429,7 +2437,8 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         $html = $this->renderAs($this->organizerRow(1));
 
-        self::assertStringContainsString('<form class="eventcrew-admin-datebar"', $html);
+        self::assertStringContainsString('<div class="eventcrew-admin-datebar"', $html);
+        self::assertStringContainsString('📅 Mon 20 Jul ✓', $html);
         self::assertStringNotContainsString('data-eventcrew-date-prev', $html);
         self::assertStringNotContainsString('data-eventcrew-date-next', $html);
     }

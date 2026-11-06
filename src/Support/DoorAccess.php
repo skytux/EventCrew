@@ -108,6 +108,17 @@ final class DoorAccess
     }
 
     /**
+     * Every night with tasks, most recent first: the date selector steps
+     * through these (DayPicker).
+     *
+     * @return array<int, string>
+     */
+    public function dates(): array
+    {
+        return $this->tasks->datesWithTasks();
+    }
+
+    /**
      * @param array<int, string> $dates most recent first
      * @return array<int, string> today and later, nearest first
      */

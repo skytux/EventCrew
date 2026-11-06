@@ -268,3 +268,113 @@
         poll('');
     }
 })();
+
+/*
+ * The placeholder picker of the Messages page: a "{ } Insert" link next to
+ * each subject and text field of a kind (form[data-ec-placeholders]). It
+ * opens the kind's placeholders, each with what it becomes for the
+ * preview's sample person and task (MessagePreview::placeholderSamples()),
+ * and puts the one picked where the cursor is. Esc or the link again closes
+ * the list. Nothing is saved until the form is.
+ */
+(function () {
+    'use strict';
+
+    function open(field, label, data, subject) {
+        var list = document.createElement('div');
+        list.className = 'ec-ph-list';
+        var hint = document.createElement('p');
+        hint.className = 'description';
+        hint.textContent = data.hint || '';
+        list.appendChild(hint);
+        var ul = document.createElement('ul');
+
+        (data.items || []).forEach(function (item) {
+            if (subject && item.body_only) {
+                return;
+            }
+            var li = document.createElement('li');
+            var pick = document.createElement('button');
+            pick.type = 'button';
+            pick.className = 'button-link';
+            var code = document.createElement('code');
+            code.textContent = item.tag;
+            pick.appendChild(code);
+            pick.addEventListener('click', function () {
+                insert(field, item.tag);
+                close(label);
+            });
+            li.appendChild(pick);
+            li.appendChild(document.createTextNode(' ' + (item.description || '')));
+            var sample = document.createElement('span');
+            sample.className = 'ec-ph-sample';
+            sample.textContent = '' === item.sample ? '(' + (data.empty || '') + ')' : item.sample;
+            li.appendChild(sample);
+            ul.appendChild(li);
+        });
+
+        list.appendChild(ul);
+        label.parentNode.insertAdjacentElement('afterend', list);
+        label.ecList = list;
+        label.setAttribute('aria-expanded', 'true');
+    }
+
+    function close(label) {
+        if (label.ecList) {
+            label.ecList.remove();
+            label.ecList = null;
+        }
+        label.setAttribute('aria-expanded', 'false');
+    }
+
+    function insert(field, tag) {
+        var start = typeof field.selectionStart === 'number' ? field.selectionStart : field.value.length;
+        var end = typeof field.selectionEnd === 'number' ? field.selectionEnd : start;
+        field.focus();
+        field.setRangeText(tag, start, end, 'end');
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    document.querySelectorAll('form[data-ec-placeholders]').forEach(function (form) {
+        var data;
+        try {
+            data = JSON.parse(form.getAttribute('data-ec-placeholders'));
+        } catch (e) {
+            return;
+        }
+
+        form.querySelectorAll('.ec-translated input[type="text"], .ec-translated textarea').forEach(function (field) {
+            var forLabel = field.id ? form.querySelector('label[for="' + field.id + '"]') : null;
+            if (!forLabel || !forLabel.parentNode) {
+                return;
+            }
+            var subject = 'INPUT' === field.tagName;
+            var link = document.createElement('button');
+            link.type = 'button';
+            link.className = 'button-link ec-ph-insert';
+            link.textContent = data.insert || '{ }';
+            link.setAttribute('aria-expanded', 'false');
+            link.addEventListener('click', function () {
+                if (link.ecList) {
+                    close(link);
+                } else {
+                    open(field, link, data, subject);
+                }
+            });
+            link.addEventListener('keydown', function (event) {
+                if ('Escape' === event.key) {
+                    close(link);
+                }
+            });
+            forLabel.parentNode.appendChild(document.createTextNode(' '));
+            forLabel.parentNode.appendChild(link);
+        });
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if ('Escape' !== event.key) {
+            return;
+        }
+        document.querySelectorAll('.ec-ph-insert[aria-expanded="true"]').forEach(close);
+    });
+})();

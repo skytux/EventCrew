@@ -117,6 +117,8 @@ final class AssistantActionsTest extends TestCase
         self::assertSame('/join 12', $result['action']);
 
         self::assertSame('l:12', self::check('/leave #12', self::member())['payload']);
+        // A leave asks no question of its own: the board asks, with the cost.
+        self::assertFalse(self::check('/leave #12', self::member())['confirm']);
     }
 
     public function testJoinRefusesATaskTheModelWasNotShown(): void

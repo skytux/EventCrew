@@ -51,7 +51,8 @@ final class RoleTaskBot
         private readonly SignupService $signup,
         private readonly RoleTaskService $roleTasks,
         private readonly ClaimNotifier $notifier,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        private readonly ?BoardService $board = null
     ) {
     }
 
@@ -302,7 +303,7 @@ final class RoleTaskBot
             $rows[] = $row;
         }
 
-        foreach (DayPicker::rows($dates, $shown, self::PREFIX . 'd:', BoardRenderer::SPACER_DATA) as $row) {
+        foreach (DayPicker::rows($dates, $shown, self::PREFIX . 'd:') as $row) {
             $rows[] = $row;
         }
 
@@ -404,8 +405,18 @@ final class RoleTaskBot
         }
     }
 
+    /**
+     * ❌: asks first, with what the cancel costs, as the board's Cancel does
+     * (BoardService::askCancel()). Only its Yes cancels.
+     */
     private function leave(string $callbackId, int $chatId, Person $person, int $taskId, int $listMessageId): void
     {
+        if (null !== $this->board) {
+            $this->board->askCancel($callbackId, $person, $taskId, $chatId);
+
+            return;
+        }
+
         $status = null === $this->tasks->find($taskId) ? '' : $this->signup->drop($person->id, $taskId);
 
         $message = match ($status) {

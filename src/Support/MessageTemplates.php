@@ -84,6 +84,7 @@ final class MessageTemplates
 
         $shared = self::sharedPlaceholders();
         $eventTimes = self::eventTimePlaceholders();
+        $forTask = self::taskPlaceholders();
         $previews = self::previews();
         $actions = self::actions();
 
@@ -97,6 +98,7 @@ final class MessageTemplates
                 $template->body,
                 $template->placeholders
                     + (isset($template->placeholders['event']) ? $eventTimes : [])
+                    + (isset($template->placeholders['role'], $template->placeholders['event']) ? $forTask : [])
                     + $shared,
                 $template->wired,
                 ($previews[$template->id] ?? []) + $template->preview,
@@ -502,6 +504,37 @@ final class MessageTemplates
             'doors_close' => self::placeholder(
                 __('When the doors close, like 19:30. Empty when doors close is off (Settings > Web page) and the event has no time of its own.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
                 static fn (array $c): string => EventTimes::doorsClose($eventId($c))
+            ),
+        ];
+    }
+
+    /**
+     * The task's description and the event's times, for every kind about a
+     * task ({role} and {event}), so the text of any of them can use them.
+     *
+     * @return array{
+     *     description: array{description: string, resolve: Closure, required: bool},
+     *     event_times: array{description: string, resolve: Closure, required: bool}
+     * }
+     */
+    private static function taskPlaceholders(): array
+    {
+        return [
+            'description' => self::placeholder(
+                __('The description of the task, or of its role when the task has none. On a line of its own; the line goes when there is no description.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+                static fn (array $c): string => is_string($c['description'] ?? null)
+                    ? $c['description']
+                    : (($c['task'] ?? null) instanceof Task ? RoleGuide::taskDescription($c['task']) : ''),
+                false,
+                true
+            ),
+            'event_times' => self::placeholder(
+                __('When the event starts and its doors close, like Event starts 19:00 · doors close 19:30. On a line of its own; the line goes when neither time is known.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+                static fn (array $c): string => ($c['task'] ?? null) instanceof Task
+                    ? self::eventTimes($c['task'])
+                    : '',
+                false,
+                true
             ),
         ];
     }
@@ -1022,20 +1055,7 @@ final class MessageTemplates
             __('The day of the task and its time, like Fri 14 Nov 18:00–20:00.', 'eventcrew'),
             static fn (array $c): string => ($c['task'] ?? null) instanceof Task ? self::when($c['task']) : ''
         );
-        $description = self::placeholder(
-            __('The description of the task, or of its role when the task has none. On a line of its own; the line goes when there is no description.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
-            static fn (array $c): string => is_string($c['description'] ?? null)
-                ? $c['description']
-                : (($c['task'] ?? null) instanceof Task ? RoleGuide::taskDescription($c['task']) : ''),
-            false,
-            true
-        );
-        $eventTimes = self::placeholder(
-            __('When the event starts and its doors close, like Event starts 19:00 · doors close 19:30. On a line of its own; the line goes when neither time is known.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
-            static fn (array $c): string => ($c['task'] ?? null) instanceof Task ? self::eventTimes($c['task']) : '',
-            false,
-            true
-        );
+        ['description' => $description, 'event_times' => $eventTimes] = self::taskPlaceholders();
         $standingTask = self::placeholder(
             __('The task, the event and the date, like Door at Dance Night, Sat 14 Nov 18:00–20:00.', 'eventcrew'),
             static fn (array $c): string => ($c['task'] ?? null) instanceof Task ? self::standingTask($c['task']) : ''

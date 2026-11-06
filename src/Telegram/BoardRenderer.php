@@ -355,7 +355,7 @@ final class BoardRenderer
             }
         }
 
-        foreach (DayPicker::rows($dates, $shown, BoardService::PICK_PREFIX, self::SPACER_DATA) as $row) {
+        foreach (DayPicker::rows($dates, $shown, BoardService::PICK_PREFIX) as $row) {
             $keyboard[] = $row;
         }
 

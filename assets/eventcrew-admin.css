@@ -120,3 +120,16 @@
 }
 .ec-translating .ec-translated-text textarea,
 .ec-translating .ec-translated-text input[type="text"] { opacity: 0.6; }
+
+/*
+ * The placeholder picker of the Messages page (eventcrew-jobs.js): the
+ * "{ } Insert" link next to a text field and the list it opens.
+ */
+.ec-ph-insert { margin-left: 0.5em; }
+.ec-ph-list {
+    max-width: 48em; max-height: 20em; overflow-y: auto; margin: 0 0 0.5em; padding: 0.3em 0.8em;
+    border: 1px solid #c3c4c7; background: #f6f7f7;
+}
+.ec-ph-list ul { margin: 0.3em 0; }
+.ec-ph-list li { margin: 0 0 0.5em; }
+.ec-ph-sample { display: block; color: #646970; font-style: italic; overflow-wrap: anywhere; }

@@ -293,10 +293,13 @@ final class AssistantActions
             return self::refuse(self::ERROR_NOT_REGISTERED);
         }
 
-        // The board's own buttons: j:<id> joins, l:<id> leaves.
-        $data = ('/join' === $head ? 'j:' : 'l:') . $taskId;
+        // The board's own buttons: j:<id> joins, l:<id> leaves. A leave
+        // needs no question of its own: the board asks first, with what the
+        // cancel costs (BoardService::askCancel()).
+        $join = '/join' === $head;
+        $data = ($join ? 'j:' : 'l:') . $taskId;
 
-        return self::accept($head . ' ' . $taskId, true, self::RUN_TAP, $data);
+        return self::accept($head . ' ' . $taskId, $join, self::RUN_TAP, $data);
     }
 
     /**

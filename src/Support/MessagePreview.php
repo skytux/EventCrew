@@ -36,6 +36,24 @@ final class MessagePreview
 {
     public const SAMPLE_EMAIL = 'sample@example.invalid';
 
+    /** The kind has no AI text per event (MessageAiText::offers()). */
+    public const AI_NONE = '';
+
+    /** The kind's AI tick is off: the template's text is sent. */
+    public const AI_OFF = 'off';
+
+    /** The event has an AI text for the kind (written, or changed by hand). */
+    public const AI_WRITTEN = 'written';
+
+    /** The kind's AI tick is on, but the event has no AI text for it yet. */
+    public const AI_MISSING = 'missing';
+
+    /** How many past events the event picker offers, after the coming ones. */
+    public const PAST_EVENTS = 3;
+
+    /** The longest sample value the placeholder picker shows. */
+    public const SAMPLE_LENGTH = 160;
+
     public function __construct(
         private readonly Logger $logger,
         private readonly ?TaskRepository $tasks = null,
@@ -54,14 +72,23 @@ final class MessagePreview
      * DM: text (what Telegram shows) and buttons (their labels). 'error' is
      * a line saying why the kind could not be previewed, '' when it could.
      *
+     * The event and task (the preview's pickers): $taskId when it is a task
+     * of $eventId (or $eventId is 0), else the first task of $eventId, else
+     * a sample task on that event, else the next task (sampleTask()). The
+     * text is the one a real send for that event uses: its AI text, changed
+     * by hand or not, when the kind's AI tick is on (MessageAiText::body()).
+     * event_id and task_id say which were used (0: none, a sample), and
+     * ai is one of the AI_ states for that event and kind.
+     *
      * @return array{
      *     id: string, label: string, channel: string, subject: string, to: string, from: string,
-     *     headers: list<string>, html: string, text: string, buttons: list<string>, error: string
+     *     headers: list<string>, html: string, text: string, buttons: list<string>, error: string,
+     *     event_id: int, task_id: int, about_task: bool, ai: string
      * }|null
      */
-    public function render(string $id, ?string $lang = null): ?array
+    public function render(string $id, ?string $lang = null, int $eventId = 0, int $taskId = 0): ?array
     {
-        return Language::run($lang, function () use ($id, $lang): ?array {
+        return Language::run($lang, function () use ($id, $lang, $eventId, $taskId): ?array {
             $template = MessageTemplates::find($id);
 
             if (null === $template) {
@@ -80,10 +107,19 @@ final class MessagePreview
                 'text' => '',
                 'buttons' => [],
                 'error' => '',
+                'event_id' => 0,
+                'task_id' => 0,
+                'about_task' => self::aboutTask($template),
+                'ai' => self::AI_NONE,
             ];
 
             try {
-                return $this->compose($template, $lang ?? Language::current()) + $result;
+                $task = $this->resolveTask($eventId, $taskId);
+                $result['event_id'] = (int) $task->eventPostId;
+                $result['task_id'] = $task->id;
+                $result['ai'] = self::aiState($id, $result['event_id']);
+
+                return $this->compose($template, $lang ?? Language::current(), $task) + $result;
             } catch (\Throwable $error) {
                 $this->logger->warning(sprintf('Message preview "%s" failed: %s', $id, get_class($error)));
 
@@ -103,10 +139,10 @@ final class MessagePreview
      *
      * @return array<string, mixed>
      */
-    public function sampleContext(?string $lang = null): array
+    public function sampleContext(?string $lang = null, ?Task $task = null): array
     {
         $person = self::samplePerson(__('Sample Person', 'eventcrew'), self::SAMPLE_EMAIL, $lang);
-        $task = $this->sampleTask();
+        $task ??= $this->sampleTask();
         $date = TicketMail::shortDate($task->taskDate);
         $standing = new Standing(Standing::UNRATED, 0.0, 0, 1);
 
@@ -181,10 +217,10 @@ final class MessagePreview
     /**
      * @return array<string, mixed>
      */
-    private function compose(MessageTemplate $template, ?string $lang): array
+    private function compose(MessageTemplate $template, ?string $lang, ?Task $task = null): array
     {
         $preview = $template->preview;
-        $context = (isset($preview['context']) ? ($preview['context'])() : []) + $this->sampleContext($lang);
+        $context = (isset($preview['context']) ? ($preview['context'])() : []) + $this->sampleContext($lang, $task);
         $buttons = $preview['buttons'] ?? [];
         $buttons = array_values($buttons instanceof \Closure ? $buttons($context) : $buttons);
         $mailer = new Mailer($this->logger, new EmailTemplate($this->logger, true), true);
@@ -361,6 +397,182 @@ final class MessagePreview
         }
 
         return $composer;
+    }
+
+    /**
+     * The placeholder picker of the Messages page, per kind: each
+     * placeholder the kind's text can use, what it becomes, and its value in
+     * the preview's sample context (the next task, Sample Person), in the
+     * language being composed in. The organizers' own AI placeholders
+     * (EventAiText::placeholders()) are listed for the kinds that fill them
+     * (MessageAiText::offers()), in the text only, with their fallback as
+     * the sample. Nothing is sent or written.
+     *
+     * @return array<string, list<array{tag: string, description: string, sample: string, body_only: bool}>>
+     */
+    public function placeholderSamples(?string $lang = null): array
+    {
+        return Language::run($lang, function () use ($lang): array {
+            $base = $this->sampleContext($lang);
+            $own = EventAiText::placeholders();
+            $all = [];
+
+            foreach (MessageTemplates::all() as $id => $template) {
+                $context = (isset($template->preview['context']) ? ($template->preview['context'])() : []) + $base;
+                $list = [];
+
+                foreach ($template->placeholders as $name => $placeholder) {
+                    try {
+                        $sample = (string) ($placeholder['resolve'])($context);
+                    } catch (\Throwable $error) {
+                        $sample = '';
+                    }
+
+                    $list[] = [
+                        'tag' => '{' . $name . '}',
+                        'description' => $placeholder['description'],
+                        'sample' => self::shortSample($sample),
+                        'body_only' => false,
+                    ];
+                }
+
+                foreach (MessageAiText::offers((string) $id) ? $own : [] as $placeholder) {
+                    $list[] = [
+                        'tag' => '{' . $placeholder['name'] . '}',
+                        'description' => __('Your own AI placeholder (Messages > AI), written for each event.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+                        'sample' => self::shortSample((string) $placeholder['fallback']),
+                        'body_only' => true,
+                    ];
+                }
+
+                $all[(string) $id] = $list;
+            }
+
+            return $all;
+        });
+    }
+
+    /** $text on one line, cut to SAMPLE_LENGTH characters with "…". */
+    public static function shortSample(string $text): string
+    {
+        $text = trim((string) preg_replace('/\s+/u', ' ', $text));
+
+        if (mb_strlen($text) <= self::SAMPLE_LENGTH) {
+            return $text;
+        }
+
+        return rtrim(mb_substr($text, 0, self::SAMPLE_LENGTH - 1)) . '…';
+    }
+
+    /**
+     * Whether kind $template is about one task (a reminder, a sign-up, a
+     * takeover), so the preview offers the event's tasks to choose from.
+     */
+    public static function aboutTask(MessageTemplate $template): bool
+    {
+        $names = $template->placeholders;
+
+        return isset($names['task']) || (isset($names['role']) && isset($names['event']));
+    }
+
+    /**
+     * Where kind $id stands with its AI text for event $eventId, in the
+     * language being composed in: AI_NONE (no AI text per event, or no
+     * event), AI_OFF, AI_WRITTEN or AI_MISSING.
+     */
+    public static function aiState(string $id, int $eventId): string
+    {
+        if ($eventId <= 0 || ! MessageAiText::offers($id)) {
+            return self::AI_NONE;
+        }
+
+        $settings = MessageTemplates::settings($id);
+        $prompt = $settings[EventAiText::SETTING_AI_PROMPT] ?? null;
+
+        if (empty($settings[EventAiText::SETTING_AI_EACH_EVENT]) || ! is_string($prompt) || '' === trim($prompt)) {
+            return self::AI_OFF;
+        }
+
+        $text = EventAiText::text($id, $eventId, Language::current() ?? Language::ENGLISH, $settings);
+
+        return null === $text ? self::AI_MISSING : self::AI_WRITTEN;
+    }
+
+    /**
+     * The task a preview is made with (see render()): $taskId when it
+     * belongs to $eventId (or $eventId is 0), else the first task of
+     * $eventId, else a task on that event made up for the preview, else the
+     * next task (sampleTask()).
+     */
+    public function resolveTask(int $eventId, int $taskId): Task
+    {
+        $task = $taskId > 0 && null !== $this->tasks ? $this->tasks->find($taskId) : null;
+
+        if (null !== $task && ($eventId <= 0 || $task->eventPostId === $eventId)) {
+            return $task;
+        }
+
+        if ($eventId > 0) {
+            $first = $this->tasksOf($eventId)[0] ?? null;
+
+            if (null !== $first) {
+                return $first;
+            }
+
+            $event = EventSource::describe($eventId);
+
+            if (null !== $event && '' !== $event['date']) {
+                $role = (string) (Roles::active()[0]['slug'] ?? 'door');
+
+                return new Task(0, $event['date'], $role, 4, $eventId, '', $event['starts_at'], $event['ends_at']);
+            }
+        }
+
+        return $this->sampleTask();
+    }
+
+    /**
+     * The event picker of the preview: the last PAST_EVENTS past events,
+     * then every coming one, earliest first.
+     *
+     * @return list<array{id: int, title: string, date: string, past: bool}>
+     */
+    public function events(): array
+    {
+        $today = (string) current_time('Y-m-d');
+        $past = [];
+        $coming = [];
+
+        foreach (EventSource::upcoming() as $event) {
+            if ('' === $event['date']) {
+                continue;
+            }
+
+            $row = [
+                'id' => (int) $event['id'],
+                'title' => EventName::name((int) $event['id'], EventName::lang(), $event['title']),
+                'date' => $event['date'],
+                'past' => $event['date'] < $today,
+            ];
+
+            if ($row['past']) {
+                $past[] = $row;
+            } else {
+                $coming[] = $row;
+            }
+        }
+
+        return array_merge(array_slice($past, -self::PAST_EVENTS), $coming);
+    }
+
+    /**
+     * The task picker of the preview: the tasks of $eventId, earliest first.
+     *
+     * @return list<Task>
+     */
+    public function tasksOf(int $eventId): array
+    {
+        return $eventId <= 0 || null === $this->tasks ? [] : array_values($this->tasks->forEvent($eventId));
     }
 
     /**

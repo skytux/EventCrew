@@ -262,6 +262,12 @@ final class UpdateRouter
             // button.
             $taskId = SlotFreedNotice::taskFromPayload($payload);
 
+            // A board tap that could not reach the private chat:
+            // t.me/<bot>?start=cancel-<id> asks the cancel question here.
+            if ($isPrivate && 0 !== $fromId && $this->board->openCancel($fromId, $chatId, $payload)) {
+                return;
+            }
+
             if ($isPrivate && 0 !== $fromId && 0 !== $taskId) {
                 $this->board->sendTask($chatId, $taskId);
 

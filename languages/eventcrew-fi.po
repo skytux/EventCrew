@@ -4845,9 +4845,6 @@ msgstr "Lähetetty. Katso sähköpostisi tai Telegram, jos käytät bottia."
 msgid "signed up %s"
 msgstr "ilmoittautui %s"
 
-msgid "🗓 Dates"
-msgstr "🗓 Päivät"
-
 msgid "A guest's email address is deleted %d days after the event too. The guest's name stays on that night's guest list."
 msgstr "Myös vieraan sähköpostiosoite poistetaan %d päivän kuluttua tapahtumasta. Vieraan nimi jää illan vieraslistalle."
 
@@ -8308,8 +8305,6 @@ msgstr "Esikatsele kaikki"
 msgid "Message previews"
 msgstr "Viestien esikatselu"
 
-msgid "Sample data: a made-up person and the next event. Nothing is sent, and the links in the message lead nowhere."
-msgstr "Mallitiedot: keksitty henkilö ja seuraava tapahtuma. Mitään ei lähetetä, eivätkä viestin linkit vie mihinkään."
 
 msgid "Language:"
 msgstr "Kieli:"
@@ -8477,3 +8472,73 @@ msgstr "Mitään ei muutettu: tapahtuman paikka on asetettu käsin, tai tekoäly
 
 msgid "The AI reads the venue from the description again within the hour."
 msgstr "Tekoäly lukee paikan kuvauksesta uudelleen tunnin sisällä."
+
+msgid "Sample data: a made-up person and the event chosen below, with that event’s AI texts and changes. Nothing is sent, and the links in the message lead nowhere."
+msgstr "Mallitiedot: keksitty henkilö ja alla valittu tapahtuma sen tekoälyteksteineen ja muutoksineen. Mitään ei lähetetä, eivätkä viestin linkit vie mihinkään."
+
+msgid "past"
+msgstr "mennyt"
+
+msgid "Write it now"
+msgstr "Kirjoita nyt"
+
+msgid "The AI wrote the text for this event."
+msgstr "Tekoäly kirjoitti tekstin tälle tapahtumalle."
+
+msgid "The AI could not write the text. Check that the AI is set up in EventCrew > Settings."
+msgstr "Tekoäly ei saanut tekstiä kirjoitettua. Tarkista tekoälyn asetukset kohdassa EventCrew > Asetukset."
+
+msgid "This is the AI text of this message for this event, with any change made by hand, as it will be sent."
+msgstr "Tämä on viestin tekoälyteksti tälle tapahtumalle käsin tehtyine muutoksineen, sellaisena kuin se lähetetään."
+
+msgid "The AI has not written this message for this event yet, so the text from the Messages page is shown."
+msgstr "Tekoäly ei ole vielä kirjoittanut tätä viestiä tälle tapahtumalle, joten näytetään Viestit-sivun teksti."
+
+msgid "{ } Insert"
+msgstr "{ } Lisää"
+
+msgid "Pick a placeholder to put it where the cursor is. The grey text is what it becomes for a sample person."
+msgstr "Valitse paikkamerkki, niin se lisätään kursorin kohdalle. Harmaa teksti on se, millä se korvataan mallihenkilölle."
+
+msgid "empty for this sample"
+msgstr "tässä mallissa tyhjä"
+
+msgid "Your own AI placeholder (Messages > AI), written for each event."
+msgstr "Oma tekoälypaikkamerkkisi (Viestit > Tekoäly), kirjoitetaan joka tapahtumalle."
+
+
+msgid "Check your private chat with the bot: it asks there first."
+msgstr "Katso yksityinen chatti botin kanssa: se kysyy ensin siellä."
+
+#. translators: %s: the night, like Sat 14 Nov
+#, php-format
+msgid "Credit spent on %s."
+msgstr "Vapaalippu käytetty: %s."
+
+#. translators: %d: free-entry credits left
+#, php-format
+msgid "Kept: you have %d free-entry credit."
+msgid_plural "Kept: you have %d free-entry credits."
+msgstr[0] "Säästetty: sinulla on %d vapaalippu."
+msgstr[1] "Säästetty: sinulla on %d vapaalippua."
+
+msgid "Yes, use a credit"
+msgstr "Kyllä, käytä lippu"
+
+msgid "Keep my credit"
+msgstr "Säästä lippuni"
+
+#. translators: %s: the night, like Sat 14 Nov
+#, php-format
+msgid "Spend a free-entry credit on %s?"
+msgstr "Käytätkö vapaalipun: %s?"
+
+#. translators: %d: the free-entry credits the person has
+#, php-format
+msgid "This uses your only free-entry credit."
+msgid_plural "This uses 1 of your %d free-entry credits."
+msgstr[0] "Tämä käyttää ainoan vapaalippusi."
+msgstr[1] "Tämä käyttää yhden %d vapaalipustasi."
+
+msgid "Open a private chat with the bot and tap Start first, then tap the task again."
+msgstr "Avaa ensin yksityinen chatti botin kanssa ja paina Aloita, sitten paina tehtävää uudelleen."

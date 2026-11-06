@@ -312,7 +312,8 @@ abstract class TelegramTestCase extends TestCase
             $this->signup(),
             $this->roleTaskService(),
             new ClaimNotifier(new TaskRepository(), $assignments, $mailer, $this->client(), $this->standing()),
-            $this->client()
+            $this->client(),
+            $this->boardService()
         );
     }
 

@@ -258,6 +258,9 @@ final class SignupBoardView
                 'task' => $task,
                 'taken' => $occupancy[$task->id] ?? 0,
                 'mine' => isset($mine[$task->id]),
+                // What Cancel asks first, with what it costs (the bot's
+                // words); '' when a cancel would not go through anyway.
+                'cancel_ask' => isset($mine[$task->id]) && null !== $person ? $this->cancelAsk($task, $person) : '',
                 'blocked' => $this->blockedReason($task, $person, $personRefusal),
                 // An organizer sees a restricted task of a role they do not
                 // hold, with a disabled "DJ only" button.
@@ -266,6 +269,21 @@ final class SignupBoardView
         }
 
         return array_values($groups);
+    }
+
+    /**
+     * The question the Cancel button asks first, saying whether the cancel
+     * would be late, or '' when there is nothing a cancel would record.
+     */
+    private function cancelAsk(Task $task, Person $person): string
+    {
+        $outcome = $this->signup->dropOutcome($person->id, $task->id);
+
+        if (! in_array($outcome, [AssignmentStatus::CANCELLED, AssignmentStatus::LATE_CANCEL], true)) {
+            return '';
+        }
+
+        return BoardService::cancelQuestion($task, AssignmentStatus::LATE_CANCEL === $outcome);
     }
 
     /**

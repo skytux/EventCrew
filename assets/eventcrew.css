@@ -399,16 +399,11 @@
 .eventcrew-signup .eventcrew-admin-add summary { list-style: none; }
 .eventcrew-signup .eventcrew-admin-add summary::-webkit-details-marker { display: none; }
 .eventcrew-signup .eventcrew-admin-add > form { padding-left: 0; padding-right: 0; }
-/* The date bar of the Roster and Door screens: ‹ date menu ›, centred. */
+/* The date bar of the Roster and Door screens: ◀ date · 📅 date ✓ · date ▶, centred. */
 .eventcrew-signup .eventcrew-admin-datebar {
-    display: flex; align-items: center; justify-content: center; gap: .4em; margin: 0 0 1em;
+    display: flex; align-items: center; justify-content: center; gap: .9em; margin: 0 0 1em;
 }
-.eventcrew-signup .eventcrew-admin-datebar select {
-    flex: 0 1 14em; min-width: 0; min-height: 44px; padding: .4em .6em;
-    font: inherit; color: inherit; background: color-mix(in srgb, currentColor 8%, transparent);
-    border: 1px solid var(--eventcrew-line); border-radius: var(--eventcrew-radius);
-}
-.eventcrew-signup .eventcrew-admin-datebar select option { color: #222; background: #fff; }
+.eventcrew-signup .eventcrew-admin-datebar [aria-current="date"] { font-weight: 600; }
 .eventcrew-signup .eventcrew-admin-datebar-arrow {
     display: inline-flex; justify-content: center; min-width: 44px; font-size: 1.5em; text-decoration: none;
 }

@@ -257,6 +257,20 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertSame('That task is no longer available.', $this->lastCallTo('sendMessage')['text']);
     }
 
+    public function testACancelStartLinkFromSomeoneUnknownGoesToTheSignUpFlow(): void
+    {
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/start cancel-5',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555, 'first_name' => 'Sam'],
+            ],
+        ]);
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertArrayHasKey('eventcrew_tg_await_email_555', $this->transients);
+    }
+
     /**
      * "Not right? Tell us" (a no-show notice's button or its email link):
      * the bot asks what is wrong and keeps the question in the chat's log,
