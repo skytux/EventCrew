@@ -964,6 +964,12 @@ final class MessageTemplates
             false,
             true
         );
+        $eventTimes = self::placeholder(
+            __('When the event starts and its doors close, like Event starts 19:00 · doors close 19:30. On a line of its own; the line goes when neither time is known.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+            static fn (array $c): string => ($c['task'] ?? null) instanceof Task ? self::eventTimes($c['task']) : '',
+            false,
+            true
+        );
         $standingTask = self::placeholder(
             __('The task, the event and the date, like Door at Dance Night, Sat 14 Nov 18:00–20:00.', 'eventcrew'),
             static fn (array $c): string => ($c['task'] ?? null) instanceof Task ? self::standingTask($c['task']) : ''
@@ -1274,12 +1280,22 @@ final class MessageTemplates
                     __('You’re signed up: %1$s for %2$s', 'eventcrew'),
                     ['%1$s' => '{role}', '%2$s' => '{event}']
                 ),
-                static fn (): string => self::tag(
+                // The when line, the event's times and the task's description
+                // first ({description} takes the place of {about}).
+                static fn (): string => FrictionB1Migration::withEventTimes(self::withDescription(self::tag(
                     /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line, 6: how to cancel */
                     __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s. Show your ticket at the door.\n\n%5\$s\n\n%6\$s", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}', '%5$s' => '{standing}', '%6$s' => '{cancel_help}']
-                ) . '{free_cancel}{about}',
-                ['name' => $name, 'role' => $role, 'event' => $event, 'when' => $when, 'cancel_help' => $cancelHelp] + $claimPlaceholders
+                ) . '{free_cancel}')),
+                [
+                    'name' => $name,
+                    'role' => $role,
+                    'event' => $event,
+                    'when' => $when,
+                    'event_times' => $eventTimes,
+                    'description' => $description,
+                    'cancel_help' => $cancelHelp,
+                ] + $claimPlaceholders
             ),
             new MessageTemplate(
                 'signup_confirmed_dm',
@@ -1287,12 +1303,20 @@ final class MessageTemplates
                 $telegram,
                 __('Sent when a person signs up for a task, in the bot or on the web page. The ticket, calendar and crew guide buttons are added below the text.', 'eventcrew'),
                 null,
-                static fn (): string => self::tag(
+                // The Cancel button asks first and offers the hand-over, so the
+                // text no longer explains them.
+                static fn (): string => FrictionB1Migration::withEventTimes(self::withDescription(self::tag(
                     /* translators: 1: role, 2: event, 3: date/time */
-                    __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap Cancel below, or tap the task again on the board. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew'),
+                    __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.", 'eventcrew'),
                     ['%1$s' => '{role}', '%2$s' => '{event}', '%3$s' => '{when}']
-                ) . "{free_cancel}{about}\n\n{standing}",
-                ['role' => $role, 'event' => $event, 'when' => $when] + $claimPlaceholders
+                ) . "{free_cancel}\n\n{standing}")),
+                [
+                    'role' => $role,
+                    'event' => $event,
+                    'when' => $when,
+                    'event_times' => $eventTimes,
+                    'description' => $description,
+                ] + $claimPlaceholders
             ),
             new MessageTemplate(
                 'cancel_confirmed',
@@ -2485,6 +2509,27 @@ final class MessageTemplates
         bool $ownLine = false
     ): array {
         return ['description' => $description, 'resolve' => $resolve, 'required' => $required, 'own_line' => $ownLine];
+    }
+
+    /**
+     * "Event starts 19:00 · doors close 19:30" for the task's event, the
+     * half that is known, or '' when neither time is (EventTimes).
+     */
+    private static function eventTimes(Task $task): string
+    {
+        $start = EventTimes::start($task->eventPostId);
+        $doors = EventTimes::doorsClose($task->eventPostId);
+
+        if ('' === $start) {
+            /* translators: %s: a time like 19:30 */
+            return '' === $doors ? '' : sprintf(__('Doors close %s', 'eventcrew'), $doors);
+        }
+
+        return '' === $doors
+            /* translators: %s: a time like 19:00 */
+            ? sprintf(__('Event starts %s', 'eventcrew'), $start)
+            /* translators: 1: start time, 2: doors close time, like 19:00 and 19:30 */
+            : sprintf(__('Event starts %1$s · doors close %2$s', 'eventcrew'), $start, $doors);
     }
 
     /**

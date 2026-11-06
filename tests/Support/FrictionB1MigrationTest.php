@@ -73,4 +73,33 @@ final class FrictionB1MigrationTest extends TestCase
         self::assertSame([], $this->writes);
         self::assertSame('Changed again.', $this->options[$prefix . 'late_cancel_dm'][MessageTemplates::BODY]);
     }
+
+    /**
+     * The sign-up step puts the task's description and the event's times
+     * under the when line, and drops {about}: the description says the same.
+     */
+    public function testTheSignupStepAddsTheDescriptionAndTheEventTimesUnderTheWhenLine(): void
+    {
+        $prefix = MessageTemplates::OPTION_PREFIX;
+        $this->options[$prefix . 'signup_confirmed_dm'] = [
+            MessageTemplates::BODY => "Signed up: {task}, {when}.\n\nTicket at the door.\n\n{about}",
+        ];
+        $this->options[$prefix . 'signup_confirmed'] = [
+            MessageTemplates::BODY => [
+                'source' => 'No when line here.',
+                'texts' => ['fi' => "Ilmoittauduttu: {when}.\n{event_times}\n\n{description}"],
+            ],
+        ];
+
+        FrictionB1Migration::run();
+
+        self::assertSame(
+            "Signed up: {task}, {when}.\n{event_times}\n\n{description}\n\nTicket at the door.",
+            $this->options[$prefix . 'signup_confirmed_dm'][MessageTemplates::BODY]
+        );
+        $email = $this->options[$prefix . 'signup_confirmed'][MessageTemplates::BODY];
+        self::assertSame('No when line here.', $email['source'], 'no when line: left alone');
+        self::assertSame("Ilmoittauduttu: {when}.\n{event_times}\n\n{description}", $email['texts']['fi']);
+        self::assertSame(1, $this->options[FrictionB1Migration::OPTION]['signup']);
+    }
 }
