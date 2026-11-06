@@ -11,6 +11,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\NewcomerApproval;
+use EventCrew\Support\Roles;
 use EventCrew\Telegram\MenuButtons;
 
 /**
@@ -224,6 +225,44 @@ final class NewcomerApprovalTest extends TelegramTestCase
 
     // ---- Deciding -------------------------------------------------------
 
+    /** The OK lists the open tasks the newcomer can take, a Sign up each, then See open tasks. */
+    public function testTheOkListsTheOpenTasksWithASignUpEach(): void
+    {
+        $this->options[Roles::OPTION_NAME] = [['slug' => 'door', 'label' => 'Door']];
+        $this->wpdb->nextRows[] = self::kim();
+        $this->wpdb->nextRows[] = self::sam(['telegram_chat_id' => 999]);
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = self::sam(['approval' => 'ok', 'approval_by' => 'Kim']);
+        $this->wpdb->nextResults[] = [[                             // upcoming
+            'id' => 40,
+            'task_date' => '2099-11-14',
+            'role_slug' => 'door',
+            'capacity' => 3,
+            'event_label' => 'Dance Night',
+            'starts_at' => '2099-11-14 18:00:00',
+            'ends_at' => '2099-11-14 20:00:00',
+        ]];
+        $this->wpdb->nextResults[] = [];                            // their assignments
+        $this->wpdb->nextResults[] = [['task_id' => 40, 'taken' => 1]];
+
+        $this->approval()->onTap(self::tap('nco:ok:8'));
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertNotNull($sent);
+        self::assertStringEndsWith(
+            "✅ The team said OK. You can now take tasks.\n\nOpen now:"
+                . "\n- 📅 Sat 14 Nov 18:00–20:00: Door at Dance Night (2 of 3 free)",
+            $sent['text']
+        );
+        self::assertSame(
+            [
+                [['text' => 'Sign up: Door · Sat 14 Nov', 'callback_data' => 'j:40']],
+                [['text' => 'See open tasks', 'callback_data' => MenuButtons::BOARD]],
+            ],
+            $sent['reply_markup']['inline_keyboard']
+        );
+    }
+
     public function testTheFirstOkDecidesAndTheNewcomerIsToldByTelegram(): void
     {
         $this->wpdb->nextRows[] = self::kim();                                   // tapping organizer
@@ -242,7 +281,7 @@ final class NewcomerApprovalTest extends TelegramTestCase
         self::assertNotNull($sent);
         self::assertSame(999, $sent['chat_id']);
         self::assertStringContainsString(
-            '✅ The team said OK. You can now take tasks: tap See open tasks below.',
+            '✅ The team said OK. You can now take tasks.',
             $sent['text']
         );
         self::assertSame(

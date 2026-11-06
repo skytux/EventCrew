@@ -50,7 +50,8 @@ final class NewcomerApproval
     public function __construct(
         private readonly PersonRepository $people,
         private readonly Mailer $mailer,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        private readonly OpenTaskList $openTasks = new OpenTaskList()
     ) {
     }
 
@@ -226,15 +227,18 @@ final class NewcomerApproval
         );
     }
 
-    /** The newcomer's own "the team said OK": Telegram if linked, else email. */
+    /**
+     * The newcomer's own "the team said OK": Telegram if linked, else email,
+     * with the open tasks they can now take.
+     */
     private function tellOk(Person $person): void
     {
-        $context = ['person' => $person];
+        $context = ['person' => $person, OpenTaskList::CONTEXT_KEY => $this->openTasks->forPerson($person)];
 
         if (null !== $person->telegramChatId) {
             $this->telegram->sendMessage(
                 $person->telegramChatId,
-                DmBody::frame($person, MessageTemplates::body('newcomer_ok_dm')),
+                DmBody::frame($person, MessageTemplates::body('newcomer_ok_dm', $context)),
                 MessageActions::replyMarkup(MessageActions::of('newcomer_ok_dm', $context, $this->mailer))
             );
 
@@ -244,8 +248,8 @@ final class NewcomerApproval
         $this->mailer->toPerson(
             $person->id,
             $person->email,
-            MessageTemplates::subject('newcomer_ok'),
-            EmailBody::withGreeting($person->displayName, MessageTemplates::body('newcomer_ok')),
+            MessageTemplates::subject('newcomer_ok', $context),
+            EmailBody::withGreeting($person->displayName, MessageTemplates::body('newcomer_ok', $context)),
             MessageActions::email(MessageActions::of('newcomer_ok', $context, $this->mailer))
         );
     }

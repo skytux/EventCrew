@@ -2,7 +2,7 @@ EMAIL Tervetuloa crew’hun: näin tehtävät, liput ja vapaaliput toimivat
 
 Hei Person 3,
 
-Tervetuloa Test Crew-crew’hun. Tämä viesti kertoo, miten kaikki toimii. Omat lukusi näet milloin vain: lähetä botille /me yksityiskeskustelussa.
+Tervetuloa Test Crew-crew’hun. Tämä viesti kertoo, miten kaikki toimii. Omat lukusi, lippusi ja vapaalippusi: lähetä botille /me.
 
 🧩 Tehtävät
 
@@ -12,11 +12,11 @@ Tervetuloa Test Crew-crew’hun. Tämä viesti kertoo, miten kaikki toimii. Omat
 
 🎟️ Liput
 
-Kun ilmoittaudut tehtävään, saat sille illalle ilmaisen lipun. Näytä se ovella. Se on ilmoittautumisvahvistuksesi ensimmäinen painike, ja /me tickets listaa kaikki lippusi.
+Kun ilmoittaudut tehtävään, saat sille illalle ilmaisen lipun. Näytä se ovella.
 
 🎁 Vapaaliput
 
-Saat 1 vapaalipun jokaisesta 2 tekemästäsi tehtävästä. Käytä vapaalippu lähettämällä botille /me ja napauttamalla 🎟 Vapaalippu, tai verkkosivulla. Saat silloin lipun valitsemallesi illalle. Joinakin iltoina (loppuunmyydyt tai erikoistapahtumat) vapaalippuja ei voi käyttää.
+Saat 1 vapaalipun jokaisesta 2 tekemästäsi tehtävästä. Saat silloin lipun valitsemallesi illalle. Joinakin iltoina (loppuunmyydyt tai erikoistapahtumat) vapaalippuja ei voi käyttää.
 
 📈 Luotettavuus
 
@@ -34,11 +34,11 @@ Jos perut vähintään 48 tuntia ennen, sillä ei ole vaikutusta. Tuoreet tehtä
 
 - 📅 ma 20.7. 13:00–14:00: 🎈 Somistus (2 / 3 paikkaa vapaana)
 
-Ilmoittaudu alla olevalla painikkeella.
+Ilmoittaudu napauttamalla alla olevaa painiketta.
 
 📖 Tämä opas on myös Crew-sovelluksessa Ohje-välilehdellä, kun olet kirjautunut: https://site.test/crew/#eventcrew-panel-help
 
-Ilmoittaudu tehtävään: https://site.test/crew/
+Ilmoittaudu: 🎈 Somistus · ma 20.7.: https://site.test/crew/#eventcrew-task-5
 📝 Mitä kukin tehtävä sisältää: https://site.test/crew/#eventcrew-tasks-info
 Avaa EventCrew wp-adminissa: https://site.test/wp-admin/admin.php?page=eventcrew
 

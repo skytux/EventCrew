@@ -2,7 +2,7 @@ DM 📣 Test Crew
 
 Hi Person 3,
 
-Welcome to the Test Crew crew. This message explains how it works. You can see your own numbers any time: send /me to the bot in a private chat.
+Welcome to the Test Crew crew. This message explains how it works. Your numbers, tickets and credits: send /me to the bot.
 
 🧩 The tasks
 
@@ -14,11 +14,11 @@ Welcome to the Test Crew crew. This message explains how it works. You can see y
 
 🎟️ Tickets
 
-When you sign up for a task, you get a free ticket for that night. Show it at the door. It is the first button in your sign-up confirmation, and /me tickets lists all your tickets.
+When you sign up for a task, you get a free ticket for that night. Show it at the door.
 
 🎁 Credits
 
-You earn 1 free-entry credit for every 2 tasks you complete. To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits.
+You earn 1 free-entry credit for every 2 tasks you complete. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits.
 
 📈 Standing
 

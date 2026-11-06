@@ -169,9 +169,10 @@ final class MessageTemplates
                 self::boardAction($m),
                 self::tellAction($c),
             ]),
-            // The call for open tasks: the board, and the crew's group when
-            // its link is known.
+            // The call for open tasks: a Sign up for each task listed, the
+            // board, and the crew's group when its link is known.
             'open_task_call open_task_call_dm' => static fn (array $c, Mailer $m): array => self::present([
+                ...OpenTaskList::actions($c, $m),
                 self::boardAction($m),
                 self::groupAction(),
             ]),
@@ -188,10 +189,15 @@ final class MessageTemplates
                 ),
             ],
             // New access: the open tasks, or the Admin tab for a new organizer.
-            'access_role access_role_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
-            'access_pass access_pass_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
-            'newcomer_ok newcomer_ok_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
-            'access_organizer access_organizer_dm' => static fn (): array => self::present([self::adminAction()]),
+            // A role, a pass or the team's OK: Sign up for each open task
+            // listed ({open_tasks}), then the board.
+            'access_role access_role_dm access_pass access_pass_dm newcomer_ok newcomer_ok_dm' =>
+                static fn (array $c, Mailer $m): array => [...OpenTaskList::actions($c, $m), self::boardAction($m)],
+            'access_organizer access_organizer_dm' => static fn (): array => self::present([
+                self::adminAction(),
+                new MessageAction('people', '👥 ' . __('People', 'eventcrew'), '', null, '', 'people'),
+                self::newDeskLinkAction(),
+            ]),
             // Organizer notices: give the role from the bot's people list or
             // the Admin tab; the night's sales desk link, and a new one from
             // the bot's 💳 Sales desk button.
@@ -233,6 +239,12 @@ final class MessageTemplates
     private static function newDeskLinkAction(): MessageAction
     {
         return new MessageAction('new_desk_link', '💳 ' . __('Sales desk', 'eventcrew'), '', null, '', 'sales');
+    }
+
+    /** What the Admin tab is for, in the organizer DM (access_organizer_dm). */
+    public static function adminTabLine(): string
+    {
+        return __('The Crew app has an Admin tab for you, where you manage tasks and people.', 'eventcrew');
     }
 
     /** The crew's Telegram group, or null when its link is not known. */
@@ -888,8 +900,8 @@ final class MessageTemplates
             'import_guests' => ['buttons' => [__('Open the Roster page', 'eventcrew')]],
             'import_tickets_dm' => ['buttons' => ['🗑 ' . __('Reset the list', 'eventcrew')]],
             'welcome_email' => [
-                'buttons' => [
-                    __('Sign up for a task', 'eventcrew'),
+                'buttons' => static fn (array $c): array => [
+                    $c['task'] instanceof Task ? OpenTaskList::label($c['task']) : '',
                     RoleGuide::descriptionsLabel(),
                     __('Open our group in Telegram', 'eventcrew'),
                 ],
@@ -1427,7 +1439,7 @@ final class MessageTemplates
                 static fn (): string => __('Some tasks still need people', 'eventcrew'),
                 static fn (): string => self::tag(
                     /* translators: 1: name, 2: open-task list grouped by date, 3: personal recap */
-                    __("Hi %1\$s,\n\nSome tasks still need people:\n\n%2\$s\n\nSign up on the board.\n\n%3\$s", 'eventcrew'),
+                    __("Hi %1\$s,\n\nSome tasks still need people:\n\n%2\$s\n\n%3\$s", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{open_tasks}', '%3$s' => '{recap}']
                 ),
                 ['name' => $name, 'open_tasks' => $openTasks, 'recap' => self::placeholder(
@@ -1443,7 +1455,7 @@ final class MessageTemplates
                 null,
                 static fn (): string => self::tag(
                     /* translators: %s: the open-task list, already grouped by date */
-                    __("🔔 Some tasks still need people:\n\n%s\n\nSign up on the board in the group.", 'eventcrew'),
+                    __("🔔 Some tasks still need people:\n\n%s", 'eventcrew'),
                     ['%s' => '{open_tasks}']
                 ),
                 ['open_tasks' => $openTasks]
@@ -1661,10 +1673,11 @@ final class MessageTemplates
         $email = MessageTemplate::CHANNEL_EMAIL;
         $telegram = MessageTemplate::CHANNEL_TELEGRAM;
 
+        $openTasks = ['open_tasks' => OpenTaskList::placeholder()];
         $givenRole = ['role' => self::placeholder(
             __('The name of the role, like DJ.', 'eventcrew'),
             static fn (array $c): string => (string) ($c['role'] ?? '')
-        )];
+        )] + $openTasks;
 
         // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
         return [
@@ -1682,7 +1695,7 @@ final class MessageTemplates
                     /* translators: %s: role name, such as DJ */
                     __('You now have the role %s. Its tasks are open to you on the crew page, and you can sign up for them.', 'eventcrew'),
                     ['%s' => '{role}']
-                ),
+                ) . '{open_tasks}',
                 $givenRole
             ),
             new MessageTemplate(
@@ -1693,9 +1706,9 @@ final class MessageTemplates
                 null,
                 static fn (): string => self::tag(
                     /* translators: %s: role name, such as DJ */
-                    __('You now have the role %s. Tap See open tasks below, or open the Crew app, to see its tasks and sign up for them.', 'eventcrew'),
+                    __('You now have the role %s, so you can sign up for its tasks.', 'eventcrew'),
                     ['%s' => '{role}']
-                ),
+                ) . '{open_tasks}',
                 $givenRole
             ),
             new MessageTemplate(
@@ -1704,7 +1717,8 @@ final class MessageTemplates
                 $email,
                 __('Sent to a person when an organizer gives them a one-time sign-up pass: with /people in the bot, in the Admin tab of the crew page, or on the wp-admin People page. Not sent to a person who turned off emails about permission changes. The greeting is added above the text, and a See open tasks button to the crew page under it.', 'eventcrew'),
                 static fn (): string => __('You have a one-time pass', 'eventcrew'),
-                static fn (): string => __('You have a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up.', 'eventcrew')
+                static fn (): string => __('You have a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up.', 'eventcrew') . '{open_tasks}',
+                $openTasks
             ),
             new MessageTemplate(
                 'access_pass_dm',
@@ -1712,7 +1726,8 @@ final class MessageTemplates
                 $telegram,
                 __('Sent to a person who uses the bot when an organizer gives them a one-time sign-up pass: with /people in the bot, in the Admin tab of the crew page, or on the wp-admin People page. Not sent to a person who turned off Telegram messages about permission changes.', 'eventcrew'),
                 null,
-                static fn (): string => __('🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low.', 'eventcrew')
+                static fn (): string => __('🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up.', 'eventcrew') . '{open_tasks}',
+                $openTasks
             ),
             new MessageTemplate(
                 'newcomer_ok',
@@ -1720,7 +1735,8 @@ final class MessageTemplates
                 $email,
                 __('Sent to a new person without Telegram when an organizer presses OK for them. The greeting is added above the text, and a See open tasks button to the crew page under it.', 'eventcrew'),
                 static fn (): string => __('The team said OK', 'eventcrew'),
-                static fn (): string => __('The team said OK. You can now take tasks on the crew page.', 'eventcrew')
+                static fn (): string => __('The team said OK. You can now take tasks on the crew page.', 'eventcrew') . '{open_tasks}',
+                $openTasks
             ),
             new MessageTemplate(
                 'newcomer_ok_dm',
@@ -1728,7 +1744,8 @@ final class MessageTemplates
                 $telegram,
                 __('Sent to a new person who uses the bot when an organizer presses OK for them.', 'eventcrew'),
                 null,
-                static fn (): string => __('✅ The team said OK. You can now take tasks: tap See open tasks below.', 'eventcrew')
+                static fn (): string => __('✅ The team said OK. You can now take tasks.', 'eventcrew') . '{open_tasks}',
+                $openTasks
             ),
             new MessageTemplate(
                 'access_organizer',
@@ -1752,7 +1769,7 @@ final class MessageTemplates
                     /* translators: %s: the organization's name */
                     __('⭐ You’re now an organizer of %s.', 'eventcrew'),
                     ['%s' => Organization::TAG]
-                )
+                ) . ' ' . self::adminTabLine()
             ),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong
@@ -2183,6 +2200,8 @@ final class MessageTemplates
             'crew' => $crew,
             'me_help' => self::botOrWeb(
                 __('Where to see your own numbers: in the bot, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
+                // One line for the numbers, tickets and credits: the bot's
+                // {credit_help} and {tickets_help} are empty.
                 static fn (): string => WelcomeSender::meBotLine(),
                 static fn (string $url): string => sprintf(
                     /* translators: %s: link to the crew page */
@@ -2192,7 +2211,7 @@ final class MessageTemplates
             ),
             'credit_help' => self::botOrWeb(
                 __('How to spend a credit: in the bot or on the web page, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
-                static fn (): string => WelcomeSender::creditBotLine(),
+                static fn (): string => '',
                 static fn (string $url): string => sprintf(
                     /* translators: %s: link to the crew page */
                     __('To spend a credit, pick a night under Tickets in the Me tab of the crew page (%s).', 'eventcrew'),
@@ -2201,7 +2220,7 @@ final class MessageTemplates
             ),
             'tickets_help' => self::botOrWeb(
                 __('Where all your tickets are: in the bot, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
-                static fn (): string => WelcomeSender::ticketsBotLine(),
+                static fn (): string => '',
                 static fn (string $url): string => sprintf(
                     /* translators: %s: link to the crew page */
                     __('It is the first button in your sign-up confirmation, and the Me tab of the crew page (%s) lists all your tickets.', 'eventcrew'),

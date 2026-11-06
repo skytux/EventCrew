@@ -531,8 +531,6 @@ msgid ""
 "\n"
 "%2$s\n"
 "\n"
-"Sign up on the board.\n"
-"\n"
 "%3$s"
 msgstr ""
 "Hei %1$s,\n"
@@ -540,8 +538,6 @@ msgstr ""
 "näihin tehtäviin tarvitaan vielä ihmisiä:\n"
 "\n"
 "%2$s\n"
-"\n"
-"Ilmoittaudu taululla.\n"
 "\n"
 "%3$s"
 
@@ -1028,14 +1024,6 @@ msgstr "Kirjaudutaanko ulos kaikkialta, myös täältä?"
 #: templates/public/door.php:54 templates/public/signup-board.php:137
 msgid "Sign up"
 msgstr "Ilmoittaudu"
-
-#: src/Support/WelcomeSender.php:223
-msgid "Sign up for a task"
-msgstr "Ilmoittaudu tehtävään"
-
-#: src/Support/WelcomeSender.php:543
-msgid "Sign up with the button below."
-msgstr "Ilmoittaudu alla olevalla painikkeella."
 
 #. translators: 1: the role with its emoji, 2: the day, e.g. "Sat 7 Nov"
 #: src/Support/WelcomeSender.php:265
@@ -1785,8 +1773,8 @@ msgid "🎟 Your free-entry ticket for %s — show it at the door."
 msgstr "🎟 Vapaalippusi tapahtumaan %s — näytä se ovella."
 
 #: src/Telegram/PermissionService.php:244
-msgid "🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low."
-msgstr "🎟 Sinulla on kertaluontoinen lupa ilmoittautua seuraavaan tehtävääsi, vaikka luotettavuutesi on matala."
+msgid "🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up."
+msgstr "🎟 Sinulla on kertaluontoinen lupa ilmoittautua seuraavaan tehtävääsi, vaikka luotettavuutesi on matala. Lupa kuluu, kun ilmoittaudut seuraavan kerran."
 
 #: src/Support/ClaimNotifier.php:115
 msgid "📅 Add to calendar"
@@ -1828,15 +1816,11 @@ msgstr "🔑 Kirjaudu verkossa"
 msgid ""
 "🔔 Some tasks still need people:\n"
 "\n"
-"%s\n"
-"\n"
-"Sign up on the board in the group."
+"%s"
 msgstr ""
 "🔔 Joihinkin tehtäviin tarvitaan vielä ihmisiä:\n"
 "\n"
-"%s\n"
-"\n"
-"Ilmoittaudu ryhmän taululla."
+"%s"
 
 #: src/Telegram/GuestListService.php:193
 #, php-format
@@ -7564,8 +7548,8 @@ msgstr "Myyntipiste-kortti on crew-sivun Ylläpito-välilehdellä kohdassa Ovi (
 msgid "Welcome to the %1$s crew. This message explains how it works. %2$s"
 msgstr "Tervetuloa %1$s-crew’hun. Tämä viesti kertoo, miten kaikki toimii. %2$s"
 
-msgid "You can see your own numbers any time: send /me to the bot in a private chat."
-msgstr "Omat lukusi näet milloin vain: lähetä botille /me yksityiskeskustelussa."
+msgid "Your numbers, tickets and credits: send /me to the bot."
+msgstr "Omat lukusi, lippusi ja vapaalippusi: lähetä botille /me."
 
 msgid "You can see your own numbers any time in the Me tab of the crew page (%s)."
 msgstr "Omat lukusi näet milloin vain crew-sivun Minä-välilehdellä (%s)."
@@ -7605,12 +7589,6 @@ msgstr "Missä kaikki liput ovat: botissa, tai henkilölle ilman Telegram-keskus
 #, php-format
 msgid "%1$s at %2$s, %3$s"
 msgstr "%1$s, %2$s, %3$s"
-
-#. translators: 1: role, 2: event, 3: places taken, 4: places in all
-#: src/Support/OpenTaskCall.php:389
-#, php-format
-msgid "%1$s at %2$s (%3$d/%4$d)"
-msgstr "%1$s, %2$s (%3$d/%4$d)"
 
 msgid "Hi %1$s,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event — %3$s"
 msgid_plural "Hi %1$s,\n\nAn organizer has given you %2$d free-entry credits. You can spend them on upcoming events — %3$s"
@@ -7890,8 +7868,8 @@ msgid "Sent to a person who uses the bot when an organizer gives them a role: wi
 msgstr "Lähetetään bottia käyttävälle henkilölle, kun järjestäjä antaa hänelle roolin: botin komennolla /people, crew-sivun Ylläpito-välilehdellä (myös lisäämällä hänet roolin tehtävään) tai wp-adminin Ihmiset-sivulla. Ei lähetetä, kun rooli otetaan pois, eikä henkilölle, joka on kytkenyt pois Telegram-viestit oikeuksien muutoksista."
 
 #, php-format
-msgid "You now have the role %s. Tap See open tasks below, or open the Crew app, to see its tasks and sign up for them."
-msgstr "Sinulla on nyt rooli %s. Napauta alta Avoimet tehtävät tai avaa Crew-sovellus, niin näet sen tehtävät ja voit ilmoittautua."
+msgid "You now have the role %s, so you can sign up for its tasks."
+msgstr "Sinulla on nyt rooli %s, joten voit ilmoittautua sen tehtäviin."
 
 msgid "You were given a one-time pass (email)"
 msgstr "Sait kertaluontoisen luvan (sähköposti)"
@@ -8213,8 +8191,8 @@ msgstr "Tiimi hyväksyi sinut"
 msgid "The team said OK. You can now take tasks on the crew page."
 msgstr "Tiimi hyväksyi sinut. Voit nyt ottaa tehtäviä crew-sivulla."
 
-msgid "✅ The team said OK. You can now take tasks: tap See open tasks below."
-msgstr "✅ Tiimi hyväksyi sinut. Voit nyt ottaa tehtäviä: napauta alta Avoimet tehtävät."
+msgid "✅ The team said OK. You can now take tasks."
+msgstr "✅ Tiimi hyväksyi sinut. Voit nyt ottaa tehtäviä."
 
 msgid "Sent to the organizers without Telegram when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text."
 msgstr "Lähetetään järjestäjille, joilla ei ole Telegramia, kun uusi henkilö vahvistaa sähköpostinsa ensimmäistä kertaa. Kunnes järjestäjä hyväksyy, hän näkee taulun mutta ei voi ottaa tehtäviä. Tekstin alle lisätään painike crew-sivun Admin-välilehdelle, jossa OK- ja Ei-painikkeet ovat."
@@ -8422,3 +8400,24 @@ msgstr "Tyhjä rivi ja tehtävän tiedot: tehtävä, tapahtuma, päivä ja aika,
 
 msgid "An empty line and the other open tasks of the event, one per line, with no names. Empty when there are none."
 msgstr "Tyhjä rivi ja tapahtuman muut avoimet tehtävät, yksi riviä kohti, ilman nimiä. Tyhjä, kun niitä ei ole."
+
+msgid "Open now:"
+msgstr "Avoinna nyt:"
+
+#. translators: 1: day and time, 2: role with emoji, 3: event
+msgid "%1$s: %2$s at %3$s"
+msgstr "%1$s: %2$s, %3$s"
+
+#. translators: 1: day and time, 2: role with emoji, 3: event, 4: free places, 5: places in all
+msgid "%1$s: %2$s at %3$s (%4$d of %5$d free)"
+msgstr "%1$s: %2$s, %3$s (%4$d / %5$d vapaana)"
+
+msgid "An empty line and the open tasks this person can sign up for, one line each, with no names. Empty when there are none."
+msgstr "Tyhjä rivi ja avoimet tehtävät, joihin henkilö voi ilmoittautua, yksi per rivi, ilman nimiä. Tyhjä, jos niitä ei ole."
+
+msgid "The Crew app has an Admin tab for you, where you manage tasks and people."
+msgstr "Crew-sovelluksessa on sinulle Ylläpito-välilehti, jossa hoidat tehtäviä ja ihmisiä."
+
+#. translators: 1: role, 2: event, 3: free places, 4: places in all
+msgid "%1$s at %2$s (%3$d of %4$d free)"
+msgstr "%1$s, %2$s (%3$d / %4$d vapaana)"

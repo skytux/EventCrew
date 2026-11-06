@@ -34,6 +34,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\AccessNotifier;
+use EventCrew\Support\AccessTextsMigration;
 use EventCrew\Support\AssistantKnowledge;
 use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\BoardPush;
@@ -198,6 +199,11 @@ final class Kernel
         // Adds {description} to the stored reminder texts (email and
         // Telegram). Runs once per site.
         MessageTemplates::migrateReminderDescription();
+
+        // Gives the stored texts of a role, a pass and the team's OK their
+        // list of open tasks, and the organizer DM its Admin tab line
+        // (AccessTextsMigration). Once per step, after the translations load.
+        add_action('init', [AccessTextsMigration::class, 'migrate'], 20);
 
         // The bot's answers and buttons as edited on the Translations page.
         // Registered on every request: the bot answers on the webhook path.
