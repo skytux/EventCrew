@@ -1960,7 +1960,7 @@ if (! defined('ABSPATH')) {
                     <p class="description">
                         <?php
                         // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                        esc_html_e('Off by default. When on, the board is two messages. First a photo message for the next event, when it is an EventMesh event with a picture: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Below it the text board: the next 3 events, who is signed up for which task, and the task buttons. There are no date buttons.', 'eventcrew');
+                        esc_html_e('Off by default. When on, the board is two messages. First a photo message for the next event, when it is an EventMesh event with a picture: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Below it the text board: the next event, who is signed up for which task, the task buttons and the date buttons.', 'eventcrew');
                         ?>
                     </p>
                 </td>

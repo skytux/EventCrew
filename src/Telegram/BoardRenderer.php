@@ -41,7 +41,11 @@ use EventCrew\Support\RoleGuide;
  *
  * With the card format on (BoardService::CARDS_OPTION), nextCard() is the
  * photo message for the next event and crewBoard() the text board under it:
- * the next EVENTS days at once, with who is signed up, and no day buttons.
+ * one day, with who is signed up, and the same row of day buttons.
+ *
+ * The group's message always shows the next event; a day button tapped there
+ * sends that day to the person's private chat instead of moving the shared
+ * message (BoardService::onPickDate()).
  */
 final class BoardRenderer
 {
@@ -77,9 +81,6 @@ final class BoardRenderer
      */
     public const EVENT_HEADING_MAX = 40;
 
-    /** How many events (days) crewBoard() shows. */
-    public const EVENTS = 3;
-
     /** Telegram's limit for a message's text, in UTF-16 units. */
     public const TEXT_LIMIT = 4096;
 
@@ -109,17 +110,19 @@ final class BoardRenderer
 
     /**
      * The board with the card format on (BoardService::CARDS_OPTION): the
-     * text board that goes under the next event's card. It shows the days of
-     * the next EVENTS events at once (an event is a day on the board, as the
-     * day buttons count them), with no row of day buttons: two people using
-     * the group's one message at the same time would move it under each other
-     * (Owner, 2026-11-04). The text lists, per day and task, who is signed up,
-     * by first name; the keyboard has each day's heading rows and task buttons
-     * and the links at the foot.
+     * text board that goes under the next event's card. It shows one day:
+     * the next event, or $date when it has open tasks. The text lists, per
+     * task, who is signed up, by first name; the keyboard has the day's
+     * heading rows and task buttons, the row of day buttons (DayPicker), and
+     * the links at the foot. The group's message always shows the next event
+     * (Owner, 2026-11-06: the board was too long with three); another day is
+     * shown only in a private copy.
      *
+     * @param string $date The day to show (Y-m-d); '' or a day with no open
+     *                     tasks shows the next one.
      * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
      */
-    public function crewBoard(): array
+    public function crewBoard(string $date = ''): array
     {
         $tasks = $this->boardTasks();
 
@@ -128,40 +131,29 @@ final class BoardRenderer
         }
 
         $dates = $this->dates($tasks);
-        $shown = array_slice($dates, 0, self::EVENTS);
-        $tasks = array_values(array_filter(
-            $tasks,
-            static fn (Task $t): bool => in_array($t->taskDate, $shown, true)
-        ));
+        $shown = in_array($date, $dates, true) ? $date : $dates[0];
+        $daySuffix = $shown === $dates[0] ? '' : ':' . $shown;
+        $tasks = array_values(array_filter($tasks, static fn (Task $t): bool => $t->taskDate === $shown));
         $occupants = $this->tasks->occupantsFor(array_map(static fn (Task $t): int => $t->id, $tasks));
 
         $lines = $this->introLines();
         $keyboard = [];
 
-        foreach ($shown as $date) {
-            $daySuffix = $date === $dates[0] ? '' : ':' . $date;
-            $dayTasks = array_values(array_filter($tasks, static fn (Task $t): bool => $t->taskDate === $date));
+        foreach ($this->groupByEvent($tasks) as $group) {
+            $lines[] = '';
+            $lines[] = '📅 ' . $group['date'] . ' · ' . $group['title'];
+            $keyboard[] = [$this->spacerButton('📅 ' . $group['title'])];
+            $keyboard[] = [$this->spacerButton($group['date'])];
 
-            foreach ($this->groupByEvent($dayTasks) as $group) {
-                $lines[] = '';
-                $lines[] = '📅 ' . $group['date'] . ' · ' . $group['title'];
-                $keyboard[] = [$this->spacerButton('📅 ' . $group['title'])];
-                $keyboard[] = [$this->spacerButton($group['date'])];
-
-                foreach ($group['tasks'] as $task) {
-                    $names = $occupants[$task->id] ?? [];
-                    $lines[] = $this->taskLine($task, $names);
-                    $keyboard[] = [$this->taskButton($task, count($names), $daySuffix)];
-                }
+            foreach ($group['tasks'] as $task) {
+                $names = $occupants[$task->id] ?? [];
+                $lines[] = $this->taskLine($task, $names);
+                $keyboard[] = [$this->taskButton($task, count($names), $daySuffix)];
             }
+        }
 
-            // A separator after each date; after the last one the foot rows
-            // already start with the divider button.
-            if ($date !== $shown[count($shown) - 1]) {
-                $lines[] = '';
-                $lines[] = self::DIVIDER;
-                $keyboard[] = [$this->spacerButton(self::DIVIDER)];
-            }
+        foreach (DayPicker::rows($dates, $shown, BoardService::PICK_PREFIX) as $row) {
+            $keyboard[] = $row;
         }
 
         foreach ($this->footRows() as $row) {

@@ -4694,9 +4694,9 @@ msgstr ""
 
 #: templates/admin/settings.php:1942
 msgid ""
-"Off by default. When on, the board is two messages. First a photo message for the next event, when it is an EventMesh event with a picture: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Below it the text board: the next 3 events, who is signed up for which task, and the task buttons. There are no date buttons."
+"Off by default. When on, the board is two messages. First a photo message for the next event, when it is an EventMesh event with a picture: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Below it the text board: the next event, who is signed up for which task, the task buttons and the date buttons."
 msgstr ""
-"Av som standard. När det är på består tavlan av två meddelanden. Först ett bildmeddelande för nästa evenemang, om det är ett EventMesh-evenemang med bild: bilden, namnet, datumet, priset, två meningar om DJ:n eller värden skrivna av språkmodellen, och dess länkar. Under det texttavlan: de tre nästa evenemangen, vem som är anmäld till vilken uppgift, och uppgiftsknapparna. Det finns inga datumknappar."
+"Av som standard. När det är på består tavlan av två meddelanden. Först ett bildmeddelande för nästa evenemang, om det är ett EventMesh-evenemang med bild: bilden, namnet, datumet, priset, två meningar om DJ:n eller värden skrivna av språkmodellen, och dess länkar. Under det texttavlan: nästa evenemang, vem som är anmäld till vilken uppgift, uppgiftsknapparna och datumknapparna."
 
 #: templates/admin/settings.php:1299
 msgid "Officer’s contact"
@@ -11668,6 +11668,12 @@ msgstr[1] "Det här använder 1 av dina %d fribiljetter."
 
 msgid "Open a private chat with the bot and tap Start first, then tap the task again."
 msgstr "Öppna först en privat chatt med boten och tryck på Starta, tryck sedan på uppgiften igen."
+
+msgid "Check your private chat with the bot: that day’s tasks are there."
+msgstr "Titta i din privata chatt med boten: den dagens uppgifter finns där."
+
+msgid "Open a private chat with the bot and tap Start first, then tap the date again."
+msgstr "Öppna först en privat chatt med boten och tryck på Starta, tryck sedan på datumet igen."
 
 msgid "Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine."
 msgstr "Dörrlista för %s: öppna den med knappen nedan. Länken fungerar en gång, på en enhet; den loggar in den enheten till 06:00. Det går bra att vidarebefordra den."

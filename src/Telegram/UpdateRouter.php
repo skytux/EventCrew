@@ -438,8 +438,9 @@ final class UpdateRouter
     /**
      * Shows the one thing a <verb>-<id> start payload names, in the private
      * chat: the task with its Sign up button (task-<id>), a takeover request
-     * with its two answers, for its holder (tov-<id>). False for a verb
-     * nothing here opens, so the payload goes on to the sign-up flow.
+     * with its two answers, for its holder (tov-<id>), one day of the board
+     * (board-<Ymd>). False for a verb nothing here opens, so the payload goes
+     * on to the sign-up flow.
      */
     private function openScreen(string $verb, string $id, int $fromId, int $chatId): bool
     {
@@ -465,6 +466,8 @@ final class UpdateRouter
                 $this->doorList->onTicketsCommand($fromId, $chatId, true, $date);
 
                 return true;
+            case BoardService::START_VERB:
+                return $this->board->openDay($chatId, $id);
             case NewcomerApproval::START_VERB:
                 $this->newcomers?->showRequest($fromId, $chatId, (int) $id);
 
