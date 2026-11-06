@@ -23,6 +23,7 @@ use EventCrew\Telegram\TelegramClient;
  * language. The texts are the Messages page pairs access_role /
  * access_role_dm, access_pass / access_pass_dm and access_organizer /
  * access_organizer_dm: the emails name the crew page, the DMs the bot.
+ * A role or a pass lists the open tasks it lets them take (OpenTaskList).
  */
 final class AccessNotifier
 {
@@ -36,7 +37,8 @@ final class AccessNotifier
     public function __construct(
         private readonly PersonRepository $people,
         private readonly Mailer $mailer,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        private readonly OpenTaskList $openTasks = new OpenTaskList()
     ) {
     }
 
@@ -79,6 +81,13 @@ final class AccessNotifier
     private function send(Person $person, string $template, string $slug): void
     {
         $context = ['person' => $person, 'role' => '' === $slug ? '' : Roles::label($slug)];
+
+        // A role or a pass: the open tasks it lets them take, a role's own
+        // only, each with its Sign up button.
+        if (self::ORGANIZER !== $template) {
+            $context[OpenTaskList::CONTEXT_KEY] = $this->openTasks->forPerson($person, roleSlug: $slug);
+        }
+
         $prefs = new NotificationPreferences();
 
         if ($prefs->dmAllowed($person, NotificationPreferences::PERMISSION)) {

@@ -135,7 +135,7 @@ final class MessageTemplatesTest extends TestCase
         $this->options[Organization::OPTION] = 'Ecstatic Dance Helsinki';
 
         self::assertSame('You are now an organizer of Ecstatic Dance Helsinki.', MessageTemplates::subject('access_organizer'));
-        self::assertSame('⭐ You’re now an organizer of Ecstatic Dance Helsinki.', MessageTemplates::body('access_organizer_dm'));
+        self::assertStringStartsWith('⭐ You’re now an organizer of Ecstatic Dance Helsinki. ', MessageTemplates::body('access_organizer_dm'));
         self::assertSame(
             'Olet nyt järjestäjä: Ecstatic Dance Helsinki.',
             Language::run(Language::FINNISH, static fn (): string => MessageTemplates::subject('access_organizer'))

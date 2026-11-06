@@ -216,11 +216,25 @@ final class WelcomeSender
 
     private function sendEmail(Person $person): bool
     {
-        $actions = [];
         $board = $this->mailer->boardUrl();
+        $open = $this->openTasks();
+        $shown = array_slice($open, 0, OpenTaskList::DEFAULT_MAX);
+        // A Sign up for each of the first tasks, then the board: as a button
+        // only when it shows more than those (or there are none), and in
+        // Telegram.
+        $actions = MessageActions::email([
+            ...array_map(fn (array $row): MessageAction => OpenTaskList::action($row['task'], $this->mailer), $shown),
+            new MessageAction(
+                'board',
+                __('See open tasks', 'eventcrew'),
+                '',
+                count($open) === count($shown) && [] !== $open ? null : static fn (): string => $board,
+                '',
+                'board'
+            ),
+        ]);
 
         if ('' !== $board) {
-            $actions[] = ['label' => __('Sign up for a task', 'eventcrew'), 'url' => $board];
             $actions[] = ['label' => RoleGuide::descriptionsLabel(), 'url' => RoleGuide::descriptionsUrl()];
         }
 
@@ -244,7 +258,7 @@ final class WelcomeSender
         // The texts are the Messages page templates (MessageTemplates).
         $context = [
             'person' => $person,
-            'open_tasks' => $this->openTasksText(false),
+            'open_tasks' => $this->openTasksText(),
             'help_line' => self::webLine(HelpPage::PANEL_ANCHOR),
         ];
 
@@ -252,7 +266,7 @@ final class WelcomeSender
             $person->id,
             $person->email,
             MessageTemplates::subject(self::KIND_EMAIL, $context),
-            MessageTemplates::body(self::KIND_EMAIL, $context),
+            self::tidy(MessageTemplates::body(self::KIND_EMAIL, $context)),
             $actions
         );
     }
@@ -289,13 +303,13 @@ final class WelcomeSender
 
         $context = [
             'person' => $person,
-            'open_tasks' => $this->openTasksText(true),
+            'open_tasks' => $this->openTasksText(),
             'help_line' => self::webLine(HelpPage::PANEL_ANCHOR),
         ];
 
         return null !== $this->telegram->sendMessage(
             (int) $person->telegramChatId,
-            DmBody::frame($person, EmailBody::forDm(MessageTemplates::body(self::KIND_DM, $context)), true),
+            DmBody::frame($person, EmailBody::forDm(self::tidy(MessageTemplates::body(self::KIND_DM, $context))), true),
             [] === $keyboard ? null : ['inline_keyboard' => $keyboard]
         );
     }
@@ -417,12 +431,22 @@ final class WelcomeSender
 
     /**
      * The {me_help} of the welcome message for a person with a Telegram chat:
-     * where to see their own numbers. A person without one gets the crew page
-     * (MessageTemplates, CrewPageHelp).
+     * where their own numbers, tickets and credits are, in one line, so the
+     * {credit_help} and {tickets_help} are empty for them. A person without
+     * one gets the crew page (MessageTemplates, CrewPageHelp).
      */
     public static function meBotLine(): string
     {
-        return __('You can see your own numbers any time: send /me to the bot in a private chat.', 'eventcrew');
+        return __('Your numbers, tickets and credits: send /me to the bot.', 'eventcrew');
+    }
+
+    /**
+     * $text without the gaps an empty placeholder leaves: a double space, a
+     * space before a line break or at the end.
+     */
+    private static function tidy(string $text): string
+    {
+        return (string) preg_replace(['/ {2,}/', '/ +(?=\n|$)/'], [' ', ''], $text);
     }
 
     /**
@@ -623,7 +647,7 @@ final class WelcomeSender
         );
     }
 
-    private function openTasksText(bool $forDm): string
+    private function openTasksText(): string
     {
         $lines = [];
 
@@ -646,9 +670,7 @@ final class WelcomeSender
             return __('No open tasks right now. New ones are posted on the board and in the Telegram group.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
         }
 
-        return implode("\n", $lines) . "\n\n" . ($forDm
-            ? __('Tap a button below to sign up.', 'eventcrew')
-            : __('Sign up with the button below.', 'eventcrew'));
+        return implode("\n", $lines) . "\n\n" . __('Tap a button below to sign up.', 'eventcrew');
     }
 
     /**

@@ -141,6 +141,9 @@ final class MessagePreview
                 2,
                 max(2, $task->capacity)
             ),
+            OpenTaskList::CONTEXT_KEY => [
+                ['task' => $task, 'free' => $task->hasNoLimit() ? null : max(1, $task->capacity - 1)],
+            ],
             'recap' => __('This will be your first task — welcome!', 'eventcrew'),
             'thanks' => '',
             'member' => self::samplePerson(__('Sample Newcomer', 'eventcrew'), 'newcomer@example.invalid', $lang),

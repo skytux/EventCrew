@@ -2,7 +2,7 @@ DM 📣 Test Crew
 
 Hei Person 3,
 
-Tervetuloa Test Crew-crew’hun. Tämä viesti kertoo, miten kaikki toimii. Omat lukusi näet milloin vain: lähetä botille /me yksityiskeskustelussa.
+Tervetuloa Test Crew-crew’hun. Tämä viesti kertoo, miten kaikki toimii. Omat lukusi, lippusi ja vapaalippusi: lähetä botille /me.
 
 🧩 Tehtävät
 
@@ -14,11 +14,11 @@ Tervetuloa Test Crew-crew’hun. Tämä viesti kertoo, miten kaikki toimii. Omat
 
 🎟️ Liput
 
-Kun ilmoittaudut tehtävään, saat sille illalle ilmaisen lipun. Näytä se ovella. Se on ilmoittautumisvahvistuksesi ensimmäinen painike, ja /me tickets listaa kaikki lippusi.
+Kun ilmoittaudut tehtävään, saat sille illalle ilmaisen lipun. Näytä se ovella.
 
 🎁 Vapaaliput
 
-Saat 1 vapaalipun jokaisesta 2 tekemästäsi tehtävästä. Käytä vapaalippu lähettämällä botille /me ja napauttamalla 🎟 Vapaalippu, tai verkkosivulla. Saat silloin lipun valitsemallesi illalle. Joinakin iltoina (loppuunmyydyt tai erikoistapahtumat) vapaalippuja ei voi käyttää.
+Saat 1 vapaalipun jokaisesta 2 tekemästäsi tehtävästä. Saat silloin lipun valitsemallesi illalle. Joinakin iltoina (loppuunmyydyt tai erikoistapahtumat) vapaalippuja ei voi käyttää.
 
 📈 Luotettavuus
 

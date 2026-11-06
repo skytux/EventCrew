@@ -251,9 +251,14 @@ final class OpenTaskCall
             return false;
         }
 
-        $openList = $this->openTasksText($this->digest(self::DIGEST_TASKS));
-        // The texts are the Messages page templates (MessageTemplates).
-        $context = ['person' => $person, 'open_tasks' => $openList];
+        $digest = $this->digest(self::DIGEST_TASKS);
+        // The texts are the Messages page templates (MessageTemplates); a
+        // Sign up for each task listed (OpenTaskList::actions()).
+        $context = [
+            'person' => $person,
+            'open_tasks' => $this->openTasksText($digest),
+            OpenTaskList::CONTEXT_KEY => self::signupRows($digest),
+        ];
 
         if ($emailOk) {
             $context['recap'] = $this->recap($person);
@@ -366,11 +371,11 @@ final class OpenTaskCall
         foreach ($blocks as $date => $lines) {
             $text = array_map(
                 static fn (array $line): string => '- ' . sprintf(
-                    /* translators: 1: role, 2: event, 3: places taken, 4: places in all */
-                    __('%1$s at %2$s (%3$d/%4$d)', 'eventcrew'),
+                    /* translators: 1: role, 2: event, 3: free places, 4: places in all */
+                    __('%1$s at %2$s (%3$d of %4$d free)', 'eventcrew'),
                     $line[0]->roleLabel(),
                     $line[0]->eventName(),
-                    $line[1],
+                    $line[0]->capacity - $line[1],
                     $line[0]->capacity
                 ),
                 $lines
@@ -379,6 +384,25 @@ final class OpenTaskCall
         }
 
         return implode("\n\n", $rendered);
+    }
+
+    /**
+     * The digest's tasks as OpenTaskList rows, in the order listed.
+     *
+     * @param array<string, array<int, array{0: Task, 1: int}>> $blocks
+     * @return list<array{task: Task, free: int}>
+     */
+    private static function signupRows(array $blocks): array
+    {
+        $rows = [];
+
+        foreach ($blocks as $lines) {
+            foreach ($lines as $line) {
+                $rows[] = ['task' => $line[0], 'free' => $line[0]->capacity - $line[1]];
+            }
+        }
+
+        return $rows;
     }
 
     /**

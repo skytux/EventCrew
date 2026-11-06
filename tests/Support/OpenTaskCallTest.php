@@ -409,28 +409,31 @@ final class OpenTaskCallTest extends TestCase
         return $dms;
     }
 
-    /** With nothing stored, the email and the DM are what they were before the templates. */
-    public function testTheOpenTaskMessagesAreTheSameAsBeforeTheTemplates(): void
+    /**
+     * With nothing stored: the built-in texts, each task with its free
+     * places, and a Sign up for each before the board and the group.
+     */
+    public function testWithNothingStoredTheBuiltInTextsAndASignUpPerTaskAreSent(): void
     {
         $dms = $this->sendToSam();
 
         self::assertSame('Some tasks still need people', $this->mails[0]['subject']);
         self::assertSame(
-            "Hi Sam,\n\nSome tasks still need people:\n\nSat 1 Aug\n- Decorate at Party (0/2)\n\nSign up on the"
-                . " board.\n\nThis will be your first task — welcome!\n\nTasks completed in total: 0.\n\n"
+            "Hi Sam,\n\nSome tasks still need people:\n\nSat 1 Aug\n- Decorate at Party (2 of 2 free)"
+                . "\n\nThis will be your first task — welcome!\n\nTasks completed in total: 0.\n\n"
                 . "Open the group in Telegram: https://t.me/+abc\n\n—\nManage your account or stop these emails: "
                 . 'https://example.test/wp-json/eventcrew/v1/manage?token='
                 . 'Nw.2e7412c689f539f6489b9a1e298151a2431bfc264f90e62776a73bce4d9e9398',
             $this->mails[0]['body']
         );
         self::assertSame(
-            "📣 Test Site\n\nHi Sam,\n\n🔔 Some tasks still need people:\n\nSat 1 Aug\n- Decorate at Party (0/2)"
-                . "\n\nSign up on the board in the group.",
+            "📣 Test Site\n\nHi Sam,\n\n🔔 Some tasks still need people:\n\nSat 1 Aug\n- Decorate at Party (2 of 2 free)",
             (string) $dms[0]['text']
         );
-        // The DM has the email's two actions: the board, and the group.
+        // The DM has the email's actions: Sign up, the board, the group.
         self::assertSame(
             [
+                [['text' => 'Sign up: 🎈 Decorate · Sat 1 Aug', 'callback_data' => 'j:5']],
                 [['text' => 'See open tasks', 'callback_data' => 'mn:board']],
                 [['text' => 'Open the group', 'url' => 'https://t.me/+abc']],
             ],
@@ -459,11 +462,11 @@ final class OpenTaskCallTest extends TestCase
 
         self::assertSame('Help, Sam', $this->mails[0]['subject']);
         self::assertStringStartsWith(
-            "Open:\nSat 1 Aug\n- Decorate at Party (0/2)\nThis will be your first task — welcome!",
+            "Open:\nSat 1 Aug\n- Decorate at Party (2 of 2 free)\nThis will be your first task — welcome!",
             $this->mails[0]['body']
         );
         self::assertSame(
-            "📣 Test Site\n\nHi Sam,\n\nOpen: Sat 1 Aug\n- Decorate at Party (0/2)",
+            "📣 Test Site\n\nHi Sam,\n\nOpen: Sat 1 Aug\n- Decorate at Party (2 of 2 free)",
             (string) $dms[0]['text']
         );
     }

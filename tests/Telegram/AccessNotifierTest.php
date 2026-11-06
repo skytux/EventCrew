@@ -100,8 +100,7 @@ final class AccessNotifierTest extends TelegramTestCase
         $this->notifier()->roleGiven(8, 'dj');
 
         self::assertSame(
-            "📣 Test Site\n\nHi Sam Lee,\n\nYou now have the role DJ. Tap See open tasks below, or open the Crew app,"
-                . ' to see its tasks and sign up for them.',
+            "📣 Test Site\n\nHi Sam Lee,\n\nYou now have the role DJ, so you can sign up for its tasks.",
             $this->dm()
         );
         self::assertSame(
@@ -117,6 +116,50 @@ final class AccessNotifierTest extends TelegramTestCase
         );
     }
 
+    /**
+     * A new role lists that role's open tasks, each with its Sign up: the DM
+     * by the role list's sign-up (the role is restricted), the email by a
+     * link to the task on the crew page. Then See open tasks.
+     */
+    public function testARoleListsItsOpenTasksWithASignUpEach(): void
+    {
+        $this->sam(['role_slugs' => 'dj']);
+        $task = [
+            'task_date' => '2099-11-14',
+            'capacity' => 1,
+            'event_label' => 'Dance Night',
+            'starts_at' => '2099-11-14 22:00:00',
+            'ends_at' => '2099-11-14 23:00:00',
+        ];
+        $this->wpdb->nextResults[] = [                              // upcoming
+            ['id' => 30, 'role_slug' => 'decorate'] + $task,
+            ['id' => 31, 'role_slug' => 'dj'] + $task,
+        ];
+        $this->wpdb->nextResults[] = [];                            // their assignments
+        $this->wpdb->nextResults[] = [];                            // occupancy
+
+        $this->notifier()->roleGiven(8, 'dj');
+
+        self::assertSame(
+            "📣 Test Site\n\nHi Sam Lee,\n\nYou now have the role DJ, so you can sign up for its tasks.\n\nOpen now:"
+                . "\n- 📅 Sat 14 Nov 22:00–23:00: DJ at Dance Night",
+            $this->dm()
+        );
+        self::assertSame(
+            [
+                [['text' => 'Sign up: DJ · Sat 14 Nov', 'callback_data' => 'rt:s:31']],
+                [['text' => 'See open tasks', 'callback_data' => MenuButtons::BOARD]],
+            ],
+            $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
+        );
+        self::assertStringContainsString(
+            "Open now:\n- 📅 Sat 14 Nov 22:00–23:00: DJ at Dance Night\n\n"
+                . "Sign up: DJ · Sat 14 Nov: https://site.test/crew/#eventcrew-task-31\n"
+                . 'See open tasks: https://site.test/crew/',
+            $this->mailText()
+        );
+    }
+
     public function testAPassIsToldByTelegramAndEmail(): void
     {
         $this->sam();
@@ -125,7 +168,7 @@ final class AccessNotifierTest extends TelegramTestCase
 
         self::assertSame(
             "📣 Test Site\n\nHi Sam Lee,\n\n🎟 You’ve a one-time pass to sign up for your next task, even while your"
-                . ' standing is low.',
+                . ' standing is low. It is used up the next time you sign up.',
             $this->dm()
         );
         self::assertSame(
@@ -142,7 +185,19 @@ final class AccessNotifierTest extends TelegramTestCase
 
         $this->notifier()->organizerGiven(8);
 
-        self::assertSame("📣 Test Site\n\nHi Sam Lee,\n\n⭐ You’re now an organizer of Test Site.", $this->dm());
+        self::assertSame(
+            "📣 Test Site\n\nHi Sam Lee,\n\n⭐ You’re now an organizer of Test Site. The Crew app has an Admin tab"
+                . ' for you, where you manage tasks and people.',
+            $this->dm()
+        );
+        self::assertSame(
+            [
+                [['text' => '🛠️ Open the Admin tab', 'url' => 'https://site.test/crew/#eventcrew-panel-admin']],
+                [['text' => '👥 People', 'callback_data' => MenuButtons::PEOPLE]],
+                [['text' => '💳 Sales desk', 'callback_data' => MenuButtons::SALES]],
+            ],
+            $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
+        );
         self::assertSame(
             "You are now an organizer of Test Site.\n---\nHi Sam,\n\nYou are now an organizer. The crew page has an"
                 . ' Admin tab for you, where you manage tasks and people.'
@@ -183,12 +238,9 @@ final class AccessNotifierTest extends TelegramTestCase
 
         $this->notifier()->roleGiven(8, 'dj');
 
-        self::assertStringContainsString(
-            'Sinulla on nyt rooli DJ. Napauta alta Avoimet tehtävät tai avaa Crew-sovellus, niin näet sen'
-                . ' tehtävät ja voit ilmoittautua.',
-            $this->dm()
-        );
+        self::assertStringStartsWith('📣 Test Site', $this->dm());
         self::assertSame('Sinulla on uusi rooli: DJ', $this->mails[0]['subject']);
+        self::assertStringContainsString('Sinulla on nyt rooli DJ. Sen tehtävät ovat avoinna', $this->mails[0]['body']);
         self::assertStringStartsWith('Hei Sam,', $this->mails[0]['body']);
     }
 
