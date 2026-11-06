@@ -178,7 +178,7 @@ msgstr ""
 msgid "%1$s – %2$s, one bar per week."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:63
+#: src/Telegram/ProfileService.php:64
 #. translators: 1: name, 2: standing level and score
 msgid "%1$s — %2$s"
 msgstr ""
@@ -1380,6 +1380,11 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
+#: src/Telegram/ProfileService.php:299
+#. translators: 1: role, 2: day
+msgid "Cancel %1$s, %2$s"
+msgstr ""
+
 #: src/Telegram/BoardService.php:1464
 #. translators: %s: the task, the event and the day, like "Door at Party, Sat 14 Nov 18:00"
 msgid "Cancel %s?"
@@ -1558,7 +1563,7 @@ msgstr ""
 msgid "Coming events"
 msgstr ""
 
-#: src/Telegram/ProfileService.php:93
+#: src/Telegram/ProfileService.php:94
 msgid "Coming up:"
 msgstr ""
 
@@ -1586,7 +1591,7 @@ msgstr ""
 msgid "Completed tasks a member works to earn one free-entry credit. Default 2."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:69
+#: src/Telegram/ProfileService.php:70
 #. translators: 1: completed count, 2: credit balance
 msgid "Completed tasks: %1$d · Free-entry credits: %2$d"
 msgstr ""
@@ -2785,7 +2790,7 @@ msgstr ""
 msgid "Here you can change the name we greet you with and your language, or leave the announcement."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:225
+#: src/Telegram/ProfileService.php:231
 msgid "Here’s your sign-in link for the web board — good for 30 minutes, one use."
 msgstr ""
 
@@ -3946,7 +3951,7 @@ msgstr ""
 msgid "No password — we email you a link, good for 30 minutes."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:124
+#: src/Telegram/ProfileService.php:130
 msgid "No past tasks yet — your history starts once you’ve worked one."
 msgstr ""
 
@@ -4010,7 +4015,7 @@ msgstr ""
 msgid "No ticket on tonight’s list has this code."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:150
+#: src/Telegram/ProfileService.php:156
 msgid "No tickets yet — sign up for a task or spend a credit."
 msgstr ""
 
@@ -4093,7 +4098,7 @@ msgstr ""
 msgid "Nothing logged recently. Errors from the bot, mail and boot will appear here."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:96
+#: src/Telegram/ProfileService.php:97
 msgid "Nothing on your calendar yet — tap a task on the board to sign up."
 msgstr ""
 
@@ -4450,6 +4455,10 @@ msgstr ""
 msgid "Open tasks"
 msgstr ""
 
+#: src/Telegram/BoardRenderer.php:300
+msgid "Open tasks — tap one to sign up. To cancel, tap 👤 My info."
+msgstr ""
+
 #: src/MailImport/MailedListImport.php:266 src/MailImport/MailedListImport.php:285 src/Support/MessageTemplates.php:1048 src/Support/MessageTemplates.php:1049
 #: src/Support/MessageTemplates.php:1050 src/Support/MessageTemplates.php:1051
 msgid "Open the Roster page"
@@ -4674,7 +4683,7 @@ msgstr ""
 msgid "Past"
 msgstr ""
 
-#: src/Telegram/ProfileService.php:167
+#: src/Telegram/ProfileService.php:173
 msgid "Past:"
 msgstr ""
 
@@ -5495,7 +5504,7 @@ msgstr ""
 msgid "See you on the dancefloor"
 msgstr ""
 
-#: src/Telegram/ProfileService.php:103
+#: src/Telegram/ProfileService.php:104
 msgid "Send /me history to see everything you’ve done."
 msgstr ""
 
@@ -7859,7 +7868,7 @@ msgstr ""
 msgid "There is no upcoming event night yet."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:208
+#: src/Telegram/ProfileService.php:214
 msgid "There’s no public sign-up page set up yet, so there’s nothing to sign in to on the web."
 msgstr ""
 
@@ -8484,7 +8493,7 @@ msgstr ""
 msgid "Upcoming"
 msgstr ""
 
-#: src/Telegram/ProfileService.php:154
+#: src/Telegram/ProfileService.php:160
 msgid "Upcoming:"
 msgstr ""
 
@@ -9272,7 +9281,7 @@ msgstr ""
 msgid "You get this email because you joined the next events announcement. Change your details or leave the announcement"
 msgstr ""
 
-#: src/Telegram/ProfileService.php:78
+#: src/Telegram/ProfileService.php:79
 #. translators: %d: number of free-entry credits the person holds
 msgid "You have %d free-entry credit — tap 🎟 Free-entry ticket below to spend it."
 msgid_plural "You have %d free-entry credits — tap 🎟 Free-entry ticket below to spend one."
@@ -9507,7 +9516,7 @@ msgstr ""
 msgid "Your own placeholders"
 msgstr ""
 
-#: src/Telegram/ProfileService.php:125
+#: src/Telegram/ProfileService.php:131
 msgid "Your past tasks:"
 msgstr ""
 
@@ -9584,7 +9593,7 @@ msgstr ""
 msgid "Your ticket to %1$s on %2$s was moved to another email address. The QR code in your earlier ticket email no longer works at the door."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:144
+#: src/Telegram/ProfileService.php:150
 msgid "Your tickets"
 msgstr ""
 
@@ -9650,7 +9659,7 @@ msgstr ""
 msgid "a crew member’s tasks on the night, as a list. Empty for everyone else."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:312
+#: src/Telegram/ProfileService.php:342
 msgid "a task"
 msgstr ""
 
@@ -10211,7 +10220,7 @@ msgstr ""
 msgid "🔁 %1$s asks to take over your task: %2$s at %3$s, %4$s.\n\nYou decide: let them take it, or keep it. Please answer by %5$s. If you do not answer by then, you keep the task."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:226
+#: src/Telegram/ProfileService.php:232
 msgid "🔑 Sign in on the web"
 msgstr ""
 
@@ -10253,12 +10262,3 @@ msgstr ""
 msgid "🧭 Organizer guide ↓"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php
-msgid "Open tasks — tap one to sign up. To cancel, tap 👤 My info."
-msgstr ""
-
-#. translators: 1: role, 2: day
-#: src/Telegram/ProfileService.php
-#, php-format
-msgid "Cancel %1$s, %2$s"
-msgstr ""
