@@ -31,7 +31,7 @@ final class BoardCardsTest extends TelegramTestCase
     private const SHOP = 'https://holvi.example.test/shop/x/product/1/';
     private const SHOP_NEW = 'https://holvi.example.test/shop/x/product/2/';
     private const CHAT = -100;
-    private const INTRO = 'Open tasks — tap one to sign up, tap again to cancel.';
+    private const INTRO = 'Open tasks — tap one to sign up. To cancel, tap 👤 My info.';
 
     /** @var list<array{0: int, 1: string}> Every wp_schedule_single_event call: [time, hook]. */
     private array $scheduled = [];

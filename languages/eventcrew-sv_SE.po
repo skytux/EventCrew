@@ -4940,11 +4940,6 @@ msgstr "Öppna vår grupp i Telegram"
 msgid "Open tasks"
 msgstr "Lediga uppgifter"
 
-#: src/Telegram/BoardRenderer.php:320
-msgid "Open tasks — tap one to sign up, tap again to cancel."
-msgstr ""
-"Lediga uppgifter — tryck på en för att anmäla dig, tryck igen för att avboka."
-
 #: src/MailImport/MailedListImport.php:267 src/Support/MessageTemplates.php:820 src/Support/MessageTemplates.php:821
 msgid "Open the Roster page"
 msgstr "Öppna sidan Närvaro"
@@ -11720,3 +11715,13 @@ msgstr "👤 Min info"
 #: src/Telegram/BoardRenderer.php
 msgid "📝 Task info"
 msgstr "📝 Uppgiftsinfo"
+
+#: src/Telegram/BoardRenderer.php
+msgid "Open tasks — tap one to sign up. To cancel, tap 👤 My info."
+msgstr "Lediga uppgifter — tryck för att anmäla dig. Avboka under 👤 Min info."
+
+#. translators: 1: role, 2: day
+#: src/Telegram/ProfileService.php
+#, php-format
+msgid "Cancel %1$s, %2$s"
+msgstr "Avboka %1$s, %2$s"

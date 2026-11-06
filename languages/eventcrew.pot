@@ -4450,10 +4450,6 @@ msgstr ""
 msgid "Open tasks"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:300
-msgid "Open tasks — tap one to sign up, tap again to cancel."
-msgstr ""
-
 #: src/MailImport/MailedListImport.php:266 src/MailImport/MailedListImport.php:285 src/Support/MessageTemplates.php:1048 src/Support/MessageTemplates.php:1049
 #: src/Support/MessageTemplates.php:1050 src/Support/MessageTemplates.php:1051
 msgid "Open the Roster page"
@@ -10257,3 +10253,12 @@ msgstr ""
 msgid "🧭 Organizer guide ↓"
 msgstr ""
 
+#: src/Telegram/BoardRenderer.php
+msgid "Open tasks — tap one to sign up. To cancel, tap 👤 My info."
+msgstr ""
+
+#. translators: 1: role, 2: day
+#: src/Telegram/ProfileService.php
+#, php-format
+msgid "Cancel %1$s, %2$s"
+msgstr ""
