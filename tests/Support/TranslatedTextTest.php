@@ -119,6 +119,34 @@ final class TranslatedTextTest extends TestCase
         self::assertSame('Good evening', $next['value']['texts']['en']);
     }
 
+    /**
+     * What a page gets to show a stored text in its field without a reload:
+     * every language, the hand-edited marks and the language menu as the
+     * field draws them.
+     */
+    public function testAFieldIsFilledWithEveryPartOfTheStoredText(): void
+    {
+        $byHand = ['lang' => 'fi', 'detected' => false]
+            + self::value('Hei', ['fi' => 'Hei', 'en' => 'Hi there'], ['en' => true]);
+
+        $fill = TranslatedText::fillValue($byHand);
+
+        self::assertSame('Hei', $fill['source']);
+        self::assertSame('fi', $fill['lang']);
+        self::assertSame('fi', $fill['by_hand'], 'the menu shows the language picked by hand');
+        self::assertSame('Detect automatically', $fill['menu']);
+        self::assertSame(['fi' => 'Hei', 'en' => 'Hi there'], $fill['texts']);
+        self::assertSame(['fi' => false, 'en' => true], $fill['manual']);
+        self::assertSame(TranslatedText::byHandMark(), $fill['mark']);
+
+        $detected = TranslatedText::fillValue(['lang' => 'en', 'detected' => true] + self::value('Hi', ['en' => 'Hi']));
+
+        self::assertSame('', $detected['by_hand'], 'a detected language keeps the first menu entry');
+        self::assertSame(TranslatedText::menuLabel(['lang' => 'en', 'detected' => true]), $detected['menu']);
+        self::assertStringContainsString('detected', $detected['menu']);
+        self::assertSame(['fi' => '', 'en' => 'Hi'], $detected['texts'], 'a language with no text is emptied');
+    }
+
     /** "Translate again" translates manual languages too and clears the marks. */
     public function testTranslateAgainOverwritesManualTexts(): void
     {

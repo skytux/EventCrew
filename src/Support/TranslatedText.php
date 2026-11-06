@@ -1112,15 +1112,7 @@ final class TranslatedText
         printf(
             '<option value=""%s>%s</option>',
             selected('', $byHand, false),
-            esc_html(
-                $value['detected']
-                    ? sprintf(
-                        /* translators: %s: a language name, e.g. Finnish */
-                        __('%s, detected', 'eventcrew'),
-                        self::label($value['lang'])
-                    )
-                    : __('Detect automatically', 'eventcrew')
-            )
+            esc_html(self::menuLabel($value))
         );
 
         foreach (self::languages() as $lang) {
@@ -1142,9 +1134,7 @@ final class TranslatedText
                 '<p style="margin-top:1em"><label for="%s">%s</label>%s</p>',
                 esc_attr($langId),
                 esc_html(self::label($lang)),
-                $value['manual'][$lang]
-                    ? ' <em>(' . esc_html__('edited by hand, not translated again', 'eventcrew') . ')</em>'
-                    : ''
+                $value['manual'][$lang] ? ' <em>(' . esc_html(self::byHandMark()) . ')</em>' : ''
             );
             $input($name . '[texts][' . $lang . ']', $langId, $value['texts'][$lang]);
             printf(
@@ -1161,6 +1151,62 @@ final class TranslatedText
             esc_html__('Translate again', 'eventcrew')
         );
         echo '</div>';
+    }
+
+    /**
+     * The first entry of a field's language menu: the detected language,
+     * or "Detect automatically" when none was detected.
+     *
+     * @param array{lang: string, detected: bool} $value A normalized value.
+     */
+    public static function menuLabel(array $value): string
+    {
+        return $value['detected']
+            ? sprintf(
+                /* translators: %s: a language name, e.g. Finnish */
+                __('%s, detected', 'eventcrew'),
+                self::label($value['lang'])
+            )
+            : __('Detect automatically', 'eventcrew');
+    }
+
+    /** The mark next to a language field edited by hand. */
+    public static function byHandMark(): string
+    {
+        return __('edited by hand, not translated again', 'eventcrew');
+    }
+
+    /**
+     * What a page needs to show a stored value in its field() without a
+     * reload (assets/eventcrew-jobs.js fill()): the source, the language
+     * and its menu (by_hand: the menu's chosen entry, '' for the first;
+     * menu: the first entry's text), every language's text, which ones
+     * were edited by hand, and the mark those get.
+     *
+     * @param array<string, mixed>|string $value A stored value.
+     * @return array{
+     *     source: string,
+     *     lang: string,
+     *     by_hand: string,
+     *     menu: string,
+     *     texts: array<string, string>,
+     *     manual: array<string, bool>,
+     *     mark: string
+     * }
+     */
+    public static function fillValue(array|string $value): array
+    {
+        $value = self::normalize($value);
+
+        return [
+            'source' => $value['source'],
+            'lang' => $value['lang'],
+            'by_hand' => $value['detected'] ? '' : $value['lang'],
+            'menu' => self::menuLabel($value),
+            'texts' => $value['texts'],
+            'manual' => $value['manual'],
+            'mark' => self::byHandMark(),
+        ];
     }
 
     /**

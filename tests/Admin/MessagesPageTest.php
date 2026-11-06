@@ -366,6 +366,11 @@ final class MessagesPageTest extends TestCase
         $done = array_values($answer['jobs'])[0];
         self::assertSame('message.slot_freed_dm.body', $done['row'], 'the poll names the field');
         self::assertSame('Käännetty', $done['value']['texts']['fi'], 'and gives its new text');
+        self::assertSame(
+            TranslatedText::fillValue(MessageTemplates::value('slot_freed_dm', MessageTemplates::BODY)),
+            $done['value'],
+            'every language, the marks and the language menu, as stored'
+        );
         self::assertStringNotContainsString('data-ec-job', $done['done'], 'a "Done" in place is not polled again');
         self::assertStringNotContainsString('ec-job-reload', $done['done']);
 
@@ -418,6 +423,51 @@ final class MessagesPageTest extends TestCase
             BackgroundJobs::latest(TranslatedText::jobTarget('message.slot_freed_dm.body'))['status'] ?? null
         );
         self::assertSame([], $answer['texts'], 'a Telegram message has no subject to send back');
+    }
+
+    /**
+     * A save with nothing to translate (one language changed by hand)
+     * answers the stored text: every language, the hand-edited mark and the
+     * language menu, so the fields show exactly what is stored.
+     */
+    public function testASaveWithNothingToTranslateAnswersTheStoredText(): void
+    {
+        $this->withModel('{}');
+        $this->options[MessageTemplates::OPTION_PREFIX . 'slot_freed_dm'] = [
+            MessageTemplates::BODY => [
+                'source' => 'Free {role} at {event}',
+                'lang' => 'en',
+                'detected' => true,
+                'texts' => ['en' => 'Free {role} at {event}', 'fi' => 'Vapaa {role}, {event}'],
+            ],
+        ];
+        $_POST = [
+            'kind' => 'slot_freed_dm',
+            MessageTemplates::POST_NAME => [
+                MessageTemplates::BODY => [
+                    'source' => 'Free {role} at {event}',
+                    'lang' => '',
+                    'texts' => ['en' => 'Free {role} at {event}', 'fi' => 'Vapaana {role}, {event}'],
+                ],
+            ],
+        ];
+
+        try {
+            $this->backgroundPage()->saveAjax();
+            self::fail('The save answers JSON.');
+        } catch (JsonAnswer $answer) {
+            $fill = $answer->data['texts']['message.slot_freed_dm.body'] ?? null;
+
+            self::assertSame([], $answer->data['jobs']);
+            self::assertSame([], $this->requests);
+            self::assertSame(
+                TranslatedText::fillValue(MessageTemplates::value('slot_freed_dm', MessageTemplates::BODY)),
+                $fill
+            );
+            self::assertSame('Vapaana {role}, {event}', $fill['texts']['fi']);
+            self::assertTrue($fill['manual']['fi']);
+            self::assertSame('', $fill['by_hand']);
+        }
     }
 
     /** A refused text sends no stored text back, so the form keeps what was typed. */

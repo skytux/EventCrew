@@ -83,19 +83,36 @@
             }
         };
         set(box.querySelector('[name$="[source]"]'), value.source || '');
+        // The language menu as the field draws it: the language picked by
+        // hand, or the first entry naming the detected one.
+        var menu = box.querySelector('select.ec-translated-lang');
+        if (menu) {
+            if (menu.options.length && value.menu) {
+                menu.options[0].textContent = value.menu;
+            }
+            menu.value = value.by_hand || '';
+        }
         var texts = value.texts || {};
         var manual = value.manual || {};
+        // Every language field gets what is stored, '' when nothing is, and
+        // the "edited by hand" mark exactly where it is stored.
         box.querySelectorAll('.ec-translated-text[data-ec-lang]').forEach(function (part) {
             var lang = part.getAttribute('data-ec-lang');
-            if (Object.prototype.hasOwnProperty.call(texts, lang)) {
-                set(part.querySelector('[name$="[texts][' + lang + ']"]'), texts[lang]);
+            var has = Object.prototype.hasOwnProperty.call(texts, lang);
+            set(part.querySelector('[name$="[texts][' + lang + ']"]'), has ? texts[lang] : '');
+            part.querySelectorAll('label + em').forEach(function (mark) {
+                mark.parentNode.removeChild(mark);
+            });
+            var label = part.querySelector('label');
+            if (manual[lang] && label && value.mark) {
+                var em = document.createElement('em');
+                em.textContent = '(' + value.mark + ')';
+                if (!label.nextSibling || 3 !== label.nextSibling.nodeType) {
+                    label.parentNode.insertBefore(document.createTextNode(' '), label.nextSibling);
+                }
+                label.parentNode.insertBefore(em, label.nextSibling.nextSibling);
             }
-            if (!manual[lang]) {
-                part.querySelectorAll('label + em').forEach(function (mark) {
-                    mark.parentNode.removeChild(mark);
-                });
-                part.hidden = lang === value.lang;
-            }
+            part.hidden = lang === value.lang && !manual[lang];
         });
         box.classList.remove('ec-translating');
         return true;
@@ -244,8 +261,10 @@
         }
     });
 
-    var start = bar();
-    if (start && Number(start.getAttribute('data-active')) > 0) {
+    // Not named start: that would replace start() above, and a save that
+    // queues a job would then fail and post the form a second time.
+    var first = bar();
+    if (first && Number(first.getAttribute('data-active')) > 0) {
         poll('');
     }
 })();
