@@ -10,7 +10,6 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
-use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
 
 /**
@@ -253,7 +252,6 @@ final class OpenTaskCall
         }
 
         $openList = $this->openTasksText($this->digest(self::DIGEST_TASKS));
-        $groupLink = self::groupLink();
         // The texts are the Messages page templates (MessageTemplates).
         $context = ['person' => $person, 'open_tasks' => $openList];
 
@@ -265,10 +263,7 @@ final class OpenTaskCall
                 $person->email,
                 MessageTemplates::subject('open_task_call', $context),
                 MessageTemplates::body('open_task_call', $context),
-                [
-                    ['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()],
-                    ['label' => __('Open the group in Telegram', 'eventcrew'), 'url' => $groupLink],
-                ]
+                MessageActions::email(MessageActions::of('open_task_call', $context, $this->mailer))
             );
         }
 
@@ -276,27 +271,13 @@ final class OpenTaskCall
             $this->telegram->sendMessage(
                 (int) $person->telegramChatId,
                 DmBody::frame($person, MessageTemplates::body('open_task_call_dm', $context), true),
-                // The DM arrives in a private chat, so the group is a tap away
-                // rather than a scroll away. Omitted when no link is configured;
-                // a chat id cannot be turned into one.
-                '' === $groupLink
-                    ? null
-                    : ['inline_keyboard' => [[
-                        ['text' => __('Open the group', 'eventcrew'), 'url' => $groupLink],
-                    ]]]
+                // The board, and the group a tap away rather than a scroll
+                // away (left out when its link is not known).
+                MessageActions::replyMarkup(MessageActions::of('open_task_call_dm', $context, $this->mailer))
             );
         }
 
         return true;
-    }
-
-    /**
-     * The link to the crew's group - the organizer's own, or the one discovered
-     * from Telegram. A plain option read; the discovery runs on the heartbeat.
-     */
-    private static function groupLink(): string
-    {
-        return BoardService::groupLink();
     }
 
     /**
