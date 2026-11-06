@@ -50,7 +50,7 @@ final class TicketFile
         }
 
         throw new TicketFileException(
-            __('The attached file is not an .xlsx or .csv file.', 'eventcrew')
+            __('The attached file is not an .xlsx or .csv file. Save the list as a .csv file and send it again.', 'eventcrew')
         );
     }
 

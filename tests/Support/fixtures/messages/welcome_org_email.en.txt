@@ -112,6 +112,7 @@ The scheduled ones go out only between 09:00 and 21:00. Each goes by Telegram an
 🔗 Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew
 
 Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew
+🛠️ Open the Admin tab: https://site.test/crew/#eventcrew-panel-admin
 
 —
 Manage your account or stop these emails: https://site.test/crew/?eventcrew_login=TOKEN

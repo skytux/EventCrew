@@ -119,7 +119,10 @@ final class MessageTemplatesTest extends TestCase
     {
         $list = MessageTemplates::find('credit_granted')->placeholderList();
 
-        self::assertSame(['{name}', '{credits}', '{credit_help}', '{organization}'], array_keys($list));
+        self::assertSame(
+            ['{name}', '{credits}', '{credit_help}', '{balance}', '{nights}', '{organization}'],
+            array_keys($list)
+        );
         self::assertSame('How many free-entry credits were given.', $list['{credits}']);
     }
 
@@ -146,7 +149,7 @@ final class MessageTemplatesTest extends TestCase
     {
         self::assertSame(
             "Hi {name},\n\nAn organizer has given you {credits} free-entry credits. You can spend them on upcoming"
-                . ' events — {credit_help}',
+                . " events — {credit_help}\n{balance}\n{nights}",
             MessageTemplates::find('credit_granted')->defaultBody()
         );
         self::assertSame(

@@ -11,6 +11,7 @@ use EventCrew\Models\Task;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\Language;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\TakeoverService;
 use EventCrew\Tests\Telegram\TelegramTestCase;
 
 /**
@@ -23,6 +24,10 @@ use EventCrew\Tests\Telegram\TelegramTestCase;
  */
 final class TakeoverMessagesTest extends TelegramTestCase
 {
+    /** The built-in description of the Decorate role. */
+    private const DECORATE = 'Set up before the dance: close the curtains, check the bathrooms, place the LED candles,'
+        . ' decorate the DJ table, prepare the water and fruit, and open the movable walls.';
+
     /** @var array<int, array{to: string, subject: string, body: string}> */
     private array $mails = [];
 
@@ -95,7 +100,9 @@ final class TakeoverMessagesTest extends TelegramTestCase
     public static function kinds(): array
     {
         $task = 'Decorate at Ecstatic Dance, Sat 1 Aug 20:00';
-        $ask = '🔁 Person 7 asks to take over your task: ' . $task . ".\n\nYou decide: let them take it, or keep it."
+        // The request now names what the task is (its role's description).
+        $ask = '🔁 Person 7 asks to take over your task: ' . $task . ".\n\n" . self::DECORATE
+            . "\n\nYou decide: let them take it, or keep it."
             . ' Please answer by Thu 23 Jul 12:00. If you do not answer by then, you keep the task.';
         $done = '✅ Done: Person 7 now has your task: ' . $task . '.';
         $refused = 'Person 9 keeps their task: ' . $task . '. Your request to take it over was declined.';
@@ -134,6 +141,8 @@ final class TakeoverMessagesTest extends TelegramTestCase
     {
         self::assertSame(
             '🔁 Person 7 pyytää saada ottaa tehtäväsi: Somistus, Ecstatic Dance, la 1.8. 20:00.'
+                . "\n\nValmistelu ennen tansseja: sulje verhot, tarkista vessat, aseta LED-kynttilät, somista DJ-pöytä,"
+                . ' valmistele vesi ja hedelmät ja avaa siirtoseinät.'
                 . "\n\nSinä päätät: annat tehtävän hänelle tai pidät sen. Vastaa viimeistään to 23.7. 12:00."
                 . ' Jos et vastaa siihen mennessä, pidät tehtävän.',
             Language::run(
@@ -148,6 +157,23 @@ final class TakeoverMessagesTest extends TelegramTestCase
                 static fn (): string => MessageTemplates::subject('takeover_closed', self::context('takeover_closed'))
             )
         );
+    }
+
+    /**
+     * The request says who is asking: how many tasks they have done, on the
+     * line under the task.
+     */
+    public function testTheRequestSaysHowManyTasksTheAskerHasDone(): void
+    {
+        $context = ['cover_record' => TakeoverService::coverRecord('Person 7', 3)] + self::context('takeover_ask_dm');
+
+        self::assertStringStartsWith(
+            '🔁 Person 7 asks to take over your task: Decorate at Ecstatic Dance, Sat 1 Aug 20:00.'
+                . "\nPerson 7 has done 3 tasks.\n\n" . self::DECORATE . "\n\nYou decide:",
+            MessageTemplates::body('takeover_ask_dm', $context)
+        );
+        self::assertSame('Sam has done 1 task.', TakeoverService::coverRecord('Sam', 1));
+        self::assertSame('Sam has not done a task yet.', TakeoverService::coverRecord('Sam', 0));
     }
 
     /** @param array<string, string> $parts */

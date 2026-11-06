@@ -184,6 +184,21 @@ final class WelcomeSenderTest extends SalesDeskTestCase
             'The full guide, with the details, is in your email.',
             $this->lastCallTo('sendMessage')['text']
         );
+        // The DM opens the Admin tab, the bot's 👥 People and 💳 Sales desk.
+        self::assertSame(
+            ['🛠️ Open the Admin tab', '👥 People', '💳 Sales desk'],
+            array_map(
+                static fn (array $row): string => $row[0]['text'],
+                $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
+            )
+        );
+        self::assertSame(
+            ['mn:people', 'mn:sales'],
+            array_values(array_filter(array_map(
+                static fn (array $row): ?string => $row[0]['callback_data'] ?? null,
+                $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
+            )))
+        );
         self::assertSame(
             [
                 WelcomeSender::KIND_EMAIL,

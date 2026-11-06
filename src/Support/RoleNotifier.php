@@ -41,8 +41,19 @@ final class RoleNotifier
         private readonly RoleConditions $conditions,
         private readonly PersonRepository $people,
         private readonly Mailer $mailer,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        private readonly ?StandingCalculator $standing = null
     ) {
+    }
+
+    /**
+     * "Anna has done 5 tasks · Good standing · 82%": the {record} of the
+     * role_met notice, so the organizer can decide without looking.
+     */
+    public static function record(string $name, Standing $standing): string
+    {
+        return rtrim(TakeoverService::coverRecord($name, $standing->completedCount), '.')
+            . ' · ' . $standing->ratedSummary();
     }
 
     /**
@@ -150,6 +161,10 @@ final class RoleNotifier
             default => 'role_given',
         };
         $context = ['member' => $person, 'role' => $slug, 'giver' => $giverName];
+
+        if ('met' === $kind && null !== $this->standing) {
+            $context['record'] = self::record($person->name(), $this->standing->for($person->id));
+        }
         // The organizer's own rows in the notification settings.
         $type = 'met' === $kind ? NotificationPreferences::ROLE_MET : NotificationPreferences::ROLE_NEWS;
         $prefs = new NotificationPreferences();

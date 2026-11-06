@@ -30,6 +30,9 @@ final class DoorListService
 {
     use GroupBreadcrumb;
 
+    /** The start payload door-<Ymd> shows the door list of that night. */
+    public const START_VERB = 'door';
+
     /** Callback data prefix for a night or page button: dl:<Y-m-d>[:<page>]. */
     private const SELECT_PREFIX = 'dl:';
 

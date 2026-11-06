@@ -503,7 +503,7 @@ final class MailedListImportTest extends TestCase
 
         self::assertSame('The ticket list could not be imported', $this->mails[0]['subject']);
         self::assertStringStartsWith(
-            "The columns of the attached file do not match any ticket file format in Settings → Email. The columns in the file are: Tilaus, Maa\n\nNothing was added to the door list.\n\nThe list was sent from owner@example.com.\n\n",
+            "The columns of the attached file do not match any ticket file format in Settings → Email. Send the shop’s export as it is, or add a format with these columns there. The columns in the file are: Tilaus, Maa\n\nNothing was added to the door list.\n\nThe list was sent from owner@example.com.\n\n",
             $this->mails[0]['body']
         );
     }
@@ -615,6 +615,18 @@ final class MailedListImportTest extends TestCase
         self::assertSame('🗑 Reset the list', $button['text']);
         self::assertSame('tbr:ask:2026-08-01', $button['callback_data']);
         self::assertLessThanOrEqual(64, strlen($button['callback_data']));
+        self::assertSame(
+            [['text' => 'Open the Roster page', 'url' => 'https://site.test/wp-admin/admin.php?page=eventcrew-roster&roster_date=2026-08-01']],
+            $owner['reply_markup']['inline_keyboard'][1]
+        );
+    }
+
+    public function testTheTicketsEmailOpensThatNightsDoorListInTheBot(): void
+    {
+        $this->options['eventcrew_telegram_bot_username'] = 'crewbot';
+        $this->importTicketFile([self::twoOrganizers()[0]]);
+
+        self::assertStringContainsString('t.me/crewbot?start=door-20260801', $this->mails[0]['body']);
     }
 
     public function testTheMessageIsInTheOrganizersLanguage(): void
@@ -629,7 +641,7 @@ final class MailedListImportTest extends TestCase
         self::assertSame('Ticket buyers imported for Sat 1 Aug', $this->mails[2]['subject']);
     }
 
-    public function testTheGuestListAndFailureMessagesHaveNoResetButton(): void
+    public function testTheGuestListMessageOpensTheRosterAndTheFailureMessageHasNoButton(): void
     {
         $this->queueOrganizer();
         $this->wpdb->nextCols[] = ['2026-08-01'];
@@ -643,7 +655,10 @@ final class MailedListImportTest extends TestCase
                 . "\n\nThe list was sent from owner@example.com.",
             $this->dms[0]['text']
         );
-        self::assertArrayNotHasKey('reply_markup', $this->dms[0]);
+        self::assertSame(
+            [[['text' => 'Open the Roster page', 'url' => 'https://site.test/wp-admin/admin.php?page=eventcrew-roster&roster_date=2026-08-01']]],
+            $this->dms[0]['reply_markup']['inline_keyboard']
+        );
 
         $this->dms = [];
         $this->queueOrganizer();

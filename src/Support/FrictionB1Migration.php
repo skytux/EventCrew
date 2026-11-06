@@ -65,11 +65,22 @@ final class FrictionB1Migration
     /** Runs every step not yet done. Does nothing once all have run. */
     public static function run(): void
     {
-        $done = get_option(self::OPTION, []);
+        self::runSteps(self::OPTION, self::steps());
+    }
+
+    /**
+     * Runs each of $steps not yet done, and keeps the finished ones in
+     * $option: the same runner for every batch, each with its own option.
+     *
+     * @param array<string, array<string, Closure(string): string>> $steps
+     */
+    public static function runSteps(string $option, array $steps): void
+    {
+        $done = get_option($option, []);
         $done = is_array($done) ? $done : [];
         $changed = false;
 
-        foreach (self::steps() as $step => $kinds) {
+        foreach ($steps as $step => $kinds) {
             if (! empty($done[$step])) {
                 continue;
             }
@@ -83,7 +94,7 @@ final class FrictionB1Migration
         }
 
         if ($changed) {
-            update_option(self::OPTION, $done, false);
+            update_option($option, $done, false);
         }
     }
 

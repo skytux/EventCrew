@@ -35,6 +35,9 @@ final class NewcomerApproval
     /** Callback data prefix of the OK and No buttons: "nco:ok:<id>", "nco:no:<id>". */
     public const PREFIX = 'nco:';
 
+    /** The start payload verb nco-<person_id>: shows the OK and No buttons (showRequest()). */
+    public const START_VERB = 'nco';
+
     /** decide(): this press made the decision. */
     public const DECIDED = 'decided';
 
@@ -181,6 +184,39 @@ final class NewcomerApproval
     }
 
     /**
+     * The organizer email's Telegram link (nco-<id>): the same notice with
+     * its OK and No buttons, or who decided already. Only shows them.
+     */
+    public function showRequest(int $telegramUserId, int $chatId, int $personId): void
+    {
+        $organizer = $this->people->findByTelegramUserId($telegramUserId);
+
+        if (null === $organizer || ! $organizer->isOrganizer) {
+            $this->telegram->sendMessage($chatId, __('Only organizers can answer this.', 'eventcrew'));
+
+            return;
+        }
+
+        $person = $personId > 0 ? $this->people->find($personId) : null;
+
+        if (null === $person || $person->isAnonymized()) {
+            $this->telegram->sendMessage($chatId, __('That person was not found.', 'eventcrew'));
+
+            return;
+        }
+
+        $text = DmBody::frame($organizer, MessageTemplates::body('newcomer_waiting_dm', ['member' => $person]));
+
+        if ($person->isWaitingForOk()) {
+            $this->telegram->sendMessage($chatId, $text, self::markup($person->id));
+
+            return;
+        }
+
+        $this->telegram->sendMessage($chatId, $text . "\n\n" . self::decisionLine($person));
+    }
+
+    /**
      * "OK by <name>." or "No by <name>.": who decided, for a later press and
      * under the decided notice.
      */
@@ -217,13 +253,24 @@ final class NewcomerApproval
         }
 
         $url = HelpPage::url(DoorLinkSender::ADMIN_ANCHOR);
+        $actions = '' === $url ? [] : [['label' => DoorLinkSender::adminButtonLabel(), 'url' => $url]];
+        // The same OK and No in the bot: the link only shows them.
+        $bot = MessageActions::startUrl(self::START_VERB, $person->id);
+
+        if ('' !== $bot) {
+            $actions[] = [
+                'label' => __('Answer the request', 'eventcrew'),
+                'url' => $bot,
+                'style' => EmailBody::STYLE_TELEGRAM,
+            ];
+        }
 
         $this->mailer->toPerson(
             $organizer->id,
             $organizer->email,
             MessageTemplates::subject('newcomer_waiting', $context),
             MessageTemplates::body('newcomer_waiting', $context),
-            '' === $url ? [] : [['label' => DoorLinkSender::adminButtonLabel(), 'url' => $url]]
+            $actions
         );
     }
 

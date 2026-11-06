@@ -39,6 +39,9 @@ final class TakeoverService
     /** Telegram callback data: tko:y:<id> (let them take it) or tko:n:<id> (keep it). */
     public const CALLBACK_PREFIX = 'tko:';
 
+    /** The email's "Open in Telegram" link: t.me/<bot>?start=tov-<id> (MessageActions::startUrl()). */
+    public const START_VERB = 'tov';
+
     public function __construct(
         private readonly TakeoverRepository $takeovers,
         private readonly AssignmentRepository $assignments,
@@ -47,7 +50,8 @@ final class TakeoverService
         private readonly ClaimNotifier $claims,
         private readonly BoardService $board,
         private readonly TelegramClient $telegram,
-        private readonly Mailer $mailer
+        private readonly Mailer $mailer,
+        private readonly ?StandingCalculator $standing = null
     ) {
     }
 
@@ -355,16 +359,21 @@ final class TakeoverService
 
     private function askHolder(int $id, Person $holder, Person $cover, Task $task, string $deadlineAt): void
     {
-        $context = ['person' => $holder, 'cover' => $cover, 'task' => $task, 'deadline' => $deadlineAt];
+        $context = $this->askContext($holder, $cover, $task, $deadlineAt);
 
         // Transactional: the holder must be able to answer, so the person's
         // notification settings do not apply.
         if (null !== $holder->telegramChatId) {
-            $text = MessageTemplates::body('takeover_ask_dm', $context);
-            $this->telegram->sendMessage($holder->telegramChatId, $text, ['inline_keyboard' => [[
-                ['text' => __('✅ Let them take it', 'eventcrew'), 'callback_data' => self::CALLBACK_PREFIX . 'y:' . $id],
-                ['text' => __('❌ Keep my task', 'eventcrew'), 'callback_data' => self::CALLBACK_PREFIX . 'n:' . $id],
-            ]]]);
+            $this->sendAsk($holder->telegramChatId, $id, $context);
+        }
+
+        $actions = [['label' => __('Answer the request', 'eventcrew'), 'url' => self::answerUrl($id)]];
+        // The same question in the bot, with its two buttons, for a holder
+        // who uses it (t.me/<bot>?start=tov-<id>). Opening it answers nothing.
+        $bot = null === $holder->telegramChatId ? '' : MessageActions::startUrl(self::START_VERB, $id);
+
+        if ('' !== $bot) {
+            $actions[] = ['label' => __('Answer the request', 'eventcrew'), 'url' => $bot, 'style' => EmailBody::STYLE_TELEGRAM];
         }
 
         $this->mailer->toPerson(
@@ -372,19 +381,93 @@ final class TakeoverService
             $holder->email,
             MessageTemplates::subject('takeover_ask', $context),
             MessageTemplates::body('takeover_ask', $context),
-            [['label' => __('Answer the request', 'eventcrew'), 'url' => self::answerUrl($id)]]
+            $actions
         );
+    }
+
+    /**
+     * The request again in the holder's private chat, from the email's
+     * "Open in Telegram" link (tov-<id>): the same text and two buttons as
+     * the DM. Only the holder sees it, only while it is open; anyone else,
+     * or a closed request, gets a line saying so. Nothing is answered here.
+     */
+    public function showRequest(int $takeoverId, ?Person $reader, int $chatId): void
+    {
+        $takeover = $this->takeovers->find($takeoverId);
+
+        if (null === $takeover || null === $reader || $takeover->holderId !== $reader->id) {
+            $this->telegram->sendMessage($chatId, __('This link is no longer valid.', 'eventcrew'));
+
+            return;
+        }
+
+        $task = $this->tasks->find($takeover->taskId);
+        $cover = $this->people->find($takeover->coverId);
+
+        if (! $takeover->isPending() || null === $task || null === $cover) {
+            $this->telegram->sendMessage($chatId, self::closedText($takeover->isPending() ? '' : $takeover->status));
+
+            return;
+        }
+
+        $this->sendAsk($chatId, $takeover->id, $this->askContext($reader, $cover, $task, $takeover->deadlineAt));
+    }
+
+    /**
+     * "Sam has done 5 tasks." for the takeover request, so the holder knows
+     * who is asking.
+     */
+    public static function coverRecord(string $coverName, int $done): string
+    {
+        return 0 === $done
+            ? sprintf(
+                /* translators: %s: the first name of the person who asks */
+                __('%s has not done a task yet.', 'eventcrew'),
+                $coverName
+            )
+            : sprintf(
+                /* translators: 1: the first name of the person who asks, 2: tasks done */
+                _n('%1$s has done %2$d task.', '%1$s has done %2$d tasks.', $done, 'eventcrew'),
+                $coverName,
+                $done
+            );
+    }
+
+    /** @return array<string, mixed> */
+    private function askContext(Person $holder, Person $cover, Task $task, string $deadlineAt): array
+    {
+        return [
+            'person' => $holder,
+            'cover' => $cover,
+            'task' => $task,
+            'deadline' => $deadlineAt,
+            'cover_record' => null === $this->standing
+                ? ''
+                : self::coverRecord($cover->name(), $this->standing->for($cover->id)->completedCount),
+        ];
+    }
+
+    /** @param array<string, mixed> $context */
+    private function sendAsk(int $chatId, int $id, array $context): void
+    {
+        $text = MessageTemplates::body('takeover_ask_dm', $context);
+        $this->telegram->sendMessage($chatId, $text, ['inline_keyboard' => [[
+            ['text' => __('✅ Let them take it', 'eventcrew'), 'callback_data' => self::CALLBACK_PREFIX . 'y:' . $id],
+            ['text' => __('❌ Keep my task', 'eventcrew'), 'callback_data' => self::CALLBACK_PREFIX . 'n:' . $id],
+        ]]]);
     }
 
     private function tellHolderDone(Person $holder, Person $cover, Task $task, bool $viaBot): void
     {
         Language::forPerson($holder, function () use ($holder, $cover, $task, $viaBot): void {
             $context = ['person' => $holder, 'cover' => $cover, 'task' => $task];
+            $actions = MessageActions::of('takeover_done', $context, $this->mailer);
 
             if (! $viaBot && null !== $holder->telegramChatId) {
                 $this->telegram->sendMessage(
                     $holder->telegramChatId,
-                    MessageTemplates::body('takeover_done_dm', $context)
+                    MessageTemplates::body('takeover_done_dm', $context),
+                    MessageActions::replyMarkup($actions)
                 );
             }
 
@@ -392,7 +475,8 @@ final class TakeoverService
                 $holder->id,
                 $holder->email,
                 MessageTemplates::subject('takeover_done', $context),
-                MessageTemplates::body('takeover_done', $context)
+                MessageTemplates::body('takeover_done', $context),
+                MessageActions::email($actions)
             );
         });
     }
@@ -416,17 +500,33 @@ final class TakeoverService
             'failed' => 'takeover_failed',
             default => 'takeover_closed',
         };
-        $context = ['person' => $cover, 'holder' => $holder, 'task' => $task];
+        // Other open tasks of the same event the cover can sign up for.
+        $rows = array_values(array_filter(
+            (new OpenTaskList($this->tasks, $this->assignments))->forPerson($cover, $task->eventPostId, OpenTaskList::DEFAULT_MAX + 1),
+            static fn (array $row): bool => $row['task']->id !== $task->id
+        ));
+        $context = [
+            'person' => $cover,
+            'holder' => $holder,
+            'task' => $task,
+            OpenTaskList::CONTEXT_KEY => array_slice($rows, 0, OpenTaskList::DEFAULT_MAX),
+        ];
+        $actions = MessageActions::of($kind, $context, $this->mailer);
 
         if (null !== $cover->telegramChatId) {
-            $this->telegram->sendMessage($cover->telegramChatId, MessageTemplates::body($kind . '_dm', $context));
+            $this->telegram->sendMessage(
+                $cover->telegramChatId,
+                MessageTemplates::body($kind . '_dm', $context),
+                MessageActions::replyMarkup($actions)
+            );
         }
 
         $this->mailer->toPerson(
             $cover->id,
             $cover->email,
             MessageTemplates::subject($kind, $context),
-            MessageTemplates::body($kind, $context)
+            MessageTemplates::body($kind, $context),
+            MessageActions::email($actions)
         );
     }
 

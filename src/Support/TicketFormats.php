@@ -195,7 +195,7 @@ final class TicketFormats
             sprintf(
                 /* translators: %s: the column headers found in the file, separated by commas */
                 __(
-                    'The columns of the attached file do not match any ticket file format in Settings → Email. The columns in the file are: %s', // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                    'The columns of the attached file do not match any ticket file format in Settings → Email. Send the shop’s export as it is, or add a format with these columns there. The columns in the file are: %s', // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                     'eventcrew'
                 ),
                 [] === $found ? '-' : implode(', ', $found)

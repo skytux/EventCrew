@@ -11,13 +11,16 @@ use EventCrew\Support\BuyerImport;
 use EventCrew\Support\BuyerListParser;
 use EventCrew\Support\Dates;
 use EventCrew\Support\DmBody;
+use EventCrew\Support\EmailBody;
 use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageActions;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\TicketFileException;
 use EventCrew\Support\TicketMail;
 use EventCrew\Telegram\BuyerListReset;
+use EventCrew\Telegram\DoorListService;
 use EventCrew\Telegram\TelegramClient;
 
 /**
@@ -260,14 +263,37 @@ final class MailedListImport
                 admin_url('admin.php')
             );
 
+        $actions = [['label' => __('Open the Roster page', 'eventcrew'), 'url' => $rosterUrl]];
+        $doorUrl = $fromFile ? MessageActions::startUrl(DoorListService::START_VERB, str_replace('-', '', $date)) : '';
+
+        // The tickets' door list in the bot: the link only shows it.
+        if ('' !== $doorUrl) {
+            $actions[] = [
+                'label' => __('Door list', 'eventcrew'),
+                'url' => $doorUrl,
+                'style' => EmailBody::STYLE_TELEGRAM,
+            ];
+        }
+
         $this->tellOrganizers(
             $from,
             MessageTemplates::subject($template, $context()),
             self::dropEmptyLines(MessageTemplates::body($template, $context())),
-            [['label' => __('Open the Roster page', 'eventcrew'), 'url' => $rosterUrl]],
+            $actions,
             static fn (): string => self::dropEmptyLines(MessageTemplates::body($template . '_dm', $context())),
-            // Only the tickets can be reset from the bot.
-            $fromFile ? static fn (): array => BuyerListReset::markup($date) : null
+            static function () use ($fromFile, $date, $rosterUrl): array {
+                $roster = ['text' => __('Open the Roster page', 'eventcrew'), 'url' => $rosterUrl];
+
+                // Only the tickets can be reset from the bot.
+                if (! $fromFile) {
+                    return ['inline_keyboard' => [[$roster]]];
+                }
+
+                $markup = BuyerListReset::markup($date);
+                $markup['inline_keyboard'][] = [$roster];
+
+                return $markup;
+            }
         );
     }
 

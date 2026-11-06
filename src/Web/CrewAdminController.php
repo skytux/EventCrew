@@ -18,6 +18,7 @@ use EventCrew\Support\EventName;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
+use EventCrew\Support\MessageActions;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\NewcomerApproval;
 use EventCrew\Support\RoleNotifier;
@@ -957,6 +958,9 @@ final class CrewAdminController
         $subject = MessageTemplates::subject('forged_request', $context);
         $body = MessageTemplates::body('forged_request', $context);
         $dm = MessageTemplates::body('forged_request_dm', $context);
+        // The person: on the People page in wp-admin (Unban), in the bot their role buttons.
+        $markup = MessageActions::replyMarkup(MessageActions::of('forged_request_dm', $context, $this->mailer));
+        $actions = MessageActions::email(MessageActions::of('forged_request', $context, $this->mailer));
 
         $this->logger->warning(sprintf(
             'Blocked person %d after a forged admin request (%s) from %s.',
@@ -967,11 +971,11 @@ final class CrewAdminController
 
         foreach ($this->people->organizers() as $organizer) {
             if (null !== $organizer->telegramChatId) {
-                $this->telegram->sendMessage($organizer->telegramChatId, $dm);
+                $this->telegram->sendMessage($organizer->telegramChatId, $dm, $markup);
             }
 
             if ($organizer->isEmailVerified() && ! $organizer->isAnonymized()) {
-                $this->mailer->toPerson($organizer->id, $organizer->email, $subject, $body);
+                $this->mailer->toPerson($organizer->id, $organizer->email, $subject, $body, $actions);
             }
         }
     }

@@ -205,6 +205,16 @@ final class ReplacementService
     }
 
     /**
+     * The takeover request email's "Open in Telegram" link
+     * (t.me/<bot>?start=tov-<id>): the request again, with its two buttons,
+     * for its holder only. Opening it answers nothing.
+     */
+    public function onRequestLink(int $telegramUserId, int $chatId, int $takeoverId): void
+    {
+        $this->takeovers->showRequest($takeoverId, $this->people->findByTelegramUserId($telegramUserId), $chatId);
+    }
+
+    /**
      * The holder tapped ✅ Let them take it or ❌ Keep my task on a takeover
      * request (callback tko:y:<id> / tko:n:<id>). The outcome replaces the
      * buttons, so the request cannot be answered twice from the same message.

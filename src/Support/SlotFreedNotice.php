@@ -388,9 +388,9 @@ final class SlotFreedNotice
     /** The task id in a start payload made by startPayload(), 0 for any other payload. */
     public static function taskFromPayload(string $payload): int
     {
-        return 1 === preg_match('/^' . preg_quote(self::START_PREFIX, '/') . '([1-9]\d{0,18})$/', $payload, $matches)
-            ? (int) $matches[1]
-            : 0;
+        $screen = MessageActions::screenPayload($payload);
+
+        return null !== $screen && 'task' === $screen[0] ? (int) $screen[1] : 0;
     }
 
     /**

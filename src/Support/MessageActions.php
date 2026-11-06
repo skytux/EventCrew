@@ -18,6 +18,15 @@ final class MessageActions
     public const PAYLOAD_MAX = 64;
 
     /**
+     * The verbs of the start payloads <verb>-<id> that open one screen in
+     * the bot (startUrl() with an id): a task with its Sign up button, a
+     * takeover request with its two answers, a night to spend a free-entry
+     * credit on, a person's role buttons and a newcomer's OK and No
+     * (organizers only).
+     */
+    public const SCREEN_VERBS = ['task', 'tov', 'tkt', 'who', 'nco', 'door'];
+
+    /**
      * The actions of $id with $context, [] for a kind with none.
      *
      * @param array<string, mixed> $context
@@ -113,16 +122,35 @@ final class MessageActions
      * The deep link that opens the bot's private chat on $verb, or '' when
      * the bot is not set up or $verb is not a bot verb. The payload is the
      * verb alone: never a token or anything personal.
+     *
+     * With $id, the payload is <verb>-<id> (task-12, tov-45, tkt-20261114)
+     * for one of SCREEN_VERBS: the bot shows that one thing with its
+     * buttons (UpdateRouter). Opening the link never does anything.
      */
-    public static function startUrl(string $verb): string
+    public static function startUrl(string $verb, int|string $id = ''): string
     {
-        $username = TelegramLogin::botUsername();
-
-        if ('' === $username || '' === MenuButtons::forVerb($verb) || ! self::isPayload($verb)) {
-            return '';
+        if ('' === (string) $id) {
+            return '' === MenuButtons::forVerb($verb) ? '' : self::payloadUrl($verb);
         }
 
-        return 'https://t.me/' . $username . '?start=' . $verb;
+        $payload = $verb . '-' . $id;
+
+        return null === self::screenPayload($payload) ? '' : self::payloadUrl($payload);
+    }
+
+    /**
+     * The verb and the id of a start payload made by startUrl() with an id,
+     * like ['tov', '45'], or null for any other payload.
+     *
+     * @return array{0: string, 1: string}|null
+     */
+    public static function screenPayload(string $payload): ?array
+    {
+        if (1 !== preg_match('/^([a-z]{2,8})-([1-9]\d{0,18})$/', $payload, $matches)) {
+            return null;
+        }
+
+        return in_array($matches[1], self::SCREEN_VERBS, true) ? [$matches[1], $matches[2]] : null;
     }
 
     /**

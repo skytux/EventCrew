@@ -241,6 +241,43 @@ final class PermissionServiceTest extends TelegramTestCase
         self::assertStringStartsNotWith('✅ ', $buttons[0]['text']);
     }
 
+    public function testTheWhoButtonShowsThePersonsRoleButtonsAndChangesNothing(): void
+    {
+        // An organizer notice's button: perm:who:8 shows Sam's role buttons.
+        $this->withDjRole();
+        $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'role_slugs' => 'dj'];
+
+        $this->service()->onSelect([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'message' => ['message_id' => 3, 'chat' => ['id' => 555]],
+            'data' => PermissionService::whoData(8),
+        ]);
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(555, $sent['chat_id']);
+        self::assertStringStartsWith('Roles for Sam.', $sent['text']);
+        self::assertSame(
+            ['perm:pass:8', 'perm:admin:8', 'perm:role:dj:8'],
+            array_column(array_merge(...$sent['reply_markup']['inline_keyboard']), 'callback_data')
+        );
+        self::assertContains('answerCallbackQuery', $this->calledMethods());
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame([], $this->mails);
+    }
+
+    public function testAPersonWhoIsGoneHasNoRoleButtons(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
+
+        $this->service()->showPerson(555, 555, 8);
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertStringContainsString('That person is no longer in', $sent['text']);
+        self::assertArrayNotHasKey('reply_markup', $sent);
+    }
+
     // ---- The person is told (AccessNotifier, through the hooks) -------------
 
     /**

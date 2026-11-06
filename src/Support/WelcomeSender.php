@@ -329,6 +329,8 @@ final class WelcomeSender
             'help_line' => self::webLine(HelpPage::ORGANIZER_ANCHOR),
             'guide' => OrganizerGuide::full(),
         ];
+        // The Admin tab, then 👥 People and 💳 Sales desk in the bot, as in the DM.
+        $actions = [...$actions, ...MessageActions::email(MessageActions::of(self::KIND_ORG_EMAIL, $context, $this->mailer))];
 
         return $this->mailer->toPerson(
             $person->id,
@@ -372,7 +374,8 @@ final class WelcomeSender
 
         return null !== $this->telegram->sendMessage(
             (int) $person->telegramChatId,
-            DmBody::frame($person, EmailBody::forDm(MessageTemplates::body(self::KIND_ORG_DM, $context)))
+            DmBody::frame($person, EmailBody::forDm(MessageTemplates::body(self::KIND_ORG_DM, $context))),
+            MessageActions::replyMarkup(MessageActions::of(self::KIND_ORG_DM, $context, $this->mailer))
         );
     }
 

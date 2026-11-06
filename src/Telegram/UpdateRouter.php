@@ -8,8 +8,8 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\GuestCommand;
 use EventCrew\Support\Language;
+use EventCrew\Support\MessageActions;
 use EventCrew\Support\NewcomerApproval;
-use EventCrew\Support\SlotFreedNotice;
 use EventCrew\Support\TakeoverService;
 use EventCrew\Support\TelegramLogin;
 
@@ -257,20 +257,23 @@ final class UpdateRouter
                 return;
             }
 
-            // A spot-opened email's "Sign up in Telegram" link:
-            // t.me/<bot>?start=task-<id> shows that task with its Sign up
-            // button.
-            $taskId = SlotFreedNotice::taskFromPayload($payload);
-
             // A board tap that could not reach the private chat:
             // t.me/<bot>?start=cancel-<id> asks the cancel question here.
             if ($isPrivate && 0 !== $fromId && $this->board->openCancel($fromId, $chatId, $payload)) {
                 return;
             }
 
-            if ($isPrivate && 0 !== $fromId && 0 !== $taskId) {
-                $this->board->sendTask($chatId, $taskId);
+            // An email's "Open in Telegram" link to one thing:
+            // t.me/<bot>?start=<verb>-<id> (MessageActions::startUrl()) shows
+            // it with its buttons. Opening it never does anything.
+            $screen = MessageActions::screenPayload($payload);
 
+            if (
+                $isPrivate
+                && 0 !== $fromId
+                && null !== $screen
+                && $this->openScreen($screen[0], $screen[1], $fromId, $chatId)
+            ) {
                 return;
             }
 
@@ -430,6 +433,45 @@ final class UpdateRouter
         return function (array $update) use ($chosen): void {
             $this->route($update, $chosen, BotLog::SOURCE_HELPER);
         };
+    }
+
+    /**
+     * Shows the one thing a <verb>-<id> start payload names, in the private
+     * chat: the task with its Sign up button (task-<id>), a takeover request
+     * with its two answers, for its holder (tov-<id>). False for a verb
+     * nothing here opens, so the payload goes on to the sign-up flow.
+     */
+    private function openScreen(string $verb, string $id, int $fromId, int $chatId): bool
+    {
+        switch ($verb) {
+            case 'task':
+                $this->board->sendTask($chatId, (int) $id);
+
+                return true;
+            case TakeoverService::START_VERB:
+                $this->replacement->onRequestLink($fromId, $chatId, (int) $id);
+
+                return true;
+            case TicketRedemptionService::START_VERB:
+                $this->tickets->onNightLink($fromId, $chatId, $id);
+
+                return true;
+            case PermissionService::WHO_VERB:
+                $this->permissions->showPerson($fromId, $chatId, (int) $id);
+
+                return true;
+            case DoorListService::START_VERB:
+                $date = 1 === preg_match('/^(\d{4})(\d{2})(\d{2})$/', $id, $m) ? $m[1] . '-' . $m[2] . '-' . $m[3] : '';
+                $this->doorList->onTicketsCommand($fromId, $chatId, true, $date);
+
+                return true;
+            case NewcomerApproval::START_VERB:
+                $this->newcomers?->showRequest($fromId, $chatId, (int) $id);
+
+                return null !== $this->newcomers;
+        }
+
+        return false;
     }
 
     /**

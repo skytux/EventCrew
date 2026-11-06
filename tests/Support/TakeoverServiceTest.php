@@ -12,6 +12,7 @@ use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\TakeoverDeadline;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\MenuButtons;
 use EventCrew\Tests\Telegram\TelegramTestCase;
 
 /**
@@ -123,6 +124,7 @@ final class TakeoverServiceTest extends TelegramTestCase
 
     public function testARequestAsksTheHolderByTelegramAndByEmailWithTheDeadline(): void
     {
+        $this->options[BoardService::USERNAME_OPTION] = 'crewbot';
         $this->wpdb->nextRows[] = self::personRow(9, 999); // the holder
         $this->wpdb->nextRows[] = null;                    // no pending request
         $this->wpdb->nextQueryResults[] = 1;               // stored
@@ -151,6 +153,8 @@ final class TakeoverServiceTest extends TelegramTestCase
         self::assertSame('p9@example.com', $this->mails[0]['to']);
         self::assertStringContainsString('Person 7 asks to take over your task', $this->mails[0]['subject']);
         self::assertStringContainsString('eventcrew/v1/takeover?token=', $this->mails[0]['body']);
+        // The holder has Telegram: an Open in Telegram link shows the same question.
+        self::assertStringContainsString('https://t.me/crewbot?start=tov-', $this->mails[0]['body']);
     }
 
     public function testAHolderWithoutTelegramIsAskedByEmailOnly(): void
@@ -336,6 +340,12 @@ final class TakeoverServiceTest extends TelegramTestCase
         $toCover = $this->lastCallTo('sendMessage');
         self::assertSame(555, $toCover['chat_id']);
         self::assertStringContainsString('Person 9 keeps their task', $toCover['text']);
+        // No other open task here: ask someone else, or the board.
+        self::assertSame(
+            [MenuButtons::REPLACE, MenuButtons::forVerb('board')],
+            array_map(static fn (array $row): string => $row[0]['callback_data'], $toCover['reply_markup']['inline_keyboard'])
+        );
+        self::assertSame('🔁 Take over a task', $toCover['reply_markup']['inline_keyboard'][0][0]['text']);
         self::assertSame('p7@example.com', $this->mails[0]['to']);
     }
 

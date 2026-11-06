@@ -37,6 +37,12 @@ final class TicketRedemptionService
     public const ALREADY_REDEEMED = 'already_redeemed';
     public const NOT_ELIGIBLE = 'not_eligible';
 
+    /** The start payload tkt-<Ymd> (MessageActions::startUrl()): one night to spend a credit on. */
+    public const START_VERB = 'tkt';
+
+    /** How many nights a credit message offers as buttons. */
+    public const NIGHTS_MAX = 3;
+
     public function __construct(
         private readonly PersonRepository $people,
         private readonly TaskRepository $tasks,
@@ -123,6 +129,53 @@ final class TicketRedemptionService
             ['inline_keyboard' => $keyboard]
         );
         $this->sentDmNote($chatId, $isPrivate);
+    }
+
+    /**
+     * The link tkt-<Ymd> (a free-entry message's "Open in Telegram"): that
+     * night's button, the same one as under 🎟 Free-entry ticket. It only
+     * shows: the credit is spent when the button is tapped. A night that
+     * cannot take a credit any more falls back to the whole picker, which
+     * says why.
+     */
+    public function onNightLink(int $telegramUserId, int $chatId, string $ymd): void
+    {
+        $person = $this->people->findByTelegramUserId($telegramUserId);
+        $date = 1 === preg_match('/^(\d{4})(\d{2})(\d{2})$/', $ymd, $m) ? $m[1] . '-' . $m[2] . '-' . $m[3] : '';
+        $balance = null === $person ? 0 : $this->standing->for($person->id)->creditBalance;
+        $label = null === $person || $balance < 1 ? null : ($this->eligibleDatesFor($person->id)[$date] ?? null);
+
+        if (null === $label) {
+            $this->onTicketCommand($telegramUserId, $chatId);
+
+            return;
+        }
+
+        $this->telegram->sendMessage(
+            $chatId,
+            sprintf(
+                /* translators: %d: number of free-entry credits */
+                _n(
+                    'You have %d free-entry credit. Pick an event to spend it on:',
+                    'You have %d free-entry credits. Pick an event to spend one on:',
+                    $balance,
+                    'eventcrew'
+                ),
+                $balance
+            ),
+            ['inline_keyboard' => [[['text' => $label, 'callback_data' => 'tkt:' . $date]]]]
+        );
+    }
+
+    /**
+     * The next nights a credit can be spent on, for a free-entry message:
+     * up to NIGHTS_MAX, date (Y-m-d) => label.
+     *
+     * @return array<string, string>
+     */
+    public function nextNights(int $personId): array
+    {
+        return array_slice($this->eligibleDatesFor($personId), 0, self::NIGHTS_MAX, true);
     }
 
     /**
@@ -366,14 +419,18 @@ final class TicketRedemptionService
         $prefs = new NotificationPreferences();
 
         if ($prefs->dmAllowed($person, NotificationPreferences::TICKET)) {
+            // The night's event and its times, for the DM's own lines.
+            [$dayEventId, $eventName] = $this->eventContext($date);
+            $context = [
+                'person' => $person,
+                'date' => $when,
+                'event' => $eventName,
+                'event_id' => $eventPostId ?? $dayEventId,
+            ];
             $this->telegram->sendMessage(
                 $person->telegramChatId,
                 // The Messages page template (MessageTemplates).
-                MessageAiText::body(
-                    'free_ticket_dm',
-                    ['person' => $person, 'date' => $when, 'event_id' => $eventPostId],
-                    $eventPostId
-                ),
+                MessageAiText::body('free_ticket_dm', $context, $eventPostId),
                 ['inline_keyboard' => [[['text' => __('🎟 Show your ticket', 'eventcrew'), 'url' => $url]]]]
             );
         }
