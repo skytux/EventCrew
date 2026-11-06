@@ -4545,7 +4545,7 @@ msgstr ""
 msgid "Placeholders"
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:73
+#: templates/admin/messages-tab-messages.php:74
 msgid "Placeholders:"
 msgstr ""
 
@@ -5076,7 +5076,7 @@ msgstr ""
 msgid "Save the prompts"
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:114
+#: templates/admin/messages-tab-messages.php:115
 msgid "Save the ticket email text"
 msgstr ""
 
@@ -6815,7 +6815,7 @@ msgstr ""
 msgid "The email template was reset to the built-in design."
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:28
+#: templates/admin/messages-tab-messages.php:29
 msgid "The emails and Telegram messages EventCrew sends. Write a text in any language; it is translated into the other site languages, and each translation can be edited. A word in curly brackets, like {name}, is a placeholder: it is replaced when the message is sent. Buttons and the footer are added to every email and are not part of the text."
 msgstr ""
 
@@ -7379,7 +7379,7 @@ msgstr ""
 msgid "The text for the next announcement:"
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:71
+#: templates/admin/messages-tab-messages.php:72
 msgid "The text of every ticket email: a bought ticket, a guest-list ticket, a crew ticket and a free-entry ticket. The heading, the ticket note, the “Open my ticket” button, the sign-off and the QR code are added around it. A first line written in *stars* is the greeting, shown in italics on its own line. Empty, or the same as the built-in text, means the built-in text."
 msgstr ""
 
@@ -7466,7 +7466,7 @@ msgstr ""
 msgid "The wp-admin pages"
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:108
+#: templates/admin/messages-tab-messages.php:109
 msgid "The {reason} line of the ticket email for this kind of ticket. Empty, or the same as the built-in line, means the built-in line."
 msgstr ""
 
@@ -7806,7 +7806,7 @@ msgstr ""
 msgid "Ticket email"
 msgstr ""
 
-#: src/Support/TicketText.php:194 templates/admin/messages-tab-messages.php:56
+#: src/Support/TicketText.php:194 templates/admin/messages-tab-messages.php:57
 msgid "Ticket email text"
 msgstr ""
 
@@ -8413,7 +8413,7 @@ msgstr ""
 msgid "When a mailed list has an .xlsx or .csv file attached, the file is read instead of the mail text. Its first row must hold the column headers of one of these formats. In a header field, separate accepted header texts with \"|\", and join columns with \"+\", as in \"Etunimi + Sukunimi\". Upper and lower case do not matter."
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:86
+#: templates/admin/messages-tab-messages.php:87
 msgid "When a placeholder other than {first_name} is empty, its whole paragraph is left out, so no empty line or half sentence is left."
 msgstr ""
 
@@ -9215,7 +9215,7 @@ msgstr ""
 msgid "You’ve cancelled that task."
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:81
+#: templates/admin/messages-tab-messages.php:82
 msgid "a crew member’s tasks on the night, as a list. Empty for everyone else."
 msgstr ""
 
@@ -9248,7 +9248,7 @@ msgstr ""
 msgid "button"
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:42
+#: templates/admin/messages-tab-messages.php:43
 msgid "changed"
 msgstr ""
 
@@ -9328,7 +9328,7 @@ msgstr ""
 msgid "hours after the previous event ends"
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:82
+#: templates/admin/messages-tab-messages.php:83
 msgid "how many people a guest may bring, like “2 people”. Empty for everyone else."
 msgstr ""
 
@@ -9478,19 +9478,19 @@ msgstr ""
 msgid "the Finnish original"
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:77
+#: templates/admin/messages-tab-messages.php:78
 msgid "the event’s date, like 14.11.2026."
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:76
+#: templates/admin/messages-tab-messages.php:77
 msgid "the event’s name."
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:78
+#: templates/admin/messages-tab-messages.php:79
 msgid "the event’s start time, like 19:00. Empty when the event has none."
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:83
+#: templates/admin/messages-tab-messages.php:84
 msgid "the organization’s name (Web page tab, else the site name)."
 msgstr ""
 
@@ -9502,7 +9502,7 @@ msgstr ""
 msgid "the system"
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:75
+#: templates/admin/messages-tab-messages.php:76
 msgid "the ticket holder’s first name. When there is no name, it is left out with the space in front of it: “Hi {first_name},” becomes “Hi,”."
 msgstr ""
 
@@ -9530,11 +9530,11 @@ msgstr ""
 msgid "use the form on the left, or generate a whole event’s tasks from a linked event."
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:79
+#: templates/admin/messages-tab-messages.php:80
 msgid "when the doors close, like 19:30. Empty when doors close is off."
 msgstr ""
 
-#: templates/admin/messages-tab-messages.php:80
+#: templates/admin/messages-tab-messages.php:81
 msgid "why the person has a ticket: one of the four lines below, chosen by the kind of ticket."
 msgstr ""
 
