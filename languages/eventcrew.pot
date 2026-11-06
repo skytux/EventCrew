@@ -106,7 +106,7 @@ msgstr ""
 msgid "%1$s at %2$s (%3$d of %4$d free)"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:2983 src/Telegram/BoardService.php:1414
+#: src/Support/MessageTemplates.php:2983 src/Telegram/BoardService.php:1502
 #. translators: 1: role, 2: event, 3: day and time
 msgid "%1$s at %2$s, %3$s"
 msgstr ""
@@ -388,7 +388,7 @@ msgstr ""
 msgid "%s — retention period passed"
 msgstr ""
 
-#: src/Support/TranslatedText.php:1167
+#: src/Support/TranslatedText.php:1232
 #. translators: %s: a language name, e.g. Finnish
 msgid "%s, detected"
 msgstr ""
@@ -1380,7 +1380,7 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: src/Telegram/BoardService.php:1376
+#: src/Telegram/BoardService.php:1464
 #. translators: %s: the task, the event and the day, like "Door at Party, Sat 14 Nov 18:00"
 msgid "Cancel %s?"
 msgstr ""
@@ -1510,8 +1510,12 @@ msgstr ""
 msgid "Check your inbox for the sign-in link — and your spam folder if it’s not there. Press the button again to resend."
 msgstr ""
 
-#: src/Telegram/BoardService.php:1305
+#: src/Telegram/BoardService.php:1393
 msgid "Check your private chat with the bot: it asks there first."
+msgstr ""
+
+#: src/Telegram/BoardService.php:968
+msgid "Check your private chat with the bot: that day’s tasks are there."
 msgstr ""
 
 #: templates/public/signup.php:2595
@@ -1984,7 +1988,7 @@ msgstr ""
 msgid "Detail"
 msgstr ""
 
-#: src/Support/TranslatedText.php:1170
+#: src/Support/TranslatedText.php:1235
 msgid "Detect automatically"
 msgstr ""
 
@@ -2080,7 +2084,7 @@ msgstr ""
 msgid "Each task’s ticket is on its row under My tasks. A free-entry credit you spend shows here."
 msgstr ""
 
-#: src/Telegram/BoardService.php:1381
+#: src/Telegram/BoardService.php:1469
 msgid "Early enough: it does not affect your standing."
 msgstr ""
 
@@ -2270,7 +2274,7 @@ msgid "Event: %s"
 msgstr ""
 
 #: src/Admin/Admin.php:419 src/Admin/Admin.php:420 src/Support/EventMeshSyncListener.php:53 src/Support/PrivacyEraser.php:51
-#: src/Support/PrivacyExporter.php:58 src/Telegram/BoardService.php:244
+#: src/Support/PrivacyExporter.php:58 src/Telegram/BoardService.php:255
 #. translators: the name shown against the invite link in Telegram's admin list
 msgid "EventCrew"
 msgstr ""
@@ -2456,7 +2460,7 @@ msgstr ""
 msgid "Find a name on the list"
 msgstr ""
 
-#: src/Telegram/BoardService.php:1397
+#: src/Telegram/BoardService.php:1485
 msgid "Find someone to take it"
 msgstr ""
 
@@ -2472,7 +2476,7 @@ msgstr ""
 msgid "First sign up with /start."
 msgstr ""
 
-#: src/Telegram/BoardService.php:1171
+#: src/Telegram/BoardService.php:1259
 msgid "First tap the “New here? Sign up” button below to confirm your email."
 msgstr ""
 
@@ -3268,7 +3272,7 @@ msgctxt "month name after a day number"
 msgid "June"
 msgstr ""
 
-#: src/Telegram/BoardService.php:1402
+#: src/Telegram/BoardService.php:1490
 msgid "Keep it"
 msgstr ""
 
@@ -3288,7 +3292,7 @@ msgstr ""
 msgid "Kept private on your server; used to verify each submission with Cloudflare."
 msgstr ""
 
-#: src/Telegram/BoardService.php:1252
+#: src/Telegram/BoardService.php:1340
 #. translators: %s: the task, the event and the day, like "Door at Party, Sat 14 Nov 18:00"
 msgid "Kept: you are still on %s."
 msgstr ""
@@ -3320,7 +3324,7 @@ msgstr ""
 msgid "Language model"
 msgstr ""
 
-#: src/Support/TranslatedText.php:1109
+#: src/Support/TranslatedText.php:1174
 msgid "Language of this text"
 msgstr ""
 
@@ -3922,7 +3926,7 @@ msgstr ""
 msgid "No newsletter was sent in this time range."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:311 templates/public/signup-board.php:42
+#: src/Telegram/BoardRenderer.php:303 templates/public/signup-board.php:42
 msgid "No open tasks right now. Check back soon!"
 msgstr ""
 
@@ -4215,7 +4219,7 @@ msgid "Off by default. When it is on, the coming events go by email to everyone 
 msgstr ""
 
 #: templates/admin/settings.php:1963
-msgid "Off by default. When on, the board is two messages. First a photo message for the next event, when it is an EventMesh event with a picture: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Below it the text board: the next 3 events, who is signed up for which task, and the task buttons. There are no date buttons."
+msgid "Off by default. When on, the board is two messages. First a photo message for the next event, when it is an EventMesh event with a picture: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Below it the text board: the next event, who is signed up for which task, the task buttons and the date buttons."
 msgstr ""
 
 #: templates/admin/settings.php:1317
@@ -4414,7 +4418,11 @@ msgstr ""
 msgid "Open Telegram, press Start, then press the code shown on this page. This page signs you in by itself."
 msgstr ""
 
-#: src/Telegram/BoardService.php:1326
+#: src/Telegram/BoardService.php:984
+msgid "Open a private chat with the bot and tap Start first, then tap the date again."
+msgstr ""
+
+#: src/Telegram/BoardService.php:1414
 msgid "Open a private chat with the bot and tap Start first, then tap the task again."
 msgstr ""
 
@@ -4442,7 +4450,7 @@ msgstr ""
 msgid "Open tasks"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:320
+#: src/Telegram/BoardRenderer.php:312
 msgid "Open tasks — tap one to sign up, tap again to cancel."
 msgstr ""
 
@@ -4455,7 +4463,7 @@ msgstr ""
 msgid "Open the bot in a private chat and send /start there to set up your account."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:332 src/Telegram/BoardService.php:1399
+#: src/Support/MessageTemplates.php:332 src/Telegram/BoardService.php:1487
 msgid "Open the group"
 msgstr ""
 
@@ -4778,7 +4786,7 @@ msgstr ""
 msgid "Please sign in first."
 msgstr ""
 
-#: src/Telegram/UpdateRouter.php:571
+#: src/Telegram/UpdateRouter.php:574
 msgid "Please tell an organizer what is not right: they can correct it."
 msgstr ""
 
@@ -5483,7 +5491,7 @@ msgid "Security"
 msgstr ""
 
 #: src/Support/MessageTemplates.php:479 src/Support/MessageTemplates.php:982 src/Support/TaskCancelledNotice.php:139 src/Support/WelcomeSender.php:229
-#: src/Telegram/BoardService.php:812
+#: src/Telegram/BoardService.php:862
 msgid "See open tasks"
 msgstr ""
 
@@ -5495,7 +5503,7 @@ msgstr ""
 msgid "Send /me history to see everything you’ve done."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:321
+#: src/Telegram/BoardRenderer.php:313
 msgid "Send /me in a DM to get your summary."
 msgstr ""
 
@@ -6014,7 +6022,7 @@ msgid "Sign up again"
 msgstr ""
 
 #: src/Support/MessageTemplates.php:437 src/Support/MessageTemplates.php:1065 src/Support/OpenTaskList.php:201 src/Support/WelcomeSender.php:282
-#: src/Telegram/BoardService.php:841
+#: src/Telegram/BoardService.php:891
 #. translators: 1: the role with its emoji, 2: the day, e.g. "Sat 7 Nov"
 msgid "Sign up: %1$s · %2$s"
 msgstr ""
@@ -6797,7 +6805,7 @@ msgstr ""
 msgid "That sign-up no longer exists. Send /roster again to see the current list."
 msgstr ""
 
-#: src/Telegram/BoardService.php:831 src/Telegram/BoardService.php:1106 src/Web/SignupController.php:1206
+#: src/Telegram/BoardService.php:881 src/Telegram/BoardService.php:1194 src/Web/SignupController.php:1206
 msgid "That slot just filled up."
 msgstr ""
 
@@ -6809,7 +6817,7 @@ msgstr ""
 msgid "That task is full."
 msgstr ""
 
-#: src/Support/RoleTaskService.php:219 src/Support/TakeoverService.php:84 src/Telegram/BoardService.php:819 src/Telegram/BoardService.php:1107
+#: src/Support/RoleTaskService.php:219 src/Support/TakeoverService.php:84 src/Telegram/BoardService.php:869 src/Telegram/BoardService.php:1195
 #: src/Telegram/ReplacementService.php:167 src/Telegram/ReplacementService.php:178 src/Telegram/RoleTaskBot.php:361 src/Telegram/RoleTaskBot.php:397
 #: src/Web/SignupController.php:1214
 msgid "That task is no longer available."
@@ -7251,7 +7259,7 @@ msgstr ""
 msgid "The language model answered. The connection is OK."
 msgstr ""
 
-#: src/Support/TranslatedText.php:1023
+#: src/Support/TranslatedText.php:1088
 #. translators: %s: the kind of error, e.g. timeout or http_401
 msgid "The language model could not translate the texts (%s). The language fields keep what they had, and empty ones now hold the text as you wrote it."
 msgstr ""
@@ -7722,7 +7730,7 @@ msgstr ""
 msgid "The text of every ticket email: a bought ticket, a guest-list ticket, a crew ticket and a free-entry ticket. The heading, the ticket note, the “Open my ticket” button, the sign-off and the QR code are added around it. A first line written in *stars* is the greeting, shown in italics on its own line. Empty, or the same as the built-in text, means the built-in text."
 msgstr ""
 
-#: src/Support/TranslatedText.php:1018
+#: src/Support/TranslatedText.php:1083
 msgid "The texts were not translated because no language model is set up. Empty language fields now hold the text as you wrote it."
 msgstr ""
 
@@ -7934,7 +7942,7 @@ msgstr ""
 msgid "This cannot be undone."
 msgstr ""
 
-#: src/Telegram/BoardService.php:1380
+#: src/Telegram/BoardService.php:1468
 msgid "This close to the task it is a late cancellation: it counts against your standing."
 msgstr ""
 
@@ -8304,7 +8312,7 @@ msgstr ""
 msgid "To do any of these, write to %s and we will answer within one month."
 msgstr ""
 
-#: src/Telegram/BoardService.php:1266
+#: src/Telegram/BoardService.php:1354
 msgid "To hand it over, ask someone in the crew to send /me to the bot and tap 🔁 Take over a task. You get a message to say yes, and you stay on it until then."
 msgstr ""
 
@@ -8377,7 +8385,7 @@ msgstr ""
 msgid "Tools → Export Personal Data"
 msgstr ""
 
-#: src/Support/TranslatedText.php:1151
+#: src/Support/TranslatedText.php:1216
 msgid "Translate again"
 msgstr ""
 
@@ -9061,11 +9069,11 @@ msgstr ""
 msgid "Write again"
 msgstr ""
 
-#: src/Telegram/UpdateRouter.php:577
+#: src/Telegram/UpdateRouter.php:580
 msgid "Write here in a few words what is not right. The organizers get it and can correct it."
 msgstr ""
 
-#: src/Support/TranslatedText.php:1100
+#: src/Support/TranslatedText.php:1165
 msgid "Write in any language"
 msgstr ""
 
@@ -9106,7 +9114,7 @@ msgstr ""
 msgid "Yes"
 msgstr ""
 
-#: src/Telegram/BoardService.php:1393
+#: src/Telegram/BoardService.php:1481
 msgid "Yes, cancel"
 msgstr ""
 
@@ -9380,7 +9388,7 @@ msgstr ""
 msgid "You were marked as a no-show for %2$s.\n\nNo-shows count against your standing. If this is a mistake, contact an organizer and they can correct it."
 msgstr ""
 
-#: src/Telegram/BoardService.php:1156 src/Telegram/RoleTaskBot.php:427 src/Web/SignupController.php:1216
+#: src/Telegram/BoardService.php:1244 src/Telegram/RoleTaskBot.php:427 src/Web/SignupController.php:1216
 msgid "You weren’t signed up for that one."
 msgstr ""
 
@@ -9511,7 +9519,7 @@ msgstr ""
 msgid "Your past tasks:"
 msgstr ""
 
-#: src/Telegram/BoardService.php:1100 src/Telegram/RoleTaskBot.php:391
+#: src/Telegram/BoardService.php:1188 src/Telegram/RoleTaskBot.php:391
 msgid "Your recent attendance means sign-ups are paused for now — please message an organizer."
 msgstr ""
 
@@ -9596,11 +9604,11 @@ msgstr ""
 msgid "You’re already signed up for that one."
 msgstr ""
 
-#: src/Telegram/BoardService.php:1105 src/Telegram/RoleTaskBot.php:396
+#: src/Telegram/BoardService.php:1193 src/Telegram/RoleTaskBot.php:396
 msgid "You’re already signed up for that."
 msgstr ""
 
-#: src/Telegram/BoardService.php:1104 src/Telegram/RoleTaskBot.php:395
+#: src/Telegram/BoardService.php:1192 src/Telegram/RoleTaskBot.php:395
 msgid "You’re in! See you there."
 msgstr ""
 
@@ -9608,11 +9616,11 @@ msgstr ""
 msgid "You’re not signed up for anything yet — take a look at the board."
 msgstr ""
 
-#: src/Telegram/BoardService.php:1154 src/Telegram/RoleTaskBot.php:425
+#: src/Telegram/BoardService.php:1242 src/Telegram/RoleTaskBot.php:425
 msgid "You’re out. Thanks for the notice."
 msgstr ""
 
-#: src/Telegram/BoardService.php:1153 src/Telegram/RoleTaskBot.php:424
+#: src/Telegram/BoardService.php:1241 src/Telegram/RoleTaskBot.php:424
 msgid "You’re out. This close to the event it counts as a late cancellation."
 msgstr ""
 
@@ -9711,7 +9719,7 @@ msgstr ""
 msgid "edited by hand"
 msgstr ""
 
-#: src/Support/TranslatedText.php:1176
+#: src/Support/TranslatedText.php:1241
 msgid "edited by hand, not translated again"
 msgstr ""
 
@@ -9739,7 +9747,7 @@ msgstr ""
 msgid "free"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:498
+#: src/Telegram/BoardRenderer.php:490
 msgid "full"
 msgstr ""
 
@@ -9900,7 +9908,7 @@ msgstr ""
 msgid "signed up %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:249
+#: src/Telegram/BoardRenderer.php:241
 msgid "someone"
 msgstr ""
 
@@ -10139,7 +10147,7 @@ msgstr ""
 msgid "👋 %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:386
+#: src/Telegram/BoardRenderer.php:378
 msgid "👋 New here? Sign up →"
 msgstr ""
 
@@ -10151,7 +10159,7 @@ msgstr ""
 msgid "👋 arrived · ✓ done · ⏰ late · ✗ no-show"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:387
+#: src/Telegram/BoardRenderer.php:379
 msgid "👤 See my info →"
 msgstr ""
 

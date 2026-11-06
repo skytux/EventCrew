@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.151
+Stable tag: 1.140.152
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.152 =
+* The Telegram board shows only the next event, with a one-row date selector under the tasks.
+* A date tap in a private chat reloads the board on that day; a tap in the group sends that day to your private chat (or a link to start the bot).
+* A failed or switched-off AI translation is marked as a fallback, so the next save and Translate missing translate it.
 
 = 1.140.151 =
 * Open in Telegram links open the one screen they are about (a task, a takeover question, a night's ticket, a person, a newcomer request, a door list).
@@ -1688,6 +1693,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.152 =
+No settings change.
 
 = 1.140.151 =
 No settings change.
