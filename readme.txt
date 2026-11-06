@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.132
+Stable tag: 1.140.133
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.133 =
+Messages page: a Preview link on every message and a Preview all list; one generic preview renders any message with sample data through the real templates, in any site language, never sending.
 
 = 1.140.132 =
 Settings: the post-event email and announcement on/off switches link to their entries on the Messages page (Q342).
@@ -1610,6 +1613,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.133 =
+No settings change.
 
 = 1.140.132 =
 No settings change.
