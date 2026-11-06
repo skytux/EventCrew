@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.150
+Stable tag: 1.140.151
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,14 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.151 =
+* Open in Telegram links open the one screen they are about (a task, a takeover question, a night's ticket, a person, a newcomer request, a door list).
+* Takeover requests show the task description and the asker's record; their outcomes list other open tasks with Sign up.
+* Free-entry messages show your credits and the next nights, a button each; the free ticket DM names the event and its times.
+* Organizer notices open that person's role screen; role met says what the person has done; a forged request links to the person.
+* Import notices have a Roster page button and a Door list link; a failed import says what to fix.
+* The organizer guide has Admin tab, People and Sales desk buttons; sales desk DMs are shorter.
 
 = 1.140.150 =
 * Message preview: pick the event and the task, see that event's AI text, and write it now when it is missing.
@@ -1680,6 +1688,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.151 =
+No settings change.
 
 = 1.140.150 =
 No settings change.
