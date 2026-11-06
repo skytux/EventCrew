@@ -8,6 +8,7 @@ use EventCrew\Models\Person;
 use EventCrew\Models\Task;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Telegram\TelegramClient;
 
 /**
  * When an organizer deletes a whole task, every person who was signed up for
@@ -19,7 +20,9 @@ use EventCrew\Repositories\TaskRepository;
  * for the night was emailed, TicketMail::crewTasksChanged() sends it again
  * with the tasks left, or the "Your ticket is cancelled" email when none is
  * left; either one names the deleted task. When no ticket was emailed, the
- * person gets the "Task cancelled" email instead. A task whose date is over,
+ * person gets the "Task cancelled" email instead. A person who uses the bot
+ * also gets the task_cancelled_dm, in their language, with the event's other
+ * open tasks and the board, like the email. A task whose date is over,
  * or whose end time has passed, sends nothing: there is nobody left to tell.
  *
  * It is about a commitment the person made, so like the sign-up and cancel
@@ -31,7 +34,9 @@ final class TaskCancelledNotice
         private readonly TaskRepository $tasks,
         private readonly PersonRepository $people,
         private readonly Mailer $mailer,
-        private readonly ?TicketMail $ticketMail = null
+        private readonly ?TicketMail $ticketMail = null,
+        private readonly ?TelegramClient $telegram = null,
+        private readonly ?SlotFreedNotice $slots = null
     ) {
     }
 
@@ -55,12 +60,17 @@ final class TaskCancelledNotice
             return;
         }
 
+        // The event's other open tasks, to pick another one.
+        $others = null === $this->slots ? [] : $this->slots->otherOpen($task);
+
         foreach (array_unique(array_map('intval', $personIds)) as $personId) {
             $person = $this->people->find($personId);
 
             if (null === $person || $person->isAnonymized()) {
                 continue;
             }
+
+            $this->dm($person, $task, $others);
 
             // One email per person (Q263). When their ticket for the night
             // was emailed: the ticket again with the tasks left, or the
@@ -71,8 +81,39 @@ final class TaskCancelledNotice
                 continue;
             }
 
-            $this->send($person, $task);
+            $this->send($person, $task, $others);
         }
+    }
+
+    /**
+     * The DM, in the person's language. A commitment, like the sign-up and
+     * cancel confirmations: sent to a muted account too.
+     *
+     * @param list<array{task: Task, free: int}> $others
+     */
+    private function dm(Person $person, Task $task, array $others): void
+    {
+        $telegram = $this->telegram;
+
+        if (
+            null === $telegram
+            || null === $person->telegramChatId
+            || ! (new NotificationPreferences())->dmAllowed($person, NotificationPreferences::SIGNUP)
+        ) {
+            return;
+        }
+
+        $chatId = $person->telegramChatId;
+
+        Language::forPerson($person, function () use ($person, $task, $others, $telegram, $chatId): void {
+            $context = ['person' => $person, 'task' => $task, 'other_rows' => $others];
+
+            $telegram->sendMessage(
+                $chatId,
+                MessageTemplates::body('task_cancelled_dm', $context),
+                MessageActions::replyMarkup(MessageActions::of('task_cancelled_dm', $context, $this->mailer))
+            );
+        });
     }
 
     /** True when the task's date is over, or its end time has passed. */
@@ -85,11 +126,12 @@ final class TaskCancelledNotice
         return null !== $task->endsAt && $task->endsAt <= (string) current_time('mysql');
     }
 
-    private function send(Person $person, Task $task): void
+    /** @param list<array{task: Task, free: int}> $others */
+    private function send(Person $person, Task $task, array $others): void
     {
         // The subject and text are the Messages page template (MessageTemplates).
-        $words = function () use ($person, $task): array {
-            $context = ['person' => $person, 'task' => $task];
+        $words = function () use ($person, $task, $others): array {
+            $context = ['person' => $person, 'task' => $task, 'other_rows' => $others];
 
             return [
                 'subject' => MessageTemplates::subject('task_cancelled', $context),

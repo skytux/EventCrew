@@ -55,6 +55,10 @@ final class FrictionB1Migration
                 'cancel_confirmed' => self::withOtherTasks(...),
                 'cancel_confirmed_dm' => self::withOtherTasks(...),
             ],
+            // task_cancelled_dm is new: nothing stored to change.
+            'task_cancelled_other_tasks' => [
+                'task_cancelled' => self::withOtherTasks(...),
+            ],
         ];
     }
 

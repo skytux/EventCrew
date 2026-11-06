@@ -119,4 +119,15 @@ final class FrictionB1MigrationTest extends TestCase
         self::assertSame("Hi {name},\n\nCancelled.{other_tasks}", $this->options[$prefix . 'cancel_confirmed'][MessageTemplates::BODY]);
         self::assertSame(1, $this->options[FrictionB1Migration::OPTION]['cancel_other_tasks']);
     }
+
+    public function testTheTaskCancelledStepAddsTheOtherOpenTasksAtTheEnd(): void
+    {
+        $prefix = MessageTemplates::OPTION_PREFIX;
+        $this->options[$prefix . 'task_cancelled'] = [MessageTemplates::BODY => ['source' => "Hi {name},\n\nGone.\n\n", 'texts' => []]];
+
+        FrictionB1Migration::run();
+
+        self::assertSame("Hi {name},\n\nGone.{other_tasks}", $this->options[$prefix . 'task_cancelled'][MessageTemplates::BODY]['source']);
+        self::assertSame(1, $this->options[FrictionB1Migration::OPTION]['task_cancelled_other_tasks']);
+    }
 }
