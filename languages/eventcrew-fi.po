@@ -3145,8 +3145,8 @@ msgstr "Kuka täyttää kullekin roolille asetetut ehdot (Settings, Roles). Ehto
 msgid "Your tasks, credits, ticket, settings"
 msgstr "Tehtäväsi, vapaaliput, lippu, asetukset"
 
-msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap the task again on the group board or in /board in a private chat, or tap Cancel in your reminder. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
-msgstr "✅ Ilmoittauduttu: %1$s, %2$s, %3$s.\n\nNäytä lippusi ovella - se on alla ensimmäisenä painikkeena.\n\nPeru napauttamalla tehtävää uudelleen ryhmän taululla tai komennolla /board yksityiskeskustelussa, tai napauta Peru muistutuksessasi. Tai etsi joku ottamaan se: hän lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
+msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap Cancel below, or tap the task again on the board. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
+msgstr "✅ Ilmoittauduttu: %1$s, %2$s, %3$s.\n\nNäytä lippusi ovella - se on alla ensimmäisenä painikkeena.\n\nPeru napauttamalla alta Peru tai napauttamalla tehtävää uudelleen taululla. Tai etsi joku ottamaan se: hän lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
 
 msgid "👥 People: choose what to do."
 msgstr "👥 Ihmiset: valitse, mitä teet."
@@ -7464,8 +7464,8 @@ msgstr "Hei %1$s,\n\nolet ilmoittautunut tehtävään %2$s, %3$s, %4$s. Näytä 
 msgid "Your late cancellation for %2$s has been recorded.\n\nIt counts against your standing. %3$s"
 msgstr "Myöhäinen peruutuksesi tehtävästä %2$s on kirjattu.\n\nSe heikentää luotettavuuttasi. %3$s"
 
-msgid "Can't make it? Open the bot and tap the task to cancel. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
-msgstr "Etkö pääsekään? Avaa botti ja peru napauttamalla tehtävää. Tai etsi joku ottamaan se: hän lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
+msgid "Can't make it? Tap Cancel below. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
+msgstr "Etkö pääsekään? Napauta alta Peru. Tai etsi joku ottamaan se: hän lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
 
 msgid "Can't make it? Tap Cancel on your task in the Board tab of the crew page (%s)."
 msgstr "Etkö pääsekään? Napauta Peru tehtävässäsi crew-sivun Taulu-välilehdellä (%s)."

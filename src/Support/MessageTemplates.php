@@ -7,6 +7,7 @@ namespace EventCrew\Support;
 use Closure;
 use EventCrew\Models\Person;
 use EventCrew\Models\Task;
+use EventCrew\Telegram\CalendarController;
 
 /**
  * Every message template (MessageTemplate) and the texts organizers saved for
@@ -130,7 +131,104 @@ final class MessageTemplates
      */
     private static function actionPairs(): array
     {
-        return [];
+        return [
+            // The ticket first, as it is what gets them in; the calendar hold
+            // next, the strongest nudge there is against a no-show; the crew
+            // guide last.
+            'reminder reminder_dm' => static fn (array $c, Mailer $m): array => self::present([
+                self::ticketAction($c, $m),
+                self::cancelAction($c, $m),
+                self::guideAction(),
+            ]),
+            'signup_confirmed signup_confirmed_dm' => static fn (array $c, Mailer $m): array => self::present([
+                self::ticketAction($c, $m),
+                self::calendarAction($c),
+                self::cancelAction($c, $m),
+                self::guideAction(),
+            ]),
+            // A cancellation, or a spot that opened: the open tasks are one
+            // tap away.
+            'cancel_confirmed cancel_confirmed_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
+            'slot_freed slot_freed_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
+        ];
+    }
+
+    /**
+     * @param list<MessageAction|null> $actions
+     * @return list<MessageAction>
+     */
+    private static function present(array $actions): array
+    {
+        return array_values(array_filter($actions));
+    }
+
+    /** The task's ticket: a signed link, the same in the email and the DM. */
+    private static function ticketAction(array $c, Mailer $m): MessageAction
+    {
+        return new MessageAction(
+            'ticket',
+            __('Show your ticket', 'eventcrew'),
+            __('🎟 Show your ticket', 'eventcrew'),
+            static fn (): string => $m->ticketUrl((int) ($c['assignment_id'] ?? 0))
+        );
+    }
+
+    private static function calendarAction(array $c): MessageAction
+    {
+        $task = $c['task'] ?? null;
+
+        return new MessageAction(
+            'calendar',
+            __('Add to calendar', 'eventcrew'),
+            __('📅 Add to calendar', 'eventcrew'),
+            static fn (): string => $task instanceof Task ? CalendarController::url($task->id) : ''
+        );
+    }
+
+    /**
+     * Cancel the task. In the DM, the board's own leave callback, so the tap
+     * runs the same drop as the board. In the email, the crew page: for a
+     * person with no Telegram chat a sign-in link (CrewPageHelp), as before,
+     * for everyone else the page itself; and the bot's board in Telegram.
+     */
+    private static function cancelAction(array $c, Mailer $m): MessageAction
+    {
+        $task = $c['task'] ?? null;
+        $person = $c['person'] ?? null;
+
+        return new MessageAction(
+            'cancel',
+            CrewPageHelp::webOnly($person)
+                ? __('Manage my tasks', 'eventcrew')
+                : __('Can’t make it? Cancel', 'eventcrew'),
+            '',
+            static fn (): string => CrewPageHelp::webOnly($person) && $person instanceof Person
+                ? $m->manageUrl($person->id)
+                : CrewPageHelp::pageUrl(),
+            $task instanceof Task ? 'l:' . $task->id : '',
+            'board'
+        );
+    }
+
+    /** The crew guide, or null when no guide link is set. */
+    private static function guideAction(): ?MessageAction
+    {
+        $url = Roles::guideUrl();
+
+        return '' === $url ? null : new MessageAction('guide', RoleGuide::label(), '', static fn (): string => $url);
+    }
+
+    /** The open tasks: the web board, and the bot's board in Telegram. */
+    private static function boardAction(Mailer $m): MessageAction
+    {
+        return new MessageAction(
+            'board',
+            __('See open tasks', 'eventcrew'),
+            '',
+            static fn (): string => $m->boardUrl(),
+            '',
+            'board'
+        );
     }
 
     /**
@@ -540,7 +638,6 @@ final class MessageTemplates
      */
     private static function previews(): array
     {
-        $guide = static fn (): array => null === RoleGuide::emailAction() ? [] : [RoleGuide::label()];
         $openTasks = [__('See open tasks', 'eventcrew')];
         $greet = ['greeting' => true];
         $none = ['frame' => MessageTemplate::FRAME_NONE];
@@ -550,33 +647,12 @@ final class MessageTemplates
         $admin = [DoorLinkSender::adminButtonLabel()];
 
         return [
-            'reminder' => ['buttons' => static fn (): array => [__('Show your ticket', 'eventcrew'), ...$guide()]],
-            'reminder_dm' => $signed + [
-                'buttons' => static fn (): array => [
-                    ...(null === RoleGuide::button() ? [] : [RoleGuide::label()]),
-                    __('Can’t make it? Cancel', 'eventcrew'),
-                ],
-            ],
-            'slot_freed' => ['buttons' => $openTasks],
+            'reminder_dm' => $signed,
             'slot_freed_dm' => $signed,
             'task_cancelled' => ['buttons' => $openTasks],
             'credit_granted' => ['buttons' => [__('Get your free ticket', 'eventcrew')]],
             'free_ticket_dm' => $none + ['buttons' => [__('🎟 Show your ticket', 'eventcrew')]],
-            'signup_confirmed' => [
-                'buttons' => static fn (): array => [
-                    __('Show your ticket', 'eventcrew'),
-                    __('Add to calendar', 'eventcrew'),
-                    ...$guide(),
-                ],
-            ],
-            'signup_confirmed_dm' => $none + [
-                'buttons' => static fn (): array => [
-                    __('🎟 Show your ticket', 'eventcrew'),
-                    __('📅 Add to calendar', 'eventcrew'),
-                    ...(null === RoleGuide::button() ? [] : [RoleGuide::label()]),
-                ],
-            ],
-            'cancel_confirmed' => ['buttons' => $openTasks],
+            'signup_confirmed_dm' => $none,
             'cancel_confirmed_dm' => $none,
             'open_task_call' => [
                 'buttons' => [__('See open tasks', 'eventcrew'), __('Open the group in Telegram', 'eventcrew')],
@@ -760,7 +836,7 @@ final class MessageTemplates
         // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
         $cancelHelp = self::botOrWeb(
             __('How to cancel the task or find someone to take it over: in the bot, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
-            static fn (): string => __("Can't make it? Open the bot and tap the task to cancel. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew'),
+            static fn (): string => __("Can't make it? Tap Cancel below. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew'),
             static fn (string $url): string => sprintf(
                 /* translators: %s: link to the crew page */
                 __("Can't make it? Tap Cancel on your task in the Board tab of the crew page (%s).", 'eventcrew'),
@@ -996,7 +1072,7 @@ final class MessageTemplates
                 null,
                 static fn (): string => self::tag(
                     /* translators: 1: role, 2: event, 3: date/time */
-                    __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap the task again on the group board or in /board in a private chat, or tap Cancel in your reminder. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew'),
+                    __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.\n\nTo cancel, tap Cancel below, or tap the task again on the board. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew'),
                     ['%1$s' => '{role}', '%2$s' => '{event}', '%3$s' => '{when}']
                 ) . "{free_cancel}{about}\n\n{standing}",
                 ['role' => $role, 'event' => $event, 'when' => $when] + $claimPlaceholders
