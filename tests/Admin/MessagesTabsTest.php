@@ -243,6 +243,11 @@ final class MessagesTabsTest extends TestCase
         foreach (TicketReasons::KINDS as $kind) {
             self::assertStringContainsString('data-ec-row="email.ticket_reason.' . $kind . '"', $html);
         }
+
+        // Q341: the unused message text of the Ticket entry is gone, with its warning; the others keep theirs.
+        self::assertStringNotContainsString('data-ec-row="message.ticket.', $html);
+        self::assertStringNotContainsString('name="kind" value="ticket"', $html);
+        self::assertStringContainsString('data-ec-row="message.slot_freed_dm.body"', $html);
     }
 
     public function testTheAiFormsReturnToTheAiTab(): void
