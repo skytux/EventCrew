@@ -10262,3 +10262,8 @@ msgstr ""
 msgid "🧭 Organizer guide ↓"
 msgstr ""
 
+msgid "📅 More tasks"
+msgstr ""
+
+msgid "There are no task descriptions yet."
+msgstr ""

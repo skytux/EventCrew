@@ -48,17 +48,17 @@ final class RoleGuideTest extends TelegramTestCase
         );
     }
 
-    public function testTheTelegramBoardLinksToTheDescriptions(): void
+    /** The board's Task info opens the bot, which sends the list (Owner 2026-11-07). */
+    public function testTheTelegramBoardOpensTheDescriptionsInTheBot(): void
     {
-        $this->options['eventcrew_signup_page_id'] = 7;
-        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
+        $this->options['eventcrew_telegram_bot_username'] = 'eventcrew_bot';
         $this->wpdb->nextResults[] = [$this->taskRow()];
         $this->wpdb->nextResults[] = [];
 
         $keyboard = (new BoardRenderer(new TaskRepository()))->render()['keyboard'];
         $urls = array_column(array_merge(...$keyboard), 'url');
 
-        self::assertContains('https://site.test/crew/#eventcrew-tasks-info', $urls);
+        self::assertContains('https://t.me/eventcrew_bot?start=tasks', $urls);
     }
 
     /**

@@ -590,19 +590,7 @@ final class WelcomeSender
      */
     private static function roleLines(): array
     {
-        $lines = [];
-
-        foreach (RoleGuide::descriptions() as $role) {
-            $line = '- ' . $role['name'];
-
-            if (! EmailBody::isEmojiLine($line)) {
-                $line = '- 🔹 ' . $role['name'];
-            }
-
-            $lines[] = '' === $role['description'] ? $line : $line . ': ' . $role['description'];
-        }
-
-        return $lines;
+        return RoleGuide::lines();
     }
 
     /**

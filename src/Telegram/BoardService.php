@@ -15,6 +15,7 @@ use EventCrew\Support\Dates;
 use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\MessageActions;
+use EventCrew\Support\RoleGuide;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\SlotFreedNotice;
 
@@ -363,8 +364,8 @@ final class BoardService
     private function textBoard(string $date = '', bool $group = true): array
     {
         $build = fn (): array => self::cardsOn()
-            ? $this->renderer->crewBoard($date)
-            : $this->renderer->render($date);
+            ? $this->renderer->crewBoard($date, $group)
+            : $this->renderer->render($date, $group);
 
         return $group ? Language::run(Language::ENGLISH, $build) : $build();
     }
@@ -826,6 +827,25 @@ final class BoardService
         $rendered = $this->textBoard($date, false);
 
         return null !== $this->telegram->sendMessage($chatId, $rendered['text'], $this->markup($rendered));
+    }
+
+    /**
+     * What each task involves (MenuButtons::TASK_INFO, the board's 📝 Task
+     * info link, Owner 2026-11-07): one line per role with its description,
+     * always in the person's private chat $chatId.
+     */
+    public function sendTaskInfo(int $chatId): void
+    {
+        if (! $this->telegram->isConfigured() || 0 === $chatId) {
+            return;
+        }
+
+        $lines = RoleGuide::lines();
+        $text = [] === $lines
+            ? __('There are no task descriptions yet.', 'eventcrew')
+            : implode("\n", array_merge([RoleGuide::descriptionsLabel(), ''], $lines));
+
+        $this->telegram->sendMessage($chatId, $text);
     }
 
     /**

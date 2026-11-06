@@ -9,7 +9,6 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\BoardVisibility;
 use EventCrew\Support\Dates;
 use EventCrew\Support\EventName;
-use EventCrew\Support\RoleGuide;
 
 /**
  * Turns the open tasks into the board's text and inline keyboard - the pure
@@ -17,8 +16,9 @@ use EventCrew\Support\RoleGuide;
  * editing the message (the lifecycle) reads separately from composing it.
  *
  * Each event is headed in the text (📅 date · name); the keyboard holds only
- * buttons that do something: the open tasks by role, two to a row
- * (taskRows()), the day buttons, then the links at the foot (footRows()). No
+ * buttons that do something: the open tasks by role, three to a row
+ * (taskRows()), the day buttons (private copies only), then the links at the
+ * foot (footRows()). No
  * headings in the keyboard and no full tasks (Owner 2026-11-06: the board was
  * too tall). Boards posted before that still carry heading rows with
  * SPACER_DATA, which no handler acts on.
@@ -32,9 +32,10 @@ use EventCrew\Support\RoleGuide;
  * photo message for the next event and crewBoard() the text board under it:
  * one day, with who is signed up, and the same row of day buttons.
  *
- * The group's message always shows the next event; a day button tapped there
- * sends that day to the person's private chat instead of moving the shared
- * message (BoardService::onPickDate()).
+ * The group's message always shows the next event and has no day buttons
+ * (Owner 2026-11-07): its 📅 More tasks link opens the next day in the
+ * person's private chat (start=board-<Ymd>). A day button on a group board
+ * posted before that still sends that day privately (BoardService::onPickDate()).
  */
 final class BoardRenderer
 {
@@ -71,7 +72,7 @@ final class BoardRenderer
      *                     tasks shows the next one.
      * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
      */
-    public function render(string $date = ''): array
+    public function render(string $date = '', bool $group = true): array
     {
         $tasks = $this->boardTasks();
 
@@ -82,7 +83,7 @@ final class BoardRenderer
         $dates = $this->dates($tasks);
         $shown = in_array($date, $dates, true) ? $date : $dates[0];
 
-        return $this->day($tasks, $dates, $shown);
+        return $this->day($tasks, $dates, $shown, $group);
     }
 
     /**
@@ -93,13 +94,16 @@ final class BoardRenderer
      * task buttons (taskRows()), the row of day buttons (DayPicker), and
      * the links at the foot. The group's message always shows the next event
      * (Owner, 2026-11-06: the board was too long with three); another day is
-     * shown only in a private copy.
+     * shown only in a private copy. The group's message has no day buttons
+     * (Owner 2026-11-07): its More tasks link opens the next day in the private
+     * chat instead.
      *
-     * @param string $date The day to show (Y-m-d); '' or a day with no open
-     *                     tasks shows the next one.
+     * @param string $date  The day to show (Y-m-d); '' or a day with no open
+     *                      tasks shows the next one.
+     * @param bool   $group Whether this is the group's message, not a private copy.
      * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
      */
-    public function crewBoard(string $date = ''): array
+    public function crewBoard(string $date = '', bool $group = true): array
     {
         $tasks = $this->boardTasks();
 
@@ -117,11 +121,11 @@ final class BoardRenderer
         $keyboard = [];
         $taken = [];
 
-        foreach ($this->groupByEvent($tasks) as $group) {
+        foreach ($this->groupByEvent($tasks) as $heading) {
             $lines[] = '';
-            $lines[] = '📅 ' . $group['date'] . ' · ' . $group['title'];
+            $lines[] = '📅 ' . $heading['date'] . ' · ' . $heading['title'];
 
-            foreach ($group['tasks'] as $task) {
+            foreach ($heading['tasks'] as $task) {
                 $names = $occupants[$task->id] ?? [];
                 $taken[$task->id] = count($names);
                 $lines[] = $this->taskLine($task, $names);
@@ -132,11 +136,13 @@ final class BoardRenderer
             $keyboard[] = $row;
         }
 
-        foreach (DayPicker::rows($dates, $shown, BoardService::PICK_PREFIX) as $row) {
-            $keyboard[] = $row;
+        if (! $group) {
+            foreach (DayPicker::rows($dates, $shown, BoardService::PICK_PREFIX) as $row) {
+                $keyboard[] = $row;
+            }
         }
 
-        foreach ($this->footRows() as $row) {
+        foreach ($this->footRows($group ? $this->nextDay($dates, $shown) : '') as $row) {
             $keyboard[] = $row;
         }
 
@@ -307,9 +313,10 @@ final class BoardRenderer
      * @param array<int, Task>   $tasks       Every task the board may show.
      * @param array<int, string> $dates       Every day of $tasks, ascending.
      * @param string             $shown       The day to show, Y-m-d.
+     * @param bool               $group       The group's message: no day buttons.
      * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
      */
-    private function day(array $tasks, array $dates, string $shown): array
+    private function day(array $tasks, array $dates, string $shown, bool $group): array
     {
         $tasks = array_values(array_filter($tasks, static fn (Task $t): bool => $t->taskDate === $shown));
         $daySuffix = $shown === $dates[0] ? '' : ':' . $shown;
@@ -322,11 +329,11 @@ final class BoardRenderer
 
         // The event's heading and each task's time and count go in the text;
         // the keyboard has only the task buttons (taskRows()).
-        foreach ($groups as $group) {
+        foreach ($groups as $heading) {
             $lines[] = '';
-            $lines[] = '📅 ' . $group['date'] . ' · ' . $group['title'];
+            $lines[] = '📅 ' . $heading['date'] . ' · ' . $heading['title'];
 
-            foreach ($group['tasks'] as $task) {
+            foreach ($heading['tasks'] as $task) {
                 $lines[] = $this->countLine($task, $occupancy[$task->id] ?? 0);
             }
         }
@@ -335,11 +342,13 @@ final class BoardRenderer
             $keyboard[] = $row;
         }
 
-        foreach (DayPicker::rows($dates, $shown, BoardService::PICK_PREFIX) as $row) {
-            $keyboard[] = $row;
+        if (! $group) {
+            foreach (DayPicker::rows($dates, $shown, BoardService::PICK_PREFIX) as $row) {
+                $keyboard[] = $row;
+            }
         }
 
-        foreach ($this->footRows() as $row) {
+        foreach ($this->footRows($group ? $this->nextDay($dates, $shown) : '') as $row) {
             $keyboard[] = $row;
         }
 
@@ -347,36 +356,43 @@ final class BoardRenderer
     }
 
     /**
-     * The links at the foot of the board (Owner 2026-11-06): sign-up across the
-     * whole row, then your own info and what each task involves side by side.
-     * No crew guide. Only the links there are go in; [] when none.
+     * The links at the foot of the board (Owner 2026-11-07): your own info,
+     * what each task involves and, on the group's message, More tasks side
+     * by side; then sign-up across the whole row at the bottom. No crew
+     * guide. Only the links there are go in; [] when none.
      *
+     * @param string $moreDay The day More tasks opens in the private chat
+     *                        (Y-m-d); '' = no More tasks button.
      * @return array<int, array<int, array<string, mixed>>>
      */
-    private function footRows(): array
+    private function footRows(string $moreDay = ''): array
     {
         $rows = [];
+
+        // What each task involves, sent as a private message (Owner 2026-11-07).
+        $descriptions = $this->deepLinkButton('tasks', __('📝 Task info', 'eventcrew'));
+
+        $more = '' === $moreDay
+            ? null
+            : $this->deepLinkButton(
+                BoardService::START_VERB . '-' . str_replace('-', '', $moreDay),
+                __('📅 More tasks', 'eventcrew')
+            );
+
+        $links = array_values(array_filter([
+            $this->deepLinkButton('me', __('👤 My info', 'eventcrew')),
+            $descriptions,
+            $more,
+        ]));
+
+        if ([] !== $links) {
+            $rows[] = $links;
+        }
+
         $signUp = $this->deepLinkButton('onboard', __('👋 New here? Sign up →', 'eventcrew'));
 
         if (null !== $signUp) {
             $rows[] = [$signUp];
-        }
-
-        // What each task involves: the descriptions section on the web board.
-        // Needs only the sign-up page, not the bot username.
-        $descriptions = RoleGuide::descriptionsButton();
-
-        if (null !== $descriptions) {
-            $descriptions['text'] = __('📝 Task info', 'eventcrew');
-        }
-
-        $pair = array_values(array_filter([
-            $this->deepLinkButton('me', __('👤 My info', 'eventcrew')),
-            $descriptions,
-        ]));
-
-        if ([] !== $pair) {
-            $rows[] = $pair;
         }
 
         // No crew guide on the board (Owner 2026-11-06).
@@ -384,7 +400,25 @@ final class BoardRenderer
     }
 
     /**
-     * The task buttons, two to a row: only the tasks with a free place, each
+     * The first day after $shown that has open tasks, or '' when there is none.
+     *
+     * @param array<int, string> $dates Every day of the board, ascending.
+     */
+    private function nextDay(array $dates, string $shown): string
+    {
+        foreach ($dates as $date) {
+            if ($date > $shown) {
+                return $date;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * The task buttons, three to a row (Owner 2026-11-07), the last row filled
+     * with blank buttons so every button is the same width: only the tasks
+     * with a free place, each
      * by its role alone (the text has the times and who is in). The time is
      * added only when two open tasks share a role, to tell them apart.
      *
@@ -411,7 +445,14 @@ final class BoardRenderer
             $buttons[] = ['text' => $label, 'callback_data' => 't:' . $task->id . $daySuffix];
         }
 
-        return array_chunk($buttons, 2);
+        $rows = array_chunk($buttons, 3);
+        $last = count($rows) - 1;
+
+        while ($last >= 0 && count($rows[$last]) < 3) {
+            $rows[$last][] = ['text' => DayPicker::BLANK, 'callback_data' => self::SPACER_DATA];
+        }
+
+        return $rows;
     }
 
     /** "🎨 Decorate · 17:00–18:30 · 1/3", and "· full" when it is. */

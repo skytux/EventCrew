@@ -113,6 +113,29 @@ final class RoleGuide
         return $list;
     }
 
+    /**
+     * One "- " line per role on offer, with its description. The role's own
+     * emoji is the line's bullet; a role without one gets 🔹.
+     *
+     * @return array<int, string>
+     */
+    public static function lines(): array
+    {
+        $lines = [];
+
+        foreach (self::descriptions() as $role) {
+            $line = '- ' . $role['name'];
+
+            if (! EmailBody::isEmojiLine($line)) {
+                $line = '- 🔹 ' . $role['name'];
+            }
+
+            $lines[] = '' === $role['description'] ? $line : $line . ': ' . $role['description'];
+        }
+
+        return $lines;
+    }
+
     public static function descriptionsLabel(): string
     {
         return __('📝 What each task involves', 'eventcrew');

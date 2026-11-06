@@ -208,6 +208,23 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertContains('sendMessage', $this->calledMethods());
     }
 
+    /** The board's 📝 Task info link (Owner 2026-11-07): the role list as a DM, no onboarding. */
+    public function testTheTasksStartVerbSendsWhatEachTaskInvolves(): void
+    {
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/start tasks',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555, 'first_name' => 'Sam'],
+            ],
+        ]);
+
+        self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
+        $dm = $this->lastCallTo('sendMessage');
+        self::assertSame(555, $dm['chat_id']);
+        self::assertMatchesRegularExpression('/What each task involves|no task descriptions/', (string) $dm['text']);
+    }
+
     public function testAStartVerbRunsThatButton(): void
     {
         // An email's "Open in Telegram" link (t.me/<bot>?start=ticket) does

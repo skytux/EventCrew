@@ -196,13 +196,11 @@ final class BoardCardsTest extends TelegramTestCase
         self::assertSame([self::SHOP], self::targets($photo));
 
         $text = $this->lastCallTo('sendMessage');
-        // Owner 2026-11-06: only the next event, then the row of day buttons.
+        // Owner 2026-11-06: only the next event. Owner 2026-11-07: three task
+        // buttons to a row, and no day buttons on the group's message.
         self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug · Party\n🎈 Decorate · 0/2: –", $text['text']);
         self::assertSame(['t:1'], self::taskTargets($text));
-        self::assertSame(
-            ['🎈 Decorate', DayPicker::BLANK, '📅 Sat 1 Aug ✓', 'Sun 2 Aug ▶'],
-            self::labels($text)
-        );
+        self::assertSame(['🎈 Decorate', DayPicker::BLANK, DayPicker::BLANK], self::labels($text));
 
         $board = $this->options[BoardService::BOARD_OPTION];
         self::assertSame(62, $board['message_id']);
@@ -314,12 +312,12 @@ final class BoardCardsTest extends TelegramTestCase
         self::assertStringContainsString('Night 1', $text['text']);
         self::assertStringNotContainsString('Night 2', $text['text']);
         self::assertSame(['t:1'], self::taskTargets($text));
-        // Under the tasks: the shown day and the next one, no ◀ on the first.
+        // No day buttons on the group's message (Owner 2026-11-07).
         $picker = array_values(array_filter(
             self::targets($text),
             static fn (string $target): bool => str_starts_with($target, BoardService::PICK_PREFIX)
         ));
-        self::assertSame(['bd:2026-08-01', 'bd:2026-08-02'], $picker);
+        self::assertSame([], $picker);
     }
 
     public function testAPickedDayShowsThatDayWithItsNamesAndDayOnTheTaskButtons(): void
@@ -327,7 +325,7 @@ final class BoardCardsTest extends TelegramTestCase
         $this->wpdb->nextResults[] = $this->twoDays();
         $this->wpdb->nextResults[] = [['task_id' => 2, 'display_name' => 'Ben']];
 
-        $board = (new BoardRenderer(new TaskRepository()))->crewBoard('2026-08-02');
+        $board = (new BoardRenderer(new TaskRepository()))->crewBoard('2026-08-02', false);
 
         self::assertSame(self::INTRO . "\n\n📅 Sun 2 Aug · Cleanup\n🎈 Decorate · 1/2: Ben", $board['text']);
         $data = array_column(array_merge(...$board['keyboard']), 'callback_data', 'text');
@@ -376,11 +374,12 @@ final class BoardCardsTest extends TelegramTestCase
         }
     }
 
-    public function testBothFormatsHaveTheDayButtonsAndThePhotoHasNone(): void
+    public function testBothFormatsHaveTheDayButtonsOnlyInThePrivateTextBoard(): void
     {
         $this->partyEvent();
 
-        // On: the text boards have them, the photo messages do not.
+        // On: the private text board has them; the group's message and the
+        // photo messages do not (Owner 2026-11-07).
         $this->queueRefresh($this->twoDays());
         $this->board()->refresh();
         $this->wpdb->nextResults[] = $this->twoDays(); // the card
@@ -392,12 +391,14 @@ final class BoardCardsTest extends TelegramTestCase
         foreach ($this->telegramCalls as $call) {
             if ('sendPhoto' === $call['method']) {
                 self::assertSame([self::SHOP], self::targets($call['body']));
-            } else {
+            } elseif (555 === $call['body']['chat_id']) {
                 self::assertContains('bd:2026-08-02', self::targets($call['body']));
+            } else {
+                self::assertNotContains('bd:2026-08-02', self::targets($call['body']));
             }
         }
 
-        // Off: both have them.
+        // Off: only the private copy has them.
         $this->options[BoardService::CARDS_OPTION] = false;
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => self::CHAT, 'message_id' => 0];
         $this->telegramCalls = [];
@@ -409,9 +410,8 @@ final class BoardCardsTest extends TelegramTestCase
         $this->board()->sendPrivate(555);
 
         self::assertSame(['sendMessage', 'sendMessage'], $this->calledMethods());
-        foreach ($this->telegramCalls as $call) {
-            self::assertContains('bd:2026-08-02', self::targets($call['body']));
-        }
+        self::assertNotContains('bd:2026-08-02', self::targets($this->telegramCalls[0]['body']));
+        self::assertContains('bd:2026-08-02', self::targets($this->telegramCalls[1]['body']));
     }
 
     public function testWithTheSettingOffTheBoardIsUnchanged(): void
@@ -427,7 +427,7 @@ final class BoardCardsTest extends TelegramTestCase
         $sent = $this->lastCallTo('sendMessage');
         self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug · Party\n🎈 Decorate · 1/2", $sent['text']);
         self::assertSame(['t:1'], self::taskTargets($sent));
-        self::assertContains('bd:2026-08-02', self::targets($sent));
+        self::assertNotContains('bd:2026-08-02', self::targets($sent));
         self::assertContains('🎈 Decorate', self::labels($sent));
         self::assertSame([], array_filter(
             $this->wpdb->queries,
@@ -593,7 +593,7 @@ final class BoardCardsTest extends TelegramTestCase
         self::assertSame(['deleteMessage', 'editMessageText'], $this->calledMethods());
         self::assertSame([61], $this->deleted());
         self::assertSame(62, $this->lastCallTo('editMessageText')['message_id']);
-        self::assertContains('bd:2026-08-02', self::targets($this->lastCallTo('editMessageText')));
+        self::assertNotContains('bd:2026-08-02', self::targets($this->lastCallTo('editMessageText')));
         self::assertSame(
             ['chat_id' => self::CHAT, 'message_id' => 62],
             $this->options[BoardService::BOARD_OPTION]
