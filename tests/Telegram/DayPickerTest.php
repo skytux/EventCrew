@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Telegram;
 
+use EventCrew\Telegram\BoardRenderer;
 use EventCrew\Telegram\DayPicker;
 use EventCrew\Tests\TestCase;
 
 /**
- * The date selector: one row of [◀ previous] [📅 shown ✓] [next ▶], the
- * arrows left out at the ends, and the next day picked by default. "Today"
+ * The date selector: one row of [◀ previous] [📅 shown ✓] [next ▶], with
+ * blank buttons at the ends, and the next day picked by default. "Today"
  * is 2026-07-20 in the tests.
  */
 final class DayPickerTest extends TestCase
@@ -25,14 +26,19 @@ final class DayPickerTest extends TestCase
         ]], DayPicker::rows(self::DATES, '2026-07-27', 'dl:'));
     }
 
-    public function testTheArrowsAreLeftOutAtTheEnds(): void
+    /** Lou 2026-11-06: at an end, a blank button keeps the shown day in the middle. */
+    public function testAnEndHasABlankButtonInsteadOfTheArrow(): void
     {
+        $blank = ['text' => DayPicker::BLANK, 'callback_data' => BoardRenderer::SPACER_DATA];
+
         self::assertSame([[
             ['text' => '◀ Mon 27 Jul', 'callback_data' => 'dl:2026-07-27'],
             ['text' => '📅 Mon 3 Aug ✓', 'callback_data' => 'dl:2026-08-03'],
+            $blank,
         ]], DayPicker::rows(self::DATES, '2026-08-03', 'dl:'));
 
         self::assertSame([[
+            $blank,
             ['text' => '📅 Mon 13 Jul ✓', 'callback_data' => 'dl:2026-07-13'],
             ['text' => 'Mon 20 Jul ▶', 'callback_data' => 'dl:2026-07-20'],
         ]], DayPicker::rows(self::DATES, '2026-07-13', 'dl:'));
@@ -54,7 +60,7 @@ final class DayPickerTest extends TestCase
         $rows = DayPicker::rows(self::DATES, '2026-07-27', 'dl:', $canView);
 
         self::assertSame(
-            ['◀ Mon 13 Jul', '📅 Mon 27 Jul ✓'],
+            ['◀ Mon 13 Jul', '📅 Mon 27 Jul ✓', DayPicker::BLANK],
             array_column($rows[0], 'text')
         );
         // Outward from the shown day, stopping at the first allowed one.

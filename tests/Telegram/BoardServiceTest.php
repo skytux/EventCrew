@@ -309,7 +309,7 @@ final class BoardServiceTest extends TelegramTestCase
 
     /**
      * Under the tasks (Lou 2026-11-06): sign-up across the row, then my info
-     * and task info side by side, then the crew guide. No rule, no headings.
+     * and task info side by side. No rule, no headings, no crew guide.
      */
     public function testTheFootIsSignUpThenMyInfoAndTaskInfoThenTheGuide(): void
     {
@@ -327,8 +327,8 @@ final class BoardServiceTest extends TelegramTestCase
     }
 
     /**
-     * Every link set: my info and task info share a row, the guide is under
-     * them. A full task has no button, and two open tasks with the same role
+     * Every link set: my info and task info share a row, and the crew guide
+     * is not on the board (Lou 2026-11-06). A full task has no button, and two open tasks with the same role
      * are told apart by their times.
      */
     public function testTheBoardHasOnlyOpenTasksThenTheFourLinks(): void
@@ -353,7 +353,7 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertStringContainsString('🎈 Decorate · ', $rows[0][0]);
         self::assertNotSame($rows[0][0], $rows[0][1]);
         self::assertSame(
-            [['👋 New here? Sign up →'], ['👤 My info', '📝 Task info'], ['📋 Crew guide']],
+            [['👋 New here? Sign up →'], ['👤 My info', '📝 Task info']],
             array_slice($rows, 1)
         );
         self::assertStringContainsString('2/2 · full', $rendered['text']);

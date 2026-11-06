@@ -15,7 +15,8 @@ use EventCrew\Support\Dates;
  *
  * One row of three: [◀ previous day] [📅 shown day ✓] [next day ▶]. The
  * arrows step to the nearest day before and after the shown one that the
- * person may see, and an arrow is left out at either end. Past days are
+ * person may see; at either end the arrow's place is a blank button that does
+ * nothing (BLANK), so the shown day stays in the middle (Lou 2026-11-06). Past days are
  * reached only by stepping back. The middle button opens the shown day again,
  * so it refreshes the list. With no other day there is no row. A list opens on the next day with something on
  * it, today included (defaultDate()).
@@ -24,6 +25,12 @@ final class DayPicker
 {
     /** The mark after the day that is shown. */
     public const MARK = ' ✓';
+
+    /**
+     * The label of the blank button at an end of the row: U+2800, which shows
+     * as nothing (Telegram refuses an empty or whitespace-only label).
+     */
+    public const BLANK = "\u{2800}";
 
     /**
      * The selector row for $shown. No row when no day is shown, or when
@@ -48,17 +55,16 @@ final class DayPicker
             return [];
         }
 
-        $row = [];
-
-        if ('' !== $steps['prev']) {
-            $row[] = ['text' => '◀ ' . Dates::dayLabel($steps['prev']), 'callback_data' => $prefix . $steps['prev']];
-        }
-
-        $row[] = ['text' => self::label($shown), 'callback_data' => $prefix . $shown];
-
-        if ('' !== $steps['next']) {
-            $row[] = ['text' => Dates::dayLabel($steps['next']) . ' ▶', 'callback_data' => $prefix . $steps['next']];
-        }
+        $blank = ['text' => self::BLANK, 'callback_data' => BoardRenderer::SPACER_DATA];
+        $row = [
+            '' === $steps['prev']
+                ? $blank
+                : ['text' => '◀ ' . Dates::dayLabel($steps['prev']), 'callback_data' => $prefix . $steps['prev']],
+            ['text' => self::label($shown), 'callback_data' => $prefix . $shown],
+            '' === $steps['next']
+                ? $blank
+                : ['text' => Dates::dayLabel($steps['next']) . ' ▶', 'callback_data' => $prefix . $steps['next']],
+        ];
 
         return [$row];
     }

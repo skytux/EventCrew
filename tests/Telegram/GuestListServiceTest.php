@@ -15,6 +15,8 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\TicketMail;
+use EventCrew\Telegram\BoardRenderer;
+use EventCrew\Telegram\DayPicker;
 use EventCrew\Telegram\GuestListService;
 
 final class GuestListServiceTest extends TelegramTestCase
@@ -360,6 +362,7 @@ final class GuestListServiceTest extends TelegramTestCase
         );
         self::assertSame(
             ['inline_keyboard' => [[
+                ['text' => DayPicker::BLANK, 'callback_data' => BoardRenderer::SPACER_DATA],
                 ['text' => '📅 Sat 1 Aug ✓', 'callback_data' => 'gl:2026-08-01'],
                 ['text' => 'Sat 8 Aug ▶', 'callback_data' => 'gl:2026-08-08'],
             ]]],

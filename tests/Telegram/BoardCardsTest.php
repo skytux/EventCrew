@@ -10,6 +10,7 @@ use EventCrew\Support\AssistantSettings;
 use EventCrew\Telegram\BoardDjText;
 use EventCrew\Telegram\BoardRenderer;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\DayPicker;
 use EventCrew\Telegram\EntityHtml;
 use EventCrew\Telegram\EventCard;
 use EventCrew\Tests\Support\FakeEventNames;
@@ -199,7 +200,7 @@ final class BoardCardsTest extends TelegramTestCase
         self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug · Party\n🎈 Decorate · 0/2: –", $text['text']);
         self::assertSame(['t:1'], self::taskTargets($text));
         self::assertSame(
-            ['🎈 Decorate', '📅 Sat 1 Aug ✓', 'Sun 2 Aug ▶'],
+            ['🎈 Decorate', DayPicker::BLANK, '📅 Sat 1 Aug ✓', 'Sun 2 Aug ▶'],
             self::labels($text)
         );
 

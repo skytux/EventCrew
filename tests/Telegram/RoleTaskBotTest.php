@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
 use EventCrew\Support\Roles;
+use EventCrew\Telegram\DayPicker;
 
 /**
  * /roletasks: the restricted-role tasks in the bot. Someone holding a role
@@ -140,9 +141,9 @@ final class RoleTaskBotTest extends TelegramTestCase
 
         $this->roleTaskBot()->start(555, 555);
 
-        self::assertSame(['rt:s:9', 'rt:d:2026-07-25', 'rt:d:2026-08-01'], $this->buttonData());
+        self::assertSame(['rt:s:9', 'x', 'rt:d:2026-07-25', 'rt:d:2026-08-01'], $this->buttonData());
         $keyboard = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
-        self::assertSame(['📅 Sat 25 Jul ✓', 'Sat 1 Aug ▶'], array_column($keyboard[1], 'text'));
+        self::assertSame([DayPicker::BLANK, '📅 Sat 25 Jul ✓', 'Sat 1 Aug ▶'], array_column($keyboard[1], 'text'));
     }
 
     public function testTappingADayRedrawsTheListOnThatDay(): void
@@ -159,7 +160,7 @@ final class RoleTaskBotTest extends TelegramTestCase
         $edit = $this->lastCallTo('editMessageText');
         self::assertSame(3, $edit['message_id']);
         $data = array_column(array_merge(...$edit['reply_markup']['inline_keyboard']), 'callback_data');
-        self::assertSame(['rt:s:10', 'rt:d:2026-07-25', 'rt:d:2026-08-01'], $data);
+        self::assertSame(['rt:s:10', 'rt:d:2026-07-25', 'rt:d:2026-08-01', 'x'], $data);
     }
 
     public function testTheListIsEmptyForSomeoneWithoutTheRole(): void

@@ -11,6 +11,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
+use EventCrew\Telegram\DayPicker;
 use EventCrew\Telegram\RosterService;
 
 final class RosterServiceTest extends TelegramTestCase
@@ -515,7 +516,7 @@ final class RosterServiceTest extends TelegramTestCase
 
         $buttons = array_merge(...$this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']);
         self::assertSame(
-            ['📅 Mon 20 Jul ✓' => 'rd:2026-07-20', 'Mon 27 Jul ▶' => 'rd:2026-07-27'],
+            [DayPicker::BLANK => 'x', '📅 Mon 20 Jul ✓' => 'rd:2026-07-20', 'Mon 27 Jul ▶' => 'rd:2026-07-27'],
             array_column($buttons, 'callback_data', 'text')
         );
     }
