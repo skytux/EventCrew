@@ -1693,6 +1693,10 @@ final class Kernel
                     SettingsPage::WEBHOOK_JOB,
                     fn (array $args): array => $container->get(SettingsPage::class)->webhookJob($args)
                 );
+                $jobs->handle(
+                    SettingsPage::BOARD_JOB,
+                    fn (array $args): array => $container->get(SettingsPage::class)->boardJob($args)
+                );
 
                 return $jobs;
             }

@@ -3386,14 +3386,11 @@ msgstr "Webhook asennettu. Lisää botti ryhmääsi, niin taulu ilmestyy sinne i
 msgid "Add a bot token first, then install the webhook."
 msgstr "Lisää ensin botin token ja asenna sitten webhook."
 
-msgid "The board has no home yet. Add the bot to your group and send /board there once; after that this button redraws it."
-msgstr "Taululla ei ole vielä paikkaa. Lisää botti ryhmääsi ja lähetä siellä kerran /board; sen jälkeen tämä painike piirtää taulun uudelleen."
-
 msgid "The board has been redrawn."
 msgstr "Taulu piirrettiin uudelleen."
 
-msgid "The board could not be redrawn — it may have been deleted from the group. Send /board there to post a fresh one. Diagnostics has the logged reason."
-msgstr "Taulua ei voitu piirtää uudelleen — se on ehkä poistettu ryhmästä. Lähetä siellä /board, niin uusi taulu julkaistaan. Diagnostiikassa on kirjattu syy."
+msgid "The board could not be redrawn — it may have been deleted from the group. Use Post the board in the group to post a fresh one. Diagnostics has the logged reason."
+msgstr "Taulua ei voitu piirtää uudelleen — se on ehkä poistettu ryhmästä. Julkaise uusi taulu painikkeella Julkaise taulu ryhmässä. Diagnostiikassa on kirjattu syy."
 
 msgid "A new webhook secret was generated and installed. Any copy of the old one — in a server log, for instance — is now useless."
 msgstr "Uusi webhook-salaisuus luotiin ja asennettiin. Vanhan salaisuuden kopiot — esimerkiksi palvelimen lokissa — ovat nyt hyödyttömiä."
@@ -4302,9 +4299,6 @@ msgstr "Botti"
 
 msgid "Board group"
 msgstr "Taulun ryhmä"
-
-msgid "Not set yet - run /board in the group once."
-msgstr "Ei vielä asetettu - suorita /board ryhmässä kerran."
 
 msgid "Could not read the webhook status from Telegram. Check the token."
 msgstr "Webhookin tilaa ei voitu lukea Telegramista. Tarkista tunniste."
@@ -7754,14 +7748,14 @@ msgctxt "month name after a day number"
 msgid "December"
 msgstr "joulukuuta"
 
-msgid "The board has no group yet. Use Add the bot to your group, or send /board in the group once."
-msgstr "Taululla ei ole vielä ryhmää. Käytä painiketta Lisää botti ryhmääsi tai lähetä ryhmässä kerran /board."
+msgid "The board is being posted in the group. This page shows when it is done."
+msgstr "Taulua julkaistaan ryhmässä. Tämä sivu näyttää, kun se on valmis."
 
-msgid "A new board has been posted in the group."
-msgstr "Ryhmään on julkaistu uusi taulu."
+msgid "The board could not be posted in the group. Diagnostics has the logged reason."
+msgstr "Taulua ei voitu julkaista ryhmässä. Diagnostiikka näyttää kirjatun syyn."
 
-msgid "There is no board yet. Add the bot to your group: the board appears there by itself. If the bot is already in the group, send /board there once instead."
-msgstr "Taulua ei ole vielä. Lisää botti ryhmääsi: taulu ilmestyy sinne itsestään. Jos botti on jo ryhmässä, lähetä sen sijaan /board ryhmään kerran."
+msgid "The site does not know your Telegram group. To fix it, remove the bot from the group and add it again, or tap any button on a bot message there. Then reload this page."
+msgstr "Sivusto ei tiedä Telegram-ryhmääsi. Korjaa se poistamalla botti ryhmästä ja lisäämällä se uudelleen, tai napauta mitä tahansa botin viestin painiketta ryhmässä. Lataa sitten tämä sivu uudelleen."
 
 msgid "Add the bot to your group"
 msgstr "Lisää botti ryhmääsi"
@@ -7769,11 +7763,11 @@ msgstr "Lisää botti ryhmääsi"
 msgid "Telegram asks which group. Reload this page afterwards to see the board’s group here."
 msgstr "Telegram kysyy, mihin ryhmään. Lataa tämä sivu sen jälkeen uudelleen, niin näet taulun ryhmän täällä."
 
-msgid "Post a new board"
-msgstr "Julkaise uusi taulu"
+msgid "Post the board in the group"
+msgstr "Julkaise taulu ryhmässä"
 
-msgid "Refresh edits the board where it already sits, so nobody in the group is notified. Post a new board puts a fresh copy at the bottom of the group, like /board there, and removes the old one when Telegram allows it (within 48 hours)."
-msgstr "Päivitä muokkaa taulua sen nykyisellä paikalla, joten kukaan ryhmässä ei saa ilmoitusta. Julkaise uusi taulu lisää uuden kopion ryhmän alimmaiseksi, kuten /board ryhmässä, ja poistaa vanhan, jos Telegram sen sallii (48 tunnin sisällä)."
+msgid "Refresh edits the board where it already sits, so nobody in the group is notified. Post the board in the group puts a fresh copy at the bottom of the group, like /board there, and removes the old one when Telegram allows it (within 48 hours). No command in the group is needed."
+msgstr "Päivitä muokkaa taulua sen nykyisellä paikalla, joten kukaan ryhmässä ei saa ilmoitusta. Julkaise taulu ryhmässä lisää uuden kopion ryhmän alimmaiseksi, kuten /board ryhmässä, ja poistaa vanhan, jos Telegram sen sallii (48 tunnin sisällä). Komentoa ryhmässä ei tarvita."
 
 msgid "Your code"
 msgstr "Koodisi"
