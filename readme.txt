@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.149
+Stable tag: 1.140.150
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,14 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.150 =
+* Message preview: pick the event and the task, see that event's AI text, and write it now when it is missing.
+* Messages page: a { } Insert link by each field lists the placeholders with sample values and inserts one at the cursor.
+* Task messages offer {description} and {event_times}.
+* Cancelling a task or spending a free-entry credit asks first and says why (standing, credits left), in Telegram and on the web.
+* A cancel tapped on the group board asks in the private chat, or opens the bot when the person has not started it yet.
+* Every date screen has one row: previous date, the marked current date, next date. It opens on today or the next event.
 
 = 1.140.149 =
 * Messages about one event show its short description, post-event emails included ({event_description}).
@@ -1672,6 +1680,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.150 =
+No settings change.
 
 = 1.140.149 =
 No settings change.
