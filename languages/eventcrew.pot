@@ -3926,7 +3926,7 @@ msgstr ""
 msgid "No newsletter was sent in this time range."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:303 templates/public/signup-board.php:42
+#: src/Telegram/BoardRenderer.php:286 templates/public/signup-board.php:42
 msgid "No open tasks right now. Check back soon!"
 msgstr ""
 
@@ -4450,7 +4450,7 @@ msgstr ""
 msgid "Open tasks"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:312
+#: src/Telegram/BoardRenderer.php:300
 msgid "Open tasks — tap one to sign up, tap again to cancel."
 msgstr ""
 
@@ -9743,7 +9743,7 @@ msgstr ""
 msgid "free"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:490
+#: src/Telegram/BoardRenderer.php:436
 msgid "full"
 msgstr ""
 
@@ -9904,7 +9904,7 @@ msgstr ""
 msgid "signed up %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:241
+#: src/Telegram/BoardRenderer.php:221
 msgid "someone"
 msgstr ""
 
@@ -10143,7 +10143,7 @@ msgstr ""
 msgid "👋 %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:378
+#: src/Telegram/BoardRenderer.php:359
 msgid "👋 New here? Sign up →"
 msgstr ""
 
@@ -10153,6 +10153,10 @@ msgstr ""
 
 #: src/Telegram/RosterService.php:453
 msgid "👋 arrived · ✓ done · ⏰ late · ✗ no-show"
+msgstr ""
+
+#: src/Telegram/BoardRenderer.php:374
+msgid "👤 My info"
 msgstr ""
 
 #: src/Telegram/HelpService.php:144
@@ -10174,6 +10178,10 @@ msgstr ""
 #: src/Support/RoleGuide.php:46
 #. translators: %s: a sentence or two on what the role involves
 msgid "📝 About the task: %s"
+msgstr ""
+
+#: src/Telegram/BoardRenderer.php:370
+msgid "📝 Task info"
 msgstr ""
 
 #: src/Support/RoleGuide.php:118
@@ -10249,10 +10257,3 @@ msgstr ""
 msgid "🧭 Organizer guide ↓"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php
-msgid "👤 My info"
-msgstr ""
-
-#: src/Telegram/BoardRenderer.php
-msgid "📝 Task info"
-msgstr ""
