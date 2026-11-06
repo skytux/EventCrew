@@ -113,7 +113,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         return new Mailer(new Logger(), new EmailTemplate(new Logger()));
     }
 
-    private function admin(): CrewAdminController
+    private function admin(?\EventCrew\Support\BackgroundJobs $jobs = null): CrewAdminController
     {
         return new CrewAdminController(
             new PersonRepository(),
@@ -135,7 +135,8 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             null,
             new CrewAdminFollowup(new FollowupText(new LlmClient(new Logger()), new Logger())),
             null,
-            new NewcomerApproval(new PersonRepository(), $this->mailer(), $this->client())
+            new NewcomerApproval(new PersonRepository(), $this->mailer(), $this->client()),
+            $jobs
         );
     }
 
@@ -576,6 +577,60 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         $job = \EventCrew\Support\BackgroundJobs::latest(\EventCrew\Admin\AiPromptsPage::followupTarget('came'));
         self::assertSame(\EventCrew\Admin\AiPromptsPage::FOLLOWUP_JOB, $job['kind'] ?? null);
         self::assertSame(['variant' => 'came', 'text' => 'Thanks for coming!', 'by' => 1], $job['args'] ?? null);
+    }
+
+    public function testATextBeingTranslatedShowsSoUntilItsJobIsDone(): void
+    {
+        $this->options[\EventCrew\Support\AssistantSettings::URL_OPTION] = 'https://llm.example.test/v1';
+        $this->options[\EventCrew\Support\AssistantSettings::MODEL_OPTION] = 'test-model';
+        $followup = new CrewAdminFollowup(new FollowupText(new LlmClient(new Logger()), new Logger()));
+
+        $this->signIn($this->organizerRow(1));
+        $this->post(CrewAdminController::FOLLOWUP_TEXT_ACTION, ['variant' => 'came', 'followup_text' => 'Thanks!']);
+
+        self::assertTrue($followup->view()['texts']['came']['translating']);
+        self::assertFalse($followup->view()['texts']['missed']['translating']);
+        self::assertSame(['active' => ['followup:came']], $this->admin()->textStatus());
+
+        // The poll runs the job; after it the text is no longer listed.
+        $ran = [];
+        $jobs = new \EventCrew\Support\BackgroundJobs();
+        $jobs->handle(\EventCrew\Admin\AiPromptsPage::FOLLOWUP_JOB, static function (array $args) use (&$ran): array {
+            $ran[] = $args['text'];
+
+            return ['ok' => true];
+        });
+
+        self::assertSame(['active' => []], $this->admin($jobs)->textStatus());
+        self::assertSame(['Thanks!'], $ran);
+        self::assertFalse($followup->view()['texts']['came']['translating']);
+    }
+
+    public function testTheTranslationPollIsForOrganizersOnly(): void
+    {
+        $this->signIn($this->personRow(8));
+        $this->wpdb->nextResults[] = [$this->organizerRow(1)];   // organizers() for the alert
+
+        $result = $this->post(CrewAdminController::TEXT_STATUS_ACTION, [], 8);
+
+        self::assertSame(CrewAdminController::FORGED, $result['code']);
+
+        $this->signIn($this->organizerRow(1));
+        self::assertSame(
+            ['code' => CrewAdminController::OK, 'notice' => ''],
+            $this->post(CrewAdminController::TEXT_STATUS_ACTION)
+        );
+        $this->signIn($this->organizerRow(1));
+        self::assertSame(['code' => CrewAdminController::REFUSED, 'notice' => ''], $this->post(
+            CrewAdminController::TEXT_STATUS_ACTION,
+            [],
+            2
+        ));
+    }
+
+    public function testTheQueuedNoticeNoLongerAsksForAReload(): void
+    {
+        self::assertStringNotContainsString('Reload', CrewAdminFollowup::queuedNotice());
     }
 
     public function testAMemberCannotSetAPostEventText(): void

@@ -27,12 +27,13 @@ final class CrewAdminFollowup
     /**
      * What the screen shows. For each variant: the text the next email uses
      * in every site language (language code => text, with {event} and {date}
-     * still in it), whether it is a one-time text, and, for a one-time text,
-     * whether it was translated.
+     * still in it), whether it is a one-time text, for a one-time text
+     * whether it was translated, and whether a saved text is being
+     * translated in the background now (translating).
      *
      * @return array{
      *     enabled: bool,
-     *     texts: array<string, array{texts: array<string, string>, next: bool, translated: bool}>
+     *     texts: array<string, array{texts: array<string, string>, next: bool, translated: bool, translating: bool}>
      * }
      */
     public function view(): array
@@ -51,6 +52,9 @@ final class CrewAdminFollowup
                 'texts' => $byLanguage,
                 'next' => null !== $next,
                 'translated' => null === $next || $next['translated'],
+                'translating' => BackgroundJobs::isActive(
+                    BackgroundJobs::latest(AiPromptsPage::followupTarget($variant))
+                ),
             ];
         }
 
@@ -120,10 +124,25 @@ final class CrewAdminFollowup
 
     /**
      * The crew app's notice after a text was left to a background job. The
-     * crew app has no status bar, so it says when to look again.
+     * text shows "Translating…" until the job is done; then the page puts
+     * every language in place by itself (CrewAdminController::textStatus()).
      */
     public static function queuedNotice(): string
     {
-        return __('The text is translated in the background and saved when that is done. Reload the page in a few minutes to see every language.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        return __('Saved. The text is being translated; every language appears here when that is done.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+    }
+
+    /**
+     * The BackgroundJobs targets of the texts this screen and the
+     * announcement screen leave to a background job.
+     *
+     * @return list<string>
+     */
+    public static function jobTargets(): array
+    {
+        $targets = array_map([AiPromptsPage::class, 'followupTarget'], FollowupText::VARIANTS);
+        $targets[] = AiPromptsPage::NEWSLETTER_TARGET;
+
+        return array_values($targets);
     }
 }

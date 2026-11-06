@@ -10,6 +10,7 @@ use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Dates;
 use EventCrew\Support\DoorLinkSender;
@@ -77,6 +78,7 @@ final class CrewAdminController
     public const FOLLOWUP_TEXT_ACTION = 'eventcrew_web_admin_followup_text';
     public const AI_TEXT_ACTION = 'eventcrew_web_admin_ai_text';
     public const NEWCOMER_ACTION = 'eventcrew_web_admin_newcomer';
+    public const TEXT_STATUS_ACTION = 'eventcrew_web_admin_text_status';
 
     /**
      * The action names boot() hooks. Kept apart from actionLabels(), because
@@ -108,6 +110,7 @@ final class CrewAdminController
         self::FOLLOWUP_TEXT_ACTION,
         self::AI_TEXT_ACTION,
         self::NEWCOMER_ACTION,
+        self::TEXT_STATUS_ACTION,
     ];
 
     /** guard(): an organizer with a valid CSRF token. Run the action. */
@@ -149,7 +152,8 @@ final class CrewAdminController
         private readonly ?CrewAdminNewsletter $newsletterScreen = null,
         private readonly ?CrewAdminFollowup $followupScreen = null,
         private readonly ?CrewAdminAiText $aiTextScreen = null,
-        private readonly ?NewcomerApproval $newcomers = null
+        private readonly ?NewcomerApproval $newcomers = null,
+        private readonly ?BackgroundJobs $jobs = null
     ) {
     }
 
@@ -195,6 +199,7 @@ final class CrewAdminController
             self::FOLLOWUP_TEXT_ACTION => __('Text for the next post-event email', 'eventcrew'),
             self::AI_TEXT_ACTION => __('Change an AI text for an event', 'eventcrew'),
             self::NEWCOMER_ACTION => __('Say OK or No to a newcomer', 'eventcrew'),
+            self::TEXT_STATUS_ACTION => __('Check whether a text is translated', 'eventcrew'),
         ];
     }
 
@@ -259,6 +264,7 @@ final class CrewAdminController
         $organizer = $guard['person'];
 
         $notice = match ($action) {
+            self::TEXT_STATUS_ACTION => '',
             self::SALES_ACTION => $this->sendSalesLink($organizer),
             self::BOARD_ACTION => $this->postBoard(),
             self::GIFT_ACTION => $this->giveCredit(
@@ -359,9 +365,40 @@ final class CrewAdminController
             wp_die(esc_html__('You are not allowed to do this.', 'eventcrew'), '', ['response' => 403]);
         }
 
+        if (self::TEXT_STATUS_ACTION === $action) {
+            wp_send_json_success($this->textStatus());
+        }
+
         wp_safe_redirect(add_query_arg('eventcrew_notice', $result['notice'], $this->safeRedirect()));
 
         exit;
+    }
+
+    /**
+     * The crew app's poll while a text shows "Translating…": runs one
+     * queued background job (as the wp-admin poll does, so the text does
+     * not wait for WP-Cron) and answers which of the Admin tab's texts are
+     * still being translated. The page fetches the stored texts again for
+     * each one that is no longer in the list.
+     *
+     * The job runs on even when the page is left halfway, as in
+     * JobsStatus::answer().
+     *
+     * @return array{active: list<string>}
+     */
+    public function textStatus(): array
+    {
+        if (null !== $this->jobs && BackgroundJobs::activeCount() > 0) {
+            ignore_user_abort(true);
+            $this->jobs->runOne();
+        }
+
+        $active = array_filter(
+            CrewAdminFollowup::jobTargets(),
+            static fn (string $target): bool => BackgroundJobs::isActive(BackgroundJobs::latest($target))
+        );
+
+        return ['active' => array_values($active)];
     }
 
     /**
@@ -734,6 +771,7 @@ final class CrewAdminController
             'open_task_action' => self::OPEN_TASK_ACTION,
             'role_action' => self::ROLE_ACTION,
             'tasks' => $this->tasksScreen->view(...self::tasksQuery()),
+            'text_status_action' => self::TEXT_STATUS_ACTION,
         ] + (null === $this->newsletterScreen ? [] : [
             'newsletter_text_action' => self::NEWSLETTER_TEXT_ACTION,
             'newsletter_stop_action' => self::NEWSLETTER_STOP_ACTION,

@@ -8220,8 +8220,11 @@ msgstr "Tyhjänä: ei ovien aikaa."
 msgid "Nothing was saved: that event was not found."
 msgstr "Mitään ei tallennettu: tapahtumaa ei löytynyt."
 
-msgid "The text is translated in the background and saved when that is done. Reload the page in a few minutes to see every language."
-msgstr "Teksti käännetään taustalla ja tallennetaan, kun se on valmis. Lataa sivu uudelleen muutaman minuutin päästä, niin näet kaikki kielet."
+msgid "Saved. The text is being translated; every language appears here when that is done."
+msgstr "Tallennettu. Tekstiä käännetään; kaikki kielet näkyvät tässä, kun se on valmis."
+
+msgid "Check whether a text is translated"
+msgstr "Tarkista, onko teksti käännetty"
 
 #, php-format
 msgid "The webhook could not be re-installed: %s"
