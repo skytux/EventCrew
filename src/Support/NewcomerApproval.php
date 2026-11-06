@@ -229,23 +229,24 @@ final class NewcomerApproval
     /** The newcomer's own "the team said OK": Telegram if linked, else email. */
     private function tellOk(Person $person): void
     {
+        $context = ['person' => $person];
+
         if (null !== $person->telegramChatId) {
             $this->telegram->sendMessage(
                 $person->telegramChatId,
-                DmBody::frame($person, MessageTemplates::body('newcomer_ok_dm'))
+                DmBody::frame($person, MessageTemplates::body('newcomer_ok_dm')),
+                MessageActions::replyMarkup(MessageActions::of('newcomer_ok_dm', $context, $this->mailer))
             );
 
             return;
         }
-
-        $url = $this->mailer->boardUrl();
 
         $this->mailer->toPerson(
             $person->id,
             $person->email,
             MessageTemplates::subject('newcomer_ok'),
             EmailBody::withGreeting($person->displayName, MessageTemplates::body('newcomer_ok')),
-            '' === $url ? [] : [['label' => __('See open tasks', 'eventcrew'), 'url' => $url]]
+            MessageActions::email(MessageActions::of('newcomer_ok', $context, $this->mailer))
         );
     }
 

@@ -3198,10 +3198,10 @@ msgid_plural "You have %d free-entry credits — tap 🎟 Free-entry ticket belo
 msgstr[0] "Sinulla on %d vapaalippu — napauta alla 🎟 Vapaalippu, niin käytät sen."
 msgstr[1] "Sinulla on %d vapaalippua — napauta alla 🎟 Vapaalippu, niin käytät yhden."
 
-msgid "🎁 You’ve been given %d free-entry credit. Send /me and tap 🎟 Free-entry ticket to spend it on an upcoming event."
-msgid_plural "🎁 You’ve been given %d free-entry credits. Send /me and tap 🎟 Free-entry ticket to spend them on upcoming events."
-msgstr[0] "🎁 Sait %d vapaalipun. Lähetä /me ja napauta 🎟 Vapaalippu, niin voit käyttää sen tulevaan tapahtumaan."
-msgstr[1] "🎁 Sait %d vapaalippua. Lähetä /me ja napauta 🎟 Vapaalippu, niin voit käyttää ne tuleviin tapahtumiin."
+msgid "🎁 You’ve been given %d free-entry credit. Tap 🎟 Free-entry ticket below to spend it on an upcoming event."
+msgid_plural "🎁 You’ve been given %d free-entry credits. Tap 🎟 Free-entry ticket below to spend them on upcoming events."
+msgstr[0] "🎁 Sait %d vapaalipun. Napauta alta 🎟 Vapaalippu, niin voit käyttää sen tulevaan tapahtumaan."
+msgstr[1] "🎁 Sait %d vapaalippua. Napauta alta 🎟 Vapaalippu, niin voit käyttää ne tuleviin tapahtumiin."
 
 msgid "A new email address takes effect when you open the link we send to it."
 msgstr "Uusi sähköpostiosoite otetaan käyttöön, kun avaat linkin, jonka lähetämme siihen."
@@ -7551,8 +7551,8 @@ msgid "How to get the free ticket: in the bot or the Crew app, or, for a person 
 msgstr "Miten ilmainen lippu saadaan: botissa tai Crew-sovelluksessa, tai henkilölle ilman Telegram-keskustelua crew-sivulla, linkin kanssa."
 
 #, php-format
-msgid "open the %s bot, send /me and tap 🎟 Free-entry ticket, or use your Crew app, to get your free ticket."
-msgstr "avaa %s -botti, lähetä /me ja napauta 🎟 Vapaalippu, tai käytä Crew-sovellustasi, niin saat ilmaisen lippusi."
+msgid "tap Get your free ticket below."
+msgstr "napauta alta Hae ilmainen lippusi."
 
 msgid "open the Me tab of the crew page (%s) and pick a night under Tickets to get your free ticket."
 msgstr "avaa crew-sivun Minä-välilehti (%s) ja valitse ilta kohdasta Liput, niin saat ilmaisen lippusi."
@@ -7820,8 +7820,8 @@ msgid "Sent to a person who uses the bot when an organizer gives them a role: wi
 msgstr "Lähetetään bottia käyttävälle henkilölle, kun järjestäjä antaa hänelle roolin: botin komennolla /people, crew-sivun Ylläpito-välilehdellä (myös lisäämällä hänet roolin tehtävään) tai wp-adminin Ihmiset-sivulla. Ei lähetetä, kun rooli otetaan pois, eikä henkilölle, joka on kytkenyt pois Telegram-viestit oikeuksien muutoksista."
 
 #, php-format
-msgid "You now have the role %s. Its tasks are shown to you with /board in a private chat with the bot and in the Crew app, and you can sign up for them."
-msgstr "Sinulla on nyt rooli %s. Näet sen tehtävät komennolla /board yksityiskeskustelussa botin kanssa ja Crew-sovelluksessa, ja voit ilmoittautua niihin."
+msgid "You now have the role %s. Tap See open tasks below, or open the Crew app, to see its tasks and sign up for them."
+msgstr "Sinulla on nyt rooli %s. Napauta alta Avoimet tehtävät tai avaa Crew-sovellus, niin näet sen tehtävät ja voit ilmoittautua."
 
 msgid "You were given a one-time pass (email)"
 msgstr "Sait kertaluontoisen luvan (sähköposti)"
@@ -8143,8 +8143,8 @@ msgstr "Tiimi hyväksyi sinut"
 msgid "The team said OK. You can now take tasks on the crew page."
 msgstr "Tiimi hyväksyi sinut. Voit nyt ottaa tehtäviä crew-sivulla."
 
-msgid "✅ The team said OK. You can now take tasks: send /board."
-msgstr "✅ Tiimi hyväksyi sinut. Voit nyt ottaa tehtäviä: lähetä /board."
+msgid "✅ The team said OK. You can now take tasks: tap See open tasks below."
+msgstr "✅ Tiimi hyväksyi sinut. Voit nyt ottaa tehtäviä: napauta alta Avoimet tehtävät."
 
 msgid "Sent to the organizers without Telegram when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text."
 msgstr "Lähetetään järjestäjille, joilla ei ole Telegramia, kun uusi henkilö vahvistaa sähköpostinsa ensimmäistä kertaa. Kunnes järjestäjä hyväksyy, hän näkee taulun mutta ei voi ottaa tehtäviä. Tekstin alle lisätään painike crew-sivun Admin-välilehdelle, jossa OK- ja Ei-painikkeet ovat."

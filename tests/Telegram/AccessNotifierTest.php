@@ -13,6 +13,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\Roles;
+use EventCrew\Telegram\MenuButtons;
 
 /**
  * The person hears, by Telegram and email, that an organizer gave them a role,
@@ -99,9 +100,13 @@ final class AccessNotifierTest extends TelegramTestCase
         $this->notifier()->roleGiven(8, 'dj');
 
         self::assertSame(
-            "📣 Test Site\n\nHi Sam Lee,\n\nYou now have the role DJ. Its tasks are shown to you with /board in a"
-                . ' private chat with the bot and in the Crew app, and you can sign up for them.',
+            "📣 Test Site\n\nHi Sam Lee,\n\nYou now have the role DJ. Tap See open tasks below, or open the Crew app,"
+                . ' to see its tasks and sign up for them.',
             $this->dm()
+        );
+        self::assertSame(
+            [[['text' => 'See open tasks', 'callback_data' => MenuButtons::BOARD]]],
+            $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
         );
         self::assertCount(1, $this->mails);
         self::assertSame('sam@example.com', $this->mails[0]['to']);
@@ -179,8 +184,8 @@ final class AccessNotifierTest extends TelegramTestCase
         $this->notifier()->roleGiven(8, 'dj');
 
         self::assertStringContainsString(
-            'Sinulla on nyt rooli DJ. Näet sen tehtävät komennolla /board yksityiskeskustelussa botin kanssa ja'
-                . ' Crew-sovelluksessa, ja voit ilmoittautua niihin.',
+            'Sinulla on nyt rooli DJ. Napauta alta Avoimet tehtävät tai avaa Crew-sovellus, niin näet sen'
+                . ' tehtävät ja voit ilmoittautua.',
             $this->dm()
         );
         self::assertSame('Sinulla on uusi rooli: DJ', $this->mails[0]['subject']);
