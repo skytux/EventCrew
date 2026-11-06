@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.126
+Stable tag: 1.140.127
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.127 =
+Newsletter: List-Unsubscribe headers are left out when the link is not https; organizer preview emails now carry the headers with a sample link that unsubscribes nobody (Q337).
 
 = 1.140.126 =
 Settings has Post the board in the group; it posts in the background, with no command in the group.
@@ -1592,6 +1595,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.127 =
+No settings change.
 
 = 1.140.126 =
 No settings change.
