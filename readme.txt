@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.148
+Stable tag: 1.140.149
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.149 =
+* Messages about one event show its short description, post-event emails included ({event_description}).
+* A default venue and a per-event venue, shown as a 📍 row ({venue}); the EventMesh venue is used when neither is set.
+* The AI can read the venue from the event description (setting, off by default), with a Read again link per event.
 
 = 1.140.148 =
 * Messages to one person are in that person's language only; hybrid posts and emails put each language on its own row.
@@ -1667,6 +1672,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.149 =
+No settings change.
 
 = 1.140.148 =
 No settings change.
