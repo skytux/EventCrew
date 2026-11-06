@@ -4,24 +4,89 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests;
 
+use EventCrew\Support\SiteLanguages;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 
 /**
- * The Finnish catalog holds only strings the plugin still uses: every entry
- * in languages/eventcrew-fi.po is in languages/eventcrew.pot, which
- * tools/make-pot.php builds from the code. A string removed from the code
- * must be removed from the .po too.
+ * The plugin's catalogs against languages/eventcrew.pot, which
+ * tools/make-pot.php builds from the code:
+ * - a complete catalog translates every string in the .pot, so a person who
+ *   reads that language never gets a built-in string in English. Every
+ *   catalog in languages/ is complete, except the old PARTIAL ones;
+ * - the Finnish and Swedish catalogs hold only strings the plugin still
+ *   uses. A string removed from the code must be removed from them too.
  */
 final class LanguageCatalogTest extends PHPUnitTestCase
 {
-    public function testEveryFinnishEntryIsAStringTheCodeStillUses(): void
+    /**
+     * Old machine-made catalogs that stopped being kept up to date. A site
+     * using one of these languages gets the strings added since in English.
+     * Finnish and Swedish must never be here: they are the site's languages.
+     */
+    private const PARTIAL = ['de_DE', 'es_ES', 'fr_FR', 'it_IT', 'ja', 'nl_NL', 'pl_PL', 'pt_BR', 'ru_RU', 'zh_CN'];
+
+    /** The catalogs that must be complete and current. */
+    private const REQUIRED = ['fi', 'sv_SE'];
+
+    public function testFinnishAndSwedishCatalogsExistAndAreKeptComplete(): void
+    {
+        $root = dirname(__DIR__);
+
+        foreach (self::REQUIRED as $locale) {
+            self::assertFileExists($root . '/languages/eventcrew-' . $locale . '.po');
+            self::assertNotContains($locale, self::PARTIAL);
+        }
+
+        self::assertSame('sv_SE', SiteLanguages::locale('sv'));
+        self::assertSame('fi', SiteLanguages::locale('fi'));
+    }
+
+    /**
+     * Every catalog a site language can use (languages/eventcrew-{locale}.po
+     * for a locale in SiteLanguages::KNOWN) translates every string in the
+     * .pot, the old PARTIAL ones excepted. The failure lists the missing
+     * msgids.
+     */
+    public function testEveryCatalogInUseTranslatesEveryString(): void
     {
         $root = dirname(__DIR__);
         $pot = self::keys((string) file_get_contents($root . '/languages/eventcrew.pot'));
-        $po = self::keys((string) file_get_contents($root . '/languages/eventcrew-fi.po'));
+        $locales = array_map(static fn (array $known): string => $known[2], SiteLanguages::KNOWN);
+        $missing = [];
 
         self::assertNotEmpty($pot);
-        self::assertSame([], array_values(array_diff($po, $pot)));
+
+        foreach (glob($root . '/languages/eventcrew-*.po') ?: [] as $file) {
+            $locale = substr(basename($file, '.po'), strlen('eventcrew-'));
+
+            if (! in_array($locale, $locales, true) || in_array($locale, self::PARTIAL, true)) {
+                continue;
+            }
+
+            $translated = self::keys((string) file_get_contents($file), true);
+
+            foreach (array_diff($pot, $translated) as $key) {
+                $missing[] = $locale . ': ' . str_replace("\x04", ' | ', $key);
+            }
+        }
+
+        self::assertSame(
+            [],
+            $missing,
+            "These strings have no translation. Add them to the catalog:\n" . implode("\n", $missing)
+        );
+    }
+
+    public function testEveryFinnishAndSwedishEntryIsAStringTheCodeStillUses(): void
+    {
+        $root = dirname(__DIR__);
+        $pot = self::keys((string) file_get_contents($root . '/languages/eventcrew.pot'));
+
+        foreach (self::REQUIRED as $locale) {
+            $po = self::keys((string) file_get_contents($root . '/languages/eventcrew-' . $locale . '.po'));
+
+            self::assertSame([], array_values(array_diff($po, $pot)), $locale);
+        }
     }
 
     /** The Crew app's button that stops the next announcement is in Finnish (Owner, Q238). */
@@ -34,11 +99,13 @@ final class LanguageCatalogTest extends PHPUnitTestCase
 
     /**
      * Each entry's msgctxt and msgid, joined by "\x04" as in a .mo file. The
-     * header (empty msgid) is left out.
+     * header (empty msgid) is left out. With $translatedOnly, so are the
+     * entries that are fuzzy or have an empty msgstr (WordPress shows those
+     * in English).
      *
      * @return list<string>
      */
-    private static function keys(string $catalog): array
+    private static function keys(string $catalog, bool $translatedOnly = false): array
     {
         $keys = [];
 
@@ -59,9 +126,29 @@ final class LanguageCatalogTest extends PHPUnitTestCase
                 continue;
             }
 
+            if ($translatedOnly && (str_contains($block, '#, fuzzy') || ! self::isTranslated($fields))) {
+                continue;
+            }
+
             $keys[] = isset($fields['msgctxt']) ? $fields['msgctxt'] . "\x04" . $fields['msgid'] : $fields['msgid'];
         }
 
         return $keys;
+    }
+
+    /**
+     * Whether every msgstr of an entry (each plural form) is filled in.
+     *
+     * @param array<string, string> $fields
+     */
+    private static function isTranslated(array $fields): bool
+    {
+        $forms = array_filter(
+            $fields,
+            static fn (string $field): bool => str_starts_with($field, 'msgstr'),
+            ARRAY_FILTER_USE_KEY
+        );
+
+        return [] !== $forms && ! in_array('', $forms, true);
     }
 }
