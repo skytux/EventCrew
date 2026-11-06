@@ -271,6 +271,80 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertArrayHasKey('eventcrew_tg_await_email_555', $this->transients);
     }
 
+    public function testATakeoverRequestStartPayloadOnlyShowsAndChangesNothing(): void
+    {
+        // The takeover request email's Telegram link: t.me/<bot>?start=tov-9.
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/start tov-9',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555, 'first_name' => 'Sam'],
+            ],
+        ]);
+
+        self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame('This link is no longer valid.', $this->lastCallTo('sendMessage')['text']);
+    }
+
+    public function testANightStartPayloadSpendsNothing(): void
+    {
+        // A free-entry email's Telegram link: t.me/<bot>?start=tkt-20261114.
+        // Someone the bot does not know is told how to start; nothing is written.
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/start tkt-20261114',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555, 'first_name' => 'Sam'],
+            ],
+        ]);
+
+        self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame(['sendMessage'], $this->calledMethods());
+    }
+
+    public function testAPersonStartPayloadOnlyShowsAndOnlyToAnOrganizer(): void
+    {
+        // An organizer notice's Telegram link: t.me/<bot>?start=who-8. Someone
+        // who is not an organizer sees no role buttons; nothing is written.
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/start who-8',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555, 'first_name' => 'Sam'],
+            ],
+        ]);
+
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame(['sendMessage'], $this->calledMethods());
+        self::assertSame('Only organizers can change roles.', $this->lastCallTo('sendMessage')['text']);
+    }
+
+    public function testADoorListStartPayloadOnlyShowsAndOnlyToWhoMaySee(): void
+    {
+        // The ticket import email's Telegram link: t.me/<bot>?start=door-20260801.
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/start door-20260801',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555, 'first_name' => 'Sam'],
+            ],
+        ]);
+
+        self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame(['sendMessage'], $this->calledMethods());
+        self::assertSame(
+            'Only organizers and that night’s welcome crew can see who has a ticket.',
+            $this->lastCallTo('sendMessage')['text']
+        );
+    }
+
     /**
      * "Not right? Tell us" (a no-show notice's button or its email link):
      * the bot asks what is wrong and keeps the question in the chat's log,

@@ -130,6 +130,9 @@ final class MessagePreviewTest extends TestCase
             }
 
             $partner = str_ends_with($id, '_dm') ? substr($id, 0, -3) : $id . '_dm';
+            // welcome_org_email and welcome_org_dm.
+            $partner = preg_replace('/_email(_dm)?$/', '_dm', $partner);
+            $partner = isset($all[$partner]) ? $partner : $partner . '_email';
             self::assertArrayHasKey($partner, $all, $id . ' has actions but no other version');
             self::assertSame($template->actions, $all[$partner]->actions, $id . ' and ' . $partner . ' share their actions');
             self::assertNotSame($template->channel, $all[$partner]->channel, $id);

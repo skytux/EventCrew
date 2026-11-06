@@ -6,6 +6,7 @@ namespace EventCrew\Support;
 
 use EventCrew\Models\Person;
 use EventCrew\Telegram\TelegramClient;
+use EventCrew\Telegram\TicketRedemptionService;
 
 /**
  * Tells a person an organizer has handed them a free-entry credit, on both
@@ -21,7 +22,9 @@ final class CreditGrantNotifier
 {
     public function __construct(
         private readonly Mailer $mailer,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        private readonly ?StandingCalculator $standing = null,
+        private readonly ?TicketRedemptionService $tickets = null
     ) {
     }
 
@@ -35,7 +38,13 @@ final class CreditGrantNotifier
         $credits = max(1, $credits);
         $prefs = new NotificationPreferences();
         // The texts are the Messages page templates (MessageTemplates).
-        $context = ['person' => $person, 'credits' => $credits];
+        // With the credits they hold now and the next nights to spend one on.
+        $context = [
+            'person' => $person,
+            'credits' => $credits,
+            'balance' => $this->standing?->for($person->id)->creditBalance,
+            'nights' => $this->tickets?->nextNights($person->id) ?? [],
+        ];
 
         if ($prefs->dmAllowed($person, NotificationPreferences::CREDIT)) {
             $this->telegram->sendMessage(

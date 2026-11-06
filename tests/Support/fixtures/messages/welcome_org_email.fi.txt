@@ -112,6 +112,7 @@ Ajastetut lähtevät vain klo 09:00–21:00. Jokainen lähtee Telegramilla ja s�
 🔗 Avaa EventCrew wp-adminissa: https://site.test/wp-admin/admin.php?page=eventcrew
 
 Avaa EventCrew wp-adminissa: https://site.test/wp-admin/admin.php?page=eventcrew
+🛠️ Avaa Ylläpito-välilehti: https://site.test/crew/#eventcrew-panel-admin
 
 —
 Hallitse tiliäsi tai lopeta nämä sähköpostit: https://site.test/crew/?eventcrew_login=TOKEN

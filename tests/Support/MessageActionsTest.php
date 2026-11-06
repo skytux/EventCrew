@@ -88,6 +88,30 @@ final class MessageActionsTest extends TestCase
         self::assertFalse(MessageActions::isPayload('a=b'));
     }
 
+    /**
+     * A screen link, <verb>-<id>: only a known screen verb and a plain
+     * number, so the payload is never a token or a name.
+     */
+    public function testAScreenLinkIsAKnownVerbAndANumber(): void
+    {
+        self::assertSame('https://t.me/crewbot?start=tov-45', MessageActions::startUrl('tov', 45));
+        self::assertSame('https://t.me/crewbot?start=tkt-20261114', MessageActions::startUrl('tkt', '20261114'));
+        self::assertSame('https://t.me/crewbot?start=task-7', MessageActions::startUrl('task', 7));
+        self::assertSame('', MessageActions::startUrl('login', 5));
+        self::assertSame('', MessageActions::startUrl('tov', 0));
+        self::assertSame('', MessageActions::startUrl('tov', 'abc'));
+        self::assertSame('https://t.me/crewbot?start=board', MessageActions::startUrl('board', ''));
+
+        self::assertSame(['tov', '45'], MessageActions::screenPayload('tov-45'));
+        self::assertNull(MessageActions::screenPayload('tov-'));
+        self::assertNull(MessageActions::screenPayload('tov-4x'));
+        self::assertNull(MessageActions::screenPayload('login-abc'));
+        self::assertNull(MessageActions::screenPayload('board'));
+
+        $this->options[BoardService::USERNAME_OPTION] = '';
+        self::assertSame('', MessageActions::startUrl('tov', 45));
+    }
+
     public function testTheUrlIsMadeOnlyWhenDrawn(): void
     {
         $made = 0;

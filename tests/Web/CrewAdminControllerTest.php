@@ -2007,6 +2007,8 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         foreach (['Person 8', 'p8@example.com', '2026-07-20 12:00:00', 'Give a credit', self::IP] as $detail) {
             self::assertStringContainsString($detail, $dm['text']);
         }
+        // Under it, the person's role buttons in the bot; it changes nothing.
+        self::assertSame('perm:who:8', $dm['reply_markup']['inline_keyboard'][0][0]['callback_data']);
 
         // And by email; organizer 2 has no verified address, so gets none.
         self::assertCount(1, $this->mails);

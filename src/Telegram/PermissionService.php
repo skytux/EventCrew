@@ -34,6 +34,12 @@ final class PermissionService
     /** Callback data prefix for a permission tap: perm:<action>:<person_id>. */
     private const PICK_PREFIX = 'perm:';
 
+    /**
+     * The start payload verb who-<person_id>, and the action perm:who:<id>:
+     * shows one person's role buttons, and changes nothing.
+     */
+    public const WHO_VERB = 'who';
+
     public function __construct(
         private readonly PersonRepository $people,
         private readonly TelegramClient $telegram,
@@ -150,6 +156,50 @@ final class PermissionService
     }
 
     /**
+     * The callback data of a button that shows one person's role buttons
+     * (showPerson()); the tap changes nothing.
+     */
+    public static function whoData(int $personId): string
+    {
+        return self::PICK_PREFIX . self::WHO_VERB . ':' . $personId;
+    }
+
+    /**
+     * One person's role buttons, for an organizer: from a notice's button
+     * (perm:who:<id>) or its email's who-<id> link. Only shows them.
+     */
+    public function showPerson(int $telegramUserId, int $chatId, int $personId): void
+    {
+        $organizer = $this->people->findByTelegramUserId($telegramUserId);
+
+        if (null === $organizer || ! $organizer->isOrganizer) {
+            $this->telegram->sendMessage($chatId, __('Only organizers can change roles.', 'eventcrew'));
+
+            return;
+        }
+
+        $this->sendPerson($chatId, $personId);
+    }
+
+    /** The organizer's checked: one person's role buttons, or that they are gone. */
+    private function sendPerson(int $chatId, int $personId): void
+    {
+        $person = $personId > 0 ? $this->people->find($personId) : null;
+
+        if (null === $person || $person->isAnonymized()) {
+            $this->telegram->sendMessage($chatId, sprintf(
+                /* translators: %s: the organization's name */
+                __('That person is no longer in %s. Send /people to pick someone else.', 'eventcrew'),
+                Organization::name()
+            ));
+
+            return;
+        }
+
+        $this->telegram->sendMessage($chatId, $this->menuText($person), $this->menuKeyboard($person));
+    }
+
+    /**
      * The text over one person's role buttons.
      */
     private function menuText(Person $person): string
@@ -214,6 +264,13 @@ final class PermissionService
                 __('Only organizers can change roles.', 'eventcrew'),
                 true
             );
+
+            return;
+        }
+
+        if (self::WHO_VERB === $action) {
+            $this->telegram->answerCallbackQuery($callbackId);
+            $this->sendPerson((int) ($callbackQuery['message']['chat']['id'] ?? $organizerTelegramId), $personId);
 
             return;
         }
@@ -347,7 +404,7 @@ final class PermissionService
             return ['role', (int) $m[2], $m[1]];
         }
 
-        if (1 !== preg_match('#^' . $prefix . '(pass|admin):(\d+)$#', $data, $m)) {
+        if (1 !== preg_match('#^' . $prefix . '(pass|admin|who):(\d+)$#', $data, $m)) {
             return ['', 0, ''];
         }
 

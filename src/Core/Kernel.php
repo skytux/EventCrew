@@ -53,6 +53,8 @@ use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\FrictionB1Migration;
+use EventCrew\Support\FrictionB3Migration;
+use EventCrew\Support\FrictionB4Migration;
 use EventCrew\Support\HealthReport;
 use EventCrew\Support\EventAiText;
 use EventCrew\Support\EventDetailsText;
@@ -184,6 +186,8 @@ final class Kernel
         // Adds the new placeholders to the message texts organizers saved
         // before they existed (late cancel, no-show, ...). Each step runs once.
         FrictionB1Migration::run();
+        FrictionB3Migration::run();
+        FrictionB4Migration::run();
 
         // Adds crew members with a verified email to the newsletter. Runs once
         // per site, on the first request after the update, while the setting
@@ -805,7 +809,8 @@ final class Kernel
                 $container->get(RoleConditions::class),
                 $container->get(PersonRepository::class),
                 $container->get(Mailer::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(StandingCalculator::class)
             )
         );
 
@@ -1266,7 +1271,8 @@ final class Kernel
                 $container->get(ClaimNotifier::class),
                 $container->get(BoardService::class),
                 $container->get(TelegramClient::class),
-                $container->get(Mailer::class)
+                $container->get(Mailer::class),
+                $container->get(StandingCalculator::class)
             )
         );
 
@@ -1304,7 +1310,9 @@ final class Kernel
             CreditGrantNotifier::class,
             fn (Container $container) => new CreditGrantNotifier(
                 $container->get(Mailer::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(StandingCalculator::class),
+                $container->get(TicketRedemptionService::class)
             )
         );
 

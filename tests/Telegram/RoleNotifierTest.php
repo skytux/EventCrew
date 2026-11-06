@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
+use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\EmailTemplate;
@@ -14,6 +15,9 @@ use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\RoleConditions;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
+use EventCrew\Support\Standing;
+use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\PermissionService;
 
 /**
  * The organizers hear, by Telegram and by email, the first time someone meets
@@ -91,6 +95,52 @@ final class RoleNotifierTest extends TelegramTestCase
         self::assertCount(1, $this->wpdb->updates);
         self::assertSame(8, $this->wpdb->updates[0]['where']['id']);
         self::assertArrayHasKey('met:leader', json_decode($this->wpdb->updates[0]['data']['role_notices'], true));
+    }
+
+    public function testTheMetNoticeOpensThatPersonsRoleButtons(): void
+    {
+        $this->options[BoardService::USERNAME_OPTION] = 'crewbot';
+        $this->wpdb->nextResults[] = [$this->organizerRow()];
+        $this->wpdb->nextResults[] = [['id' => 8, 'display_name' => 'Jo', 'email' => 'jo@example.com']];
+        $this->wpdb->nextResults[] = [['role_slug' => 'welcome', 'n' => 2]];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Jo', 'email' => 'jo@example.com'];
+
+        $this->notifier()->run();
+
+        $button = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'][0][0];
+        self::assertSame('👥 Give them the role', $button['text']);
+        self::assertSame(PermissionService::whoData(8), $button['callback_data']);
+        self::assertStringContainsString('t.me/crewbot?start=who-8', $this->mails[0]['body']);
+    }
+
+    public function testTheMetNoticeSaysWhatThePersonHasDone(): void
+    {
+        $record = RoleNotifier::record('Jo', new Standing(Standing::GOOD, 0.82, 5, 0));
+        self::assertSame('Jo has done 5 tasks · Good standing · 82%', $record);
+
+        $context = ['member' => new Person(8, 'jo@example.com', 'Jo'), 'role' => 'leader', 'record' => $record];
+        self::assertSame(
+            "Jo now meets the conditions for the role Crew leader. To give it to them, tap Give them the role below.\n" . $record,
+            MessageTemplates::body('role_met_dm', $context)
+        );
+        unset($context['record']);
+        self::assertSame(
+            'Jo now meets the conditions for the role Crew leader. To give it to them, tap Give them the role below.',
+            MessageTemplates::body('role_met_dm', $context)
+        );
+    }
+
+    public function testTheGivenNoticeOpensThatPersonsRoleButtons(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Jo', 'email' => 'jo@example.com'];
+        $this->wpdb->nextResults[] = [$this->organizerRow()];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Jo', 'email' => 'jo@example.com'];
+
+        $this->notifier()->roleGiven(8, 'leader');
+
+        $button = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'][0][0];
+        self::assertSame('🏷 Open their roles', $button['text']);
+        self::assertSame('perm:who:8', $button['callback_data']);
     }
 
     public function testSomeoneAlreadyAnnouncedIsNotAnnouncedAgain(): void

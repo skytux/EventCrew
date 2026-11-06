@@ -12,6 +12,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\NewcomerApproval;
 use EventCrew\Support\Roles;
+use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\MenuButtons;
 
 /**
@@ -110,6 +111,7 @@ final class NewcomerApprovalTest extends TelegramTestCase
 
     public function testAWaitingNewcomerAsksOrganizersByTelegramAndByEmail(): void
     {
+        $this->options[BoardService::USERNAME_OPTION] = 'crewbot';
         $this->wpdb->nextRows[] = self::sam(); // find
         $this->wpdb->nextRows[] = self::sam(); // markRoleNotice find
         $this->wpdb->nextResults[] = [
@@ -135,6 +137,7 @@ final class NewcomerApprovalTest extends TelegramTestCase
             self::assertSame('New: Sam Lee wants to join', $mail['subject']);
             self::assertStringContainsString('Press OK or No in the Admin tab of the crew page.', $mail['body']);
             self::assertStringContainsString('https://site.test/crew/#', $mail['body']);
+            self::assertStringContainsString('t.me/crewbot?start=nco-8', $mail['body']);
         }
 
         // Recorded, so the next sign-in does not ask again.
@@ -343,6 +346,44 @@ final class NewcomerApprovalTest extends TelegramTestCase
             "🆕 New: Sam Lee (sam@example.com) wants to join.\n\n❌ No, by Alex.",
             $this->lastCallTo('editMessageText')['text']
         );
+    }
+
+    public function testTheEmailLinkShowsTheOkAndNoAndDecidesNothing(): void
+    {
+        $this->wpdb->nextRows[] = self::kim();
+        $this->wpdb->nextRows[] = self::sam();
+
+        $this->approval()->showRequest(555, 555, 8);
+
+        $dm = $this->lastCallTo('sendMessage');
+        self::assertStringContainsString('🆕 New: Sam Lee (sam@example.com) wants to join.', $dm['text']);
+        self::assertSame(
+            ['nco:ok:8', 'nco:no:8'],
+            array_column($dm['reply_markup']['inline_keyboard'][0], 'callback_data')
+        );
+        self::assertSame([], $this->updatesOfApproval());
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testTheEmailLinkSaysWhoDecidedOnceDecided(): void
+    {
+        $this->wpdb->nextRows[] = self::kim();
+        $this->wpdb->nextRows[] = self::sam(['approval' => 'no', 'approval_by' => 'Alex']);
+
+        $this->approval()->showRequest(555, 555, 8);
+
+        $dm = $this->lastCallTo('sendMessage');
+        self::assertStringEndsWith("\n\n❌ No, by Alex.", $dm['text']);
+        self::assertArrayNotHasKey('reply_markup', $dm);
+    }
+
+    public function testTheEmailLinkShowsNothingToSomeoneWhoIsNotAnOrganizer(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 4, 'telegram_user_id' => 555, 'is_organizer' => 0];
+
+        $this->approval()->showRequest(555, 555, 8);
+
+        self::assertSame('Only organizers can answer this.', $this->lastCallTo('sendMessage')['text']);
     }
 
     public function testOnlyAnOrganizerCanPress(): void

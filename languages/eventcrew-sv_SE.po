@@ -7732,8 +7732,8 @@ msgstr ""
 "Den bifogade .xlsx-filen kunde inte läsas. Exportera den igen från butiken och skicka den igen."
 
 #: src/Support/TicketFile.php:53
-msgid "The attached file is not an .xlsx or .csv file."
-msgstr "Den bifogade filen är inte en .xlsx- eller .csv-fil."
+msgid "The attached file is not an .xlsx or .csv file. Save the list as a .csv file and send it again."
+msgstr "Den bifogade filen är inte en .xlsx- eller .csv-fil. Spara listan som en .csv-fil och skicka den igen."
 
 #: templates/admin/settings.php:2157
 msgid "The base address of the API, ending before /chat/completions."
@@ -7834,9 +7834,9 @@ msgstr "Koden stämmer."
 #: src/Support/TicketFormats.php:197
 #. translators: %s: the column headers found in the file, separated by commas
 msgid ""
-"The columns of the attached file do not match any ticket file format in Settings → Email. The columns in the file are: %s"
+"The columns of the attached file do not match any ticket file format in Settings → Email. Send the shop’s export as it is, or add a format with these columns there. The columns in the file are: %s"
 msgstr ""
-"Kolumnerna i den bifogade filen matchar inget biljettfilformat i Inställningar → E-post. Kolumnerna i filen är: %s"
+"Kolumnerna i den bifogade filen matchar inget biljettfilformat i Inställningar → E-post. Skicka butikens export som den är, eller lägg till ett format med de här kolumnerna där. Kolumnerna i filen är: %s"
 
 #: src/Support/MessageTemplates.php:1422
 msgid "The coming events, as the newsletter writes them."
@@ -11668,3 +11668,49 @@ msgstr[1] "Det här använder 1 av dina %d fribiljetter."
 
 msgid "Open a private chat with the bot and tap Start first, then tap the task again."
 msgstr "Öppna först en privat chatt med boten och tryck på Starta, tryck sedan på uppgiften igen."
+
+msgid "Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine."
+msgstr "Dörrlista för %s: öppna den med knappen nedan. Länken fungerar en gång, på en enhet; den loggar in den enheten till 06:00. Det går bra att vidarebefordra den."
+
+msgid "You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks."
+msgstr "Du arrangerar den %s. Knappen för försäljningsdisken loggar in den här enheten på dörrlistan till 06:00; länken fungerar en gång. Admin-fliken finns i crew-appen; logga in där om den ber om det."
+
+msgid "How many tasks the person who asks has done, like: Sam has done 5 tasks. On a line of its own; the line goes when it is not known."
+msgstr "Hur många uppgifter personen som frågar har gjort, t.ex.: Sam har gjort 5 uppgifter. På en egen rad; raden tas bort när det inte är känt."
+
+#. translators: %s: the first name of the person who asks
+msgid "%s has not done a task yet."
+msgstr "%s har inte gjort någon uppgift än."
+
+#. translators: 1: the first name of the person who asks, 2: tasks done
+msgid "%1$s has done %2$d task."
+msgid_plural "%1$s has done %2$d tasks."
+msgstr[0] "%1$s har gjort %2$d uppgift."
+msgstr[1] "%1$s har gjort %2$d uppgifter."
+
+msgid "How many free-entry credits the person has now, like: You now have 3 free-entry credits. On a line of its own; the line goes when it is not known."
+msgstr "Hur många fribiljetter personen har nu, t.ex.: Du har nu 3 fribiljetter. På en egen rad; raden tas bort när det inte är känt."
+
+msgid "An empty line and the next nights a free-entry credit can be spent on, one per line. On lines of their own; they go when there are none."
+msgstr "En tom rad och de nästa kvällarna en fribiljett kan användas till, en per rad. På egna rader; de tas bort när det inte finns några."
+
+#. translators: %d: free-entry credits the person has now
+msgid "You now have %d free-entry credit."
+msgid_plural "You now have %d free-entry credits."
+msgstr[0] "Du har nu %d fribiljett."
+msgstr[1] "Du har nu %d fribiljetter."
+
+msgid "Next nights for free entry:"
+msgstr "Nästa kvällar med fri entré:"
+
+msgid "The name of the event. On a line of its own; the line goes when it is not known."
+msgstr "Evenemangets namn. På en egen rad; raden tas bort när det inte är känt."
+
+msgid "What the person has done: their tasks and their standing. On a line of its own; the line goes when it is not known."
+msgstr "Vad personen har gjort: uppgifter och pålitlighet. På en egen rad; raden tas bort när det inte är känt."
+
+msgid "Open their roles"
+msgstr "Öppna rollerna"
+
+msgid "Open the person"
+msgstr "Öppna personen"
