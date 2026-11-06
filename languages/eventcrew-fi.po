@@ -8241,3 +8241,6 @@ msgstr "Lippusähköpostin tekstiä ja sen {reason}-rivejä muokataan Viestit-si
 
 msgid "Messages > Ticket (email)"
 msgstr "Viestit > Lippu (sähköposti)"
+
+msgid "Edit the text on the Messages page:"
+msgstr "Muokkaa tekstiä Viestit-sivulla:"

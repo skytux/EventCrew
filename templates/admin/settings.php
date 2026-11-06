@@ -1595,6 +1595,26 @@ if (! defined('ABSPATH')) {
                         <?php esc_html_e('On', 'eventcrew'); ?>
                     </label>
                     <p class="description">
+                        <?php esc_html_e('Edit the text on the Messages page:', 'eventcrew'); ?>
+                        <?php
+                        $eventcrew_links = [];
+
+                        foreach (['followup_came', 'followup_missed'] as $eventcrew_message_id) {
+                            $eventcrew_message = \EventCrew\Support\MessageTemplates::find($eventcrew_message_id);
+
+                            if (null !== $eventcrew_message) {
+                                $eventcrew_links[] = '<a href="' . esc_url(\EventCrew\Admin\MessagesPage::url(
+                                    \EventCrew\Admin\MessagesPage::TAB_MESSAGES,
+                                    ['kind' => $eventcrew_message_id],
+                                    'ec-message-' . $eventcrew_message_id
+                                )) . '">' . esc_html($eventcrew_message->label) . '</a>';
+                            }
+                        }
+
+                        echo implode(' · ', $eventcrew_links); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each link is escaped above.
+                        ?>
+                    </p>
+                    <p class="description">
                         <?php esc_html_e('Off by default. When it is on, everyone who had a ticket to an event and gave an email address gets a short email the day after at 12:00: a thank-you if they were checked in at the door, and a kind “sorry we missed you” if they were not. Both show the next three events. The day before the event at 12:00, every organizer gets a preview with a Stop button; the Roster page has the same button.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                     </p>
                     <p class="description">
@@ -1617,6 +1637,26 @@ if (! defined('ABSPATH')) {
                             <?php checked($newsletter_enabled); ?>>
                         <?php esc_html_e('On', 'eventcrew'); ?>
                     </label>
+                    <p class="description">
+                        <?php esc_html_e('Edit the text on the Messages page:', 'eventcrew'); ?>
+                        <?php
+                        $eventcrew_links = [];
+
+                        foreach (['newsletter'] as $eventcrew_message_id) {
+                            $eventcrew_message = \EventCrew\Support\MessageTemplates::find($eventcrew_message_id);
+
+                            if (null !== $eventcrew_message) {
+                                $eventcrew_links[] = '<a href="' . esc_url(\EventCrew\Admin\MessagesPage::url(
+                                    \EventCrew\Admin\MessagesPage::TAB_MESSAGES,
+                                    ['kind' => $eventcrew_message_id],
+                                    'ec-message-' . $eventcrew_message_id
+                                )) . '">' . esc_html($eventcrew_message->label) . '</a>';
+                            }
+                        }
+
+                        echo implode(' · ', $eventcrew_links); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each link is escaped above.
+                        ?>
+                    </p>
                     <p class="description">
                         <?php esc_html_e('Off by default. When it is on, the coming events go by email to everyone who joined the next events announcement and confirmed their address. People join with the [eventcrew_newsletter] shortcode. Before sending, every organizer gets a preview email with a Stop button; the crew app’s Admin tab has the same button.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
                     </p>
