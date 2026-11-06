@@ -1897,7 +1897,7 @@ if ($eventcrew_link_expired) {
             <?php if (isset($eventcrew_admin['newsletter'])) : ?>
                 <?php $eventcrew_news = $eventcrew_admin['newsletter']; ?>
             <div class="eventcrew-subpanel" id="eventcrew-admin-newsletter" data-eventcrew-subpanel="newsletter">
-            <section class="eventcrew-event eventcrew-admin-card">
+            <section class="eventcrew-event eventcrew-admin-card" id="eventcrew-admin-newsletter-card">
                 <header class="eventcrew-event-head">
                     <h3 class="eventcrew-event-title"><?php esc_html_e('Next events announcement', 'eventcrew'); ?></h3>
                 </header>
@@ -1988,6 +1988,16 @@ if ($eventcrew_link_expired) {
                             </button>
                         <?php endif; ?>
                     </form>
+                    <?php if ($eventcrew_news['translating']) : ?>
+                        <p class="eventcrew-muted" role="status"
+                            data-eventcrew-translating="<?php echo esc_attr(\EventCrew\Admin\AiPromptsPage::NEWSLETTER_TARGET); ?>"
+                            data-card="eventcrew-admin-newsletter-card"
+                            data-url="<?php echo esc_url($eventcrew_ajax); ?>"
+                            data-action="<?php echo esc_attr($eventcrew_admin['text_status_action']); ?>"
+                            data-csrf="<?php echo esc_attr($eventcrew_csrf); ?>"><?php
+                            echo esc_html(\EventCrew\Support\BackgroundJobs::doing(\EventCrew\Admin\AiPromptsPage::NEWSLETTER_JOB));
+                            ?></p>
+                    <?php endif; ?>
                     <?php if (null !== $eventcrew_news['text']) : ?>
                         <?php foreach ($eventcrew_news['text']['texts'] as $eventcrew_news_lang => $eventcrew_news_words) : ?>
                             <p><strong><?php echo esc_html(\EventCrew\Support\SiteLanguages::label((string) $eventcrew_news_lang) . ':'); ?></strong></p>
@@ -2013,7 +2023,7 @@ if ($eventcrew_link_expired) {
                 ];
                 ?>
             <div class="eventcrew-subpanel" id="eventcrew-admin-followup" data-eventcrew-subpanel="followup">
-            <section class="eventcrew-event eventcrew-admin-card">
+            <section class="eventcrew-event eventcrew-admin-card" id="eventcrew-admin-followup-card">
                 <header class="eventcrew-event-head">
                     <h3 class="eventcrew-event-title"><?php esc_html_e('Post-event email', 'eventcrew'); ?></h3>
                 </header>
@@ -2037,6 +2047,16 @@ if ($eventcrew_link_expired) {
                             }
                             ?>
                         </p>
+                        <?php if ($eventcrew_follow_text['translating']) : ?>
+                            <p class="eventcrew-muted" role="status"
+                                data-eventcrew-translating="<?php echo esc_attr(\EventCrew\Admin\AiPromptsPage::followupTarget($eventcrew_follow_variant)); ?>"
+                                data-card="eventcrew-admin-followup-card"
+                                data-url="<?php echo esc_url($eventcrew_ajax); ?>"
+                                data-action="<?php echo esc_attr($eventcrew_admin['text_status_action']); ?>"
+                                data-csrf="<?php echo esc_attr($eventcrew_csrf); ?>"><?php
+                                echo esc_html(\EventCrew\Support\BackgroundJobs::doing(\EventCrew\Admin\AiPromptsPage::FOLLOWUP_JOB));
+                                ?></p>
+                        <?php endif; ?>
                         <?php foreach ($eventcrew_follow_text['texts'] as $eventcrew_follow_lang => $eventcrew_follow_words) : ?>
                             <p><strong><?php echo esc_html(\EventCrew\Support\SiteLanguages::label((string) $eventcrew_follow_lang) . ':'); ?></strong></p>
                             <p style="white-space:pre-line"><?php echo esc_html($eventcrew_follow_words); ?></p>
@@ -2310,6 +2330,70 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
 
     admin.classList.add('has-subtabs');
     show(key);
+})();
+
+/*
+ * A text in the Admin tab that is being translated shows "Translating…".
+ * While one does, the page asks the site every few seconds (which also runs
+ * the job); when a text is done, its card is fetched again and put in
+ * place, so every language shows what is stored, without a reload. A text
+ * typed into the card's fields and not yet saved is kept.
+ */
+(function () {
+    var timer = null;
+
+    function marks() {
+        return [].slice.call(document.querySelectorAll('[data-eventcrew-translating]'));
+    }
+
+    function refresh(ids) {
+        return window.fetch(window.location.href, { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.text() : ''; })
+            .then(function (html) {
+                if (!html) { return; }
+                var doc = new window.DOMParser().parseFromString(html, 'text/html');
+                ids.forEach(function (id) {
+                    var old = document.getElementById(id);
+                    var fresh = doc.getElementById(id);
+                    if (!old || !fresh) { return; }
+                    [].slice.call(old.querySelectorAll('textarea[id], input[type="text"][id]')).forEach(function (f) {
+                        var twin = fresh.querySelector('#' + f.id);
+                        if (twin && f.value) { twin.value = f.value; }
+                    });
+                    old.replaceWith(document.importNode(fresh, true));
+                });
+            });
+    }
+
+    function poll() {
+        timer = null;
+        var list = marks();
+        if (!list.length) { return; }
+        var first = list[0];
+        var body = new window.FormData();
+        body.append('action', first.getAttribute('data-action'));
+        body.append('csrf', first.getAttribute('data-csrf'));
+        window.fetch(first.getAttribute('data-url'), { method: 'POST', body: body, credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (answer) {
+                if (!answer || !answer.success) { return null; }
+                var active = answer.data.active || [];
+                var cards = [];
+                marks().forEach(function (m) {
+                    var card = m.getAttribute('data-card');
+                    if (active.indexOf(m.getAttribute('data-eventcrew-translating')) < 0 && cards.indexOf(card) < 0) {
+                        cards.push(card);
+                    }
+                });
+                return cards.length ? refresh(cards) : true;
+            })
+            .then(function (goOn) {
+                if (goOn !== null) { timer = window.setTimeout(poll, 4000); }
+            })
+            .catch(function () { timer = window.setTimeout(poll, 15000); });
+    }
+
+    if (marks().length && window.fetch && window.DOMParser) { timer = window.setTimeout(poll, 3000); }
 })();
 
 /*

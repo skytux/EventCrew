@@ -893,7 +893,8 @@ final class Kernel
                 $container->get(CrewAdminNewsletter::class),
                 $container->get(CrewAdminFollowup::class),
                 $container->get(CrewAdminAiText::class),
-                $container->get(NewcomerApproval::class)
+                $container->get(NewcomerApproval::class),
+                $container->get(BackgroundJobs::class)
             )
         );
 

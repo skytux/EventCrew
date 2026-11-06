@@ -42,7 +42,8 @@ final class CrewAdminNewsletter
      *         failed: int
      *     }|null,
      *     last: array{at: string, sent: int, failed: int}|null,
-     *     text: array{texts: array<string, string>, translated: bool}|null
+     *     text: array{texts: array<string, string>, translated: bool}|null,
+     *     translating: bool
      * }
      */
     public function view(): array
@@ -79,6 +80,7 @@ final class CrewAdminNewsletter
             'texts' => $status['text']['texts'],
             'translated' => $status['text']['translated'],
         ];
+        $translating = BackgroundJobs::isActive(BackgroundJobs::latest(AiPromptsPage::NEWSLETTER_TARGET));
 
         return [
             'enabled' => $status['enabled'],
@@ -87,6 +89,7 @@ final class CrewAdminNewsletter
             'plan' => $plan,
             'last' => $last,
             'text' => $text,
+            'translating' => $translating,
         ];
     }
 
