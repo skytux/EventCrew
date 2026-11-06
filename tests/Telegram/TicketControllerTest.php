@@ -312,7 +312,24 @@ final class TicketControllerTest extends TestCase
 
         $html = $this->controller()->renderPage($ticket);
 
-        self::assertStringContainsString('<p class="t-date">Saturday 1 August 2026 · 19:00</p>', $html);
+        self::assertStringContainsString('<p class="t-date">Saturday 1 August 2026<br>19:00</p>', $html);
+    }
+
+    /** The task and its time are on rows of their own (Owner, 2026-11-06). */
+    public function testRenderPagePutsTheTaskAndItsTimeOnRowsOfTheirOwn(): void
+    {
+        $ticket = $this->sampleTicket();
+        $ticket['role'] = 'Bar';
+        $ticket['time'] = '19:00–22:00';
+
+        self::assertStringContainsString(
+            '<p class="t-task">Bar<br>19:00–22:00</p>',
+            $this->controller()->renderPage($ticket)
+        );
+        self::assertStringContainsString(
+            '<p class="t-task">Free entry</p>',
+            $this->controller()->renderPage($this->sampleTicket())
+        );
     }
 
     public function testRenderPageShowsTheValidAndDisabledBands(): void

@@ -1052,7 +1052,11 @@ final class TicketMail
             $mail['subject'],
             $mail['html'],
             $mail['text'],
-            self::noticeFooter($language)
+            self::noticeFooter($language),
+            true,
+            '',
+            [],
+            HybridPolicy::languagesFor(HybridPolicy::TICKET_CANCELLED, $language)
         );
     }
 
@@ -1162,7 +1166,8 @@ final class TicketMail
             $html[] = EmailBody::toHtml($body, [], EmailTemplate::accent(), $tags[$lang]);
         }
 
-        $title = '' === $event ? $short : $event . ' — ' . $short;
+        // The event and the date, each on its own row (Owner, 2026-11-06).
+        $title = '' === $event ? $short : $event . "\n" . $short;
 
         return [
             'subject' => $both('subject') . ' – ' . $short,
@@ -1290,10 +1295,9 @@ final class TicketMail
             $partsHtml[] = $this->ticketPart($words, $tags[$lang]);
         }
 
-        // The heading: "event — 14.11.2026 · 19:00", the time when the event has one.
-        $start = EventTimes::start($eventId);
-        $when = '' === $start ? $date : $date . ' · ' . $start;
-        $html = $this->ticketTop($both('subject', ' · '), $event, $when)
+        // The heading: the event, the date and the time (when the event has
+        // one), each on its own row (Owner, 2026-11-06).
+        $html = $this->ticketTop($both('subject', "\n"), $event, $date, EventTimes::start($eventId))
             . implode('<hr style="border:0;border-top:1px solid ' . self::RULE_COLOR . ';margin:20px 0">', $partsHtml)
             . ('' === $note ? '' : sprintf(
                 '<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0"'
@@ -1307,7 +1311,7 @@ final class TicketMail
             ))
             . EmailBody::centred(EmailBody::toHtml(
                 '',
-                [['label' => $both('open', ' · '), 'url' => $url]],
+                [['label' => $both('open', "\n"), 'url' => $url]],
                 EmailTemplate::accent()
             ))
             . sprintf(
@@ -1315,7 +1319,7 @@ final class TicketMail
                     . 'color:%2$s;text-align:center">%3$s</p>',
                 self::HEAD_FONT,
                 self::GOLD_COLOR,
-                esc_html($both('closing', ' ✦ '))
+                str_replace("\n", '<br>', esc_html($both('closing', "\n")))
             );
 
         $offline = implode('<br>', array_map('esc_html', array_unique(array_values(HybridPolicy::field($parts, 'offline')))));
@@ -1325,7 +1329,7 @@ final class TicketMail
             . $both('open') . ': ' . $url . "\n\n"
             . ('' === $holder ? '' : $holder . "\n")
             . ('' === $code ? '' : $both('code') . ': ' . $code . "\n")
-            . "\n" . $both('closing', ' ✦ ');
+            . "\n" . $both('closing', "\n");
 
         return [
             'subject' => $both('subject') . ' – ' . $date,
@@ -1379,7 +1383,9 @@ final class TicketMail
             $mail['text'],
             $this->footer($row instanceof CrewTicket ? $row->language : null),
             true,
-            $mail['corner']
+            $mail['corner'],
+            [],
+            HybridPolicy::languagesFor(HybridPolicy::TICKET, $row instanceof CrewTicket ? $row->language : null)
         );
     }
 
@@ -1465,28 +1471,28 @@ final class TicketMail
 
     /**
      * The top of the ticket email: a small gold star, $kicker ("Your
-     * ticket") small and in capitals, then "event — date" as the heading, in
-     * gold, with a short gold line under it.
+     * ticket", one language per row) small and in capitals, then the event,
+     * the date and the time ('' for none), each on its own row, as the
+     * shining heading in gold, with a short gold line under it.
      */
-    private function ticketTop(string $kicker, string $event, string $date): string
+    private function ticketTop(string $kicker, string $event, string $date, string $start = ''): string
     {
         return sprintf(
             '<p style="margin:0 0 10px;font-size:16px;line-height:1;color:#c9802f;text-align:center">✦</p>'
                 . '<p style="margin:0 0 6px;font-family:%1$s;font-size:12px;line-height:1.4;letter-spacing:.14em;'
                 . 'text-transform:uppercase;color:%2$s;text-align:center">%3$s</p>'
                 . '<h1 class="ec-shimmer" style="margin:0;font-family:%4$s;font-size:27px;font-weight:700;'
-                . 'line-height:1.25;color:%5$s;text-align:center">%6$s — %7$s</h1>'
+                . 'line-height:1.25;color:%5$s;text-align:center">%6$s</h1>'
                 . '<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
                 . ' style="margin:18px auto 24px"><tr><td width="48" height="2" bgcolor="#d9b27a"'
                 . ' style="width:48px;height:2px;line-height:2px;font-size:0;background-color:#d9b27a">&nbsp;</td>'
                 . '</tr></table>',
             EmailBody::FONT,
             self::MUTED_COLOR,
-            esc_html($kicker),
+            str_replace("\n", '<br>', esc_html($kicker)),
             self::HEAD_FONT,
             self::GOLD_COLOR,
-            esc_html($event),
-            esc_html($date)
+            implode('<br>', array_map('esc_html', array_filter([$event, $date, $start], 'strlen')))
         );
     }
 

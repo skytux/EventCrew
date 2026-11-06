@@ -1047,13 +1047,11 @@ final class NewsletterWriterTest extends TestCase
         self::assertTrue($this->plan()['previewed']);
     }
 
-    public function testAShortPairSharesALineAndALongPairStacks(): void
+    public function testEachLanguageOfAPairHasItsOwnLine(): void
     {
-        // 25 and 32 characters: one line with a dot.
-        self::assertSame('Osta lippu · Buy a ticket', NewsletterLayout::joinPair('Osta lippu', 'Buy a ticket'));
-        self::assertSame('Ovet 18:30 · Doors open at 18:30', NewsletterLayout::joinPair('Ovet 18:30', 'Doors open at 18:30'));
-        // 33 characters and more: the English on a new line.
-        self::assertSame("Ovet 18:30\nDoors open at 18:30.", NewsletterLayout::joinPair('Ovet 18:30', 'Doors open at 18:30.'));
+        // One language per row, however short (Owner, 2026-11-06).
+        self::assertSame("Osta lippu\nBuy a ticket", NewsletterLayout::joinPair('Osta lippu', 'Buy a ticket'));
+        self::assertSame("Ovet 18:30\nDoors open at 18:30", NewsletterLayout::joinPair('Ovet 18:30', 'Doors open at 18:30'));
         self::assertSame(
             "Ovet sulkeutuvat 19:00\nDoors close 19:00",
             NewsletterLayout::joinPair('Ovet sulkeutuvat 19:00', 'Doors close 19:00')

@@ -3373,6 +3373,9 @@ msgstr "Hybrid"
 msgid "Hybrid messages"
 msgstr "Hybridmeddelanden"
 
+msgid "Telegram buttons show only the first two languages."
+msgstr "Telegram-knapparna visar bara de två första språken."
+
 #: src/Telegram/EventsCommand.php:55 src/Telegram/SayCommand.php:80
 msgid "I am not in the crew group yet."
 msgstr "Jag är inte med i crew-gruppen än."

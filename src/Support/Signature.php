@@ -16,8 +16,8 @@ namespace EventCrew\Support;
  *
  * The sign-off is a written-once text (SiteTexts, TranslatedText): written in
  * any language and kept in every site language. A message composed in Finnish
- * uses the Finnish text; a two-language email (Finnish, then English) shows
- * both.
+ * uses the Finnish text; an email in several languages shows each of them,
+ * one language per row.
  */
 final class Signature
 {
@@ -46,15 +46,17 @@ final class Signature
     }
 
     /**
-     * The plain-text sign-off of a two-language email: the Finnish one, a
-     * blank line and the English one, or just one when they are the same.
+     * The plain-text sign-off of an email in $languages (every site language
+     * when empty): each language's sign-off, a blank line between them, each
+     * different text once.
+     *
+     * @param list<string> $languages
      */
-    public static function bothText(): string
+    public static function bothText(array $languages = []): string
     {
-        $finnish = self::text(Language::FINNISH);
-        $english = self::text(Language::ENGLISH);
+        $texts = array_map(static fn (string $language): string => trim(self::text($language)), self::languages($languages));
 
-        return $finnish === $english ? $english : trim($finnish . "\n\n" . $english);
+        return implode("\n\n", array_values(array_unique(array_filter($texts, static fn (string $text): bool => '' !== $text))));
     }
 
     /**
@@ -64,35 +66,60 @@ final class Signature
      * (the crew's name) in gold. A one-line sign-off is split after its first
      * comma, so "With love, the crew" is drawn on two lines as well.
      *
-     * $bothLanguages is for a two-language email: when the Finnish sign-off
-     * differs from the English one, each line shows the Finnish words, " · "
-     * and the English words, or the two sign-offs follow each other when
-     * their lines do not pair up.
+     * $languages is for an email in several languages: true for every site
+     * language, or the list of languages. When the sign-offs differ, each
+     * line comes once per language, one language per row ("Rakkaudella,",
+     * then "With love,"; a line the same in every language once), or the
+     * sign-offs follow each other when their lines do not pair up. A single
+     * language shows that language's sign-off.
+     *
+     * @param bool|list<string> $languages
      */
-    public static function html(bool $bothLanguages = false): string
+    public static function html(bool|array $languages = false): string
     {
-        if (! $bothLanguages) {
+        if (false === $languages) {
             return self::closing(self::lines(self::text()));
         }
 
-        $finnish = self::lines(self::text(Language::FINNISH));
-        $english = self::lines(self::text(Language::ENGLISH));
+        $sets = [];
 
-        if ($finnish === $english || [] === $finnish || [] === $english) {
-            return self::closing([] === $english ? $finnish : $english);
+        foreach (self::languages(true === $languages ? [] : $languages) as $language) {
+            $lines = self::lines(self::text($language));
+
+            if ([] !== $lines && ! in_array($lines, $sets, true)) {
+                $sets[] = $lines;
+            }
         }
 
-        if (count($finnish) !== count($english)) {
-            return self::closing($finnish) . self::closing($english);
+        if (count($sets) <= 1) {
+            return self::closing($sets[0] ?? []);
         }
 
-        $paired = [];
-
-        foreach ($finnish as $index => $line) {
-            $paired[] = $line === $english[$index] ? $line : $line . ' · ' . $english[$index];
+        if (1 !== count(array_unique(array_map('count', $sets)))) {
+            return implode('', array_map(static fn (array $lines): string => self::closing($lines), $sets));
         }
 
-        return self::closing($paired);
+        $rows = [];
+        $first = 0;
+
+        foreach (array_keys($sets[0]) as $index) {
+            $each = array_values(array_unique(array_column($sets, $index)));
+            $first = 0 === $index ? count($each) : $first;
+            array_push($rows, ...$each);
+        }
+
+        return self::closing($rows, $first);
+    }
+
+    /**
+     * $languages, or every site language when it is empty.
+     *
+     * @param list<string> $languages
+     * @return list<string>
+     */
+    private static function languages(array $languages): array
+    {
+        return [] === $languages ? SiteLanguages::codes() : array_values($languages);
     }
 
     /**
@@ -121,8 +148,13 @@ final class Signature
         return $lines;
     }
 
-    /** @param array<int, string> $lines */
-    private static function closing(array $lines): string
+    /**
+     * $lines as the closing: the first $first lines in italics, one per
+     * row, the rest in gold.
+     *
+     * @param array<int, string> $lines
+     */
+    private static function closing(array $lines, int $first = 1): string
     {
         if ([] === $lines) {
             return '';
@@ -133,7 +165,7 @@ final class Signature
                 . 'color:%s;text-align:center">%s</p>',
             EmailBody::HEAD_FONT,
             EmailBody::TEXT_COLOR,
-            esc_html(array_shift($lines))
+            implode('<br>', array_map('esc_html', array_splice($lines, 0, max(1, $first))))
         );
 
         if ([] !== $lines) {

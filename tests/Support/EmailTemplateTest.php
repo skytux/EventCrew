@@ -500,16 +500,20 @@ final class EmailTemplateTest extends TestCase
     }
 
     /**
-     * A two-language email pairs the Finnish and English lines; the plain
-     * text has both sign-offs. A blank Finnish sign-off uses the main one.
+     * A two-language email shows each line once per language, one language
+     * per row; the plain text has both sign-offs. A one-language email has
+     * that language's sign-off. A blank Finnish sign-off uses the main one.
      */
     public function testTheSignOffInBothLanguages(): void
     {
         $this->options[Signature::OPTION] = "With love,\nthe crew";
         $this->options[Signature::FINNISH_OPTION] = "Rakkaudella,\nkrew";
 
-        self::assertStringContainsString('>Rakkaudella, · With love,</p>', Signature::html(true));
-        self::assertStringContainsString('>krew · the crew</p>', Signature::html(true));
+        self::assertStringContainsString('>Rakkaudella,<br>With love,</p>', Signature::html(true));
+        self::assertStringContainsString('>krew<br>the crew</p>', Signature::html(true));
+        self::assertStringNotContainsString(' · ', Signature::html(true));
+        self::assertStringNotContainsString('Rakkaudella', Signature::html(['en']));
+        self::assertSame("With love,\nthe crew", Signature::bothText(['en']));
         self::assertSame("Rakkaudella,\nkrew\n\nWith love,\nthe crew", Signature::bothText());
         self::assertSame("Rakkaudella,\nkrew", Signature::text(\EventCrew\Support\Language::FINNISH));
 

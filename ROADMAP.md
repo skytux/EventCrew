@@ -40,10 +40,10 @@ Do not re-open these without new information.
 
 ## Where it stands
 
-### Now (1.140.10, 2026-11-05)
+### Now (1.140.147, 2026-11-06)
 
 The plugin runs in production. Everything listed in `README.md` is shipped; the
-changelog is in `readme.txt`. The database schema is version 32. The releases
+changelog is in `readme.txt`. The database schema is version 33. The releases
 since the last update of this file (1.95.2):
 
 - 1.96.0: the bot's About and Description texts (English and Finnish) are set
@@ -147,6 +147,38 @@ since the last update of this file (1.95.2):
 - 1.140.8–1.140.10: tasks and events. The event edit screen has a "Move the
   tasks too" checkbox; a new role starts at the event start and a new task form
   is filled with the event's start; a task needs a start time.
+- 1.140.12–1.140.41: security and robustness fixes from an audit: one-time
+  sign-in, door desk and email links; rate limits on the sign-in form; secrets
+  shown only by their last 4 characters; mail import trusts only our own mail
+  server's Authentication-Results header; the bot refuses blocked people. Crew
+  tickets are one per person per night (1.140.15). The VPS mail poller is
+  removed (1.140.39).
+- 1.140.42–1.140.55: one ticket email for everyone, and the v4 look (photo or
+  purple backdrop, cream card, gold headings) on every email. The plugin in ten
+  more languages (es, fr, pt_BR, ru, nl, zh_CN, pl, de, it, ja), machine-drafted
+  and not proofread.
+- 1.140.56–1.140.73: site languages: Settings lists them, and a Translations
+  page holds every editable text in every site language. Group messages are
+  written in up to 3 site languages side by side, with a Hybrid tick per
+  message; a message to one person uses that person's language. A Messages
+  page holds every message the plugin sends, editable per language.
+- 1.140.74–1.140.105: many message fixes (dates in the reader's language,
+  web-only crew pointed to the crew page, long Telegram lists split into
+  pages); a Don't send me these link on after-the-night emails; organizer
+  notifications with Telegram and email rows; translations and AI texts run as
+  background jobs; a Second thoughts window (1.140.103).
+- 1.140.106–1.140.132: a newcomer waits for the team's OK before taking tasks
+  (schema 33); the Organization name, start time and Doors close placeholders;
+  clean event names from EventMesh; the site keeps the Telegram group in its own
+  setting; Settings can post the board with no command in the group.
+- 1.140.133–1.140.145: every message has a preview, and each message pair
+  declares its actions once (Telegram buttons, email links). Cancel asks first
+  and says whether it is late; cancel, sign-up, reminder, spot-opened and
+  late-cancel messages show the task's details, the standing and the other open
+  tasks.
+- 1.140.146–1.140.147: the role, pass, OK, open task call and welcome
+  messages list the open tasks with Sign up; the plugin in Swedish (sv_SE),
+  every built-in text.
 
 **In progress:** nothing recorded here.
 

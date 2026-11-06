@@ -6,6 +6,7 @@ namespace EventCrew\Telegram;
 
 use EventCrew\Support\EventName;
 use EventCrew\Support\EventSource;
+use EventCrew\Support\HybridPolicy;
 use EventCrew\Support\Language;
 use EventCrew\Support\NewsletterLayout;
 use EventCrew\Support\TicketMail;
@@ -29,7 +30,9 @@ use EventCrew\Support\TicketMail;
  * - buttons: rows of link buttons. "🎟 Osta lippu · Buy a ticket · 22 €" to
  *   the ticket shop (not on a sold-out event), "▶ Kuuntele DJ:tä · Listen to
  *   the DJ" to the DJ's music page when there is one, and "📱 Crew app" to the
- *   crew page when one is set.
+ *   crew page when one is set. A button shows the first two site languages
+ *   on its one row; "Sold out" in the caption is one language per row, in
+ *   every site language (Owner, 2026-11-06).
  */
 final class EventCard
 {
@@ -211,7 +214,8 @@ final class EventCard
         }
 
         if (! empty($event['sold_out'])) {
-            $head[] = '🚫 <b>' . self::escape(self::pair($words, 'sold_out')) . '</b>';
+            // One language per row (HybridPolicy::rows()).
+            $head[] = '🚫 <b>' . self::escape(HybridPolicy::rows(self::column($words, 'sold_out'))) . '</b>';
         } elseif ('' !== $price) {
             $head[] = '🎟 ' . self::escape($price);
         }
@@ -377,15 +381,35 @@ final class EventCard
         return is_string($url) ? $url : '';
     }
 
-    /** @param array<string, array<string, string>> $words */
+    /**
+     * A button's words: the first two site languages on one row
+     * (HybridPolicy::buttonText()).
+     *
+     * @param array<string, array<string, string>> $words
+     */
     private static function pair(array $words, string $key): string
     {
-        return $words['fi'][$key] === $words['en'][$key]
-            ? $words['en'][$key]
-            : $words['fi'][$key] . ' · ' . $words['en'][$key];
+        return HybridPolicy::buttonText(self::column($words, $key));
     }
 
-    /** @return array<string, array<string, string>> Every fixed word, in Finnish and in English. */
+    /**
+     * $key's words keyed by language.
+     *
+     * @param array<string, array<string, string>> $words
+     * @return array<string, string>
+     */
+    private static function column(array $words, string $key): array
+    {
+        return array_map(static fn (array $each): string => $each[$key], $words);
+    }
+
+    /**
+     * Every fixed word in each site language, main language first, keyed by
+     * language; the main language alone when hybrid is not allowed (4 or
+     * more site languages).
+     *
+     * @return array<string, array<string, string>>
+     */
     private static function words(): array
     {
         $words = static fn (): array => [
@@ -393,10 +417,8 @@ final class EventCard
             'listen' => __('Listen to the DJ', 'eventcrew'),
             'sold_out' => __('Sold out', 'eventcrew'),
         ];
+        $languages = HybridPolicy::isAllowed() ? HybridPolicy::siteLanguages() : [HybridPolicy::mainLanguage()];
 
-        return [
-            'fi' => Language::run(Language::FINNISH, $words),
-            'en' => Language::run(Language::ENGLISH, $words),
-        ];
+        return HybridPolicy::inEach($languages, $words);
     }
 }

@@ -2000,7 +2000,7 @@ msgid "You are organizing on %s"
 msgstr "Järjestäjänä %s"
 
 msgid "🛠️ Open the Admin tab"
-msgstr "🛠️ Avaa Admin-välilehti"
+msgstr "🛠️ Avaa Ylläpito-välilehti"
 
 msgctxt "Admin tab screen"
 msgid "Roster"
@@ -3049,16 +3049,16 @@ msgid "/people – buttons: 🎁 give credits, 🏷 roles, organizers and passes
 msgstr "/people – painikkeet: 🎁 anna vapaalippuja, 🏷 roolit, järjestäjät ja passit, ✅ kuka voi saada minkäkin roolin"
 
 msgid "/people, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab in the Crew app can do the same."
-msgstr "/people antaa yksityiskeskustelussa botin kanssa myös kertaluvan ilmoittautumisrajan ohi, tekee jostakusta järjestäjän (tai lopettaa sen) ja antaa tai poistaa rooleja, kuten DJ tai VJ. Samaan pystyvät wp-adminin People-sivu ja Crew-sovelluksen Admin-välilehti."
+msgstr "/people antaa yksityiskeskustelussa botin kanssa myös kertaluvan ilmoittautumisrajan ohi, tekee jostakusta järjestäjän (tai lopettaa sen) ja antaa tai poistaa rooleja, kuten DJ tai VJ. Samaan pystyvät wp-adminin People-sivu ja Crew-sovelluksen Ylläpito-välilehti."
 
 msgid "A role can have conditions in EventCrew > Settings: how many tasks of which roles a member has completed. Meeting them does not give the role. You are told, by Telegram and by email, the first time someone meets a role's conditions and the first time someone is given a role. /people, then ✅ Who may hold each role, lists who meets the conditions of each role."
 msgstr "Roolilla voi olla ehtoja kohdassa EventCrew > Settings: kuinka monta minkäkin roolin tehtävää jäsen on tehnyt. Ehtojen täyttyminen ei anna roolia. Saat Telegram-viestin ja sähköpostin, kun joku ensimmäisen kerran täyttää roolin ehdot ja kun jollekulle ensimmäisen kerran annetaan rooli. /people ja sitten ✅ Kuka voi saada minkäkin roolin näyttää, kuka täyttää kunkin roolin ehdot."
 
 msgid "A role ticked \"Only people with this role\" (a DJ, a VJ, a ceremony leader) is shown only to people given that role, in the Crew app, in the bot and at the sales desk. Its tasks have no sign-up limit and are never posted on the Telegram group board. Give people the role on the People page, in the Crew app Admin tab, or with /people in the bot. With \"Add to every night\" ticked, every upcoming night gets one task of that role, including nights that already exist; unticking it later removes nothing."
-msgstr "Rooli, jossa on valittuna \"Only people with this role\" (DJ, VJ, seremonian vetäjä), näytetään vain niille, joilla rooli on: Crew-sovelluksessa, botissa ja myyntipisteessä. Sen tehtävillä ei ole ilmoittautumisrajaa, eikä niitä koskaan julkaista Telegram-ryhmän taululla. Anna rooli People-sivulla, Crew-sovelluksen Admin-välilehdellä tai botissa komennolla /people. Kun \"Add to every night\" on valittuna, jokainen tuleva ilta saa yhden tämän roolin tehtävän, myös jo olemassa olevat illat; valinnan poistaminen myöhemmin ei poista mitään."
+msgstr "Rooli, jossa on valittuna \"Only people with this role\" (DJ, VJ, seremonian vetäjä), näytetään vain niille, joilla rooli on: Crew-sovelluksessa, botissa ja myyntipisteessä. Sen tehtävillä ei ole ilmoittautumisrajaa, eikä niitä koskaan julkaista Telegram-ryhmän taululla. Anna rooli People-sivulla, Crew-sovelluksen Ylläpito-välilehdellä tai botissa komennolla /people. Kun \"Add to every night\" on valittuna, jokainen tuleva ilta saa yhden tämän roolin tehtävän, myös jo olemassa olevat illat; valinnan poistaminen myöhemmin ei poista mitään."
 
 msgid "As an organizer you can add anyone to any task of a night, with /board in a private chat, in the Crew app Admin tab, or at the sales desk."
-msgstr "Järjestäjänä voit lisätä kenet tahansa mihin tahansa illan tehtävään: komennolla /board yksityiskeskustelussa, Crew-sovelluksen Admin-välilehdellä tai myyntipisteessä."
+msgstr "Järjestäjänä voit lisätä kenet tahansa mihin tahansa illan tehtävään: komennolla /board yksityiskeskustelussa, Crew-sovelluksen Ylläpito-välilehdellä tai myyntipisteessä."
 
 msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /me to the bot, taps 🔁 Take over a task, and the member accepts."
 msgstr "Peruminen alle %d tuntia ennen tehtävää on myöhäinen peruutus. Jäsen, joka ei pääse, voi etsiä tuuraajan: tuuraaja lähettää botille /me, napauttaa 🔁 Ota tehtävä, ja jäsen hyväksyy."
@@ -3149,7 +3149,7 @@ msgid "Web sign-in"
 msgstr "Verkkokirjautuminen"
 
 msgid "When you are signed up for the night's Organize task, you get the sales desk link %d minutes before the night's first task, with a button to the Admin tab. The welcome crew (people on tasks of a role marked \"Opens the sales desk\") get it once they are marked arrived. /door, then 💳 Sales desk, sends a new link any time. /door has buttons for the door list (who has a ticket) and the guest list."
-msgstr "Kun olet ilmoittautunut illan Organize-tehtävään, saat myyntipisteen linkin %d minuuttia ennen illan ensimmäistä tehtävää, ja mukana on painike Admin-välilehdelle. Tervetulotiimi (roolin, jossa on valittuna \"Opens the sales desk\", tehtävissä olevat) saa sen, kun heidät on merkitty saapuneiksi. /door ja sitten 💳 Myyntipiste lähettää uuden linkin milloin vain. /door-komennossa on painikkeet ovilistalle (kenellä on lippu) ja vieraslistalle."
+msgstr "Kun olet ilmoittautunut illan Organize-tehtävään, saat myyntipisteen linkin %d minuuttia ennen illan ensimmäistä tehtävää, ja mukana on painike Ylläpito-välilehdelle. Tervetulotiimi (roolin, jossa on valittuna \"Opens the sales desk\", tehtävissä olevat) saa sen, kun heidät on merkitty saapuneiksi. /door ja sitten 💳 Myyntipiste lähettää uuden linkin milloin vain. /door-komennossa on painikkeet ovilistalle (kenellä on lippu) ja vieraslistalle."
 
 msgid "Who meets the conditions for each role. ✅ = they have the role. Give a role with /people."
 msgstr "Kuka täyttää kunkin roolin ehdot. ✅ = hänellä on rooli. Anna rooli komennolla /people."
@@ -4858,7 +4858,7 @@ msgid "A test ticket email was sent to your own address."
 msgstr "Testilippu lähetettiin sähköpostilla omaan osoitteeseesi."
 
 msgid "After each import, every imported ticket with an email address is emailed to its buyer automatically: a thank-you message with the ticket's QR code, in every site language, or in one language when its Hybrid tick in Settings > Email is off. Roster and the Admin tab show how many were sent, failed or not sent yet. \"Send a test to me\" sends one to your own address; \"Send the rest now\" sends every ticket not sent yet, failed ones too."
-msgstr "Jokaisen tuonnin jälkeen jokainen tuotu lippu, jolla on sähköpostiosoite, lähetetään ostajalleen automaattisesti: kiitosviesti ja lipun QR-koodi kaikilla sivuston kielillä, tai yhdellä kielellä, kun sen Monikielinen-ruutua ei ole valittu kohdassa Asetukset > Sähköposti. Roster ja Admin-välilehti näyttävät, montako lähti, montako epäonnistui ja montako on vielä lähettämättä. \"Lähetä testi minulle\" lähettää yhden omaan osoitteeseesi; \"Lähetä loput nyt\" lähettää kaikki vielä lähettämättömät liput, myös epäonnistuneet."
+msgstr "Jokaisen tuonnin jälkeen jokainen tuotu lippu, jolla on sähköpostiosoite, lähetetään ostajalleen automaattisesti: kiitosviesti ja lipun QR-koodi kaikilla sivuston kielillä, tai yhdellä kielellä, kun sen Monikielinen-ruutua ei ole valittu kohdassa Asetukset > Sähköposti. Roster ja Ylläpito-välilehti näyttävät, montako lähti, montako epäonnistui ja montako on vielä lähettämättä. \"Lähetä testi minulle\" lähettää yhden omaan osoitteeseesi; \"Lähetä loput nyt\" lähettää kaikki vielä lähettämättömät liput, myös epäonnistuneet."
 
 msgid "Email their tickets now to the buyers who have not got one?"
 msgstr "Lähetetäänkö liput nyt niille ostajille, jotka eivät ole vielä saaneet lippua?"
@@ -5148,7 +5148,7 @@ msgid "Next announcement: %s, about these events:"
 msgstr "Seuraava tiedote: %s, näistä tapahtumista:"
 
 msgid "Off by default. When it is on, the coming events go by email to everyone who joined the next events announcement and confirmed their address. People join with the [eventcrew_newsletter] shortcode. Before sending, every organizer gets a preview email with a Stop button; the crew app’s Admin tab has the same button."
-msgstr "Oletuksena pois päältä. Kun se on päällä, tulevat tapahtumat lähtevät sähköpostilla kaikille, jotka ovat tilanneet tulevien tapahtumien tiedotteen ja vahvistaneet osoitteensa. Tiedotteen voi tilata lyhytkoodilla [eventcrew_newsletter]. Ennen lähetystä jokainen järjestäjä saa esikatselusähköpostin, jossa on Pysäytä-painike; Crew-sovelluksen Admin-välilehdellä on sama painike."
+msgstr "Oletuksena pois päältä. Kun se on päällä, tulevat tapahtumat lähtevät sähköpostilla kaikille, jotka ovat tilanneet tulevien tapahtumien tiedotteen ja vahvistaneet osoitteensa. Tiedotteen voi tilata lyhytkoodilla [eventcrew_newsletter]. Ennen lähetystä jokainen järjestäjä saa esikatselusähköpostin, jossa on Pysäytä-painike; Crew-sovelluksen Ylläpito-välilehdellä on sama painike."
 
 msgid "Only organizers can use /newsletter."
 msgstr "Vain järjestäjät voivat käyttää komentoa /newsletter."
@@ -5285,7 +5285,7 @@ msgid "Your email address"
 msgstr "Sähköpostiosoitteesi"
 
 msgid "📰 The next events announcement, if an administrator has switched it on, emails the coming events to everyone who joined it. Before it goes out, each organizer gets a preview email with a button to stop it; the Crew app Admin tab has the same button. To add your own text to the next announcement, send /newsletter followed by the text in a private chat with the bot, or tell the bot there in your own words what to add (it shows the text with a Confirm button first), or use the Admin tab. Write it in any language: it is translated into every site language."
-msgstr "📰 Tulevien tapahtumien tiedote, jos ylläpitäjä on kytkenyt sen päälle, lähettää tulevat tapahtumat sähköpostilla kaikille sen tilanneille. Ennen lähtöä jokainen järjestäjä saa esikatselusähköpostin, jossa on painike sen pysäyttämiseen; Crew-sovelluksen Admin-välilehdellä on sama painike. Lisää oma teksti seuraavaan tiedotteeseen lähettämällä /newsletter ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla botille siellä omin sanoin, mitä lisätä (se näyttää tekstin ensin Vahvista-painikkeen kanssa), tai käytä Admin-välilehteä. Kirjoita se millä kielellä tahansa: se käännetään jokaiselle sivuston kielelle."
+msgstr "📰 Tulevien tapahtumien tiedote, jos ylläpitäjä on kytkenyt sen päälle, lähettää tulevat tapahtumat sähköpostilla kaikille sen tilanneille. Ennen lähtöä jokainen järjestäjä saa esikatselusähköpostin, jossa on painike sen pysäyttämiseen; Crew-sovelluksen Ylläpito-välilehdellä on sama painike. Lisää oma teksti seuraavaan tiedotteeseen lähettämällä /newsletter ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla botille siellä omin sanoin, mitä lisätä (se näyttää tekstin ensin Vahvista-painikkeen kanssa), tai käytä Ylläpito-välilehteä. Kirjoita se millä kielellä tahansa: se käännetään jokaiselle sivuston kielelle."
 
 msgid "Get the coming events by email"
 msgstr "Tulevat tapahtumat sähköpostiisi"
@@ -5692,7 +5692,7 @@ msgid "You get this email because you had a ticket to this event."
 msgstr "Saat tämän viestin, koska sinulla oli lippu tähän tapahtumaan."
 
 msgid "💌 The post-event email, if an administrator has switched it on, goes the day after each event at 12:00 to everyone who had a ticket and gave an email address: a thank-you to those who were checked in at the door, and a kind \"sorry we missed you\" to those who were not. Both show the next three events. At 12:00 the day before the event, each organizer gets a preview of both with a button to stop it; the Roster page and the Crew app Admin tab have the same button and a \"Send a test to me\" button. The Roster page shows how many were sent and how many people opened a link."
-msgstr "💌 Tapahtuman jälkeinen viesti lähtee, jos ylläpitäjä on kytkenyt sen päälle, jokaisen tapahtuman jälkeisenä päivänä klo 12.00 kaikille, joilla oli lippu ja jotka antoivat sähköpostiosoitteensa: kiitos niille, jotka merkittiin sisään ovella, ja lämmin \"harmi, ettet päässyt\" niille, joita ei merkitty. Kummassakin näkyvät kolme seuraavaa tapahtumaa. Tapahtumaa edeltävänä päivänä klo 12.00 jokainen järjestäjä saa molemmista esikatselun, jossa on painike viestin pysäyttämiseen; Läsnäolo-sivulla ja Crew-sovelluksen Admin-välilehdellä on sama painike sekä \"Lähetä testi minulle\" -painike. Läsnäolo-sivu näyttää, montako viestiä lähti ja moniko avasi linkin."
+msgstr "💌 Tapahtuman jälkeinen viesti lähtee, jos ylläpitäjä on kytkenyt sen päälle, jokaisen tapahtuman jälkeisenä päivänä klo 12.00 kaikille, joilla oli lippu ja jotka antoivat sähköpostiosoitteensa: kiitos niille, jotka merkittiin sisään ovella, ja lämmin \"harmi, ettet päässyt\" niille, joita ei merkitty. Kummassakin näkyvät kolme seuraavaa tapahtumaa. Tapahtumaa edeltävänä päivänä klo 12.00 jokainen järjestäjä saa molemmista esikatselun, jossa on painike viestin pysäyttämiseen; Läsnäolo-sivulla ja Crew-sovelluksen Ylläpito-välilehdellä on sama painike sekä \"Lähetä testi minulle\" -painike. Läsnäolo-sivu näyttää, montako viestiä lähti ja moniko avasi linkin."
 
 msgid "It starts with the first event whose day begins after you switch it on. Events that are already over, or going on, at that moment get no email."
 msgstr "Viestit alkavat ensimmäisestä tapahtumasta, jonka päivä alkaa sen jälkeen, kun kytket asetuksen päälle. Tapahtumat, jotka ovat silloin jo ohi tai käynnissä, eivät saa viestiä."
@@ -5727,7 +5727,7 @@ msgid "Email (optional: the ticket is emailed)"
 msgstr "Sähköposti (valinnainen: lippu lähetetään)"
 
 msgid "The same ticket email goes to a guest you add with an email address (wp-admin Roster, the Admin tab, or /door add Name name@example.com) and to a Holvi buyer added at the sales desk with an email address, with the next batch. Crew get a separate ticket email when they take a task or spend a credit. When a guest is removed, or a task or credit is cancelled, after the ticket was emailed, the person gets a short \"Your ticket is cancelled\" email."
-msgstr "Sama lippusähköposti lähtee seuraavassa erässä vieraalle, jonka lisäät sähköpostiosoitteen kanssa (wp-adminin Roster, Admin-välilehti tai /door add Nimi nimi@example.com), ja myyntipisteessä sähköpostiosoitteen kanssa lisätylle Holvi-ostajalle. Crew saa erillisen lippusähköpostin, kun ottaa tehtävän tai käyttää vapaalipun. Kun vieras poistetaan tai tehtävä tai vapaalippu perutaan lipun lähettämisen jälkeen, hän saa lyhyen \"Lippusi on peruttu\" -viestin."
+msgstr "Sama lippusähköposti lähtee seuraavassa erässä vieraalle, jonka lisäät sähköpostiosoitteen kanssa (wp-adminin Roster, Ylläpito-välilehti tai /door add Nimi nimi@example.com), ja myyntipisteessä sähköpostiosoitteen kanssa lisätylle Holvi-ostajalle. Crew saa erillisen lippusähköpostin, kun ottaa tehtävän tai käyttää vapaalipun. Kun vieras poistetaan tai tehtävä tai vapaalippu perutaan lipun lähettämisen jälkeen, hän saa lyhyen \"Lippusi on peruttu\" -viestin."
 
 msgid "When you take a task, or spend a free-entry credit, we also email you your ticket: a QR code and a link to your ticket page. If that task or credit is cancelled after the ticket was sent, we email you that the ticket is cancelled."
 msgstr "Kun otat tehtävän tai käytät vapaalipun, lähetämme sinulle myös lipun sähköpostilla: QR-koodin ja linkin lippusivullesi. Jos tehtävä tai vapaalippu perutaan lipun lähettämisen jälkeen, kerromme sähköpostilla, että lippu on peruttu."
@@ -5965,7 +5965,7 @@ msgid "Text: a one-time text an organizer set for this email. After this send, t
 msgstr "Teksti: kertateksti, jonka järjestäjä asetti tähän viestiin. Tämän lähetyksen jälkeen käytetään taas Viestit-sivun tekstiä."
 
 msgid "Text: the one on the Messages page. An organizer can set a one-time text for this email with /followup in the bot, or in the crew app’s Admin tab."
-msgstr "Teksti: Viestit-sivun teksti. Järjestäjä voi asettaa tähän viestiin kertatekstin botin komennolla /followup tai Crew-sovelluksen Admin-välilehdellä."
+msgstr "Teksti: Viestit-sivun teksti. Järjestäjä voi asettaa tähän viestiin kertatekstin botin komennolla /followup tai Crew-sovelluksen Ylläpito-välilehdellä."
 
 msgid "Use /followup in a private chat with me."
 msgstr "Käytä komentoa /followup yksityiskeskustelussa kanssani."
@@ -6016,7 +6016,7 @@ msgid "Write it in any language. It is translated into every site language when 
 msgstr "Kirjoita se millä kielellä tahansa. Se käännetään jokaiselle sivuston kielelle, kun tallennat."
 
 msgid "✏️ The thank-you text and the sorry text of the post-event email are set in wp-admin under EventCrew > Messages. To use another text for the next post-event email only, send /followup came or /followup missed followed by the text in a private chat with the bot, or tell the bot there in your own words (it shows the text with a Confirm button first), or use the Crew app Admin tab. Write it in any language: it is translated into every site language. After that email is sent, or when that night is stopped, the text on the Messages page is used again. Send /followup alone to see both texts."
-msgstr "✏️ Tapahtuman jälkeisen viestin kiitosteksti ja harmiteksti asetetaan wp-adminissa kohdassa EventCrew > Viestit. Käytä toista tekstiä vain seuraavassa tapahtuman jälkeisessä viestissä lähettämällä /followup came tai /followup missed ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla se botille siellä omin sanoin (se näyttää tekstin ensin Vahvista-painikkeen kanssa) tai käyttämällä Crew-sovelluksen Admin-välilehteä. Kirjoita se millä kielellä tahansa: se käännetään jokaiselle sivuston kielelle. Kun se viesti on lähetetty tai sen illan viesti pysäytetty, käytetään taas Viestit-sivun tekstiä. Lähetä pelkkä /followup nähdäksesi molemmat tekstit."
+msgstr "✏️ Tapahtuman jälkeisen viestin kiitosteksti ja harmiteksti asetetaan wp-adminissa kohdassa EventCrew > Viestit. Käytä toista tekstiä vain seuraavassa tapahtuman jälkeisessä viestissä lähettämällä /followup came tai /followup missed ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla se botille siellä omin sanoin (se näyttää tekstin ensin Vahvista-painikkeen kanssa) tai käyttämällä Crew-sovelluksen Ylläpito-välilehteä. Kirjoita se millä kielellä tahansa: se käännetään jokaiselle sivuston kielelle. Kun se viesti on lähetetty tai sen illan viesti pysäytetty, käytetään taas Viestit-sivun tekstiä. Lähetä pelkkä /followup nähdäksesi molemmat tekstit."
 
 msgid "Hi!"
 msgstr "Hei!"
@@ -6141,7 +6141,7 @@ msgid "The ticket emails go out at %s. To stop them, press \"Cancel sending\" on
 msgstr "Lippuviestit lähtevät klo %s. Jos haluat estää ne, paina Läsnäolo-sivulla \"Peru lähetys\" ennen sitä."
 
 msgid "Every send waits 10 minutes before anything goes out, whether an import or \"Send the rest now\" started it. Until then, Roster and the Admin tab show the time, how many get an email, and a \"Cancel sending\" button. Cancelling sends nothing; those tickets stay not sent. \"Send a test to me\" is not delayed."
-msgstr "Jokainen lähetys odottaa 10 minuuttia ennen kuin mitään lähtee, aloitti sen tuonti tai \"Lähetä loput nyt\". Siihen asti Roster ja Admin-välilehti näyttävät kellonajan, montako saa viestin, ja \"Peru lähetys\" -painikkeen. Peruminen ei lähetä mitään; liput jäävät lähettämättä. \"Lähetä testi minulle\" ei odota."
+msgstr "Jokainen lähetys odottaa 10 minuuttia ennen kuin mitään lähtee, aloitti sen tuonti tai \"Lähetä loput nyt\". Siihen asti Roster ja Ylläpito-välilehti näyttävät kellonajan, montako saa viestin, ja \"Peru lähetys\" -painikkeen. Peruminen ei lähetä mitään; liput jäävät lähettämättä. \"Lähetä testi minulle\" ei odota."
 
 msgid "Newsletter"
 msgstr "Uutiskirje"
@@ -7087,6 +7087,9 @@ msgstr "EventCrew: sivustolla on %1$d kieltä. Monikieliset viestit toimivat eni
 msgid "Hybrid messages"
 msgstr "Monikieliset viestit"
 
+msgid "Telegram buttons show only the first two languages."
+msgstr "Telegram-painikkeissa näkyy vain kaksi ensimmäistä kieltä."
+
 msgid "Hybrid"
 msgstr "Monikielinen"
 
@@ -7534,7 +7537,7 @@ msgid "Door list for %1$s: open it with the button below. The link works once, o
 msgstr "Ovilista %1$s: avaa se alla olevasta painikkeesta. Linkki toimii kerran, yhdellä laitteella; se pitää laitteen kirjautuneena klo 06:00 asti. Sen saa välittää eteenpäin. Tarvitsetko uuden? %2$s"
 
 msgid "You are organizing on %1$s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? %2$s"
-msgstr "Olet %1$s järjestäjänä. Myyntipisteen painike kirjaa tämän laitteen ovilistalle klo 06:00 asti; linkki toimii kerran. Admin-välilehti on Crew-sovelluksessa; kirjaudu siellä, jos se pyytää. Tarvitsetko uuden myyntipisteen linkin? %2$s"
+msgstr "Olet %1$s järjestäjänä. Myyntipisteen painike kirjaa tämän laitteen ovilistalle klo 06:00 asti; linkki toimii kerran. Ylläpito-välilehti on Crew-sovelluksessa; kirjaudu siellä, jos se pyytää. Tarvitsetko uuden myyntipisteen linkin? %2$s"
 
 msgid "Tap 💳 Sales desk below."
 msgstr "Napauta alta 💳 Myyntipiste."
@@ -8178,7 +8181,7 @@ msgstr "Uusi: %s haluaa mukaan"
 #. translators: 1: the person's name, 2: their email
 #, php-format
 msgid "%1$s (%2$s) signed in for the first time and wants to join the crew. Press OK or No in the Admin tab of the crew page."
-msgstr "%1$s (%2$s) kirjautui ensimmäistä kertaa ja haluaa mukaan crew'hun. Paina OK tai Ei crew-sivun Admin-välilehdellä."
+msgstr "%1$s (%2$s) kirjautui ensimmäistä kertaa ja haluaa mukaan crew'hun. Paina OK tai Ei crew-sivun Ylläpito-välilehdellä."
 
 #. translators: 1: the person's name, 2: their email
 #, php-format
@@ -8195,7 +8198,7 @@ msgid "✅ The team said OK. You can now take tasks."
 msgstr "✅ Tiimi hyväksyi sinut. Voit nyt ottaa tehtäviä."
 
 msgid "Sent to the organizers without Telegram when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text."
-msgstr "Lähetetään järjestäjille, joilla ei ole Telegramia, kun uusi henkilö vahvistaa sähköpostinsa ensimmäistä kertaa. Kunnes järjestäjä hyväksyy, hän näkee taulun mutta ei voi ottaa tehtäviä. Tekstin alle lisätään painike crew-sivun Admin-välilehdelle, jossa OK- ja Ei-painikkeet ovat."
+msgstr "Lähetetään järjestäjille, joilla ei ole Telegramia, kun uusi henkilö vahvistaa sähköpostinsa ensimmäistä kertaa. Kunnes järjestäjä hyväksyy, hän näkee taulun mutta ei voi ottaa tehtäviä. Tekstin alle lisätään painike crew-sivun Ylläpito-välilehdelle, jossa OK- ja Ei-painikkeet ovat."
 
 msgid "Sent to the organizers who use the bot when a new person confirms their email for the first time. The OK and No buttons are added under the text; the first organizer to press decides."
 msgstr "Lähetetään bottia käyttäville järjestäjille, kun uusi henkilö vahvistaa sähköpostinsa ensimmäistä kertaa. OK- ja Ei-painikkeet lisätään tekstin alle; ensimmäinen painaja päättää."

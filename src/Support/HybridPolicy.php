@@ -16,12 +16,14 @@ use EventCrew\Models\Person;
  *   is switched off for every message kind (Q289), and wp-admin says why.
  * - isOn($kind): the "Hybrid" tick of that message kind (on by default for
  *   every kind that was hybrid before the tick existed), and isAllowed().
- * - languagesFor($kind, $recipient): every site language when the kind is
- *   hybrid; otherwise the one language: a person's stored language, or
- *   English for a person who has not chosen one (personLanguage(), as
- *   Language::forPerson() does); the main language (the first site
- *   language) for ticket buyers, guests, subscribers and anyone else who is
- *   not a person, whose language is not known (Q290).
+ * - languagesFor($kind, $recipient): a message to one reader whose
+ *   language is known is in that language only, hybrid or not (Owner,
+ *   2026-11-06): a person's stored language, or English for a person who
+ *   has not chosen one (personLanguage(), as Language::forPerson() does), or
+ *   the language code given, when it is a site language. Otherwise every
+ *   site language when the kind is hybrid, else the main language (the
+ *   first site language): ticket buyers, guests, subscribers and anyone else
+ *   who is not a person, whose language is not known (Q290).
  *
  * Every sender that used to write Finnish then English asks this class which
  * languages to write in, so the rule is in one place.
@@ -33,6 +35,12 @@ final class HybridPolicy
 
     /** Hybrid works up to this many site languages; one more switches it off. */
     public const MAX_LANGUAGES = 3;
+
+    /**
+     * A Telegram button of a hybrid message shows this many languages, the
+     * first site languages, on its one row (Owner, 2026-11-06).
+     */
+    public const BUTTON_LANGUAGES = 2;
 
     /** The ticket email (TicketMail::compose()). */
     public const TICKET = 'ticket';
@@ -109,26 +117,27 @@ final class HybridPolicy
 
     /**
      * The languages a $kind message to $recipient is written in, main
-     * language first: every site language when it is hybrid, else one.
-     * $recipient is a Person (personLanguage()), a language code, or null
-     * when the language is not known (a ticket buyer, a guest, a subscriber,
-     * a Telegram group): then the main language. A language that is not a
-     * site language also gets the main language.
+     * language first. $recipient is a Person (personLanguage()), a language
+     * code, or null when the language is not known (a ticket buyer, a guest,
+     * a subscriber, a Telegram group). A known site language gives that one
+     * language, even when $kind is hybrid: a message to one person is in
+     * their language only. An unknown language, or one that is not a site
+     * language, gives every site language when $kind is hybrid, else the
+     * main language.
      *
      * @return list<string>
      */
     public static function languagesFor(string $kind, Person|string|null $recipient = null): array
     {
         $site = self::siteLanguages();
-
-        if (self::isOn($kind)) {
-            return $site;
-        }
-
         $language = $recipient instanceof Person ? self::personLanguage($recipient) : $recipient;
         $language = is_string($language) ? strtolower(trim($language)) : '';
 
-        return [in_array($language, $site, true) ? $language : $site[0]];
+        if (in_array($language, $site, true)) {
+            return [$language];
+        }
+
+        return self::isOn($kind) ? $site : [$site[0]];
     }
 
     /**
@@ -179,6 +188,29 @@ final class HybridPolicy
     public static function join(array $texts, string $glue = ' / '): string
     {
         return implode($glue, array_unique(array_values(array_map('strval', $texts))));
+    }
+
+    /**
+     * The texts one language per row, main language first, each different
+     * text once (Owner, 2026-11-06: one language per row).
+     *
+     * @param array<string, string> $texts
+     */
+    public static function rows(array $texts): string
+    {
+        return self::join($texts, "\n");
+    }
+
+    /**
+     * A Telegram button's label in a hybrid message: the texts of the first
+     * BUTTON_LANGUAGES languages on one row, "Osta lippu · Buy a ticket"; the
+     * other languages are left out, since a Telegram button has one row.
+     *
+     * @param array<string, string> $texts
+     */
+    public static function buttonText(array $texts): string
+    {
+        return self::join(array_slice($texts, 0, self::BUTTON_LANGUAGES, true), ' · ');
     }
 
     /**
@@ -269,6 +301,20 @@ final class HybridPolicy
         }
 
         return $ticks;
+    }
+
+    /**
+     * The admin warning while more than BUTTON_LANGUAGES site languages are
+     * chosen and hybrid works: a Telegram button leaves the others out
+     * (buttonText()). '' when there is nothing to say.
+     */
+    public static function buttonsWarning(): string
+    {
+        if (! self::isAllowed() || count(self::siteLanguages()) <= self::BUTTON_LANGUAGES) {
+            return '';
+        }
+
+        return __('Telegram buttons show only the first two languages.', 'eventcrew');
     }
 
     /** The admin warning while hybrid is off because of the number of languages. */

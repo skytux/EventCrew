@@ -367,7 +367,8 @@ final class EmailBody
                     . 'line-height:1.25;color:%s;text-align:center">%s</h1>',
                 self::HEAD_FONT,
                 self::GOLD,
-                esc_html($text)
+                // A new line in $text starts a row of its own.
+                str_replace("\n", '<br>', esc_html($text))
             )
             . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"'
             . ' style="margin:18px auto 26px"><tr><td style="width:48px;height:2px;line-height:2px;'
@@ -560,7 +561,11 @@ final class EmailBody
                 self::FONT,
                 $primary ? '700' : '600',
                 $danger ? ($primary ? '#ffffff' : self::DANGER_COLOR) : '#241238',
-                esc_html($action['label'])
+                // A label in several languages is one language per row.
+                str_contains($action['label'], "\n")
+                    ? '<span style="display:block;text-align:center">'
+                        . str_replace("\n", '<br>', esc_html($action['label'])) . '</span>'
+                    : esc_html($action['label'])
             );
 
             $primary = false;

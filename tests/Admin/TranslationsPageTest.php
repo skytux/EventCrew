@@ -313,9 +313,18 @@ final class TranslationsPageTest extends TestCase
         self::assertStringContainsString('row[texts][sv]', $html);
         self::assertStringContainsString('Translate missing', $html);
         self::assertStringContainsString('Showing 2 of 2 texts.', $html);
+        self::assertStringContainsString('Telegram buttons show only the first two languages.', $html);
 
         $html = $this->rendered(['s' => 'kiitos', 'show' => '']);
         self::assertStringContainsString('Showing 0 of 2 texts.', $html);
+    }
+
+    /** With two site languages there is no warning about the Telegram buttons. */
+    public function testTwoLanguagesHaveNoButtonsWarning(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en'];
+
+        self::assertStringNotContainsString('Telegram buttons show', $this->rendered(['s' => '', 'show' => '']));
     }
 
     /** @param array<string, string> $get */
