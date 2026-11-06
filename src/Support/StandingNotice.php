@@ -37,7 +37,8 @@ final class StandingNotice
         private readonly PersonRepository $people,
         private readonly NotificationsRepository $ledger,
         private readonly TelegramClient $telegram,
-        private readonly Mailer $mailer
+        private readonly Mailer $mailer,
+        private readonly ?StandingCalculator $standing = null
     ) {
     }
 
@@ -79,14 +80,19 @@ final class StandingNotice
     private function notifyInLanguage(Person $person, Task $task, string $status): void
     {
         $isNoShow = AssignmentStatus::NO_SHOW === $status;
+        $kind = $isNoShow ? 'no_show' : 'late_cancel';
         $prefs = new NotificationPreferences();
+        // The texts are the Messages page templates (MessageTemplates); both
+        // versions share one list of actions (MessageTemplates::actions()).
+        $context = ['person' => $person, 'task' => $task, 'standing' => $this->standingLine($person)];
 
         if ($prefs->dmAllowed($person, NotificationPreferences::STANDING)) {
             // Framed but not signed: a warm sign-off under "you were marked as a
             // no-show" would read as sarcasm.
             $this->telegram->sendMessage(
                 $person->telegramChatId,
-                DmBody::frame($person, $this->dmText($task, $isNoShow))
+                DmBody::frame($person, MessageAiText::body($kind . '_dm', $context, $task->eventPostId)),
+                MessageActions::replyMarkup(MessageActions::of($kind . '_dm', $context, $this->mailer))
             );
         }
 
@@ -94,22 +100,38 @@ final class StandingNotice
             return;
         }
 
-        $kind = $isNoShow ? 'no_show' : 'late_cancel';
-
         $this->mailer->toPerson(
             $person->id,
             $person->email,
-            MessageTemplates::subject($kind, ['person' => $person, 'task' => $task]),
-            MessageAiText::body($kind, ['person' => $person, 'task' => $task], $task->eventPostId),
-            // A person with no Telegram chat gets the crew page (CrewPageHelp).
-            array_values(array_filter([$isNoShow ? null : CrewPageHelp::manageAction($this->mailer, $person)]))
+            MessageTemplates::subject($kind, $context),
+            MessageAiText::body($kind, $context, $task->eventPostId),
+            // A person with no Telegram chat also gets the crew page (CrewPageHelp).
+            array_values(array_filter([
+                $isNoShow ? null : CrewPageHelp::manageAction($this->mailer, $person),
+                ...MessageActions::email(MessageActions::of($kind, $context, $this->mailer)),
+            ]))
         );
     }
 
-    /** The DM text: the Messages page template (MessageTemplates). */
-    private function dmText(Task $task, bool $isNoShow): string
+    /**
+     * "Your standing: ... · N free-entry credits.", the line the sign-up and
+     * cancel confirmations end with (ClaimNotifier), or '' without a
+     * calculator.
+     */
+    private function standingLine(Person $person): string
     {
-        return MessageAiText::body($isNoShow ? 'no_show_dm' : 'late_cancel_dm', ['task' => $task], $task->eventPostId);
+        if (null === $this->standing) {
+            return '';
+        }
+
+        $standing = $this->standing->for($person->id);
+
+        return sprintf(
+            /* translators: 1: standing level and score, 2: number of free-entry credits */
+            __('Your standing: %1$s · %2$d free-entry credits.', 'eventcrew'),
+            $standing->ratedSummary(),
+            $standing->creditBalance
+        );
     }
 
     /**

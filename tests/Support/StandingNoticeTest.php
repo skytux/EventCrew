@@ -6,12 +6,16 @@ namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\StandingNotice;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
@@ -72,7 +76,8 @@ final class StandingNoticeTest extends TestCase
             new PersonRepository(),
             $ledger,
             new TelegramClient(new Logger(), new DohResolver(new Logger())),
-            new Mailer(new Logger(), new EmailTemplate(new Logger()))
+            new Mailer(new Logger(), new EmailTemplate(new Logger())),
+            new StandingCalculator(new AssignmentRepository(), new RedemptionRepository(), new CreditGrantRepository())
         );
     }
 
@@ -213,10 +218,103 @@ final class StandingNoticeTest extends TestCase
         self::assertStringNotContainsString('/me', $this->mails[0]);
 
         self::assertStringContainsString(
-            'It counts against your standing. More notice next time keeps it clear, and so does a replacement: they'
-                . ' send /me to the bot and tap 🔁 Take over a task, and you accept.',
+            'It counts against your standing. Next time tap Cancel early or find someone to take it.',
             $this->mails[1]
         );
         self::assertStringNotContainsString('Manage my tasks', $this->mails[1]);
+    }
+
+    /** One due mark of $status for person 7 (Telegram chat 4242) on task 5. */
+    private function queueMark(string $status): void
+    {
+        $this->wpdb->nextResults[] = [[
+            'id' => 11, 'task_id' => 5, 'person_id' => 7, 'status' => $status,
+            'status_changed_at' => '2026-07-18 09:00:00', 'task_date' => '2026-07-17',
+        ]];
+        $this->wpdb->nextRows[] = [
+            'id' => 5, 'task_date' => '2026-07-17', 'role_slug' => 'decorate', 'capacity' => 2,
+            'event_label' => 'Party',
+        ];
+        $this->wpdb->nextRows[] = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00', 'telegram_chat_id' => 4242,
+        ];
+    }
+
+    /**
+     * Less friction: both notices say where the person stands now and offer
+     * the open tasks, in the DM as a button and in the email as a link.
+     */
+    public function testBothNoticesShowTheStandingAndTheOpenTasks(): void
+    {
+        $options = [
+            TelegramClient::TOKEN_OPTION => 'BOT:TOKEN',
+            'eventcrew_link_secret' => 'test-secret',
+            EmailTemplate::HTML_OPTION => false,
+            'eventcrew_signup_page_id' => 7,
+        ];
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => $options[$name] ?? $default
+        );
+        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
+
+        foreach (['late_cancel', 'no_show'] as $i => $status) {
+            $this->queueMark($status);
+            $this->service()->sendDue(25);
+
+            $dm = $this->sends[$i];
+            self::assertStringContainsString('Your standing: ', (string) $dm['text'], $status);
+            self::assertStringContainsString('free-entry credits.', (string) $dm['text'], $status);
+            $buttons = array_column(array_merge(...$dm['reply_markup']['inline_keyboard']), 'callback_data', 'text');
+            self::assertSame(['See open tasks' => 'mn:board'], $buttons, $status);
+            self::assertStringContainsString('Your standing: ', $this->mails[$i], $status);
+            self::assertStringContainsString('See open tasks: https://site.test/crew/', $this->mails[$i], $status);
+        }
+    }
+
+    /**
+     * "Not right? Tell us" under a no-show, on both channels, only while the
+     * bot's helper forwards chats to the organizers; never under a late
+     * cancellation.
+     */
+    public function testANoShowOffersTellUsOnlyWhileTheHelperForwards(): void
+    {
+        $options = [
+            TelegramClient::TOKEN_OPTION => 'BOT:TOKEN',
+            'eventcrew_link_secret' => 'test-secret',
+            EmailTemplate::HTML_OPTION => false,
+            'eventcrew_telegram_bot_username' => 'crewbot',
+            AssistantSettings::ENABLED_OPTION => true,
+            AssistantSettings::URL_OPTION => 'https://llm.test/v1',
+            AssistantSettings::MODEL_OPTION => 'm',
+        ];
+        Functions\when('get_option')->alias(
+            static function (string $name, mixed $default = false) use (&$options): mixed {
+                return $options[$name] ?? $default;
+            }
+        );
+
+        $this->queueMark('no_show');
+        $this->service()->sendDue(25);
+        $this->queueMark('late_cancel');
+        $this->service()->sendDue(25);
+        $options[AssistantSettings::FORWARD_OPTION] = false;
+        $this->queueMark('no_show');
+        $this->service()->sendDue(25);
+
+        $tap = static fn (array $dm): array => array_column(
+            array_merge(...$dm['reply_markup']['inline_keyboard']),
+            'callback_data',
+            'text'
+        );
+        self::assertSame(
+            ['See open tasks' => 'mn:board', '💬 Not right? Tell us' => 'mn:tell'],
+            $tap($this->sends[0])
+        );
+        self::assertStringContainsString('Not right? Tell us in Telegram: https://t.me/crewbot?start=tell', $this->mails[0]);
+        self::assertSame(['See open tasks' => 'mn:board'], $tap($this->sends[1]));
+        self::assertStringNotContainsString('Tell us', $this->mails[1]);
+        self::assertSame(['See open tasks' => 'mn:board'], $tap($this->sends[2]));
+        self::assertStringNotContainsString('Tell us', $this->mails[2]);
     }
 }

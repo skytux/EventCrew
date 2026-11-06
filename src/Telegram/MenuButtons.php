@@ -33,6 +33,9 @@ final class MenuButtons
     public const BOARD = 'mn:board';
     public const PEOPLE = 'mn:people';
 
+    /** "Not right? Tell us" under a no-show notice: asks what is wrong (UpdateRouter). */
+    public const TELL = 'mn:tell';
+
     /**
      * The bot verbs a message can offer (MessageAction::$verb): the verb is
      * the deep link start payload an email's "Open in Telegram" link carries
@@ -46,6 +49,7 @@ final class MenuButtons
         'replace' => self::REPLACE,
         'sales' => self::SALES,
         'people' => self::PEOPLE,
+        'tell' => self::TELL,
     ];
 
     /** Followed by the night ("" = the next one), as typed after /door. */
