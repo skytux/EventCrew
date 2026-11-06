@@ -3931,7 +3931,7 @@ msgstr ""
 msgid "No newsletter was sent in this time range."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:292 templates/public/signup-board.php:42
+#: src/Telegram/BoardRenderer.php:310 templates/public/signup-board.php:42
 msgid "No open tasks right now. Check back soon!"
 msgstr ""
 
@@ -4455,7 +4455,7 @@ msgstr ""
 msgid "Open tasks"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:306
+#: src/Telegram/BoardRenderer.php:324
 msgid "Open tasks — tap one to sign up. To cancel, tap 👤 My info."
 msgstr ""
 
@@ -9752,7 +9752,7 @@ msgstr ""
 msgid "free"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:471
+#: src/Telegram/BoardRenderer.php:496
 msgid "full"
 msgstr ""
 
@@ -9913,7 +9913,7 @@ msgstr ""
 msgid "signed up %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:227
+#: src/Telegram/BoardRenderer.php:245
 msgid "someone"
 msgstr ""
 
@@ -10152,7 +10152,7 @@ msgstr ""
 msgid "👋 %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:392
+#: src/Telegram/BoardRenderer.php:417
 msgid "👋 New here? Sign up →"
 msgstr ""
 
@@ -10164,7 +10164,7 @@ msgstr ""
 msgid "👋 arrived · ✓ done · ⏰ late · ✗ no-show"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:383
+#: src/Telegram/BoardRenderer.php:408
 msgid "👤 My info"
 msgstr ""
 
@@ -10180,7 +10180,7 @@ msgstr ""
 msgid "📅 Add to calendar"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:379
+#: src/Telegram/BoardRenderer.php:404
 msgid "📅 More tasks"
 msgstr ""
 
@@ -10193,7 +10193,7 @@ msgstr ""
 msgid "📝 About the task: %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:373
+#: src/Telegram/BoardRenderer.php:398
 msgid "📝 Task info"
 msgstr ""
 
