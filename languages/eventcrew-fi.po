@@ -8324,3 +8324,34 @@ msgstr "Tehtävän kuvaus, tai sen roolin kuvaus, jos tehtävällä ei ole omaa.
 
 msgid "Sample description: what the task involves."
 msgstr "Mallikuvaus: mitä tehtävään kuuluu."
+
+#. translators: %s: the task's role, with its emoji
+#, php-format
+msgid "Task: %s"
+msgstr "Tehtävä: %s"
+
+#. translators: %s: the name of the event
+#, php-format
+msgid "Event: %s"
+msgstr "Tapahtuma: %s"
+
+#. translators: %s: the day and the time, like Sat 14 Nov 18:00–20:00
+#, php-format
+msgid "When: %s"
+msgstr "Aika: %s"
+
+#. translators: 1: free places, 2: places in total
+#, php-format
+msgid "%1$d of %2$d places free"
+msgstr "%1$d / %2$d paikkaa vapaana"
+
+#. translators: %s: the name of the event
+#, php-format
+msgid "Other open tasks at %s:"
+msgstr "Muut avoimet tehtävät, %s:"
+
+msgid "An empty line and the task's details: the task, the event, the day and time, the free places, and the description of the task or its role."
+msgstr "Tyhjä rivi ja tehtävän tiedot: tehtävä, tapahtuma, päivä ja aika, vapaat paikat sekä tehtävän tai sen roolin kuvaus."
+
+msgid "An empty line and the other open tasks of the event, one per line, with no names. Empty when there are none."
+msgstr "Tyhjä rivi ja tapahtuman muut avoimet tehtävät, yksi riviä kohti, ilman nimiä. Tyhjä, kun niitä ei ole."

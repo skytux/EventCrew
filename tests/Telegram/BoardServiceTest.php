@@ -1113,4 +1113,44 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertSame(-100, $this->options[BoardService::BOARD_OPTION]['chat_id']);
         self::assertSame([], $this->telegramCalls);
     }
+
+    // --- one task, from the "A spot opened" link -----------------------------
+
+    public function testSendTaskShowsTheTaskWithAJoinOnlySignUpButton(): void
+    {
+        $this->wpdb->nextRows[] = array_merge($this->taskRow(5, 100, 'Party'), ['notes' => 'Bring tape.']); // findLive
+        $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 1]];                                     // occupancyFor
+
+        $this->board()->sendTask(555, 5);
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertStringContainsString('Task: ' . Roles::display('decorate'), $sent['text']);
+        self::assertStringContainsString('1 of 2 places free', $sent['text']);
+        self::assertStringContainsString('Bring tape.', $sent['text']);
+        // Nothing is signed up yet: the tap goes through the board's own join.
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame('j:5', $sent['reply_markup']['inline_keyboard'][0][0]['callback_data']);
+    }
+
+    public function testSendTaskSaysSoWhenTheTaskIsFull(): void
+    {
+        $this->wpdb->nextRows[] = $this->taskRow(5, 100, 'Party');
+        $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 2]];
+
+        $this->board()->sendTask(555, 5);
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame('That slot just filled up.', $sent['text']);
+        self::assertStringNotContainsString('j:5', (string) json_encode($sent['reply_markup']));
+    }
+
+    public function testSendTaskRefusesAMissingOrRestrictedTask(): void
+    {
+        $this->board()->sendTask(555, 5); // no row: deleted or never there
+        self::assertSame('That task is no longer available.', $this->lastCallTo('sendMessage')['text']);
+
+        $this->wpdb->nextRows[] = array_merge($this->taskRow(5, 100, 'Party'), ['role_slug' => 'organize']);
+        $this->board()->sendTask(555, 5);
+        self::assertSame('That task is no longer available.', $this->lastCallTo('sendMessage')['text']);
+    }
 }

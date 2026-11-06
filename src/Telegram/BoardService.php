@@ -10,9 +10,11 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\ClaimNotifier;
+use EventCrew\Support\Dates;
 use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\SignupService;
+use EventCrew\Support\SlotFreedNotice;
 
 /**
  * The board itself: the single group message that lists open tasks, and the
@@ -756,6 +758,64 @@ final class BoardService
         $rendered = $this->textBoard();
 
         $this->telegram->sendMessage($chatId, $rendered['text'], $this->markup($rendered));
+    }
+
+    /**
+     * One task in a private chat, from an email's "Sign up in Telegram" link
+     * (t.me/<bot>?start=task-<id>, SlotFreedNotice::startPayload()): its
+     * details and a Sign up button, which is the join-only j: callback, so
+     * signing up runs onJoinLeave() with all the board's checks. Nothing is
+     * signed up by opening the link. A task that is gone, under way or full
+     * (or restricted to a role) says so instead. Both end with the See open tasks button.
+     */
+    public function sendTask(int $chatId, int $taskId): void
+    {
+        if (! $this->telegram->isConfigured() || 0 === $chatId) {
+            return;
+        }
+
+        $task = $this->tasks->findLive($taskId);
+        $board = [['text' => __('See open tasks', 'eventcrew'), 'callback_data' => MenuButtons::BOARD]];
+
+        // A restricted task is never a spot opened to the crew, and the board
+        // does not show it to everyone either.
+        if (null === $task || $task->hasStarted() || $task->isRestricted()) {
+            $this->telegram->sendMessage(
+                $chatId,
+                __('That task is no longer available.', 'eventcrew'),
+                ['inline_keyboard' => [$board]]
+            );
+
+            return;
+        }
+
+        $free = $task->capacity - ($this->tasks->occupancyFor([$task->id])[$task->id] ?? 0);
+
+        if ($free <= 0) {
+            $this->telegram->sendMessage(
+                $chatId,
+                __('That slot just filled up.', 'eventcrew'),
+                ['inline_keyboard' => [$board]]
+            );
+
+            return;
+        }
+
+        $signup = [
+            'text' => sprintf(
+                /* translators: 1: the role with its emoji, 2: the day, e.g. "Sat 7 Nov" */
+                __('Sign up: %1$s · %2$s', 'eventcrew'),
+                $task->roleDisplay(),
+                Dates::dayLabel($task->taskDate)
+            ),
+            'callback_data' => 'j:' . $task->id,
+        ];
+
+        $this->telegram->sendMessage(
+            $chatId,
+            SlotFreedNotice::details($task, $free),
+            ['inline_keyboard' => [[$signup], $board]]
+        );
     }
 
     /**

@@ -8,6 +8,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\GuestCommand;
 use EventCrew\Support\Language;
 use EventCrew\Support\NewcomerApproval;
+use EventCrew\Support\SlotFreedNotice;
 use EventCrew\Support\TakeoverService;
 use EventCrew\Support\TelegramLogin;
 
@@ -251,6 +252,17 @@ final class UpdateRouter
             // runs the same thing as that verb's button in a DM.
             if ($isPrivate && 0 !== $fromId && '' !== MenuButtons::forVerb($payload)) {
                 $this->runMenu(MenuButtons::forVerb($payload), $fromId, $chatId, $isPrivate);
+
+                return;
+            }
+
+            // A spot-opened email's "Sign up in Telegram" link:
+            // t.me/<bot>?start=task-<id> shows that task with its Sign up
+            // button.
+            $taskId = SlotFreedNotice::taskFromPayload($payload);
+
+            if ($isPrivate && 0 !== $fromId && 0 !== $taskId) {
+                $this->board->sendTask($chatId, $taskId);
 
                 return;
             }
