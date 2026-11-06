@@ -118,7 +118,8 @@ endif; ?>
                 $eventcrew_fill = sprintf(__('%d signed up', 'eventcrew'), $eventcrew_row['taken']);
             }
             ?>
-            <li class="eventcrew-task-row" data-eventcrew-task="<?php echo esc_attr((string) $eventcrew_task->id); ?>">
+            <?php // The id is what a "Sign up" link in an email points at (SlotFreedNotice::ANCHOR_PREFIX). ?>
+            <li class="eventcrew-task-row" id="<?php echo esc_attr(\EventCrew\Support\SlotFreedNotice::ANCHOR_PREFIX . $eventcrew_task->id); ?>" data-eventcrew-task="<?php echo esc_attr((string) $eventcrew_task->id); ?>">
                 <?php
                 $eventcrew_about = trim($eventcrew_task->roleDescription());
                 $eventcrew_about_id = 'eventcrew-about-' . $eventcrew_task->id;

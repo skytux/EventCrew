@@ -76,8 +76,8 @@ final class MessageActions
     /**
      * The email's actions for Mailer::toPerson(): each web link as a button,
      * then each bot verb as an "Open in Telegram" link (style 'telegram',
-     * drawn as a line of links under the buttons, EmailBody), once per verb,
-     * when the bot is set up.
+     * drawn as a line of links under the buttons, EmailBody), once per verb
+     * (or own start payload), when the bot is set up.
      *
      * @param list<MessageAction> $actions
      * @return list<array{label: string, url: string, style?: string}>
@@ -94,10 +94,11 @@ final class MessageActions
                 $buttons[] = ['label' => $action->label, 'url' => $url];
             }
 
-            $start = self::startUrl($action->verb);
+            $key = '' !== $action->start ? $action->start : $action->verb;
+            $start = '' !== $action->start ? self::payloadUrl($action->start) : self::startUrl($action->verb);
 
-            if ('' !== $start && ! isset($links[$action->verb])) {
-                $links[$action->verb] = [
+            if ('' !== $start && ! isset($links[$key])) {
+                $links[$key] = [
                     'label' => $action->label,
                     'url' => $start,
                     'style' => EmailBody::STYLE_TELEGRAM,
@@ -122,6 +123,22 @@ final class MessageActions
         }
 
         return 'https://t.me/' . $username . '?start=' . $verb;
+    }
+
+    /**
+     * The deep link that opens the bot's private chat with $payload, or ''
+     * when the bot is not set up or $payload is not one Telegram takes. The
+     * payload is never a token or anything personal.
+     */
+    public static function payloadUrl(string $payload): string
+    {
+        $username = TelegramLogin::botUsername();
+
+        if ('' === $username || ! self::isPayload($payload)) {
+            return '';
+        }
+
+        return 'https://t.me/' . $username . '?start=' . $payload;
     }
 
     /** True for a start payload Telegram takes: 1 to 64 of A-Z, a-z, 0-9, _ and -. */

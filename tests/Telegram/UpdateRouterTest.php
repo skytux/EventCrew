@@ -239,6 +239,22 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
     }
 
+    public function testATaskStartPayloadShowsThatTaskAndSignsNobodyUp(): void
+    {
+        // The "A spot opened" email's Telegram link: t.me/<bot>?start=task-5.
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/start task-5',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555, 'first_name' => 'Sam'],
+            ],
+        ]);
+
+        self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame('That task is no longer available.', $this->lastCallTo('sendMessage')['text']);
+    }
+
     public function testAnUnknownStartPayloadStillBeginsOnboarding(): void
     {
         $this->router()->dispatch([

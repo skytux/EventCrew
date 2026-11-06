@@ -193,6 +193,18 @@ final class MessagePreviewTest extends TestCase
         self::assertStringContainsString($description, $email['text']);
     }
 
+    public function testTheSpotOpenedPreviewShowsTheTaskAndSampleOtherTasks(): void
+    {
+        foreach (['slot_freed', 'slot_freed_dm'] as $kind) {
+            $message = $this->preview()->render($kind);
+
+            self::assertNotNull($message);
+            $text = (string) ($message['html'] ?? '') . (string) ($message['text'] ?? '');
+            self::assertStringContainsString('places free', $text, $kind);
+            self::assertStringContainsString('Other open tasks at', $text, $kind);
+        }
+    }
+
     public function testAnUnknownKindIsNull(): void
     {
         self::assertNull($this->preview()->render('no_such_kind'));

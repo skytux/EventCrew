@@ -25,6 +25,8 @@ use Closure;
  *   drawn, so a sign-in link is not issued for a DM that does not show it.
  * - callback: the DM button's callback data ('' = none), at most 64 bytes.
  * - verb: a bot verb (MenuButtons::VERBS), '' for none.
+ * - start: the email's "Open in Telegram" link payload when it is not a bot
+ *   verb ('' = the verb's), like task-12 (MessageActions::isPayload()).
  */
 final class MessageAction
 {
@@ -37,7 +39,8 @@ final class MessageAction
         public readonly string $dmLabel = '',
         public readonly ?Closure $url = null,
         public readonly string $callback = '',
-        public readonly string $verb = ''
+        public readonly string $verb = '',
+        public readonly string $start = ''
     ) {
     }
 

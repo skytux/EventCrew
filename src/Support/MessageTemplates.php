@@ -153,7 +153,11 @@ final class MessageTemplates
             // A cancellation, or a spot that opened: the open tasks are one
             // tap away.
             'cancel_confirmed cancel_confirmed_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
-            'slot_freed slot_freed_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
+            // A spot that opened: sign up for it at once, else the board.
+            'slot_freed slot_freed_dm' => static fn (array $c, Mailer $m): array => self::present([
+                self::taskSignupAction($c, $m),
+                self::boardAction($m),
+            ]),
             // The call for open tasks: the board, and the crew's group when
             // its link is known.
             'open_task_call open_task_call_dm' => static fn (array $c, Mailer $m): array => self::present([
@@ -308,6 +312,44 @@ final class MessageTemplates
         $url = Roles::guideUrl();
 
         return '' === $url ? null : new MessageAction('guide', RoleGuide::label(), '', static fn (): string => $url);
+    }
+
+    /**
+     * Sign up for the task, or null with no task. In the DM, the join-only
+     * callback (j:, as the welcome DM's buttons), so the tap runs the
+     * board's sign-up with all its checks and never turns into a cancel. In
+     * the email, the crew page at that task's row with its Sign up button,
+     * and the bot showing that task with its Sign up button
+     * (SlotFreedNotice::startPayload()).
+     *
+     * @param array<string, mixed> $c
+     */
+    private static function taskSignupAction(array $c, Mailer $m): ?MessageAction
+    {
+        $task = $c['task'] ?? null;
+
+        if (! $task instanceof Task) {
+            return null;
+        }
+
+        return new MessageAction(
+            'signup',
+            __('Sign up', 'eventcrew'),
+            sprintf(
+                /* translators: 1: the role with its emoji, 2: the day, e.g. "Sat 7 Nov" */
+                __('Sign up: %1$s · %2$s', 'eventcrew'),
+                $task->roleDisplay(),
+                Dates::dayLabel($task->taskDate)
+            ),
+            static function () use ($m, $task): string {
+                $url = $m->boardUrl();
+
+                return '' === $url ? '' : $url . '#' . SlotFreedNotice::ANCHOR_PREFIX . $task->id;
+            },
+            'j:' . $task->id,
+            '',
+            SlotFreedNotice::startPayload($task->id)
+        );
     }
 
     /** The open tasks: the web board, and the bot's board in Telegram. */
@@ -738,10 +780,13 @@ final class MessageTemplates
         // The sender makes the one-time link; the preview shows a stand-in.
         $deskLink = ['context' => static fn (): array => ['desk_url' => Mailer::PREVIEW_LINK]];
         $admin = [DoorLinkSender::adminButtonLabel()];
+        // A spot opened: one free place, and made-up other open tasks.
+        $sampleOthers = ['context' => static fn (): array => ['free' => 1, 'sample_other_tasks' => true]];
 
         return [
             'reminder_dm' => $signed,
-            'slot_freed_dm' => $signed,
+            'slot_freed' => $sampleOthers,
+            'slot_freed_dm' => $signed + $sampleOthers,
             'task_cancelled' => ['buttons' => $openTasks],
             'free_ticket_dm' => $none + ['buttons' => [__('🎟 Show your ticket', 'eventcrew')]],
             'signup_confirmed_dm' => $none,
@@ -924,6 +969,34 @@ final class MessageTemplates
         );
         // phpcs:enable Generic.Files.LineLength.TooLong
 
+        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
+        $spotPlaceholders = [
+            'task_details' => self::placeholder(
+                __('An empty line and the task\'s details: the task, the event, the day and time, the free places, and the description of the task or its role.', 'eventcrew'),
+                static fn (array $c): string => ($c['task'] ?? null) instanceof Task
+                    ? "\n\n" . SlotFreedNotice::details($c['task'], (int) ($c['free'] ?? 1))
+                    : ''
+            ),
+            'other_tasks' => self::placeholder(
+                __('An empty line and the other open tasks of the event, one per line, with no names. Empty when there are none.', 'eventcrew'),
+                static function (array $c): string {
+                    $task = $c['task'] ?? null;
+
+                    if (! $task instanceof Task) {
+                        return '';
+                    }
+
+                    $rows = true === ($c['sample_other_tasks'] ?? false)
+                        ? SlotFreedNotice::sampleOthers($task)
+                        : (array) ($c['other_rows'] ?? []);
+                    $text = SlotFreedNotice::others($task, array_values($rows));
+
+                    return '' === $text ? '' : "\n\n" . $text;
+                }
+            ),
+        ];
+        // phpcs:enable Generic.Files.LineLength.TooLong
+
         $spot = static fn (): string => self::tag(
             /* translators: 1: role, 2: event, 3: date/time */
             __('A spot just opened: %1$s at %2$s, %3$s. Can you step in? Sign up on the board.', 'eventcrew'),
@@ -998,8 +1071,8 @@ final class MessageTemplates
                     /* translators: 1: name, 2: the opening line */
                     __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => $spot()]
-                ),
-                ['name' => $name, 'role' => $role, 'event' => $event, 'when' => $when]
+                ) . SlotFreedNotice::NEW_PLACEHOLDERS,
+                ['name' => $name, 'role' => $role, 'event' => $event, 'when' => $when] + $spotPlaceholders
             ),
             new MessageTemplate(
                 'slot_freed_dm',
@@ -1007,8 +1080,8 @@ final class MessageTemplates
                 $telegram,
                 __('Sent to the crew when someone cancels a task late and its place is free again.', 'eventcrew'),
                 null,
-                static fn (): string => '⚡ ' . $spot(),
-                ['role' => $role, 'event' => $event, 'when' => $when]
+                static fn (): string => '⚡ ' . $spot() . SlotFreedNotice::NEW_PLACEHOLDERS,
+                ['role' => $role, 'event' => $event, 'when' => $when] + $spotPlaceholders
             ),
             new MessageTemplate(
                 'task_cancelled',

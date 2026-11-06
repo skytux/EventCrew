@@ -10,7 +10,11 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
+use EventCrew\Models\Task;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageActions;
+use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\Roles;
 use EventCrew\Support\SlotFreedNotice;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
@@ -41,6 +45,7 @@ final class SlotFreedNoticeTest extends TestCase
             return true;
         });
         Functions\when('get_the_title')->justReturn('');
+        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
         Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
         Functions\when('add_query_arg')->alias(
             static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
@@ -275,5 +280,147 @@ final class SlotFreedNoticeTest extends TestCase
         // The tick is on but nothing was written for the event: the template's text.
         self::assertStringContainsString('A spot just opened', $this->mails[1]['body']);
         self::assertStringNotContainsString('AI:', $this->mails[1]['body']);
+    }
+
+    public function testTheNoticeHasTheTaskDetailsAndTheOtherOpenTasks(): void
+    {
+        $task = $this->taskRow([
+            'starts_at' => '2026-08-01 18:00:00', 'ends_at' => '2026-08-01 20:00:00', 'notes' => 'Bring gloves.',
+        ]);
+        $this->queueAndPrepare($task, 1, [$this->person(8, 'bo@example.com', ['display_name' => 'Bo Person'])]);
+        $this->wpdb->nextResults[] = [ // forDate: the night's tasks
+            $task,
+            $this->taskRow(['id' => 6, 'role_slug' => 'welcome', 'capacity' => 2,
+                'starts_at' => '2026-08-01 20:00:00', 'ends_at' => '2026-08-01 22:00:00']),
+            $this->taskRow(['id' => 7, 'role_slug' => 'decorate', 'capacity' => 1]),   // full
+            $this->taskRow(['id' => 8, 'role_slug' => 'organize', 'capacity' => 1]),   // restricted
+            $this->taskRow(['id' => 9, 'event_label' => 'Another party']),            // another event
+        ];
+        $this->wpdb->nextResults[] = [['task_id' => 6, 'taken' => 1], ['task_id' => 7, 'taken' => 1]];
+
+        $this->notice()->sendDue(25);
+
+        $body = $this->mails[0]['body'];
+        self::assertStringContainsString('Task: ' . Roles::display('clean'), $body);
+        self::assertStringContainsString('Event: Party', $body);
+        self::assertStringContainsString('When: Sat 1 Aug 18:00–20:00', $body);
+        self::assertStringContainsString('2 of 3 places free', $body);
+        self::assertStringContainsString('Bring gloves.', $body);
+        self::assertStringContainsString('Other open tasks at Party:', $body);
+        self::assertStringContainsString(Roles::display('welcome') . ' · 20:00–22:00 · 1 of 2 places free', $body);
+        self::assertStringNotContainsString(Roles::display('decorate'), $body);
+        self::assertStringNotContainsString(Roles::display('organize'), $body);
+    }
+
+    public function testTheOtherTasksAreOnlyRolesTimesAndCounts(): void
+    {
+        $task = Task::fromRow($this->taskRow(['starts_at' => '2026-08-01 18:00:00']));
+        $rows = [
+            ['task' => Task::fromRow($this->taskRow(['id' => 6, 'role_slug' => 'welcome', 'capacity' => 2,
+                'starts_at' => '2026-08-01 20:00:00', 'ends_at' => '2026-08-01 22:00:00'])), 'free' => 1],
+            ['task' => Task::fromRow($this->taskRow(['id' => 7, 'task_date' => '2026-08-02', 'role_slug' => 'decorate'])), 'free' => 3],
+        ];
+
+        self::assertSame(
+            "Other open tasks at Party:\n"
+            . '- ' . Roles::display('welcome') . " · 20:00–22:00 · 1 of 2 places free\n"
+            . '- ' . Roles::display('decorate') . ' · Sun 2 Aug · 3 of 3 places free',
+            SlotFreedNotice::others($task, $rows)
+        );
+        self::assertSame('', SlotFreedNotice::others($task, []));
+    }
+
+    public function testTheDescriptionFallsBackToTheRolesOwn(): void
+    {
+        $details = SlotFreedNotice::details(Task::fromRow($this->taskRow()), 1);
+
+        self::assertStringEndsWith("\n\n" . Roles::description('clean'), $details);
+        self::assertStringContainsString("Event: Party\nWhen: Sat 1 Aug\n1 of 3 places free", $details);
+    }
+
+    public function testWithNoOtherOpenTasksTheSectionLeavesNoEmptyLines(): void
+    {
+        $this->options[MessageTemplates::OPTION_PREFIX . 'slot_freed_dm'] = [];
+        $context = ['task' => Task::fromRow($this->taskRow(['notes' => 'Bring gloves.'])), 'free' => 1, 'other_rows' => []];
+
+        $text = MessageTemplates::body('slot_freed_dm', $context);
+
+        self::assertStringEndsWith("1 of 3 places free\n\nBring gloves.", $text);
+        self::assertStringNotContainsString('Other open tasks', $text);
+        self::assertStringNotContainsString("\n\n\n", $text);
+    }
+
+    public function testBothChannelsOfferTheSameActions(): void
+    {
+        $this->options['eventcrew_signup_page_id'] = 3;
+        $this->options['eventcrew_telegram_bot_username'] = 'crewbot';
+        $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
+        $context = ['task' => Task::fromRow($this->taskRow()), 'free' => 1, 'other_rows' => []];
+        $ids = static fn (string $kind): array => array_map(
+            static fn ($action): string => $action->id,
+            MessageActions::of($kind, $context, $mailer)
+        );
+
+        self::assertSame(['signup', 'board'], $ids('slot_freed'));
+        self::assertSame($ids('slot_freed'), $ids('slot_freed_dm'));
+
+        // The DM: the join-only callback the board's sign-up runs.
+        $keyboard = MessageActions::keyboard(MessageActions::of('slot_freed_dm', $context, $mailer));
+        self::assertSame('j:5', $keyboard[0][0]['callback_data']);
+
+        // The email: the crew page at the task, and the bot showing it.
+        $email = MessageActions::email(MessageActions::of('slot_freed', $context, $mailer));
+        self::assertSame('https://site.test/crew/#eventcrew-task-5', $email[0]['url']);
+        self::assertContains('https://t.me/crewbot?start=task-5', array_column($email, 'url'));
+        self::assertTrue(MessageActions::isPayload(SlotFreedNotice::startPayload(5)));
+        self::assertSame(5, SlotFreedNotice::taskFromPayload('task-5'));
+        self::assertSame(0, SlotFreedNotice::taskFromPayload('task-x'));
+    }
+
+    public function testTheMigrationAddsThePlaceholdersOnceToEveryStoredText(): void
+    {
+        $option = MessageTemplates::OPTION_PREFIX . 'slot_freed';
+        $this->options[$option] = [
+            'subject' => ['source' => 'Spot!'],
+            'body' => [
+                'source' => "Hi {name},\n\nA spot opened.\n",
+                'lang' => 'en',
+                'texts' => ['fi' => 'Hei {name}, paikka vapautui.{task_details}', 'sv' => ''],
+                'manual' => ['fi' => true],
+            ],
+            'settings' => ['ai' => true],
+        ];
+        $this->options[MessageTemplates::OPTION_PREFIX . 'slot_freed_dm'] = ['body' => 'Spot: {role}'];
+
+        SlotFreedNotice::migrateStoredTexts();
+        $once = $this->options;
+        // Even with the done flag gone, a second run changes nothing.
+        unset($this->options[SlotFreedNotice::MIGRATED_OPTION]);
+        SlotFreedNotice::migrateStoredTexts();
+
+        self::assertSame($once, $this->options);
+        $body = $this->options[$option]['body'];
+        self::assertSame("Hi {name},\n\nA spot opened.{task_details}{other_tasks}", $body['source']);
+        self::assertSame('Hei {name}, paikka vapautui.{task_details}{other_tasks}', $body['texts']['fi']);
+        self::assertSame('', $body['texts']['sv']);
+        self::assertSame(['fi' => true], $body['manual']);
+        self::assertSame(['source' => 'Spot!'], $this->options[$option]['subject']);
+        self::assertSame(['ai' => true], $this->options[$option]['settings']);
+        self::assertSame(
+            'Spot: {role}{task_details}{other_tasks}',
+            $this->options[MessageTemplates::OPTION_PREFIX . 'slot_freed_dm']['body']
+        );
+        self::assertSame('1', $this->options[SlotFreedNotice::MIGRATED_OPTION]);
+    }
+
+    public function testTheMigrationLeavesBuiltInTextsAlone(): void
+    {
+        SlotFreedNotice::migrateStoredTexts();
+
+        self::assertArrayNotHasKey(MessageTemplates::OPTION_PREFIX . 'slot_freed', $this->options);
+        self::assertStringEndsWith(
+            SlotFreedNotice::NEW_PLACEHOLDERS,
+            MessageTemplates::raw('slot_freed_dm', MessageTemplates::BODY)
+        );
     }
 }
