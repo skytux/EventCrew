@@ -5503,10 +5503,6 @@ msgstr ""
 msgid "Send /me history to see everything you’ve done."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:313
-msgid "Send /me in a DM to get your summary."
-msgstr ""
-
 #: src/Telegram/SayCommand.php:67
 msgid "Send /say followed by the message for the group. I show it to you first."
 msgstr ""
@@ -10159,10 +10155,6 @@ msgstr ""
 msgid "👋 arrived · ✓ done · ⏰ late · ✗ no-show"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:379
-msgid "👤 See my info →"
-msgstr ""
-
 #: src/Telegram/HelpService.php:144
 msgid "👥 People: choose what to do."
 msgstr ""
@@ -10257,3 +10249,10 @@ msgstr ""
 msgid "🧭 Organizer guide ↓"
 msgstr ""
 
+#: src/Telegram/BoardRenderer.php
+msgid "👤 My info"
+msgstr ""
+
+#: src/Telegram/BoardRenderer.php
+msgid "📝 Task info"
+msgstr ""
