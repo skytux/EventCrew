@@ -1,0 +1,132 @@
+<?php
+
+declare(strict_types=1);
+
+namespace EventCrew\Support;
+
+use EventCrew\Telegram\MenuButtons;
+
+/**
+ * Draws the actions a message kind declares (MessageTemplates::actions(),
+ * MessageAction) for its channel: the DM's inline keyboard, or the email's
+ * buttons and "Open in Telegram" links. The senders and the preview both
+ * call this, so the two versions of a message and its preview cannot drift.
+ */
+final class MessageActions
+{
+    /** The longest deep link start payload Telegram takes. */
+    public const PAYLOAD_MAX = 64;
+
+    /**
+     * The actions of $id with $context, [] for a kind with none.
+     *
+     * @param array<string, mixed> $context
+     * @return list<MessageAction>
+     */
+    public static function of(string $id, array $context, Mailer $mailer): array
+    {
+        $template = MessageTemplates::find($id);
+
+        return null === $template ? [] : $template->actions($context, $mailer);
+    }
+
+    /**
+     * The DM's inline keyboard rows, one button per row: the callback, else
+     * the bot verb's button, else the web link. An action with none of them
+     * is left out.
+     *
+     * @param list<MessageAction> $actions
+     * @return list<list<array<string, string>>>
+     */
+    public static function keyboard(array $actions): array
+    {
+        $rows = [];
+
+        foreach ($actions as $action) {
+            $data = '' !== $action->callback ? $action->callback : MenuButtons::forVerb($action->verb);
+
+            if ('' !== $data) {
+                $rows[] = [['text' => $action->dmText(), 'callback_data' => $data]];
+                continue;
+            }
+
+            $url = $action->webUrl();
+
+            if ('' !== $url) {
+                $rows[] = [['text' => $action->dmText(), 'url' => $url]];
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * The DM's reply markup, or null when there are no buttons.
+     *
+     * @param list<MessageAction> $actions
+     * @return array{inline_keyboard: list<list<array<string, string>>>}|null
+     */
+    public static function replyMarkup(array $actions): ?array
+    {
+        $rows = self::keyboard($actions);
+
+        return [] === $rows ? null : ['inline_keyboard' => $rows];
+    }
+
+    /**
+     * The email's actions for Mailer::toPerson(): each web link as a button,
+     * then each bot verb as an "Open in Telegram" link (style 'telegram',
+     * drawn as a line of links under the buttons, EmailBody), once per verb,
+     * when the bot is set up.
+     *
+     * @param list<MessageAction> $actions
+     * @return list<array{label: string, url: string, style?: string}>
+     */
+    public static function email(array $actions): array
+    {
+        $buttons = [];
+        $links = [];
+
+        foreach ($actions as $action) {
+            $url = $action->webUrl();
+
+            if ('' !== $url) {
+                $buttons[] = ['label' => $action->label, 'url' => $url];
+            }
+
+            $start = self::startUrl($action->verb);
+
+            if ('' !== $start && ! isset($links[$action->verb])) {
+                $links[$action->verb] = [
+                    'label' => $action->label,
+                    'url' => $start,
+                    'style' => EmailBody::STYLE_TELEGRAM,
+                ];
+            }
+        }
+
+        return [...$buttons, ...array_values($links)];
+    }
+
+    /**
+     * The deep link that opens the bot's private chat on $verb, or '' when
+     * the bot is not set up or $verb is not a bot verb. The payload is the
+     * verb alone: never a token or anything personal.
+     */
+    public static function startUrl(string $verb): string
+    {
+        $username = TelegramLogin::botUsername();
+
+        if ('' === $username || '' === MenuButtons::forVerb($verb) || ! self::isPayload($verb)) {
+            return '';
+        }
+
+        return 'https://t.me/' . $username . '?start=' . $verb;
+    }
+
+    /** True for a start payload Telegram takes: 1 to 64 of A-Z, a-z, 0-9, _ and -. */
+    public static function isPayload(string $payload): bool
+    {
+        return 1 === preg_match('/^[A-Za-z0-9_-]{1,' . self::PAYLOAD_MAX . '}$/', $payload);
+    }
+}

@@ -49,6 +49,10 @@ use Closure;
  *     preview they lead nowhere.
  *   - context: a closure giving the sample values this kind needs on top of
  *     the shared sample context (MessagePreview::sampleContext()).
+ * - actions: what the message offers to do (MessageAction), declared once
+ *   for the email and the DM of a pair (MessageTemplates::actions()). The
+ *   sender draws them with MessageActions, and so does the preview; a kind
+ *   with actions has no hand-kept preview buttons.
  *
  * The stored text and the per-template settings live in MessageTemplates.
  */
@@ -80,6 +84,7 @@ final class MessageTemplate
      *     buttons?: list<string>|Closure(array<string, mixed>): list<string>,
      *     context?: Closure(): array<string, mixed>
      * } $preview
+     * @param (Closure(array<string, mixed>, Mailer): list<MessageAction>)|null $actions
      */
     public function __construct(
         public readonly string $id,
@@ -90,8 +95,27 @@ final class MessageTemplate
         public readonly Closure $body,
         public readonly array $placeholders = [],
         public readonly bool $wired = true,
-        public readonly array $preview = []
+        public readonly array $preview = [],
+        public readonly ?Closure $actions = null
     ) {
+    }
+
+    public function hasActions(): bool
+    {
+        return null !== $this->actions;
+    }
+
+    /**
+     * What the message offers to do, made from the context it is sent with.
+     * $mailer makes the web links (sign-in links, ticket links); in a preview
+     * it is the preview mailer, whose links lead nowhere.
+     *
+     * @param array<string, mixed> $context
+     * @return list<MessageAction>
+     */
+    public function actions(array $context, Mailer $mailer): array
+    {
+        return null === $this->actions ? [] : array_values(($this->actions)($context, $mailer));
     }
 
     public function hasSubject(): bool

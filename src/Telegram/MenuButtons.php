@@ -28,9 +28,35 @@ final class MenuButtons
     public const ELIGIBLE = 'mn:elig';
     public const CANCEL = 'mn:cancel';
 
+    /** /me, /board in a private chat and /people, as buttons under a message. */
+    public const ME = 'mn:me';
+    public const BOARD = 'mn:board';
+    public const PEOPLE = 'mn:people';
+
+    /**
+     * The bot verbs a message can offer (MessageAction::$verb): the verb is
+     * the deep link start payload an email's "Open in Telegram" link carries
+     * (t.me/<bot>?start=<verb>), and this button's callback data in a DM.
+     * Both run the same thing (UpdateRouter).
+     */
+    public const VERBS = [
+        'me' => self::ME,
+        'board' => self::BOARD,
+        'ticket' => self::TICKET,
+        'replace' => self::REPLACE,
+        'sales' => self::SALES,
+        'people' => self::PEOPLE,
+    ];
+
     /** Followed by the night ("" = the next one), as typed after /door. */
     public const DOOR_LIST = 'mn:dl:';
     public const GUEST_LIST = 'mn:gl:';
+
+    /** The callback data of bot verb $verb, '' for an unknown verb. */
+    public static function forVerb(string $verb): string
+    {
+        return self::VERBS[$verb] ?? '';
+    }
 
     /**
      * The buttons under /me.

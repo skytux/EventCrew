@@ -247,6 +247,14 @@ final class UpdateRouter
                 return;
             }
 
+            // An email's "Open in Telegram" link: t.me/<bot>?start=<verb>
+            // runs the same thing as that verb's button in a DM.
+            if ($isPrivate && 0 !== $fromId && '' !== MenuButtons::forVerb($payload)) {
+                $this->runMenu(MenuButtons::forVerb($payload), $fromId, $chatId, $isPrivate);
+
+                return;
+            }
+
             $from = is_array($message['from'] ?? null) ? $message['from'] : [];
 
             if (null !== $this->webLogin && $isPrivate && WebLoginBot::isLoginPayload($payload)) {
@@ -321,13 +329,7 @@ final class UpdateRouter
         if ($isPrivate && $this->isCommand($text, 'board')) {
             // Asked in a private chat: the board comes back in that chat. The
             // group's board stays where it is.
-            $this->board->sendPrivate($chatId);
-
-            // Then the tasks of the roles this person holds, which are never
-            // on the board (and for organizers, ➕ to put someone on a task).
-            if (null !== $this->roleTasks && 0 !== $fromId) {
-                $this->roleTasks->sendIfAny($fromId);
-            }
+            $this->privateBoard($fromId, $chatId);
 
             return;
         }
@@ -433,6 +435,29 @@ final class UpdateRouter
             return;
         }
 
+        $this->runMenu($data, $fromId, $chatId, $isPrivate);
+    }
+
+    /**
+     * The board in a private chat, then the tasks of the roles this person
+     * holds, which are never on the board (and for organizers, ➕ to put
+     * someone on a task).
+     */
+    private function privateBoard(int $fromId, int $chatId): void
+    {
+        $this->board->sendPrivate($chatId);
+
+        if (null !== $this->roleTasks && 0 !== $fromId) {
+            $this->roleTasks->sendIfAny($fromId);
+        }
+    }
+
+    /**
+     * What a menu button does: a button tap, or a bot verb from an email's
+     * "Open in Telegram" link (MenuButtons::VERBS).
+     */
+    private function runMenu(string $data, int $fromId, int $chatId, bool $isPrivate): void
+    {
         if (str_starts_with($data, MenuButtons::DOOR_LIST)) {
             $date = substr($data, strlen(MenuButtons::DOOR_LIST));
             $this->doorList->onTicketsCommand($fromId, $chatId, $isPrivate, $date);
@@ -458,6 +483,9 @@ final class UpdateRouter
             MenuButtons::ROLES => $this->permissions->start($fromId, $chatId, $isPrivate),
             MenuButtons::ELIGIBLE => $this->permissions->onEligible($fromId, $chatId, $isPrivate),
             MenuButtons::CANCEL => $this->cancelQuestions($fromId, $chatId, $isPrivate),
+            MenuButtons::ME => $this->profile->onMe($fromId, $chatId, $isPrivate),
+            MenuButtons::BOARD => $this->privateBoard($fromId, $chatId),
+            MenuButtons::PEOPLE => $this->help?->onPeople($fromId, $chatId, $isPrivate),
             default => null,
         };
     }

@@ -181,6 +181,26 @@ final class MessagePreview
         $context = (isset($preview['context']) ? ($preview['context'])() : []) + $this->sampleContext($lang);
         $buttons = $preview['buttons'] ?? [];
         $buttons = array_values($buttons instanceof \Closure ? $buttons($context) : $buttons);
+        $mailer = new Mailer($this->logger, new EmailTemplate($this->logger, true), true);
+        $emailActions = array_map(
+            static fn (string $label): array => ['label' => $label, 'url' => Mailer::PREVIEW_LINK],
+            $buttons
+        );
+
+        if ($template->hasActions()) {
+            // The same actions the sender draws: the DM's keyboard, or the
+            // email's buttons and "Open in Telegram" links, leading nowhere.
+            $actions = $template->actions($context, $mailer);
+            $buttons = array_map(
+                static fn (array $row): string => $row[0]['text'],
+                MessageActions::keyboard($actions)
+            );
+            $emailActions = array_map(
+                static fn (array $action): array => ['url' => Mailer::PREVIEW_LINK] + $action,
+                MessageActions::email($actions)
+            );
+        }
+
         $task = $context['task'];
         $eventId = $task instanceof Task ? $task->eventPostId : null;
 
@@ -196,8 +216,8 @@ final class MessagePreview
             return ['text' => $text, 'buttons' => $buttons];
         }
 
-        $mailer = new Mailer($this->logger, new EmailTemplate($this->logger, true), true);
-        $this->send($mailer, $template, $preview['send'] ?? MessageTemplate::PREVIEW_PERSON, $context, $buttons, $lang);
+        $send = $preview['send'] ?? MessageTemplate::PREVIEW_PERSON;
+        $this->send($mailer, $template, $send, $context, $emailActions, $lang);
         $mail = $mailer->captured()[0] ?? null;
 
         if (null === $mail) {
@@ -216,7 +236,7 @@ final class MessagePreview
             )),
             'html' => $html ? $mail['message'] : '',
             'text' => $mail['text'],
-            'buttons' => $buttons,
+            'buttons' => $template->hasActions() ? array_column($emailActions, 'label') : $buttons,
         ];
     }
 
@@ -224,14 +244,14 @@ final class MessagePreview
      * Hands the sample message to $mailer the way the kind's sender does.
      *
      * @param array<string, mixed> $context
-     * @param list<string> $buttons
+     * @param list<array{label: string, url: string, style?: string}> $actions
      */
     private function send(
         Mailer $mailer,
         MessageTemplate $template,
         string $send,
         array $context,
-        array $buttons,
+        array $actions,
         ?string $lang
     ): void {
         /** @var Person $person */
@@ -312,10 +332,6 @@ final class MessagePreview
         $body = true === ($template->preview['greeting'] ?? false)
             ? EmailBody::withGreeting($person->name(), $body)
             : $body;
-        $actions = array_map(
-            static fn (string $label): array => ['label' => $label, 'url' => Mailer::PREVIEW_LINK],
-            $buttons
-        );
         $subject = MessageTemplates::subject($template->id, $context);
 
         if (MessageTemplate::PREVIEW_ADDRESS === $send) {

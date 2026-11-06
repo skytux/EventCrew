@@ -80,6 +80,7 @@ final class MessageTemplates
         $shared = self::sharedPlaceholders();
         $eventTimes = self::eventTimePlaceholders();
         $previews = self::previews();
+        $actions = self::actions();
 
         foreach (self::definitions() as $template) {
             $list[$template->id] = new MessageTemplate(
@@ -93,11 +94,43 @@ final class MessageTemplates
                     + (isset($template->placeholders['event']) ? $eventTimes : [])
                     + $shared,
                 $template->wired,
-                ($previews[$template->id] ?? []) + $template->preview
+                ($previews[$template->id] ?? []) + $template->preview,
+                $actions[$template->id] ?? $template->actions
             );
         }
 
         return $list;
+    }
+
+    /**
+     * What each kind offers to do (MessageAction), by kind. The two kinds of
+     * a pair (signup_confirmed and signup_confirmed_dm) share one closure, so
+     * the email and the DM offer the same actions: the DM as buttons, the
+     * email as web buttons plus "Open in Telegram" links (MessageActions).
+     *
+     * @return array<string, Closure(array<string, mixed>, Mailer): list<MessageAction>>
+     */
+    private static function actions(): array
+    {
+        $list = [];
+
+        foreach (self::actionPairs() as $ids => $actions) {
+            foreach (explode(' ', $ids) as $id) {
+                $list[$id] = $actions;
+            }
+        }
+
+        return $list;
+    }
+
+    /**
+     * The actions, keyed by the kinds that share them, separated by a space.
+     *
+     * @return array<string, Closure(array<string, mixed>, Mailer): list<MessageAction>>
+     */
+    private static function actionPairs(): array
+    {
+        return [];
     }
 
     /**

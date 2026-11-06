@@ -206,6 +206,52 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertContains('sendMessage', $this->calledMethods());
     }
 
+    public function testAStartVerbRunsThatButton(): void
+    {
+        // An email's "Open in Telegram" link (t.me/<bot>?start=ticket) does
+        // what the 🎟 button does: here the set-up nudge, as nobody is linked.
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/start ticket',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555, 'first_name' => 'Sam'],
+            ],
+        ]);
+
+        self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
+        self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
+    }
+
+    public function testTheStartBoardVerbAndTheBoardButtonSendTheBoardToThatChat(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 999, 'message_id' => 7];
+
+        foreach (['/start board', null] as $text) {
+            $this->wpdb->nextResults[] = []; // render: no tasks
+            $this->router()->dispatch(null === $text ? $this->tap('mn:board') : [
+                'message' => ['text' => $text, 'chat' => ['id' => 555, 'type' => 'private'], 'from' => ['id' => 555]],
+            ]);
+
+            self::assertSame(555, $this->lastCallTo('sendMessage')['chat_id']);
+            self::assertSame(['chat_id' => 999, 'message_id' => 7], $this->options[BoardService::BOARD_OPTION]);
+        }
+
+        self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
+    }
+
+    public function testAnUnknownStartPayloadStillBeginsOnboarding(): void
+    {
+        $this->router()->dispatch([
+            'message' => [
+                'text' => '/start somethingelse',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555, 'first_name' => 'Sam'],
+            ],
+        ]);
+
+        self::assertArrayHasKey('eventcrew_tg_await_email_555', $this->transients);
+    }
+
     public function testGroupBoardCommandSetsTheBoardChat(): void
     {
         $this->wpdb->nextResults[] = []; // repost render: no tasks
