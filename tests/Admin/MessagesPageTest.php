@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Admin;
 
 use Brain\Monkey\Functions;
+use EventCrew\Admin\JobsStatus;
 use EventCrew\Admin\MessagesPage;
 use EventCrew\Admin\View;
+use EventCrew\Support\AssistantSettings;
+use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\MessageTemplate;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\TranslatedText;
+use EventCrew\Support\TranslationRegistry;
+use EventCrew\Tests\Support\JsonAnswer;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -260,5 +265,199 @@ final class MessagesPageTest extends TestCase
         self::assertSame([MessagesPage::RESET_ACTION], $this->nonces);
         self::assertSame(['page' => MessagesPage::PAGE_SLUG, 'tab' => 'messages', 'kind' => 'reminder'], $this->redirectArgs);
         self::assertFalse(MessageTemplates::isChanged('reminder'));
+    }
+
+    /** @var list<string> The bodies sent to the language model. */
+    private array $requests = [];
+
+    /**
+     * A language model that answers $answer to every request (a stub of
+     * wp_remote_post; nothing leaves the test), and the poll's JSON answer
+     * thrown as a JsonAnswer.
+     */
+    private function withModel(string $answer): void
+    {
+        $this->requests = [];
+        $this->options[AssistantSettings::URL_OPTION] = 'https://llm.example.test/v1';
+        $this->options[AssistantSettings::MODEL_OPTION] = 'test-model';
+        Functions\when('wp_remote_post')->alias(function (string $url, array $args) use ($answer): array {
+            $this->requests[] = (string) $args['body'];
+
+            return ['answer' => $answer];
+        });
+        Functions\when('wp_remote_retrieve_response_code')->justReturn(200);
+        Functions\when('wp_remote_retrieve_body')->alias(
+            static fn (array $response): string => (string) json_encode(
+                ['choices' => [['message' => ['content' => $response['answer']]]]]
+            )
+        );
+        Functions\when('check_ajax_referer')->justReturn(1);
+        Functions\when('wp_send_json_success')->alias(static function (mixed $data): never {
+            throw new JsonAnswer($data);
+        });
+    }
+
+    /** The page as wired on the site: its saves queue the translation. */
+    private function backgroundPage(): MessagesPage
+    {
+        return new MessagesPage(
+            new View(),
+            new MessageTemplates(new TranslatedText(new LlmClient(new Logger()), new Logger(), true))
+        );
+    }
+
+    /** The admin-ajax poll, with the runner of the translation jobs. */
+    private function poll(): JobsStatus
+    {
+        $registry = new TranslationRegistry(new TranslatedText(new LlmClient(new Logger()), new Logger()));
+        $registry->add([MessageTemplates::class, 'translationRows']);
+        $jobs = new BackgroundJobs();
+        $jobs->handle(TranslatedText::JOB, [$registry, 'runJob']);
+
+        return new JobsStatus($jobs, $registry);
+    }
+
+    /** "Translate again" on the Telegram message $kind, posted by the page's JavaScript. */
+    private function pressTranslateAgain(string $kind, string $source): array
+    {
+        $_POST = [
+            'action' => MessagesPage::SAVE_ACTION,
+            'kind' => $kind,
+            MessageTemplates::POST_NAME => [
+                MessageTemplates::BODY => [
+                    'source' => $source,
+                    'texts' => ['fi' => '', 'en' => $source],
+                    'again' => '1',
+                ],
+            ],
+        ];
+
+        try {
+            $this->backgroundPage()->saveAjax();
+            self::fail('The save answers JSON.');
+        } catch (JsonAnswer $answer) {
+            return $answer->data;
+        }
+    }
+
+    /**
+     * Lou's report: translating one message and then another translated
+     * both again. The first run was cut off when the page was left (the
+     * poll running it was dropped), stayed "running" and was run once more
+     * later. The poll now runs its job to the end, and the second press
+     * queues and translates only the second message.
+     */
+    public function testTranslatingOneMessageThenAnotherTranslatesOnlyTheSecond(): void
+    {
+        $this->withModel('{"lang": "en", "fi": "Käännetty", "en": "Translated"}');
+        $first = $this->pressTranslateAgain('slot_freed_dm', 'First {role} at {event}');
+        $status = $this->poll();
+
+        ignore_user_abort(false);
+        $answer = $status->answer(['ids' => implode(',', array_map(
+            static fn (string $html): string => (string) preg_replace('/.*data-ec-job="([^"]+)".*/s', '$1', $html),
+            $first['jobs']
+        ))]);
+
+        self::assertSame(1, ignore_user_abort(), 'the run goes on when the page is left');
+        self::assertCount(1, $this->requests);
+        self::assertSame(0, $answer['active']);
+
+        $done = array_values($answer['jobs'])[0];
+        self::assertSame('message.slot_freed_dm.body', $done['row'], 'the poll names the field');
+        self::assertSame('Käännetty', $done['value']['texts']['fi'], 'and gives its new text');
+        self::assertStringNotContainsString('data-ec-job', $done['done'], 'a "Done" in place is not polled again');
+        self::assertStringNotContainsString('ec-job-reload', $done['done']);
+
+        $second = $this->pressTranslateAgain('credit_granted_dm', 'Second {credits}');
+
+        self::assertSame(['message.credit_granted_dm.body'], array_keys($second['jobs']));
+        self::assertSame(1, BackgroundJobs::activeCount(), 'only the second message waits');
+
+        $status->answer(['ids' => '']);
+        $status->answer(['ids' => '']);
+
+        self::assertCount(2, $this->requests, 'one model request per press');
+        self::assertStringContainsString('Second', $this->requests[1]);
+        self::assertStringNotContainsString('First', $this->requests[1]);
+    }
+
+    /** The second press while the first still waits: each message is translated once. */
+    public function testASecondPressWhileTheFirstWaitsTranslatesEachOnce(): void
+    {
+        $this->withModel('{"lang": "en", "fi": "Käännetty", "en": "Translated"}');
+        $this->pressTranslateAgain('slot_freed_dm', 'First {role} at {event}');
+        $this->pressTranslateAgain('credit_granted_dm', 'Second {credits}');
+        $status = $this->poll();
+
+        self::assertSame(2, BackgroundJobs::activeCount());
+
+        for ($i = 0; $i < 4; $i++) {
+            $status->answer(['ids' => '']);
+        }
+
+        self::assertSame(0, BackgroundJobs::activeCount());
+        self::assertCount(2, $this->requests);
+        self::assertStringContainsString('First', $this->requests[0]);
+        self::assertStringContainsString('Second', $this->requests[1]);
+    }
+
+    /** The press answers at once: it only queues; the model is asked later, by the poll. */
+    public function testThePressOnlyQueuesTheTranslation(): void
+    {
+        $this->withModel('{"lang": "en", "fi": "Käännetty", "en": "Translated"}');
+
+        $answer = $this->pressTranslateAgain('slot_freed_dm', 'Free {role} at {event}');
+
+        self::assertSame([], $this->requests, 'no model request inside the press');
+        self::assertSame('success', $answer['type']);
+        self::assertSame(['message.slot_freed_dm.body'], array_keys($answer['jobs']));
+        self::assertStringContainsString('Translating…', $answer['jobs']['message.slot_freed_dm.body']);
+        self::assertSame(
+            BackgroundJobs::QUEUED,
+            BackgroundJobs::latest(TranslatedText::jobTarget('message.slot_freed_dm.body'))['status'] ?? null
+        );
+        self::assertSame([], $answer['texts'], 'a Telegram message has no subject to send back');
+    }
+
+    /** A refused text sends no stored text back, so the form keeps what was typed. */
+    public function testARefusedPressKeepsTheTypedText(): void
+    {
+        $this->withModel('{}');
+        $_POST = [
+            'kind' => 'email_changed',
+            MessageTemplates::POST_NAME => [
+                MessageTemplates::BODY => ['source' => 'No placeholder', 'texts' => ['en' => 'No placeholder']],
+            ],
+        ];
+
+        try {
+            $this->backgroundPage()->saveAjax();
+            self::fail('The save answers JSON.');
+        } catch (JsonAnswer $answer) {
+            self::assertSame('error', $answer->data['type']);
+            self::assertSame([], $answer->data['texts']);
+            self::assertSame([], $answer->data['jobs']);
+        }
+    }
+
+    /** The press needs the capability. */
+    public function testThePressNeedsTheCapability(): void
+    {
+        $this->withModel('{}');
+        Functions\when('current_user_can')->justReturn(false);
+        Functions\when('wp_send_json_error')->alias(static function (mixed $data, int $code): never {
+            throw new \RuntimeException('error ' . $code);
+        });
+        $_POST = ['kind' => 'slot_freed_dm'];
+
+        try {
+            $this->backgroundPage()->saveAjax();
+            self::fail('Refused.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('error 403', $e->getMessage());
+        }
+
+        self::assertSame(0, BackgroundJobs::activeCount());
     }
 }

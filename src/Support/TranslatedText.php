@@ -1037,6 +1037,8 @@ final class TranslatedText
      * $row, the TranslationRegistry row id of the text, shows the state of
      * its background translation: while it waits, the field holds what was
      * last saved, with "Translating…"; a failed one says so, with "Try again".
+     * The box carries data-ec-row="$row", so the page's JavaScript can put
+     * the job badge (in .ec-translated-job) and the finished text in place.
      *
      * @param array<string, mixed>|string $value
      */
@@ -1089,9 +1091,11 @@ final class TranslatedText
 
         $byHand = $value['detected'] ? '' : $value['lang'];
 
-        echo '<div class="ec-translated" style="max-width:48em">';
+        $rowAttribute = '' === $row ? '' : ' data-ec-row="' . esc_attr($row) . '"';
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped just above.
+        printf('<div class="ec-translated" style="max-width:48em"%s>', $rowAttribute);
         printf(
-            '<p><label for="%s"><strong>%s</strong></label> %s</p>',
+            '<p><label for="%s"><strong>%s</strong></label> <span class="ec-translated-job">%s</span></p>',
             esc_attr($id),
             esc_html__('Write in any language', 'eventcrew'),
             BackgroundJobs::badge($job) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in badge().

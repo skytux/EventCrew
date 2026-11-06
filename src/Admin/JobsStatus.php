@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace EventCrew\Admin;
 
 use EventCrew\Support\BackgroundJobs;
+use EventCrew\Support\TranslatedText;
+use EventCrew\Support\TranslationRegistry;
 
 /**
  * The status of the background jobs on the EventCrew admin pages: the bar
@@ -19,8 +21,14 @@ final class JobsStatus
     /** The admin-post action of "Try again" without JavaScript. */
     public const RETRY_ACTION = 'eventcrew_job_retry';
 
+    /**
+     * @param TranslationRegistry|null $registry The rows of the texts, for
+     *        the new text of a finished translation (the page puts it in its
+     *        field without a reload). Null: no texts are answered.
+     */
     public function __construct(
-        private readonly BackgroundJobs $jobs
+        private readonly BackgroundJobs $jobs,
+        private readonly ?TranslationRegistry $registry = null
     ) {
     }
 
@@ -45,8 +53,17 @@ final class JobsStatus
      * What poll() answers for the posted $request: ids (the jobs on the
      * page) and retry (a failed job to queue again).
      *
+     * A finished translation (TranslatedText::JOB) also answers its row id,
+     * the row's text as now stored (value: source, lang, texts, manual) and
+     * done, the badge without the reload link, so the page shows the new
+     * text in place.
+     *
+     * The job runs on even when the page is left halfway (the organizer
+     * presses the next button): a run cut off stayed "running" and was run
+     * once more minutes later, translating that text a second time.
+     *
      * @param array<string, mixed> $request
-     * @return array{jobs: array<string, array{status: string, html: string}>, active: int, bar: string}
+     * @return array{jobs: array<string, array<string, mixed>>, active: int, bar: string}
      */
     public function answer(array $request): array
     {
@@ -57,6 +74,7 @@ final class JobsStatus
         }
 
         if (BackgroundJobs::activeCount() > 0) {
+            ignore_user_abort(true);
             $this->jobs->runOne();
         }
 
@@ -69,13 +87,55 @@ final class JobsStatus
             $job = '' === $id ? null : BackgroundJobs::find($id);
 
             if (null !== $job) {
-                $out[$id] = ['status' => (string) $job['status'], 'html' => BackgroundJobs::badge($job, true)];
+                $out[$id] = ['status' => (string) $job['status'], 'html' => BackgroundJobs::badge($job, true)]
+                    + $this->newText($job);
             }
         }
 
         $active = BackgroundJobs::activeCount();
 
         return ['jobs' => $out, 'active' => $active, 'bar' => self::barText($active)];
+    }
+
+    /**
+     * For a finished translation of a row: the row id, its stored text and
+     * the "Done" badge without the reload link. Empty for any other job.
+     *
+     * @param array<string, mixed> $job
+     * @return array<string, mixed>
+     */
+    private function newText(array $job): array
+    {
+        if (
+            null === $this->registry
+            || TranslatedText::JOB !== $job['kind']
+            || BackgroundJobs::DONE !== $job['status']
+        ) {
+            return [];
+        }
+
+        $id = (string) ($job['args']['row'] ?? '');
+        $row = '' === $id ? null : $this->registry->find($id);
+
+        if (null === $row) {
+            return [];
+        }
+
+        $value = TranslatedText::normalize($row->value);
+
+        return [
+            'row' => $id,
+            'value' => [
+                'source' => $value['source'],
+                'lang' => $value['lang'],
+                'texts' => $value['texts'],
+                'manual' => $value['manual'],
+            ],
+            'done' => sprintf(
+                '<span class="ec-job ec-job-done" role="status">%s</span>',
+                esc_html__('Done ✓', 'eventcrew')
+            ),
+        ];
     }
 
     /** admin-post "Try again" (a link, for a page without JavaScript). */

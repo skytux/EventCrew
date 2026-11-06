@@ -3,6 +3,14 @@
  * running, ask admin-ajax every few seconds. Each answer runs one job on the
  * server and returns the new badges, so the page shows "Done" or "Failed"
  * without a reload. "Try again" and the reload links work here too.
+ *
+ * A finished translation comes with the new text: it is put in its field
+ * (.ec-translated[data-ec-row]) and the badge says "Done" with no reload.
+ *
+ * A form marked data-ec-ajax-save (the Messages page) is posted to
+ * admin-ajax instead of leaving the page: the answer comes at once (the
+ * translation only waits in the queue), the field shows "Translating…",
+ * and the poll starts. When the post fails, the form is posted as usual.
  */
 (function () {
     'use strict';
@@ -14,6 +22,7 @@
 
     var busy = false;
     var timer = null;
+    var pending = false;
 
     function ids() {
         var out = [];
@@ -33,6 +42,11 @@
             return;
         }
         node.setAttribute('data-active', String(active));
+        if (0 === active && !document.querySelector('[data-ec-job] .ec-job-reload')) {
+            // Every result is already on the page: nothing to reload for.
+            node.parentNode.removeChild(node);
+            return;
+        }
         var line = node.querySelector('p');
         line.textContent = text + ' ';
         if (0 === active) {
@@ -49,6 +63,52 @@
     function schedule() {
         clearTimeout(timer);
         timer = setTimeout(function () { poll(''); }, 3000);
+    }
+
+    // Puts a finished translation in its field. False when the field is not on this page.
+    function fill(row, value) {
+        var box = null;
+        document.querySelectorAll('.ec-translated[data-ec-row]').forEach(function (node) {
+            if (node.getAttribute('data-ec-row') === row) {
+                box = node;
+            }
+        });
+        if (!box || !value) {
+            return false;
+        }
+        var set = function (field, text) {
+            if (field && field.value !== text) {
+                field.value = text;
+                field.dispatchEvent(new Event('input', {bubbles: true}));
+            }
+        };
+        set(box.querySelector('[name$="[source]"]'), value.source || '');
+        var texts = value.texts || {};
+        var manual = value.manual || {};
+        box.querySelectorAll('.ec-translated-text[data-ec-lang]').forEach(function (part) {
+            var lang = part.getAttribute('data-ec-lang');
+            if (Object.prototype.hasOwnProperty.call(texts, lang)) {
+                set(part.querySelector('[name$="[texts][' + lang + ']"]'), texts[lang]);
+            }
+            if (!manual[lang]) {
+                part.querySelectorAll('label + em').forEach(function (mark) {
+                    mark.parentNode.removeChild(mark);
+                });
+                part.hidden = lang === value.lang;
+            }
+        });
+        box.classList.remove('ec-translating');
+        return true;
+    }
+
+    // Polls now, or right after the poll that is under way.
+    function start() {
+        clearTimeout(timer);
+        if (busy) {
+            pending = true;
+            return;
+        }
+        poll('');
     }
 
     function poll(retry) {
@@ -75,12 +135,15 @@
                 var jobs = answer.data.jobs || {};
                 Object.keys(jobs).forEach(function (id) {
                     var node = document.querySelector('[data-ec-job="' + id + '"]');
-                    if (node && jobs[id].html) {
-                        node.outerHTML = jobs[id].html;
+                    var job = jobs[id];
+                    if (!node || !job.html) {
+                        return;
                     }
+                    node.outerHTML = job.row && job.done && fill(job.row, job.value) ? job.done : job.html;
                 });
                 showBar(answer.data.active, answer.data.bar);
-                if (answer.data.active > 0) {
+                if (answer.data.active > 0 || pending) {
+                    pending = false;
                     schedule();
                 }
             })
@@ -89,6 +152,72 @@
                 schedule();
             });
     }
+
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+        if (!(form instanceof HTMLFormElement) || !form.hasAttribute('data-ec-ajax-save')) {
+            return;
+        }
+        event.preventDefault();
+        var buttons = form.querySelectorAll('[type=submit]');
+        var notice = form.querySelector('[data-ec-ajax-notice]');
+        buttons.forEach(function (button) { button.disabled = true; });
+        var done = function () {
+            buttons.forEach(function (button) { button.disabled = false; });
+        };
+        var fallback = function () {
+            done();
+            HTMLFormElement.prototype.submit.call(form);
+        };
+
+        fetch(config.url, {method: 'POST', credentials: 'same-origin', body: new FormData(form)})
+            .then(function (response) { return response.json(); })
+            .then(function (answer) {
+                if (!answer || !answer.success) {
+                    fallback();
+                    return;
+                }
+                done();
+                if (notice) {
+                    notice.innerHTML = '';
+                    if (answer.data.message) {
+                        var box = document.createElement('div');
+                        box.className = 'notice inline notice-' + (answer.data.type || 'success');
+                        var line = document.createElement('p');
+                        line.textContent = answer.data.message;
+                        box.appendChild(line);
+                        notice.appendChild(box);
+                    }
+                }
+                // "Translate again" was sent with this post; a later save must not send it again.
+                form.querySelectorAll('input[type=hidden][name$="[again]"]').forEach(function (mark) {
+                    mark.value = '';
+                });
+                var jobs = answer.data.jobs || {};
+                var texts = answer.data.texts || {};
+                var any = false;
+                form.querySelectorAll('.ec-translated[data-ec-row]').forEach(function (node) {
+                    var row = node.getAttribute('data-ec-row');
+                    var html = jobs[row];
+                    if (!html) {
+                        if (texts[row]) {
+                            fill(row, texts[row]);
+                        }
+                        return;
+                    }
+                    var slot = node.querySelector('.ec-translated-job');
+                    if (slot) {
+                        slot.innerHTML = html;
+                    }
+                    node.classList.add('ec-translating');
+                    any = true;
+                });
+                if (any) {
+                    start();
+                }
+            })
+            .catch(fallback);
+    });
 
     document.addEventListener('click', function (event) {
         var target = event.target;
