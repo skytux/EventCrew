@@ -1102,7 +1102,8 @@ final class NewsletterController
                 );
             }
 
-            if ($this->subscribers->unsubscribe($id)) {
+            // The preview's sample link answers as a real one, but unsubscribes nobody.
+            if (Newsletter::SAMPLE_ID === $id || $this->subscribers->unsubscribe($id)) {
                 return $this->page(
                     200,
                     static fn (): string => __(

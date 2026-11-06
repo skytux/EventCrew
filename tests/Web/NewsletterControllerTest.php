@@ -299,6 +299,24 @@ final class NewsletterControllerTest extends TestCase
         self::assertSame('unsubscribed', $this->wpdb->updates[0]['data']['status']);
     }
 
+    /**
+     * Q337: the preview's sample link works like a real one (a GET shows the
+     * button, a POST answers as done) but unsubscribes nobody.
+     */
+    public function testThePreviewSampleLinkUnsubscribesNobody(): void
+    {
+        $token = SignedLink::sign(Newsletter::PURPOSE_UNSUBSCRIBE, Newsletter::SAMPLE_ID);
+
+        $page = $this->controller()->respond('unsubscribe', 'GET', $token);
+        self::assertSame(200, $page['status']);
+        self::assertStringContainsString('name="do" value="unsubscribe"', $page['html']);
+
+        $page = $this->controller()->respond('unsubscribe', 'POST', $token);
+        self::assertSame(200, $page['status']);
+        self::assertStringContainsString('You have left the announcement.', $page['html']);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
     public function testABadUnsubscribeTokenShowsNoButton(): void
     {
         $page = $this->controller()->respond('unsubscribe', 'GET', SignedLink::sign(Newsletter::PURPOSE_CONFIRM, 5));

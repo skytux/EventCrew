@@ -127,6 +127,12 @@ final class Newsletter
     /** Stands in for the subscriber's own link in the kept copy of a sent newsletter. */
     public const COPY_LINK = '#';
 
+    /**
+     * The subscriber id in the preview's sample unsubscribe link: no row has
+     * it, so a POST to that link unsubscribes nobody.
+     */
+    public const SAMPLE_ID = 0;
+
     /** The closed reasons that keep an event out, as in AssistantKnowledge. */
     private const HIDDEN_REASONS = ['unpublished', 'disabled', 'hidden'];
 
@@ -198,6 +204,28 @@ final class Newsletter
     public static function unsubscribeUrl(int $subscriberId): string
     {
         return self::link('unsubscribe', SignedLink::sign(self::PURPOSE_UNSUBSCRIBE, $subscriberId));
+    }
+
+    /**
+     * The List-Unsubscribe headers of one announcement for its unsubscribe
+     * link $url (RFC 2369 and RFC 8058): mail apps show their own unsubscribe
+     * button, and a one-click POST to $url unsubscribes at once. None when
+     * $url is not https, which one-click requires.
+     *
+     * @return list<string>
+     */
+    public static function unsubscribeHeaders(string $url): array
+    {
+        return FollowupMail::unsubscribeHeaders($url);
+    }
+
+    /**
+     * The unsubscribe link of the organizers' preview: a sample link that
+     * unsubscribes nobody (no subscriber has id SAMPLE_ID).
+     */
+    public static function sampleUnsubscribeUrl(): string
+    {
+        return self::unsubscribeUrl(self::SAMPLE_ID);
     }
 
     /** The footer link of one subscriber's announcement: their manage page. */
@@ -775,10 +803,7 @@ final class Newsletter
                 $greeting['text'] . "\n\n" . $mail['text'],
                 $mail['footer'],
                 self::manageUrl($row['id']),
-                [
-                    'List-Unsubscribe: <' . $unsubscribe . '>',
-                    'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
-                ],
+                self::unsubscribeHeaders($unsubscribe),
                 $mail['crew_note']
             );
 
@@ -944,7 +969,9 @@ final class Newsletter
                     $mail['crew_note'],
                     ['label' => $words['stop'], 'url' => $stopUrl],
                     $words['line'],
-                    $now
+                    $now,
+                    // The headers a subscriber gets, with a sample link that unsubscribes nobody.
+                    self::unsubscribeHeaders(self::sampleUnsubscribeUrl())
                 );
 
                 if ($sent) {

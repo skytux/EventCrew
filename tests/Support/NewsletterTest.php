@@ -1075,8 +1075,67 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString('do=stop', $after);
         self::assertStringContainsString('Goes out on 20.7.2026 at 12:00 to 2 subscribers.', $after);
         self::assertGreaterThan($buttonAt, strpos($preview['body'], 'Goes out on'));
-        self::assertStringNotContainsString('List-Unsubscribe', implode("\n", (array) $preview['headers']));
+        // Q337: the preview has the subscriber's headers, with a sample link that unsubscribes nobody.
+        self::assertContains(
+            'List-Unsubscribe: <' . Newsletter::sampleUnsubscribeUrl() . '>',
+            (array) $preview['headers']
+        );
+        self::assertContains('List-Unsubscribe-Post: List-Unsubscribe=One-Click', (array) $preview['headers']);
         self::assertStringNotContainsString('a@example.test', $preview['body']);
+    }
+
+    /** Q337: each subscriber's headers carry their own unsubscribe link. */
+    public function testEachSubscriberGetsTheirOwnUnsubscribeHeader(): void
+    {
+        $this->withPlan([
+            'status' => Newsletter::PLAN_SENDING,
+            'events' => [self::planEvent(1, '2026-07-27', 'Summer Social')],
+        ]);
+        $this->wpdb->nextResults[] = [
+            ['id' => 4, 'email' => 'a@example.test'],
+            ['id' => 6, 'email' => 'b@example.test'],
+        ];
+
+        self::assertSame(2, $this->newsletter()->sendBatch());
+
+        foreach ([4, 6] as $i => $id) {
+            self::assertSame(
+                [
+                    'List-Unsubscribe: <' . Newsletter::unsubscribeUrl($id) . '>',
+                    'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
+                ],
+                array_values(array_filter(
+                    (array) $this->mails[$i]['headers'],
+                    static fn (string $h): bool => str_starts_with($h, 'List-Unsubscribe')
+                ))
+            );
+        }
+        self::assertNotSame(Newsletter::unsubscribeUrl(4), Newsletter::unsubscribeUrl(6));
+    }
+
+    /** Q337: one-click needs https; an http link gets no List-Unsubscribe headers. */
+    public function testAnHttpLinkGetsNoUnsubscribeHeaders(): void
+    {
+        self::assertSame([], Newsletter::unsubscribeHeaders('http://site.test/wp-json/eventcrew/v1/newsletter'));
+        self::assertSame(
+            [
+                'List-Unsubscribe: <https://site.test/x>',
+                'List-Unsubscribe-Post: List-Unsubscribe=One-Click',
+            ],
+            Newsletter::unsubscribeHeaders('https://site.test/x')
+        );
+    }
+
+    /** Q337: the preview's sample link is signed for a subscriber id no row has. */
+    public function testThePreviewSampleLinkNamesNoSubscriber(): void
+    {
+        parse_str((string) parse_url(Newsletter::sampleUnsubscribeUrl(), PHP_URL_QUERY), $query);
+
+        self::assertSame('unsubscribe', $query['do']);
+        self::assertSame(
+            Newsletter::SAMPLE_ID,
+            SignedLink::verify(Newsletter::PURPOSE_UNSUBSCRIBE, (string) $query['token'])
+        );
     }
 
     /**

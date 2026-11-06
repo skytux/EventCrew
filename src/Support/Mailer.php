@@ -255,10 +255,12 @@ final class Mailer
      * The newsletter preview to one organizer: the email a subscriber gets
      * (subscriberHtml(), the same plain text as toSubscriber()), with $stop
      * as a red button at the very bottom and $line, one plain line, under
-     * it. $now is the moment the email is shown as (the send time). No
-     * List-Unsubscribe headers: the organizer is not a subscriber.
+     * it. $now is the moment the email is shown as (the send time).
+     * $headers are added to the mail's headers: the List-Unsubscribe headers
+     * a subscriber gets, with a sample link that unsubscribes nobody.
      *
      * @param array{label: string, url: string} $stop
+     * @param array<int, string> $headers
      */
     public function toOrganizerAsSubscriber(
         string $to,
@@ -270,7 +272,8 @@ final class Mailer
         string $footerNote,
         array $stop,
         string $line,
-        ?\DateTimeInterface $now = null
+        ?\DateTimeInterface $now = null,
+        array $headers = []
     ): bool {
         if (Person::isPlaceholderEmail($to)) {
             return false;
@@ -298,7 +301,12 @@ final class Mailer
         add_action('phpmailer_init', $altBody);
 
         try {
-            $sent = (bool) wp_mail($to, $subject, $html, ['Content-Type: text/html; charset=UTF-8']);
+            $sent = (bool) wp_mail(
+                $to,
+                $subject,
+                $html,
+                array_merge(['Content-Type: text/html; charset=UTF-8'], $headers)
+            );
         } catch (\Throwable $error) {
             $this->logger->error(sprintf(
                 'Email "%s" to an organizer failed: %s: %s',
