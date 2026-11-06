@@ -3015,8 +3015,11 @@ msgstr "Verkkosivusto"
 msgid "   buttons: 🎟 free-entry ticket, 🔁 take over a task, 🔑 web sign-in, 🔔 notifications, 🌐 language"
 msgstr "   painikkeet: 🎟 vapaalippu, 🔁 ota tehtävä, 🔑 verkkokirjautuminen, 🔔 ilmoitukset, 🌐 kieli"
 
-msgid "%1$s now meets the conditions for the role %2$s. You can give them the role with /people."
-msgstr "%1$s täyttää nyt roolin %2$s ehdot. Voit antaa hänelle roolin komennolla /people."
+msgid "Give them the role"
+msgstr "Anna rooli"
+
+msgid "%1$s now meets the conditions for the role %2$s. To give it to them, tap Give them the role below."
+msgstr "%1$s täyttää nyt roolin %2$s ehdot. Anna rooli napauttamalla alta Anna rooli."
 
 msgid "/board in a private chat – also ➕ to put a person on a task"
 msgstr "/board yksityiskeskustelussa – myös ➕ lisää henkilö tehtävään"
@@ -7482,8 +7485,8 @@ msgstr "Ovilista %1$s: avaa se alla olevasta painikkeesta. Linkki toimii kerran,
 msgid "You are organizing on %1$s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? %2$s"
 msgstr "Olet %1$s järjestäjänä. Myyntipisteen painike kirjaa tämän laitteen ovilistalle klo 06:00 asti; linkki toimii kerran. Admin-välilehti on Crew-sovelluksessa; kirjaudu siellä, jos se pyytää. Tarvitsetko uuden myyntipisteen linkin? %2$s"
 
-msgid "Send /door to the bot and tap 💳 Sales desk."
-msgstr "Lähetä botille /door ja napauta 💳 Myyntipiste."
+msgid "Tap 💳 Sales desk below."
+msgstr "Napauta alta 💳 Myyntipiste."
 
 msgid "Tap Sales desk in the Me tab of the crew page (%s)."
 msgstr "Napauta Myyntipiste crew-sivun Minä-välilehdellä (%s)."

@@ -2,4 +2,4 @@ DM 📣 Test Crew
 
 Hei Person 1,
 
-Olet ma 20.7. järjestäjänä. Myyntipisteen painike kirjaa tämän laitteen ovilistalle klo 06:00 asti; linkki toimii kerran. Admin-välilehti on Crew-sovelluksessa; kirjaudu siellä, jos se pyytää. Tarvitsetko uuden myyntipisteen linkin? Lähetä botille /door ja napauta 💳 Myyntipiste.
+Olet ma 20.7. järjestäjänä. Myyntipisteen painike kirjaa tämän laitteen ovilistalle klo 06:00 asti; linkki toimii kerran. Admin-välilehti on Crew-sovelluksessa; kirjaudu siellä, jos se pyytää. Tarvitsetko uuden myyntipisteen linkin? Napauta alta 💳 Myyntipiste.

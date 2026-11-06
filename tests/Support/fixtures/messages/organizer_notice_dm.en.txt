@@ -2,4 +2,4 @@ DM 📣 Test Crew
 
 Hi Person 1,
 
-You are organizing on Mon 20 Jul. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? Send /door to the bot and tap 💳 Sales desk.
+You are organizing on Mon 20 Jul. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? Tap 💳 Sales desk below.
