@@ -204,9 +204,7 @@ final class EventsCommand
     /** The crew group: the chat the board lives in. 0 when there is none. */
     private function groupChatId(): int
     {
-        $board = get_option(BoardService::BOARD_OPTION, []);
-
-        return is_array($board) ? (int) ($board['chat_id'] ?? 0) : 0;
+        return GroupChat::current();
     }
 
     private function removeButtons(int $chatId, int $messageId): void
