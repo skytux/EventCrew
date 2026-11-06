@@ -1472,6 +1472,34 @@ msgstr ""
 msgid "You weren’t signed up for that one."
 msgstr "Et ollut ilmoittautunut siihen."
 
+#. translators: %s: the task, the event and the day, like "Door at Party, Sat 14 Nov 18:00"
+#, php-format
+msgid "Cancel %s?"
+msgstr "Perutaanko %s?"
+
+msgid "This close to the task it is a late cancellation: it counts against your standing."
+msgstr "Näin lähellä tehtävää se on myöhäinen peruutus: se heikentää luotettavuuttasi."
+
+msgid "Early enough: it does not affect your standing."
+msgstr "Ajoissa: se ei vaikuta luotettavuuteesi."
+
+msgid "Yes, cancel"
+msgstr "Kyllä, peru"
+
+msgid "Find someone to take it"
+msgstr "Etsi joku tilallesi"
+
+msgid "Keep it"
+msgstr "Pidän sen"
+
+#. translators: %s: the task, the event and the day, like "Door at Party, Sat 14 Nov 18:00"
+#, php-format
+msgid "Kept: you are still on %s."
+msgstr "Pidetty: olet yhä tehtävässä %s."
+
+msgid "To hand it over, ask someone in the crew to send /me to the bot and tap 🔁 Take over a task. You get a message to say yes, and you stay on it until then."
+msgstr "Pyydä joku tiimistä lähettämään botille /me ja napauttamaan 🔁 Ota tehtävä. Saat viestin, jossa hyväksyt, ja pysyt tehtävässä siihen asti."
+
 #: src/Telegram/VerificationController.php:137
 #, php-format
 msgid "Your %s account is now linked to another Telegram account. Contact an organizer if that wasn't you."

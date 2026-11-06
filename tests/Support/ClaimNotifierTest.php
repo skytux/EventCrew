@@ -307,7 +307,7 @@ final class ClaimNotifierTest extends TestCase
         $rows = $sends[0]['reply_markup']['inline_keyboard'];
         self::assertStringContainsString('eventcrew/v1/ticket?token=', $rows[0][0]['url']);
         self::assertStringContainsString('eventcrew/v1/calendar?token=', $rows[1][0]['url']);
-        self::assertSame('l:5', $rows[2][0]['callback_data']);
+        self::assertSame('lc:5', $rows[2][0]['callback_data']);
         self::assertSame('https://docs.example/guide', $rows[3][0]['url']);
 
         self::assertStringContainsString('About the task', $this->mails[0]['body']);

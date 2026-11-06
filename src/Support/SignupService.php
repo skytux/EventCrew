@@ -287,6 +287,22 @@ final class SignupService
         );
     }
 
+    /**
+     * What drop() would record now, without dropping: LATE_CANCEL,
+     * CANCELLED, AssignmentRepository::CANCEL_LOCKED, or '' when there is no
+     * live slot. Read by the bot's "Cancel?" question before the cancel.
+     */
+    public function dropOutcome(int $personId, int $taskId): string
+    {
+        return $this->assignments->cancelOutcome(
+            $taskId,
+            $personId,
+            $this->noticeHours(),
+            SecondThoughts::justTaken($personId, $taskId) ? 0 : self::signoutLockMinutes(),
+            false === SecondThoughts::opened($personId, $taskId)
+        );
+    }
+
     /** The sign-out lock in minutes, from the setting; 0 = off. */
     public static function signoutLockMinutes(): int
     {

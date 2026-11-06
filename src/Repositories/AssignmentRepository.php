@@ -238,7 +238,40 @@ final class AssignmentRepository
     public function cancel(int $taskId, int $personId, int $noticeHours, int $lockMinutes = 0, bool $free = false): string
     {
         $assignment = $this->findFor($taskId, $personId);
+        $status = $this->cancelOutcomeOf($assignment, $taskId, $noticeHours, $lockMinutes, $free);
 
+        $cancels = [AssignmentStatus::CANCELLED, AssignmentStatus::LATE_CANCEL];
+
+        if ($assignment instanceof Assignment && in_array($status, $cancels, true)) {
+            $this->setStatus($assignment->id, $status);
+        }
+
+        return $status;
+    }
+
+    /**
+     * What cancel() would return now, with the same arguments, without
+     * writing anything: the status a cancel would record, CANCEL_LOCKED, or
+     * '' when there is no live slot. The bot's "Cancel?" question uses it to
+     * say beforehand whether the cancel would be late.
+     */
+    public function cancelOutcome(
+        int $taskId,
+        int $personId,
+        int $noticeHours,
+        int $lockMinutes = 0,
+        bool $free = false
+    ): string {
+        return $this->cancelOutcomeOf($this->findFor($taskId, $personId), $taskId, $noticeHours, $lockMinutes, $free);
+    }
+
+    private function cancelOutcomeOf(
+        ?Assignment $assignment,
+        int $taskId,
+        int $noticeHours,
+        int $lockMinutes,
+        bool $free
+    ): string {
         if (! $assignment instanceof Assignment || ! $assignment->isOccupying()) {
             return '';
         }
@@ -252,10 +285,7 @@ final class AssignmentRepository
             return self::CANCEL_LOCKED;
         }
 
-        $status = $free ? AssignmentStatus::CANCELLED : $this->cancellationStatus($start, $noticeHours);
-        $this->setStatus($assignment->id, $status);
-
-        return $status;
+        return $free ? AssignmentStatus::CANCELLED : $this->cancellationStatus($start, $noticeHours);
     }
 
     /**

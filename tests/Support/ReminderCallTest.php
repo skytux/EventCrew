@@ -211,7 +211,7 @@ final class ReminderCallTest extends TelegramTestCase
         // The ticket, cancel, then the guide: the same actions as the email.
         $rows = $dm['reply_markup']['inline_keyboard'];
         self::assertStringContainsString('eventcrew/v1/ticket?token=', $rows[0][0]['url']);
-        self::assertSame('l:5', $rows[1][0]['callback_data']);
+        self::assertSame('lc:5', $rows[1][0]['callback_data']);
         self::assertSame('https://docs.example/guide', $rows[2][0]['url']);
         self::assertStringContainsString('Crew guide', $rows[2][0]['text']);
     }
@@ -255,7 +255,7 @@ final class ReminderCallTest extends TelegramTestCase
         $rows = ((array) $this->lastCallTo('sendMessage'))['reply_markup']['inline_keyboard'];
         self::assertCount(2, $rows);
         self::assertStringContainsString('eventcrew/v1/ticket?token=', $rows[0][0]['url']);
-        self::assertSame('l:5', $rows[1][0]['callback_data']);
+        self::assertSame('lc:5', $rows[1][0]['callback_data']);
     }
 
     /** MessageAiText: the event's AI text when there is one, else the template's text. */

@@ -568,6 +568,112 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertContains('editMessageText', $this->calledMethods());
     }
 
+    // --- cancel question (lc:) ------------------------------------------------
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function cancelTap(string $data): array
+    {
+        return $this->callbackQuery($data) + ['message' => ['chat' => ['id' => 555], 'message_id' => 42]];
+    }
+
+    /** The rows a cancel question reads: the person, the task, the sign-up, the start. */
+    private function cancelRows(string $startsAt = '2026-09-01 20:00:00', bool $signedUp = true): void
+    {
+        $this->verifiedPerson(555);
+        $this->wpdb->nextRows[] = ['starts_at' => $startsAt] + $this->taskRow(5, null, 'Party', substr($startsAt, 0, 10));
+        $this->wpdb->nextRows[] = $signedUp
+            ? ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up']
+            : null;
+        $this->wpdb->nextRows[] = ['starts_at' => $startsAt, 'task_date' => substr($startsAt, 0, 10)];
+    }
+
+    public function testCancelAsksFirstAndChangesNothing(): void
+    {
+        $this->cancelRows();
+
+        $this->board()->onJoinLeave($this->cancelTap('lc:5'));
+
+        self::assertSame([], $this->wpdb->updates);
+        $ask = $this->lastCallTo('sendMessage');
+        self::assertNotNull($ask);
+        self::assertStringContainsString('Cancel ', (string) $ask['text']);
+        self::assertStringContainsString('Party', (string) $ask['text']);
+        self::assertStringContainsString('does not affect your standing', (string) $ask['text']);
+        self::assertSame('lc:5:y', $this->callbackOf($ask, '✅'));
+        self::assertSame('lc:5:f', $this->callbackOf($ask, '🔁'));
+        self::assertSame('lc:5:k', $this->callbackOf($ask, '👍'));
+    }
+
+    public function testTheQuestionSaysWhenTheCancelWouldBeLate(): void
+    {
+        // The tests' now is 2026-07-20 12:00; the notice is 48 hours.
+        $this->cancelRows('2026-07-21 10:00:00');
+
+        $this->board()->onJoinLeave($this->cancelTap('lc:5'));
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertStringContainsString('late cancellation', (string) $this->lastCallTo('sendMessage')['text']);
+    }
+
+    public function testYesCancelsAndTheQuestionBecomesTheAnswer(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->verifiedPerson(555);
+        $this->wpdb->nextRows[] = $this->taskRow(5, null, 'Party', '2026-09-01');
+        // drop(): findFor, then the task's start time.
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = ['starts_at' => '2026-09-01 20:00:00', 'task_date' => '2026-09-01'];
+
+        $this->board()->onJoinLeave($this->cancelTap('lc:5:y'));
+
+        self::assertNotSame([], $this->wpdb->updates);
+        self::assertSame([], $this->wpdb->deletes);
+        $edits = array_values(array_filter(
+            $this->telegramCalls,
+            static fn (array $call): bool => 'editMessageText' === $call['method'] && 42 === ($call['body']['message_id'] ?? 0)
+        ));
+        self::assertCount(1, $edits);
+        self::assertStringContainsString('You’re out', (string) $edits[0]['body']['text']);
+        self::assertSame([], $edits[0]['body']['reply_markup']['inline_keyboard']);
+    }
+
+    public function testKeepItChangesNothing(): void
+    {
+        $this->cancelRows();
+
+        $this->board()->onJoinLeave($this->cancelTap('lc:5:k'));
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertNotContains('sendMessage', $this->calledMethods());
+        self::assertStringContainsString('Kept', (string) $this->lastCallTo('editMessageText')['text']);
+    }
+
+    public function testFindSomeoneShowsHowAndKeepsYesAndKeep(): void
+    {
+        $this->cancelRows();
+
+        $this->board()->onJoinLeave($this->cancelTap('lc:5:f'));
+
+        self::assertSame([], $this->wpdb->updates);
+        $edit = $this->lastCallTo('editMessageText');
+        self::assertStringContainsString('Take over a task', (string) $edit['text']);
+        self::assertSame('lc:5:y', $this->callbackOf($edit, '✅'));
+        self::assertSame('lc:5:k', $this->callbackOf($edit, '👍'));
+        self::assertNull($this->callbackOf($edit, '🔁'));
+    }
+
+    public function testCancelWithNothingToCancelAsksNothing(): void
+    {
+        $this->cancelRows('2026-09-01 20:00:00', false);
+
+        $this->board()->onJoinLeave($this->cancelTap('lc:5'));
+
+        self::assertNotContains('sendMessage', $this->calledMethods());
+        self::assertStringContainsString('weren’t signed up', (string) $this->lastCallTo('answerCallbackQuery')['text']);
+    }
+
     public function testSignupSendsAConfirmationEmailWithATicketLink(): void
     {
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];

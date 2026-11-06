@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Telegram;
 
 use EventCrew\Models\Person;
+use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -90,6 +91,15 @@ final class BoardService
      * message for everyone - Telegram has no per-person view of a message.
      */
     public const PICK_PREFIX = 'bd:';
+
+    /**
+     * Callback data prefix of the Cancel button under a message about one's
+     * own task (MessageTemplates::cancelAction()): lc:<task id> asks first,
+     * in a new message, whether to cancel, saying whether it would be late.
+     * Its buttons add a step: :y cancels (the board's leave), :f shows how
+     * to hand the task over, :k keeps it. Only :y changes anything.
+     */
+    public const CANCEL_ASK_PREFIX = 'lc:';
 
     /**
      * The card format switch, off by default (Settings → Telegram bot). On, the
@@ -977,6 +987,12 @@ final class BoardService
      */
     public function onJoinLeave(array $callbackQuery): void
     {
+        if (str_starts_with((string) ($callbackQuery['data'] ?? ''), self::CANCEL_ASK_PREFIX)) {
+            $this->onCancelAsk($callbackQuery);
+
+            return;
+        }
+
         $callbackId = (string) ($callbackQuery['id'] ?? '');
         $telegramUserId = (int) ($callbackQuery['from']['id'] ?? 0);
         [$action, $taskId, $date] = $this->parseData((string) ($callbackQuery['data'] ?? ''));
@@ -987,15 +1003,9 @@ final class BoardService
             return;
         }
 
-        $person = $this->people->findByTelegramUserId($telegramUserId);
+        $person = $this->verifiedPerson($callbackId, $telegramUserId);
 
-        if (null === $person || ! $person->isEmailVerified()) {
-            $this->telegram->answerCallbackQuery(
-                $callbackId,
-                __('First tap the “New here? Sign up” button below to confirm your email.', 'eventcrew'),
-                true
-            );
-
+        if (null === $person) {
             return;
         }
 
@@ -1064,27 +1074,234 @@ final class BoardService
 
     private function handleLeave(string $callbackId, int $taskId, Person $person): bool
     {
+        return self::isCancel($this->leave($callbackId, $taskId, $person));
+    }
+
+    /** True for a status that ended a sign-up: CANCELLED or LATE_CANCEL. */
+    private static function isCancel(string $status): bool
+    {
+        return in_array($status, [AssignmentStatus::CANCELLED, AssignmentStatus::LATE_CANCEL], true);
+    }
+
+    /**
+     * Drops the task and answers the tap. Returns what SignupService::drop()
+     * returned: the cancellation recorded, CANCEL_LOCKED, or ''.
+     */
+    private function leave(string $callbackId, int $taskId, Person $person): string
+    {
         // Cancel, don't delete: the row stays for the reputation history, and
         // is classified late_cancel/cancelled by how much notice this gives.
         $status = $this->signup->drop($person->id, $taskId);
 
-        $message = match ($status) {
+        $this->telegram->answerCallbackQuery(
+            $callbackId,
+            self::leaveText($status),
+            AssignmentRepository::CANCEL_LOCKED === $status
+        );
+
+        if (self::isCancel($status)) {
+            $this->notifier->cancelled($person, $taskId, $status);
+        }
+
+        return $status;
+    }
+
+    /** The answer to a leave tap that ended in $status (SignupService::drop()). */
+    private static function leaveText(string $status): string
+    {
+        return match ($status) {
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             AssignmentStatus::LATE_CANCEL => __('You’re out. This close to the event it counts as a late cancellation.', 'eventcrew'),
             AssignmentStatus::CANCELLED => __('You’re out. Thanks for the notice.', 'eventcrew'),
             AssignmentRepository::CANCEL_LOCKED => SignupService::signoutLockedText(),
             default => __('You weren’t signed up for that one.', 'eventcrew'),
         };
+    }
 
-        $this->telegram->answerCallbackQuery($callbackId, $message, AssignmentRepository::CANCEL_LOCKED === $status);
+    /**
+     * The person behind a tap, when their email is confirmed. Otherwise the
+     * tap is answered with what to do first, and null comes back.
+     */
+    private function verifiedPerson(string $callbackId, int $telegramUserId): ?Person
+    {
+        $person = $this->people->findByTelegramUserId($telegramUserId);
 
-        if ('' === $status || AssignmentRepository::CANCEL_LOCKED === $status) {
-            return false;
+        if (null === $person || ! $person->isEmailVerified()) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('First tap the “New here? Sign up” button below to confirm your email.', 'eventcrew'),
+                true
+            );
+
+            return null;
         }
 
-        $this->notifier->cancelled($person, $taskId, $status);
+        return $person;
+    }
 
-        return true;
+    /**
+     * A tap on the Cancel button under a message about one's own task, or on
+     * one of the buttons of its question (CANCEL_ASK_PREFIX). The tap acts
+     * for the person who tapped, so a forwarded message cancels nobody
+     * else's task.
+     *
+     * @param array<string, mixed> $callbackQuery
+     */
+    private function onCancelAsk(array $callbackQuery): void
+    {
+        $callbackId = (string) ($callbackQuery['id'] ?? '');
+        $telegramUserId = (int) ($callbackQuery['from']['id'] ?? 0);
+        $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
+        $chatId = (int) ($message['chat']['id'] ?? $telegramUserId);
+        $messageId = (int) ($message['message_id'] ?? 0);
+
+        if (
+            1 !== preg_match('/^lc:(\d+)(?::([yfk]))?$/', (string) ($callbackQuery['data'] ?? ''), $m)
+            || 0 === $telegramUserId
+        ) {
+            $this->telegram->answerCallbackQuery($callbackId);
+
+            return;
+        }
+
+        $taskId = (int) $m[1];
+        $step = $m[2] ?? '';
+        $person = $this->verifiedPerson($callbackId, $telegramUserId);
+        $task = null === $person ? null : $this->tasks->find($taskId);
+
+        if (null === $person) {
+            return;
+        }
+
+        if ('y' === $step) {
+            $status = $this->leave($callbackId, $taskId, $person);
+            $this->replaceQuestion($chatId, $messageId, self::leaveIcon($status) . self::leaveText($status));
+
+            if (self::isCancel($status)) {
+                $this->refresh();
+            }
+
+            return;
+        }
+
+        $outcome = $this->signup->dropOutcome($person->id, $taskId);
+
+        // Nothing to cancel, or too close to cancel: said at once, no question.
+        if (null === $task || ! self::isCancel($outcome)) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                self::leaveText($outcome),
+                AssignmentRepository::CANCEL_LOCKED === $outcome
+            );
+
+            if ('' !== $step) {
+                $this->replaceQuestion($chatId, $messageId, self::leaveText($outcome));
+            }
+
+            return;
+        }
+
+        $this->telegram->answerCallbackQuery($callbackId);
+
+        if ('k' === $step) {
+            $this->replaceQuestion($chatId, $messageId, '👍 ' . sprintf(
+                /* translators: %s: the task, the event and the day, like "Door at Party, Sat 14 Nov 18:00" */
+                __('Kept: you are still on %s.', 'eventcrew'),
+                self::taskLine($task)
+            ));
+
+            return;
+        }
+
+        $text = self::cancelQuestion($task, AssignmentStatus::LATE_CANCEL === $outcome);
+
+        if ('f' === $step) {
+            $this->telegram->editMessageText(
+                $chatId,
+                $messageId,
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                $text . "\n\n🔁 " . __('To hand it over, ask someone in the crew to send /me to the bot and tap 🔁 Take over a task. You get a message to say yes, and you stay on it until then.', 'eventcrew'),
+                $this->cancelKeyboard($taskId, false)
+            );
+
+            return;
+        }
+
+        $this->telegram->sendMessage($chatId, $text, $this->cancelKeyboard($taskId, true));
+    }
+
+    /**
+     * "Cancel Door at Dance Night, Sat 14 Nov 18:00–20:00?", and whether it
+     * counts against the standing.
+     */
+    private static function cancelQuestion(Task $task, bool $late): string
+    {
+        return sprintf(
+            /* translators: %s: the task, the event and the day, like "Door at Party, Sat 14 Nov 18:00" */
+            __('Cancel %s?', 'eventcrew'),
+            self::taskLine($task)
+        ) . "\n\n" . ($late
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            ? '⚠️ ' . __('This close to the task it is a late cancellation: it counts against your standing.', 'eventcrew')
+            : __('Early enough: it does not affect your standing.', 'eventcrew'));
+    }
+
+    /**
+     * The question's buttons: Yes, cancel; how to hand it over (until it was
+     * shown), else the crew's group when its link is known; Keep it.
+     *
+     * @return array{inline_keyboard: list<list<array<string, string>>>}
+     */
+    private function cancelKeyboard(int $taskId, bool $withHandOver): array
+    {
+        $data = static fn (string $step): string => self::CANCEL_ASK_PREFIX . $taskId . ':' . $step;
+        $rows = [[['text' => '✅ ' . __('Yes, cancel', 'eventcrew'), 'callback_data' => $data('y')]]];
+        $group = self::groupLink();
+
+        if ($withHandOver) {
+            $rows[] = [['text' => '🔁 ' . __('Find someone to take it', 'eventcrew'), 'callback_data' => $data('f')]];
+        } elseif ('' !== $group) {
+            $rows[] = [['text' => __('Open the group', 'eventcrew'), 'url' => $group]];
+        }
+
+        $rows[] = [['text' => '👍 ' . __('Keep it', 'eventcrew'), 'callback_data' => $data('k')]];
+
+        return ['inline_keyboard' => $rows];
+    }
+
+    /** "Door at Dance Night, Sat 14 Nov 18:00–20:00". */
+    private static function taskLine(Task $task): string
+    {
+        $day = Dates::dayLabel($task->taskDate);
+
+        return sprintf(
+            /* translators: 1: role, 2: event, 3: day and time */
+            __('%1$s at %2$s, %3$s', 'eventcrew'),
+            $task->roleLabel(),
+            $task->eventName(),
+            '' === $task->timeRange() ? $day : $day . ' ' . $task->timeRange()
+        );
+    }
+
+    private static function leaveIcon(string $status): string
+    {
+        return match ($status) {
+            AssignmentStatus::LATE_CANCEL => '⚠️ ',
+            AssignmentStatus::CANCELLED => '❌ ',
+            default => '',
+        };
+    }
+
+    /** The question's text becomes $text, and its buttons go. */
+    private function replaceQuestion(int $chatId, int $messageId, string $text): void
+    {
+        if (0 === $chatId || 0 === $messageId) {
+            $this->telegram->sendMessage($chatId, $text);
+
+            return;
+        }
+
+        $this->telegram->editMessageText($chatId, $messageId, $text, ['inline_keyboard' => []]);
     }
 
     /**
