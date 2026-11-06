@@ -205,13 +205,15 @@ final class ReminderCallTest extends TelegramTestCase
         // The link lives in a named button, never in the text itself.
         self::assertStringNotContainsString('docs.example', (string) $dm['text']);
 
+        // The ticket, cancel, then the guide: the same actions as the email.
         $rows = $dm['reply_markup']['inline_keyboard'];
-        self::assertSame('https://docs.example/guide', $rows[0][0]['url']);
-        self::assertStringContainsString('Crew guide', $rows[0][0]['text']);
+        self::assertStringContainsString('eventcrew/v1/ticket?token=', $rows[0][0]['url']);
         self::assertSame('l:5', $rows[1][0]['callback_data']);
+        self::assertSame('https://docs.example/guide', $rows[2][0]['url']);
+        self::assertStringContainsString('Crew guide', $rows[2][0]['text']);
     }
 
-    public function testWithoutAGuideLinkTheReminderKeepsOnlyTheCancelButton(): void
+    public function testWithoutAGuideLinkTheReminderHasTheTicketAndCancelButtons(): void
     {
         $this->wpdb->nextResults[] = [$this->taskRow(5)];
         $this->wpdb->nextResults[] = [$this->assignmentRow(3)];
@@ -220,8 +222,9 @@ final class ReminderCallTest extends TelegramTestCase
         $this->call()->run(25);
 
         $rows = ((array) $this->lastCallTo('sendMessage'))['reply_markup']['inline_keyboard'];
-        self::assertCount(1, $rows);
-        self::assertSame('l:5', $rows[0][0]['callback_data']);
+        self::assertCount(2, $rows);
+        self::assertStringContainsString('eventcrew/v1/ticket?token=', $rows[0][0]['url']);
+        self::assertSame('l:5', $rows[1][0]['callback_data']);
     }
 
     /** MessageAiText: the event's AI text when there is one, else the template's text. */
@@ -302,7 +305,9 @@ final class ReminderCallTest extends TelegramTestCase
 
         $this->call()->run(25);
 
-        self::assertStringContainsString("Can't make it? Open the bot and tap the task to cancel", $bodies[1]);
+        // The bot text, and Cancel leads to the crew page itself, not a sign-in link.
+        self::assertStringContainsString("Can't make it? Tap Cancel below.", $bodies[1]);
         self::assertStringNotContainsString('Manage my tasks', $bodies[1]);
+        self::assertStringContainsString("\nCan’t make it? Cancel: https://example.test/crew/\n", $bodies[1]);
     }
 }

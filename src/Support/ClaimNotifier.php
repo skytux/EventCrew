@@ -8,7 +8,6 @@ use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
-use EventCrew\Telegram\CalendarController;
 use EventCrew\Telegram\TelegramClient;
 
 /**
@@ -117,12 +116,13 @@ final class ClaimNotifier
             'standing' => $this->standingLine($person),
             'free_cancel' => self::freeCancelLine(),
             'about' => '' === $about ? '' : "\n\n" . $about,
+            'assignment_id' => $assignment->id,
         ];
 
         $this->dm(
             $person,
             MessageTemplates::body('signup_confirmed_dm', $context),
-            ['inline_keyboard' => $this->signupKeyboard($task->id, $assignment->id)]
+            MessageActions::replyMarkup(MessageActions::of('signup_confirmed_dm', $context, $this->mailer))
         );
 
         $this->mailer->toPerson(
@@ -131,18 +131,9 @@ final class ClaimNotifier
             MessageTemplates::subject('signup_confirmed', $context),
             MessageTemplates::body('signup_confirmed', $context),
             // The ticket first: it is the thing this email exists to hand over.
-            // The calendar hold second, since a task in someone's own calendar,
-            // with its own alarm, is the strongest nudge there is against a
-            // no-show.
-            // A person with no Telegram chat cancels on the crew page
-            // (CrewPageHelp).
-            // The crew guide last, for anyone who wants the full detail.
-            array_values(array_filter([
-                ['label' => __('Show your ticket', 'eventcrew'), 'url' => $this->mailer->ticketUrl($assignment->id)],
-                ['label' => __('Add to calendar', 'eventcrew'), 'url' => CalendarController::url($task->id)],
-                CrewPageHelp::manageAction($this->mailer, $person),
-                RoleGuide::emailAction(),
-            ]))
+            // Then the calendar hold, cancel and the crew guide: the same
+            // actions as the DM (MessageTemplates::actions()).
+            MessageActions::email(MessageActions::of('signup_confirmed', $context, $this->mailer))
         );
 
         // The "Your ticket" email, the same one ticket buyers get, after the
@@ -175,29 +166,6 @@ final class ClaimNotifier
             ),
             $hours
         );
-    }
-
-    /**
-     * The confirmation DM's links, each a named button rather than a raw
-     * address: the ticket first, since it is what gets them in; then the
-     * calendar hold, the strongest nudge there is against a no-show; then the
-     * crew guide when one is set.
-     *
-     * @return list<list<array<string, string>>>
-     */
-    private function signupKeyboard(int $taskId, int $assignmentId): array
-    {
-        $rows = [
-            [['text' => __('🎟 Show your ticket', 'eventcrew'), 'url' => $this->mailer->ticketUrl($assignmentId)]],
-            [['text' => __('📅 Add to calendar', 'eventcrew'), 'url' => CalendarController::url($taskId)]],
-        ];
-        $guide = RoleGuide::button();
-
-        if (null !== $guide) {
-            $rows[] = [$guide];
-        }
-
-        return $rows;
     }
 
     /**
@@ -246,7 +214,11 @@ final class ClaimNotifier
             'standing' => $this->standingLine($person),
         ];
 
-        $this->dm($person, MessageTemplates::body('cancel_confirmed_dm', $context));
+        $this->dm(
+            $person,
+            MessageTemplates::body('cancel_confirmed_dm', $context),
+            MessageActions::replyMarkup(MessageActions::of('cancel_confirmed_dm', $context, $this->mailer))
+        );
 
         $this->mailer->toPerson(
             $person->id,
@@ -255,7 +227,7 @@ final class ClaimNotifier
             MessageTemplates::body('cancel_confirmed', $context),
             // A cancellation is the moment someone is most likely to pick up a
             // different slot, so the board is one tap away.
-            [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
+            MessageActions::email(MessageActions::of('cancel_confirmed', $context, $this->mailer))
         );
 
         // When the night's ticket was emailed: the ticket email again with

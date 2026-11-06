@@ -184,7 +184,8 @@ final class SlotFreedNotice
         if ($prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK)) {
             $this->telegram->sendMessage(
                 (int) $person->telegramChatId,
-                DmBody::frame($person, MessageAiText::body('slot_freed_dm', $context, $task->eventPostId), true)
+                DmBody::frame($person, MessageAiText::body('slot_freed_dm', $context, $task->eventPostId), true),
+                MessageActions::replyMarkup(MessageActions::of('slot_freed_dm', $context, $this->mailer))
             );
             $sent = true;
         }
@@ -195,7 +196,7 @@ final class SlotFreedNotice
                 $person->email,
                 MessageTemplates::subject('slot_freed', $context),
                 MessageAiText::body('slot_freed', $context, $task->eventPostId),
-                [['label' => __('See open tasks', 'eventcrew'), 'url' => $this->mailer->boardUrl()]]
+                MessageActions::email(MessageActions::of('slot_freed', $context, $this->mailer))
             );
             $sent = true;
         }

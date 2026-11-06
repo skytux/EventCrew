@@ -107,7 +107,7 @@ final class ReminderCall
         $aboutBlock = '' === $about ? '' : "\n\n" . $about;
         // The texts are the Messages page templates (MessageTemplates); the
         // task's "about" line is added under them.
-        $context = ['person' => $person, 'task' => $task];
+        $context = ['person' => $person, 'task' => $task, 'assignment_id' => $assignmentId];
 
         if (null !== $person->telegramChatId) {
             $this->telegram->sendMessage(
@@ -117,13 +117,13 @@ final class ReminderCall
                     MessageAiText::body('reminder_dm', $context, $task->eventPostId) . $aboutBlock,
                     true
                 ),
-                // A one-tap out, so a "can't make it" turns into an early cancel
-                // someone else can cover rather than a silent no-show. It carries
-                // the board's own leave callback ('l:'), so tapping it runs the
-                // exact same drop - late-cancel classification, the slot-freed
-                // broadcast and the cancellation confirmation all included. The
-                // crew guide, when one is set, sits on its own row above it.
-                ['inline_keyboard' => $this->dmKeyboard($task)]
+                // The ticket, and a one-tap out, so a "can't make it" turns into
+                // an early cancel someone else can cover rather than a silent
+                // no-show. Cancel carries the board's own leave callback ('l:'),
+                // so tapping it runs the exact same drop - late-cancel
+                // classification, the slot-freed broadcast and the cancellation
+                // confirmation all included (MessageTemplates::actions()).
+                MessageActions::replyMarkup(MessageActions::of('reminder_dm', $context, $this->mailer))
             );
         }
 
@@ -133,34 +133,10 @@ final class ReminderCall
             MessageTemplates::subject('reminder', $context),
             MessageAiText::body('reminder', $context, $task->eventPostId) . $aboutBlock,
             // The ticket again, a day out: the reminder is the message people
-            // still have open when they arrive at the door. A person with no
-            // Telegram chat cancels on the crew page (CrewPageHelp).
-            array_values(array_filter([
-                ['label' => __('Show your ticket', 'eventcrew'), 'url' => $this->mailer->ticketUrl($assignmentId)],
-                CrewPageHelp::manageAction($this->mailer, $person),
-                RoleGuide::emailAction(),
-            ]))
+            // still have open when they arrive at the door. The same actions
+            // as the DM, with the bot's as "Open in Telegram" links.
+            MessageActions::email(MessageActions::of('reminder', $context, $this->mailer))
         );
-    }
-
-    /**
-     * @return list<list<array<string, string>>>
-     */
-    private function dmKeyboard(Task $task): array
-    {
-        $rows = [];
-        $guide = RoleGuide::button();
-
-        if (null !== $guide) {
-            $rows[] = [$guide];
-        }
-
-        $rows[] = [[
-            'text' => __('Can’t make it? Cancel', 'eventcrew'),
-            'callback_data' => 'l:' . $task->id,
-        ]];
-
-        return $rows;
     }
 
     /**
