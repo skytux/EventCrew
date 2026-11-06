@@ -143,7 +143,7 @@ final class BoardServiceTest extends TelegramTestCase
 
         // The two tasks side by side. No foot links (no username).
         self::assertCount(1, $rendered['keyboard']);
-        self::assertStringContainsString('📅 Sat 1 Aug · Party', $rendered['text']);
+        self::assertStringContainsString("📅 Sat 1 Aug\nParty\n", $rendered['text']);
         self::assertSame('t:1', $rendered['keyboard'][0][0]['callback_data']);
         self::assertSame('t:2', $rendered['keyboard'][0][1]['callback_data']);
     }
@@ -168,10 +168,10 @@ final class BoardServiceTest extends TelegramTestCase
 
         $text = $this->board()->render()['text'];
 
-        self::assertStringContainsString('· Ecstatic Dance · Ihmeidentekijä', $text);
+        self::assertStringContainsString("\nEcstatic Dance · Ihmeidentekijä\n", $text);
         // "Open Floor · Milla Linna, Ty Alexander & Kuu" is 44 characters.
-        self::assertStringContainsString("· Open Floor\n", $text);
-        self::assertStringContainsString('· Picnic', $text);
+        self::assertStringContainsString("\nOpen Floor\n", $text);
+        self::assertStringContainsString("\nPicnic\n", $text);
     }
 
     /**
@@ -287,8 +287,8 @@ final class BoardServiceTest extends TelegramTestCase
 
         // Two events, each headed in the text; their tasks share one row.
         self::assertCount(1, $rendered['keyboard']);
-        self::assertStringContainsString('· Party A', $rendered['text']);
-        self::assertStringContainsString('· Party B', $rendered['text']);
+        self::assertStringContainsString("\nParty A\n", $rendered['text']);
+        self::assertStringContainsString("\nParty B\n", $rendered['text']);
     }
 
     /**
@@ -955,7 +955,7 @@ final class BoardServiceTest extends TelegramTestCase
         $rendered = $this->board()->render();
         $labels = array_column($this->buttons($rendered['keyboard']), 'text');
 
-        self::assertStringContainsString('· Party A', $rendered['text']);
+        self::assertStringContainsString("\nParty A\n", $rendered['text']);
         self::assertStringNotContainsString('Party B', $rendered['text']);
         self::assertStringNotContainsString('Party C', $rendered['text']);
         // On the next event the task buttons keep the plain form.
@@ -1007,7 +1007,7 @@ final class BoardServiceTest extends TelegramTestCase
         $rendered = $this->privateRender('2026-08-08');
         $data = array_column($this->buttons($rendered['keyboard']), 'callback_data', 'text');
 
-        self::assertStringContainsString('· Party B', $rendered['text']);
+        self::assertStringContainsString("\nParty B\n", $rendered['text']);
         self::assertStringNotContainsString('Party A', $rendered['text']);
         self::assertStringNotContainsString('Party C', $rendered['text']);
         // Its task button carries the day, so a join redraws the same day.
@@ -1024,7 +1024,7 @@ final class BoardServiceTest extends TelegramTestCase
         $rendered = $this->privateRender('2026-09-30');
         $labels = array_column($this->buttons($rendered['keyboard']), 'text');
 
-        self::assertStringContainsString('· Party A', $rendered['text']);
+        self::assertStringContainsString("\nParty A\n", $rendered['text']);
         self::assertContains('📅 Sat 1 Aug ✓', $labels);
     }
 
@@ -1041,7 +1041,7 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertSame(555, $edit['chat_id']);
         self::assertSame(42, $edit['message_id']);
         $labels = array_column($this->buttons($edit['reply_markup']['inline_keyboard']), 'text');
-        self::assertStringContainsString('· Party C', $edit['text']);
+        self::assertStringContainsString("\nParty C\n", $edit['text']);
         self::assertStringNotContainsString('Party A', $edit['text']);
     }
 
@@ -1063,7 +1063,7 @@ final class BoardServiceTest extends TelegramTestCase
         $sent = $this->lastCallTo('sendMessage');
         self::assertSame(555, $sent['chat_id']);
         $data = array_column($this->buttons($sent['reply_markup']['inline_keyboard']), 'callback_data', 'text');
-        self::assertStringContainsString('· Party B', $sent['text']);
+        self::assertStringContainsString("\nParty B\n", $sent['text']);
         self::assertStringNotContainsString('Party A', $sent['text']);
         self::assertSame('t:2:2026-08-08', $data['🎈 Decorate'] ?? null);
         self::assertSame('bd:2026-08-01', $data['◀ Sat 1 Aug'] ?? null);
@@ -1115,7 +1115,7 @@ final class BoardServiceTest extends TelegramTestCase
 
         $sent = $this->lastCallTo('sendMessage');
         self::assertSame(555, $sent['chat_id']);
-        self::assertStringContainsString('· Party B', $sent['text']);
+        self::assertStringContainsString("\nParty B\n", $sent['text']);
         self::assertFalse($this->board()->openDay(555, 'x'));
     }
 
@@ -1150,7 +1150,7 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertSame('You’re in! See you there.', $this->lastCallTo('answerCallbackQuery')['text']);
         self::assertSame(['answerCallbackQuery', 'editMessageText'], $this->calledMethods());
         $text = (string) $this->lastCallTo('editMessageText')['text'];
-        self::assertStringContainsString('· Party A', $text);
+        self::assertStringContainsString("\nParty A\n", $text);
         self::assertStringNotContainsString('Party B', $text);
     }
 
@@ -1170,9 +1170,9 @@ final class BoardServiceTest extends TelegramTestCase
         $edits = array_values(array_filter($this->telegramCalls, static fn (array $c): bool => 'editMessageText' === $c['method']));
         self::assertCount(2, $edits);
         self::assertSame(100, $edits[0]['body']['chat_id']);
-        self::assertStringContainsString('· Party A', (string) $edits[0]['body']['text']);
+        self::assertStringContainsString("\nParty A\n", (string) $edits[0]['body']['text']);
         self::assertSame(555, $edits[1]['body']['chat_id']);
-        self::assertStringContainsString('· Party B', (string) $edits[1]['body']['text']);
+        self::assertStringContainsString("\nParty B\n", (string) $edits[1]['body']['text']);
     }
 
     /**
@@ -1192,7 +1192,7 @@ final class BoardServiceTest extends TelegramTestCase
         $this->board()->onJoinLeave($query);
 
         self::assertSame('You’re in! See you there.', $this->lastCallTo('answerCallbackQuery')['text']);
-        self::assertStringContainsString('· Party A', (string) $this->lastCallTo('editMessageText')['text']);
+        self::assertStringContainsString("\nParty A\n", (string) $this->lastCallTo('editMessageText')['text']);
     }
 
     public function testTheAutomaticRedrawGoesBackToTheNextEvent(): void
@@ -1203,7 +1203,7 @@ final class BoardServiceTest extends TelegramTestCase
         $this->board()->refresh();
 
         $text = (string) $this->lastCallTo('editMessageText')['text'];
-        self::assertStringContainsString('· Party A', $text);
+        self::assertStringContainsString("\nParty A\n", $text);
         self::assertStringNotContainsString('Party B', $text);
     }
 
