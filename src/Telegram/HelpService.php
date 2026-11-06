@@ -37,7 +37,11 @@ final class HelpService
     ) {
     }
 
-    public function onHelp(int $telegramUserId, int $chatId, bool $isPrivate = true): void
+    /**
+     * @param bool $fromMe True for the ❓ Help button under /me, which puts a
+     *                     👤 My info button under the list.
+     */
+    public function onHelp(int $telegramUserId, int $chatId, bool $isPrivate = true, bool $fromMe = false): void
     {
         if (! $isPrivate) {
             $this->telegram->sendMessage(
@@ -65,7 +69,11 @@ final class HelpService
             $sections[] = $this->organizers();
         }
 
-        $this->telegram->sendMessage($chatId, implode("\n\n", $sections));
+        $this->telegram->sendMessage(
+            $chatId,
+            implode("\n\n", $sections),
+            $fromMe ? ['inline_keyboard' => [MenuButtons::backRow()]] : null
+        );
     }
 
     /**
@@ -147,6 +155,24 @@ final class HelpService
         $this->sentDmNote($chatId, $isPrivate);
     }
 
+    /**
+     * The 🛠 Admin button under /me (organizers only, Lou 2026-11-07): the
+     * roster, door and people screens, in the DM.
+     */
+    public function onAdmin(int $telegramUserId, int $chatId, bool $isPrivate): void
+    {
+        $person = 0 !== $telegramUserId ? $this->people->findByTelegramUserId($telegramUserId) : null;
+
+        if (null === $person || ! $person->isOrganizer) {
+            $this->telegram->sendMessage($chatId, __('Only organizers can open this.', 'eventcrew'));
+
+            return;
+        }
+
+        $this->telegram->sendMessage($telegramUserId, '🛠 ' . __('Admin', 'eventcrew'), MenuButtons::admin());
+        $this->sentDmNote($chatId, $isPrivate);
+    }
+
     /** Stops the spinner on a tapped MenuButtons button. */
     public function answerTap(string $callbackQueryId): void
     {
@@ -198,11 +224,10 @@ final class HelpService
         return implode("\n", [
             __('Everyone', 'eventcrew'),
             __('/board – the open tasks; in a private chat also the tasks of your roles', 'eventcrew'),
-            __('/me – your tasks, credits and standing', 'eventcrew'),
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            __('   buttons: 🎟 free-entry ticket, 🔁 take over a task, 🔑 web sign-in, 🔔 notifications, 🌐 language', 'eventcrew'),
-            __('/me history – your past tasks', 'eventcrew'),
-            __('/me tickets – your tickets for coming nights', 'eventcrew'),
+            __('/me – your standing, credits and coming tasks', 'eventcrew'),
+            __('/tasks – cancel, take over a task, past tasks', 'eventcrew'),
+            __('/tickets – your tickets, free-entry ticket', 'eventcrew'),
+            __('/settings – notifications, language, web sign-in', 'eventcrew'),
             __('/help – this list', 'eventcrew'),
         ]);
     }

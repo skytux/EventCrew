@@ -50,7 +50,8 @@ final class CommandMenu
 
     private const GROUP = ['board', 'help'];
 
-    private const EVERYONE = ['board', 'me', 'help'];
+    /** /tasks, /tickets and /settings: the screens under /me (Lou 2026-11-07). */
+    private const EVERYONE = ['board', 'me', 'tasks', 'tickets', 'settings', 'help'];
 
     private const WELCOME_CREW = ['roster', 'door'];
 
@@ -281,6 +282,9 @@ final class CommandMenu
             'help' => __('The commands you can use', 'eventcrew'),
             'board' => __('Show the open tasks', 'eventcrew'),
             'me' => __('Your tasks, credits, ticket, settings', 'eventcrew'),
+            'tasks' => __('Your coming tasks; cancel or take over one', 'eventcrew'),
+            'tickets' => __('Your tickets and free-entry ticket', 'eventcrew'),
+            'settings' => __('Notifications, language, web sign-in', 'eventcrew'),
             'roster' => __('Who works a night; mark done, late or no-show', 'eventcrew'),
             'door' => __('The door list, guest list and sales desk', 'eventcrew'),
             'people' => __('Credits, roles, organizers and passes', 'eventcrew'),

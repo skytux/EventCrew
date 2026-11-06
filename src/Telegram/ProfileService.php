@@ -10,16 +10,16 @@ use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\Dates;
 use EventCrew\Support\StandingCalculator;
-use EventCrew\Support\StandingExplainer;
 use EventCrew\Support\TicketList;
 
 /**
- * /me, /me history and /me tickets: a person's own standing, what they're
- * signed up for next, everything they've done and their tickets - sent to
- * their private chat. /me has buttons for the actions that used to be
- * commands of their own (MenuButtons::me()).
+ * /me (My info), /tasks, /tickets, /settings and /me history: a person's own
+ * standing, what they're signed up for next, everything they've done and
+ * their tickets - sent to their private chat. My info is only the facts, with
+ * a button for each of the other screens (MenuButtons::me(), Lou 2026-11-07).
  *
  * The one self-service window into the reputation and credits the organizer
  * sees on the People list - read-only, so it exposes what someone has earned
@@ -58,6 +58,8 @@ final class ProfileService
 
         $standing = $this->standing->for($person->id);
 
+        // Only the facts, no explanations (Lou 2026-11-07): name and standing,
+        // the counts, and the coming tasks.
         $lines = [
             sprintf(
                 /* translators: 1: name, 2: standing level and score */
@@ -71,44 +73,66 @@ final class ProfileService
                 $standing->completedCount,
                 $standing->creditBalance
             ),
+            '',
         ];
 
-        if ($standing->creditBalance > 0) {
-            $lines[] = sprintf(
-                /* translators: %d: number of free-entry credits the person holds */
-                _n(
-                    'You have %d free-entry credit — tap 🎟 Free-entry ticket below to spend it.',
-                    'You have %d free-entry credits — tap 🎟 Free-entry ticket below to spend one.',
-                    $standing->creditBalance,
-                    'eventcrew'
-                ),
-                $standing->creditBalance
-            );
+        $lines = array_merge($lines, $this->comingBlock($this->upcoming($person->id)[0]));
+
+        $this->deliver(
+            $telegramUserId,
+            $chatId,
+            $isPrivate,
+            implode("\n", $lines),
+            MenuButtons::me($person->isOrganizer)
+        );
+    }
+
+    /**
+     * /tasks and the 📋 Tasks button under /me: the coming tasks, each with a
+     * cancel button (the board has none for a full task), then Take over a
+     * task and Past tasks (Lou 2026-11-07).
+     *
+     * @param bool $isPrivate See onMe(); the answer is a DM either way.
+     */
+    public function onMyTasks(int $telegramUserId, int $chatId, bool $isPrivate = true): void
+    {
+        $person = $this->people->findByTelegramUserId($telegramUserId);
+
+        if (null === $person || ! $person->isEmailVerified()) {
+            $this->telegram->sendMessage($chatId, SetupNudge::text(! $isPrivate));
+
+            return;
         }
 
-        [$upcoming, $cancelRows] = $this->upcoming($person->id);
+        [$coming, $cancelRows] = $this->upcoming($person->id);
+        $lines = array_merge(['📋 ' . __('Tasks', 'eventcrew')], $this->comingBlock($coming));
 
-        $lines[] = '';
+        $this->deliver(
+            $telegramUserId,
+            $chatId,
+            $isPrivate,
+            implode("\n", $lines),
+            ['inline_keyboard' => array_merge($cancelRows, MenuButtons::tasksRows())]
+        );
+    }
 
-        if ([] !== $upcoming) {
-            $lines[] = __('Coming up:', 'eventcrew');
-            $lines = array_merge($lines, $upcoming);
-        } else {
-            $lines[] = __('Nothing on your calendar yet — tap a task on the board to sign up.', 'eventcrew');
+    /**
+     * /settings and the ⚙️ Settings button under /me: notifications, language
+     * and web sign-in (Lou 2026-11-07).
+     *
+     * @param bool $isPrivate See onMe(); the answer is a DM either way.
+     */
+    public function onSettings(int $telegramUserId, int $chatId, bool $isPrivate = true): void
+    {
+        $person = $this->people->findByTelegramUserId($telegramUserId);
+
+        if (null === $person || ! $person->isEmailVerified()) {
+            $this->telegram->sendMessage($chatId, SetupNudge::text(! $isPrivate));
+
+            return;
         }
 
-        $lines[] = '';
-        $lines = array_merge($lines, StandingExplainer::lines());
-
-        $lines[] = '';
-        $lines[] = __('Send /me history to see everything you’ve done.', 'eventcrew');
-
-        // A cancel button per coming task above the menu (Lou 2026-11-07):
-        // the board has no button for a full task, so this is where to cancel.
-        $keyboard = MenuButtons::me();
-        $keyboard['inline_keyboard'] = array_merge($cancelRows, $keyboard['inline_keyboard']);
-
-        $this->deliver($telegramUserId, $chatId, $isPrivate, implode("\n", $lines), $keyboard);
+        $this->deliver($telegramUserId, $chatId, $isPrivate, '⚙️ ' . __('Settings', 'eventcrew'), MenuButtons::settings());
     }
 
     /**
@@ -130,10 +154,13 @@ final class ProfileService
             ? __('No past tasks yet — your history starts once you’ve worked one.', 'eventcrew')
             : implode("\n", array_merge([__('Your past tasks:', 'eventcrew')], $past));
 
-        $this->deliver($telegramUserId, $chatId, $isPrivate, $body);
+        $this->deliver($telegramUserId, $chatId, $isPrivate, $body, ['inline_keyboard' => [MenuButtons::backRow()]]);
     }
 
     /**
+     * /tickets, /me tickets and the 🎟 Tickets button under /me: the person's
+     * tickets, each upcoming one a button, then 🎟 Free-entry ticket.
+     *
      * @param bool $isPrivate See onMe(); the answer is a DM either way.
      */
     public function onMyTickets(int $telegramUserId, int $chatId, bool $isPrivate = true): void
@@ -180,13 +207,13 @@ final class ProfileService
             $chatId,
             $isPrivate,
             implode("\n", $lines),
-            [] === $buttons ? null : ['inline_keyboard' => $buttons]
+            ['inline_keyboard' => array_merge($buttons, MenuButtons::ticketsRows())]
         );
     }
 
     /**
      * DMs the person a one-time link that signs them in to the web board -
-     * asked with the 🔑 Web sign-in button under /me. It is the same single-use, 30-minute magic link the web
+     * asked with the 🔑 Web sign-in button under /settings. It is the same single-use, 30-minute magic link the web
      * sign-in form and the email footer issue (purpose 'web_login', consumed on
      * the signup page via ?eventcrew_login), so a Telegram member can hop to the
      * web without typing their email. The link is personal, so it only ever goes
@@ -290,7 +317,8 @@ final class ProfileService
         // historyFor is newest-first; upcoming reads better soonest-first.
         foreach (array_reverse($entries) as $entry) {
             $task = $this->tasks->find($entry['assignment']->taskId);
-            $lines[] = $this->line($entry, $task);
+            // "Signed up" goes without saying; tonight's "arrived" does not.
+            $lines[] = $this->line($entry, $task, AssignmentStatus::SIGNED_UP !== $entry['assignment']->status);
 
             if (null !== $task) {
                 $rows[] = [[
@@ -306,6 +334,19 @@ final class ProfileService
         }
 
         return [$lines, $rows];
+    }
+
+    /**
+     * "Coming up:" and the coming task lines, or "No coming tasks.".
+     *
+     * @param array<int, string> $coming
+     * @return array<int, string>
+     */
+    private function comingBlock(array $coming): array
+    {
+        return [] === $coming
+            ? [__('No coming tasks.', 'eventcrew')]
+            : array_merge([__('Coming up:', 'eventcrew')], $coming);
     }
 
     /**
@@ -328,12 +369,13 @@ final class ProfileService
     }
 
     /**
-     * One assignment as a "• date — role (event): status" line.
+     * One assignment as a "• date — role (event): status" line; a coming
+     * task leaves out a plain "signed up".
      *
      * @param array{assignment: \EventCrew\Models\Assignment, task_date: string} $entry
      * @param Task|false|null $task The task when already looked up; false = look it up.
      */
-    private function line(array $entry, Task|false|null $task = false): string
+    private function line(array $entry, Task|false|null $task = false, bool $withStatus = true): string
     {
         $assignment = $entry['assignment'];
         $task = false === $task ? $this->tasks->find($assignment->taskId) : $task;
@@ -342,11 +384,8 @@ final class ProfileService
             ? __('a task', 'eventcrew')
             : sprintf('%s (%s)', $task->roleLabel(), $task->eventName());
 
-        return sprintf(
-            '• %s — %s: %s',
-            Dates::dayLabel((string) $entry['task_date']),
-            $what,
-            $assignment->statusLabel()
-        );
+        $line = sprintf('• %s — %s', Dates::dayLabel((string) $entry['task_date']), $what);
+
+        return $withStatus ? $line . ': ' . $assignment->statusLabel() : $line;
     }
 }

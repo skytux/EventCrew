@@ -771,10 +771,6 @@ msgstr "Listalla ei ole ketään."
 msgid "Nobody signed up."
 msgstr "Kukaan ei ole ilmoittautunut."
 
-#: src/Telegram/ProfileService.php:96
-msgid "Nothing on your calendar yet — tap a task on the board to sign up."
-msgstr "Kalenterissasi ei ole vielä mitään — ilmoittaudu napauttamalla tehtävää taululla."
-
 #: src/Telegram/ManageController.php:128 src/Telegram/PermissionService.php:231
 msgid "Nothing to do."
 msgstr "Ei tehtävää."
@@ -2857,18 +2853,6 @@ msgid_plural "%d people in all"
 msgstr[0] "yhteensä %d henki"
 msgstr[1] "yhteensä %d henkeä"
 
-#: src/Telegram/HelpService.php:105
-msgid "/me history – your past tasks"
-msgstr "/me history – menneet tehtäväsi"
-
-#: src/Telegram/HelpService.php:106
-msgid "/me tickets – your tickets for coming nights"
-msgstr "/me tickets – lippusi tuleviin iltoihin"
-
-#: src/Telegram/HelpService.php:104
-msgid "/me – your tasks, credits and standing"
-msgstr "/me – tehtäväsi, vapaalippusi ja luotettavuutesi"
-
 #: src/Telegram/HelpService.php:121
 msgid "/roster [date] – who works that night; the sales desk marks 👋 arrived, organizers 👋 arrived, ✓ done, ⏰ late, ✗ no-show"
 msgstr "/roster [päivä] – kuka on töissä sinä iltana; myyntipiste merkitsee 👋 saapui, järjestäjät 👋 saapui, ✓ tehty, ⏰ myöhässä, ✗ ei saapunut"
@@ -2930,10 +2914,6 @@ msgstr "Järjestäjät"
 #. translators: %s: person's name
 msgid "Roles for %s. Tap a role to give it or take it away. ✅ = they have it.\n🎟 gives a one-time pass to sign up while at risk. It only gives a pass; it cannot take one away."
 msgstr "Henkilön %s roolit. Napauta roolia antaaksesi tai poistaaksesi sen. ✅ = hänellä on se.\n🎟 antaa kertaluontoisen luvan ilmoittautua riskitasolla. Se vain antaa luvan; se ei voi poistaa sitä."
-
-#: src/Telegram/ProfileService.php:102
-msgid "Send /me history to see everything you’ve done."
-msgstr "Lähetä /me history, niin näet kaiken, mitä olet tehnyt."
 
 #: src/Telegram/HelpService.php:79
 msgid "Send me /help in a private chat for more."
@@ -3011,9 +2991,6 @@ msgstr "Vain %s"
 
 msgid "Website"
 msgstr "Verkkosivusto"
-
-msgid "   buttons: 🎟 free-entry ticket, 🔁 take over a task, 🔑 web sign-in, 🔔 notifications, 🌐 language"
-msgstr "   painikkeet: 🎟 vapaalippu, 🔁 ota tehtävä, 🔑 verkkokirjautuminen, 🔔 ilmoitukset, 🌐 kieli"
 
 msgid "Give them the role"
 msgstr "Anna rooli"
@@ -3208,11 +3185,6 @@ msgstr "Vierasta numero %1$d ei ole päivälle %2$s Lähetä /door ja napauta �
 
 msgid "To see the list send /door and tap 👥 Guest list, or /door 1.8. for another night."
 msgstr "Näet listan lähettämällä /door ja napauttamalla 👥 Vieraslista, tai /door 1.8. toiselle illalle."
-
-msgid "You have %d free-entry credit — tap 🎟 Free-entry ticket below to spend it."
-msgid_plural "You have %d free-entry credits — tap 🎟 Free-entry ticket below to spend one."
-msgstr[0] "Sinulla on %d vapaalippu — napauta alla 🎟 Vapaalippu, niin käytät sen."
-msgstr[1] "Sinulla on %d vapaalippua — napauta alla 🎟 Vapaalippu, niin käytät yhden."
 
 msgid "🎁 You’ve been given %d free-entry credit. Tap 🎟 Free-entry ticket below to spend it on an upcoming event."
 msgid_plural "🎁 You’ve been given %d free-entry credits. Tap 🎟 Free-entry ticket below to spend them on upcoming events."
@@ -8606,3 +8578,43 @@ msgstr "📅 Lisää tehtäviä"
 
 msgid "There are no task descriptions yet."
 msgstr "Tehtävien kuvauksia ei ole vielä."
+
+#: src/Telegram/MenuButtons.php
+msgid "Past tasks"
+msgstr "Menneet tehtävät"
+
+#: src/Telegram/ProfileService.php
+msgid "No coming tasks."
+msgstr "Ei tulevia tehtäviä."
+
+#: src/Telegram/HelpService.php
+msgid "Only organizers can open this."
+msgstr "Vain järjestäjät voivat avata tämän."
+
+#: src/Telegram/HelpService.php
+msgid "/me – your standing, credits and coming tasks"
+msgstr "/me – luotettavuutesi, vapaaliput ja tulevat tehtävät"
+
+#: src/Telegram/HelpService.php
+msgid "/tasks – cancel, take over a task, past tasks"
+msgstr "/tasks – peru, ota tehtävä, menneet tehtävät"
+
+#: src/Telegram/HelpService.php
+msgid "/tickets – your tickets, free-entry ticket"
+msgstr "/tickets – lippusi, vapaalippu"
+
+#: src/Telegram/HelpService.php
+msgid "/settings – notifications, language, web sign-in"
+msgstr "/settings – ilmoitukset, kieli, verkkokirjautuminen"
+
+#: src/Telegram/CommandMenu.php
+msgid "Your coming tasks; cancel or take over one"
+msgstr "Tulevat tehtäväsi; peru tai ota tehtävä"
+
+#: src/Telegram/CommandMenu.php
+msgid "Your tickets and free-entry ticket"
+msgstr "Lippusi ja vapaalippu"
+
+#: src/Telegram/CommandMenu.php
+msgid "Notifications, language, web sign-in"
+msgstr "Ilmoitukset, kieli, verkkokirjautuminen"

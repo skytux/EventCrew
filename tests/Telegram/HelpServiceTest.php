@@ -94,7 +94,7 @@ final class HelpServiceTest extends TelegramTestCase
 
         $text = $this->lastText();
         self::assertStringStartsWith("Test Site bot – commands\n\nEveryone\n/board – the open tasks", $text);
-        self::assertStringContainsString('buttons: 🎟 free-entry ticket, 🔁 take over a task', $text);
+        self::assertStringContainsString('/tasks – cancel, take over a task, past tasks', $text);
         self::assertStringNotContainsString('Welcome crew', $text);
         self::assertStringNotContainsString('Organizers', $text);
     }
@@ -233,6 +233,75 @@ final class HelpServiceTest extends TelegramTestCase
         self::assertStringStartsWith('🎟 Your tickets', $this->lastText());
     }
 
+    /**
+     * Lou 2026-11-07: /tasks, /tickets and /settings are commands of their
+     * own, the same screens as the buttons under /me, each with a way back.
+     */
+    public function testTheScreensUnderMeAreCommandsToo(): void
+    {
+        $this->person();
+        $this->send('/settings');
+        self::assertSame('⚙️ Settings', $this->lastText());
+        self::assertSame(['mn:notif', 'mn:lang', 'mn:web', 'mn:me'], $this->lastButtons());
+
+        $this->person();
+        $this->send('/tickets');
+        self::assertStringStartsWith('🎟 Your tickets', $this->lastText());
+        self::assertSame(['mn:ticket', 'mn:me'], $this->lastButtons());
+
+        $this->person();
+        $this->send('/tasks');
+        self::assertSame("📋 Tasks\nNo coming tasks.", $this->lastText());
+        self::assertSame(['mn:replace', 'mn:hist', 'mn:me'], $this->lastButtons());
+    }
+
+    /** The Tasks screen's deep link is "mytasks": "tasks" is the board's Task info. */
+    public function testTheTasksScreenHasItsOwnStartVerb(): void
+    {
+        $this->person();
+        $this->send('/start mytasks');
+
+        self::assertStringStartsWith('📋 Tasks', $this->lastText());
+    }
+
+    public function testTheAdminButtonOpensTheOrganizerScreens(): void
+    {
+        $this->person(true);
+        $this->tapMenu('mn:admin');
+
+        self::assertSame('🛠 Admin', $this->lastText());
+        self::assertSame(['mn:roster', 'mn:door', 'mn:people', 'mn:me'], $this->lastButtons());
+    }
+
+    public function testTheAdminButtonIsRefusedToAMember(): void
+    {
+        $this->person();
+        $this->tapMenu('mn:admin');
+
+        self::assertSame('Only organizers can open this.', $this->lastText());
+    }
+
+    public function testTheHelpButtonUnderMeSendsHelpWithAWayBack(): void
+    {
+        $this->person();
+        $this->wpdb->nextCols[] = []; // nearbyDates
+
+        $this->tapMenu('mn:help');
+
+        self::assertStringStartsWith('Test Site bot – commands', $this->lastText());
+        self::assertSame(['mn:me'], $this->lastButtons());
+    }
+
+    private function tapMenu(string $data): void
+    {
+        $this->updateRouter()->dispatch(['callback_query' => [
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'message' => ['chat' => ['id' => 555, 'type' => 'private']],
+            'data' => $data,
+        ]]);
+    }
+
     private function tapCancel(): void
     {
         $this->updateRouter()->dispatch(['callback_query' => [
@@ -321,7 +390,7 @@ final class HelpServiceTest extends TelegramTestCase
 
         $this->send('/me');
 
-        self::assertSame(['mn:ticket', 'mn:replace', 'mn:web', 'mn:notif', 'mn:lang'], $this->lastButtons());
+        self::assertSame(['mn:tix', 'mn:mytasks', 'mn:set', 'mn:help'], $this->lastButtons());
     }
 
     public function testRosterTakesADateAndExplainsTheMarks(): void

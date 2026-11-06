@@ -88,10 +88,11 @@ final class ProfileServiceTest extends TelegramTestCase
     }
 
     /**
-     * Lou 2026-11-07: My info has a cancel button for each coming task, above
-     * the menu. It sends the board's leave tap, which asks before cancelling.
+     * Lou 2026-11-07: the Tasks screen has a cancel button for each coming
+     * task, above Take over a task. It sends the board's leave tap, which
+     * asks before cancelling.
      */
-    public function testMeHasACancelButtonForEachComingTask(): void
+    public function testTasksHasACancelButtonForEachComingTask(): void
     {
         Functions\when('current_time')->justReturn('2026-07-10');
         $this->wpdb->nextRows[] = [
@@ -106,20 +107,69 @@ final class ProfileServiceTest extends TelegramTestCase
             ['id' => 1, 'task_id' => 1, 'person_id' => 7, 'status' => 'signed_up', 'task_date' => '2026-07-20'],
             ['id' => 3, 'task_id' => 3, 'person_id' => 7, 'status' => 'completed', 'task_date' => '2026-07-03'],
         ];
-        $this->wpdb->nextResults[] = $history; // standing
-        $this->wpdb->nextVars[] = 0; // redemptions
         $this->wpdb->nextResults[] = $history; // coming tasks
         $this->wpdb->nextRows[] = $this->taskRow(1);
         $this->wpdb->nextRows[] = ['id' => 2, 'task_date' => '2026-07-27'] + $this->taskRow(2);
 
-        $this->service()->onMe(555, 555);
+        $this->service()->onMyTasks(555, 555);
 
-        $rows = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
+        $dm = $this->lastCallTo('sendMessage');
+        self::assertSame(
+            "📋 Tasks\nComing up:\n• Mon 20 Jul — Decorate (Dance)\n• Mon 27 Jul — Decorate (Dance)",
+            $dm['text']
+        );
+        $rows = $dm['reply_markup']['inline_keyboard'];
         self::assertSame('✖️ Cancel Decorate, Mon 20 Jul', $rows[0][0]['text']);
         self::assertSame('l:1', $rows[0][0]['callback_data']);
         self::assertSame('✖️ Cancel Decorate, Mon 27 Jul', $rows[1][0]['text']);
         self::assertSame('l:2', $rows[1][0]['callback_data']);
-        self::assertSame('mn:ticket', $rows[2][0]['callback_data']);
+        self::assertSame(['mn:replace', 'mn:hist', 'mn:me'], array_column(array_merge(...array_slice($rows, 2)), 'callback_data'));
+    }
+
+    /**
+     * Lou 2026-11-07: My info is only the facts - no explanations - and one
+     * full-width button per row: Tickets, Tasks, Settings, Help, and Admin
+     * at the bottom for an organizer.
+     */
+    public function testMeIsOnlyTheFactsWithOneButtonPerRow(): void
+    {
+        Functions\when('current_time')->justReturn('2026-07-10');
+
+        foreach ([false, true] as $organizer) {
+            $this->wpdb->nextRows[] = [
+                'id' => 7,
+                'email' => 'sam@example.com',
+                'display_name' => 'Sam',
+                'email_verified_at' => '2026-07-01 00:00:00',
+                'is_organizer' => $organizer ? 1 : 0,
+                'telegram_user_id' => 555,
+            ];
+            $history = [
+                ['id' => 1, 'task_id' => 1, 'person_id' => 7, 'status' => 'signed_up', 'task_date' => '2026-07-20'],
+            ];
+            $this->wpdb->nextResults[] = $history; // standing
+            $this->wpdb->nextVars[] = 0; // redemptions
+            $this->wpdb->nextResults[] = $history; // coming tasks
+            $this->wpdb->nextRows[] = $this->taskRow(1);
+
+            $this->service()->onMe(555, 555);
+
+            $dm = $this->lastCallTo('sendMessage');
+            $lines = explode("\n", (string) $dm['text']);
+            self::assertStringStartsWith('Sam — ', $lines[0]);
+            self::assertSame('Completed tasks: 0 · Free-entry credits: 0', $lines[1]);
+            self::assertSame(['', 'Coming up:', '• Mon 20 Jul — Decorate (Dance)'], array_slice($lines, 2));
+
+            $rows = $dm['reply_markup']['inline_keyboard'];
+            $expected = ['mn:tix', 'mn:mytasks', 'mn:set', 'mn:help'];
+
+            if ($organizer) {
+                $expected[] = 'mn:admin';
+            }
+
+            self::assertSame($expected, array_map(static fn (array $row): string => $row[0]['callback_data'], $rows));
+            self::assertSame([1], array_unique(array_map('count', $rows)));
+        }
     }
 
     public function testMeAsksAnUnknownUserToSetUpFirst(): void
@@ -223,8 +273,11 @@ final class ProfileServiceTest extends TelegramTestCase
         self::assertStringNotContainsString('token=', $text);
 
         // Only the upcoming ticket gets a button; the past one is just listed.
+        // Then 🎟 Free-entry ticket and the way back to My info.
         $rows = $dm['reply_markup']['inline_keyboard'];
-        self::assertCount(1, $rows);
+        self::assertCount(3, $rows);
+        self::assertSame('mn:ticket', $rows[1][0]['callback_data']);
+        self::assertSame('mn:me', $rows[2][0]['callback_data']);
         self::assertStringContainsString('2026-07-25', $rows[0][0]['text']);
         self::assertStringContainsString('eventcrew/v1/ticket?token=', $rows[0][0]['url']);
     }

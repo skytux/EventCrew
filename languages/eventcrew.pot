@@ -9,10 +9,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Domain: eventcrew\n"
 
-#: src/Telegram/HelpService.php:203
-msgid "   buttons: 🎟 free-entry ticket, 🔁 take over a task, 🔑 web sign-in, 🔔 notifications, 🌐 language"
-msgstr ""
-
 #: templates/admin/people.php:182
 msgid " and "
 msgstr ""
@@ -460,18 +456,6 @@ msgstr ""
 
 #: src/Telegram/HelpService.php:206
 msgid "/help – this list"
-msgstr ""
-
-#: src/Telegram/HelpService.php:204
-msgid "/me history – your past tasks"
-msgstr ""
-
-#: src/Telegram/HelpService.php:205
-msgid "/me tickets – your tickets for coming nights"
-msgstr ""
-
-#: src/Telegram/HelpService.php:201
-msgid "/me – your tasks, credits and standing"
 msgstr ""
 
 #: src/Telegram/NewsletterCommand.php:86
@@ -4098,10 +4082,6 @@ msgstr ""
 msgid "Nothing logged recently. Errors from the bot, mail and boot will appear here."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:97
-msgid "Nothing on your calendar yet — tap a task on the board to sign up."
-msgstr ""
-
 #: src/Telegram/ManageController.php:245
 msgid "Nothing to do."
 msgstr ""
@@ -5502,10 +5482,6 @@ msgstr ""
 
 #: src/Support/TicketMail.php:1468
 msgid "See you on the dancefloor"
-msgstr ""
-
-#: src/Telegram/ProfileService.php:104
-msgid "Send /me history to see everything you’ve done."
 msgstr ""
 
 #: src/Telegram/SayCommand.php:67
@@ -9285,13 +9261,6 @@ msgstr ""
 msgid "You get this email because you joined the next events announcement. Change your details or leave the announcement"
 msgstr ""
 
-#: src/Telegram/ProfileService.php:79
-#. translators: %d: number of free-entry credits the person holds
-msgid "You have %d free-entry credit — tap 🎟 Free-entry ticket below to spend it."
-msgid_plural "You have %d free-entry credits — tap 🎟 Free-entry ticket below to spend one."
-msgstr[0] ""
-msgstr[1] ""
-
 #: src/Telegram/TicketRedemptionService.php:121 src/Telegram/TicketRedemptionService.php:158
 #. translators: %d: number of free-entry credits
 msgid "You have %d free-entry credit. Pick an event to spend it on:"
@@ -10270,3 +10239,42 @@ msgstr ""
 msgid "🧭 Organizer guide ↓"
 msgstr ""
 
+#: src/Telegram/MenuButtons.php
+msgid "Past tasks"
+msgstr ""
+
+#: src/Telegram/ProfileService.php
+msgid "No coming tasks."
+msgstr ""
+
+#: src/Telegram/HelpService.php
+msgid "Only organizers can open this."
+msgstr ""
+
+#: src/Telegram/HelpService.php
+msgid "/me – your standing, credits and coming tasks"
+msgstr ""
+
+#: src/Telegram/HelpService.php
+msgid "/tasks – cancel, take over a task, past tasks"
+msgstr ""
+
+#: src/Telegram/HelpService.php
+msgid "/tickets – your tickets, free-entry ticket"
+msgstr ""
+
+#: src/Telegram/HelpService.php
+msgid "/settings – notifications, language, web sign-in"
+msgstr ""
+
+#: src/Telegram/CommandMenu.php
+msgid "Your coming tasks; cancel or take over one"
+msgstr ""
+
+#: src/Telegram/CommandMenu.php
+msgid "Your tickets and free-entry ticket"
+msgstr ""
+
+#: src/Telegram/CommandMenu.php
+msgid "Notifications, language, web sign-in"
+msgstr ""
