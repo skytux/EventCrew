@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.141
+Stable tag: 1.140.142
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.142 =
+The late cancel and no-show messages show your standing and the open tasks; no-show offers "Not right? Tell us".
 
 = 1.140.141 =
 Cancel no longer cancels in one tap: it asks first, says whether the cancel is late and offers to find someone to take the task.
@@ -1637,6 +1640,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.142 =
+No settings change.
 
 = 1.140.141 =
 No settings change.
