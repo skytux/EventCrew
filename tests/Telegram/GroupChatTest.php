@@ -208,4 +208,62 @@ final class GroupChatTest extends TelegramTestCase
         self::assertNull($this->client()->editMessageText(-900, 5, 'Hello'));
         self::assertSame(1, $sent);
     }
+
+    public function testATapInAGroupStoresItWhenNoGroupIsKnown(): void
+    {
+        GroupChat::learn([
+            'callback_query' => [
+                'id' => 'q',
+                'data' => 'bd:',
+                'message' => ['message_id' => 5, 'chat' => ['id' => -1001234, 'type' => 'supergroup']],
+            ],
+        ]);
+
+        self::assertSame(-1001234, $this->options[GroupChat::OPTION]);
+    }
+
+    public function testAnyGroupMessageThroughTheRouterStoresTheGroupWhenNoneIsKnown(): void
+    {
+        // Someone joining: a service message, delivered under privacy mode.
+        $this->updateRouter()->dispatch([
+            'message' => [
+                'chat' => ['id' => -1005555, 'type' => 'supergroup'],
+                'from' => ['id' => 42],
+                'new_chat_members' => [['id' => 42]],
+            ],
+        ]);
+
+        self::assertSame(-1005555, $this->options[GroupChat::OPTION]);
+    }
+
+    public function testAKnownGroupIsNotReplacedByAnotherGroupsUpdate(): void
+    {
+        $this->options[GroupChat::OPTION] = -900;
+
+        GroupChat::learn(['message' => ['chat' => ['id' => -1005555, 'type' => 'supergroup'], 'text' => 'hi']]);
+
+        self::assertSame(-900, $this->options[GroupChat::OPTION]);
+    }
+
+    public function testABoardChatAlsoCountsAsAKnownGroup(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => -900, 'message_id' => 3];
+
+        GroupChat::learn(['message' => ['chat' => ['id' => -1005555, 'type' => 'supergroup'], 'text' => 'hi']]);
+
+        self::assertArrayNotHasKey(GroupChat::OPTION, $this->options);
+    }
+
+    public function testPrivateChatsAndTheBotsOwnMembershipAreNotLearned(): void
+    {
+        GroupChat::learn(['message' => ['chat' => ['id' => 42, 'type' => 'private'], 'text' => '/start']]);
+        GroupChat::learn([
+            'my_chat_member' => [
+                'chat' => ['id' => -1005555, 'type' => 'supergroup'],
+                'new_chat_member' => ['status' => 'left'],
+            ],
+        ]);
+
+        self::assertArrayNotHasKey(GroupChat::OPTION, $this->options);
+    }
 }

@@ -93,10 +93,15 @@ final class GroupChat
     }
 
     /**
-     * Reads the group from an update the bot gets anyway: a message saying
-     * the group moved to a supergroup (migrate_to_chat_id in the old chat,
-     * migrate_from_chat_id in the new one) moves the group. Telegram sends
-     * these service messages to the bot under privacy mode too.
+     * Reads the group from an update the bot gets anyway: a board button tap,
+     * a command, a reply, or a service message such as someone joining. Under
+     * privacy mode the bot sees nothing else from the group.
+     *
+     * - A message saying the group moved to a supergroup (migrate_to_chat_id
+     *   in the old chat, migrate_from_chat_id in the new one) moves the group.
+     * - When no group is known at all, a group or supergroup chat is stored.
+     *   With no group known the lock has nothing to protect, so it always
+     *   allows this. A known group is never replaced here.
      *
      * The bot's own membership changes (my_chat_member) are not read here:
      * BoardService::onBotMembershipChange() handles them, the lock included.
@@ -135,6 +140,10 @@ final class GroupChat
 
         if (0 !== $from) {
             self::migrated($from, $chatId);
+        }
+
+        if (0 === self::current()) {
+            self::remember($chatId);
         }
     }
 }
