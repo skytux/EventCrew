@@ -127,10 +127,9 @@ final class BoardServiceTest extends TelegramTestCase
     // --- render -------------------------------------------------------------
 
     /**
-     * Each event is introduced by two heading rows in the keyboard - 📅 and the
-     * event's name, then the date under it - and the task buttons follow.
-     * Headings appear for a single event too: a board that changes shape when a
-     * second event opens is one people have to re-learn.
+     * A single event is named in the text (📅 date · name), so the keyboard
+     * is only its task buttons: no heading rows (Lou 2026-11-06, "even less
+     * tall").
      */
     public function testRenderHeadsEachEventWithItsNameThenItsDate(): void
     {
@@ -142,15 +141,11 @@ final class BoardServiceTest extends TelegramTestCase
 
         $rendered = $this->board()->render();
 
-        // Name, date, then one row per task. No deep-link row (no username).
-        self::assertCount(4, $rendered['keyboard']);
-        self::assertSame('📅 Party', $rendered['keyboard'][0][0]['text']);
-        self::assertStringNotContainsString('📅', $rendered['keyboard'][1][0]['text']);
-
-        // The headings are no-ops, and the tasks are not.
-        self::assertSame(BoardRenderer::SPACER_DATA, $rendered['keyboard'][0][0]['callback_data']);
-        self::assertSame(BoardRenderer::SPACER_DATA, $rendered['keyboard'][1][0]['callback_data']);
-        self::assertSame('t:1', $rendered['keyboard'][2][0]['callback_data']);
+        // The two tasks side by side. No foot links (no username).
+        self::assertCount(1, $rendered['keyboard']);
+        self::assertStringContainsString('📅 Sat 1 Aug · Party', $rendered['text']);
+        self::assertSame('t:1', $rendered['keyboard'][0][0]['callback_data']);
+        self::assertSame('t:2', $rendered['keyboard'][0][1]['callback_data']);
     }
 
     /**
@@ -171,15 +166,12 @@ final class BoardServiceTest extends TelegramTestCase
         ];
         $this->wpdb->nextResults[] = []; // occupancyFor
 
-        $labels = array_map(
-            static fn (array $row): string => $row[0]['text'],
-            $this->board()->render()['keyboard']
-        );
+        $text = $this->board()->render()['text'];
 
-        self::assertContains('📅 Ecstatic Dance · Ihmeidentekijä', $labels);
+        self::assertStringContainsString('· Ecstatic Dance · Ihmeidentekijä', $text);
         // "Open Floor · Milla Linna, Ty Alexander & Kuu" is 44 characters.
-        self::assertContains('📅 Open Floor', $labels);
-        self::assertContains('📅 Picnic', $labels);
+        self::assertStringContainsString("· Open Floor\n", $text);
+        self::assertStringContainsString('· Picnic', $text);
     }
 
     /**
@@ -195,8 +187,8 @@ final class BoardServiceTest extends TelegramTestCase
 
         $rendered = $this->board()->render();
 
-        // Rows 0 and 1 are the headings; the task follows.
-        self::assertSame('🎈 Decorate · 0/2', $rendered['keyboard'][2][0]['text']);
+        self::assertSame('🎈 Decorate', $rendered['keyboard'][0][0]['text']);
+        self::assertStringContainsString('🎈 Decorate · 0/2', $rendered['text']);
     }
 
     /**
@@ -278,7 +270,7 @@ final class BoardServiceTest extends TelegramTestCase
         });
 
         self::assertStringContainsString('Open tasks', $rendered['text']);
-        self::assertSame('🎈 Decorate · 0/2', $rendered['keyboard'][2][0]['text']);
+        self::assertSame('🎈 Decorate', $rendered['keyboard'][0][0]['text']);
         // The rest of the tap (its popup) is Finnish again once the board is built.
         self::assertSame('Tallennettu.', $after);
     }
@@ -293,12 +285,10 @@ final class BoardServiceTest extends TelegramTestCase
 
         $rendered = $this->board()->render();
 
-        $labels = array_map(static fn (array $row): string => $row[0]['text'], $rendered['keyboard']);
-
-        // Two events, each two heading rows and one task: six rows.
-        self::assertCount(6, $rendered['keyboard']);
-        self::assertContains('📅 Party A', $labels);
-        self::assertContains('📅 Party B', $labels);
+        // Two events, each headed in the text; their tasks share one row.
+        self::assertCount(1, $rendered['keyboard']);
+        self::assertStringContainsString('· Party A', $rendered['text']);
+        self::assertStringContainsString('· Party B', $rendered['text']);
     }
 
     /**
@@ -318,38 +308,55 @@ final class BoardServiceTest extends TelegramTestCase
     }
 
     /**
-     * The links at the foot lead out of the board rather than into a slot, so a
-     * rule separates them from the last task. It is only drawn when there is
-     * something under it - otherwise a bot with no cached username would end
-     * the board on a divider followed by nothing.
+     * Under the tasks (Lou 2026-11-06): sign-up across the row, then my info
+     * and task info side by side, then the crew guide. No rule, no headings.
      */
-    public function testARuleSeparatesTheFootLinksFromTheTasks(): void
+    public function testTheFootIsSignUpThenMyInfoAndTaskInfoThenTheGuide(): void
     {
         $this->options[BoardService::USERNAME_OPTION] = 'eventcrew_bot';
         $this->wpdb->nextResults[] = [$this->taskRow(1, 100, 'Party')];
         $this->wpdb->nextResults[] = [];
 
-        $rendered = $this->board()->render();
-        $labels = array_map(static fn (array $row): string => $row[0]['text'], $rendered['keyboard']);
+        $keyboard = $this->board()->render()['keyboard'];
 
-        // Name, date, task, rule, then the two links.
-        self::assertSame(BoardRenderer::DIVIDER, $labels[3]);
-        self::assertCount(6, $labels);
-        self::assertSame(BoardRenderer::SPACER_DATA, $rendered['keyboard'][3][0]['callback_data']);
+        self::assertSame([['🎈 Decorate'], ['👋 New here? Sign up →'], ['👤 My info']], array_map(
+            static fn (array $row): array => array_column($row, 'text'),
+            $keyboard
+        ));
+        self::assertNotContains(BoardRenderer::SPACER_DATA, array_column($this->buttons($keyboard), 'callback_data'));
     }
 
-    public function testNoRuleIsDrawnWhenThereAreNoFootLinks(): void
+    /**
+     * Every link set: my info and task info share a row, the guide is under
+     * them. A full task has no button, and two open tasks with the same role
+     * are told apart by their times.
+     */
+    public function testTheBoardHasOnlyOpenTasksThenTheFourLinks(): void
     {
-        // No username cached, so both deep links are dropped.
-        $this->wpdb->nextResults[] = [$this->taskRow(1, 100, 'Party')];
-        $this->wpdb->nextResults[] = [];
+        $this->options[BoardService::USERNAME_OPTION] = 'eventcrew_bot';
+        $this->options[Roles::GUIDE_URL_OPTION] = 'https://site.test/guide/';
+        $this->options['eventcrew_signup_page_id'] = 7;
+        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
+        $early = ['starts_at' => '2026-08-01 18:00:00', 'ends_at' => '2026-08-01 20:00:00'];
+        $late = ['starts_at' => '2026-08-01 20:00:00', 'ends_at' => '2026-08-01 22:00:00'];
+        $this->wpdb->nextResults[] = [
+            array_merge($this->taskRow(1, 100, 'Party'), $early),
+            array_merge($this->taskRow(2, 100, 'Party'), $late),
+            array_merge($this->taskRow(3, 100, 'Party'), ['role_slug' => 'door']),
+        ];
+        $this->wpdb->nextResults[] = [['task_id' => 3, 'taken' => 2]]; // the door is full
 
-        $labels = array_map(
-            static fn (array $row): string => $row[0]['text'],
-            $this->board()->render()['keyboard']
+        $rendered = $this->board()->render();
+        $rows = array_map(static fn (array $row): array => array_column($row, 'text'), $rendered['keyboard']);
+
+        self::assertSame(['t:1', 't:2'], array_column($rendered['keyboard'][0], 'callback_data'));
+        self::assertStringContainsString('🎈 Decorate · ', $rows[0][0]);
+        self::assertNotSame($rows[0][0], $rows[0][1]);
+        self::assertSame(
+            [['👋 New here? Sign up →'], ['👤 My info', '📝 Task info'], ['📋 Crew guide']],
+            array_slice($rows, 1)
         );
-
-        self::assertNotContains(BoardRenderer::DIVIDER, $labels);
+        self::assertStringContainsString('2/2 · full', $rendered['text']);
     }
 
     public function testRenderAddsTheDeepLinkButtonWhenTheUsernameIsKnown(): void
@@ -360,13 +367,13 @@ final class BoardServiceTest extends TelegramTestCase
 
         $rendered = $this->board()->render();
 
-        $urls = array_map(static fn (array $row): string => $row[0]['url'] ?? '', $rendered['keyboard']);
+        $urls = array_column($this->buttons($rendered['keyboard']), 'url');
         self::assertContains('https://t.me/eventcrew_bot?start=onboard', $urls);
 
         // Both deep links open with an emoji, like the buttons under them.
-        $labels = array_map(static fn (array $row): string => $row[0]['text'], $rendered['keyboard']);
+        $labels = array_column($this->buttons($rendered['keyboard']), 'text');
         self::assertContains('👋 New here? Sign up →', $labels);
-        self::assertContains('👤 See my info →', $labels);
+        self::assertContains('👤 My info', $labels);
     }
 
     public function testRenderReportsAnEmptyBoard(): void
@@ -925,9 +932,9 @@ final class BoardServiceTest extends TelegramTestCase
         $rendered = $this->board()->render();
         $labels = array_column($this->buttons($rendered['keyboard']), 'text');
 
-        self::assertContains('📅 Party A', $labels);
-        self::assertNotContains('📅 Party B', $labels);
-        self::assertNotContains('📅 Party C', $labels);
+        self::assertStringContainsString('· Party A', $rendered['text']);
+        self::assertStringNotContainsString('Party B', $rendered['text']);
+        self::assertStringNotContainsString('Party C', $rendered['text']);
         // On the next event the task buttons keep the plain form.
         self::assertContains('t:1', array_column($this->buttons($rendered['keyboard']), 'callback_data'));
     }
@@ -977,9 +984,9 @@ final class BoardServiceTest extends TelegramTestCase
         $rendered = $this->board()->render('2026-08-08');
         $data = array_column($this->buttons($rendered['keyboard']), 'callback_data', 'text');
 
-        self::assertArrayHasKey('📅 Party B', $data);
-        self::assertArrayNotHasKey('📅 Party A', $data);
-        self::assertArrayNotHasKey('📅 Party C', $data);
+        self::assertStringContainsString('· Party B', $rendered['text']);
+        self::assertStringNotContainsString('Party A', $rendered['text']);
+        self::assertStringNotContainsString('Party C', $rendered['text']);
         // Its task button carries the day, so a join redraws the same day.
         self::assertContains('t:2:2026-08-08', $data);
         self::assertSame('bd:2026-08-01', $data['◀ Sat 1 Aug'] ?? null);
@@ -991,9 +998,10 @@ final class BoardServiceTest extends TelegramTestCase
     {
         $this->queueThreeDays();
 
-        $labels = array_column($this->buttons($this->board()->render('2026-09-30')['keyboard']), 'text');
+        $rendered = $this->board()->render('2026-09-30');
+        $labels = array_column($this->buttons($rendered['keyboard']), 'text');
 
-        self::assertContains('📅 Party A', $labels);
+        self::assertStringContainsString('· Party A', $rendered['text']);
         self::assertContains('📅 Sat 1 Aug ✓', $labels);
     }
 
@@ -1010,8 +1018,8 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertSame(555, $edit['chat_id']);
         self::assertSame(42, $edit['message_id']);
         $labels = array_column($this->buttons($edit['reply_markup']['inline_keyboard']), 'text');
-        self::assertContains('📅 Party C', $labels);
-        self::assertNotContains('📅 Party A', $labels);
+        self::assertStringContainsString('· Party C', $edit['text']);
+        self::assertStringNotContainsString('Party A', $edit['text']);
     }
 
     /**
@@ -1032,9 +1040,9 @@ final class BoardServiceTest extends TelegramTestCase
         $sent = $this->lastCallTo('sendMessage');
         self::assertSame(555, $sent['chat_id']);
         $data = array_column($this->buttons($sent['reply_markup']['inline_keyboard']), 'callback_data', 'text');
-        self::assertArrayHasKey('📅 Party B', $data);
-        self::assertArrayNotHasKey('📅 Party A', $data);
-        self::assertSame('t:2:2026-08-08', $data['🎈 Decorate · 0/2'] ?? null);
+        self::assertStringContainsString('· Party B', $sent['text']);
+        self::assertStringNotContainsString('Party A', $sent['text']);
+        self::assertSame('t:2:2026-08-08', $data['🎈 Decorate'] ?? null);
         self::assertSame('bd:2026-08-01', $data['◀ Sat 1 Aug'] ?? null);
         self::assertSame('bd:2026-08-08', $data['📅 Sat 8 Aug ✓'] ?? null);
         self::assertSame('bd:2026-08-15', $data['Sat 15 Aug ▶'] ?? null);
@@ -1084,8 +1092,7 @@ final class BoardServiceTest extends TelegramTestCase
 
         $sent = $this->lastCallTo('sendMessage');
         self::assertSame(555, $sent['chat_id']);
-        $labels = array_column($this->buttons($sent['reply_markup']['inline_keyboard']), 'text');
-        self::assertContains('📅 Party B', $labels);
+        self::assertStringContainsString('· Party B', $sent['text']);
         self::assertFalse($this->board()->openDay(555, 'x'));
     }
 
@@ -1119,9 +1126,9 @@ final class BoardServiceTest extends TelegramTestCase
 
         self::assertSame('You’re in! See you there.', $this->lastCallTo('answerCallbackQuery')['text']);
         self::assertSame(['answerCallbackQuery', 'editMessageText'], $this->calledMethods());
-        $labels = array_column($this->buttons($this->lastCallTo('editMessageText')['reply_markup']['inline_keyboard']), 'text');
-        self::assertContains('📅 Party A', $labels);
-        self::assertNotContains('📅 Party B', $labels);
+        $text = (string) $this->lastCallTo('editMessageText')['text'];
+        self::assertStringContainsString('· Party A', $text);
+        self::assertStringNotContainsString('Party B', $text);
     }
 
     public function testJoiningOnAPickedDayInADmKeepsTheGroupBoardOnTheNextEvent(): void
@@ -1139,12 +1146,10 @@ final class BoardServiceTest extends TelegramTestCase
 
         $edits = array_values(array_filter($this->telegramCalls, static fn (array $c): bool => 'editMessageText' === $c['method']));
         self::assertCount(2, $edits);
-        $group = array_column($this->buttons($edits[0]['body']['reply_markup']['inline_keyboard']), 'text');
-        $private = array_column($this->buttons($edits[1]['body']['reply_markup']['inline_keyboard']), 'text');
         self::assertSame(100, $edits[0]['body']['chat_id']);
-        self::assertContains('📅 Party A', $group);
+        self::assertStringContainsString('· Party A', (string) $edits[0]['body']['text']);
         self::assertSame(555, $edits[1]['body']['chat_id']);
-        self::assertContains('📅 Party B', $private);
+        self::assertStringContainsString('· Party B', (string) $edits[1]['body']['text']);
     }
 
     /**
@@ -1164,8 +1169,7 @@ final class BoardServiceTest extends TelegramTestCase
         $this->board()->onJoinLeave($query);
 
         self::assertSame('You’re in! See you there.', $this->lastCallTo('answerCallbackQuery')['text']);
-        $labels = array_column($this->buttons($this->lastCallTo('editMessageText')['reply_markup']['inline_keyboard']), 'text');
-        self::assertContains('📅 Party A', $labels);
+        self::assertStringContainsString('· Party A', (string) $this->lastCallTo('editMessageText')['text']);
     }
 
     public function testTheAutomaticRedrawGoesBackToTheNextEvent(): void
@@ -1175,9 +1179,9 @@ final class BoardServiceTest extends TelegramTestCase
 
         $this->board()->refresh();
 
-        $labels = array_column($this->buttons($this->lastCallTo('editMessageText')['reply_markup']['inline_keyboard']), 'text');
-        self::assertContains('📅 Party A', $labels);
-        self::assertNotContains('📅 Party B', $labels);
+        $text = (string) $this->lastCallTo('editMessageText')['text'];
+        self::assertStringContainsString('· Party A', $text);
+        self::assertStringNotContainsString('Party B', $text);
     }
 
     public function testIgnoresMalformedCallbackData(): void

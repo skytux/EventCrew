@@ -967,17 +967,9 @@ msgstr "Skannaa tämä QR-koodi toisen puhelimen kameralla. Linkki toimii kerran
 msgid "Security"
 msgstr "Turvallisuus"
 
-#: src/Telegram/BoardRenderer.php:112
-msgid "👤 See my info →"
-msgstr "👤 Omat tietoni →"
-
 #: src/Support/ClaimNotifier.php:192 src/Support/OpenTaskCall.php:262 src/Support/SlotFreedNotice.php:88
 msgid "See open tasks"
 msgstr "Avoimet tehtävät"
-
-#: src/Telegram/BoardRenderer.php:85
-msgid "Send /me in a DM to get your summary."
-msgstr "Lähetä /me yksityisviestinä, niin saat yhteenvetosi."
 
 #: src/Web/CrewAdminController.php:111 templates/public/signup.php:486
 msgid "Send me the sales desk link"
@@ -8594,3 +8586,11 @@ msgstr "Avaa roolit"
 
 msgid "Open the person"
 msgstr "Avaa henkilö"
+
+#: src/Telegram/BoardRenderer.php
+msgid "👤 My info"
+msgstr "👤 Omat tietoni"
+
+#: src/Telegram/BoardRenderer.php
+msgid "📝 Task info"
+msgstr "📝 Tehtävistä"

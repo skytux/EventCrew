@@ -16,23 +16,12 @@ use EventCrew\Support\RoleGuide;
  * "what the board looks like" half of BoardService, pulled out so posting and
  * editing the message (the lifecycle) reads separately from composing it.
  *
- * Tasks are grouped by event, and each group is introduced by two heading rows
- * in the keyboard itself: 📅 and the event's name, then the date under it.
- * Those headings used to live in the message text above the buttons, which read
- * correctly and scanned badly - Telegram renders the text and the keyboard as
- * two separate blocks, so a heading in the text sat several rows away from the
- * buttons it named, and with two events open there was no way to tell where one
- * event's buttons ended and the next began.
- *
- * The 📅 sits on the name rather than on the date, where it began. It is doing
- * the work of marking where a group starts, and the first row of a group is
- * where the eye needs that mark while scrolling; on the second row it labelled
- * something that already said it was a date.
- *
- * The headings are buttons too, since Telegram has no inert row. They carry
- * SPACER_DATA, which no handler acts on, so tapping one dismisses its own
- * spinner and does nothing. Tasks are told apart from them by their own role
- * emoji, which no heading carries.
+ * Each event is headed in the text (📅 date · name); the keyboard holds only
+ * buttons that do something: the open tasks by role, two to a row
+ * (taskRows()), the day buttons, then the links at the foot (footRows()). No
+ * headings in the keyboard and no full tasks (Lou 2026-11-06: the board was
+ * too tall). Boards posted before that still carry heading rows with
+ * SPACER_DATA, which no handler acts on.
  *
  * Only one event day is shown at a time: the next one, unless another day was
  * picked from the row of day buttons under it (DayPicker, BoardService::PICK_PREFIX). On
@@ -50,7 +39,7 @@ use EventCrew\Support\RoleGuide;
 final class BoardRenderer
 {
     /**
-     * The callback payload every heading row carries.
+     * The callback payload the heading rows of older boards carry.
      *
      * Telegram gives no way to put an inert row in an inline keyboard - every
      * button must carry a callback, a URL or one of the other actions - so an
@@ -61,18 +50,6 @@ final class BoardRenderer
      * changes nothing.
      */
     public const SPACER_DATA = 'x';
-
-    /**
-     * The separator row's label.
-     *
-     * A rule rather than a genuinely blank row: Telegram requires an inline
-     * button to carry text, and a whitespace-only label is at best undefined -
-     * a rejected button means editMessageText fails and the board silently
-     * stops updating, which is a poor trade for a slightly quieter gap. Box
-     * drawing characters render identically on every client and read as a
-     * divider rather than as something to tap.
-     */
-    public const DIVIDER = '───────────';
 
     /**
      * The longest event heading, "Name · DJ X", in characters. A button label
@@ -113,7 +90,7 @@ final class BoardRenderer
      * text board that goes under the next event's card. It shows one day:
      * the next event, or $date when it has open tasks. The text lists, per
      * task, who is signed up, by first name; the keyboard has the day's
-     * heading rows and task buttons, the row of day buttons (DayPicker), and
+     * task buttons (taskRows()), the row of day buttons (DayPicker), and
      * the links at the foot. The group's message always shows the next event
      * (Lou, 2026-11-06: the board was too long with three); another day is
      * shown only in a private copy.
@@ -138,18 +115,21 @@ final class BoardRenderer
 
         $lines = $this->introLines();
         $keyboard = [];
+        $taken = [];
 
         foreach ($this->groupByEvent($tasks) as $group) {
             $lines[] = '';
             $lines[] = '📅 ' . $group['date'] . ' · ' . $group['title'];
-            $keyboard[] = [$this->spacerButton('📅 ' . $group['title'])];
-            $keyboard[] = [$this->spacerButton($group['date'])];
 
             foreach ($group['tasks'] as $task) {
                 $names = $occupants[$task->id] ?? [];
+                $taken[$task->id] = count($names);
                 $lines[] = $this->taskLine($task, $names);
-                $keyboard[] = [$this->taskButton($task, count($names), $daySuffix)];
             }
+        }
+
+        foreach ($this->taskRows($tasks, $taken, $daySuffix) as $row) {
+            $keyboard[] = $row;
         }
 
         foreach (DayPicker::rows($dates, $shown, BoardService::PICK_PREFIX) as $row) {
@@ -220,7 +200,7 @@ final class BoardRenderer
     }
 
     /**
-     * "🎨 Decorate · 17:00–18:30: Anna, Ben", or "…: –" when nobody is signed
+     * "🎨 Decorate · 17:00–18:30 · 2/3: Anna, Ben", or "…: –" when nobody is signed
      * up. Each person by the first word of their name, never their email.
      *
      * @param list<string> $names Display names, '' for someone who gave none.
@@ -242,6 +222,9 @@ final class BoardRenderer
             },
             $names
         );
+
+        // The count moved here from the button, which has only the role.
+        $parts[] = sprintf('%d/%d', count($names), $task->capacity);
 
         return implode(' · ', $parts) . ': ' . ([] === $first ? '–' : implode(', ', $first));
     }
@@ -305,12 +288,16 @@ final class BoardRenderer
         ];
     }
 
-    /** @return array<int, string> The two lines at the top of the board. */
+    /**
+     * The line at the top of the board. (Your own summary is the "See my
+     * info" button at the foot.)
+     *
+     * @return array<int, string>
+     */
     private function introLines(): array
     {
         return [
             __('Open tasks — tap one to sign up, tap again to cancel.', 'eventcrew'),
-            __('Send /me in a DM to get your summary.', 'eventcrew'),
         ];
     }
 
@@ -333,18 +320,19 @@ final class BoardRenderer
         $lines = $this->introLines();
         $keyboard = [];
 
-        // Headings go in for one event as readily as for several. A board that
-        // changes shape when a second event opens is a board people have to
-        // re-learn, and the event's own name is worth having even when it is
-        // the only one - the date alone never said which night it was.
+        // The event's heading and each task's time and count go in the text;
+        // the keyboard has only the task buttons (taskRows()).
         foreach ($groups as $group) {
-            $keyboard[] = [$this->spacerButton('📅 ' . $group['title'])];
-            $keyboard[] = [$this->spacerButton($group['date'])];
+            $lines[] = '';
+            $lines[] = '📅 ' . $group['date'] . ' · ' . $group['title'];
 
             foreach ($group['tasks'] as $task) {
-                $taken = $occupancy[$task->id] ?? 0;
-                $keyboard[] = [$this->taskButton($task, $taken, $daySuffix)];
+                $lines[] = $this->countLine($task, $occupancy[$task->id] ?? 0);
             }
+        }
+
+        foreach ($this->taskRows($tasks, $occupancy, $daySuffix) as $row) {
+            $keyboard[] = $row;
         }
 
         foreach (DayPicker::rows($dates, $shown, BoardService::PICK_PREFIX) as $row) {
@@ -359,31 +347,19 @@ final class BoardRenderer
     }
 
     /**
-     * The links at the foot of the board, under a divider; [] when there are
-     * none.
+     * The links at the foot of the board (Lou 2026-11-06): sign-up across the
+     * whole row, then your own info and what each task involves side by side,
+     * then the crew guide. Only the links there are go in; [] when none.
      *
      * @return array<int, array<int, array<string, mixed>>>
      */
     private function footRows(): array
     {
-        // The links at the foot are not part of any event - they lead out of
-        // the board rather than into a slot - so a rule separates them from the
-        // last task above. Built first and only added if there is at least one,
-        // or an un-configured bot would end the board on a divider with nothing
-        // under it.
-        $deepLinks = [];
+        $rows = [];
+        $signUp = $this->deepLinkButton('onboard', __('👋 New here? Sign up →', 'eventcrew'));
 
-        foreach (
-            [
-                'onboard' => __('👋 New here? Sign up →', 'eventcrew'),
-                'me' => __('👤 See my info →', 'eventcrew'),
-            ] as $payload => $label
-        ) {
-            $button = $this->deepLinkButton((string) $payload, $label);
-
-            if (null !== $button) {
-                $deepLinks[] = [$button];
-            }
+        if (null !== $signUp) {
+            $rows[] = [$signUp];
         }
 
         // What each task involves: the descriptions section on the web board.
@@ -391,21 +367,76 @@ final class BoardRenderer
         $descriptions = RoleGuide::descriptionsButton();
 
         if (null !== $descriptions) {
-            $deepLinks[] = [$descriptions];
+            $descriptions['text'] = __('📝 Task info', 'eventcrew');
+        }
+
+        $pair = array_values(array_filter([
+            $this->deepLinkButton('me', __('👤 My info', 'eventcrew')),
+            $descriptions,
+        ]));
+
+        if ([] !== $pair) {
+            $rows[] = $pair;
         }
 
         // The crew guide needs no bot username, only the link itself.
         $guide = RoleGuide::button();
 
         if (null !== $guide) {
-            $deepLinks[] = [$guide];
+            $rows[] = [$guide];
         }
 
-        if ([] === $deepLinks) {
-            return [];
+        return $rows;
+    }
+
+    /**
+     * The task buttons, two to a row: only the tasks with a free place, each
+     * by its role alone (the text has the times and who is in). The time is
+     * added only when two open tasks share a role, to tell them apart.
+     *
+     * @param array<int, Task> $tasks
+     * @param array<int, int>  $taken Places taken, by task id.
+     * @return array<int, array<int, array<string, string>>>
+     */
+    private function taskRows(array $tasks, array $taken, string $daySuffix): array
+    {
+        $open = array_values(array_filter(
+            $tasks,
+            static fn (Task $t): bool => ($taken[$t->id] ?? 0) < $t->capacity
+        ));
+        $roles = array_count_values(array_map(static fn (Task $t): string => $t->roleDisplay(), $open));
+        $buttons = [];
+
+        foreach ($open as $task) {
+            $label = $task->roleDisplay();
+
+            if ($roles[$label] > 1 && '' !== $task->timeRange()) {
+                $label .= ' · ' . $task->timeRange();
+            }
+
+            $buttons[] = ['text' => $label, 'callback_data' => 't:' . $task->id . $daySuffix];
         }
 
-        return array_merge([[$this->spacerButton(self::DIVIDER)]], $deepLinks);
+        return array_chunk($buttons, 2);
+    }
+
+    /** "🎨 Decorate · 17:00–18:30 · 1/3", and "· full" when it is. */
+    private function countLine(Task $task, int $taken): string
+    {
+        $parts = [$task->roleDisplay()];
+        $time = $task->timeRange();
+
+        if ('' !== $time) {
+            $parts[] = $time;
+        }
+
+        $parts[] = sprintf('%d/%d', $taken, $task->capacity);
+
+        if ($taken >= $task->capacity) {
+            $parts[] = __('full', 'eventcrew');
+        }
+
+        return implode(' · ', $parts);
     }
 
     /**
@@ -440,57 +471,6 @@ final class BoardRenderer
         }
 
         return $groups;
-    }
-
-    /**
-     * A heading row: text, and a callback nothing acts on.
-     *
-     * @return array<string, string>
-     */
-    private function spacerButton(string $text): array
-    {
-        return ['text' => $text, 'callback_data' => self::SPACER_DATA];
-    }
-
-    /**
-     * One toggle button per task: "🎨 Decorate · 17:00–18:30 · 1/3".
-     *
-     * The job's name leads. It is the thing a person is choosing between - the
-     * times under one heading are all the same evening, so they separate the
-     * rows far less than the work does - and a name in a fixed left-hand column
-     * is what makes the list scannable rather than something to read through.
-     * What follows is when, then how full, which is the order the questions
-     * arrive in.
-     *
-     * The role's own emoji, from roleDisplay(), is also what tells a task from
-     * a heading: headings carry 📅 or nothing, so a row opening with a role
-     * emoji is a row that does something. No ✅ among them, which reads as
-     * "done" rather than "taken".
-     *
-     * The date is not repeated here; the heading above carries it, and it used
-     * to be on every button only because there was nowhere else to put it.
-     *
-     * @return array<string, string>
-     */
-    private function taskButton(Task $task, int $taken, string $daySuffix = ''): array
-    {
-        $parts = [$task->roleDisplay()];
-
-        // A task created from a role template has no times until someone
-        // decides them, and an empty one would leave a stray separator.
-        $time = $task->timeRange();
-
-        if ('' !== $time) {
-            $parts[] = $time;
-        }
-
-        $parts[] = sprintf('%d/%d', $taken, $task->capacity);
-
-        if ($taken >= $task->capacity) {
-            $parts[] = __('full', 'eventcrew');
-        }
-
-        return ['text' => implode(' · ', $parts), 'callback_data' => 't:' . $task->id . $daySuffix];
     }
 
     /**

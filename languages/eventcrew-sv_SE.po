@@ -6040,10 +6040,6 @@ msgstr "Vi ses på dansgolvet"
 msgid "Send /me history to see everything you’ve done."
 msgstr "Skicka /me history för att se allt du har gjort."
 
-#: src/Telegram/BoardRenderer.php:321
-msgid "Send /me in a DM to get your summary."
-msgstr "Skicka /me i ett privat meddelande för att få din sammanfattning."
-
 #: src/Telegram/SayCommand.php:67
 msgid ""
 "Send /say followed by the message for the group. I show it to you first."
@@ -11414,10 +11410,6 @@ msgstr "👋 anlände"
 msgid "👋 arrived · ✓ done · ⏰ late · ✗ no-show"
 msgstr "👋 anlände · ✓ klar · ⏰ sen · ✗ uteblev"
 
-#: src/Telegram/BoardRenderer.php:387
-msgid "👤 See my info →"
-msgstr "👤 Visa min info →"
-
 #: src/Telegram/HelpService.php:144
 msgid "👥 People: choose what to do."
 msgstr "👥 Personer: välj vad du vill göra."
@@ -11720,3 +11712,11 @@ msgstr "Öppna rollerna"
 
 msgid "Open the person"
 msgstr "Öppna personen"
+
+#: src/Telegram/BoardRenderer.php
+msgid "👤 My info"
+msgstr "👤 Min info"
+
+#: src/Telegram/BoardRenderer.php
+msgid "📝 Task info"
+msgstr "📝 Uppgiftsinfo"
