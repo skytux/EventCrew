@@ -209,7 +209,7 @@ final class MessagesPage
             $row = 'message.' . $result['kind'] . '.' . $part;
 
             if (! isset($jobs[$row])) {
-                $texts[$row] = TranslatedText::normalize(MessageTemplates::value($result['kind'], $part));
+                $texts[$row] = TranslatedText::fillValue(MessageTemplates::value($result['kind'], $part));
             }
         }
 

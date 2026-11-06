@@ -54,7 +54,7 @@ final class JobsStatus
      * page) and retry (a failed job to queue again).
      *
      * A finished translation (TranslatedText::JOB) also answers its row id,
-     * the row's text as now stored (value: source, lang, texts, manual) and
+     * the row's text as now stored (value: TranslatedText::fillValue()) and
      * done, the badge without the reload link, so the page shows the new
      * text in place.
      *
@@ -121,16 +121,9 @@ final class JobsStatus
             return [];
         }
 
-        $value = TranslatedText::normalize($row->value);
-
         return [
             'row' => $id,
-            'value' => [
-                'source' => $value['source'],
-                'lang' => $value['lang'],
-                'texts' => $value['texts'],
-                'manual' => $value['manual'],
-            ],
+            'value' => TranslatedText::fillValue($row->value),
             'done' => sprintf(
                 '<span class="ec-job ec-job-done" role="status">%s</span>',
                 esc_html__('Done ✓', 'eventcrew')
