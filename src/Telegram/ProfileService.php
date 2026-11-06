@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
@@ -85,7 +86,7 @@ final class ProfileService
             );
         }
 
-        $upcoming = $this->upcomingLines($person->id);
+        [$upcoming, $cancelRows] = $this->upcoming($person->id);
 
         $lines[] = '';
 
@@ -102,7 +103,12 @@ final class ProfileService
         $lines[] = '';
         $lines[] = __('Send /me history to see everything you’ve done.', 'eventcrew');
 
-        $this->deliver($telegramUserId, $chatId, $isPrivate, implode("\n", $lines), MenuButtons::me());
+        // A cancel button per coming task above the menu (Owner 2026-11-07):
+        // the board has no button for a full task, so this is where to cancel.
+        $keyboard = MenuButtons::me();
+        $keyboard['inline_keyboard'] = array_merge($cancelRows, $keyboard['inline_keyboard']);
+
+        $this->deliver($telegramUserId, $chatId, $isPrivate, implode("\n", $lines), $keyboard);
     }
 
     /**
@@ -260,11 +266,14 @@ final class ProfileService
     }
 
     /**
-     * Tasks the person still holds a slot in, today onward, soonest first.
+     * The person's coming tasks, soonest first: a line for each, and a cancel
+     * button row for each task that still exists. The button sends
+     * BoardService's leave tap (l:<id>), which asks "Cancel …?" with what it
+     * costs before anything changes.
      *
-     * @return array<int, string>
+     * @return array{0: array<int, string>, 1: array<int, array<int, array{text: string, callback_data: string}>>}
      */
-    private function upcomingLines(int $personId): array
+    private function upcoming(int $personId): array
     {
         $today = current_time('Y-m-d');
         $entries = [];
@@ -275,8 +284,28 @@ final class ProfileService
             }
         }
 
+        $lines = [];
+        $rows = [];
+
         // historyFor is newest-first; upcoming reads better soonest-first.
-        return array_map([$this, 'line'], array_reverse($entries));
+        foreach (array_reverse($entries) as $entry) {
+            $task = $this->tasks->find($entry['assignment']->taskId);
+            $lines[] = $this->line($entry, $task);
+
+            if (null !== $task) {
+                $rows[] = [[
+                    'text' => '✖️ ' . sprintf(
+                        /* translators: 1: role, 2: day */
+                        __('Cancel %1$s, %2$s', 'eventcrew'),
+                        $task->roleLabel(),
+                        Dates::dayLabel((string) $entry['task_date'])
+                    ),
+                    'callback_data' => 'l:' . $task->id,
+                ]];
+            }
+        }
+
+        return [$lines, $rows];
     }
 
     /**
@@ -302,11 +331,12 @@ final class ProfileService
      * One assignment as a "• date — role (event): status" line.
      *
      * @param array{assignment: \EventCrew\Models\Assignment, task_date: string} $entry
+     * @param Task|false|null $task The task when already looked up; false = look it up.
      */
-    private function line(array $entry): string
+    private function line(array $entry, Task|false|null $task = false): string
     {
         $assignment = $entry['assignment'];
-        $task = $this->tasks->find($assignment->taskId);
+        $task = false === $task ? $this->tasks->find($assignment->taskId) : $task;
 
         $what = null === $task
             ? __('a task', 'eventcrew')

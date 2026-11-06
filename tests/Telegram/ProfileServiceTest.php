@@ -87,6 +87,41 @@ final class ProfileServiceTest extends TelegramTestCase
         self::assertStringContainsString('Mon 20 Jul — Decorate', $body); // a recent task line
     }
 
+    /**
+     * Owner 2026-11-07: My info has a cancel button for each coming task, above
+     * the menu. It sends the board's leave tap, which asks before cancelling.
+     */
+    public function testMeHasACancelButtonForEachComingTask(): void
+    {
+        Functions\when('current_time')->justReturn('2026-07-10');
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+        ];
+        $history = [
+            ['id' => 2, 'task_id' => 2, 'person_id' => 7, 'status' => 'signed_up', 'task_date' => '2026-07-27'],
+            ['id' => 1, 'task_id' => 1, 'person_id' => 7, 'status' => 'signed_up', 'task_date' => '2026-07-20'],
+            ['id' => 3, 'task_id' => 3, 'person_id' => 7, 'status' => 'completed', 'task_date' => '2026-07-03'],
+        ];
+        $this->wpdb->nextResults[] = $history; // standing
+        $this->wpdb->nextVars[] = 0; // redemptions
+        $this->wpdb->nextResults[] = $history; // coming tasks
+        $this->wpdb->nextRows[] = $this->taskRow(1);
+        $this->wpdb->nextRows[] = ['id' => 2, 'task_date' => '2026-07-27'] + $this->taskRow(2);
+
+        $this->service()->onMe(555, 555);
+
+        $rows = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
+        self::assertSame('✖️ Cancel Decorate, Mon 20 Jul', $rows[0][0]['text']);
+        self::assertSame('l:1', $rows[0][0]['callback_data']);
+        self::assertSame('✖️ Cancel Decorate, Mon 27 Jul', $rows[1][0]['text']);
+        self::assertSame('l:2', $rows[1][0]['callback_data']);
+        self::assertSame('mn:ticket', $rows[2][0]['callback_data']);
+    }
+
     public function testMeAsksAnUnknownUserToSetUpFirst(): void
     {
         // No person row queued -> findByTelegramUserId returns null.

@@ -853,10 +853,6 @@ msgstr "Avaa ryhmämme Telegramissa"
 msgid "Open tasks"
 msgstr "Avoimet tehtävät"
 
-#: src/Telegram/BoardRenderer.php:84
-msgid "Open tasks — tap one to sign up, tap again to cancel."
-msgstr "Avoimet tehtävät — ilmoittaudu napauttamalla, peru napauttamalla uudelleen."
-
 #: src/Telegram/OnboardingService.php:127
 msgid "Open the bot in a private chat and send /start there to set up your account."
 msgstr "Avaa botti yksityiskeskustelussa ja lähetä siellä /start, niin tilisi otetaan käyttöön."
@@ -8594,3 +8590,13 @@ msgstr "👤 Omat tietoni"
 #: src/Telegram/BoardRenderer.php
 msgid "📝 Task info"
 msgstr "📝 Tehtävistä"
+
+#: src/Telegram/BoardRenderer.php
+msgid "Open tasks — tap one to sign up. To cancel, tap 👤 My info."
+msgstr "Avoimet tehtävät — ilmoittaudu napauttamalla. Peru kohdasta 👤 Omat tietoni."
+
+#. translators: 1: role, 2: day
+#: src/Telegram/ProfileService.php
+#, php-format
+msgid "Cancel %1$s, %2$s"
+msgstr "Peru %1$s, %2$s"

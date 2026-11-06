@@ -297,7 +297,7 @@ final class BoardRenderer
     private function introLines(): array
     {
         return [
-            __('Open tasks — tap one to sign up, tap again to cancel.', 'eventcrew'),
+            __('Open tasks — tap one to sign up. To cancel, tap 👤 My info.', 'eventcrew'),
         ];
     }
 
