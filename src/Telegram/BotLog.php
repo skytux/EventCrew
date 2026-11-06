@@ -56,6 +56,7 @@ final class BotLog
         MenuButtons::ROLES,
         MenuButtons::ELIGIBLE,
         MenuButtons::CANCEL,
+        MenuButtons::TASK_INFO,
     ];
 
     public function __construct(

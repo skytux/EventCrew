@@ -551,6 +551,7 @@ final class UpdateRouter
             MenuButtons::BOARD => $this->privateBoard($fromId, $chatId),
             MenuButtons::PEOPLE => $this->help?->onPeople($fromId, $chatId, $isPrivate),
             MenuButtons::TELL => $this->askWhatIsWrong($fromId, $chatId, $isPrivate),
+            MenuButtons::TASK_INFO => $this->board->sendTaskInfo($fromId),
             default => null,
         };
     }

@@ -8600,3 +8600,9 @@ msgstr "Avoimet tehtävät — ilmoittaudu napauttamalla. Peru kohdasta 👤 Oma
 #, php-format
 msgid "Cancel %1$s, %2$s"
 msgstr "Peru %1$s, %2$s"
+
+msgid "📅 More tasks"
+msgstr "📅 Lisää tehtäviä"
+
+msgid "There are no task descriptions yet."
+msgstr "Tehtävien kuvauksia ei ole vielä."

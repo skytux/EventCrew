@@ -308,10 +308,11 @@ final class BoardServiceTest extends TelegramTestCase
     }
 
     /**
-     * Under the tasks (Lou 2026-11-06): sign-up across the row, then my info
-     * and task info side by side. No rule, no headings, no crew guide.
+     * Under the tasks (Lou 2026-11-07): my info and task info side by side,
+     * then sign-up across the row at the bottom. One day: no More tasks.
+     * The task row is filled to three with blank buttons. No crew guide.
      */
-    public function testTheFootIsSignUpThenMyInfoAndTaskInfoThenTheGuide(): void
+    public function testTheFootIsMyInfoAndTaskInfoThenSignUp(): void
     {
         $this->options[BoardService::USERNAME_OPTION] = 'eventcrew_bot';
         $this->wpdb->nextResults[] = [$this->taskRow(1, 100, 'Party')];
@@ -319,11 +320,11 @@ final class BoardServiceTest extends TelegramTestCase
 
         $keyboard = $this->board()->render()['keyboard'];
 
-        self::assertSame([['🎈 Decorate'], ['👋 New here? Sign up →'], ['👤 My info']], array_map(
-            static fn (array $row): array => array_column($row, 'text'),
-            $keyboard
-        ));
-        self::assertNotContains(BoardRenderer::SPACER_DATA, array_column($this->buttons($keyboard), 'callback_data'));
+        self::assertSame(
+            [['🎈 Decorate', '⠀', '⠀'], ['👤 My info', '📝 Task info'], ['👋 New here? Sign up →']],
+            array_map(static fn (array $row): array => array_column($row, 'text'), $keyboard)
+        );
+        self::assertSame('https://t.me/eventcrew_bot?start=tasks', $keyboard[1][1]['url']);
     }
 
     /**
@@ -349,11 +350,11 @@ final class BoardServiceTest extends TelegramTestCase
         $rendered = $this->board()->render();
         $rows = array_map(static fn (array $row): array => array_column($row, 'text'), $rendered['keyboard']);
 
-        self::assertSame(['t:1', 't:2'], array_column($rendered['keyboard'][0], 'callback_data'));
+        self::assertSame(['t:1', 't:2', BoardRenderer::SPACER_DATA], array_column($rendered['keyboard'][0], 'callback_data'));
         self::assertStringContainsString('🎈 Decorate · ', $rows[0][0]);
         self::assertNotSame($rows[0][0], $rows[0][1]);
         self::assertSame(
-            [['👋 New here? Sign up →'], ['👤 My info', '📝 Task info']],
+            [['👤 My info', '📝 Task info'], ['👋 New here? Sign up →']],
             array_slice($rows, 1)
         );
         self::assertStringContainsString('2/2 · full', $rendered['text']);
@@ -906,6 +907,28 @@ final class BoardServiceTest extends TelegramTestCase
     /**
      * Three event days: 1 Aug (Party A), 8 Aug (Party B), 15 Aug (Party C).
      */
+    /** A private copy of the board, which has the day buttons (Lou 2026-11-07). */
+    private function privateRender(string $date = ''): array
+    {
+        return (new BoardRenderer(new TaskRepository()))->render($date, false);
+    }
+
+    public function testTheGroupBoardHasNoDayButtonsAndMoreTasksOpensTheNextDayPrivately(): void
+    {
+        $this->options[BoardService::USERNAME_OPTION] = 'eventcrew_bot';
+        $this->queueThreeDays();
+
+        $keyboard = $this->board()->render()['keyboard'];
+        $buttons = $this->buttons($keyboard);
+
+        self::assertSame([], array_filter(
+            array_column($buttons, 'callback_data'),
+            static fn (string $d): bool => str_starts_with($d, 'bd:')
+        ));
+        $urls = array_column($buttons, 'url', 'text');
+        self::assertSame('https://t.me/eventcrew_bot?start=board-20260808', $urls['📅 More tasks'] ?? null);
+    }
+
     private function queueThreeDays(): void
     {
         $this->wpdb->nextResults[] = [
@@ -943,7 +966,7 @@ final class BoardServiceTest extends TelegramTestCase
     {
         $this->queueThreeDays();
 
-        $data = array_column($this->buttons($this->board()->render()['keyboard']), 'callback_data', 'text');
+        $data = array_column($this->buttons($this->privateRender()['keyboard']), 'callback_data', 'text');
 
         // The first day: no ◀, the day marked, then the next day.
         self::assertSame('bd:2026-08-01', $data['📅 Sat 1 Aug ✓'] ?? null);
@@ -955,7 +978,7 @@ final class BoardServiceTest extends TelegramTestCase
     public function testTheDaySelectorIsOneRowOfThree(): void
     {
         $this->queueThreeDays();
-        $keyboard = $this->board()->render('2026-08-08')['keyboard'];
+        $keyboard = $this->privateRender('2026-08-08')['keyboard'];
 
         $row = array_values(array_filter(
             $keyboard,
@@ -981,7 +1004,7 @@ final class BoardServiceTest extends TelegramTestCase
     {
         $this->queueThreeDays();
 
-        $rendered = $this->board()->render('2026-08-08');
+        $rendered = $this->privateRender('2026-08-08');
         $data = array_column($this->buttons($rendered['keyboard']), 'callback_data', 'text');
 
         self::assertStringContainsString('· Party B', $rendered['text']);
@@ -998,7 +1021,7 @@ final class BoardServiceTest extends TelegramTestCase
     {
         $this->queueThreeDays();
 
-        $rendered = $this->board()->render('2026-09-30');
+        $rendered = $this->privateRender('2026-09-30');
         $labels = array_column($this->buttons($rendered['keyboard']), 'text');
 
         self::assertStringContainsString('· Party A', $rendered['text']);

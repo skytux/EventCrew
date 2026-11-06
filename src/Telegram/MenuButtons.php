@@ -36,6 +36,9 @@ final class MenuButtons
     /** "Not right? Tell us" under a no-show notice: asks what is wrong (UpdateRouter). */
     public const TELL = 'mn:tell';
 
+    /** What each task involves, as a private message (the board's 📝 Task info, Lou 2026-11-07). */
+    public const TASK_INFO = 'mn:tasks';
+
     /**
      * The bot verbs a message can offer (MessageAction::$verb): the verb is
      * the deep link start payload an email's "Open in Telegram" link carries
@@ -50,6 +53,7 @@ final class MenuButtons
         'sales' => self::SALES,
         'people' => self::PEOPLE,
         'tell' => self::TELL,
+        'tasks' => self::TASK_INFO,
     ];
 
     /** Followed by the night ("" = the next one), as typed after /door. */

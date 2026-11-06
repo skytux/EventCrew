@@ -11725,3 +11725,9 @@ msgstr "Lediga uppgifter — tryck för att anmäla dig. Avboka under 👤 Min i
 #, php-format
 msgid "Cancel %1$s, %2$s"
 msgstr "Avboka %1$s, %2$s"
+
+msgid "📅 More tasks"
+msgstr "📅 Fler uppgifter"
+
+msgid "There are no task descriptions yet."
+msgstr "Det finns inga uppgiftsbeskrivningar än."
