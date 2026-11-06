@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Admin;
 
+use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\MessageTemplate;
 use EventCrew\Support\MessageTemplates;
@@ -164,41 +165,141 @@ final class MessagesPage
         return __('Formatting: **bold**, *italic*, a line starting with "- " is a list item, a line starting with "## " is a heading, and an empty line starts a new paragraph.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
     }
 
-    /** admin-post: saves one kind's subject, text and settings. */
+    /** admin-post: saves one kind's subject, text and settings (the form without JavaScript). */
     public function save(): void
     {
         Admin::assertCanSave(self::SAVE_ACTION);
 
+        $result = $this->applySave();
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            $result['message'],
+            $result['type'],
+            null === $result['kind'] ? [] : ['tab' => self::TAB_MESSAGES, 'kind' => $result['kind']]
+        );
+    }
+
+    /**
+     * admin-ajax: the same save as save(), for the form posted by the page's
+     * JavaScript. It only stores and queues (the translation runs later, in
+     * the poll of JobsStatus), and answers at once with the notice; per
+     * part whose translation waits, its job badge (jobs), and per other
+     * part, its text as now stored (texts), so the page stays where it is.
+     */
+    public function saveAjax(): never
+    {
+        if (! current_user_can(Admin::CAPABILITY)) {
+            wp_send_json_error(null, 403);
+        }
+
+        check_ajax_referer(self::SAVE_ACTION);
+
+        $result = $this->applySave();
+
+        if ('' !== $result['message'] && BackgroundJobs::addedNow() > 0) {
+            $result['message'] .= ' ' . BackgroundJobs::queuedNotice();
+        }
+
+        $jobs = null === $result['kind'] ? [] : self::waitingJobs($result['kind']);
+        $texts = [];
+
+        // A refused text is not stored: the form keeps what was typed.
+        foreach (null === $result['kind'] || ! $result['saved'] ? [] : self::parts($result['kind']) as $part) {
+            $row = 'message.' . $result['kind'] . '.' . $part;
+
+            if (! isset($jobs[$row])) {
+                $texts[$row] = TranslatedText::normalize(MessageTemplates::value($result['kind'], $part));
+            }
+        }
+
+        wp_send_json_success([
+            'type' => $result['type'],
+            'message' => $result['message'],
+            'jobs' => $jobs,
+            'texts' => $texts,
+        ]);
+    }
+
+    /**
+     * The badge of each part of $id whose translation is queued or running,
+     * keyed by its Translations page row id (the data-ec-row of its field).
+     *
+     * @return array<string, string>
+     */
+    public static function waitingJobs(string $id): array
+    {
+        $jobs = [];
+
+        foreach (self::parts($id) as $part) {
+            $row = 'message.' . $id . '.' . $part;
+            $job = BackgroundJobs::latest(TranslatedText::jobTarget($row));
+
+            if (BackgroundJobs::isActive($job)) {
+                $jobs[$row] = BackgroundJobs::badge($job);
+            }
+        }
+
+        return $jobs;
+    }
+
+    /**
+     * The text parts of kind $id: subject (when it has one) and body.
+     *
+     * @return list<string>
+     */
+    private static function parts(string $id): array
+    {
+        return true === MessageTemplates::find($id)?->hasSubject()
+            ? [MessageTemplates::SUBJECT, MessageTemplates::BODY]
+            : [MessageTemplates::BODY];
+    }
+
+    /**
+     * Saves the posted kind: its texts (a translation is queued, see
+     * MessageTemplates::save()) and settings.
+     *
+     * @return array{kind: ?string, saved: bool, type: string, message: string}
+     *     kind is null when it does not exist; saved is false when nothing was stored.
+     */
+    private function applySave(): array
+    {
         $id = $this->postedKind();
 
         if (null === $id) {
-            Admin::redirectTo(self::PAGE_SLUG, __('That message kind does not exist.', 'eventcrew'), 'error');
+            return [
+                'kind' => null,
+                'saved' => false,
+                'type' => 'error',
+                'message' => __('That message kind does not exist.', 'eventcrew'),
+            ];
         }
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified in assertCanSave(); sanitized per field in TranslatedText::fromPost().
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput -- verified by the caller; sanitized per field in TranslatedText::fromPost().
         $error = $this->templates->save($id, $_POST[MessageTemplates::POST_NAME] ?? null);
 
         if (MessageTemplates::ERROR_MISSING_PLACEHOLDER === $error) {
-            Admin::redirectTo(
-                self::PAGE_SLUG,
-                sprintf(
+            return [
+                'kind' => $id,
+                'saved' => false,
+                'type' => 'error',
+                'message' => sprintf(
                     /* translators: %s: the placeholders, like {email} */
                     __('Not saved: the text must contain %s, in every language. The message keeps the text it had.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                     implode(', ', MessageTemplates::find($id)?->requiredPlaceholders() ?? [])
                 ),
-                'error',
-                ['tab' => self::TAB_MESSAGES, 'kind' => $id]
-            );
+            ];
         }
 
         $notice = TranslatedText::errorNotice($error);
+        $saved = __('Message saved.', 'eventcrew');
 
-        Admin::redirectTo(
-            self::PAGE_SLUG,
-            '' === $notice ? __('Message saved.', 'eventcrew') : __('Message saved.', 'eventcrew') . ' ' . $notice,
-            '' === $notice ? 'success' : 'error',
-            ['tab' => self::TAB_MESSAGES, 'kind' => $id]
-        );
+        return [
+            'kind' => $id,
+            'saved' => true,
+            'type' => '' === $notice ? 'success' : 'error',
+            'message' => '' === $notice ? $saved : $saved . ' ' . $notice,
+        ];
     }
 
     /** admin-post: "Reset to built-in text" for one kind. */

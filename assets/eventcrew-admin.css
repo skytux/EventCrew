@@ -118,3 +118,5 @@
     /* No turning: a still ring with a darker half says the same. */
     .ec-job-spin { animation: none; border-right-color: #2271b1; }
 }
+.ec-translating .ec-translated-text textarea,
+.ec-translating .ec-translated-text input[type="text"] { opacity: 0.6; }

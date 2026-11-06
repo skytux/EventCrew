@@ -277,6 +277,11 @@ final class Admin
         );
 
         add_action(
+            'wp_ajax_' . MessagesPage::SAVE_ACTION,
+            [$this->container->get(MessagesPage::class), 'saveAjax']
+        );
+
+        add_action(
             'admin_post_' . MessagesPage::RESET_ACTION,
             [$this->container->get(MessagesPage::class), 'reset']
         );

@@ -49,7 +49,8 @@ use EventCrew\Support\TranslatedText;
                 </p>
             <?php endif; ?>
 
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+            <?php // With JavaScript the page posts this form to admin-ajax and stays (eventcrew-jobs.js). ?>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" data-ec-ajax-save>
                 <input type="hidden" name="action" value="<?php echo esc_attr(MessagesPage::SAVE_ACTION); ?>">
                 <input type="hidden" name="kind" value="<?php echo esc_attr($eventcrew_id); ?>">
                 <?php wp_nonce_field(MessagesPage::SAVE_ACTION); ?>
@@ -124,6 +125,7 @@ use EventCrew\Support\TranslatedText;
                 ?>
 
                 <?php submit_button(__('Save this message', 'eventcrew')); ?>
+                <div class="ec-ajax-notice" data-ec-ajax-notice aria-live="polite"></div>
             </form>
 
             <?php if ($eventcrew_entry['changed']) : ?>

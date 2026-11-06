@@ -1695,7 +1695,10 @@ final class Kernel
 
         $this->container->singleton(
             JobsStatus::class,
-            fn (Container $container) => new JobsStatus($container->get(BackgroundJobs::class))
+            fn (Container $container) => new JobsStatus(
+                $container->get(BackgroundJobs::class),
+                $container->get(TranslationRegistry::class)
+            )
         );
 
         $this->container->singleton(
