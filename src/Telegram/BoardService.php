@@ -393,13 +393,14 @@ final class BoardService
 
     /**
      * Re-posts the board into the chat it already lives in. Used by the
-     * scheduled reminder. Inert until the bot and a board chat are set.
+     * scheduled reminder and the Settings button. Inert until the bot and a
+     * board chat are set. Returns whether the text board was posted.
      */
-    public function repost(): void
+    public function repost(): bool
     {
         $chatId = (int) ($this->board()['chat_id'] ?? 0);
 
-        $this->repostInto($chatId);
+        return $this->repostInto($chatId);
     }
 
     /**
@@ -414,17 +415,18 @@ final class BoardService
      * a delete that fails - the message is already gone, or is older than the
      * 48 hours Telegram lets a non-admin bot delete - is a swallowed benign
      * case. Inert until the bot is configured and a real chat is given.
+     * Returns whether the text board was posted.
      */
-    public function repostInto(int $chatId): void
+    public function repostInto(int $chatId): bool
     {
         if (! $this->telegram->isConfigured() || 0 === $chatId) {
-            return;
+            return false;
         }
 
         // /board in a different group cannot move a locked board either; the
         // group it already lives in still reposts (same chat passes the check).
         if ($this->moveBlocked($chatId)) {
-            return;
+            return false;
         }
 
         $previous = $this->board();
@@ -468,6 +470,8 @@ final class BoardService
         }
 
         $this->storeBoard($chatId, $result);
+
+        return null !== $result;
     }
 
     /** Whether the board is shown in card format (Settings → Telegram bot). */

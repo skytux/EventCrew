@@ -2613,7 +2613,7 @@ if (! defined('ABSPATH')) {
                             <?php
                             echo 0 !== $telegram['board_chat_id']
                                 ? esc_html((string) $telegram['board_chat_id'])
-                                : esc_html__('Not set yet - run /board in the group once.', 'eventcrew');
+                                : esc_html(\EventCrew\Admin\SettingsPage::noGroupText());
                             ?>
                         </td>
                     </tr>
@@ -2654,16 +2654,26 @@ if (! defined('ABSPATH')) {
         </p>
 
         <h2><?php esc_html_e('The board', 'eventcrew'); ?></h2>
+        <?php
+        // "Post the board in the group" runs in the background.
+        $eventcrew_board_badge = \EventCrew\Support\BackgroundJobs::badge(
+            \EventCrew\Support\BackgroundJobs::latest(\EventCrew\Admin\SettingsPage::BOARD_TARGET)
+        );
+        if ('' !== $eventcrew_board_badge) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in badge().
+            echo '<p>' . $eventcrew_board_badge . '</p>';
+        }
+        ?>
         <p class="description">
             <?php esc_html_e('The group’s board redraws itself whenever anything on it changes — someone joins or drops, you edit a task, or the hourly check notices a task has passed. This button does it now instead, which is what you want after upgrading (a new release may lay the board out differently) or to see a change land without waiting.', 'eventcrew'); ?>
         </p>
         <p class="description">
-            <?php esc_html_e('Refresh edits the board where it already sits, so nobody in the group is notified. Post a new board puts a fresh copy at the bottom of the group, like /board there, and removes the old one when Telegram allows it (within 48 hours).', 'eventcrew'); ?>
+            <?php esc_html_e('Refresh edits the board where it already sits, so nobody in the group is notified. Post the board in the group puts a fresh copy at the bottom of the group, like /board there, and removes the old one when Telegram allows it (within 48 hours). No command in the group is needed.', 'eventcrew'); ?>
         </p>
         <?php if (0 === $telegram['board_chat_id']) : ?>
             <div class="notice notice-warning inline" style="margin:1em 0">
                 <p>
-                    <?php esc_html_e('There is no board yet. Add the bot to your group: the board appears there by itself. If the bot is already in the group, send /board there once instead.', 'eventcrew'); ?>
+                    <?php echo esc_html(\EventCrew\Admin\SettingsPage::noGroupText()); ?>
                 </p>
                 <?php if ('' !== $telegram['bot_username']) : ?>
                     <p>
@@ -2688,7 +2698,7 @@ if (! defined('ABSPATH')) {
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;margin:1em 0 1em .5em">
             <input type="hidden" name="action" value="eventcrew_post_board">
             <?php wp_nonce_field($telegram['setup_nonce_action']); ?>
-            <?php submit_button(__('Post a new board', 'eventcrew'), 'secondary', 'submit', false, $eventcrew_no_board); ?>
+            <?php submit_button(__('Post the board in the group', 'eventcrew'), 'secondary', 'submit', false, $eventcrew_no_board); ?>
         </form>
     <?php endif; ?>
     </div>

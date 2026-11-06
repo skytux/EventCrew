@@ -64,22 +64,55 @@ final class SettingsPageTest extends TelegramTestCase
         return $notice;
     }
 
-    public function testPostANewBoardRepostsIntoTheBoardsGroup(): void
+    public function testPostTheBoardQueuesARepostAndTheJobPostsIt(): void
     {
-        $this->options[\EventCrew\Telegram\BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
-        $this->wpdb->nextResults[] = []; // render: no upcoming tasks
+        $this->options[\EventCrew\Telegram\BoardService::BOARD_OPTION] = ['chat_id' => -100, 'message_id' => 5];
 
         $notice = $this->save([], 'postBoard');
 
-        self::assertSame('A new board has been posted in the group.', $notice);
+        // The button only queues the job; Telegram is not called yet.
+        self::assertSame('The board is being posted in the group. This page shows when it is done.', $notice);
+        self::assertNotContains('sendMessage', $this->calledMethods());
+        $job = \EventCrew\Support\BackgroundJobs::latest(SettingsPage::BOARD_TARGET);
+        self::assertSame(SettingsPage::BOARD_JOB, $job['kind'] ?? null);
+
+        // The job posts the board in the group.
+        $this->telegramResults['sendMessage'] = ['message_id' => 6];
+        $this->wpdb->nextResults[] = []; // render: no upcoming tasks
+        self::assertSame(['ok' => true, 'error' => ''], $this->page()->boardJob([]));
         self::assertContains('sendMessage', $this->calledMethods());
+        self::assertSame(6, $this->options[\EventCrew\Telegram\BoardService::BOARD_OPTION]['message_id']);
     }
 
-    public function testPostANewBoardWithoutAGroupPostsNothing(): void
+    public function testPostTheBoardUsesTheStoredGroupWhenTheBoardOptionIsGone(): void
+    {
+        $this->options[\EventCrew\Telegram\GroupChat::OPTION] = -100;
+        $this->telegramResults['sendMessage'] = ['message_id' => 6];
+        $this->wpdb->nextResults[] = []; // render: no upcoming tasks
+
+        self::assertSame(['ok' => true, 'error' => ''], $this->page()->boardJob([]));
+        self::assertSame(-100, $this->telegramCalls[0]['body']['chat_id']);
+    }
+
+    public function testAFailedBoardJobSaysSo(): void
+    {
+        $this->options[\EventCrew\Telegram\GroupChat::OPTION] = -100;
+        $this->telegramErrors['sendMessage'] = 'Forbidden: bot was kicked from the supergroup chat';
+        $this->wpdb->nextResults[] = []; // render: no upcoming tasks
+
+        $result = $this->page()->boardJob([]);
+
+        self::assertFalse($result['ok']);
+        self::assertStringStartsWith('The board could not be posted in the group.', $result['error']);
+    }
+
+    public function testPostTheBoardWithoutAGroupSaysHowToFixIt(): void
     {
         $notice = $this->save([], 'postBoard');
 
-        self::assertStringStartsWith('The board has no group yet.', $notice);
+        self::assertSame(SettingsPage::noGroupText(), $notice);
+        self::assertStringContainsString('add it again', $notice);
+        self::assertNull(\EventCrew\Support\BackgroundJobs::latest(SettingsPage::BOARD_TARGET));
         self::assertNotContains('sendMessage', $this->calledMethods());
     }
 

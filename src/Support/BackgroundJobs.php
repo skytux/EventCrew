@@ -169,7 +169,7 @@ final class BackgroundJobs
         return self::$added;
     }
 
-    /** For tests: forget the jobs counted by addedNow(). */
+    /** Forget the jobs counted by addedNow(): for tests, and for a notice that says it itself. */
     public static function resetAdded(): void
     {
         self::$added = 0;

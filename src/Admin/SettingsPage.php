@@ -92,6 +92,10 @@ final class SettingsPage
     public const WEBHOOK_JOB = 'telegram_webhook';
     public const WEBHOOK_TARGET = 'telegram:webhook';
 
+    /** The BackgroundJobs kind and target of "Post the board in the group" (boardJob()). */
+    public const BOARD_JOB = 'telegram_board_post';
+    public const BOARD_TARGET = 'telegram:board';
+
     private const WEBHOOK_VERSION_OPTION = 'eventcrew_webhook_version';
 
     /** When the last automatic install failed; installOnUpdate() waits WEBHOOK_RETRY_GAP after it. */
@@ -1492,12 +1496,7 @@ final class SettingsPage
         }
 
         if (! $this->board->hasHome()) {
-            Admin::redirectTo(
-                self::PAGE_SLUG,
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __('The board has no home yet. Add the bot to your group and send /board there once; after that this button redraws it.', 'eventcrew'),
-                'error'
-            );
+            Admin::redirectTo(self::PAGE_SLUG, self::noGroupText(), 'error');
         }
 
         if ($this->board->refresh()) {
@@ -1507,14 +1506,26 @@ final class SettingsPage
         Admin::redirectTo(
             self::PAGE_SLUG,
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            __('The board could not be redrawn — it may have been deleted from the group. Send /board there to post a fresh one. Diagnostics has the logged reason.', 'eventcrew'),
+            __('The board could not be redrawn — it may have been deleted from the group. Use Post the board in the group to post a fresh one. Diagnostics has the logged reason.', 'eventcrew'),
             'error'
         );
     }
 
     /**
-     * "Post a new board": the /board repost, from wp-admin. A fresh board at
-     * the foot of the group, and the old one deleted where Telegram allows.
+     * What to do when the site knows no Telegram group: shown by the board
+     * buttons and on the Telegram tab.
+     */
+    public static function noGroupText(): string
+    {
+        // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        return __('The site does not know your Telegram group. To fix it, remove the bot from the group and add it again, or tap any button on a bot message there. Then reload this page.', 'eventcrew');
+    }
+
+    /**
+     * "Post the board in the group": the /board repost, from wp-admin, with
+     * no command in the group. A fresh board at the foot of the group, and
+     * the old one deleted where Telegram allows. The Telegram calls run in
+     * the background (boardJob()); the board section shows the job's badge.
      */
     public function postBoard(): void
     {
@@ -1529,17 +1540,41 @@ final class SettingsPage
         }
 
         if (! $this->board->hasHome()) {
-            Admin::redirectTo(
-                self::PAGE_SLUG,
-                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                __('The board has no group yet. Use Add the bot to your group, or send /board in the group once.', 'eventcrew'),
-                'error'
-            );
+            Admin::redirectTo(self::PAGE_SLUG, self::noGroupText(), 'error');
         }
 
-        $this->board->repost();
+        BackgroundJobs::enqueue(self::BOARD_JOB, self::BOARD_TARGET, [], __('Post the board in the group', 'eventcrew'));
 
-        Admin::redirectTo(self::PAGE_SLUG, __('A new board has been posted in the group.', 'eventcrew'));
+        // The notice below says it; the general "translations run in the
+        // background" sentence would not fit.
+        BackgroundJobs::resetAdded();
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            __('The board is being posted in the group. This page shows when it is done.', 'eventcrew')
+        );
+    }
+
+    /**
+     * The background job (BOARD_JOB) of "Post the board in the group".
+     *
+     * @param array<string, mixed> $args None.
+     * @return array{ok: bool, error: string}
+     */
+    public function boardJob(array $args = []): array
+    {
+        if (! $this->board->hasHome()) {
+            return ['ok' => false, 'error' => self::noGroupText()];
+        }
+
+        if ($this->board->repost()) {
+            return ['ok' => true, 'error' => ''];
+        }
+
+        return [
+            'ok' => false,
+            'error' => __('The board could not be posted in the group. Diagnostics has the logged reason.', 'eventcrew'),
+        ];
     }
 
     /**
