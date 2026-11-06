@@ -8318,3 +8318,9 @@ msgstr "Avaa Telegramissa:"
 #. translators: %s: an action, such as "Show your ticket". The line is followed by a t.me link.
 msgid "%s in Telegram"
 msgstr "%s Telegramissa"
+
+msgid "The description of the task, or of its role when the task has none. On a line of its own; the line goes when there is no description."
+msgstr "Tehtävän kuvaus, tai sen roolin kuvaus, jos tehtävällä ei ole omaa. Omalla rivillään; rivi poistuu, kun kuvausta ei ole."
+
+msgid "Sample description: what the task involves."
+msgstr "Mallikuvaus: mitä tehtävään kuuluu."

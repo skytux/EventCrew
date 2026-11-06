@@ -190,6 +190,10 @@ final class Kernel
         // option (GroupChat). Does nothing once it is set.
         GroupChat::migrate();
 
+        // Adds {description} to the stored reminder texts (email and
+        // Telegram). Runs once per site.
+        MessageTemplates::migrateReminderDescription();
+
         // The bot's answers and buttons as edited on the Translations page.
         // Registered on every request: the bot answers on the webhook path.
         BotTexts::boot();

@@ -103,18 +103,29 @@ final class ReminderCall
 
     private function remindInLanguage(Person $person, Task $task, int $assignmentId): void
     {
+        $description = RoleGuide::taskDescription($task);
         $about = RoleGuide::aboutLine($task);
-        $aboutBlock = '' === $about ? '' : "\n\n" . $about;
-        // The texts are the Messages page templates (MessageTemplates); the
-        // task's "about" line is added under them.
-        $context = ['person' => $person, 'task' => $task, 'assignment_id' => $assignmentId];
+        // The texts are the Messages page templates (MessageTemplates), with
+        // the task's description in {description}. A text that does not show
+        // the description (an AI text, or one with {description} taken out)
+        // gets the role's "about" line under it instead.
+        $withAbout = static fn (string $body): string => ('' === $about
+            || ('' !== $description && str_contains($body, $description)))
+            ? $body
+            : $body . "\n\n" . $about;
+        $context = [
+            'person' => $person,
+            'task' => $task,
+            'assignment_id' => $assignmentId,
+            'description' => $description,
+        ];
 
         if (null !== $person->telegramChatId) {
             $this->telegram->sendMessage(
                 $person->telegramChatId,
                 DmBody::frame(
                     $person,
-                    MessageAiText::body('reminder_dm', $context, $task->eventPostId) . $aboutBlock,
+                    $withAbout(MessageAiText::body('reminder_dm', $context, $task->eventPostId)),
                     true
                 ),
                 // The ticket, and a one-tap out, so a "can't make it" turns into
@@ -131,7 +142,7 @@ final class ReminderCall
             $person->id,
             $person->email,
             MessageTemplates::subject('reminder', $context),
-            MessageAiText::body('reminder', $context, $task->eventPostId) . $aboutBlock,
+            $withAbout(MessageAiText::body('reminder', $context, $task->eventPostId)),
             // The ticket again, a day out: the reminder is the message people
             // still have open when they arrive at the door. The same actions
             // as the DM, with the bot's as "Open in Telegram" links.

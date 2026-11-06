@@ -22,6 +22,7 @@ use EventCrew\Support\MessageTemplate;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterText;
+use EventCrew\Support\Roles;
 use EventCrew\Support\TicketMail;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Tests\TestCase;
@@ -175,6 +176,21 @@ final class MessagePreviewTest extends TestCase
         self::assertStringContainsString('Hi Sample,', $message['html']);
         self::assertSame(MessagePreview::SAMPLE_EMAIL, $message['to']);
         self::assertStringContainsString(Mailer::PREVIEW_LINK, $message['html']);
+    }
+
+    /** The reminder previews show the sample task's description under the "you're on" line. */
+    public function testTheReminderPreviewShowsTheDescription(): void
+    {
+        $description = Roles::description((string) Roles::active()[0]['slug']);
+        self::assertNotSame('', $description);
+
+        $dm = $this->preview()->render('reminder_dm');
+        self::assertNotNull($dm);
+        self::assertStringContainsString("See you there!\n\n" . $description, $dm['text']);
+
+        $email = $this->preview()->render('reminder');
+        self::assertNotNull($email);
+        self::assertStringContainsString($description, $email['text']);
     }
 
     public function testAnUnknownKindIsNull(): void

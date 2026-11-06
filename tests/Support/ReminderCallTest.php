@@ -200,8 +200,11 @@ final class ReminderCallTest extends TelegramTestCase
         $this->call()->run(25);
 
         $dm = (array) $this->lastCallTo('sendMessage');
-        self::assertStringContainsString('About the task', (string) $dm['text']);
-        self::assertStringContainsString('LED candles', (string) $dm['text']);
+        // The role's description is the {description} paragraph, under the
+        // "you're on" line, and not repeated as an "About the task" line.
+        self::assertStringContainsString("See you there!\n\nSet up before the dance", (string) $dm['text']);
+        self::assertSame(1, substr_count((string) $dm['text'], 'LED candles'));
+        self::assertStringNotContainsString('About the task', (string) $dm['text']);
         // The link lives in a named button, never in the text itself.
         self::assertStringNotContainsString('docs.example', (string) $dm['text']);
 
@@ -211,6 +214,34 @@ final class ReminderCallTest extends TelegramTestCase
         self::assertSame('l:5', $rows[1][0]['callback_data']);
         self::assertSame('https://docs.example/guide', $rows[2][0]['url']);
         self::assertStringContainsString('Crew guide', $rows[2][0]['text']);
+    }
+
+    /**
+     * The task's own description (its notes) comes first: the role's
+     * description is not shown then. The email keeps its line breaks.
+     */
+    public function testTheTasksOwnDescriptionIsShownInBothReminders(): void
+    {
+        $bodies = [];
+        Functions\when('wp_mail')->alias(function (string $to, string $subject, string $body) use (&$bodies): bool {
+            $bodies[] = $body;
+
+            return true;
+        });
+
+        $this->wpdb->nextResults[] = [['notes' => "Bring a torch.\nMeet at the back door."] + $this->taskRow(5)];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(3)];
+        $this->wpdb->nextRows[] = $this->personRow();
+
+        $this->call()->run(25);
+
+        $dm = (string) $this->lastCallTo('sendMessage')['text'];
+        self::assertStringContainsString("See you there!\n\nBring a torch.\nMeet at the back door.", $dm);
+        self::assertStringNotContainsString('LED candles', $dm);
+        self::assertStringNotContainsString('About the task', $dm);
+        // Escaped, with the line break kept.
+        self::assertStringContainsString("Bring a torch.<br>Meet at the back door.", $bodies[0]);
+        self::assertStringNotContainsString('LED candles', $bodies[0]);
     }
 
     public function testWithoutAGuideLinkTheReminderHasTheTicketAndCancelButtons(): void

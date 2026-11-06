@@ -127,6 +127,9 @@ final class MessagePreview
             ),
             'free_cancel' => '',
             'about' => '',
+            'description' => '' !== RoleGuide::taskDescription($task)
+                ? RoleGuide::taskDescription($task)
+                : __('Sample description: what the task involves.', 'eventcrew'),
             'note' => __('Thanks for the notice.', 'eventcrew'),
             'cancelled' => __('❌ Cancelled', 'eventcrew'),
             'open_tasks' => '- 📅 ' . sprintf(
