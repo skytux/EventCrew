@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.157
+Stable tag: 1.140.158
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,12 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.158 =
+* My info shows only facts: standing, completed tasks, credits and coming tasks
+* Full-width buttons: 🎟 Tickets, 📋 Tasks, ⚙️ Settings, ❓ Help; 🛠 Admin at the bottom for organizers
+* Tasks screen has the cancel buttons, Take over a task and Past tasks; Settings has Notifications, Language and Web sign-in
+* New commands /tasks, /tickets and /settings
 
 = 1.140.157 =
 * Board text: the date, then the event title on its own line, then an empty line before the tasks
@@ -1716,6 +1722,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.158 =
+No settings change.
 
 = 1.140.157 =
 No settings change.
