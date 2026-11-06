@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.155
+Stable tag: 1.140.156
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,12 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.156 =
+* Group board: no date buttons; 📅 More tasks opens the next date in the private chat
+* Task buttons three to a row, filled with blank buttons
+* Foot: 👤 My info · 📝 Task info · 📅 More tasks, then 👋 New here? Sign up at the bottom
+* 📝 Task info sends what each task involves as a private message
 
 = 1.140.155 =
 * My info (/me) has a cancel button for each coming task; it asks first, with what the cancel costs.
@@ -1706,6 +1712,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.156 =
+No settings change.
 
 = 1.140.155 =
 No settings change.
