@@ -5195,10 +5195,6 @@ msgstr "移除图片"
 msgid "Remove key"
 msgstr "移除密钥"
 
-#: templates/admin/messages-tab-events.php:105 templates/public/signup.php:2094
-msgid "Remove the one-time text"
-msgstr "移除一次性文本"
-
 #: templates/admin/settings.php:1043
 msgid "Remove the saved secret key"
 msgstr "移除已保存的私钥"
@@ -5206,10 +5202,6 @@ msgstr "移除已保存的私钥"
 #: templates/admin/settings.php:1873
 msgid "Remove the saved token (this disconnects the bot)"
 msgstr "移除已保存的令牌（这会断开机器人）"
-
-#: templates/admin/messages-tab-events.php:162 templates/public/signup.php:1991
-msgid "Remove the text"
-msgstr "移除文本"
 
 #: templates/admin/settings.php:2379
 msgid "Remove this format"
@@ -8488,10 +8480,6 @@ msgstr "收件人"
 msgid "To add one, send /newsletter followed by the text, for example:"
 msgstr "要添加一条，请发送 /newsletter 后面跟上文本，例如："
 
-#: src/Telegram/NewsletterCommand.php:97
-msgid "To change it, send /newsletter followed by the new text. To remove it, send /newsletter clear."
-msgstr "要更改，请发送 /newsletter 后面跟上新文本。要移除，请发送 /newsletter clear。"
-
 #. translators: %s: the controller's contact address
 #: src/Support/PrivacyPolicy.php:887
 msgid "To do any of these, write to %s and we will answer within one month."
@@ -8504,10 +8492,6 @@ msgstr "要转交任务，请团队中的某人给机器人发送 /me 并点 �
 #: src/Telegram/GuestListService.php:417
 msgid "To see the list send /door and tap 👥 Guest list, or /door 1.8. for another night."
 msgstr "要查看名单，请发送 /door 并点击 👥 嘉宾名单，或用 /door 1.8. 查看另一晚。"
-
-#: src/Telegram/FollowupCommand.php:141
-msgid "To set a text for the next post-event email only, send /followup came followed by the thank-you text, or /followup missed followed by the sorry text. {event} becomes the event’s name and {date} its date. To remove a one-time text, send /followup came clear or /followup missed clear; /followup clear removes both."
-msgstr "要只为下一封活动后邮件设置文本，请发送 /followup came 后面跟上感谢文本，或 /followup missed 后面跟上致歉文本。{event} 会变成活动名称，{date} 会变成其日期。要移除一次性文本，请发送 /followup came clear 或 /followup missed clear；/followup clear 会同时移除两者。"
 
 #: src/Telegram/WebLoginBot.php:86
 msgid "To sign in to the crew app, press the code that the crew app on your screen shows. If you did not just press Telegram on the crew app yourself, press nothing."
@@ -11138,3 +11122,69 @@ msgstr "开始前不到 %d 小时取消"
 #: src/Telegram/TicketController.php
 msgid "Show QR code"
 msgstr "显示二维码"
+
+msgid "Translating… The translations will show here."
+msgstr "正在翻译… 译文将显示在这里。"
+
+msgid "Not translated: every language gets this text as written. Translation is tried again before the email goes out."
+msgstr "未翻译：所有语言都将收到原文。发送邮件前会再次尝试翻译。"
+
+msgid "%s reset it to the default."
+msgstr "%s 已恢复默认。"
+
+msgid "%s set this text:"
+msgstr "%s 设置了此文本："
+
+msgid "Confirm replaces it."
+msgstr "确认即替换。"
+
+msgid "Keep"
+msgstr "保留"
+
+msgid "Kept the current text."
+msgstr "已保留当前文本。"
+
+msgid "Next announcement"
+msgstr "下一次公告"
+
+msgid "Nothing was saved: there is already a one-time text. Tick “Replace the current text” to replace it."
+msgstr "未保存：已有一次性文本。勾选“替换当前文本”即可替换。"
+
+msgid "Nothing was saved: there is already a text. Tick “Replace the current text” to replace it."
+msgstr "未保存：已有文本。勾选“替换当前文本”即可替换。"
+
+msgid "Replace"
+msgstr "替换"
+
+msgid "Replace it with your text?"
+msgstr "用你的文本替换吗？"
+
+msgid "Replace the current text"
+msgstr "替换当前文本"
+
+msgid "Reset to default"
+msgstr "恢复默认"
+
+msgid "Set by %1$s on %2$s at %3$s."
+msgstr "由 %1$s 于 %2$s %3$s 设置。"
+
+msgid "There is already a one-time text:"
+msgstr "已有一次性文本："
+
+msgid "There is already a text for the next announcement:"
+msgstr "下一次公告已有文本："
+
+msgid "This has expired. Please send it again."
+msgstr "已过期，请重新发送。"
+
+msgid "To change it, send /newsletter followed by the new text. To reset it to the default, send /newsletter reset."
+msgstr "要修改，请发送 /newsletter 加新文本。要恢复默认，请发送 /newsletter reset。"
+
+msgid "To see it or reset it to the default: %s"
+msgstr "查看或恢复默认：%s"
+
+msgid "To set a text for the next post-event email only, send /followup came followed by the thank-you text, or /followup missed followed by the sorry text. {event} becomes the event’s name and {date} its date. To reset a version to the default, send /followup came reset or /followup missed reset; /followup reset resets both."
+msgstr "要只为下一封活动后邮件设置文本，请发送 /followup came 加感谢文本，或 /followup missed 加致歉文本。{event} 会变成活动名称，{date} 变成日期。要将某个版本恢复默认，请发送 /followup came reset 或 /followup missed reset；/followup reset 恢复两者。"
+
+msgid "an administrator"
+msgstr "一位管理员"

@@ -102,7 +102,7 @@ $eventcrew_card_style = 'margin:1em 0;padding:0.5em 1em 1em;background:#fff;bord
                         <button type="submit" class="button button-primary" name="op" value="save"><?php esc_html_e('Save', 'eventcrew'); ?></button>
                         <?php if ($eventcrew_follow_text['next']) : ?>
                             <button type="submit" class="button-link" name="op" value="clear" style="margin-left:1em">
-                                <?php esc_html_e('Remove the one-time text', 'eventcrew'); ?>
+                                <?php esc_html_e('Reset to default', 'eventcrew'); ?>
                             </button>
                         <?php endif; ?>
                     </p>
@@ -159,7 +159,7 @@ $eventcrew_card_style = 'margin:1em 0;padding:0.5em 1em 1em;background:#fff;bord
                     <button type="submit" class="button button-primary" name="op" value="save"><?php esc_html_e('Save', 'eventcrew'); ?></button>
                     <?php if (null !== $newsletter['text']) : ?>
                         <button type="submit" class="button-link" name="op" value="clear" style="margin-left:1em">
-                            <?php esc_html_e('Remove the text', 'eventcrew'); ?>
+                            <?php esc_html_e('Reset to default', 'eventcrew'); ?>
                         </button>
                     <?php endif; ?>
                 </p>

@@ -113,7 +113,8 @@ final class AssistantActions
             $list[] = self::entry('/newsletter', "show the organizers' own text for the next newsletter");
             $list[] = self::entry(
                 '/newsletter <text>',
-                "set the organizers' own text for the next newsletter, replacing any earlier one; it is translated"
+                "set the organizers' own text for the next newsletter, replacing any earlier one (the confirmation"
+                    . ' shows the earlier text and who set it); it is translated'
                     . ' so the mail carries it in every site language; <text> is the text itself, as the person'
                     . ' wants it sent (line breaks allowed)',
                 true
@@ -132,8 +133,9 @@ final class AssistantActions
                     . ' the person asks which events come next'
             );
             $list[] = self::entry(
-                '/newsletter clear',
-                "remove the organizers' own text from the next newsletter",
+                '/newsletter reset',
+                "reset the organizers' own text of the next newsletter to the default (removes it); also for"
+                    . ' "clear" or "remove"',
                 true
             );
             $list[] = self::entry(
@@ -146,13 +148,14 @@ final class AssistantActions
                 'set a one-time text for the next post-event email only: came = the thank-you text, missed = the'
                     . ' sorry text; it replaces the main text between the greeting and the sign-off, is translated'
                     . ' into every site language, and is removed after that email is sent; {event} and {date} in it'
-                    . ' become the event\'s name and date; <text> is the text itself (line breaks allowed)',
+                    . ' become the event\'s name and date; <text> is the text itself (line breaks allowed); it'
+                    . ' replaces an earlier one-time text of that version (the confirmation shows it and who set it)',
                 true
             );
             $list[] = self::entry(
-                '/followup [came|missed] clear',
-                'remove the one-time text of the next post-event email (one version, or both when no version'
-                    . ' is given), so it uses the text on the Messages page',
+                '/followup [came|missed] reset',
+                'reset the next post-event email to the default (one version, or both when no version is given):'
+                    . ' removes the one-time text, so it uses the text on the Messages page; also for "clear"',
                 true
             );
         }
@@ -357,7 +360,7 @@ final class AssistantActions
 
     /**
      * "/newsletter" shows the text for the next newsletter, "/newsletter
-     * clear" removes it, and "/newsletter <text>" sets it. Organizers only.
+     * reset" (or clear) resets it to the default, and "/newsletter <text>" sets it. Organizers only.
      * Setting and removing ask to confirm, and the text shown with the
      * Confirm button is exactly the text that is saved.
      *
@@ -381,8 +384,8 @@ final class AssistantActions
             return self::accept('/newsletter', false, self::RUN_MESSAGE, '/newsletter');
         }
 
-        if ('clear' === strtolower($text)) {
-            return self::accept('/newsletter clear', true, self::RUN_MESSAGE, '/newsletter clear');
+        if (in_array(strtolower($text), ['clear', 'reset'], true)) {
+            return self::accept('/newsletter reset', true, self::RUN_MESSAGE, '/newsletter reset');
         }
 
         if (mb_strlen($text) > NewsletterText::MAX_LENGTH) {
@@ -395,8 +398,8 @@ final class AssistantActions
     }
 
     /**
-     * "/followup" shows the post-event email's texts, "/followup clear"
-     * removes both one-time texts, "/followup came|missed clear" removes one,
+     * "/followup" shows the post-event email's texts, "/followup reset"
+     * (or clear) resets both one-time texts, "/followup came|missed reset" one,
      * and "/followup came|missed <text>" sets one. Organizers only. Setting
      * and removing ask to confirm, and the text shown with the Confirm button
      * is exactly the text that is saved.
@@ -421,8 +424,8 @@ final class AssistantActions
             return self::accept('/followup', false, self::RUN_MESSAGE, '/followup');
         }
 
-        if ('clear' === strtolower($rest)) {
-            return self::accept('/followup clear', true, self::RUN_MESSAGE, '/followup clear');
+        if (in_array(strtolower($rest), ['clear', 'reset'], true)) {
+            return self::accept('/followup reset', true, self::RUN_MESSAGE, '/followup reset');
         }
 
         $parts = preg_split('/\s+/u', $rest, 2);
@@ -433,8 +436,8 @@ final class AssistantActions
             return self::refuse(self::ERROR_INVALID);
         }
 
-        if ('clear' === strtolower($text)) {
-            $line = '/followup ' . $variant . ' clear';
+        if (in_array(strtolower($text), ['clear', 'reset'], true)) {
+            $line = '/followup ' . $variant . ' reset';
 
             return self::accept($line, true, self::RUN_MESSAGE, $line);
         }

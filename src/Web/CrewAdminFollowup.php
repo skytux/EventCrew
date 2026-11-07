@@ -8,6 +8,7 @@ use EventCrew\Admin\AiPromptsPage;
 use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupText;
+use EventCrew\Support\OwnTextNotice;
 use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\TranslatedText;
 
@@ -17,11 +18,18 @@ use EventCrew\Support\TranslatedText;
  * next email uses, with a field to set a one-time text for the next email
  * only. The one-time text goes through FollowupText, the same as the bot's
  * /followup, so it is translated the same way as the newsletter's text.
+ *
+ * As in the bot, a one-time text is only replaced when the organizer ticks
+ * "Replace the current text" (which shows who set it and when), the reset
+ * button puts the default back, and the other organizers are told
+ * (OwnTextNotice).
  */
 final class CrewAdminFollowup
 {
-    public function __construct(private readonly FollowupText $text)
-    {
+    public function __construct(
+        private readonly FollowupText $text,
+        private readonly ?OwnTextNotice $notice = null
+    ) {
     }
 
     /**
@@ -29,11 +37,18 @@ final class CrewAdminFollowup
      * in every site language (language code => text, with {event} and {date}
      * still in it), whether it is a one-time text, for a one-time text
      * whether it was translated, and whether a saved text is being
-     * translated in the background now (translating).
+     * translated in the background now (translating), and for a one-time
+     * text who set it when (set_by, '' when it does not say).
      *
      * @return array{
      *     enabled: bool,
-     *     texts: array<string, array{texts: array<string, string>, next: bool, translated: bool, translating: bool}>
+     *     texts: array<string, array{
+     *         texts: array<string, string>,
+     *         next: bool,
+     *         translated: bool,
+     *         translating: bool,
+     *         set_by: string
+     *     }>
      * }
      */
     public function view(): array
@@ -55,6 +70,7 @@ final class CrewAdminFollowup
                 'translating' => BackgroundJobs::isActive(
                     BackgroundJobs::latest(AiPromptsPage::followupTarget($variant))
                 ),
+                'set_by' => null !== $next && null !== $this->notice ? $this->notice->setBy($next) : '',
             ];
         }
 
@@ -65,10 +81,15 @@ final class CrewAdminFollowup
     }
 
     /**
-     * Saves or clears the one-time text of $variant ($byPersonId: who, 0 from
-     * wp-admin). $op is 'clear' to clear;
-     * anything else saves $text (an empty text clears too). Returns the
-     * notice code.
+     * Saves the one-time text of $variant, or resets it to the default
+     * ($byPersonId: who, 0 from wp-admin). $op is 'clear' to reset; anything
+     * else saves $text (an empty text resets too). Returns the notice code.
+     *
+     * With $replace false (the crew app's form without "Replace the current
+     * text" ticked), an earlier one-time text is kept and
+     * 'admin_followup_exists' is answered; null does not ask (wp-admin).
+     * $notify tells the other organizers (OwnTextNotice); the background job
+     * that saves a text already told them when it was queued.
      *
      * With $background (the crew app), a text to translate is saved by a
      * background job (AiPromptsPage::FOLLOWUP_JOB, the same as the wp-admin
@@ -80,16 +101,32 @@ final class CrewAdminFollowup
         string $variant,
         string $op,
         string $text,
-        bool $background = false
+        bool $background = false,
+        ?bool $replace = null,
+        bool $notify = true
     ): string {
         if (! FollowupText::isVariant($variant)) {
             return 'admin_followup_unknown';
         }
 
+        $had = null !== $this->text->next($variant);
+
         if ('clear' === $op || '' === trim($text)) {
             $this->text->clearNext($variant);
 
+            if ($had && $notify) {
+                $this->notice?->changed($variant, $byPersonId, '');
+            }
+
             return 'admin_followup_cleared';
+        }
+
+        if (false === $replace && $had) {
+            return 'admin_followup_exists';
+        }
+
+        if ($notify) {
+            $this->notice?->changed($variant, $byPersonId, $text);
         }
 
         if ($background && TranslatedText::modelReady()) {
@@ -114,6 +151,7 @@ final class CrewAdminFollowup
             'admin_followup_saved' => __('Saved for the next post-event email only. The text is translated; every language’s version is shown below.', 'eventcrew'),
             'admin_followup_saved_untranslated' => __('Saved for the next post-event email only, but the text could not be translated, so every language shows it as you wrote it.', 'eventcrew'),
             'admin_followup_cleared' => __('The one-time text is removed. The next post-event email uses the text on the Messages page.', 'eventcrew'),
+            'admin_followup_exists' => __('Nothing was saved: there is already a one-time text. Tick “Replace the current text” to replace it.', 'eventcrew'),
             'admin_followup_unknown' => __('Nothing was saved: choose the thank-you text or the sorry text.', 'eventcrew'),
             'admin_followup_queued' => self::queuedNotice(),
         ];

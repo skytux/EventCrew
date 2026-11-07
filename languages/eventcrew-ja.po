@@ -5195,10 +5195,6 @@ msgstr "画像を削除"
 msgid "Remove key"
 msgstr "キーを削除"
 
-#: templates/admin/messages-tab-events.php:105 templates/public/signup.php:2094
-msgid "Remove the one-time text"
-msgstr "1 回限りの文面を削除"
-
 #: templates/admin/settings.php:1043
 msgid "Remove the saved secret key"
 msgstr "保存したシークレットキーを削除"
@@ -5206,10 +5202,6 @@ msgstr "保存したシークレットキーを削除"
 #: templates/admin/settings.php:1873
 msgid "Remove the saved token (this disconnects the bot)"
 msgstr "保存したトークンを削除（ボットの接続が切れます）"
-
-#: templates/admin/messages-tab-events.php:162 templates/public/signup.php:1991
-msgid "Remove the text"
-msgstr "文面を削除"
 
 #: templates/admin/settings.php:2379
 msgid "Remove this format"
@@ -8488,10 +8480,6 @@ msgstr "宛先"
 msgid "To add one, send /newsletter followed by the text, for example:"
 msgstr "追加するには、/newsletter に続けて文面を送ってください。例:"
 
-#: src/Telegram/NewsletterCommand.php:97
-msgid "To change it, send /newsletter followed by the new text. To remove it, send /newsletter clear."
-msgstr "変更するには、/newsletter に続けて新しい文面を送ってください。削除するには /newsletter clear を送ってください。"
-
 #. translators: %s: the controller's contact address
 #: src/Support/PrivacyPolicy.php:887
 msgid "To do any of these, write to %s and we will answer within one month."
@@ -8504,10 +8492,6 @@ msgstr "引き渡すには、クルーの誰かにボットへ /me を送って 
 #: src/Telegram/GuestListService.php:417
 msgid "To see the list send /door and tap 👥 Guest list, or /door 1.8. for another night."
 msgstr "リストを見るには /door を送って 👥 ゲストリスト をタップするか、別の夜なら /door 1.8. を送ってください。"
-
-#: src/Telegram/FollowupCommand.php:141
-msgid "To set a text for the next post-event email only, send /followup came followed by the thank-you text, or /followup missed followed by the sorry text. {event} becomes the event’s name and {date} its date. To remove a one-time text, send /followup came clear or /followup missed clear; /followup clear removes both."
-msgstr "次のイベント後メールだけの文面を設定するには、/followup came に続けてお礼の文面を、または /followup missed に続けてお詫びの文面を送ってください。{event} はイベント名に、{date} はその日付になります。1 回限りの文面を削除するには /followup came clear または /followup missed clear を送ってください。/followup clear で両方を削除します。"
 
 #: src/Telegram/WebLoginBot.php:86
 msgid "To sign in to the crew app, press the code that the crew app on your screen shows. If you did not just press Telegram on the crew app yourself, press nothing."
@@ -11138,3 +11122,69 @@ msgstr "%d時間前を切ってキャンセル"
 #: src/Telegram/TicketController.php
 msgid "Show QR code"
 msgstr "QRコードを表示"
+
+msgid "Translating… The translations will show here."
+msgstr "翻訳中… 翻訳はここに表示されます。"
+
+msgid "Not translated: every language gets this text as written. Translation is tried again before the email goes out."
+msgstr "未翻訳：すべての言語に書かれたままのテキストが届きます。メール送信前に翻訳を再試行します。"
+
+msgid "%s reset it to the default."
+msgstr "%sが既定に戻しました。"
+
+msgid "%s set this text:"
+msgstr "%sがこのテキストを設定しました："
+
+msgid "Confirm replaces it."
+msgstr "確認すると置き換わります。"
+
+msgid "Keep"
+msgstr "そのまま"
+
+msgid "Kept the current text."
+msgstr "現在のテキストをそのままにしました。"
+
+msgid "Next announcement"
+msgstr "次のお知らせ"
+
+msgid "Nothing was saved: there is already a one-time text. Tick “Replace the current text” to replace it."
+msgstr "保存されていません：一回限りのテキストがすでにあります。置き換えるには「現在のテキストを置き換える」にチェックしてください。"
+
+msgid "Nothing was saved: there is already a text. Tick “Replace the current text” to replace it."
+msgstr "保存されていません：テキストがすでにあります。置き換えるには「現在のテキストを置き換える」にチェックしてください。"
+
+msgid "Replace"
+msgstr "置き換える"
+
+msgid "Replace it with your text?"
+msgstr "あなたのテキストで置き換えますか？"
+
+msgid "Replace the current text"
+msgstr "現在のテキストを置き換える"
+
+msgid "Reset to default"
+msgstr "既定に戻す"
+
+msgid "Set by %1$s on %2$s at %3$s."
+msgstr "%1$sが%2$s %3$sに設定。"
+
+msgid "There is already a one-time text:"
+msgstr "一回限りのテキストがすでにあります："
+
+msgid "There is already a text for the next announcement:"
+msgstr "次のお知らせのテキストがすでにあります："
+
+msgid "This has expired. Please send it again."
+msgstr "期限切れです。もう一度送ってください。"
+
+msgid "To change it, send /newsletter followed by the new text. To reset it to the default, send /newsletter reset."
+msgstr "変更するには /newsletter に続けて新しいテキストを送ってください。既定に戻すには /newsletter reset を送ってください。"
+
+msgid "To see it or reset it to the default: %s"
+msgstr "表示または既定に戻す：%s"
+
+msgid "To set a text for the next post-event email only, send /followup came followed by the thank-you text, or /followup missed followed by the sorry text. {event} becomes the event’s name and {date} its date. To reset a version to the default, send /followup came reset or /followup missed reset; /followup reset resets both."
+msgstr "次のイベント後メールだけのテキストを設定するには、/followup came に続けてお礼のテキストを、または /followup missed に続けてお詫びのテキストを送ってください。{event} はイベント名に、{date} はその日付になります。版を既定に戻すには /followup came reset または /followup missed reset を、/followup reset で両方を戻します。"
+
+msgid "an administrator"
+msgstr "管理者"

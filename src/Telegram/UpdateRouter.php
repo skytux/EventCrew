@@ -38,6 +38,9 @@ final class UpdateRouter
     /** Highest Telegram update_id already processed, for idempotency. */
     public const LAST_UPDATE_OPTION = 'eventcrew_telegram_last_update_id';
 
+    /** The update being routed: BotLog::SOURCE_HELPER for the helper's actions, else ''. */
+    private string $source = '';
+
     public function __construct(
         private readonly OnboardingService $onboarding,
         private readonly BoardService $board,
@@ -109,6 +112,8 @@ final class UpdateRouter
     private function route(array $update, ?string $chosen, string $source = ''): void
     {
         $logged = null !== $this->botLog ? $this->botLog->record($update, $source) : 0;
+        $outer = $this->source;
+        $this->source = $source;
 
         try {
             $this->routeUpdate($update, $chosen);
@@ -116,6 +121,8 @@ final class UpdateRouter
             $this->botLog?->failed($logged);
 
             throw $e;
+        } finally {
+            $this->source = $outer;
         }
     }
 
@@ -203,6 +210,10 @@ final class UpdateRouter
                 $this->doorList->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'gl:')) {
                 $this->guestList->onSelect($callbackQuery);
+            } elseif (null !== $this->followup && str_starts_with($data, FollowupCommand::PREFIX)) {
+                $this->followup->onCallback($callbackQuery);
+            } elseif (null !== $this->newsletter && str_starts_with($data, NewsletterCommand::PREFIX)) {
+                $this->newsletter->onCallback($callbackQuery);
             } elseif (null !== $this->say && str_starts_with($data, SayCommand::PREFIX)) {
                 $this->say->onConfirm($callbackQuery);
             } elseif (null !== $this->events && str_starts_with($data, EventsCommand::PREFIX)) {
@@ -419,13 +430,26 @@ final class UpdateRouter
         }
 
         if (null !== $this->newsletter && $this->isCommand($text, 'newsletter')) {
-            $this->newsletter->onCommand($fromId, $chatId, $isPrivate, $this->commandArguments($text, 'newsletter'));
+            // The helper's action was confirmed with the text it replaces shown.
+            $this->newsletter->onCommand(
+                $fromId,
+                $chatId,
+                $isPrivate,
+                $this->commandArguments($text, 'newsletter'),
+                BotLog::SOURCE_HELPER === $this->source
+            );
 
             return;
         }
 
         if (null !== $this->followup && $this->isCommand($text, 'followup')) {
-            $this->followup->onCommand($fromId, $chatId, $isPrivate, $this->commandArguments($text, 'followup'));
+            $this->followup->onCommand(
+                $fromId,
+                $chatId,
+                $isPrivate,
+                $this->commandArguments($text, 'followup'),
+                BotLog::SOURCE_HELPER === $this->source
+            );
 
             return;
         }

@@ -122,7 +122,7 @@ final class AssistantServiceTest extends TelegramTestCase
         );
     }
 
-    private function service(): AssistantService
+    private function service(?\Closure $replaceWarning = null): AssistantService
     {
         return new AssistantService(
             $this->client(),
@@ -136,7 +136,9 @@ final class AssistantServiceTest extends TelegramTestCase
                 new Mailer(new Logger(), new EmailTemplate(new Logger())),
                 $this->client(),
                 new Logger()
-            )
+            ),
+            null,
+            $replaceWarning
         );
     }
 
@@ -949,6 +951,34 @@ final class AssistantServiceTest extends TelegramTestCase
 
         self::assertCount(1, $this->ran);
         self::assertSame("/newsletter Doors open at 19.\n\nBring water.", $this->ran[0]['message']['text']);
+    }
+
+    /**
+     * A text that replaces an organizer's earlier one: the confirmation shows
+     * the earlier text and who set it, so Confirm replaces it knowingly (the
+     * command does not ask again).
+     */
+    public function testTheConfirmationOfAReplacingTextShowsTheEarlierOne(): void
+    {
+        $this->person(true);
+        $this->reply(true, true, 'I will set it.', '/newsletter Doors at 19.');
+        $asked = [];
+        $service = $this->service(static function (string $action) use (&$asked): string {
+            $asked[] = $action;
+
+            return "There is already a text for the next announcement:\n\nHi\n\nConfirm replaces it.";
+        });
+
+        $service->onMessage(self::privateMessage('newsletter: doors at 19'), null, function (array $update): void {
+            $this->ran[] = $update;
+        });
+
+        self::assertSame(['/newsletter Doors at 19.'], $asked);
+        $texts = $this->sentTexts();
+        self::assertStringContainsString(
+            "➡️ /newsletter Doors at 19.\n\n⚠️ There is already a text for the next announcement:\n\nHi",
+            (string) end($texts)
+        );
     }
 
     public function testCancelRunsNothing(): void

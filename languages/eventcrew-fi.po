@@ -5047,9 +5047,6 @@ msgstr "Tilaa tulevien tapahtumien tiedote painamalla painiketta."
 msgid "Press the button to leave the announcement."
 msgstr "Peru tiedotteen tilaus painamalla painiketta."
 
-msgid "Remove the text"
-msgstr "Poista teksti"
-
 msgid "Saved, but the text could not be translated, so every language shows it as you wrote it."
 msgstr "Tallennettu, mutta tekstiä ei voitu kääntää, joten jokaisessa kielessä näkyy teksti sellaisena kuin kirjoitit sen."
 
@@ -5144,9 +5141,6 @@ msgstr "Tätä tekstiä ei ole käännetty: jokaisessa kielessä näkyy teksti s
 
 msgid "To add one, send /newsletter followed by the text, for example:"
 msgstr "Lisää teksti lähettämällä /newsletter ja sen perään teksti, esimerkiksi:"
-
-msgid "To change it, send /newsletter followed by the new text. To remove it, send /newsletter clear."
-msgstr "Muuta tekstiä lähettämällä /newsletter ja sen perään uusi teksti. Poista teksti lähettämällä /newsletter clear."
 
 msgid "Too late: the announcement is already being sent."
 msgstr "Liian myöhään: tiedotetta lähetetään jo."
@@ -5882,9 +5876,6 @@ msgstr "Seuraava viesti käyttää Viestit-sivun tekstiä."
 msgid "The next email uses a one-time text."
 msgstr "Seuraava viesti käyttää kertatekstiä."
 
-msgid "To set a text for the next post-event email only, send /followup came followed by the thank-you text, or /followup missed followed by the sorry text. {event} becomes the event’s name and {date} its date. To remove a one-time text, send /followup came clear or /followup missed clear; /followup clear removes both."
-msgstr "Aseta teksti vain seuraavaan tapahtuman jälkeiseen viestiin lähettämällä /followup came ja sen perään kiitosteksti, tai /followup missed ja sen perään harmiteksti. {event} korvautuu tapahtuman nimellä ja {date} sen päivämäärällä. Poista kertateksti lähettämällä /followup came clear tai /followup missed clear; /followup clear poistaa molemmat."
-
 msgid "Saved for the next post-event email only. The text is translated; every language’s version is shown below."
 msgstr "Tallennettu vain seuraavaan tapahtuman jälkeiseen viestiin. Teksti on käännetty; jokaisen kielen versio näkyy alla."
 
@@ -5896,9 +5887,6 @@ msgstr "Mitään ei tallennettu: valitse kiitosteksti tai harmiteksti."
 
 msgid "One-time text for the next email"
 msgstr "Kertateksti seuraavaan viestiin"
-
-msgid "Remove the one-time text"
-msgstr "Poista kertateksti"
 
 msgid "The post-event email is switched off. An administrator can switch it on in wp-admin under EventCrew > Settings > Email."
 msgstr "Tapahtuman jälkeinen viesti on pois päältä. Ylläpitäjä voi kytkeä sen päälle wp-adminissa kohdassa EventCrew > Settings > Email."
@@ -9054,3 +9042,69 @@ msgstr "Peruttu alle %d h ennen"
 #: src/Telegram/TicketController.php
 msgid "Show QR code"
 msgstr "Näytä QR-koodi"
+
+msgid "Translating… The translations will show here."
+msgstr "Käännetään… Käännökset tulevat tähän."
+
+msgid "Not translated: every language gets this text as written. Translation is tried again before the email goes out."
+msgstr "Ei käännetty: kaikki kielet saavat tekstin sellaisenaan. Käännöstä yritetään uudelleen ennen lähetystä."
+
+msgid "%s reset it to the default."
+msgstr "%s palautti oletuksen."
+
+msgid "%s set this text:"
+msgstr "%s asetti tämän tekstin:"
+
+msgid "Confirm replaces it."
+msgstr "Vahvista korvaa sen."
+
+msgid "Keep"
+msgstr "Pidä"
+
+msgid "Kept the current text."
+msgstr "Nykyinen teksti pidetty."
+
+msgid "Next announcement"
+msgstr "Seuraava tiedote"
+
+msgid "Nothing was saved: there is already a one-time text. Tick “Replace the current text” to replace it."
+msgstr "Mitään ei tallennettu: kertateksti on jo olemassa. Rastita ”Korvaa nykyinen teksti” korvataksesi sen."
+
+msgid "Nothing was saved: there is already a text. Tick “Replace the current text” to replace it."
+msgstr "Mitään ei tallennettu: teksti on jo olemassa. Rastita ”Korvaa nykyinen teksti” korvataksesi sen."
+
+msgid "Replace"
+msgstr "Korvaa"
+
+msgid "Replace it with your text?"
+msgstr "Korvataanko se sinun tekstilläsi?"
+
+msgid "Replace the current text"
+msgstr "Korvaa nykyinen teksti"
+
+msgid "Reset to default"
+msgstr "Palauta oletus"
+
+msgid "Set by %1$s on %2$s at %3$s."
+msgstr "Asetti %1$s %2$s klo %3$s."
+
+msgid "There is already a one-time text:"
+msgstr "Kertateksti on jo olemassa:"
+
+msgid "There is already a text for the next announcement:"
+msgstr "Seuraavalla tiedotteella on jo teksti:"
+
+msgid "This has expired. Please send it again."
+msgstr "Tämä on vanhentunut. Lähetä se uudelleen."
+
+msgid "To change it, send /newsletter followed by the new text. To reset it to the default, send /newsletter reset."
+msgstr "Muuta tekstiä lähettämällä /newsletter ja sen perään uusi teksti. Palauta oletus lähettämällä /newsletter reset."
+
+msgid "To see it or reset it to the default: %s"
+msgstr "Näytä tai palauta oletus: %s"
+
+msgid "To set a text for the next post-event email only, send /followup came followed by the thank-you text, or /followup missed followed by the sorry text. {event} becomes the event’s name and {date} its date. To reset a version to the default, send /followup came reset or /followup missed reset; /followup reset resets both."
+msgstr "Aseta teksti vain seuraavaan tapahtuman jälkeiseen viestiin lähettämällä /followup came ja sen perään kiitosteksti, tai /followup missed ja sen perään harmiteksti. {event} korvautuu tapahtuman nimellä ja {date} sen päivämäärällä. Palauta versio oletukseksi lähettämällä /followup came reset tai /followup missed reset; /followup reset palauttaa molemmat."
+
+msgid "an administrator"
+msgstr "ylläpitäjä"

@@ -5458,10 +5458,6 @@ msgstr "Ta bort bild"
 msgid "Remove key"
 msgstr "Ta bort nyckel"
 
-#: templates/admin/messages-tab-events.php:103 templates/public/signup.php:2093
-msgid "Remove the one-time text"
-msgstr "Ta bort engångstexten"
-
 #: templates/admin/settings.php:1041
 msgid "Remove the saved secret key"
 msgstr "Ta bort den sparade hemliga nyckeln"
@@ -5469,10 +5465,6 @@ msgstr "Ta bort den sparade hemliga nyckeln"
 #: templates/admin/settings.php:1852
 msgid "Remove the saved token (this disconnects the bot)"
 msgstr "Ta bort den sparade token (det kopplar bort boten)"
-
-#: templates/admin/messages-tab-events.php:160 templates/public/signup.php:1990
-msgid "Remove the text"
-msgstr "Ta bort texten"
 
 #: templates/admin/settings.php:2358
 msgid "Remove this format"
@@ -9131,12 +9123,6 @@ msgid "To add one, send /newsletter followed by the text, for example:"
 msgstr ""
 "För att lägga till en, skicka /newsletter följt av texten, till exempel:"
 
-#: src/Telegram/NewsletterCommand.php:97
-msgid ""
-"To change it, send /newsletter followed by the new text. To remove it, send /newsletter clear."
-msgstr ""
-"För att ändra den, skicka /newsletter följt av den nya texten. För att ta bort den, skicka /newsletter clear."
-
 #: src/Support/PrivacyPolicy.php:887
 #. translators: %s: the controller's contact address
 msgid "To do any of these, write to %s and we will answer within one month."
@@ -9153,12 +9139,6 @@ msgid ""
 "To see the list send /door and tap 👥 Guest list, or /door 1.8. for another night."
 msgstr ""
 "Skicka /door och tryck på 👥 Gästlista för att se listan, eller /door 1.8. för en annan kväll."
-
-#: src/Telegram/FollowupCommand.php:141
-msgid ""
-"To set a text for the next post-event email only, send /followup came followed by the thank-you text, or /followup missed followed by the sorry text. {event} becomes the event’s name and {date} its date. To remove a one-time text, send /followup came clear or /followup missed clear; /followup clear removes both."
-msgstr ""
-"För att ange en text för enbart nästa mejl efter evenemanget, skicka /followup came följt av tacktexten, eller /followup missed följt av texten för dem som inte kom. {event} blir evenemangets namn och {date} dess datum. För att ta bort en engångstext, skicka /followup came clear eller /followup missed clear; /followup clear tar bort båda."
 
 #: src/Telegram/WebLoginBot.php:86
 msgid ""
@@ -12097,3 +12077,69 @@ msgstr "Avbokade under %d h innan"
 #: src/Telegram/TicketController.php
 msgid "Show QR code"
 msgstr "Visa QR-kod"
+
+msgid "Translating… The translations will show here."
+msgstr "Översätter… Översättningarna visas här."
+
+msgid "Not translated: every language gets this text as written. Translation is tried again before the email goes out."
+msgstr "Inte översatt: alla språk får texten som den skrevs. Översättningen försöks igen innan mejlet skickas."
+
+msgid "%s reset it to the default."
+msgstr "%s återställde standardtexten."
+
+msgid "%s set this text:"
+msgstr "%s satte den här texten:"
+
+msgid "Confirm replaces it."
+msgstr "Bekräfta ersätter den."
+
+msgid "Keep"
+msgstr "Behåll"
+
+msgid "Kept the current text."
+msgstr "Den nuvarande texten behölls."
+
+msgid "Next announcement"
+msgstr "Nästa utskick"
+
+msgid "Nothing was saved: there is already a one-time text. Tick “Replace the current text” to replace it."
+msgstr "Inget sparades: det finns redan en engångstext. Kryssa i ”Ersätt den nuvarande texten” för att ersätta den."
+
+msgid "Nothing was saved: there is already a text. Tick “Replace the current text” to replace it."
+msgstr "Inget sparades: det finns redan en text. Kryssa i ”Ersätt den nuvarande texten” för att ersätta den."
+
+msgid "Replace"
+msgstr "Ersätt"
+
+msgid "Replace it with your text?"
+msgstr "Ersätta den med din text?"
+
+msgid "Replace the current text"
+msgstr "Ersätt den nuvarande texten"
+
+msgid "Reset to default"
+msgstr "Återställ standard"
+
+msgid "Set by %1$s on %2$s at %3$s."
+msgstr "Satt av %1$s den %2$s kl. %3$s."
+
+msgid "There is already a one-time text:"
+msgstr "Det finns redan en engångstext:"
+
+msgid "There is already a text for the next announcement:"
+msgstr "Det finns redan en text för nästa utskick:"
+
+msgid "This has expired. Please send it again."
+msgstr "Det här har gått ut. Skicka det igen."
+
+msgid "To change it, send /newsletter followed by the new text. To reset it to the default, send /newsletter reset."
+msgstr "Ändra den genom att skicka /newsletter följt av den nya texten. Återställ standard genom att skicka /newsletter reset."
+
+msgid "To see it or reset it to the default: %s"
+msgstr "Visa eller återställ standard: %s"
+
+msgid "To set a text for the next post-event email only, send /followup came followed by the thank-you text, or /followup missed followed by the sorry text. {event} becomes the event’s name and {date} its date. To reset a version to the default, send /followup came reset or /followup missed reset; /followup reset resets both."
+msgstr "Sätt en text bara för nästa mejl efter evenemanget genom att skicka /followup came följt av tacktexten, eller /followup missed följt av den beklagande texten. {event} blir evenemangets namn och {date} dess datum. Återställ en version till standard genom att skicka /followup came reset eller /followup missed reset; /followup reset återställer båda."
+
+msgid "an administrator"
+msgstr "en administratör"

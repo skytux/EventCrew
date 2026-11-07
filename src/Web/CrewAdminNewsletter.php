@@ -9,6 +9,7 @@ use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\EventName;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterText;
+use EventCrew\Support\OwnTextNotice;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TranslatedText;
 
@@ -17,12 +18,17 @@ use EventCrew\Support\TranslatedText;
  * is on, the next one (with its Stop button), the last one sent, and the field
  * "Text for the next newsletter". The text goes through NewsletterText, the
  * same as the bot's /newsletter, so it is translated the same way.
+ *
+ * As in the bot, the text is only replaced when the organizer ticks "Replace
+ * the current text" (which shows who set it and when), the reset button puts
+ * the default back, and the other organizers are told (OwnTextNotice).
  */
 final class CrewAdminNewsletter
 {
     public function __construct(
         private readonly Newsletter $newsletter,
-        private readonly NewsletterText $text
+        private readonly NewsletterText $text,
+        private readonly ?OwnTextNotice $notice = null
     ) {
     }
 
@@ -42,7 +48,7 @@ final class CrewAdminNewsletter
      *         failed: int
      *     }|null,
      *     last: array{at: string, sent: int, failed: int}|null,
-     *     text: array{texts: array<string, string>, translated: bool}|null,
+     *     text: array{texts: array<string, string>, translated: bool, set_by: string}|null,
      *     translating: bool
      * }
      */
@@ -79,6 +85,7 @@ final class CrewAdminNewsletter
         $text = null === $status['text'] ? null : [
             'texts' => $status['text']['texts'],
             'translated' => $status['text']['translated'],
+            'set_by' => null !== $this->notice ? $this->notice->setBy((array) $status['text']) : '',
         ];
         $translating = BackgroundJobs::isActive(BackgroundJobs::latest(AiPromptsPage::NEWSLETTER_TARGET));
 
@@ -94,20 +101,47 @@ final class CrewAdminNewsletter
     }
 
     /**
-     * Saves or clears the text. $op is 'clear' to clear; anything else saves
-     * $text (an empty text clears too). Returns the notice code.
+     * Saves the text or resets it to the default. $op is 'clear' to reset;
+     * anything else saves $text (an empty text resets too). Returns the
+     * notice code.
+     *
+     * With $replace false (the crew app's form without "Replace the current
+     * text" ticked), an earlier text is kept and 'admin_newsletter_exists' is
+     * answered; null does not ask (wp-admin). $notify tells the other
+     * organizers (OwnTextNotice); the background job that saves a text
+     * already told them when it was queued.
      *
      * With $background (the crew app), a text to translate is saved by a
      * background job (AiPromptsPage::NEWSLETTER_JOB, the same as the
      * wp-admin save) and 'admin_newsletter_queued' is answered; until then
      * the announcement keeps the text it had.
      */
-    public function saveText(int $byPersonId, string $op, string $text, bool $background = false): string
-    {
+    public function saveText(
+        int $byPersonId,
+        string $op,
+        string $text,
+        bool $background = false,
+        ?bool $replace = null,
+        bool $notify = true
+    ): string {
+        $had = null !== $this->text->get();
+
         if ('clear' === $op || '' === trim($text)) {
             $this->text->clear();
 
+            if ($had && $notify) {
+                $this->notice?->changed(OwnTextNotice::NEWSLETTER, $byPersonId, '');
+            }
+
             return 'admin_newsletter_cleared';
+        }
+
+        if (false === $replace && $had) {
+            return 'admin_newsletter_exists';
+        }
+
+        if ($notify) {
+            $this->notice?->changed(OwnTextNotice::NEWSLETTER, $byPersonId, $text);
         }
 
         if ($background && TranslatedText::modelReady()) {
@@ -142,6 +176,7 @@ final class CrewAdminNewsletter
             'admin_newsletter_saved' => __('Saved. The text is translated; every language’s version is shown below.', 'eventcrew'),
             'admin_newsletter_saved_untranslated' => __('Saved, but the text could not be translated, so every language shows it as you wrote it.', 'eventcrew'),
             'admin_newsletter_cleared' => __('The text for the next announcement is removed.', 'eventcrew'),
+            'admin_newsletter_exists' => __('Nothing was saved: there is already a text. Tick “Replace the current text” to replace it.', 'eventcrew'),
             'admin_newsletter_stopped' => __('The announcement is stopped. It will not be sent.', 'eventcrew'),
             'admin_newsletter_too_late' => __('Too late: the announcement is already being sent.', 'eventcrew'),
             'admin_newsletter_already' => __('This announcement was already stopped or sent.', 'eventcrew'),

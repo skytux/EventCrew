@@ -242,15 +242,49 @@ final class FollowupText
      * email, translated the same way as the newsletter's text. An empty text
      * removes it.
      *
+     * With $translateNow false it is stored as written and translated later
+     * by translateNext().
+     *
      * @return array<string, mixed> As NewsletterText::set().
      */
-    public function setNext(string $variant, string $text, int $byPersonId): array
+    public function setNext(string $variant, string $text, int $byPersonId, bool $translateNow = true): array
     {
         if (! isset($this->next[$variant])) {
             return ['saved' => false, 'translated' => false, 'error' => '', 'source' => '', 'texts' => []];
         }
 
-        return $this->next[$variant]->set($text, $byPersonId);
+        return $this->next[$variant]->set($text, $byPersonId, $translateNow);
+    }
+
+    /**
+     * Translates the one-time text of $variant when it is not translated
+     * yet (NewsletterText::translateAgain()).
+     *
+     * @return array{translated: bool, error: string, texts: array<string, string>}
+     */
+    public function translateNext(string $variant, int $timeout = NewsletterText::LATE_TIMEOUT): array
+    {
+        if (! isset($this->next[$variant])) {
+            return ['translated' => false, 'error' => '', 'texts' => []];
+        }
+
+        return $this->next[$variant]->translateAgain($timeout);
+    }
+
+    /**
+     * Translates every one-time text that is not translated yet, so the
+     * post-event email does not go out with the text as written in every
+     * language when the model can translate it now.
+     */
+    public function translatePending(int $timeout = NewsletterText::LATE_TIMEOUT): void
+    {
+        foreach (self::VARIANTS as $variant) {
+            $next = $this->next($variant);
+
+            if (null !== $next && ! $next['translated']) {
+                $this->translateNext($variant, $timeout);
+            }
+        }
     }
 
     /** Removes the one-time text of $variant, or of both when $variant is null. */

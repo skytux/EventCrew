@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use Closure;
 use EventCrew\Support\AssistantKnowledge;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\HelpPage;
@@ -70,7 +71,8 @@ final class AssistantService
         private readonly Logger $logger,
         private readonly bool $defer = true,
         private readonly ?ChatForwarder $forwarder = null,
-        private readonly ?BotLog $botLog = null
+        private readonly ?BotLog $botLog = null,
+        private readonly ?Closure $replaceWarning = null
     ) {
     }
 
@@ -519,6 +521,17 @@ final class AssistantService
         );
 
         $text = ('' !== $parsed['reply'] ? $this->clip($parsed['reply']) . "\n\n" : '') . '➡️ ' . $checked['action'];
+
+        // An organizer's own text that replaces an earlier one: the earlier
+        // text and who set it, so Confirm replaces it knowingly.
+        $warning = null === $this->replaceWarning ? '' : (string) Language::run(
+            $language,
+            fn (): string => (string) ($this->replaceWarning)($checked['action'])
+        );
+
+        if ('' !== $warning) {
+            $text = $this->clip($text . "\n\n⚠️ " . $warning);
+        }
 
         $buttons = Language::run($language, static fn (): array => [
             ['text' => '✅ ' . __('Confirm', 'eventcrew'), 'callback_data' => self::PREFIX . 'ok:' . $id],

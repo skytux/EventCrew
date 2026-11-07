@@ -98,7 +98,8 @@ final class NewsletterCommandTest extends TelegramTestCase
         $reply = $this->lastReply();
         self::assertStringContainsString("Finnish:\nMoi", $reply);
         self::assertStringContainsString("English:\nHi", $reply);
-        self::assertStringContainsString('/newsletter clear', $reply);
+        self::assertStringContainsString('/newsletter reset', $reply);
+        self::assertSame('nl:reset', $this->callbackOf($this->lastCallTo('sendMessage') ?? [], '↩️ Reset to default'));
     }
 
     /**

@@ -40,6 +40,13 @@ final class NewsletterText
     /** The longest text kept, in characters. A longer one is cut. */
     public const MAX_LENGTH = 2000;
 
+    /**
+     * Seconds to wait for the model when the translation runs after the
+     * answer has gone out (translateAgain()), longer than a chat answer may
+     * wait.
+     */
+    public const LATE_TIMEOUT = 60;
+
     /** Fired after the text is set or cleared. */
     public const CHANGED_ACTION = 'eventcrew/newsletter_text_changed';
 
@@ -70,8 +77,13 @@ final class NewsletterText
      *     holds the text as written; error is then the error kind
      *     (TranslatedText::ERROR_OFF when the switch is off, LlmClient::ERROR_*
      *     or TranslatedText::ERROR_BAD_ANSWER).
+     *
+     *     With $translateNow false the model is not asked: the text is stored
+     *     as written for every language, not translated, with error '', so
+     *     translateAgain() can translate it later (after the answer to the
+     *     organizer has gone out).
      */
-    public function set(string $text, int $byPersonId): array
+    public function set(string $text, int $byPersonId, bool $translateNow = true): array
     {
         $text = self::clean($text);
 
@@ -81,10 +93,11 @@ final class NewsletterText
             return ['saved' => false, 'translated' => false, 'error' => '', 'source' => '', 'texts' => []];
         }
 
-        $result = $this->translate($text);
+        $result = $translateNow ? $this->translate($text) : self::asWritten($text, '');
         $previous = $this->get();
 
         $stored = $result['texts'] + [
+            'written' => $text,
             'source' => $result['source'],
             'translated' => $result['translated'],
             'by' => max(0, $byPersonId),
@@ -105,6 +118,56 @@ final class NewsletterText
     }
 
     /**
+     * Translates a stored text that is not translated (set() without
+     * $translateNow, or one whose translation failed), keeping who saved it,
+     * when and its revision. Nothing is done when there is no text, it is
+     * already translated, or the model is not ready (switch off or not set
+     * up). A text saved again while the model was asked is kept as it is.
+     *
+     * @return array{translated: bool, error: string, texts: array<string, string>}
+     *     translated: whether the stored text is translated now. texts: the
+     *     stored text in every site language ([] when there is none, or it
+     *     was removed or saved again meanwhile).
+     */
+    public function translateAgain(int $timeout = self::LATE_TIMEOUT): array
+    {
+        $current = $this->get();
+
+        if (null === $current) {
+            return ['translated' => false, 'error' => '', 'texts' => []];
+        }
+
+        if ($current['translated'] || ! TranslatedText::modelReady()) {
+            return ['translated' => $current['translated'], 'error' => '', 'texts' => $current['texts']];
+        }
+
+        $result = $this->translate($current['written'], $timeout);
+        $latest = get_option($this->option, null);
+
+        if (! is_array($latest) || (int) ($latest['rev'] ?? 0) !== $current['rev']) {
+            // Removed or saved again while the model was asked.
+            return ['translated' => false, 'error' => '', 'texts' => []];
+        }
+
+        if (! $result['translated']) {
+            return ['translated' => false, 'error' => $result['error'], 'texts' => $current['texts']];
+        }
+
+        foreach (SiteLanguages::codes() as $lang) {
+            unset($latest[$lang]);
+        }
+
+        update_option(
+            $this->option,
+            $result['texts'] + ['source' => $result['source'], 'translated' => true] + $latest,
+            false
+        );
+        $this->changed();
+
+        return ['translated' => true, 'error' => '', 'texts' => $result['texts']];
+    }
+
+    /**
      * The stored text, or null when there is none.
      *
      * @return array<string, mixed>|null texts (language code => text, one
@@ -112,7 +175,8 @@ final class NewsletterText
      *     their language codes ('fi', 'en', 'sv' …, so the value is keyed by
      *     language as Newsletter::compose() reads it), source (the language
      *     code the model found, or '' when the text was not translated),
-     *     translated (bool), by (int), at (string) and rev (int).
+     *     translated (bool), written (the text as the organizer wrote it),
+     *     by (int), at (string) and rev (int).
      */
     public function get(): ?array
     {
@@ -141,10 +205,17 @@ final class NewsletterText
             $texts[$lang] = self::inLanguage($own, $source, $lang);
         }
 
+        $written = is_string($stored['written'] ?? null) && '' !== $stored['written']
+            ? $stored['written']
+            // Stored before the text as written was kept: an untranslated
+            // text is the same in every language.
+            : self::inLanguage($own, $source, '' !== $source ? $source : SiteLanguages::main());
+
         return $texts + [
             'texts' => $texts,
             'source' => $source,
             'translated' => (bool) ($stored['translated'] ?? false),
+            'written' => $written,
             'by' => (int) ($stored['by'] ?? 0),
             'at' => (string) ($stored['at'] ?? ''),
             'rev' => (int) ($stored['rev'] ?? 0),
@@ -225,20 +296,36 @@ final class NewsletterText
      *
      * @return array{texts: array<string, string>, source: string, translated: bool, error: string}
      */
-    private function translate(string $text): array
+    private function translate(string $text, int $timeout = LlmClient::TIMEOUT): array
     {
-        $result = $this->translator->translate($text, self::MAX_LENGTH);
+        $result = $this->translator->translate($text, self::MAX_LENGTH, true, null, $timeout);
+
+        if (! $result['ok']) {
+            return self::asWritten($text, $result['error']);
+        }
+
         $texts = [];
 
         foreach (SiteLanguages::codes() as $lang) {
-            $texts[$lang] = $result['ok'] && '' !== ($result['texts'][$lang] ?? '') ? $result['texts'][$lang] : $text;
-        }
-
-        if (! $result['ok']) {
-            return ['texts' => $texts, 'source' => '', 'translated' => false, 'error' => $result['error']];
+            $texts[$lang] = '' !== ($result['texts'][$lang] ?? '') ? $result['texts'][$lang] : $text;
         }
 
         return ['texts' => $texts, 'source' => $result['lang'], 'translated' => true, 'error' => ''];
+    }
+
+    /**
+     * $text as written for every site language, not translated.
+     *
+     * @return array{texts: array<string, string>, source: string, translated: bool, error: string}
+     */
+    private static function asWritten(string $text, string $error): array
+    {
+        return [
+            'texts' => array_fill_keys(SiteLanguages::codes(), $text),
+            'source' => '',
+            'translated' => false,
+            'error' => $error,
+        ];
     }
 
     /** Trims the text, unifies line endings and cuts it to MAX_LENGTH. */

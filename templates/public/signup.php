@@ -2033,12 +2033,21 @@ if ($eventcrew_link_expired) {
                                 ?>"></textarea>
                             <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('Write it in any language. It is translated into every site language when you save, and removed after the announcement is sent.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></span>
                         </p>
+                        <?php if (null !== $eventcrew_news['text']) : ?>
+                            <?php if ('' !== $eventcrew_news['text']['set_by']) : ?>
+                                <p class="eventcrew-muted"><?php echo esc_html($eventcrew_news['text']['set_by']); ?></p>
+                            <?php endif; ?>
+                            <p><label>
+                                <input type="checkbox" name="replace" value="1" required>
+                                <?php esc_html_e('Replace the current text', 'eventcrew'); ?>
+                            </label></p>
+                        <?php endif; ?>
                         <button type="submit" name="op" value="save" class="wp-element-button">
                             <?php esc_html_e('Save', 'eventcrew'); ?>
                         </button>
                         <?php if (null !== $eventcrew_news['text']) : ?>
-                            <button type="submit" name="op" value="clear" class="wp-element-button">
-                                <?php esc_html_e('Remove the text', 'eventcrew'); ?>
+                            <button type="submit" name="op" value="clear" formnovalidate class="eventcrew-textlink">
+                                <?php esc_html_e('Reset to default', 'eventcrew'); ?>
                             </button>
                         <?php endif; ?>
                     </form>
@@ -2136,12 +2145,21 @@ if ($eventcrew_link_expired) {
                                     ?>"></textarea>
                                 <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('Write it in any language. It is translated into every site language when you save.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></span>
                             </p>
+                            <?php if ($eventcrew_follow_text['next']) : ?>
+                                <?php if ('' !== $eventcrew_follow_text['set_by']) : ?>
+                                    <p class="eventcrew-muted"><?php echo esc_html($eventcrew_follow_text['set_by']); ?></p>
+                                <?php endif; ?>
+                                <p><label>
+                                    <input type="checkbox" name="replace" value="1" required>
+                                    <?php esc_html_e('Replace the current text', 'eventcrew'); ?>
+                                </label></p>
+                            <?php endif; ?>
                             <button type="submit" name="op" value="save" class="wp-element-button">
                                 <?php esc_html_e('Save', 'eventcrew'); ?>
                             </button>
                             <?php if ($eventcrew_follow_text['next']) : ?>
-                                <button type="submit" name="op" value="clear" class="wp-element-button">
-                                    <?php esc_html_e('Remove the one-time text', 'eventcrew'); ?>
+                                <button type="submit" name="op" value="clear" formnovalidate class="eventcrew-textlink">
+                                    <?php esc_html_e('Reset to default', 'eventcrew'); ?>
                                 </button>
                             <?php endif; ?>
                         </form>

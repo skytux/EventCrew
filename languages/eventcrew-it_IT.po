@@ -5241,10 +5241,6 @@ msgstr "Rimuovi immagine"
 msgid "Remove key"
 msgstr "Rimuovi chiave"
 
-#: templates/admin/messages-tab-events.php:105 templates/public/signup.php:2094
-msgid "Remove the one-time text"
-msgstr "Rimuovi il testo una tantum"
-
 #: templates/admin/settings.php:1043
 msgid "Remove the saved secret key"
 msgstr "Rimuovi la chiave segreta salvata"
@@ -5252,10 +5248,6 @@ msgstr "Rimuovi la chiave segreta salvata"
 #: templates/admin/settings.php:1873
 msgid "Remove the saved token (this disconnects the bot)"
 msgstr "Rimuovi il token salvato (scollega il bot)"
-
-#: templates/admin/messages-tab-events.php:162 templates/public/signup.php:1991
-msgid "Remove the text"
-msgstr "Rimuovi il testo"
 
 #: templates/admin/settings.php:2379
 msgid "Remove this format"
@@ -8540,10 +8532,6 @@ msgstr "A"
 msgid "To add one, send /newsletter followed by the text, for example:"
 msgstr "Per aggiungerne uno, invia /newsletter seguito dal testo, per esempio:"
 
-#: src/Telegram/NewsletterCommand.php:97
-msgid "To change it, send /newsletter followed by the new text. To remove it, send /newsletter clear."
-msgstr "Per cambiarlo, invia /newsletter seguito dal nuovo testo. Per rimuoverlo, invia /newsletter clear."
-
 #. translators: %s: the controller's contact address
 #: src/Support/PrivacyPolicy.php:887
 msgid "To do any of these, write to %s and we will answer within one month."
@@ -8556,10 +8544,6 @@ msgstr "Per passarlo a qualcuno, chiedi a qualcuno della crew di mandare /me al 
 #: src/Telegram/GuestListService.php:417
 msgid "To see the list send /door and tap 👥 Guest list, or /door 1.8. for another night."
 msgstr "Per vedere la lista invia /door e tocca 👥 Lista ospiti, o /door 1.8. per un’altra serata."
-
-#: src/Telegram/FollowupCommand.php:141
-msgid "To set a text for the next post-event email only, send /followup came followed by the thank-you text, or /followup missed followed by the sorry text. {event} becomes the event’s name and {date} its date. To remove a one-time text, send /followup came clear or /followup missed clear; /followup clear removes both."
-msgstr "Per impostare un testo solo per la prossima email post-evento, invia /followup came seguito dal testo di ringraziamento, o /followup missed seguito dal testo di scuse. {event} diventa il nome dell’evento e {date} la sua data. Per rimuovere un testo una tantum, invia /followup came clear o /followup missed clear; /followup clear li rimuove entrambi."
 
 #: src/Telegram/WebLoginBot.php:86
 msgid "To sign in to the crew app, press the code that the crew app on your screen shows. If you did not just press Telegram on the crew app yourself, press nothing."
@@ -11214,3 +11198,69 @@ msgstr "Annullato meno di %d h prima"
 #: src/Telegram/TicketController.php
 msgid "Show QR code"
 msgstr "Mostra codice QR"
+
+msgid "Translating… The translations will show here."
+msgstr "Traduzione in corso… Le traduzioni appariranno qui."
+
+msgid "Not translated: every language gets this text as written. Translation is tried again before the email goes out."
+msgstr "Non tradotto: tutte le lingue ricevono il testo così com’è. La traduzione verrà ritentata prima dell’invio."
+
+msgid "%s reset it to the default."
+msgstr "%s ha ripristinato il predefinito."
+
+msgid "%s set this text:"
+msgstr "%s ha impostato questo testo:"
+
+msgid "Confirm replaces it."
+msgstr "Conferma lo sostituisce."
+
+msgid "Keep"
+msgstr "Mantieni"
+
+msgid "Kept the current text."
+msgstr "Il testo attuale è mantenuto."
+
+msgid "Next announcement"
+msgstr "Prossimo annuncio"
+
+msgid "Nothing was saved: there is already a one-time text. Tick “Replace the current text” to replace it."
+msgstr "Non è stato salvato nulla: c’è già un testo una tantum. Spunta «Sostituisci il testo attuale» per sostituirlo."
+
+msgid "Nothing was saved: there is already a text. Tick “Replace the current text” to replace it."
+msgstr "Non è stato salvato nulla: c’è già un testo. Spunta «Sostituisci il testo attuale» per sostituirlo."
+
+msgid "Replace"
+msgstr "Sostituisci"
+
+msgid "Replace it with your text?"
+msgstr "Sostituirlo con il tuo testo?"
+
+msgid "Replace the current text"
+msgstr "Sostituisci il testo attuale"
+
+msgid "Reset to default"
+msgstr "Ripristina predefinito"
+
+msgid "Set by %1$s on %2$s at %3$s."
+msgstr "Impostato da %1$s il %2$s alle %3$s."
+
+msgid "There is already a one-time text:"
+msgstr "C’è già un testo una tantum:"
+
+msgid "There is already a text for the next announcement:"
+msgstr "C’è già un testo per il prossimo annuncio:"
+
+msgid "This has expired. Please send it again."
+msgstr "È scaduto. Invialo di nuovo."
+
+msgid "To change it, send /newsletter followed by the new text. To reset it to the default, send /newsletter reset."
+msgstr "Per cambiarlo, invia /newsletter seguito dal nuovo testo. Per ripristinare il predefinito, invia /newsletter reset."
+
+msgid "To see it or reset it to the default: %s"
+msgstr "Per vederlo o ripristinare il predefinito: %s"
+
+msgid "To set a text for the next post-event email only, send /followup came followed by the thank-you text, or /followup missed followed by the sorry text. {event} becomes the event’s name and {date} its date. To reset a version to the default, send /followup came reset or /followup missed reset; /followup reset resets both."
+msgstr "Per un testo solo nella prossima email dopo l’evento, invia /followup came seguito dal testo di ringraziamento, o /followup missed seguito dal testo di scuse. {event} diventa il nome dell’evento e {date} la sua data. Per ripristinare una versione predefinita, invia /followup came reset o /followup missed reset; /followup reset le ripristina entrambe."
+
+msgid "an administrator"
+msgstr "un amministratore"

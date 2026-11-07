@@ -1012,6 +1012,9 @@ final class FollowupMail
             }
 
             if (! isset($state['previewed'][$date]) && $at >= self::previewAt($date)->getTimestamp() && $at < $sendAt) {
+                // A one-time text whose translation failed is tried again,
+                // so the preview shows what each language really gets.
+                $this->text->translatePending();
                 $state = $this->writeNight($date, $state);
                 $state['previewed'][$date] = true;
                 $this->save($state);
@@ -1026,6 +1029,9 @@ final class FollowupMail
                 && ($at < $sendAt + self::LATE_DAYS * DAY_IN_SECONDS || isset($state['started'][$date]))
             ) {
                 if (! isset($state['started'][$date])) {
+                    // Not the text as written in every language when the
+                    // model can translate it now.
+                    $this->text->translatePending();
                     // The one-time texts this night starts with; removed when it is done.
                     $state['texts'][$date] = $this->text->revisions();
                     // The first event's text, when the preview's run could not write it.

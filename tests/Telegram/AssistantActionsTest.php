@@ -189,9 +189,9 @@ final class AssistantActionsTest extends TestCase
                 '/door edit [date] <number> [name] [+N] [; note]',
                 '/door remove [date] <number>',
                 '/newsletter <text>',
-                '/newsletter clear',
+                '/newsletter reset',
                 '/followup <came|missed> <text>',
-                '/followup [came|missed] clear',
+                '/followup [came|missed] reset',
             ],
             array_values($confirm)
         );
@@ -274,7 +274,8 @@ final class AssistantActionsTest extends TestCase
         $clear = self::check('/newsletter  CLEAR ', self::organizer());
 
         self::assertTrue($clear['confirm']);
-        self::assertSame('/newsletter clear', $clear['payload']);
+        self::assertSame('/newsletter reset', $clear['payload']);
+        self::assertSame('/newsletter reset', self::check('/newsletter reset', self::organizer())['payload']);
     }
 
     public function testTheNewsletterTextKeepsItsLineBreaks(): void
@@ -335,11 +336,12 @@ final class AssistantActionsTest extends TestCase
 
         $one = self::check('/followup missed Clear', self::organizer());
         self::assertTrue($one['confirm']);
-        self::assertSame('/followup missed clear', $one['payload']);
+        self::assertSame('/followup missed reset', $one['payload']);
 
         $both = self::check('/followup CLEAR', self::organizer());
         self::assertTrue($both['confirm']);
-        self::assertSame('/followup clear', $both['payload']);
+        self::assertSame('/followup reset', $both['payload']);
+        self::assertSame('/followup came reset', self::check('/followup came reset', self::organizer())['payload']);
     }
 
     public function testABadPostEventTextIsRefused(): void

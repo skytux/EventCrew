@@ -725,10 +725,16 @@ final class TranslatedText
      *
      * @return array{ok: bool, lang: string, texts: array<string, string>, error: string}
      *     lang is the source's language ('' when it was not asked or
-     *     failed). texts is empty unless ok.
+     *     failed). texts is empty unless ok. $timeout: seconds to wait for
+     *     the model.
      */
-    public function translate(string $source, int $maxLength = 0, bool $multiline = true, ?string $lang = null): array
-    {
+    public function translate(
+        string $source,
+        int $maxLength = 0,
+        bool $multiline = true,
+        ?string $lang = null,
+        int $timeout = LlmClient::TIMEOUT
+    ): array {
         $failed = static fn (string $error): array => ['ok' => false, 'lang' => '', 'texts' => [], 'error' => $error];
 
         if (! self::autoEnabled()) {
@@ -753,7 +759,8 @@ final class TranslatedText
                 ['role' => 'system', 'content' => self::prompt($maxLength, $lang)],
                 ['role' => 'user', 'content' => $source],
             ],
-            self::TOKENS_PER_LANGUAGE * max(1, count($targets))
+            self::TOKENS_PER_LANGUAGE * max(1, count($targets)),
+            $timeout
         );
 
         if (! $answer['ok']) {

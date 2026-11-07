@@ -14,10 +14,8 @@ use EventCrew\Support\EventTimes;
 use EventCrew\Support\EventVenue;
 use EventCrew\Support\VenueReader;
 use EventCrew\Support\FollowupMail;
-use EventCrew\Support\FollowupText;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\TicketMail;
-use EventCrew\Support\TranslatedText;
 use EventCrew\Web\CrewAdminFollowup;
 use EventCrew\Web\CrewAdminNewsletter;
 
@@ -629,23 +627,11 @@ final class AiPromptsPage
         $op = sanitize_key((string) ($post['op'] ?? ''));
         $text = sanitize_textarea_field((string) ($post['followup_text'] ?? ''));
 
-        if (
-            $background
-            && 'save' === $op
-            && '' !== trim($text)
-            && FollowupText::isVariant($variant)
-            && TranslatedText::modelReady()
-        ) {
-            BackgroundJobs::enqueue(
-                self::FOLLOWUP_JOB,
-                self::followupTarget($variant),
-                ['variant' => $variant, 'text' => $text]
-            );
+        // Saved the way the crew app saves it: queued when translated in the
+        // background, and the other organizers are told (OwnTextNotice).
+        $code = $this->followup->saveText(0, $variant, $op, $text, $background);
 
-            return self::QUEUED;
-        }
-
-        return $this->followup->saveText(0, $variant, $op, $text);
+        return 'admin_followup_queued' === $code ? self::QUEUED : $code;
     }
 
     /**
@@ -660,11 +646,15 @@ final class AiPromptsPage
             return ['ok' => false, 'error' => __('This job can no longer be run.', 'eventcrew')];
         }
 
+        // The organizers were told when the job was queued.
         $code = $this->followup->saveText(
             (int) ($args['by'] ?? 0),
             (string) ($args['variant'] ?? ''),
             'save',
-            (string) ($args['text'] ?? '')
+            (string) ($args['text'] ?? ''),
+            false,
+            null,
+            false
         );
 
         return 'admin_followup_saved' === $code
@@ -714,13 +704,11 @@ final class AiPromptsPage
         $op = sanitize_key((string) ($post['op'] ?? ''));
         $text = sanitize_textarea_field((string) ($post['newsletter_text'] ?? ''));
 
-        if ($background && 'save' === $op && '' !== trim($text) && TranslatedText::modelReady()) {
-            BackgroundJobs::enqueue(self::NEWSLETTER_JOB, self::NEWSLETTER_TARGET, ['text' => $text]);
+        // Saved the way the crew app saves it: queued when translated in the
+        // background, and the other organizers are told (OwnTextNotice).
+        $code = $this->newsletter->saveText(0, $op, $text, $background);
 
-            return self::QUEUED;
-        }
-
-        return $this->newsletter->saveText(0, $op, $text);
+        return 'admin_newsletter_queued' === $code ? self::QUEUED : $code;
     }
 
     /**
@@ -735,7 +723,15 @@ final class AiPromptsPage
             return ['ok' => false, 'error' => __('This job can no longer be run.', 'eventcrew')];
         }
 
-        $code = $this->newsletter->saveText((int) ($args['by'] ?? 0), 'save', (string) ($args['text'] ?? ''));
+        // The organizers were told when the job was queued.
+        $code = $this->newsletter->saveText(
+            (int) ($args['by'] ?? 0),
+            'save',
+            (string) ($args['text'] ?? ''),
+            false,
+            null,
+            false
+        );
 
         return 'admin_newsletter_saved' === $code
             ? ['ok' => true, 'error' => '']

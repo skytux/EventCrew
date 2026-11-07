@@ -73,6 +73,7 @@ use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterCrew;
 use EventCrew\Support\NewsletterText;
 use EventCrew\Support\NewsletterWriter;
+use EventCrew\Support\OwnTextNotice;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\OrganizeTaskBackfill;
 use EventCrew\Support\PageCacheFlush;
@@ -578,8 +579,20 @@ final class Kernel
         );
 
         $this->container->singleton(
+            OwnTextNotice::class,
+            fn (Container $container) => new OwnTextNotice(
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class),
+                $container->get(Mailer::class)
+            )
+        );
+
+        $this->container->singleton(
             CrewAdminFollowup::class,
-            fn (Container $container) => new CrewAdminFollowup($container->get(FollowupText::class))
+            fn (Container $container) => new CrewAdminFollowup(
+                $container->get(FollowupText::class),
+                $container->get(OwnTextNotice::class)
+            )
         );
 
         $this->container->singleton(
@@ -610,7 +623,9 @@ final class Kernel
             fn (Container $container) => new FollowupCommand(
                 $container->get(PersonRepository::class),
                 $container->get(FollowupText::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                null,
+                $container->get(OwnTextNotice::class)
             )
         );
 
@@ -641,7 +656,8 @@ final class Kernel
             CrewAdminNewsletter::class,
             fn (Container $container) => new CrewAdminNewsletter(
                 $container->get(Newsletter::class),
-                $container->get(NewsletterText::class)
+                $container->get(NewsletterText::class),
+                $container->get(OwnTextNotice::class)
             )
         );
 
@@ -666,7 +682,8 @@ final class Kernel
             fn (Container $container) => new NewsletterCommand(
                 $container->get(PersonRepository::class),
                 $container->get(NewsletterText::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(OwnTextNotice::class)
             )
         );
 
@@ -1445,7 +1462,20 @@ final class Kernel
                 $container->get(Logger::class),
                 true,
                 $container->get(ChatForwarder::class),
-                $container->get(BotLog::class)
+                $container->get(BotLog::class),
+                // The helper's confirmation of an organizer's own text shows
+                // the earlier text it replaces.
+                static function (string $action) use ($container): string {
+                    if (1 === preg_match('~^/followup(?:\s+(.*))?$~su', $action, $m)) {
+                        return $container->get(FollowupCommand::class)->replaceWarning($m[1] ?? '');
+                    }
+
+                    if (1 === preg_match('~^/newsletter(?:\s+(.*))?$~su', $action, $m)) {
+                        return $container->get(NewsletterCommand::class)->replaceWarning($m[1] ?? '');
+                    }
+
+                    return '';
+                }
             )
         );
 
