@@ -774,6 +774,19 @@
 /* Part of the header card, so it sits tight under the name. */
 .eventcrew-signup .eventcrew-standing { margin: 0 0 .2em; font-weight: 600; }
 /*
+ * The standing bar (StandingBar): a gold fill on a track, a thin strip under
+ * it with the zones (red below the good-standing limit, amber for the warning
+ * zone just above), and a tick at the limit through both. The numbers come in
+ * as custom properties on the element.
+ */
+.eventcrew-signup .eventcrew-standing-bar { position: relative; max-width: 20em; margin: .5em 0 .2em; }
+.eventcrew-signup .eventcrew-standing-bar-track { display: block; height: .8em; border-radius: .4em .4em 0 0; background: color-mix(in srgb, currentColor 12%, transparent); overflow: hidden; }
+.eventcrew-signup .eventcrew-standing-bar-fill { display: block; height: 100%; width: var(--eventcrew-bar-fill, 0%); background: #d4a017; }
+.eventcrew-signup .eventcrew-standing-bar-zones { display: block; height: .3em; border-radius: 0 0 .2em .2em; background: linear-gradient(to right, #d9534f 0 var(--eventcrew-bar-limit), #f0ad4e var(--eventcrew-bar-limit) var(--eventcrew-bar-warn), #c9d8c5 var(--eventcrew-bar-warn) 100%); }
+.eventcrew-signup .eventcrew-standing-bar-limit { position: absolute; top: -.15em; bottom: -.15em; left: var(--eventcrew-bar-limit); width: 2px; margin-left: -1px; background: currentColor; }
+.eventcrew-signup .eventcrew-standing-bar-label { margin: 0 0 .4em; }
+.eventcrew-signup .eventcrew-standing-bar-label strong { color: #9a7410; }
+/*
  * The header card: name, language and Sign out in its top bar, standing in
  * its body. The bar keeps the identity row's centring and its smaller text.
  */

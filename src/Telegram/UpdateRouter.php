@@ -68,7 +68,8 @@ final class UpdateRouter
         private readonly ?TelegramClient $telegram = null,
         private readonly ?BuyerListReset $buyerListReset = null,
         private readonly ?NewcomerApproval $newcomers = null,
-        private readonly ?PrivateChatGate $gate = null
+        private readonly ?PrivateChatGate $gate = null,
+        private readonly ?AssignCommand $assign = null
     ) {
     }
 
@@ -214,6 +215,8 @@ final class UpdateRouter
                 $this->followup->onCallback($callbackQuery);
             } elseif (null !== $this->newsletter && str_starts_with($data, NewsletterCommand::PREFIX)) {
                 $this->newsletter->onCallback($callbackQuery);
+            } elseif (null !== $this->assign && str_starts_with($data, AssignCommand::PREFIX)) {
+                $this->assign->onCallback($callbackQuery);
             } elseif (null !== $this->say && str_starts_with($data, SayCommand::PREFIX)) {
                 $this->say->onConfirm($callbackQuery);
             } elseif (null !== $this->events && str_starts_with($data, EventsCommand::PREFIX)) {
@@ -224,6 +227,8 @@ final class UpdateRouter
                 $this->buyerListReset->onTap($callbackQuery);
             } elseif (null !== $this->newcomers && str_starts_with($data, NewcomerApproval::PREFIX)) {
                 $this->newcomers->onTap($callbackQuery);
+            } elseif (OnboardingService::AGAIN_DATA === $data) {
+                $this->onboarding->onAgainTap($callbackQuery);
             } elseif (str_starts_with($data, OnboardingService::JOIN_PREFIX)) {
                 $this->onboarding->onJoinTap($callbackQuery);
             } elseif (null !== $this->assistant && str_starts_with($data, AssistantService::PREFIX)) {
@@ -450,6 +455,20 @@ final class UpdateRouter
                 $this->commandArguments($text, 'followup'),
                 BotLog::SOURCE_HELPER === $this->source
             );
+
+            return;
+        }
+
+        // /assign and /unassign (organizers, private chat): put a named member
+        // on a task or take them off, confirmed with buttons first.
+        if (null !== $this->assign && $this->isCommand($text, AssignCommand::ADD)) {
+            $this->assign->onCommand($chatId, $fromId, $text, $isPrivate, AssignCommand::ADD);
+
+            return;
+        }
+
+        if (null !== $this->assign && $this->isCommand($text, AssignCommand::REMOVE)) {
+            $this->assign->onCommand($chatId, $fromId, $text, $isPrivate, AssignCommand::REMOVE);
 
             return;
         }

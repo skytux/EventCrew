@@ -12,6 +12,7 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\Dates;
+use EventCrew\Support\StandingBar;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketList;
 
@@ -66,6 +67,8 @@ final class ProfileService
             '',
             '🌟 ' . $person->name(),
             $standing->ratedSummary(),
+            // The bar once rated, else how many tasks until rated (Owner 2026-11-07).
+            $standing->isRated() ? StandingBar::forStanding($standing) : StandingBar::untilRated($standing),
             '',
             sprintf(
                 /* translators: %d: completed tasks */

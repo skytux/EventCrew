@@ -803,7 +803,7 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertSame('Tallennettu.', $this->lastCallTo('answerCallbackQuery')['text']);
 
         $texts = $this->sentTexts();
-        self::assertContains('Kirjoitan sinulle suomeksi. Voit vaihtaa kielen napilla 🌐 Kieli komennon /me alla.', $texts);
+        self::assertContains('Kirjoitan sinulle suomeksi. Vaihda kieli: /settings, 🌐 Vaihda kieli.', $texts);
         // The held /me ran after the choice, in Finnish.
         self::assertSame(
             'Aloita ensin: lähetä botille /start.',

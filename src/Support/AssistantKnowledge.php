@@ -68,14 +68,15 @@ final class AssistantKnowledge
      * $roleSlugs are the person's roles: the coming tasks of their
      * restricted roles (DJ, VJ, ...) are listed in a section of their own,
      * since they are never on the board (Owner 2026-11-07: the helper told a
-     * VJ there were no VJ tasks).
+     * VJ there were no VJ tasks). An organizer ($organizer) sees every role
+     * and every role task, since they can put anyone on any of them.
      *
      * @param array<int, string> $roleSlugs
      * @return array{facts: string, tasks: array<int, int>}
      *     tasks: the ids of the board tasks listed, which are the only ones
      *     the helper may offer to sign someone up for with /join.
      */
-    public function build(array $roleSlugs = []): array
+    public function build(array $roleSlugs = [], bool $organizer = false): array
     {
         [$taskText, $taskIds] = $this->tasksText();
 
@@ -92,14 +93,14 @@ final class AssistantKnowledge
 
         $parts = [
             ...$parts,
-            '## Roles' . "\n" . $this->rolesText($roleSlugs),
+            '## Roles' . "\n" . $this->rolesText($roleSlugs, $organizer),
             '## Open tasks (the board)' . "\n" . $taskText,
         ];
 
-        $roleTasks = $this->roleTasksText($roleSlugs);
+        $roleTasks = $this->roleTasksText($roleSlugs, $organizer);
 
         if ('' !== $roleTasks) {
-            $parts[] = '## This person\'s role tasks' . "\n" . $roleTasks;
+            $parts[] = ($organizer ? '## Role tasks' : '## This person\'s role tasks') . "\n" . $roleTasks;
         }
 
         $events = $this->eventsText();
@@ -188,12 +189,12 @@ final class AssistantKnowledge
     /**
      * @param array<int, string> $roleSlugs
      */
-    private function rolesText(array $roleSlugs = []): string
+    private function rolesText(array $roleSlugs = [], bool $organizer = false): string
     {
         $lines = [];
 
         foreach (Roles::active() as $role) {
-            if (Roles::isRestricted($role['slug']) && ! in_array($role['slug'], $roleSlugs, true)) {
+            if (! $organizer && Roles::isRestricted($role['slug']) && ! in_array($role['slug'], $roleSlugs, true)) {
                 continue;
             }
 
@@ -229,9 +230,9 @@ final class AssistantKnowledge
      *
      * @param array<int, string> $roleSlugs
      */
-    private function roleTasksText(array $roleSlugs): string
+    private function roleTasksText(array $roleSlugs, bool $organizer = false): string
     {
-        if ([] === $roleSlugs) {
+        if ([] === $roleSlugs && ! $organizer) {
             return '';
         }
 
@@ -239,11 +240,11 @@ final class AssistantKnowledge
             $this->tasks->upcoming(self::TASK_LIMIT),
             static fn (Task $task): bool => $task->isRestricted()
                 && ! $task->hasStarted()
-                && in_array($task->roleSlug, $roleSlugs, true)
+                && ($organizer || in_array($task->roleSlug, $roleSlugs, true))
         ));
 
         if ([] === $tasks) {
-            return 'No coming tasks of this person\'s roles yet.';
+            return $organizer ? 'No coming role tasks yet.' : 'No coming tasks of this person\'s roles yet.';
         }
 
         $taken = $this->tasks->occupancyFor(array_map(static fn (Task $task): int => $task->id, $tasks));
@@ -251,6 +252,15 @@ final class AssistantKnowledge
             'These are not on the group board. The person signs up for them with the role task buttons'
                 . ' that /board sends in this private chat, so for these give the action /board, never /join.',
         ];
+
+        if ($organizer) {
+            $lines = [
+                'Every coming role task, of every role: this person is an organizer. They are not on the group'
+                    . ' board. The organizer signs themselves up for one of their own roles with /board. To put'
+                    . ' anyone on any task, also one for a role that person does not hold, give the action'
+                    . ' /assign <task> ; <person> (or /board, ➕ Add someone); /unassign takes someone off.',
+            ];
+        }
 
         foreach ($tasks as $task) {
             $time = $task->timeRange();

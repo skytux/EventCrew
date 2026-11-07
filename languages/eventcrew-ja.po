@@ -1114,10 +1114,6 @@ msgstr "遅れて到着"
 msgid "Arrived late, did the task"
 msgstr "遅れて到着し、タスクを完了"
 
-#: src/Support/OrganizerGuide.php:245
-msgid "As an organizer you can add anyone to any task of a night, with /board in a private chat, in the Crew app Admin tab, or at the sales desk."
-msgstr "主催者は、プライベートチャットの /board、Crew アプリの管理タブ、または販売デスクで、その夜のどのタスクにも誰でも追加できます。"
-
 #: templates/admin/translations.php:213
 msgid "As written"
 msgstr "原文のまま"
@@ -1442,11 +1438,6 @@ msgstr "キャンセル: %2$s の %1$s"
 #: src/Support/WelcomeSender.php:554
 msgid "Cancelling %1$d hours or more before has no effect. Recent tasks count more than old ones. You get a rating after %2$d finished tasks. %3$d%% or higher is good standing."
 msgstr "%1$d 時間以上前のキャンセルは影響しません。最近のタスクほど重く数えます。完了したタスクが %2$d 件になると評価が付きます。%3$d%% 以上が良好です。"
-
-#. translators: %d: hours of notice, e.g. 48
-#: src/Support/OrganizerGuide.php:139
-msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /me to the bot, taps 🔁 Take over a task, and the member accepts."
-msgstr "タスクの %d 時間前を切ってからのキャンセルは直前キャンセルになります。来られないメンバーは代わりの人を探せます: 代わりの人がボットに /me を送って 🔁 タスクを引き継ぐ をタップし、メンバーが承認します。"
 
 #: templates/admin/settings.php:490
 msgid "Cancelling this many hours or less before a task starts is recorded as a late cancellation, which counts against reputation; earlier than that carries no penalty. Default 48."
@@ -3143,10 +3134,6 @@ msgstr "このチャットを主催者に伝えました。"
 msgid "I remember our private chat for 24 hours, so you can refer back to it."
 msgstr "プライベートチャットの内容は 24 時間覚えているので、後から参照できます。"
 
-#: src/Telegram/LanguageService.php:135
-msgid "I will write to you in English. To change it, tap 🌐 Language under /me."
-msgstr "英語でメッセージを送ります。変更するには /me の 🌐 言語 をタップしてください。"
-
 #: templates/admin/settings.php:2405
 msgid "IMAP"
 msgstr "IMAP"
@@ -3689,11 +3676,6 @@ msgstr "偽の管理リクエストの後にメンバーをブロックしまし
 msgid "Member name or email"
 msgstr "メンバーの名前またはメール"
 
-#. translators: %d: completed tasks needed for one credit
-#: src/Support/OrganizerGuide.php:217
-msgid "Members earn 1 free-entry credit per %d completed tasks and spend it with 🎟 Free-entry ticket under /me or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
-msgstr "メンバーはタスクを %d 件完了するごとに無料入場クレジットを 1 つ得て、/me またはウェブページの 🎟 無料入場チケット で使います。クレジットは /people、「人」ページ、または販売デスクで贈れます。贈るたびに「人」ページのクレジットの記録に書かれ、メンバーに通知されます。"
-
 #: src/Support/NewsletterConfirmMail.php:86 templates/admin/diagnostics.php:125
 #: templates/admin/settings.php:1580
 msgid "Message"
@@ -3756,11 +3738,6 @@ msgstr "月"
 msgctxt "weekday name"
 msgid "Monday"
 msgstr "月曜日"
-
-#. translators: %s: link to the crew page
-#: src/Support/MessageTemplates.php:1263
-msgid "More notice next time keeps it clear: tap Cancel on your task in the Board tab of the crew page (%s) as soon as you know."
-msgstr "次はもっと早めの連絡でお願いします: 分かった時点で、クルーページ (%s) のボードタブで自分のタスクのキャンセルをタップしてください。"
 
 #: templates/admin/settings.php:1299
 msgid "Most event organisers do not need one. A DPO is required only of public authorities, of anyone monitoring people systematically on a large scale, and of anyone handling special-category data at scale — none of which is what this plugin does. Leave both blank and the notice says so plainly, and points people at the contact address above. Fill in a contact and it is published as the officer’s, which is what makes a designation meaningful."
@@ -3894,10 +3871,6 @@ msgstr "無料入場できる次の夜:"
 #: templates/admin/settings.php:940
 msgid "Next run: %1$s. Last run: %2$s."
 msgstr "次回の実行: %1$s。前回の実行: %2$s。"
-
-#: src/Support/MessageTemplates.php:1260
-msgid "Next time tap Cancel early or find someone to take it."
-msgstr "次回は早めにキャンセルするか、引き継ぐ人を探してください。"
 
 #: src/Telegram/MessagePages.php:62
 msgid "Next »"
@@ -7723,11 +7696,6 @@ msgstr "アドレスではなくヘッダーにシークレットを入れた同
 msgid "The same ticket email goes to a guest you add with an email address (wp-admin Roster, the Admin tab, or /door add Name name@example.com) and to a Holvi buyer added at the sales desk with an email address, with the next batch. Crew get a separate ticket email when they take a task or spend a credit. When a guest is removed, or a task or credit is cancelled, after the ticket was emailed, the person gets a short \"Your ticket is cancelled\" email."
 msgstr "同じチケットメールが、メールアドレス付きで追加したゲスト（wp-admin の名簿、管理タブ、または /door add 名前 name@example.com）と、販売デスクでメールアドレス付きで追加した Holvi の購入者にも、次の送信分で届きます。クルーには、タスクを担当したときやクレジットを使ったときに別のチケットメールが届きます。チケットをメールで送った後にゲストが外されたり、タスクやクレジットがキャンセルされたりすると、その人に短い「チケットはキャンセルされました」というメールが届きます。"
 
-#. translators: 1: opening time, e.g. 09:00, 2: closing time, e.g. 21:00
-#: src/Support/OrganizerGuide.php:271
-msgid "The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with 🔔 Notifications under /me; confirmations and reminders always go."
-msgstr "予約されたものは %1$s から %2$s の間だけ送られます。それぞれ Telegram とメールで送られます。メンバーは /me の 🔔 通知 で受け取るものを選べます。確認とリマインダーは常に送られます。"
-
 #: src/Support/DoorNewMember.php:116 src/Support/MessageTemplates.php:1097
 msgid "The second button opens the crew’s Telegram group, where tasks are posted."
 msgstr "2 つ目のボタンでクルーの Telegram グループが開き、そこにタスクが投稿されます。"
@@ -8266,14 +8234,6 @@ msgstr "このチケットのリンクは無効です。"
 msgid "This uses your only free-entry credit."
 msgid_plural "This uses 1 of your %d free-entry credits."
 msgstr[0] "%d 件の無料入場クレジットのうち1件を使います。"
-
-#: src/Support/ClaimNotifier.php:202
-msgid "This was a late cancellation, which counts against your standing. More notice keeps it clear next time."
-msgstr "直前キャンセルのため、評価に影響します。次回はもっと早めに連絡すれば影響しません。"
-
-#: src/Support/ClaimNotifier.php:204
-msgid "This was a late cancellation, which counts against your standing. Next time, more notice keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept."
-msgstr "直前キャンセルのため、評価に影響します。次回はもっと早めに連絡するか、代わりの人を見つければ影響しません: その人がボットに /me を送って 🔁 タスクを引き継ぐ をタップし、あなたが承認します。"
 
 #: src/Support/TicketFile.php:105
 msgid "This website cannot read .xlsx files, because its PHP has no zip or XML support. Save the list as a .csv file and send it again, or ask the site’s administrator to turn on the PHP zip extension."
@@ -8933,10 +8893,6 @@ msgstr "完了した各タスクが点数にどれだけ寄与するか、0〜10
 msgid "What is hybrid?"
 msgstr "ハイブリッドとは?"
 
-#: src/Support/MessageTemplates.php:1259
-msgid "What keeps it clear next time: more notice, or a replacement found in the bot. For a person with no Telegram chat: more notice, and the link to the crew page."
-msgstr "次回影響しないようにする方法: もっと早めの連絡、またはボットで代わりの人を見つけること。Telegram チャットのない人には: もっと早めの連絡と、クルーページへのリンク。"
-
 #: src/Web/NewsletterController.php:664 src/Web/NewsletterController.php:1227
 msgid "What should we call you?"
 msgstr "何とお呼びすればよいですか？"
@@ -9209,10 +9165,6 @@ msgstr "今夜担当: タスクを選ぶ"
 #: src/Support/DoorList.php:117
 msgid "Working: %s"
 msgstr "担当: %s"
-
-#: src/Support/FollowupMail.php:1330
-msgid "Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time."
-msgstr "新しいイベントを真っ先に知りたいですか？次回イベントのお知らせに登録してください: 新しいイベントが出たらメールでお知らせします。ボタンを 1 回押すだけで、いつでもやめられます。"
 
 #: src/Support/MessageAiText.php:77
 msgid "Write a new text with the AI for each event"
@@ -9527,20 +9479,6 @@ msgstr "主催者になりました (Telegram)"
 msgid "You were made an organizer (email)"
 msgstr "主催者になりました (メール)"
 
-#: src/Support/MessageTemplates.php:1369
-msgid "You were marked as a no-show"
-msgstr "欠席として記録されました"
-
-#: src/Support/MessageTemplates.php:1371
-msgid ""
-"You were marked as a no-show for %2$s.\n"
-"\n"
-"No-shows count against your standing. If this is a mistake, contact an organizer and they can correct it."
-msgstr ""
-"%2$s で欠席として記録されました。\n"
-"\n"
-"欠席は評価に響きます。間違いであれば主催者に連絡してください。訂正してもらえます。"
-
 #: src/Telegram/BoardService.php:1264 src/Telegram/RoleTaskBot.php:427
 #: src/Web/SignupController.php:1216
 msgid "You weren’t signed up for that one."
@@ -9632,18 +9570,6 @@ msgstr "無料入場チケットの準備ができました。"
 #: src/Web/SignupController.php:1211
 msgid "Your language is saved."
 msgstr "言語を保存しました。"
-
-#. translators: 2: role at event, date, 3: what keeps it clear next time
-#: src/Support/MessageTemplates.php:1397
-msgid ""
-"Your late cancellation for %2$s has been recorded.\n"
-"\n"
-"It counts against your standing. %3$s"
-msgstr "%2$s の直前キャンセルを記録しました。\n\n評価に影響します。%3$s"
-
-#: src/Support/MessageTemplates.php:1394
-msgid "Your late cancellation was recorded"
-msgstr "直前キャンセルが記録されました"
 
 #: src/Support/PrivacyPolicy.php:770
 msgid "Your name and ticket code are used to check you in at the door. The legal basis is that this is necessary to give you the entry you paid for."
@@ -10214,16 +10140,6 @@ msgstr "⏰ リマインダー: %2$s の %1$s、%3$s を担当します。当日
 #: src/Support/ClaimNotifier.php:212
 msgid "⚠️ Late cancellation"
 msgstr "⚠️ 直前キャンセル"
-
-#. translators: %s: role at event, date
-#: src/Support/MessageTemplates.php:1384
-msgid "⚠️ You were marked as a no-show for %s. No-shows count against your standing. If that’s a mistake, tell an organizer."
-msgstr "⚠️ %s で欠席として記録されました。欠席は評価に響きます。間違いであれば主催者に伝えてください。"
-
-#. translators: %s: role at event, date
-#: src/Support/MessageTemplates.php:1415
-msgid "⚠️ Your late cancellation for %s is recorded. It counts against your standing; more notice keeps it clear next time."
-msgstr "⚠️ %s の直前キャンセルが記録されました。評価に響きます。次回は早めに知らせれば影響はありません。"
 
 #. translators: 1: guest name, 2: event day
 #: src/Telegram/GuestListService.php:264
@@ -11040,6 +10956,9 @@ msgstr "申し訳ありません。このチケットは期限切れです"
 msgid "You’re in, welcome!"
 msgstr "入場完了、ようこそ！"
 
+msgid "You’re in. Welcome, %s!"
+msgstr "入場完了。ようこそ、%sさん！"
+
 msgid "Checked in at %s"
 msgstr "%s に入場"
 
@@ -11199,3 +11118,246 @@ msgstr "タスクを引き受けて、この夜を支えてくれてありがと
 #: src/Support/TicketReasons.php
 msgid "Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!"
 msgstr "クルーの一員として、これらの夜を支えてくれてありがとうございます。今夜は私たちからの招待です。ゲストとして踊って楽しんでください！"
+
+msgid "What helps next time: cancelling as soon as you know, or someone found in the bot to take the task over. For a person with no Telegram chat: cancelling early on the crew page, with its link."
+msgstr "次回に役立つこと: わかった時点ですぐキャンセルするか、ボットでタスクを引き継ぐ人を見つけること。Telegram チャットのない人には: クルーページで早めにキャンセルすること (リンク付き)。"
+
+msgid "Next time, tap Cancel as soon as you know, or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task."
+msgstr "次回は、わかった時点ですぐキャンセルをタップするか、引き継ぐ人を見つけてください: その人がボットに /me を送って 🔁 タスクの引き継ぎ をタップします。"
+
+msgid "Next time, tap Cancel on your task in the Board tab of the crew page (%s) as soon as you know."
+msgstr "次回は、わかった時点ですぐ、クルーページ (%s) のボードタブで自分のタスクのキャンセルをタップしてください。"
+
+msgid "The sentence saying what a late cancellation counts in the score next to a completed task, with the weights from Settings (40 and 100 percent by default)."
+msgstr "直前キャンセルが完了したタスクと比べてスコアでどれだけに数えられるかを示す文。重みは設定から (既定は 40 と 100 パーセント)。"
+
+msgid "A late cancellation counts %1$d%% in your score, a completed task %2$d%%."
+msgstr "直前キャンセルはスコアで %1$d%%、完了したタスクは %2$d%% に数えられます。"
+
+msgid "We missed you at your task"
+msgstr "タスクでお会いできず残念でした"
+
+msgid ""
+"We missed you at %2$s, so it was marked as a no-show. Unexpected things happen, and that's OK.\n"
+"\n"
+"The night runs on its crew: a missed task falls on the others or leaves a gap. %3$s%4$s\n"
+"\n"
+"A no-show counts against your standing, but every task you complete lifts it again, and it weighs less over time. Conditions may be better next time, so we hope you sign up again. If this is a mistake, tell an organizer and they will correct it."
+msgstr ""
+"%2$s でお会いできず残念でした。そのため欠席として記録されました。予期せぬことは起こるものです。気にしないでください。\n"
+"\n"
+"イベントの夜はクルーで成り立っています: 抜けたタスクはほかの人の負担になるか、穴が空いてしまいます。%3$s%4$s\n"
+"\n"
+"欠席は評価に影響しますが、タスクを完了するたびにまた上がり、時間とともに影響も小さくなります。次はもっと条件が良いかもしれません。また参加登録してくれるとうれしいです。間違いであれば主催者に伝えてください。修正してくれます。"
+
+msgid ""
+"🤍 We missed you at %1$s. Unexpected things happen, and that's OK.\n"
+"\n"
+"The night runs on its crew: a missed task falls on others or leaves a gap. %2$s%3$s\n"
+"\n"
+"A no-show counts against your standing; every task you complete lifts it again. Next time may suit you better, so sign up again! If this is a mistake, tell an organizer."
+msgstr ""
+"🤍 %1$s でお会いできず残念でした。予期せぬことは起こるものです。気にしないでください。\n"
+"\n"
+"イベントの夜はクルーで成り立っています: 抜けたタスクはほかの人の負担になるか、穴が空いてしまいます。%2$s%3$s\n"
+"\n"
+"欠席は評価に影響しますが、タスクを完了するたびにまた上がります。次はもっとうまくいくかもしれません。また参加登録してください! 間違いであれば主催者に伝えてください。"
+
+msgid "Thanks for letting us know"
+msgstr "連絡ありがとうございます"
+
+msgid ""
+"Thanks for letting the crew know you couldn't make it to %2$s. Telling us is always better than not showing up.\n"
+"\n"
+"It was a late cancellation, and early notice matters: it gives someone else time to take the place. %3$s%4$s\n"
+"\n"
+"%5$s It weighs less over time. Plans change sometimes; we hope you sign up again when it suits you. If this is a mistake, tell an organizer."
+msgstr ""
+"%2$s に行けなくなったことをクルーに知らせてくれてありがとうございます。連絡するのは、来ないよりいつでもずっと良いことです。\n"
+"\n"
+"今回は直前キャンセルでした。早めの連絡が大切なのは、ほかの人が代わりに入る時間ができるからです。%3$s%4$s\n"
+"\n"
+"%5$s 時間とともに影響は小さくなります。予定が変わることもあります。都合の良いときにまた参加登録してくれるとうれしいです。間違いであれば主催者に伝えてください。"
+
+msgid ""
+"🤍 Thanks for letting us know about %1$s. Telling the crew is always better than not showing up.\n"
+"\n"
+"It was a late cancellation: early notice gives someone else time to take the place. %2$s%3$s\n"
+"\n"
+"%4$s It weighs less over time. Next time may suit you better, so sign up again! If this is a mistake, tell an organizer."
+msgstr ""
+"🤍 %1$s について連絡してくれてありがとうございます。クルーに知らせるのは、来ないよりいつでもずっと良いことです。\n"
+"\n"
+"今回は直前キャンセルでした: 早めに連絡すれば、ほかの人が代わりに入る時間ができます。%2$s%3$s\n"
+"\n"
+"%4$s 時間とともに影響は小さくなります。次はもっとうまくいくかもしれません。また参加登録してください! 間違いであれば主催者に伝えてください。"
+
+msgid "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hour or more before has no effect and gives someone else time to take the place."
+msgid_plural "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hours or more before has no effect and gives someone else time to take the place."
+msgstr[0] "連絡ありがとうございます。タスクの直前なので評価に影響します。%d 時間以上前のキャンセルなら影響はなく、ほかの人が代わりに入る時間もできます。"
+
+msgid "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hour or more before has no effect and gives someone else time to take the place. You can also hand a task over: the other person sends /me to the bot and taps 🔁 Take over a task, and you accept."
+msgid_plural "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hours or more before has no effect and gives someone else time to take the place. You can also hand a task over: the other person sends /me to the bot and taps 🔁 Take over a task, and you accept."
+msgstr[0] "連絡ありがとうございます。タスクの直前なので評価に影響します。%d 時間以上前のキャンセルなら影響はなく、ほかの人が代わりに入る時間もできます。タスクを譲ることもできます: 相手がボットに /me を送って 🔁 タスクの引き継ぎ をタップし、あなたが承認します。"
+
+msgid "Good standing from %d%%"
+msgstr "%d%% 以上で良好"
+
+msgid "Standing %1$d%% → %2$d%%."
+msgstr "評価 %1$d%% → %2$d%%。"
+
+msgid "Standing %d%%."
+msgstr "評価 %d%%。"
+
+msgid "You get a standing score after %d more task."
+msgid_plural "You get a standing score after %d more tasks."
+msgstr[0] "あと %d 件のタスクで評価がつきます。"
+
+msgid "Good standing is %d%% or more, so every task is open to you."
+msgstr "%d%% 以上が良好なので、すべてのタスクに申し込めます。"
+
+msgid "Still good standing, but close to the %d%% limit."
+msgstr "まだ良好ですが、%d%% の境目に近づいています。"
+
+msgid "Good standing is %d%% or more."
+msgstr "%d%% 以上が良好です。"
+
+msgid "The standing as a bar from 0 to 100 percent, with the good-standing limit marked; in the email a coloured bar. On a line of its own; the line goes while the person has no score yet."
+msgstr "評価を 0〜100 パーセントのバーで表示し、良好の境目に印をつけます。メールでは色付きのバーになります。1 行で表示され、まだ評価がない間はその行が消えます。"
+
+msgid "The standing before and after, like: Standing 82 → 74 percent, with one sentence on what it means. Before the person has a score: how many tasks until they get one."
+msgstr "前後の評価。例: 評価 82 → 74 パーセント、とその意味を 1 文で。まだ評価がない場合は、評価がつくまでのタスク数。"
+
+msgid "The free-entry credits the person has now, and how many more completed tasks earn the next one."
+msgstr "その人の今の無料入場クレジットと、次のクレジットまでに必要な完了タスク数。"
+
+msgid "%d more completed task earns the next one."
+msgid_plural "%d more completed tasks earn the next one."
+msgstr[0] "あと %d 件のタスクを完了すると次のクレジットがもらえます。"
+
+msgid "Thank you for a task (email)"
+msgstr "タスクへのお礼 (メール)"
+
+msgid "Thank you for a task (Telegram)"
+msgstr "タスクへのお礼 (Telegram)"
+
+msgid "Sent a day after an organizer marks a person's task as completed or arrived late."
+msgstr "主催者がある人のタスクを完了または遅刻と記録した1日後に送られます。"
+
+msgid "Thank you for your task"
+msgstr "タスクをありがとう"
+
+msgid "Thank you for %1$s! The night runs on its crew, and you helped make it happen."
+msgstr "%1$s をありがとう！夜はクルーで成り立っていて、あなたがそれを支えてくれました。"
+
+msgid "We hope to see you again soon."
+msgstr "またすぐに会えるのを楽しみにしています。"
+
+msgid "See you next time!"
+msgstr "また次回！"
+
+#: src/Support/OrganizerGuide.php:245
+msgid "As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
+msgstr "主催者は、運営を除くその夜のどのタスクにも誰でも追加できます。持っていない役割のタスクにも追加でき、その場合は役割が付与されます。方法: プライベートチャットで /assign タスク ; 名前（/unassign で外す）、/board の ➕ 誰かを追加、Crew アプリの管理タブ、または販売デスク。"
+
+#. translators: %d: hours of notice, e.g. 48
+#: src/Support/OrganizerGuide.php:139
+msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /tasks to the bot, taps 🔁 Take over a task, and the member accepts."
+msgstr "タスクの %d 時間前を切ってからのキャンセルは直前キャンセルになります。来られないメンバーは代わりの人を探せます: 代わりの人がボットに /tasks を送って 🔁 タスクの引き継ぎ をタップし、メンバーが承認します。"
+
+#: src/Telegram/LanguageService.php:135
+msgid "I will write to you in English. To change it: /settings, 🌐 Change language."
+msgstr "英語でメッセージを送ります。変更するには: /settings、🌐 言語を変更。"
+
+#. translators: %d: completed tasks needed for one credit
+#: src/Support/OrganizerGuide.php:217
+msgid "Members earn 1 free-entry credit per %d completed tasks and spend it with /me, 🎟 Tickets, 🎟 Get a free-entry ticket (or /tickets), or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
+msgstr "メンバーはタスクを %d 件完了するごとに無料入場クレジットを 1 つ得て、/me、🎟 チケット、🎟 無料入場チケットを受け取る（または /tickets）、またはウェブページで使います。クレジットは /people、「人」ページ、または販売デスクで贈れます。贈るたびに「人」ページのクレジットの記録に書かれ、メンバーに通知されます。"
+
+#. translators: 1: opening time, e.g. 09:00, 2: closing time, e.g. 21:00
+#: src/Support/OrganizerGuide.php:271
+msgid "The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with /settings, 🔔 Choose notifications; confirmations and reminders always go."
+msgstr "予約されたものは %1$s から %2$s の間だけ送られます。それぞれ Telegram とメールで送られます。メンバーは /settings、🔔 通知を選ぶ で受け取るものを選べます。確認とリマインダーは常に送られます。"
+
+msgid "%1$s does not have the %2$s role. As an organizer you can still add them; they get the role."
+msgstr "%1$s は %2$s の役割を持っていません。主催者として追加はできます。その場合、役割も付与されます。"
+
+msgid "%s is blocked from sign-ups. An organizer can lift it on the People page."
+msgstr "%s は申し込みをブロックされています。主催者が「人」ページで解除できます。"
+
+msgid "/assign task ; name – put a member on a task (/unassign takes them off); you confirm first"
+msgstr "/assign タスク ; 名前 – メンバーをタスクに入れる（/unassign で外す）。先に確認します"
+
+msgid "Add %1$s to %2$s?"
+msgstr "%1$s を %2$s に追加しますか？"
+
+msgid "Add, counts"
+msgstr "追加（カウントする）"
+
+msgid "Add, no credit"
+msgstr "追加（クレジットなし）"
+
+msgid "Cancelled. Nothing was changed."
+msgstr "キャンセルしました。何も変更していません。"
+
+msgid "Many members match “%s”. Write more of the name."
+msgstr "「%s」に当てはまるメンバーが多すぎます。名前をもっと詳しく書いてください。"
+
+msgid "No member called “%s” was found."
+msgstr "「%s」という名前のメンバーは見つかりませんでした。"
+
+msgid "No member called “%s” was found. Someone who is not a member yet: ➕ Add someone under /board."
+msgstr "「%s」という名前のメンバーは見つかりませんでした。まだメンバーでない人は: /board の ➕ 誰かを追加。"
+
+msgid "No task called “%1$s”. Tasks on %2$s: %3$s"
+msgstr "「%1$s」というタスクはありません。%2$s のタスク: %3$s"
+
+msgid "Organize tasks are for organizers only. Make someone an organizer with /people."
+msgstr "運営タスクは主催者専用です。/people で誰かを主催者にしてください。"
+
+msgid "Put a member on a task: /assign task ; name\nExample: /assign Host ; Milla\nA date first picks another event: /assign 21.11. Host ; Milla"
+msgstr "メンバーをタスクに入れる: /assign タスク ; 名前\n例: /assign Host ; Milla\n先頭に日付を書くと別の夜を選べます: /assign 21.11. Host ; Milla"
+
+msgid "Take %1$s off %2$s?"
+msgstr "%1$s を %2$s から外しますか？"
+
+msgid "Take a member off a task: /unassign task ; name\nExample: /unassign Host ; Milla\nA date first picks another event: /unassign 21.11. Host ; Milla"
+msgstr "メンバーをタスクから外す: /unassign タスク ; 名前\n例: /unassign Host ; Milla\n先頭に日付を書くと別の夜を選べます: /unassign 21.11. Host ; Milla"
+
+msgid "Taken off the task. If their ticket was emailed, they get an updated one; nothing else is sent."
+msgstr "タスクから外しました。チケットをメールで送っていた場合は更新版が届きます。それ以外は何も送りません。"
+
+msgid "That person is not on this task."
+msgstr "その人はこのタスクにいません。"
+
+msgid "That task is full (%1$d of %2$d places taken). Nothing was added."
+msgstr "そのタスクは満員です（%2$d 枠中 %1$d 枠が埋まっています）。何も追加していません。"
+
+msgid "There are no tasks on %s."
+msgstr "%s にはタスクがありません。"
+
+msgid "There are no upcoming tasks."
+msgstr "今後のタスクはありません。"
+
+msgid "This request has expired. Please send it again."
+msgstr "このリクエストは期限切れです。もう一度送ってください。"
+
+msgid "Use %s in a private chat with me."
+msgstr "%s は私とのプライベートチャットで使ってください。"
+
+msgid "Which member?"
+msgstr "どのメンバーですか？"
+
+#: src/Support/FollowupMail.php
+msgid "Get an email when new events come out. You can leave any time."
+msgstr "新しいイベントが出たらメールでお知らせします。いつでも解除できます。"
+
+#: src/Support/FollowupMail.php
+msgid "The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
+msgstr "この夜を作ったのはクルーです。みんなが踊れるように裏方で働いてくれた人たちです。参加してみませんか？人と知り合い、役に立てて、チケット代も節約できるすてきな方法です。"
+
+msgid "Nothing after a few minutes, not even in spam? Try again, with the same or another address."
+msgstr "数分たっても届かず、迷惑メールにもない場合は、同じアドレスか別のアドレスでもう一度お試しください。"
+
+msgid "✏️ Use another email"
+msgstr "✏️ 別のメールを使う"

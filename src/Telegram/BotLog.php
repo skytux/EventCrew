@@ -41,7 +41,7 @@ final class BotLog
 
     /** The commands UpdateRouter answers. */
     private const COMMANDS = [
-        'help', 'start', 'roster', 'door', 'people', 'me', 'board', 'newsletter', 'say', 'events',
+        'help', 'start', 'roster', 'door', 'people', 'me', 'board', 'newsletter', 'say', 'assign', 'unassign', 'events',
     ];
 
     /** Menu button callback data, stored whole: it is a fixed word, not data. */

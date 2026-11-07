@@ -8,6 +8,7 @@ use EventCrew\Support\Dates;
 use EventCrew\Support\GuestCommand;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\NewsletterText;
+use EventCrew\Support\SiteLanguages;
 
 /**
  * The actions the language-model helper may ask for, and the check every one
@@ -74,15 +75,30 @@ final class AssistantActions
             self::entry('/tasks', "the person's coming tasks, each with a cancel button; take over a task; past tasks"),
             self::entry('/tickets', "the person's tickets and the free-entry ticket button"),
             self::entry('/settings', 'the notifications, language and web sign-in buttons'),
-            self::entry('/board', 'the open tasks as buttons to tap'),
+            self::entry(
+                '/board',
+                'the open tasks as buttons to tap; in a private chat also the tasks of the roles the person holds'
+                    . ' (✋ sign up, ❌ cancel), and for an organizer a ➕ Add someone button under every task, to put'
+                    . ' anyone on it (a member, or someone new by name and email)'
+            ),
             self::entry('/join <task>', 'sign the person up for a task; <task> is a task number from Open tasks', true),
             self::entry('/leave <task>', 'take the person off a task they signed up for; <task> as above', true),
             self::entry('menu:ticket', 'get the free-entry ticket for a night'),
             self::entry('menu:replace', "take over someone else's task (the bot then asks whose)"),
             self::entry('menu:web', 'a sign-in link for the crew web page'),
             self::entry('menu:notifications', 'choose which notifications the person gets'),
-            self::entry('menu:language', 'choose Finnish or English for the bot'),
+            self::entry(
+                'menu:language',
+                'choose the language of the bot: ' . implode(', ', array_map([SiteLanguages::class, 'name'], SiteLanguages::codes()))
+            ),
         ];
+
+        if (! $audience['organizer'] && ! $audience['welcomeCrew']) {
+            $list[] = self::entry(
+                '/roster [date]',
+                'who works that night, by task (names only); only for a night the person works themselves'
+            );
+        }
 
         if ($audience['organizer'] || $audience['welcomeCrew']) {
             $list[] = self::entry(
@@ -99,13 +115,34 @@ final class AssistantActions
         }
 
         if ($audience['organizer']) {
-            $list[] = self::entry('/door add [date] <name> [+N] [; note]', 'add a guest to the guest list', true);
+            $list[] = self::entry(
+                '/door add [date] <name> [email] [+N] [; note]',
+                'add a guest to the guest list; with an email address after the name (/door add Anna anna@example.com)'
+                    . ' the guest gets their ticket by email',
+                true
+            );
             $list[] = self::entry(
                 '/door edit [date] <number> [name] [+N] [; note]',
                 'change a guest; <number> is the guest\'s number on the guest list',
                 true
             );
             $list[] = self::entry('/door remove [date] <number>', 'take a guest off the guest list', true);
+            $list[] = self::entry(
+                '/assign [date] <task> ; <person>',
+                'put a member on a task of the next event (or of [date]): any task but Organize, also one for a role'
+                    . ' the person does not hold (the bot warns and gives them the role). <task> is the task name'
+                    . ' (Host, Door, ...), <person> the name as the organizer wrote it, even partly or misspelled:'
+                    . ' the bot finds the member, asks with buttons when several match, says when the task is full,'
+                    . ' and asks the organizer to confirm before anything is written; the person then gets the'
+                    . ' normal sign-up confirmation and ticket. Someone who is not a member yet: /board, ➕ Add someone',
+                false
+            );
+            $list[] = self::entry(
+                '/unassign [date] <task> ; <person>',
+                'take a member off a task of the next event (or of [date]); same names as /assign; the bot asks the'
+                    . ' organizer to confirm first',
+                false
+            );
             $list[] = self::entry('/people', 'the people buttons: credits, roles, who may hold each role');
             $list[] = self::entry('menu:gift', 'give someone credits (the bot then asks who)');
             $list[] = self::entry('menu:roles', 'give or take roles, organizers and passes (the bot then asks who)');
@@ -258,10 +295,6 @@ final class AssistantActions
                 return self::validateTask($head, $rest, $audience, $offeredTasks);
 
             case '/roster':
-                if (! $staff) {
-                    return self::refuse(self::ERROR_NOT_PERMITTED);
-                }
-
                 return self::withOptionalDate('/roster', $rest, $today, self::RUN_MESSAGE, '/roster');
 
             case 'menu:doorlist':
@@ -276,9 +309,45 @@ final class AssistantActions
 
             case '/door':
                 return self::validateDoor($rest, $audience, $userText, $today);
+
+            case '/assign':
+            case '/unassign':
+                return self::validateAssign($head, $rest, $audience, $today);
         }
 
         return self::refuse(self::ERROR_UNKNOWN);
+    }
+
+    /**
+     * "/assign [date] <task> ; <person>" and "/unassign ...": organizers only.
+     * Not confirmed here, because the command itself finds the task and the
+     * member, asks when a name is unclear, and confirms with ✅ / ✖️.
+     *
+     * @param array{organizer: bool, welcomeCrew: bool, verified: bool} $audience
+     * @return array{ok: bool, error: string, action: string, confirm: bool, run: string, payload: string}
+     */
+    private static function validateAssign(string $head, string $rest, array $audience, string $today): array
+    {
+        if (! $audience['organizer']) {
+            return self::refuse(self::ERROR_NOT_PERMITTED);
+        }
+
+        $whole = $rest;
+        $parts = preg_split('/\s+/u', $rest, 2) ?: [];
+
+        if ('' !== Dates::parseUserDate((string) ($parts[0] ?? ''), $today)) {
+            $rest = trim((string) ($parts[1] ?? ''));
+        }
+
+        $sides = explode(';', $rest, 2);
+
+        if (2 !== count($sides) || '' === trim($sides[0]) || '' === trim($sides[1])) {
+            return self::refuse(self::ERROR_INVALID);
+        }
+
+        $line = $head . ' ' . $whole;
+
+        return self::accept($line, false, self::RUN_MESSAGE, $line);
     }
 
     /**

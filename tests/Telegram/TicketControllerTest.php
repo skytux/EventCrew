@@ -340,7 +340,8 @@ final class TicketControllerTest extends TestCase
         $ticket = $this->sampleTicket();
 
         self::assertStringContainsString(
-            '<p class="t-band is-valid" id="ec-band" aria-live="polite">VALID</p>',
+            '<p class="t-band is-valid" id="ec-band" aria-live="polite"><span class="t-state">VALID</span>'
+            . '<span class="t-in t-ghost" aria-hidden="true">',
             $this->controller()->renderPage($ticket)
         );
 
@@ -463,7 +464,11 @@ final class TicketControllerTest extends TestCase
 
         $html = $this->controller()->renderPage($ticket);
 
-        self::assertStringContainsString('<span class="t-in-text">You’re in, welcome!</span><span class="t-at">Checked in at 21:05</span></p>', $html);
+        self::assertStringContainsString(
+            '<span class="t-in"><span class="t-in-text">You’re in. Welcome, Sam!</span>'
+            . '<span class="t-at">Checked in at 21:05</span></span></p>',
+            $html
+        );
         self::assertStringNotContainsString('is-valid">', $html);
     }
 
@@ -489,7 +494,8 @@ final class TicketControllerTest extends TestCase
 
         self::assertNull($ticket['used']);
         self::assertStringContainsString(
-            '<p class="t-band is-valid" id="ec-band" aria-live="polite">VALID</p>',
+            '<p class="t-band is-valid" id="ec-band" aria-live="polite"><span class="t-state">VALID</span>'
+            . '<span class="t-in t-ghost" aria-hidden="true">',
             $this->controller()->renderPage($ticket)
         );
     }
@@ -507,7 +513,8 @@ final class TicketControllerTest extends TestCase
 
         self::assertStringContainsString("kind = 'guest' AND ref_id IN (12)", (string) end($this->wpdb->queries));
         self::assertStringContainsString(
-            '<span class="t-in-text">You’re in, welcome!</span><span class="t-at">Checked in at 20:15</span></p>',
+            '<span class="t-in-text">You’re in. Welcome, Cy!</span>'
+            . '<span class="t-at">Checked in at 20:15</span></span></p>',
             $this->controller()->renderPage($ticket)
         );
     }
@@ -529,7 +536,11 @@ final class TicketControllerTest extends TestCase
         self::assertStringContainsString("kind = 'buyer' AND ref_id IN (4)", (string) end($this->wpdb->queries));
         $html = $this->controller()->renderPage($ticket);
 
-        self::assertStringContainsString('<p class="t-band is-valid" id="ec-band" aria-live="polite">VALID</p>', $html);
+        self::assertStringContainsString(
+            '<p class="t-band is-valid" id="ec-band" aria-live="polite"><span class="t-state">VALID</span>'
+            . '<span class="t-in t-ghost" aria-hidden="true">',
+            $html
+        );
         self::assertStringNotContainsString(' used<', $html);
     }
 
@@ -546,7 +557,8 @@ final class TicketControllerTest extends TestCase
             self::assertStringNotContainsString('ticket_code', (string) $sql);
         }
         self::assertStringContainsString(
-            '<span class="t-in-text">You’re in, welcome!</span><span class="t-at">Checked in at 23:10</span></p>',
+            '<span class="t-in-text">You’re in. Welcome, Bo!</span>'
+            . '<span class="t-at">Checked in at 23:10</span></span></p>',
             $this->controller()->renderPage($ticket)
         );
     }
@@ -706,7 +718,11 @@ final class TicketControllerTest extends TestCase
     {
         $html = $this->controller()->renderPage($this->ticketForEventStartingAt('19:00'));
 
-        self::assertStringContainsString('<p class="t-band is-valid" id="ec-band" aria-live="polite">VALID</p>', $html);
+        self::assertStringContainsString(
+            '<p class="t-band is-valid" id="ec-band" aria-live="polite"><span class="t-state">VALID</span>'
+            . '<span class="t-in t-ghost" aria-hidden="true">',
+            $html
+        );
         // Doors close at 19:30; the site's clock says 12:00.
         self::assertStringContainsString('"closesIn":27000', $html);
         self::assertStringContainsString(
@@ -722,7 +738,7 @@ final class TicketControllerTest extends TestCase
         $html = $this->controller()->renderPage($this->ticketForEventStartingAt('10:00'));
 
         self::assertStringContainsString(
-            '<p class="t-band is-expired" id="ec-band" aria-live="polite">Sorry, this ticket has expired</p>',
+            '<p class="t-band is-expired" id="ec-band" aria-live="polite"><span class="t-state">Sorry, this ticket has expired</span>',
             $html
         );
         self::assertStringNotContainsString('>VALID<', $html);
@@ -845,7 +861,78 @@ final class TicketControllerTest extends TestCase
         // The sparkles' own scale (--s) stays at most 1.
         self::assertStringContainsString('--s:"+(.5+Math.random()*.5).toFixed(2)', $html);
         self::assertStringContainsString('function out(){isIn=false;var x=document.querySelector(".t-fx");', $html);
-        self::assertStringContainsString('animation:t-fly var(--t,2.6s) linear var(--d,0s) both', $html);
+        self::assertStringContainsString('animation:t-fly var(--t,6.5s) linear var(--d,0s) both', $html);
+        // They stay about twice as long (Owner 2026-11-07): 5.5 to 8.2 s each,
+        // cleared after 9.5 s, once the last has faded.
+        self::assertStringContainsString('--t:"+(5.5+Math.random()*2.7).toFixed(2)+"s"', $html);
+        self::assertStringContainsString('f.parentNode.removeChild(f);}},9500);', $html);
+    }
+
+    /**
+     * The gold band greets the holder by first name (Owner 2026-11-07), escaped,
+     * on the page opened already in and in the band the live script draws.
+     */
+    public function testTheGoldBandWelcomesTheFirstNameEscaped(): void
+    {
+        Functions\when('esc_html')->alias(static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES));
+        $ticket = $this->ticketForEventStartingAt('19:00');
+        $ticket['name'] = '<b>Al&</b> Smith';
+
+        $html = $this->controller()->renderPage($ticket);
+
+        self::assertStringContainsString('You’re in. Welcome, &lt;b&gt;Al&amp;&lt;/b&gt;!', $html);
+        self::assertStringNotContainsString('<b>Al', $html);
+        self::assertStringNotContainsString('Smith!', $html);
+        // The live script's copy is JSON with < > & hexed.
+        self::assertStringContainsString('Welcome, \u0026lt;b\u0026gt;Al\u0026amp;\u0026lt;\/b\u0026gt;!', $html);
+
+        $ticket['used'] = '2026-07-20 18:50:00';
+        self::assertStringContainsString(
+            '<span class="t-in-text">You’re in. Welcome, &lt;b&gt;Al&amp;&lt;/b&gt;!</span>',
+            $this->controller()->renderPage($ticket)
+        );
+
+        $ticket['name'] = '';
+        self::assertStringContainsString(
+            '<span class="t-in-text">You’re in, welcome!</span>',
+            $this->controller()->renderPage($ticket)
+        );
+    }
+
+    /**
+     * Turning gold moves nothing on the page (Owner 2026-11-07: it moved
+     * down): the open band holds the gold band's words hidden in the same
+     * grid cell, with the gold band's padding, and the live script keeps
+     * them whenever it rewrites the band (expired, ticked out again).
+     */
+    public function testTheOpenBandReservesTheGoldBandsSpace(): void
+    {
+        $html = $this->controller()->renderPage($this->ticketForEventStartingAt('19:00'));
+
+        self::assertStringContainsString(
+            '<span class="t-state">VALID</span><span class="t-in t-ghost" aria-hidden="true">'
+            . '<span class="t-in-text">You’re in. Welcome, Sam!</span><span class="t-at">Checked in at 00:00</span>'
+            . '</span></p>',
+            $html
+        );
+        self::assertStringContainsString(
+            '#ec-band{display:grid;align-items:center;padding:.7em .45em}#ec-band>*{grid-area:1/1}',
+            $html
+        );
+        self::assertStringContainsString('.t-in{display:block;letter-spacing:.04em}.t-ghost{visibility:hidden}', $html);
+        // The gold band itself has the same padding.
+        self::assertStringContainsString(
+            '.t-band.is-in{position:relative;overflow:hidden;isolation:isolate;padding:.7em .45em;',
+            $html
+        );
+        self::assertStringContainsString(
+            '"ghost":"\u003Cspan class=\"t-in t-ghost\" aria-hidden=\"true\"\u003E',
+            $html
+        );
+        self::assertStringContainsString('function show(k,s){b.className=k;b.innerHTML=c.ghost;', $html);
+        self::assertStringContainsString('show("t-band is-expired",c.expired);', $html);
+        self::assertStringContainsString('show("t-band is-valid",c.valid);', $html);
+        self::assertStringNotContainsString('b.textContent=', $html);
     }
 
     /**

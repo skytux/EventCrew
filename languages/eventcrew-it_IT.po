@@ -1129,10 +1129,6 @@ msgstr "Arrivato in ritardo"
 msgid "Arrived late, did the task"
 msgstr "Arrivato in ritardo, incarico svolto"
 
-#: src/Support/OrganizerGuide.php:245
-msgid "As an organizer you can add anyone to any task of a night, with /board in a private chat, in the Crew app Admin tab, or at the sales desk."
-msgstr "Come organizzatore puoi aggiungere chiunque a qualsiasi incarico di una serata, con /board in chat privata, nella scheda Admin dell’app Crew, o alla cassa."
-
 #: templates/admin/translations.php:213
 msgid "As written"
 msgstr "Come scritto"
@@ -1457,11 +1453,6 @@ msgstr "Annullato: %1$s per %2$s"
 #: src/Support/WelcomeSender.php:554
 msgid "Cancelling %1$d hours or more before has no effect. Recent tasks count more than old ones. You get a rating after %2$d finished tasks. %3$d%% or higher is good standing."
 msgstr "Annullare %1$d ore o più prima non ha effetti. Gli incarichi recenti contano più di quelli vecchi. Ricevi una valutazione dopo %2$d incarichi conclusi. Dal %3$d%% in su sei affidabile."
-
-#. translators: %d: hours of notice, e.g. 48
-#: src/Support/OrganizerGuide.php:139
-msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /me to the bot, taps 🔁 Take over a task, and the member accepts."
-msgstr "Annullare meno di %d ore prima dell’incarico conta come cancellazione tardiva. Un membro che non può venire può trovare un sostituto: il sostituto manda /me al bot, tocca 🔁 Subentra in un incarico e il membro accetta."
 
 #: templates/admin/settings.php:490
 msgid "Cancelling this many hours or less before a task starts is recorded as a late cancellation, which counts against reputation; earlier than that carries no penalty. Default 48."
@@ -3185,10 +3176,6 @@ msgstr "Ho passato questa chat agli organizzatori."
 msgid "I remember our private chat for 24 hours, so you can refer back to it."
 msgstr "Ricordo la nostra chat privata per 24 ore, così puoi farci riferimento."
 
-#: src/Telegram/LanguageService.php:135
-msgid "I will write to you in English. To change it, tap 🌐 Language under /me."
-msgstr "Ti scriverò in inglese. Per cambiare, tocca 🌐 Lingua sotto /me."
-
 #: templates/admin/settings.php:2405
 msgid "IMAP"
 msgstr "IMAP"
@@ -3733,11 +3720,6 @@ msgstr "Membro bloccato dopo una richiesta admin falsificata (email)"
 msgid "Member name or email"
 msgstr "Nome o email del membro"
 
-#. translators: %d: completed tasks needed for one credit
-#: src/Support/OrganizerGuide.php:217
-msgid "Members earn 1 free-entry credit per %d completed tasks and spend it with 🎟 Free-entry ticket under /me or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
-msgstr "I membri guadagnano 1 credito d’ingresso gratuito ogni %d incarichi completati e lo spendono con 🎟 Biglietto d’ingresso gratuito sotto /me o sulla pagina web. Dai crediti con /people, nella pagina Persone o alla cassa. Ogni regalo viene scritto nel registro crediti della pagina Persone, e il membro viene avvisato."
-
 #: src/Support/NewsletterConfirmMail.php:86 templates/admin/diagnostics.php:125
 #: templates/admin/settings.php:1580
 msgid "Message"
@@ -3800,11 +3782,6 @@ msgstr "Lun"
 msgctxt "weekday name"
 msgid "Monday"
 msgstr "lunedì"
-
-#. translators: %s: link to the crew page
-#: src/Support/MessageTemplates.php:1263
-msgid "More notice next time keeps it clear: tap Cancel on your task in the Board tab of the crew page (%s) as soon as you know."
-msgstr "Più preavviso la prossima volta mantiene tutto in ordine: tocca Annulla sul tuo incarico nella scheda Bacheca della pagina della crew (%s) appena lo sai."
 
 #: templates/admin/settings.php:1299
 msgid "Most event organisers do not need one. A DPO is required only of public authorities, of anyone monitoring people systematically on a large scale, and of anyone handling special-category data at scale — none of which is what this plugin does. Leave both blank and the notice says so plainly, and points people at the contact address above. Fill in a contact and it is published as the officer’s, which is what makes a designation meaningful."
@@ -3939,10 +3916,6 @@ msgstr "Prossime serate per l’ingresso gratuito:"
 #: templates/admin/settings.php:940
 msgid "Next run: %1$s. Last run: %2$s."
 msgstr "Prossima esecuzione: %1$s. Ultima esecuzione: %2$s."
-
-#: src/Support/MessageTemplates.php:1260
-msgid "Next time tap Cancel early or find someone to take it."
-msgstr "La prossima volta tocca Annulla presto o trova qualcuno che lo prenda."
 
 #: src/Telegram/MessagePages.php:62
 msgid "Next »"
@@ -7774,11 +7747,6 @@ msgstr "La stessa richiesta con il segreto nell’intestazione invece che nell�
 msgid "The same ticket email goes to a guest you add with an email address (wp-admin Roster, the Admin tab, or /door add Name name@example.com) and to a Holvi buyer added at the sales desk with an email address, with the next batch. Crew get a separate ticket email when they take a task or spend a credit. When a guest is removed, or a task or credit is cancelled, after the ticket was emailed, the person gets a short \"Your ticket is cancelled\" email."
 msgstr "La stessa email con il biglietto va a un ospite che aggiungi con un indirizzo email (Roster in wp-admin, la scheda Admin, o /door add Nome nome@example.com) e a un acquirente Holvi aggiunto alla cassa con un indirizzo email, con il gruppo successivo di invii. La crew riceve un’email separata con il biglietto quando prende un incarico o spende un credito. Quando un ospite viene tolto, o un incarico o credito viene annullato, dopo che il biglietto è stato inviato, la persona riceve una breve email \"Il tuo biglietto è annullato\"."
 
-#. translators: 1: opening time, e.g. 09:00, 2: closing time, e.g. 21:00
-#: src/Support/OrganizerGuide.php:271
-msgid "The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with 🔔 Notifications under /me; confirmations and reminders always go."
-msgstr "Quelli programmati partono solo tra le %1$s e le %2$s. Ognuno parte via Telegram e via email. I membri scelgono quali ricevere con 🔔 Notifiche sotto /me; conferme e promemoria partono sempre."
-
 #: src/Support/DoorNewMember.php:116 src/Support/MessageTemplates.php:1097
 msgid "The second button opens the crew’s Telegram group, where tasks are posted."
 msgstr "Il secondo pulsante apre il gruppo Telegram della crew, dove vengono pubblicati gli incarichi."
@@ -8318,14 +8286,6 @@ msgid "This uses your only free-entry credit."
 msgid_plural "This uses 1 of your %d free-entry credits."
 msgstr[0] "Così usi il tuo unico credito d’ingresso gratuito."
 msgstr[1] "Così usi 1 dei tuoi %d crediti d’ingresso gratuito."
-
-#: src/Support/ClaimNotifier.php:202
-msgid "This was a late cancellation, which counts against your standing. More notice keeps it clear next time."
-msgstr "È stata una cancellazione tardiva, che conta contro la tua affidabilità. Più preavviso la prossima volta mantiene tutto in ordine."
-
-#: src/Support/ClaimNotifier.php:204
-msgid "This was a late cancellation, which counts against your standing. Next time, more notice keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept."
-msgstr "È stata una cancellazione tardiva, che conta contro la tua affidabilità. La prossima volta, più preavviso mantiene tutto in ordine, e così anche un sostituto: manda /me al bot, tocca 🔁 Subentra in un incarico e tu accetti."
 
 #: src/Support/TicketFile.php:105
 msgid "This website cannot read .xlsx files, because its PHP has no zip or XML support. Save the list as a .csv file and send it again, or ask the site’s administrator to turn on the PHP zip extension."
@@ -8986,10 +8946,6 @@ msgstr "Quanto vale ogni incarico concluso per il punteggio, 0–100%. Gli incar
 msgid "What is hybrid?"
 msgstr "Che cos’è l’ibrido?"
 
-#: src/Support/MessageTemplates.php:1259
-msgid "What keeps it clear next time: more notice, or a replacement found in the bot. For a person with no Telegram chat: more notice, and the link to the crew page."
-msgstr "Cosa mantiene tutto in ordine la prossima volta: più preavviso, o un sostituto trovato nel bot. Per una persona senza chat Telegram: più preavviso e il link alla pagina della crew."
-
 #: src/Web/NewsletterController.php:664 src/Web/NewsletterController.php:1227
 msgid "What should we call you?"
 msgstr "Come ti dobbiamo chiamare?"
@@ -9262,10 +9218,6 @@ msgstr "Lavori stasera: scegli un incarico"
 #: src/Support/DoorList.php:117
 msgid "Working: %s"
 msgstr "Lavora come: %s"
-
-#: src/Support/FollowupMail.php:1330
-msgid "Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time."
-msgstr "Vuoi sapere per primo dei nuovi eventi? Iscriviti all’annuncio dei prossimi eventi: ti scriviamo quando escono nuovi eventi. Basta premere il pulsante una volta, e puoi uscire quando vuoi."
 
 #: src/Support/MessageAiText.php:77
 msgid "Write a new text with the AI for each event"
@@ -9584,20 +9536,6 @@ msgstr "Sei stato nominato organizzatore (Telegram)"
 msgid "You were made an organizer (email)"
 msgstr "Sei stato nominato organizzatore (email)"
 
-#: src/Support/MessageTemplates.php:1369
-msgid "You were marked as a no-show"
-msgstr "Sei stato segnato come assente"
-
-#: src/Support/MessageTemplates.php:1371
-msgid ""
-"You were marked as a no-show for %2$s.\n"
-"\n"
-"No-shows count against your standing. If this is a mistake, contact an organizer and they can correct it."
-msgstr ""
-"Sei stato segnato come assente per %2$s.\n"
-"\n"
-"Le assenze pesano sulla tua affidabilità. Se è un errore, contatta un organizzatore e potrà correggerlo."
-
 #: src/Telegram/BoardService.php:1264 src/Telegram/RoleTaskBot.php:427
 #: src/Web/SignupController.php:1216
 msgid "You weren’t signed up for that one."
@@ -9689,21 +9627,6 @@ msgstr "Il tuo biglietto d’ingresso gratuito è pronto."
 #: src/Web/SignupController.php:1211
 msgid "Your language is saved."
 msgstr "La tua lingua è salvata."
-
-#. translators: 2: role at event, date, 3: what keeps it clear next time
-#: src/Support/MessageTemplates.php:1397
-msgid ""
-"Your late cancellation for %2$s has been recorded.\n"
-"\n"
-"It counts against your standing. %3$s"
-msgstr ""
-"La tua cancellazione tardiva per %2$s è stata registrata.\n"
-"\n"
-"Conta contro la tua affidabilità. %3$s"
-
-#: src/Support/MessageTemplates.php:1394
-msgid "Your late cancellation was recorded"
-msgstr "La tua cancellazione tardiva è stata registrata"
 
 #: src/Support/PrivacyPolicy.php:770
 msgid "Your name and ticket code are used to check you in at the door. The legal basis is that this is necessary to give you the entry you paid for."
@@ -10274,16 +10197,6 @@ msgstr "⏰ Promemoria: sei in %1$s a %2$s, %3$s. Ci vediamo lì!"
 #: src/Support/ClaimNotifier.php:212
 msgid "⚠️ Late cancellation"
 msgstr "⚠️ Cancellazione tardiva"
-
-#. translators: %s: role at event, date
-#: src/Support/MessageTemplates.php:1384
-msgid "⚠️ You were marked as a no-show for %s. No-shows count against your standing. If that’s a mistake, tell an organizer."
-msgstr "⚠️ Sei stato segnato come assente per %s. Le assenze pesano sulla tua affidabilità. Se è un errore, dillo a un organizzatore."
-
-#. translators: %s: role at event, date
-#: src/Support/MessageTemplates.php:1415
-msgid "⚠️ Your late cancellation for %s is recorded. It counts against your standing; more notice keeps it clear next time."
-msgstr "⚠️ La tua cancellazione tardiva per %s è registrata. Pesa sulla tua affidabilità; più preavviso la tiene pulita la prossima volta."
 
 #. translators: 1: guest name, 2: event day
 #: src/Telegram/GuestListService.php:264
@@ -11116,6 +11029,9 @@ msgstr "Spiacenti, questo biglietto è scaduto"
 msgid "You’re in, welcome!"
 msgstr "Sei dentro, ti diamo il benvenuto!"
 
+msgid "You’re in. Welcome, %s!"
+msgstr "Sei dentro. Ti diamo il benvenuto, %s!"
+
 msgid "Checked in at %s"
 msgstr "Ingresso registrato alle %s"
 
@@ -11275,3 +11191,250 @@ msgstr "Grazie per aver preso un incarico e per aiutare a rendere possibile ques
 #: src/Support/TicketReasons.php
 msgid "Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!"
 msgstr "Grazie per far parte della crew e per aiutare a rendere possibili queste serate. Questa la offriamo noi: vieni a ballare e goditela come nostro ospite!"
+
+msgid "What helps next time: cancelling as soon as you know, or someone found in the bot to take the task over. For a person with no Telegram chat: cancelling early on the crew page, with its link."
+msgstr "Cosa aiuta la prossima volta: annullare appena lo si sa, o qualcuno trovato nel bot che subentri nell’incarico. Per una persona senza chat Telegram: annullare per tempo sulla pagina della crew, con il suo link."
+
+msgid "Next time, tap Cancel as soon as you know, or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task."
+msgstr "La prossima volta, tocca Annulla appena lo sai, o trova qualcuno che subentri: manda /me al bot e tocca 🔁 Subentra in un incarico."
+
+msgid "Next time, tap Cancel on your task in the Board tab of the crew page (%s) as soon as you know."
+msgstr "La prossima volta, tocca Annulla sul tuo incarico nella scheda Bacheca della pagina della crew (%s) appena lo sai."
+
+msgid "The sentence saying what a late cancellation counts in the score next to a completed task, with the weights from Settings (40 and 100 percent by default)."
+msgstr "La frase che dice quanto conta un annullamento tardivo nel punteggio rispetto a un incarico completato, con i pesi delle Impostazioni (40 e 100 per cento di default)."
+
+msgid "A late cancellation counts %1$d%% in your score, a completed task %2$d%%."
+msgstr "Un annullamento tardivo conta il %1$d%% nel tuo punteggio, un incarico completato il %2$d%%."
+
+msgid "We missed you at your task"
+msgstr "Ci sei mancato al tuo incarico"
+
+msgid ""
+"We missed you at %2$s, so it was marked as a no-show. Unexpected things happen, and that's OK.\n"
+"\n"
+"The night runs on its crew: a missed task falls on the others or leaves a gap. %3$s%4$s\n"
+"\n"
+"A no-show counts against your standing, but every task you complete lifts it again, and it weighs less over time. Conditions may be better next time, so we hope you sign up again. If this is a mistake, tell an organizer and they will correct it."
+msgstr ""
+"Ci sei mancato a %2$s, quindi è stato segnato come assenza. Gli imprevisti capitano, e va bene così.\n"
+"\n"
+"La serata si regge sulla sua crew: un incarico scoperto ricade sugli altri o lascia un vuoto. %3$s%4$s\n"
+"\n"
+"Un’assenza pesa sulla tua affidabilità, ma ogni incarico che completi la fa risalire, e col tempo pesa meno. La prossima volta le condizioni potrebbero essere migliori, quindi speriamo che ti iscriva di nuovo. Se è un errore, dillo a un organizzatore e lo correggerà."
+
+msgid ""
+"🤍 We missed you at %1$s. Unexpected things happen, and that's OK.\n"
+"\n"
+"The night runs on its crew: a missed task falls on others or leaves a gap. %2$s%3$s\n"
+"\n"
+"A no-show counts against your standing; every task you complete lifts it again. Next time may suit you better, so sign up again! If this is a mistake, tell an organizer."
+msgstr ""
+"🤍 Ci sei mancato a %1$s. Gli imprevisti capitano, e va bene così.\n"
+"\n"
+"La serata si regge sulla sua crew: un incarico scoperto ricade su altri o lascia un vuoto. %2$s%3$s\n"
+"\n"
+"Un’assenza pesa sulla tua affidabilità; ogni incarico che completi la fa risalire. La prossima volta potrebbe andare meglio, quindi iscriviti di nuovo! Se è un errore, dillo a un organizzatore."
+
+msgid "Thanks for letting us know"
+msgstr "Grazie di averci avvisato"
+
+msgid ""
+"Thanks for letting the crew know you couldn't make it to %2$s. Telling us is always better than not showing up.\n"
+"\n"
+"It was a late cancellation, and early notice matters: it gives someone else time to take the place. %3$s%4$s\n"
+"\n"
+"%5$s It weighs less over time. Plans change sometimes; we hope you sign up again when it suits you. If this is a mistake, tell an organizer."
+msgstr ""
+"Grazie di aver detto alla crew che non potevi esserci a %2$s. Avvisare è sempre meglio che non presentarsi.\n"
+"\n"
+"È stato un annullamento tardivo, e avvisare presto conta: dà a qualcun altro il tempo di prendere il posto. %3$s%4$s\n"
+"\n"
+"%5$s Col tempo pesa meno. A volte i piani cambiano; speriamo che ti iscriva di nuovo quando ti va bene. Se è un errore, dillo a un organizzatore."
+
+msgid ""
+"🤍 Thanks for letting us know about %1$s. Telling the crew is always better than not showing up.\n"
+"\n"
+"It was a late cancellation: early notice gives someone else time to take the place. %2$s%3$s\n"
+"\n"
+"%4$s It weighs less over time. Next time may suit you better, so sign up again! If this is a mistake, tell an organizer."
+msgstr ""
+"🤍 Grazie di averci avvisato per %1$s. Avvisare la crew è sempre meglio che non presentarsi.\n"
+"\n"
+"È stato un annullamento tardivo: avvisare presto dà a qualcun altro il tempo di prendere il posto. %2$s%3$s\n"
+"\n"
+"%4$s Col tempo pesa meno. La prossima volta potrebbe andare meglio, quindi iscriviti di nuovo! Se è un errore, dillo a un organizzatore."
+
+msgid "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hour or more before has no effect and gives someone else time to take the place."
+msgid_plural "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hours or more before has no effect and gives someone else time to take the place."
+msgstr[0] "Grazie di averci avvisato. Così a ridosso dell’incarico pesa sulla tua affidabilità; annullare %d ora o più prima non ha alcun effetto e dà a qualcun altro il tempo di prendere il posto."
+msgstr[1] "Grazie di averci avvisato. Così a ridosso dell’incarico pesa sulla tua affidabilità; annullare %d ore o più prima non ha alcun effetto e dà a qualcun altro il tempo di prendere il posto."
+
+msgid "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hour or more before has no effect and gives someone else time to take the place. You can also hand a task over: the other person sends /me to the bot and taps 🔁 Take over a task, and you accept."
+msgid_plural "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hours or more before has no effect and gives someone else time to take the place. You can also hand a task over: the other person sends /me to the bot and taps 🔁 Take over a task, and you accept."
+msgstr[0] "Grazie di averci avvisato. Così a ridosso dell’incarico pesa sulla tua affidabilità; annullare %d ora o più prima non ha alcun effetto e dà a qualcun altro il tempo di prendere il posto. Puoi anche cedere un incarico: l’altra persona manda /me al bot, tocca 🔁 Subentra in un incarico e tu accetti."
+msgstr[1] "Grazie di averci avvisato. Così a ridosso dell’incarico pesa sulla tua affidabilità; annullare %d ore o più prima non ha alcun effetto e dà a qualcun altro il tempo di prendere il posto. Puoi anche cedere un incarico: l’altra persona manda /me al bot, tocca 🔁 Subentra in un incarico e tu accetti."
+
+msgid "Good standing from %d%%"
+msgstr "Affidabile dal %d%%"
+
+msgid "Standing %1$d%% → %2$d%%."
+msgstr "Affidabilità %1$d%% → %2$d%%."
+
+msgid "Standing %d%%."
+msgstr "Affidabilità %d%%."
+
+msgid "You get a standing score after %d more task."
+msgid_plural "You get a standing score after %d more tasks."
+msgstr[0] "Avrai un punteggio di affidabilità dopo %d altro incarico."
+msgstr[1] "Avrai un punteggio di affidabilità dopo altri %d incarichi."
+
+msgid "Good standing is %d%% or more, so every task is open to you."
+msgstr "Sei affidabile dal %d%% in su, quindi tutti gli incarichi sono aperti per te."
+
+msgid "Still good standing, but close to the %d%% limit."
+msgstr "Ancora affidabile, ma vicino al limite del %d%%."
+
+msgid "Good standing is %d%% or more."
+msgstr "Sei affidabile dal %d%% in su."
+
+msgid "The standing as a bar from 0 to 100 percent, with the good-standing limit marked; in the email a coloured bar. On a line of its own; the line goes while the person has no score yet."
+msgstr "L’affidabilità come barra da 0 a 100 per cento, con il limite di affidabilità segnato; nell’email una barra colorata. Su una riga a sé; la riga sparisce finché la persona non ha un punteggio."
+
+msgid "The standing before and after, like: Standing 82 → 74 percent, with one sentence on what it means. Before the person has a score: how many tasks until they get one."
+msgstr "L’affidabilità prima e dopo, ad esempio: Affidabilità 82 → 74 per cento, con una frase su cosa significa. Prima che la persona abbia un punteggio: quanti incarichi le mancano."
+
+msgid "The free-entry credits the person has now, and how many more completed tasks earn the next one."
+msgstr "I crediti d’ingresso gratuito che la persona ha ora e quanti incarichi completati in più portano al prossimo."
+
+msgid "%d more completed task earns the next one."
+msgid_plural "%d more completed tasks earn the next one."
+msgstr[0] "Ancora %d incarico completato porta al prossimo."
+msgstr[1] "Ancora %d incarichi completati portano al prossimo."
+
+msgid "Thank you for a task (email)"
+msgstr "Grazie per un incarico (email)"
+
+msgid "Thank you for a task (Telegram)"
+msgstr "Grazie per un incarico (Telegram)"
+
+msgid "Sent a day after an organizer marks a person's task as completed or arrived late."
+msgstr "Inviato un giorno dopo che un organizzatore segna l’incarico di una persona come completato o arrivato in ritardo."
+
+msgid "Thank you for your task"
+msgstr "Grazie per il tuo incarico"
+
+msgid "Thank you for %1$s! The night runs on its crew, and you helped make it happen."
+msgstr "Grazie per %1$s! La serata vive grazie alla sua crew, e tu hai aiutato a renderla possibile."
+
+msgid "We hope to see you again soon."
+msgstr "Speriamo di rivederti presto."
+
+msgid "See you next time!"
+msgstr "Alla prossima!"
+
+#: src/Support/OrganizerGuide.php:245
+msgid "As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
+msgstr "Come organizzatore puoi aggiungere chiunque a qualsiasi incarico di una serata tranne Organizzazione, anche a uno di un ruolo che non ha (riceve allora il ruolo): in chat privata con /assign incarico ; nome (/unassign lo toglie) o con ➕ Aggiungi qualcuno sotto /board, nella scheda Admin dell’app Crew, o alla cassa."
+
+#. translators: %d: hours of notice, e.g. 48
+#: src/Support/OrganizerGuide.php:139
+msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /tasks to the bot, taps 🔁 Take over a task, and the member accepts."
+msgstr "Annullare meno di %d ore prima dell’incarico conta come cancellazione tardiva. Un membro che non può venire può trovare un sostituto: il sostituto manda /tasks al bot, tocca 🔁 Subentra in un incarico e il membro accetta."
+
+#: src/Telegram/LanguageService.php:135
+msgid "I will write to you in English. To change it: /settings, 🌐 Change language."
+msgstr "Ti scriverò in inglese. Per cambiare: /settings, 🌐 Cambia lingua."
+
+#. translators: %d: completed tasks needed for one credit
+#: src/Support/OrganizerGuide.php:217
+msgid "Members earn 1 free-entry credit per %d completed tasks and spend it with /me, 🎟 Tickets, 🎟 Get a free-entry ticket (or /tickets), or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
+msgstr "I membri guadagnano 1 credito d’ingresso gratuito ogni %d incarichi completati e lo spendono con /me, 🎟 Biglietti, 🎟 Ottieni un biglietto gratuito (o /tickets), o sulla pagina web. Dai crediti con /people, nella pagina Persone o alla cassa. Ogni regalo viene scritto nel registro crediti della pagina Persone, e il membro viene avvisato."
+
+#. translators: 1: opening time, e.g. 09:00, 2: closing time, e.g. 21:00
+#: src/Support/OrganizerGuide.php:271
+msgid "The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with /settings, 🔔 Choose notifications; confirmations and reminders always go."
+msgstr "Quelli programmati partono solo tra le %1$s e le %2$s. Ognuno parte via Telegram e via email. I membri scelgono quali ricevere con /settings, 🔔 Scegli le notifiche; conferme e promemoria partono sempre."
+
+msgid "%1$s does not have the %2$s role. As an organizer you can still add them; they get the role."
+msgstr "%1$s non ha il ruolo %2$s. Come organizzatore puoi aggiungerlo comunque; riceverà il ruolo."
+
+msgid "%s is blocked from sign-ups. An organizer can lift it on the People page."
+msgstr "%s è bloccato per le iscrizioni. Un organizzatore può togliere il blocco nella pagina Persone."
+
+msgid "/assign task ; name – put a member on a task (/unassign takes them off); you confirm first"
+msgstr "/assign incarico ; nome – metti un membro su un incarico (/unassign lo toglie); prima confermi"
+
+msgid "Add %1$s to %2$s?"
+msgstr "Aggiungere %1$s a %2$s?"
+
+msgid "Add, counts"
+msgstr "Aggiungi, conta"
+
+msgid "Add, no credit"
+msgstr "Aggiungi, senza credito"
+
+msgid "Cancelled. Nothing was changed."
+msgstr "Annullato. Non è stato cambiato nulla."
+
+msgid "Many members match “%s”. Write more of the name."
+msgstr "Molti membri corrispondono a “%s”. Scrivi più del nome."
+
+msgid "No member called “%s” was found."
+msgstr "Nessun membro chiamato “%s” trovato."
+
+msgid "No member called “%s” was found. Someone who is not a member yet: ➕ Add someone under /board."
+msgstr "Nessun membro chiamato “%s” trovato. Qualcuno che non è ancora membro: ➕ Aggiungi qualcuno sotto /board."
+
+msgid "No task called “%1$s”. Tasks on %2$s: %3$s"
+msgstr "Nessun incarico chiamato “%1$s”. Incarichi il %2$s: %3$s"
+
+msgid "Organize tasks are for organizers only. Make someone an organizer with /people."
+msgstr "Gli incarichi di Organizzazione sono solo per organizzatori. Rendi qualcuno organizzatore con /people."
+
+msgid "Put a member on a task: /assign task ; name\nExample: /assign Host ; Milla\nA date first picks another event: /assign 21.11. Host ; Milla"
+msgstr "Metti un membro su un incarico: /assign incarico ; nome\nEsempio: /assign Host ; Milla\nUna data davanti sceglie un’altra serata: /assign 21.11. Host ; Milla"
+
+msgid "Take %1$s off %2$s?"
+msgstr "Togliere %1$s da %2$s?"
+
+msgid "Take a member off a task: /unassign task ; name\nExample: /unassign Host ; Milla\nA date first picks another event: /unassign 21.11. Host ; Milla"
+msgstr "Togli un membro da un incarico: /unassign incarico ; nome\nEsempio: /unassign Host ; Milla\nUna data davanti sceglie un’altra serata: /unassign 21.11. Host ; Milla"
+
+msgid "Taken off the task. If their ticket was emailed, they get an updated one; nothing else is sent."
+msgstr "Tolto dall’incarico. Se il biglietto è stato inviato via email, ne riceve uno aggiornato; non viene inviato altro."
+
+msgid "That person is not on this task."
+msgstr "Quella persona non è su questo incarico."
+
+msgid "That task is full (%1$d of %2$d places taken). Nothing was added."
+msgstr "Questo incarico è pieno (%1$d posti presi su %2$d). Non è stato aggiunto nulla."
+
+msgid "There are no tasks on %s."
+msgstr "Non ci sono incarichi il %s."
+
+msgid "There are no upcoming tasks."
+msgstr "Non ci sono incarichi in arrivo."
+
+msgid "This request has expired. Please send it again."
+msgstr "Questa richiesta è scaduta. Inviala di nuovo."
+
+msgid "Use %s in a private chat with me."
+msgstr "Usa %s in una chat privata con me."
+
+msgid "Which member?"
+msgstr "Quale membro?"
+
+#: src/Support/FollowupMail.php
+msgid "Get an email when new events come out. You can leave any time."
+msgstr "Ricevi un’email quando escono nuovi eventi. Puoi uscire quando vuoi."
+
+#: src/Support/FollowupMail.php
+msgid "The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
+msgstr "La serata l’ha resa possibile la nostra crew: le persone che hanno lavorato dietro le quinte perché tutti gli altri potessero ballare. Ti piacerebbe unirti? È un bel modo per conoscere persone, sentirti utile e risparmiare sui biglietti."
+
+msgid "Nothing after a few minutes, not even in spam? Try again, with the same or another address."
+msgstr "Niente dopo qualche minuto, nemmeno nello spam? Riprova, con lo stesso indirizzo o un altro."
+
+msgid "✏️ Use another email"
+msgstr "✏️ Usa un’altra email"

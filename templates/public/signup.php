@@ -418,6 +418,32 @@ if ($eventcrew_link_expired) {
                             $eventcrew_standing->creditBalance
                         )); ?></span>
                     </p>
+                    <?php
+                    /*
+                     * The standing as a bar once rated: gold fill, the limit
+                     * for good standing marked, the warning zone above it
+                     * (StandingBar). Before that, how many tasks to go.
+                     */
+                    ?>
+                    <?php if ($eventcrew_standing->isRated()) : ?>
+                        <?php
+                        $eventcrew_bar_percent = $eventcrew_standing->scorePercent();
+                        $eventcrew_bar_limit = \EventCrew\Support\StandingBar::limit();
+                        /* translators: %d: the good-standing limit percentage */
+                        $eventcrew_bar_label = sprintf(__('Good standing from %d%%', 'eventcrew'), $eventcrew_bar_limit);
+                        ?>
+                        <div class="eventcrew-standing-bar eventcrew-standing-bar--<?php echo esc_attr(\EventCrew\Support\StandingBar::zone($eventcrew_bar_percent, $eventcrew_bar_limit)); ?>"
+                            role="img"
+                            aria-label="<?php echo esc_attr($eventcrew_bar_percent . '% · ' . $eventcrew_bar_label); ?>"
+                            style="<?php echo esc_attr(sprintf('--eventcrew-bar-fill:%d%%;--eventcrew-bar-limit:%d%%;--eventcrew-bar-warn:%d%%', $eventcrew_bar_percent, $eventcrew_bar_limit, \EventCrew\Support\StandingBar::warningTop($eventcrew_bar_limit))); ?>">
+                            <span class="eventcrew-standing-bar-track"><span class="eventcrew-standing-bar-fill"></span></span>
+                            <span class="eventcrew-standing-bar-zones"></span>
+                            <span class="eventcrew-standing-bar-limit"></span>
+                        </div>
+                        <p class="eventcrew-muted eventcrew-standing-bar-label"><strong><?php echo esc_html($eventcrew_bar_percent . '%'); ?></strong> · <?php echo esc_html($eventcrew_bar_label); ?></p>
+                    <?php else : ?>
+                        <p class="eventcrew-muted"><?php echo esc_html(\EventCrew\Support\StandingBar::untilRated($eventcrew_standing)); ?></p>
+                    <?php endif; ?>
                     <details class="eventcrew-disclosure eventcrew-score-help">
                         <summary><?php esc_html_e('How your score works', 'eventcrew'); ?></summary>
                         <table>

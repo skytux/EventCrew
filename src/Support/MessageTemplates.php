@@ -103,7 +103,7 @@ final class MessageTemplates
                 $template->subject,
                 $template->body,
                 $template->placeholders
-                    + (isset($template->placeholders['event']) ? $eventTimes : [])
+                    + (isset($template->placeholders['event']) ? self::eventTimesFor($template->id, $eventTimes) : [])
                     + (isset($template->placeholders['role'], $template->placeholders['event']) ? $forTask : [])
                     + $shared,
                 $template->wired,
@@ -173,6 +173,8 @@ final class MessageTemplates
             // A mark against the standing: the open tasks, to win it back; for
             // a no-show, a word to the organizers in the bot when it is wrong.
             'late_cancel late_cancel_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
+            // A thank-you: the open tasks, for the next one.
+            'task_completed task_completed_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
             'no_show no_show_dm' => static fn (array $c, Mailer $m): array => self::present([
                 self::boardAction($m),
                 self::tellAction($c),
@@ -559,6 +561,21 @@ final class MessageTemplates
             false,
             true
         );
+    }
+
+    /**
+     * $eventTimes for kind $id: the post-event emails have no
+     * {event_description}, since they show that text under the next event's
+     * picture (FollowupMail), not in the text.
+     *
+     * @param array<string, array{description: string, resolve: Closure, required: bool}> $eventTimes
+     * @return array<string, array{description: string, resolve: Closure, required: bool}>
+     */
+    private static function eventTimesFor(string $id, array $eventTimes): array
+    {
+        return in_array($id, FollowupText::TEMPLATES, true)
+            ? array_diff_key($eventTimes, ['event_description' => true])
+            : $eventTimes;
     }
 
     /**
@@ -1341,13 +1358,74 @@ final class MessageTemplates
             )
         );
         $lateHelp = self::botOrWeb(
-            __('What keeps it clear next time: more notice, or a replacement found in the bot. For a person with no Telegram chat: more notice, and the link to the crew page.', 'eventcrew'),
-            static fn (): string => __('Next time tap Cancel early or find someone to take it.', 'eventcrew'),
+            __('What helps next time: cancelling as soon as you know, or someone found in the bot to take the task over. For a person with no Telegram chat: cancelling early on the crew page, with its link.', 'eventcrew'),
+            static fn (): string => __('Next time, tap Cancel as soon as you know, or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task.', 'eventcrew'),
             static fn (string $url): string => sprintf(
                 /* translators: %s: link to the crew page */
-                __('More notice next time keeps it clear: tap Cancel on your task in the Board tab of the crew page (%s) as soon as you know.', 'eventcrew'),
+                __('Next time, tap Cancel on your task in the Board tab of the crew page (%s) as soon as you know.', 'eventcrew'),
                 $url
             )
+        );
+        // The weights from Settings, as the score uses them (ReputationSettings).
+        $lateScore = self::placeholder(
+            __('The sentence saying what a late cancellation counts in the score next to a completed task, with the weights from Settings (40 and 100 percent by default).', 'eventcrew'),
+            static function (): string {
+                $percents = (new ReputationSettings())->weightPercents();
+
+                return sprintf(
+                    /* translators: 1: score percent of a late cancellation, 2: score percent of a completed task */
+                    __('A late cancellation counts %1$d%% in your score, a completed task %2$d%%.', 'eventcrew'),
+                    $percents[AssignmentStatus::LATE_CANCEL] ?? 0,
+                    $percents[AssignmentStatus::COMPLETED] ?? 100
+                );
+            }
+        );
+
+        // The standing before and after a mark, as StandingNotice puts them in
+        // the context; a bar and a sentence on what it means (Owner 2026-11-07).
+        $after = static fn (array $c): ?Standing => ($c['standing_after'] ?? null) instanceof Standing
+            ? $c['standing_after']
+            : null;
+        $standingBar = self::placeholder(
+            __('The standing as a bar from 0 to 100 percent, with the good-standing limit marked; in the email a coloured bar. On a line of its own; the line goes while the person has no score yet.', 'eventcrew'),
+            static fn (array $c): string => StandingBar::forStanding($after($c)),
+            false,
+            true
+        );
+        $standingChange = self::placeholder(
+            __('The standing before and after, like: Standing 82 → 74 percent, with one sentence on what it means. Before the person has a score: how many tasks until they get one.', 'eventcrew'),
+            static fn (array $c): string => StandingBar::change(
+                ($c['standing_before'] ?? null) instanceof Standing ? $c['standing_before'] : null,
+                $after($c)
+            ),
+            false,
+            true
+        );
+        $creditProgress = self::placeholder(
+            __('The free-entry credits the person has now, and how many more completed tasks earn the next one.', 'eventcrew'),
+            static function (array $c) use ($after): string {
+                $standing = $after($c);
+
+                if (null === $standing) {
+                    return '';
+                }
+
+                $perCredit = max(1, (new ReputationSettings())->tasksPerCredit());
+                $left = $perCredit - $standing->completedCount % $perCredit;
+
+                return self::balanceLine($standing->creditBalance) . ' ' . sprintf(
+                    /* translators: %d: completed tasks still needed for the next free-entry credit */
+                    _n(
+                        '%d more completed task earns the next one.',
+                        '%d more completed tasks earn the next one.',
+                        $left,
+                        'eventcrew'
+                    ),
+                    $left
+                );
+            },
+            false,
+            true
         );
 
         return [
@@ -1451,12 +1529,23 @@ final class MessageTemplates
                 __('Marked as a no-show (email)', 'eventcrew'),
                 $email,
                 __('Sent a day after an organizer marks a person as a no-show.', 'eventcrew'),
-                static fn (): string => __('You were marked as a no-show', 'eventcrew'),
+                static fn (): string => __('We missed you at your task', 'eventcrew'),
+                // Warm, short and useful: why it matters, what helps next
+                // time, and an invitation back (Owner 2026-11-07).
                 static fn (): string => "Hi {name},\n\n" . self::tag(
-                    __("You were marked as a no-show for %2\$s.\n\nNo-shows count against your standing. If this is a mistake, contact an organizer and they can correct it.", 'eventcrew'),
-                    ['%2$s' => '{task}']
-                ) . "\n\n{standing}",
-                ['name' => $name, 'task' => $standingTask, 'standing' => $claimPlaceholders['standing']]
+                    /* translators: 2: role at event, date, 3: what helps next time, 4: a space and until when a cancellation has no effect (may be empty) */
+                    __("We missed you at %2\$s, so it was marked as a no-show. Unexpected things happen, and that's OK.\n\nThe night runs on its crew: a missed task falls on the others or leaves a gap. %3\$s%4\$s\n\nA no-show counts against your standing, but every task you complete lifts it again, and it weighs less over time. Conditions may be better next time, so we hope you sign up again. If this is a mistake, tell an organizer and they will correct it.", 'eventcrew'),
+                    ['%2$s' => '{task}', '%3$s' => '{late_help}', '%4$s' => '{free_cancel}']
+                ) . "\n\n{standing_bar}\n\n{standing_change}",
+                [
+                    'name' => $name,
+                    'task' => $standingTask,
+                    'late_help' => $lateHelp,
+                    'free_cancel' => $claimPlaceholders['free_cancel'],
+                    'standing' => $claimPlaceholders['standing'],
+                    'standing_bar' => $standingBar,
+                    'standing_change' => $standingChange,
+                ]
             ),
             new MessageTemplate(
                 'no_show_dm',
@@ -1465,28 +1554,39 @@ final class MessageTemplates
                 __('Sent a day after an organizer marks a person as a no-show.', 'eventcrew'),
                 null,
                 static fn (): string => self::tag(
-                    /* translators: %s: role at event, date */
-                    __('⚠️ You were marked as a no-show for %s. No-shows count against your standing. If that’s a mistake, tell an organizer.', 'eventcrew'),
-                    ['%s' => '{task}']
-                ) . "\n\n{standing}",
-                ['task' => $standingTask, 'standing' => $claimPlaceholders['standing']]
+                    /* translators: 1: role at event, date, 2: what helps next time, 3: a space and until when a cancellation has no effect (may be empty) */
+                    __("🤍 We missed you at %1\$s. Unexpected things happen, and that's OK.\n\nThe night runs on its crew: a missed task falls on others or leaves a gap. %2\$s%3\$s\n\nA no-show counts against your standing; every task you complete lifts it again. Next time may suit you better, so sign up again! If this is a mistake, tell an organizer.", 'eventcrew'),
+                    ['%1$s' => '{task}', '%2$s' => '{late_help}', '%3$s' => '{free_cancel}']
+                ) . "\n\n{standing_bar}\n\n{standing_change}",
+                [
+                    'task' => $standingTask,
+                    'late_help' => $lateHelp,
+                    'free_cancel' => $claimPlaceholders['free_cancel'],
+                    'standing' => $claimPlaceholders['standing'],
+                    'standing_bar' => $standingBar,
+                    'standing_change' => $standingChange,
+                ]
             ),
             new MessageTemplate(
                 'late_cancel',
                 __('Late cancellation recorded (email)', 'eventcrew'),
                 $email,
                 __('Sent a day after a late cancellation is recorded.', 'eventcrew'),
-                static fn (): string => __('Your late cancellation was recorded', 'eventcrew'),
+                static fn (): string => __('Thanks for letting us know', 'eventcrew'),
                 static fn (): string => "Hi {name},\n\n" . self::tag(
-                    /* translators: 2: role at event, date, 3: what keeps it clear next time */
-                    __("Your late cancellation for %2\$s has been recorded.\n\nIt counts against your standing. %3\$s", 'eventcrew'),
-                    ['%2$s' => '{task}', '%3$s' => '{late_help}']
-                ) . "\n\n{standing}",
+                    /* translators: 2: role at event, date, 3: what helps next time, 4: a space and until when a cancellation has no effect (may be empty), 5: what a late cancellation counts in the score */
+                    __("Thanks for letting the crew know you couldn't make it to %2\$s. Telling us is always better than not showing up.\n\nIt was a late cancellation, and early notice matters: it gives someone else time to take the place. %3\$s%4\$s\n\n%5\$s It weighs less over time. Plans change sometimes; we hope you sign up again when it suits you. If this is a mistake, tell an organizer.", 'eventcrew'),
+                    ['%2$s' => '{task}', '%3$s' => '{late_help}', '%4$s' => '{free_cancel}', '%5$s' => '{late_score}']
+                ) . "\n\n{standing_bar}\n\n{standing_change}",
                 [
                     'name' => $name,
                     'task' => $standingTask,
                     'late_help' => $lateHelp,
+                    'free_cancel' => $claimPlaceholders['free_cancel'],
+                    'late_score' => $lateScore,
                     'standing' => $claimPlaceholders['standing'],
+                    'standing_bar' => $standingBar,
+                    'standing_change' => $standingChange,
                 ]
             ),
             new MessageTemplate(
@@ -1496,11 +1596,62 @@ final class MessageTemplates
                 __('Sent a day after a late cancellation is recorded.', 'eventcrew'),
                 null,
                 static fn (): string => self::tag(
-                    /* translators: %s: role at event, date */
-                    __('⚠️ Your late cancellation for %s is recorded. It counts against your standing; more notice keeps it clear next time.', 'eventcrew'),
-                    ['%s' => '{task}']
-                ) . "\n\n{standing}",
-                ['task' => $standingTask, 'standing' => $claimPlaceholders['standing']]
+                    /* translators: 1: role at event, date, 2: what helps next time, 3: a space and until when a cancellation has no effect (may be empty), 4: what a late cancellation counts in the score */
+                    __("🤍 Thanks for letting us know about %1\$s. Telling the crew is always better than not showing up.\n\nIt was a late cancellation: early notice gives someone else time to take the place. %2\$s%3\$s\n\n%4\$s It weighs less over time. Next time may suit you better, so sign up again! If this is a mistake, tell an organizer.", 'eventcrew'),
+                    ['%1$s' => '{task}', '%2$s' => '{late_help}', '%3$s' => '{free_cancel}', '%4$s' => '{late_score}']
+                ) . "\n\n{standing_bar}\n\n{standing_change}",
+                [
+                    'task' => $standingTask,
+                    'late_help' => $lateHelp,
+                    'free_cancel' => $claimPlaceholders['free_cancel'],
+                    'late_score' => $lateScore,
+                    'standing' => $claimPlaceholders['standing'],
+                    'standing_bar' => $standingBar,
+                    'standing_change' => $standingChange,
+                ]
+            ),
+            new MessageTemplate(
+                'task_completed',
+                __('Thank you for a task (email)', 'eventcrew'),
+                $email,
+                __('Sent a day after an organizer marks a person\'s task as completed or arrived late.', 'eventcrew'),
+                static fn (): string => __('Thank you for your task', 'eventcrew'),
+                // The thank-you, the credits and the standing bar; sent like
+                // the no-show notice, a day later (StandingNotice).
+                static fn (): string => "Hi {name},\n\n" . self::tag(
+                    /* translators: %1$s: role at event, date */
+                    __('Thank you for %1$s! The night runs on its crew, and you helped make it happen.', 'eventcrew'),
+                    ['%1$s' => '{task}']
+                ) . "\n\n{credit_progress}\n\n{standing_bar}\n\n{standing_change}\n\n"
+                    . __('We hope to see you again soon.', 'eventcrew'),
+                [
+                    'name' => $name,
+                    'task' => $standingTask,
+                    'credit_progress' => $creditProgress,
+                    'standing_bar' => $standingBar,
+                    'standing_change' => $standingChange,
+                    'standing' => $claimPlaceholders['standing'],
+                ]
+            ),
+            new MessageTemplate(
+                'task_completed_dm',
+                __('Thank you for a task (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent a day after an organizer marks a person\'s task as completed or arrived late.', 'eventcrew'),
+                null,
+                static fn (): string => '💛 ' . self::tag(
+                    /* translators: %1$s: role at event, date */
+                    __('Thank you for %1$s! The night runs on its crew, and you helped make it happen.', 'eventcrew'),
+                    ['%1$s' => '{task}']
+                ) . "\n\n{credit_progress}\n\n{standing_bar}\n\n{standing_change}\n\n"
+                    . __('See you next time!', 'eventcrew'),
+                [
+                    'task' => $standingTask,
+                    'credit_progress' => $creditProgress,
+                    'standing_bar' => $standingBar,
+                    'standing_change' => $standingChange,
+                    'standing' => $claimPlaceholders['standing'],
+                ]
             ),
             new MessageTemplate(
                 'credit_granted',
@@ -1631,11 +1782,11 @@ final class MessageTemplates
                 null,
                 // The Cancel button asks first and offers the hand-over, so the
                 // text no longer explains them.
-                static fn (): string => EventDetailsText::withVenue(EventDetailsText::withEventDescription(FrictionB1Migration::withEventTimes(self::withDescription(self::tag(
+                static fn (): string => EventDetailsText::withVenue(FrictionB1Migration::withEventTimes(self::withDescription(self::tag(
                     /* translators: 1: role, 2: event, 3: date/time */
                     __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.", 'eventcrew'),
                     ['%1$s' => '{role}', '%2$s' => '{event}', '%3$s' => '{when}']
-                ) . "{free_cancel}\n\n{standing}")))),
+                ) . "{free_cancel}\n\n{standing}"))),
                 [
                     'role' => $role,
                     'event' => $event,
@@ -1797,7 +1948,7 @@ final class MessageTemplates
                 $email,
                 __('Sent the day after an event to the people who came. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off.', 'eventcrew'),
                 static fn (): string => __('Thank you for dancing with us', 'eventcrew'),
-                static fn (): string => EventDetailsText::withEventDescription(self::followupBody(FollowupText::defaultText(FollowupText::CAME))),
+                static fn (): string => self::followupBody(FollowupText::defaultText(FollowupText::CAME)),
                 ['first_name' => $firstName, 'event' => $event, 'date' => $date]
             ),
             new MessageTemplate(
@@ -1806,7 +1957,7 @@ final class MessageTemplates
                 $email,
                 __('Sent the day after an event to the people who had a ticket but did not come. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off.', 'eventcrew'),
                 static fn (): string => __('We missed you this time', 'eventcrew'),
-                static fn (): string => EventDetailsText::withEventDescription(self::followupBody(FollowupText::defaultText(FollowupText::MISSED))),
+                static fn (): string => self::followupBody(FollowupText::defaultText(FollowupText::MISSED)),
                 ['first_name' => $firstName, 'event' => $event, 'date' => $date]
             ),
             // TODO(messages): the newsletter (Newsletter::compose() and

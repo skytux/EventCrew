@@ -162,7 +162,10 @@ final class MessagePreview
                 $standing->ratedSummary(),
                 $standing->creditBalance
             ),
-            'free_cancel' => '',
+            'free_cancel' => ClaimNotifier::freeCancelLine(),
+            // The standing notices' before and after: 82% -> 74%.
+            'standing_before' => new Standing(Standing::GOOD, 0.82, 6, 2, 7),
+            'standing_after' => new Standing(Standing::GOOD, 0.74, 6, 2, 8),
             'about' => '',
             'description' => '' !== RoleGuide::taskDescription($task)
                 ? RoleGuide::taskDescription($task)

@@ -574,10 +574,6 @@ msgstr "En löytänyt tällä nimellä ketään, jolla on tuleva tehtävä tuura
 msgid "I couldn’t find anyone by that name. Try their exact name or @mention them."
 msgstr "En löytänyt ketään tällä nimellä. Kokeile koko nimeä tai mainitse hänet @-merkillä."
 
-#: src/Telegram/LanguageService.php:126
-msgid "I will write to you in English. To change it, tap 🌐 Language under /me."
-msgstr "Kirjoitan sinulle suomeksi. Voit vaihtaa kielen napilla 🌐 Kieli komennon /me alla."
-
 #. translators: %s: the date and time the ticket was issued
 #: src/Telegram/TicketController.php:223
 #, php-format
@@ -1377,21 +1373,6 @@ msgstr "Sinulla ei ole vapaalippuja käytettäväksi."
 msgid "You were already signed up for that."
 msgstr "Olit jo ilmoittautunut siihen."
 
-#: src/Support/StandingNotice.php:101
-msgid "You were marked as a no-show"
-msgstr "Sinut merkittiin poissaolleeksi"
-
-#: src/Support/StandingNotice.php:132
-#, php-format
-msgid ""
-"You were marked as a no-show for %2$s.\n"
-"\n"
-"No-shows count against your standing. If this is a mistake, contact an organizer and they can correct it."
-msgstr ""
-"Sinut merkittiin poissaolleeksi tehtävästä %2$s.\n"
-"\n"
-"Poissaolot heikentävät luotettavuuttasi. Jos tämä on virhe, ota yhteyttä järjestäjään, niin hän voi korjata sen."
-
 #: src/Telegram/BoardService.php:523 src/Web/SignupController.php:704
 msgid "You weren’t signed up for that one."
 msgstr "Et ollut ilmoittautunut siihen."
@@ -1463,10 +1444,6 @@ msgstr "Vapaalippusi on valmis."
 #: src/Web/SignupController.php:700
 msgid "Your language is saved."
 msgstr "Kielivalintasi on tallennettu."
-
-#: src/Support/StandingNotice.php:102
-msgid "Your late cancellation was recorded"
-msgstr "Myöhäinen peruutuksesi kirjattiin"
 
 #: src/Web/SignupController.php:699
 msgid "Your notification preferences are saved."
@@ -1644,18 +1621,6 @@ msgstr "⏰ Muistutus: olet tehtävässä %1$s, %2$s, %3$s. Nähdään siellä!"
 #: src/Support/ClaimNotifier.php:163
 msgid "⚠️ Late cancellation"
 msgstr "⚠️ Myöhäinen peruutus"
-
-#. translators: %s: role at event, date
-#: src/Support/StandingNotice.php:115
-#, php-format
-msgid "⚠️ You were marked as a no-show for %s. No-shows count against your standing. If that’s a mistake, tell an organizer."
-msgstr "⚠️ Sinut merkittiin poissaolleeksi: %s. Poissaolot heikentävät luotettavuuttasi. Jos se on virhe, kerro järjestäjälle."
-
-#. translators: %s: role at event, date
-#: src/Support/StandingNotice.php:121
-#, php-format
-msgid "⚠️ Your late cancellation for %s is recorded. It counts against your standing; more notice keeps it clear next time."
-msgstr "⚠️ Myöhäinen peruutuksesi on kirjattu: %s. Se heikentää luotettavuuttasi; aikaisempi ilmoitus pitää tilanteen ensi kerralla puhtaana."
 
 #. translators: 1: guest name, 2: event day
 #: src/Telegram/GuestListService.php:149
@@ -2955,12 +2920,6 @@ msgstr "Roolilla voi olla ehtoja kohdassa EventCrew > Settings: kuinka monta min
 msgid "A role ticked \"Only people with this role\" (a DJ, a VJ, a ceremony leader) is shown only to people given that role, in the Crew app, in the bot and at the sales desk. Its tasks have no sign-up limit and are never posted on the Telegram group board. Give people the role on the People page, in the Crew app Admin tab, or with /people in the bot. With \"Add to every night\" ticked, every upcoming night gets one task of that role, including nights that already exist; unticking it later removes nothing."
 msgstr "Rooli, jossa on valittuna \"Only people with this role\" (DJ, VJ, seremonian vetäjä), näytetään vain niille, joilla rooli on: Crew-sovelluksessa, botissa ja myyntipisteessä. Sen tehtävillä ei ole ilmoittautumisrajaa, eikä niitä koskaan julkaista Telegram-ryhmän taululla. Anna rooli People-sivulla, Crew-sovelluksen Ylläpito-välilehdellä tai botissa komennolla /people. Kun \"Add to every night\" on valittuna, jokainen tuleva ilta saa yhden tämän roolin tehtävän, myös jo olemassa olevat illat; valinnan poistaminen myöhemmin ei poista mitään."
 
-msgid "As an organizer you can add anyone to any task of a night, with /board in a private chat, in the Crew app Admin tab, or at the sales desk."
-msgstr "Järjestäjänä voit lisätä kenet tahansa mihin tahansa illan tehtävään: komennolla /board yksityiskeskustelussa, Crew-sovelluksen Ylläpito-välilehdellä tai myyntipisteessä."
-
-msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /me to the bot, taps 🔁 Take over a task, and the member accepts."
-msgstr "Peruminen alle %d tuntia ennen tehtävää on myöhäinen peruutus. Jäsen, joka ei pääse, voi etsiä tuuraajan: tuuraaja lähettää botille /me, napauttaa 🔁 Ota tehtävä, ja jäsen hyväksyy."
-
 msgid "Conditions: the completed tasks someone needs before the organizers hear about them. Set a number for any of the named roles, or a number of different roles each done a number of times, or both. Meeting them lets nobody sign up. The organizers get a Telegram message and an email the first time someone meets them, and the first time someone is given the role. The People page, Role conditions tab, and the bot’s /people show who meets them."
 msgstr "Ehdot: tehdyt tehtävät, jotka joku tarvitsee ennen kuin järjestäjät kuulevat hänestä. Aseta luku mille tahansa nimetylle roolille tai luku eri rooleja, joista kukin on tehty tietyn monta kertaa, tai molemmat. Ehtojen täyttyminen ei anna kenellekään oikeutta ilmoittautua. Järjestäjät saavat Telegram-viestin ja sähköpostin, kun joku ensimmäisen kerran täyttää ehdot ja kun jollekulle ensimmäisen kerran annetaan rooli. People-sivun Role conditions -välilehti ja botin /people näyttävät, kuka ne täyttää."
 
@@ -2984,9 +2943,6 @@ msgstr "En löytänyt ketään tällä nimellä. Lähetä /people ja yritä uude
 
 msgid "Language"
 msgstr "Kieli"
-
-msgid "Members earn 1 free-entry credit per %d completed tasks and spend it with 🎟 Free-entry ticket under /me or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
-msgstr "Jäsenet saavat 1 vapaalipun jokaisesta %d tehdystä tehtävästä ja käyttävät sen napilla 🎟 Vapaalippu komennon /me alla tai verkkosivulla. Sinä annat vapaalippuja komennolla /people, People-sivulla tai myyntipisteessä. Jokainen lahja kirjataan People-sivun vapaalippulokiin, ja jäsenelle kerrotaan siitä."
 
 msgid "Nothing was added. Start again with /board."
 msgstr "Mitään ei lisätty. Aloita uudelleen komennolla /board."
@@ -3022,9 +2978,6 @@ msgstr "Tämä henkilö ei ole enää %s -tiimissä. Lähetä /people ja valitse
 msgid "The door list, guest list and sales desk"
 msgstr "Ovilista, vieraslista ja myyntipiste"
 
-msgid "The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with 🔔 Notifications under /me; confirmations and reminders always go."
-msgstr "Ajastetut lähtevät vain klo %1$s–%2$s. Jokainen lähtee Telegramilla ja sähköpostilla. Jäsenet valitsevat saamansa ilmoitukset napilla 🔔 Ilmoitukset komennon /me alla; vahvistukset ja muistutukset lähtevät aina."
-
 msgid "The sign-up gate is on: a member below %d%% cannot sign up for new tasks. /people can give them a one-time pass."
 msgstr "Ilmoittautumisraja on päällä: jäsen, jonka luotettavuus on alle %d%%, ei voi ilmoittautua uusiin tehtäviin. /people voi antaa hänelle kertaluvan."
 
@@ -3036,9 +2989,6 @@ msgstr "Tämä laite ei ole kirjautunut myyntipisteeseen. Pyydä järjestäjält
 
 msgid "This link was already used — ask an organizer for a new one (/door in Telegram, then 💳 Sales desk)."
 msgstr "Linkki on jo käytetty — pyydä järjestäjältä uusi (/door Telegramissa ja sitten 💳 Myyntipiste)."
-
-msgid "This was a late cancellation, which counts against your standing. Next time, more notice keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept."
-msgstr "Tämä oli myöhäinen peruutus, joka heikentää luotettavuuttasi. Ensi kerralla aikaisempi ilmoitus pitää tilanteen puhtaana, ja niin myös tuuraaja: hän lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
 
 msgid "When you are signed up for the night's Organize task, you get the sales desk link %d minutes before the night's first task, with a button to the Admin tab. The welcome crew (people on tasks of a role marked \"Opens the sales desk\") get it once they are marked arrived. /door, then 💳 Sales desk, sends a new link any time. /door has buttons for the door list (who has a ticket) and the guest list."
 msgstr "Kun olet ilmoittautunut illan Organize-tehtävään, saat myyntipisteen linkin %d minuuttia ennen illan ensimmäistä tehtävää, ja mukana on painike Ylläpito-välilehdelle. Tervetulotiimi (roolin, jossa on valittuna \"Opens the sales desk\", tehtävissä olevat) saa sen, kun heidät on merkitty saapuneiksi. /door ja sitten 💳 Myyntipiste lähettää uuden linkin milloin vain. /door-komennossa on painikkeet ovilistalle (kenellä on lippu) ja vieraslistalle."
@@ -5495,9 +5445,6 @@ msgstr "Jokaisessa sen linkissä on utm_source=eventcrew, utm_medium=email ja ut
 msgid "If you are on a guest list with your email address, you get the same message after the event."
 msgstr "Jos olet vieraslistalla sähköpostiosoitteesi kanssa, saat saman viestin tapahtuman jälkeen."
 
-msgid "The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Thank you, crew! Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
-msgstr "Illan teki mahdolliseksi crew: ihmiset, jotka tekivät töitä kulisseissa, jotta kaikki muut saivat tanssia. Kiitos, crew! Haluaisitko mukaan? Se on mukava tapa tutustua ihmisiin, tuntea itsensä hyödylliseksi ja säästää lipuissa."
-
 msgid "Join on the web"
 msgstr "Liity verkossa"
 
@@ -5537,6 +5484,8 @@ msgstr "Lähetä tapahtuman jälkeinen viesti"
 msgid "Stop this night’s post-event email? It will not be sent."
 msgstr "Pysäytetäänkö tämän illan tapahtuman jälkeinen viesti? Sitä ei lähetetä."
 
+#. translators: 1: the event's name, 2: its date, e.g. 14.11.2026
+#: src/Support/FollowupText.php
 msgid "Thank you for coming to %1$s on %2$s. It was lovely to share the evening and the dance floor with you, and we hope some of that warmth went home with you."
 msgstr "Kiitos, että olit mukana %1$s -illassa %2$s. Oli ihanaa jakaa ilta ja tanssilattia kanssasi, ja toivomme, että jotain siitä lämmöstä lähti mukaasi kotiin."
 
@@ -5573,6 +5522,8 @@ msgstr "Liian myöhään: tapahtuman jälkeinen viesti on jo lähtenyt."
 msgid "Warmly,"
 msgstr "Lämpimästi,"
 
+#. translators: 1: the event's name, 2: its date, e.g. 14.11.2026
+#: src/Support/FollowupText.php
 msgid "We missed you at %1$s on %2$s. We are sorry you could not make it this time. We understand it may have been frustrating, and we hope all is well with you."
 msgstr "Kaipasimme sinua %1$s -illassa %2$s. Olemme pahoillamme, ettet päässyt mukaan tällä kertaa. Ymmärrämme, että se on voinut harmittaa, ja toivomme, että voit hyvin."
 
@@ -5944,9 +5895,6 @@ msgstr "Vahvistettu"
 
 msgid "The subscription to the next events announcement was deleted, with its name and language."
 msgstr "Tulevien tapahtumien tiedotteen tilaus poistettiin nimineen ja kielineen."
-
-msgid "Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time."
-msgstr "Haluatko kuulla uusista tapahtumista ensimmäisten joukossa? Tilaa tulevien tapahtumien tiedote: lähetämme sinulle sähköpostia, kun uusia tapahtumia julkaistaan. Yksi painikkeen painallus riittää, ja voit perua tilauksen milloin tahansa."
 
 msgid "If you join our next events announcement, we store your email address, whether you have confirmed it or left the announcement, the date you signed up and the date you confirmed. We also store the name you want us to greet you with, if you give one, and the language your browser prefers (Finnish or English). You can change the name and the language, or leave, with the link at the end of every announcement. When you leave, the name is deleted."
 msgstr "Jos tilaat tulevien tapahtumien tiedotteemme, tallennamme sähköpostiosoitteesi, tiedon siitä, oletko vahvistanut sen tai perunut tiedotteen tilauksen, liittymispäivän ja vahvistuspäivän. Tallennamme myös nimen, jolla haluat meidän tervehtivän sinua, jos annat sen, sekä selaimesi suosiman kielen (suomi tai englanti). Voit muuttaa nimeä ja kieltä tai perua tilauksen jokaisen tiedotteen lopussa olevalla linkillä. Kun perut, nimi poistetaan."
@@ -7380,17 +7328,11 @@ msgstr "Seuraava »"
 msgid "Hi %1$s,\n\nJust a reminder that you're on %2$s at %3$s, %4$s.\n\n%5$s"
 msgstr "Hei %1$s,\n\nmuistutus: olet tehtävässä %2$s, %3$s, %4$s.\n\n%5$s"
 
-msgid "Your late cancellation for %2$s has been recorded.\n\nIt counts against your standing. %3$s"
-msgstr "Myöhäinen peruutuksesi tehtävästä %2$s on kirjattu.\n\nSe heikentää luotettavuuttasi. %3$s"
-
 msgid "Can't make it? Tap Cancel below. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
 msgstr "Etkö pääsekään? Napauta alta Peru. Tai etsi joku ottamaan se: hän lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
 
 msgid "Can't make it? Tap Cancel on your task in the Board tab of the crew page (%s)."
 msgstr "Etkö pääsekään? Napauta Peru tehtävässäsi crew-sivun Taulu-välilehdellä (%s)."
-
-msgid "Next time tap Cancel early or find someone to take it."
-msgstr "Ensi kerralla peru ajoissa tai etsi joku tilallesi."
 
 msgid "Not right? Tell us"
 msgstr "Väärin? Kerro meille"
@@ -7400,9 +7342,6 @@ msgstr "Kerro järjestäjälle, mikä on väärin: hän voi korjata sen."
 
 msgid "Write here in a few words what is not right. The organizers get it and can correct it."
 msgstr "Kirjoita tähän lyhyesti, mikä on väärin. Järjestäjät saavat sen ja voivat korjata sen."
-
-msgid "More notice next time keeps it clear: tap Cancel on your task in the Board tab of the crew page (%s) as soon as you know."
-msgstr "Aikaisempi ilmoitus ensi kerralla pitää tilanteen puhtaana: napauta Peru tehtävässäsi crew-sivun Taulu-välilehdellä (%s) heti kun tiedät."
 
 msgid "Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine."
 msgstr "Ovilista %s: avaa se alla olevasta painikkeesta. Linkki toimii kerran, yhdellä laitteella; se pitää laitteen kirjautuneena klo 06:00 asti. Sen saa välittää eteenpäin."
@@ -7428,17 +7367,11 @@ msgstr "Myyntipiste-kortti on crew-sivun Ylläpito-välilehdellä kohdassa Ovi (
 msgid "When you sign up for a task, you get a free ticket for that night. Show it at the door. %s"
 msgstr "Kun ilmoittaudut tehtävään, saat sille illalle ilmaisen lipun. Näytä se ovella. %s"
 
-msgid "This was a late cancellation, which counts against your standing. More notice keeps it clear next time."
-msgstr "Tämä oli myöhäinen peruutus, joka heikentää luotettavuuttasi. Aikaisempi ilmoitus pitää tilanteen ensi kerralla puhtaana."
-
 msgid "Manage my tasks"
 msgstr "Hallitse tehtäviäni"
 
 msgid "How to cancel the task or find someone to take it over: in the bot, or, for a person with no Telegram chat, on the crew page, with its link."
 msgstr "Miten tehtävän voi perua tai löytää sille ottajan: botissa, tai henkilölle ilman Telegram-keskustelua crew-sivulla, linkin kanssa."
-
-msgid "What keeps it clear next time: more notice, or a replacement found in the bot. For a person with no Telegram chat: more notice, and the link to the crew page."
-msgstr "Mikä pitää tilanteen ensi kerralla puhtaana: aikaisempi ilmoitus tai botissa löydetty tuuraaja. Henkilölle ilman Telegram-keskustelua: aikaisempi ilmoitus ja linkki crew-sivulle."
 
 msgid "How to get another sales desk link: in the bot, or, for a person with no Telegram chat, on the crew page, with its link."
 msgstr "Miten saa uuden myyntipisteen linkin: botissa, tai henkilölle ilman Telegram-keskustelua crew-sivulla, linkin kanssa."
@@ -8934,6 +8867,9 @@ msgstr "Pahoittelut, lippu on vanhentunut"
 msgid "You’re in, welcome!"
 msgstr "Olet sisällä, tervetuloa!"
 
+msgid "You’re in. Welcome, %s!"
+msgstr "Olet sisällä. Tervetuloa, %s!"
+
 msgid "Checked in at %s"
 msgstr "Kirjattu sisään klo %s"
 
@@ -9117,3 +9053,243 @@ msgstr "Kiitos, että otit tehtävän ja autat tekemään tästä illasta totta.
 #: src/Support/TicketReasons.php
 msgid "Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!"
 msgstr "Kiitos, että olet mukana crew'ssa ja teet näistä illoista totta. Tämä ilta on meiltä: tule tanssimaan ja nauti illasta vieraanamme!"
+
+msgid "What helps next time: cancelling as soon as you know, or someone found in the bot to take the task over. For a person with no Telegram chat: cancelling early on the crew page, with its link."
+msgstr "Mikä auttaa ensi kerralla: peruminen heti kun tiedät, tai botista löydetty tehtävän ottaja. Henkilölle ilman Telegram-keskustelua: peruminen ajoissa crew-sivulla, linkin kanssa."
+
+msgid "Next time, tap Cancel as soon as you know, or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task."
+msgstr "Ensi kerralla napauta Peru heti kun tiedät, tai etsi tehtävälle ottaja: hän lähettää botille /me ja napauttaa 🔁 Ota tehtävä."
+
+msgid "Next time, tap Cancel on your task in the Board tab of the crew page (%s) as soon as you know."
+msgstr "Ensi kerralla napauta Peru tehtävässäsi crew-sivun Taulu-välilehdellä (%s) heti kun tiedät."
+
+msgid "The sentence saying what a late cancellation counts in the score next to a completed task, with the weights from Settings (40 and 100 percent by default)."
+msgstr "Lause siitä, paljonko myöhäinen peruutus painaa pisteissä tehdyn tehtävän rinnalla, painot asetuksista (oletuksena 40 ja 100 prosenttia)."
+
+msgid "A late cancellation counts %1$d%% in your score, a completed task %2$d%%."
+msgstr "Myöhäinen peruutus painaa pisteissäsi %1$d %%, tehty tehtävä %2$d %%."
+
+msgid "We missed you at your task"
+msgstr "Kaipasimme sinua tehtävässäsi"
+
+msgid ""
+"We missed you at %2$s, so it was marked as a no-show. Unexpected things happen, and that's OK.\n"
+"\n"
+"The night runs on its crew: a missed task falls on the others or leaves a gap. %3$s%4$s\n"
+"\n"
+"A no-show counts against your standing, but every task you complete lifts it again, and it weighs less over time. Conditions may be better next time, so we hope you sign up again. If this is a mistake, tell an organizer and they will correct it."
+msgstr ""
+"Kaipasimme sinua tehtävässä %2$s, joten se merkittiin poissaoloksi. Yllättäviä asioita sattuu, eikä se haittaa.\n"
+"\n"
+"Ilta pyörii crew'n voimin: väliin jäänyt tehtävä kaatuu muille tai jättää aukon. %3$s%4$s\n"
+"\n"
+"Poissaolo heikentää luotettavuuttasi, mutta jokainen tehty tehtävä nostaa sitä taas, ja sen paino vähenee ajan myötä. Ensi kerralla olot voivat olla paremmat, joten toivomme, että ilmoittaudut taas. Jos tämä on virhe, kerro järjestäjälle, niin hän korjaa sen."
+
+msgid ""
+"🤍 We missed you at %1$s. Unexpected things happen, and that's OK.\n"
+"\n"
+"The night runs on its crew: a missed task falls on others or leaves a gap. %2$s%3$s\n"
+"\n"
+"A no-show counts against your standing; every task you complete lifts it again. Next time may suit you better, so sign up again! If this is a mistake, tell an organizer."
+msgstr ""
+"🤍 Kaipasimme sinua tehtävässä %1$s. Yllättäviä asioita sattuu, eikä se haittaa.\n"
+"\n"
+"Ilta pyörii crew'n voimin: väliin jäänyt tehtävä kaatuu muille tai jättää aukon. %2$s%3$s\n"
+"\n"
+"Poissaolo heikentää luotettavuuttasi; jokainen tehty tehtävä nostaa sitä taas. Ensi kerta voi sopia paremmin, joten ilmoittaudu taas! Jos tämä on virhe, kerro järjestäjälle."
+
+msgid "Thanks for letting us know"
+msgstr "Kiitos, että kerroit"
+
+msgid ""
+"Thanks for letting the crew know you couldn't make it to %2$s. Telling us is always better than not showing up.\n"
+"\n"
+"It was a late cancellation, and early notice matters: it gives someone else time to take the place. %3$s%4$s\n"
+"\n"
+"%5$s It weighs less over time. Plans change sometimes; we hope you sign up again when it suits you. If this is a mistake, tell an organizer."
+msgstr ""
+"Kiitos, että kerroit crew'lle, ettet päässyt tehtävään %2$s. Kertominen on aina parempi kuin jäädä tulematta.\n"
+"\n"
+"Se oli myöhäinen peruutus, ja aikainen ilmoitus auttaa: joku muu ehtii ottaa paikan. %3$s%4$s\n"
+"\n"
+"%5$s Sen paino vähenee ajan myötä. Suunnitelmat muuttuvat joskus; toivomme, että ilmoittaudut taas, kun se sopii sinulle. Jos tämä on virhe, kerro järjestäjälle."
+
+msgid ""
+"🤍 Thanks for letting us know about %1$s. Telling the crew is always better than not showing up.\n"
+"\n"
+"It was a late cancellation: early notice gives someone else time to take the place. %2$s%3$s\n"
+"\n"
+"%4$s It weighs less over time. Next time may suit you better, so sign up again! If this is a mistake, tell an organizer."
+msgstr ""
+"🤍 Kiitos, että kerroit tehtävästä %1$s. Kertominen on aina parempi kuin jäädä tulematta.\n"
+"\n"
+"Se oli myöhäinen peruutus: aikainen ilmoitus antaa jollekulle muulle aikaa ottaa paikka. %2$s%3$s\n"
+"\n"
+"%4$s Sen paino vähenee ajan myötä. Ensi kerta voi sopia paremmin, joten ilmoittaudu taas! Jos tämä on virhe, kerro järjestäjälle."
+
+msgid "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hour or more before has no effect and gives someone else time to take the place."
+msgid_plural "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hours or more before has no effect and gives someone else time to take the place."
+msgstr[0] "Kiitos, että kerroit. Näin lähellä tehtävää se heikentää luotettavuuttasi; peruminen %d tunnin tai enemmän ennen ei vaikuta mitenkään ja antaa jollekulle muulle aikaa ottaa paikka."
+msgstr[1] "Kiitos, että kerroit. Näin lähellä tehtävää se heikentää luotettavuuttasi; peruminen %d tuntia tai enemmän ennen ei vaikuta mitenkään ja antaa jollekulle muulle aikaa ottaa paikka."
+
+msgid "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hour or more before has no effect and gives someone else time to take the place. You can also hand a task over: the other person sends /me to the bot and taps 🔁 Take over a task, and you accept."
+msgid_plural "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hours or more before has no effect and gives someone else time to take the place. You can also hand a task over: the other person sends /me to the bot and taps 🔁 Take over a task, and you accept."
+msgstr[0] "Kiitos, että kerroit. Näin lähellä tehtävää se heikentää luotettavuuttasi; peruminen %d tunnin tai enemmän ennen ei vaikuta mitenkään ja antaa jollekulle muulle aikaa ottaa paikka. Voit myös luovuttaa tehtävän: toinen henkilö lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
+msgstr[1] "Kiitos, että kerroit. Näin lähellä tehtävää se heikentää luotettavuuttasi; peruminen %d tuntia tai enemmän ennen ei vaikuta mitenkään ja antaa jollekulle muulle aikaa ottaa paikka. Voit myös luovuttaa tehtävän: toinen henkilö lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
+
+msgid "Good standing from %d%%"
+msgstr "Hyvä taso alkaen %d %%"
+
+msgid "Standing %1$d%% → %2$d%%."
+msgstr "Luotettavuus %1$d %% → %2$d %%."
+
+msgid "Standing %d%%."
+msgstr "Luotettavuus %d %%."
+
+msgid "You get a standing score after %d more task."
+msgid_plural "You get a standing score after %d more tasks."
+msgstr[0] "Saat luotettavuusluvun vielä %d tehtävän jälkeen."
+msgstr[1] "Saat luotettavuusluvun vielä %d tehtävän jälkeen."
+
+msgid "Good standing is %d%% or more, so every task is open to you."
+msgstr "Hyvä taso on %d %% tai enemmän, joten kaikki tehtävät ovat auki."
+
+msgid "Still good standing, but close to the %d%% limit."
+msgstr "Yhä hyvä taso, mutta lähellä %d %%:n rajaa."
+
+msgid "Good standing is %d%% or more."
+msgstr "Hyvä taso on %d %% tai enemmän."
+
+msgid "The standing as a bar from 0 to 100 percent, with the good-standing limit marked; in the email a coloured bar. On a line of its own; the line goes while the person has no score yet."
+msgstr "Luotettavuus palkkina 0–100 prosenttia, hyvän tason raja merkittynä; sähköpostissa värillinen palkki. Omalla rivillään; rivi poistuu, kun henkilöllä ei vielä ole lukua."
+
+msgid "The standing before and after, like: Standing 82 → 74 percent, with one sentence on what it means. Before the person has a score: how many tasks until they get one."
+msgstr "Luotettavuus ennen ja jälkeen, kuten: Luotettavuus 82 → 74 prosenttia, ja yksi lause sen merkityksestä. Ennen kuin henkilöllä on luku: montako tehtävää siihen on."
+
+msgid "The free-entry credits the person has now, and how many more completed tasks earn the next one."
+msgstr "Henkilön vapaaliput nyt ja montako tehtyä tehtävää vielä tuo seuraavan."
+
+msgid "%d more completed task earns the next one."
+msgid_plural "%d more completed tasks earn the next one."
+msgstr[0] "Vielä %d tehty tehtävä tuo seuraavan."
+msgstr[1] "Vielä %d tehtyä tehtävää tuo seuraavan."
+
+msgid "Thank you for a task (email)"
+msgstr "Kiitos tehtävästä (sähköposti)"
+
+msgid "Thank you for a task (Telegram)"
+msgstr "Kiitos tehtävästä (Telegram)"
+
+msgid "Sent a day after an organizer marks a person's task as completed or arrived late."
+msgstr "Lähetetään päivä sen jälkeen, kun järjestäjä merkitsee henkilön tehtävän tehdyksi tai myöhässä saapuneeksi."
+
+msgid "Thank you for your task"
+msgstr "Kiitos tehtävästäsi"
+
+msgid "Thank you for %1$s! The night runs on its crew, and you helped make it happen."
+msgstr "Kiitos tehtävästä %1$s! Ilta pyörii crew'n voimin, ja sinä autoit tekemään sen."
+
+msgid "We hope to see you again soon."
+msgstr "Toivottavasti nähdään pian taas."
+
+msgid "See you next time!"
+msgstr "Nähdään ensi kerralla!"
+
+#: src/Telegram/LanguageService.php:126
+msgid "I will write to you in English. To change it: /settings, 🌐 Change language."
+msgstr "Kirjoitan sinulle suomeksi. Vaihda kieli: /settings, 🌐 Vaihda kieli."
+
+msgid "As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
+msgstr "Järjestäjänä voit lisätä kenet tahansa mihin tahansa illan tehtävään paitsi Järjestelyihin, myös roolin tehtävään, jota hänellä ei ole (hän saa roolin): yksityiskeskustelussa komennolla /assign tehtävä ; nimi (/unassign poistaa) tai napilla ➕ Lisää joku komennon /board alla, Crew-sovelluksen Ylläpito-välilehdellä tai myyntipisteessä."
+
+msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /tasks to the bot, taps 🔁 Take over a task, and the member accepts."
+msgstr "Peruminen alle %d tuntia ennen tehtävää on myöhäinen peruutus. Jäsen, joka ei pääse, voi etsiä tuuraajan: tuuraaja lähettää botille /tasks, napauttaa 🔁 Ota tehtävä, ja jäsen hyväksyy."
+
+msgid "Members earn 1 free-entry credit per %d completed tasks and spend it with /me, 🎟 Tickets, 🎟 Get a free-entry ticket (or /tickets), or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
+msgstr "Jäsenet saavat 1 vapaalipun jokaisesta %d tehdystä tehtävästä ja käyttävät sen: /me, 🎟 Liput, 🎟 Hae vapaalippu (tai /tickets), tai verkkosivulla. Sinä annat vapaalippuja komennolla /people, People-sivulla tai myyntipisteessä. Jokainen lahja kirjataan People-sivun vapaalippulokiin, ja jäsenelle kerrotaan siitä."
+
+msgid "The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with /settings, 🔔 Choose notifications; confirmations and reminders always go."
+msgstr "Ajastetut lähtevät vain klo %1$s–%2$s. Jokainen lähtee Telegramilla ja sähköpostilla. Jäsenet valitsevat saamansa ilmoitukset: /settings, 🔔 Valitse ilmoitukset; vahvistukset ja muistutukset lähtevät aina."
+
+msgid "%1$s does not have the %2$s role. As an organizer you can still add them; they get the role."
+msgstr "Henkilöllä %1$s ei ole roolia %2$s. Järjestäjänä voit silti lisätä hänet; hän saa roolin."
+
+msgid "%s is blocked from sign-ups. An organizer can lift it on the People page."
+msgstr "%s on estetty ilmoittautumasta. Järjestäjä voi poistaa eston People-sivulla."
+
+msgid "/assign task ; name – put a member on a task (/unassign takes them off); you confirm first"
+msgstr "/assign tehtävä ; nimi – lisää jäsen tehtävään (/unassign poistaa); vahvistat ensin"
+
+msgid "Add %1$s to %2$s?"
+msgstr "Lisätäänkö %1$s tehtävään %2$s?"
+
+msgid "Add, counts"
+msgstr "Lisää, lasketaan"
+
+msgid "Add, no credit"
+msgstr "Lisää, ei lasketa"
+
+msgid "Cancelled. Nothing was changed."
+msgstr "Peruttu. Mitään ei muutettu."
+
+msgid "Many members match “%s”. Write more of the name."
+msgstr "Moni jäsen vastaa hakua “%s”. Kirjoita nimeä pidemmälle."
+
+msgid "No member called “%s” was found."
+msgstr "Jäsentä nimeltä “%s” ei löytynyt."
+
+msgid "No member called “%s” was found. Someone who is not a member yet: ➕ Add someone under /board."
+msgstr "Jäsentä nimeltä “%s” ei löytynyt. Jos hän ei ole vielä jäsen: ➕ Lisää joku komennon /board alla."
+
+msgid "No task called “%1$s”. Tasks on %2$s: %3$s"
+msgstr "Ei tehtävää “%1$s”. Tehtävät %2$s: %3$s"
+
+msgid "Organize tasks are for organizers only. Make someone an organizer with /people."
+msgstr "Järjestelytehtävät ovat vain järjestäjille. Tee joku järjestäjäksi komennolla /people."
+
+msgid "Put a member on a task: /assign task ; name\nExample: /assign Host ; Milla\nA date first picks another event: /assign 21.11. Host ; Milla"
+msgstr "Lisää jäsen tehtävään: /assign tehtävä ; nimi\nEsimerkki: /assign Host ; Milla\nPäivä ensin valitsee toisen illan: /assign 21.11. Host ; Milla"
+
+msgid "Take %1$s off %2$s?"
+msgstr "Poistetaanko %1$s tehtävästä %2$s?"
+
+msgid "Take a member off a task: /unassign task ; name\nExample: /unassign Host ; Milla\nA date first picks another event: /unassign 21.11. Host ; Milla"
+msgstr "Poista jäsen tehtävästä: /unassign tehtävä ; nimi\nEsimerkki: /unassign Host ; Milla\nPäivä ensin valitsee toisen illan: /unassign 21.11. Host ; Milla"
+
+msgid "Taken off the task. If their ticket was emailed, they get an updated one; nothing else is sent."
+msgstr "Poistettu tehtävästä. Jos lippu lähti sähköpostilla, hän saa päivitetyn; muuta ei lähetetä."
+
+msgid "That person is not on this task."
+msgstr "Hän ei ole tässä tehtävässä."
+
+msgid "That task is full (%1$d of %2$d places taken). Nothing was added."
+msgstr "Tehtävä on täynnä (%1$d/%2$d paikkaa varattu). Mitään ei lisätty."
+
+msgid "There are no tasks on %s."
+msgstr "Päivälle %s ei ole tehtäviä."
+
+msgid "There are no upcoming tasks."
+msgstr "Tulevia tehtäviä ei ole."
+
+msgid "This request has expired. Please send it again."
+msgstr "Pyyntö on vanhentunut. Lähetä se uudelleen."
+
+msgid "Use %s in a private chat with me."
+msgstr "Käytä komentoa %s yksityiskeskustelussa kanssani."
+
+msgid "Which member?"
+msgstr "Kuka jäsen?"
+
+#: src/Support/FollowupMail.php
+msgid "Get an email when new events come out. You can leave any time."
+msgstr "Saat sähköpostin, kun uusia tapahtumia julkaistaan. Voit perua milloin tahansa."
+
+#: src/Support/FollowupMail.php
+msgid "The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
+msgstr "Illan teki mahdolliseksi crew: ihmiset, jotka tekivät töitä kulisseissa, jotta kaikki muut saivat tanssia. Haluaisitko mukaan? Se on mukava tapa tutustua ihmisiin, tuntea itsensä hyödylliseksi ja säästää lipuissa."
+
+msgid "Nothing after a few minutes, not even in spam? Try again, with the same or another address."
+msgstr "Eikö mitään muutamassa minuutissa, ei edes roskapostissa? Yritä uudelleen samalla tai toisella osoitteella."
+
+msgid "✏️ Use another email"
+msgstr "✏️ Toinen sähköposti"

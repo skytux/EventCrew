@@ -12,6 +12,7 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\Dates;
+use EventCrew\Support\DoorDesk;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\EventName;
 use EventCrew\Support\EventTimes;
@@ -536,12 +537,15 @@ final class TicketController
             ? null
             : (int) strtotime($closeAt . ' UTC') - (int) strtotime((string) current_time('mysql') . ' UTC');
 
+        // "Welcome, Sam!" uses the first word of the name, as the desk does.
+        $first = DoorDesk::firstName((string) $ticket['name']);
+
         if (! $ticket['valid']) {
             $band = '<p class="t-band is-disabled">' . esc_html__('DISABLED', 'eventcrew') . '</p>';
         } elseif (null !== $used) {
-            $band = $this->inBand(Dates::wallClock($used, 'H:i'));
+            $band = $this->inBand(Dates::wallClock($used, 'H:i'), $first);
         } else {
-            $band = $this->openBand(null !== $closesIn && $closesIn <= 0);
+            $band = $this->openBand(null !== $closesIn && $closesIn <= 0, $first);
         }
 
         $body = sprintf(
@@ -569,7 +573,7 @@ final class TicketController
             . $this->shortBlock((string) ($ticket['short'] ?? '')) . $this->codeBlock($ticket['code'] ?? '')
             . $this->noteBlock($eventId) . $this->antiFraudBlock($ticket['issued'])
             . ($ticket['valid'] && (null === $used || $demo)
-                ? $this->liveScript((string) ($ticket['poll'] ?? ''), $closesIn, $demo)
+                ? $this->liveScript((string) ($ticket['poll'] ?? ''), $closesIn, $demo, $first)
                 : '')
             . '</div>'
         );
@@ -581,29 +585,55 @@ final class TicketController
      * An expired ticket can still be scanned and counted in: the band only
      * says it is late. liveScript() turns VALID into expired on an open page
      * when the doors close, and either into inBand() when the door marks it in.
+     *
+     * Turning gold moves nothing on the page (Owner 2026-11-07): the band
+     * already holds the gold band's words, hidden (openGhost()), in the same
+     * grid cell as its own word, so it is as tall as the gold band will be.
      */
-    private function openBand(bool $expired): string
+    private function openBand(bool $expired, string $first = ''): string
     {
-        return $expired
-            ? '<p class="t-band is-expired" id="ec-band" aria-live="polite">'
-                . esc_html__('Sorry, this ticket has expired', 'eventcrew') . '</p>'
-            : '<p class="t-band is-valid" id="ec-band" aria-live="polite">' . esc_html__('VALID', 'eventcrew') . '</p>';
+        $state = $expired
+            ? esc_html__('Sorry, this ticket has expired', 'eventcrew')
+            : esc_html__('VALID', 'eventcrew');
+
+        return '<p class="t-band ' . ($expired ? 'is-expired' : 'is-valid') . '" id="ec-band" aria-live="polite">'
+            . '<span class="t-state">' . $state . '</span>' . $this->openGhost($first) . '</p>';
+    }
+
+    /**
+     * The gold band's words, hidden, that keep the open band as tall as the
+     * gold band (00:00 stands in for the check-in time).
+     */
+    private function openGhost(string $first): string
+    {
+        return '<span class="t-in t-ghost" aria-hidden="true">' . $this->inWords('00:00', $first) . '</span>';
     }
 
     /**
      * The band of a ticket the door has marked in: gold with twinkling stars,
-     * "You're in, welcome!" and the time ($at, like 21:05). On an open page
+     * "You're in. Welcome, Sam!" ($first, the first name; without one
+     * "You're in, welcome!") and the time ($at, like 21:05). On an open page
      * liveScript() draws the same band with a burst ("is-new").
      */
-    private function inBand(string $at): string
+    private function inBand(string $at, string $first = ''): string
     {
-        return '<p class="t-band is-in" id="ec-band" aria-live="polite">' . $this->inBandInner($at) . '</p>';
+        return '<p class="t-band is-in" id="ec-band" aria-live="polite">' . $this->inBandInner($at, $first) . '</p>';
     }
 
-    private function inBandInner(string $at): string
+    private function inBandInner(string $at, string $first = ''): string
     {
         return '<span class="t-stars" aria-hidden="true">' . str_repeat('<i>★</i><i>✦</i>', 5) . '</span>'
-            . '<span class="t-in-text">' . esc_html__('You’re in, welcome!', 'eventcrew') . '</span>'
+            . '<span class="t-in">' . $this->inWords($at, $first) . '</span>';
+    }
+
+    private function inWords(string $at, string $first): string
+    {
+        $welcome = '' === $first
+            ? __('You’re in, welcome!', 'eventcrew')
+            /* translators: %s: the ticket holder's first name, like Sam */
+            : sprintf(__('You’re in. Welcome, %s!', 'eventcrew'), $first);
+
+        return '<span class="t-in-text">' . esc_html($welcome) . '</span>'
             . '<span class="t-at">' . esc_html(sprintf(
                 /* translators: %s: the time the door checked the ticket in, like 21:05 */
                 __('Checked in at %s', 'eventcrew'),
@@ -630,21 +660,26 @@ final class TicketController
      * Phones only play sound on a page the person has touched, so the first
      * touch on the page unlocks it silently.
      */
-    private function liveScript(string $poll, ?int $closesIn, bool $again = false): string
-    {
+    private function liveScript(
+        string $poll,
+        ?int $closesIn,
+        bool $again = false,
+        string $first = ''
+    ): string {
         $config = [
             'poll' => $poll,
             'closesIn' => $closesIn,
             'again' => $again,
             'valid' => __('VALID', 'eventcrew'),
             'expired' => __('Sorry, this ticket has expired', 'eventcrew'),
-            'inHtml' => $this->inBandInner('%s'),
+            'inHtml' => $this->inBandInner('%s', $first),
+            'ghost' => $this->openGhost($first),
             'sound' => defined('EVENTCREW_PLUGIN_URL') ? EVENTCREW_PLUGIN_URL . self::IN_SOUND . '?ver=' . EVENTCREW_VERSION : '',
         ];
         $json = (string) wp_json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
 
         // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained script; wrapping adds stray whitespace.
-        return '<script>(function(){var c=' . $json . ';var b=document.getElementById("ec-band");if(!b){return;}var done=false,busy=false,timer=null,fails=0,isIn=-1!==b.className.indexOf("is-in");var snd=null;if(c.sound&&window.Audio){snd=new Audio(c.sound);snd.preload="auto";snd.volume=0.3;var unlock=function(){document.removeEventListener("pointerdown",unlock,true);snd.muted=true;var p=snd.play();if(p&&p.then){p.then(function(){snd.pause();snd.currentTime=0;snd.muted=false;},function(){snd.muted=false;});}else{snd.pause();snd.muted=false;}};document.addEventListener("pointerdown",unlock,true);}function ding(){if(!snd){return;}try{snd.muted=false;snd.currentTime=0;var p=snd.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}var closeAt=null===c.closesIn?null:Date.now()+c.closesIn*1000;function expire(){if(done||isIn||null===closeAt||Date.now()<closeAt||"t-band is-expired"===b.className){return;}b.className="t-band is-expired";b.textContent=c.expired;}function burst(){var k=b.closest?b.closest(".t"):null;if(!k){return;}var o=k.querySelector(".t-fx");if(o){o.parentNode.removeChild(o);}var f=document.createElement("span"),w=k.clientWidth,h=k.clientHeight,y=b.offsetTop+b.offsetHeight/2,g="✦★•✦★✦";f.className="t-fx";f.setAttribute("aria-hidden","true");for(var i=0;i<48;i++){var e=document.createElement("i"),a=Math.random()*6.2832,r=.3+Math.random()*.7;e.textContent=g.charAt(i%6);e.style.cssText="left:"+(6+Math.random()*88).toFixed(1)+"%;top:"+Math.round(y)+"px;font-size:"+(.7+Math.random()*1.1).toFixed(2)+"em;--dx:"+Math.round(Math.cos(a)*r*w*.5)+"px;--dy:"+Math.round(Math.sin(a)*r*h*.45)+"px;--r:"+Math.round(Math.random()*360-180)+"deg;--s:"+(.5+Math.random()*.5).toFixed(2)+";--d:"+(Math.random()*.6).toFixed(2)+"s;--t:"+(2.2+Math.random()*1.8).toFixed(2)+"s";f.appendChild(e);}k.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},5500);}function welcome(at){isIn=true;if(!c.again){done=true;if(timer){clearTimeout(timer);}}b.className="t-band is-in is-new";b.innerHTML=c.inHtml;ding();burst();var t=b.querySelector(".t-at");if(t){t.textContent=t.textContent.replace("%s",at);}}function out(){isIn=false;var x=document.querySelector(".t-fx");if(x){x.parentNode.removeChild(x);}b.className="t-band is-valid";b.textContent=c.valid;expire();}function later(ms){if(timer){clearTimeout(timer);}timer=setTimeout(ask,ms);}function ask(){timer=null;if(done||busy||!c.poll||document.hidden){return;}busy=true;fetch(c.poll+(-1===c.poll.indexOf("?")?"?":"&")+(c.again?"in="+(isIn?1:0)+"&":"")+"_="+Date.now(),{cache:"no-store",credentials:"same-origin"}).then(function(r){if(404===r.status){c.poll="";}if(!r.ok){throw new Error(String(r.status));}return r.json();}).then(function(d){busy=false;fails=0;if(d&&d.in){if(!isIn){welcome(d.at||"");}if(!c.again){return;}}else if(d&&isIn&&c.again){out();}if(!d||null===d.next){c.poll="";return;}later(1000*d.next);},function(){busy=false;fails++;later(Math.min(60000,2000*fails));});}document.addEventListener("visibilitychange",function(){if(!document.hidden){expire();if(!busy){later(0);}}});setInterval(expire,1000);expire();ask();})();</script>';
+        return '<script>(function(){var c=' . $json . ';var b=document.getElementById("ec-band");if(!b){return;}var done=false,busy=false,timer=null,fails=0,isIn=-1!==b.className.indexOf("is-in");var snd=null;if(c.sound&&window.Audio){snd=new Audio(c.sound);snd.preload="auto";snd.volume=0.3;var unlock=function(){document.removeEventListener("pointerdown",unlock,true);snd.muted=true;var p=snd.play();if(p&&p.then){p.then(function(){snd.pause();snd.currentTime=0;snd.muted=false;},function(){snd.muted=false;});}else{snd.pause();snd.muted=false;}};document.addEventListener("pointerdown",unlock,true);}function ding(){if(!snd){return;}try{snd.muted=false;snd.currentTime=0;var p=snd.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}var closeAt=null===c.closesIn?null:Date.now()+c.closesIn*1000;function show(k,s){b.className=k;b.innerHTML=c.ghost;var e=document.createElement("span");e.className="t-state";e.textContent=s;b.insertBefore(e,b.firstChild);}function expire(){if(done||isIn||null===closeAt||Date.now()<closeAt||"t-band is-expired"===b.className){return;}show("t-band is-expired",c.expired);}function burst(){var k=b.closest?b.closest(".t"):null;if(!k){return;}var o=k.querySelector(".t-fx");if(o){o.parentNode.removeChild(o);}var f=document.createElement("span"),w=k.clientWidth,h=k.clientHeight,y=b.offsetTop+b.offsetHeight/2,g="✦★•✦★✦";f.className="t-fx";f.setAttribute("aria-hidden","true");for(var i=0;i<48;i++){var e=document.createElement("i"),a=Math.random()*6.2832,r=.3+Math.random()*.7;e.textContent=g.charAt(i%6);e.style.cssText="left:"+(6+Math.random()*88).toFixed(1)+"%;top:"+Math.round(y)+"px;font-size:"+(.7+Math.random()*1.1).toFixed(2)+"em;--dx:"+Math.round(Math.cos(a)*r*w*.5)+"px;--dy:"+Math.round(Math.sin(a)*r*h*.45)+"px;--r:"+Math.round(Math.random()*360-180)+"deg;--s:"+(.5+Math.random()*.5).toFixed(2)+";--d:"+(Math.random()*.8).toFixed(2)+"s;--t:"+(5.5+Math.random()*2.7).toFixed(2)+"s";f.appendChild(e);}k.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},9500);}function welcome(at){isIn=true;if(!c.again){done=true;if(timer){clearTimeout(timer);}}b.className="t-band is-in is-new";b.innerHTML=c.inHtml;ding();burst();var t=b.querySelector(".t-at");if(t){t.textContent=t.textContent.replace("%s",at);}}function out(){isIn=false;var x=document.querySelector(".t-fx");if(x){x.parentNode.removeChild(x);}show("t-band is-valid",c.valid);expire();}function later(ms){if(timer){clearTimeout(timer);}timer=setTimeout(ask,ms);}function ask(){timer=null;if(done||busy||!c.poll||document.hidden){return;}busy=true;fetch(c.poll+(-1===c.poll.indexOf("?")?"?":"&")+(c.again?"in="+(isIn?1:0)+"&":"")+"_="+Date.now(),{cache:"no-store",credentials:"same-origin"}).then(function(r){if(404===r.status){c.poll="";}if(!r.ok){throw new Error(String(r.status));}return r.json();}).then(function(d){busy=false;fails=0;if(d&&d.in){if(!isIn){welcome(d.at||"");}if(!c.again){return;}}else if(d&&isIn&&c.again){out();}if(!d||null===d.next){c.poll="";return;}later(1000*d.next);},function(){busy=false;fails++;later(Math.min(60000,2000*fails));});}document.addEventListener("visibilitychange",function(){if(!document.hidden){expire();if(!busy){later(0);}}});setInterval(expire,1000);expire();ask();})();</script>';
     }
 
     /**
@@ -816,6 +851,13 @@ final class TicketController
             . '.t-band{margin:0 -1.2em 1em;padding:.45em;color:#fff;font-weight:700;letter-spacing:.15em}'
             . '.t-band.is-valid{background:#1a7f37}.t-band.is-disabled{background:#b32d2e}'
             . '.t-band.is-expired{background:#000;letter-spacing:.04em}'
+            // The live band never changes height (Owner 2026-11-07: the page
+            // moved down when it turned gold): every state has the gold
+            // band's padding, and VALID or expired shares one grid cell with
+            // the gold band's words, hidden (.t-ghost), so it is already as
+            // tall as the gold band. The stars sit in that cell too.
+            . '#ec-band{display:grid;align-items:center;padding:.7em .45em}#ec-band>*{grid-area:1/1}'
+            . '.t-in{display:block;letter-spacing:.04em}.t-ghost{visibility:hidden}'
             // Gold with dark brown text (over 6:1 on the darkest gold). It all
             // stays inside the card (Owner 2026-11-07: it went out of the
             // frame): every glow is inset, nothing full-width scales above 1,
@@ -834,8 +876,10 @@ final class TicketController
             // flares gold from its edges (t-flare), a golden light sweeps
             // across the whole card (t-sweep), the stars burst in one by
             // one (t-burst), the words rise in (t-rise), and liveScript()
-            // throws about 40 sparkles (.t-fx) from the band across the card
-            // that fly out, drift down and fade (t-fly). Each ends on the
+            // throws 48 sparkles (.t-fx) from the band across the card that
+            // fly out in about a second, then fall slowly and fade late, 5.5
+            // to 8.2 s each (t-fly; Owner 2026-11-07: let them stay longer).
+            // Each ends on the
             // state its loop starts from. Less motion: plain gold and a gold
             // edge, nothing moves.
             . '.t-band.is-in{position:relative;overflow:hidden;isolation:isolate;padding:.7em .45em;color:#3b2500;'
@@ -896,7 +940,7 @@ final class TicketController
             . '.t-fx{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}'
             . '.t-fx i{position:absolute;font-style:normal;line-height:1;color:#ffd24d;opacity:0;'
             . 'text-shadow:0 0 3px #fff6c8,0 0 9px rgba(255,185,30,.95);'
-            . 'animation:t-fly var(--t,2.6s) linear var(--d,0s) both}'
+            . 'animation:t-fly var(--t,6.5s) linear var(--d,0s) both}'
             . '.t-fx i:nth-child(3n){color:#fff}.t-fx i:nth-child(4n){color:#f0a81a}'
             . '@keyframes t-gold{from{background-position:0 0,0 0}to{background-position:0 0,200% 0}}'
             . '@keyframes t-glow{from{box-shadow:inset 0 1px 0 rgba(255,255,255,.85),inset 0 -2px 0 rgba(120,70,0,.3),'
@@ -923,11 +967,12 @@ final class TicketController
             . '100%{opacity:.3;transform:translateY(0) scale(.5) rotate(0deg)}}'
             . '@keyframes t-fly{0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(0deg);'
             . 'animation-timing-function:cubic-bezier(.1,.75,.3,1)}'
-            . '8%{opacity:1}'
-            . '40%{opacity:1;transform:translate(calc(var(--dx) - 50%),calc(var(--dy) - 50%)) scale(var(--s,.8))'
-            . ' rotate(var(--r,90deg));animation-timing-function:ease-in-out}'
-            . '100%{opacity:0;transform:translate(calc(var(--dx)*1.15 - 50%),calc(var(--dy) + 4em - 50%))'
-            . ' scale(.3) rotate(calc(var(--r,90deg)*2))}}'
+            . '4%{opacity:1}'
+            . '18%{opacity:1;transform:translate(calc(var(--dx) - 50%),calc(var(--dy) - 50%)) scale(var(--s,.8))'
+            . ' rotate(var(--r,90deg));animation-timing-function:cubic-bezier(.3,0,.6,1)}'
+            . '70%{opacity:.9}'
+            . '100%{opacity:0;transform:translate(calc(var(--dx)*1.2 - 50%),calc(var(--dy) + 7em - 50%))'
+            . ' scale(.35) rotate(calc(var(--r,90deg)*3))}}'
             . '@media (prefers-reduced-motion:reduce){.t-band.is-in,.t-band.is-new,.t-band.is-new .t-in-text,'
             . '.t-band.is-new .t-at,.t-stars i,.t-band.is-new .t-stars i,.t:has(.t-band.is-in)::before,'
             . '.t:has(.t-band.is-in)::after,.t:has(.t-band.is-new)::before,.t:has(.t-band.is-new)::after{animation:none}'

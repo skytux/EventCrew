@@ -107,6 +107,7 @@ use EventCrew\Support\TranslatedText;
 use EventCrew\Support\TranslationJob;
 use EventCrew\Support\TranslationRegistry;
 use EventCrew\Support\Turnstile;
+use EventCrew\Telegram\AssignCommand;
 use EventCrew\Telegram\AssistantService;
 use EventCrew\Telegram\BoardDjText;
 use EventCrew\Telegram\BoardRefreshListener;
@@ -1405,7 +1406,18 @@ final class Kernel
                 $container->get(TelegramClient::class),
                 $container->get(BuyerListReset::class),
                 $container->get(NewcomerApproval::class),
-                $container->get(PrivateChatGate::class)
+                $container->get(PrivateChatGate::class),
+                $container->get(AssignCommand::class)
+            )
+        );
+
+        $this->container->singleton(
+            AssignCommand::class,
+            fn (Container $container) => new AssignCommand(
+                $container->get(PersonRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(RoleTaskService::class),
+                $container->get(TelegramClient::class)
             )
         );
 

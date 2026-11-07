@@ -9,6 +9,7 @@ use EventCrew\Repositories\FollowupRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssistantSettings;
+use EventCrew\Support\EmailBody;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupOptOut;
@@ -943,13 +944,30 @@ final class FollowupMailTest extends TestCase
 
             foreach (['<br>' => $mail['html'], "\n" => $mail['text']] as $row => $out) {
                 self::assertStringContainsString('Myöhemmin' . $row . 'Later', $out);
-                self::assertStringContainsString('Osta lippu' . $row . 'Buy a ticket', $out);
+                self::assertStringContainsString('Osta lippu · Buy a ticket · 25 €', $out);
                 self::assertStringNotContainsString('Automatically translated', $out);
             }
 
             self::assertStringContainsString($came ? 'Kiitos, että olit mukana' : 'Kaipasimme sinua', $mail['html']);
             self::assertStringContainsString($came ? 'Thank you for coming' : 'We missed you at', $mail['html']);
         }
+    }
+
+    /**
+     * The ticket label and its price sit on one line, in the card's button,
+     * the Later links and the plain text: "Liput · Tickets · 25 €", never the
+     * price on a row of its own (Owner, 2026-11-07).
+     */
+    public function testTheTicketLabelAndPriceAreOnOneLine(): void
+    {
+        $this->sampleEvents();
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
+
+        self::assertStringContainsString('>Osta lippu · Buy a ticket · 25 €</a>', $mail['html']);
+        self::assertSame(3, substr_count($mail['html'], '>Liput · Tickets · 25 € →</a>'), 'each Later link');
+        self::assertStringNotContainsString('<br>25 €', $mail['html']);
+        self::assertStringContainsString("\nOsta lippu · Buy a ticket · 25 €: https://", $mail['text']);
+        self::assertStringNotContainsString("\n25 €", $mail['text']);
     }
 
     /**
@@ -1050,8 +1068,8 @@ final class FollowupMailTest extends TestCase
             '~<span [^>]*>EN</span>&nbsp; </p><p [^>]*font-style:italic[^>]*>Hi Anna,</p>~',
             $mail['html']
         );
-        self::assertMatchesRegularExpression('~>FI</span>&nbsp; Haluatko kuulla~', $mail['html'], 'the invitation');
-        self::assertMatchesRegularExpression('~>EN</span>&nbsp; Would you like~', $mail['html']);
+        self::assertMatchesRegularExpression('~>FI</span>&nbsp; Saat sähköpostin~', $mail['html'], 'the invitation');
+        self::assertMatchesRegularExpression('~>EN</span>&nbsp; Get an email~', $mail['html']);
         self::assertStringContainsString('Tilaa tiedote<br>Join the announcement', $mail['html'], 'the button, one language per row');
         self::assertSame(4, substr_count($mail['html'], '</span>&nbsp; '), 'two texts and two invitations');
         self::assertStringNotContainsString('<span', $mail['text']);
@@ -1227,31 +1245,32 @@ final class FollowupMailTest extends TestCase
         $html = html_entity_decode($mail['html'], ENT_QUOTES);
 
         $en = 'The evening was made by our crew: the people who worked behind the scenes so everyone else could'
-            . ' dance. Thank you, crew! Would you like to join them? It is a lovely way to get to know people,'
-            . ' feel useful and save on tickets.';
+            . ' dance. Would you like to join them? It is a lovely way to get to know people, feel useful and'
+            . ' save on tickets.';
         self::assertStringContainsString($en, $html);
         self::assertStringContainsString($en, $mail['text']);
-        self::assertStringContainsString('Kiitos, crew!', $html, 'in Finnish too');
+        self::assertStringContainsString('Illan teki mahdolliseksi crew:', $html, 'in Finnish too');
+        self::assertStringNotContainsString('Thank you, crew!', $html . $mail['text'], 'no separate thanks (Owner)');
+        self::assertStringNotContainsString('Kiitos, crew!', $html . $mail['text']);
         self::assertStringContainsString("Liity verkossa\nJoin on the web: ", $mail['text']);
         self::assertStringContainsString("Liity Telegramissa\nJoin on Telegram: ", $mail['text']);
 
         $join = strpos($html, 'Join the announcement');
-        $crew = strpos($html, 'Thank you, crew!');
+        $crew = strpos($html, 'The evening was made by our crew');
         $optOut = strpos($html, "Don't send me these");
         self::assertNotFalse($join);
         self::assertGreaterThan($join, $crew, 'after the announcement invite');
         self::assertGreaterThan($crew, $optOut, 'before the opt-out link');
 
-        $targets = self::linkTargets(substr($mail['html'], (int) strpos($mail['html'], 'Kiitos, crew!')));
+        $targets = self::linkTargets(substr($mail['html'], (int) strpos($mail['html'], 'Illan teki mahdolliseksi crew')));
         self::assertCount(2, $targets);
         self::assertStringStartsWith('https://site.test/event-897/?', $targets[0]);
         self::assertStringContainsString('utm_campaign=' . FollowupMail::campaign(self::NIGHT, true), $targets[0]);
         self::assertSame('https://t.me/crewbot?start=onboard', $targets[1], 'a start link takes no utm_ arguments');
 
         // Counted for the row.
-        preg_match_all('/eventcrew_go=([A-Za-z0-9_.\-]+)/', substr($mail['html'], (int) strpos($mail['html'], 'Kiitos, crew!')), $tokens);
+        preg_match_all('/eventcrew_go=([A-Za-z0-9_.\-]+)/', substr($mail['html'], (int) strpos($mail['html'], 'Illan teki mahdolliseksi crew')), $tokens);
         self::assertStringStartsWith("b\n7\n", (string) SignedLink::verifyPayload(FollowupMail::PURPOSE_GO, $tokens[1][1]));
-
     }
 
     /** A button whose target is not set is left out; with neither, the whole crew part is. */
@@ -1267,11 +1286,11 @@ final class FollowupMailTest extends TestCase
         $botOnly = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
         self::assertStringContainsString('Join on Telegram', $botOnly['html']);
         self::assertStringNotContainsString('Join on the web', $botOnly['html'] . $botOnly['text']);
-        self::assertStringContainsString('Thank you, crew!', $botOnly['text']);
+        self::assertStringContainsString('The evening was made by our crew', $botOnly['text']);
 
         unset($this->options[BoardService::USERNAME_OPTION]);
         $neither = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
-        self::assertStringNotContainsString('Thank you, crew!', $neither['html'] . $neither['text']);
+        self::assertStringNotContainsString('The evening was made by our crew', $neither['html'] . $neither['text']);
         self::assertStringNotContainsString('Join on', $neither['html'] . $neither['text']);
     }
 
@@ -1283,7 +1302,7 @@ final class FollowupMailTest extends TestCase
 
         $mail = $this->followup()->compose(self::NIGHT, false, 'Anna', 'b', 7);
 
-        self::assertStringNotContainsString('Thank you, crew!', $mail['html'] . $mail['text']);
+        self::assertStringNotContainsString('The evening was made by our crew', $mail['html'] . $mail['text']);
         self::assertStringNotContainsString('Join on', $mail['html'] . $mail['text']);
     }
 
@@ -1422,37 +1441,61 @@ final class FollowupMailTest extends TestCase
     }
 
     /**
-     * The event's short text ({event_description}, the board's AI text) is in
-     * every text the email can use: the built-in text and the one-time text
-     * (as its own paragraph after the one with the event, else at the end)
-     * and the Messages page text (where it has the placeholder). English
-     * only, and never the event's own description (Owner, 2026-11-07).
+     * The board's short text about the DJ or host stands right under the
+     * picture of the event it was written for, in the HTML and the plain
+     * text, once; never in the paragraphs above (Owner, 2026-11-07). The texts
+     * of the night's own event and of a "Later" event show nowhere.
      */
-    public function testEachTextShowsTheEventsShortDescription(): void
+    public function testTheDjTextIsUnderTheNextEventsPicture(): void
     {
-        $this->describedNight("ECSTATIC DANCE HELSINKI\n14.11.2026\nDoor code 7302\n18:30-19:00 Doors open");
-        $this->options[BoardDjText::OPTION] = [50 => [
-            'hash' => md5(BoardDjText::source(50)),
-            'text' => 'Free dance in the hall. Bring water. Doors at 19.',
-        ]];
-        $short = 'Free dance in the hall. Bring water.';
+        $this->describedNight('Free dance in the hall.');
+        $this->sampleEvents();
+        $this->boardTexts([
+            1 => 'DJ Kai plays warm organic beats. Expect a slow build.',
+            2 => 'The second evening has a guest from Tallinn.',
+            50 => 'The past evening had a cellist.',
+        ]);
+        $about = 'DJ Kai plays warm organic beats. Expect a slow build.';
 
-        $builtIn = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
-        self::assertStringContainsString(
-            "went home with you.\n\n" . $short . "\n\nThe next evenings are already on their way.",
-            $builtIn
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1);
+
+        self::assertSame(1, substr_count($mail['html'], $about));
+        self::assertSame(1, substr_count($mail['text'], $about));
+        self::assertMatchesRegularExpression(
+            '~<img src="https://cdn\.test/1\.jpg"[^>]*>(?:</a>)?</td></tr>.*?<td[^>]*>\s*<div style="margin:0 0 14px">'
+                . '<p[^>]*>' . preg_quote(EmailBody::langTag('EN'), '~') . preg_quote($about, '~') . '</p></div>~s',
+            $mail['html'],
+            'the first thing under the picture, with its EN tag'
         );
-        self::assertStringNotContainsString('Free dance', (string) strstr($builtIn, 'Hi Anna', true), 'not in Finnish');
-        self::assertStringNotContainsString('7302', $builtIn);
-        self::assertStringNotContainsString('ECSTATIC', $builtIn);
+        self::assertMatchesRegularExpression(
+            '~\nEcstatic Dance 1\nEN: ' . preg_quote($about, '~') . '\n~',
+            $mail['text']
+        );
 
-        $this->nextText(FollowupText::CAME, 'Only this time.', 'Vain tällä kertaa.', 2);
-        $oneTime = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
-        self::assertStringContainsString("Hi Anna,\n\nOnly this time.\n\n" . $short . "\n\nWarmly,", $oneTime);
+        $intro = (string) strstr($mail['text'], 'Ecstatic Dance 1', true);
+        self::assertStringNotContainsString('DJ Kai', $intro, 'not in the paragraphs above');
+        self::assertStringContainsString("went home with you.\n\nThe next evenings are already on their way.", $intro);
 
-        $this->nextText(FollowupText::CAME, "At {event}.\n\nSee you.", 'Tervetuloa.', 3);
+        foreach (['guest from Tallinn', 'cellist', 'Free dance'] as $other) {
+            self::assertStringNotContainsString($other, $mail['html']);
+            self::assertStringNotContainsString($other, $mail['text']);
+        }
+    }
+
+    /**
+     * A saved text with {event_description}, a one-time text with it and the
+     * built-in text all leave it out of the paragraphs, with no gap, and the
+     * placeholder is not offered for the post-event emails.
+     */
+    public function testNoTextPutsTheDjTextInTheParagraphs(): void
+    {
+        $this->describedNight('Free dance in the hall.');
+        $this->sampleEvents();
+        $this->boardTexts([1 => 'DJ Kai plays warm organic beats.', 50 => 'The past evening had a cellist.']);
+
+        $this->nextText(FollowupText::CAME, "Only this time.\n\n{event_description}", 'Vain tällä kertaa.', 2);
         $oneTime = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
-        self::assertMatchesRegularExpression('/At [^\n]+\.\n\n' . preg_quote($short, '/') . '\n\nSee you\./', $oneTime);
+        self::assertStringContainsString("Hi Anna,\n\nOnly this time.\n\nWarmly,", $oneTime);
 
         unset($this->options[FollowupText::NEXT_OPTIONS[FollowupText::CAME]]);
         $this->options[MessageTemplates::OPTION_PREFIX . 'followup_came'] = [
@@ -1466,24 +1509,33 @@ final class FollowupMailTest extends TestCase
             ],
         ];
         $page = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
-        self::assertStringContainsString("Hi Anna,\n\nThanks.\n\n" . $short . "\n\nWarmly", $page);
+        self::assertStringContainsString("Hi Anna,\n\nThanks.\n\nWarmly", $page);
+
+        foreach ([$oneTime, $page] as $text) {
+            self::assertStringNotContainsString('{event_description}', $text);
+            self::assertStringNotContainsString('cellist', $text);
+            self::assertSame(1, substr_count($text, 'DJ Kai plays warm organic beats.'));
+        }
+
+        foreach (FollowupText::TEMPLATES as $id) {
+            self::assertStringNotContainsString('{event_description}', MessageTemplates::find($id)->defaultBody(), $id);
+            self::assertArrayNotHasKey('{event_description}', MessageTemplates::find($id)->placeholderList(), $id);
+        }
     }
 
-    /** Without a description, no text gets an empty line or the placeholder. */
-    public function testWithoutADescriptionTheTextsAreAsBefore(): void
+    /** No text for the next event: the card is as before, with no empty block. */
+    public function testWithoutADjTextTheCardIsAsBefore(): void
     {
         $this->describedNight('');
+        $this->sampleEvents();
+        $this->boardTexts([50 => 'The past evening had a cellist.']);
 
-        $builtIn = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
-        self::assertStringContainsString(
-            "went home with you.\n\nThe next evenings are already on their way.",
-            $builtIn
-        );
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1);
 
-        $this->nextText(FollowupText::CAME, "Only this time.\n\n{event_description}", 'Vain tällä kertaa.', 2);
-        $oneTime = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
-        self::assertStringContainsString("Hi Anna,\n\nOnly this time.\n\nWarmly,", $oneTime);
-        self::assertStringNotContainsString('{event_description}', $oneTime);
+        self::assertStringNotContainsString('cellist', $mail['html'] . $mail['text']);
+        self::assertStringNotContainsString('EN: ', $mail['text']);
+        self::assertStringContainsString("went home with you.\n\nThe next evenings are already on their way.", $mail['text']);
+        self::assertStringNotContainsString('<div style="margin:0 0 14px"></div>', $mail['html']);
     }
 
     /** The one-time text goes out with the next night's emails, and is removed once they are all sent. */
@@ -1778,6 +1830,23 @@ final class FollowupMailTest extends TestCase
         Functions\when('get_the_title')->alias(
             static fn (int $id): string => 50 === $id ? 'ECSTATIC DANCE 14.11.2026 / DJ Kai' : ''
         );
+    }
+
+    /**
+     * The board's DJ or host texts (BoardDjText), by event id, each stored
+     * for the event's current source so stored() returns it.
+     *
+     * @param array<int, string> $texts
+     */
+    private function boardTexts(array $texts): void
+    {
+        $stored = [];
+
+        foreach ($texts as $id => $text) {
+            $stored[$id] = ['hash' => md5(BoardDjText::source($id)), 'text' => $text];
+        }
+
+        $this->options[BoardDjText::OPTION] = $stored;
     }
 
     /** A task on the night for event post 50, whose description is $content. */

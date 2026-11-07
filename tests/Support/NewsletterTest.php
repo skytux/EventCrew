@@ -528,7 +528,7 @@ final class NewsletterTest extends TestCase
         self::assertStringNotContainsString('Tanssimme koko yön.', $html);
         self::assertLessThan(strpos($html, 'Summer Dance'), strpos($html, 'Tervetuloa!'));
         self::assertStringContainsString('href="https://shop.test/p/1"', $html);
-        self::assertStringContainsString('Osta lippu<br>Buy a ticket<br>27,50 €', $html);
+        self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €', $html);
         self::assertSame(1, substr_count($html, 'Buy a ticket'));
         self::assertStringContainsString('href="https://music.test/dj"', $html);
         self::assertStringContainsString('▶<br>Kuuntele DJ:tä<br>Listen to the DJ</a>', $html);
@@ -538,7 +538,7 @@ final class NewsletterTest extends TestCase
         $text = $mail['text'];
         self::assertStringNotContainsString('We dance all night.', $text);
         self::assertStringNotContainsString('Tanssimme koko yön.', $text);
-        self::assertStringContainsString("Osta lippu\nBuy a ticket\n27,50 €: https://shop.test/p/1", $text);
+        self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €: https://shop.test/p/1', $text);
         self::assertStringContainsString("Kuuntele DJ:tä\nListen to the DJ: https://music.test/dj", $text);
         self::assertStringContainsString('- 10.8.2026 · 21:00 · Autumn Night: https://site.test/event-3/', $text);
     }
@@ -794,7 +794,7 @@ final class NewsletterTest extends TestCase
         self::assertSame('Tulevat tapahtumat / Coming events – Test Site', $both['subject']);
         self::assertStringContainsString('FI</span>&nbsp; Tervetuloa!', $both['html']);
         self::assertStringContainsString('EN</span>&nbsp; Welcome!', $both['html']);
-        self::assertStringContainsString('Osta lippu<br>Buy a ticket<br>27,50 €', $both['html']);
+        self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €', $both['html']);
         self::assertStringContainsString('Myöhemmin<br>Later', $both['html']);
         self::assertStringContainsString("FI: Ovet aukeavat 18:30\nEN: Doors open 18:30", $both['text']);
         self::assertStringNotContainsString('Automatically translated', $both['html'] . $both['text']);
@@ -1291,7 +1291,7 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString('Old Hall<br>Main Street 1, Helsinki</p>', $html);
         self::assertStringContainsString('FI</span>&nbsp; Ovet aukeavat 18:30<br>Ovet sulkeutuvat 19:00</p>', $html);
         self::assertStringContainsString('EN</span>&nbsp; Doors open 18:30<br>Doors close 19:00</p>', $html);
-        self::assertStringContainsString('Osta lippu<br>Buy a ticket', $html);
+        self::assertStringContainsString('Osta lippu · Buy a ticket', $html);
         self::assertStringContainsString('▶<br>Kuuntele DJ:tä<br>Listen to the DJ', $html);
 
         // The plain text has no picture, so it keeps the date and the title.

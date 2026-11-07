@@ -151,7 +151,7 @@ final class ClaimNotifier
      * number SignupService uses to tell a cancellation from a late one. ''
      * when that notice is 0: then every cancellation is free.
      */
-    private static function freeCancelLine(): string
+    public static function freeCancelLine(): string
     {
         $hours = max(0, (int) get_option(SignupService::NOTICE_HOURS_OPTION, 48));
 
@@ -198,12 +198,32 @@ final class ClaimNotifier
 
         // A person with no Telegram chat cannot use 🔁 Take over a task, which
         // is only in the bot (CrewPageHelp); they get no DM, so the note is
-        // only in their email.
+        // only in their email. Thanks first: telling the crew beats not
+        // showing up (Owner 2026-11-07).
+        $hours = CancelNote::noticeHours();
+        // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
         $lateNote = CrewPageHelp::webOnly($person)
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            ? __('This was a late cancellation, which counts against your standing. More notice keeps it clear next time.', 'eventcrew')
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            : __("This was a late cancellation, which counts against your standing. Next time, more notice keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew');
+            ? sprintf(
+                /* translators: %d: the late-cancellation notice in hours */
+                _n(
+                    'Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hour or more before has no effect and gives someone else time to take the place.',
+                    'Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hours or more before has no effect and gives someone else time to take the place.',
+                    $hours,
+                    'eventcrew'
+                ),
+                $hours
+            )
+            : sprintf(
+                /* translators: %d: the late-cancellation notice in hours */
+                _n(
+                    'Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hour or more before has no effect and gives someone else time to take the place. You can also hand a task over: the other person sends /me to the bot and taps 🔁 Take over a task, and you accept.',
+                    'Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hours or more before has no effect and gives someone else time to take the place. You can also hand a task over: the other person sends /me to the bot and taps 🔁 Take over a task, and you accept.',
+                    $hours,
+                    'eventcrew'
+                ),
+                $hours
+            );
+        // phpcs:enable Generic.Files.LineLength.TooLong
         // A late cancel can be undone with the Sign up again button under this
         // message; an early one says why it costs nothing (Q351).
         $note = AssignmentStatus::LATE_CANCEL === $status

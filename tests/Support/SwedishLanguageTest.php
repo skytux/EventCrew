@@ -19,7 +19,7 @@ use EventCrew\Tests\TestCase;
  */
 final class SwedishLanguageTest extends TestCase
 {
-    private const INVITE = 'Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time.'; // phpcs:ignore Generic.Files.LineLength.TooLong -- the msgid as written.
+    private const INVITE = 'Get an email when new events come out. You can leave any time.';
 
     protected function setUp(): void
     {
@@ -48,7 +48,7 @@ final class SwedishLanguageTest extends TestCase
 
         self::assertSame('sv_SE', $locale);
         self::assertSame('Hej,', $hello);
-        self::assertStringStartsWith('Vill du höra om nya evenemang först?', $invite);
+        self::assertStringStartsWith('Få ett mejl när nya evenemang kommer ut.', $invite);
     }
 
     public function testTheSwedishRowOfAMessageInEveryLanguageIsSwedish(): void
@@ -59,6 +59,6 @@ final class SwedishLanguageTest extends TestCase
         self::assertSame(self::INVITE, $rows['en']);
         self::assertNotSame(self::INVITE, $rows['sv']);
         self::assertNotSame($rows['fi'], $rows['sv']);
-        self::assertStringContainsString('utskicket om kommande evenemang', $rows['sv']);
+        self::assertStringContainsString('Du kan avsluta när som helst.', $rows['sv']);
     }
 }

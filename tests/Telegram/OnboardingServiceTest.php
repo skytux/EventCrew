@@ -615,10 +615,40 @@ final class OnboardingServiceTest extends TelegramTestCase
         self::assertArrayNotHasKey('eventcrew_tg_await_join_555', $this->transients);
         self::assertCount(1, $this->mails);
         self::assertStringContainsString('verify?token=', $this->mails[0]['body']);
-        self::assertSame(
+        self::assertStringStartsWith(
             'Check your email and tap the link to confirm it. Then pick a task on the board.',
             $this->lastCallTo('sendMessage')['text']
         );
+    }
+
+    /**
+     * The link never came, or the address was wrong: the "Check your email"
+     * message has a button that asks for the address again.
+     */
+    public function testTheCheckYourEmailMessageOffersAnotherEmail(): void
+    {
+        $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];
+        $this->service()->captureEmail(555, 555, 'sam@example.com');
+        $this->queueNewcomer();
+        $this->tapJoin('nwq:s');
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertStringContainsString('not even in spam', $sent['text']);
+        self::assertSame(
+            [[['text' => '✏️ Use another email', 'callback_data' => OnboardingService::AGAIN_DATA]]],
+            $sent['reply_markup']['inline_keyboard']
+        );
+
+        $this->service()->onAgainTap([
+            'id' => 'cb2',
+            'from' => ['id' => 555, 'first_name' => 'Sam'],
+            'message' => ['message_id' => 41, 'chat' => ['id' => 555]],
+            'data' => OnboardingService::AGAIN_DATA,
+        ]);
+
+        self::assertSame(['inline_keyboard' => []], $this->lastCallTo('editMessageReplyMarkup')['reply_markup']);
+        self::assertStringStartsWith("Welcome! What's your email address?", $this->lastCallTo('sendMessage')['text']);
+        self::assertTrue($this->service()->isAwaitingEmail(555));
     }
 
     public function testNoEndsTheQuestionsAndSendsTheLink(): void

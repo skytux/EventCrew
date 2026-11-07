@@ -44,7 +44,7 @@ A new member sends /start to the bot in a private chat and confirms their email 
 
 If a language model is set up in Settings > Telegram bot, the bot also answers plain messages. In a private chat it answers questions about tasks, events, the site's pages and the official email address (the contact in Settings > Privacy), and can sign a member up for a task or take them off one; it asks them to confirm with a button first. It remembers a private chat for 24 hours, and in the group what each person wrote to it, separately, also for 24 hours. It knows each person's roles and leaves out what is meant only for others. When an organizer writes to it privately, it also knows this guide and the infrastructure note. In the group it answers only when the message is meant for the bot and it knows the answer. When someone in a private chat gives feedback, is unhappy or very happy, or asks for a human, every organizer gets that chat by email and a short Telegram message, at most once per person per hour (switch it off in Settings > Telegram bot).
 
-Cancelling less than 48 hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /me to the bot, taps 🔁 Take over a task, and the member accepts.
+Cancelling less than 48 hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /tasks to the bot, taps 🔁 Take over a task, and the member accepts.
 
 🌙 On the night: roster and sales desk
 
@@ -66,7 +66,7 @@ The same ticket email goes to a guest you add with an email address (wp-admin Ro
 
 Signing up for a task gives the member a free ticket for that night. The ticket is a web page with a clock that ticks. A clock that does not move is a screenshot.
 
-Members earn 1 free-entry credit per 2 completed tasks and spend it with 🎟 Free-entry ticket under /me or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told.
+Members earn 1 free-entry credit per 2 completed tasks and spend it with /me, 🎟 Tickets, 🎟 Get a free-entry ticket (or /tickets), or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told.
 
 Standing is worked out again each time from how a member's past tasks went; recent tasks count more. A member gets a rating after 3 finished tasks. 60% or higher is good standing. Settings > Reputation holds the weights and limits.
 
@@ -76,7 +76,7 @@ The sign-up gate is on: a member below 60% cannot sign up for new tasks. /people
 
 A role can have conditions in EventCrew > Settings: how many tasks of which roles a member has completed. Meeting them does not give the role. You are told, by Telegram and by email, the first time someone meets a role's conditions and the first time someone is given a role. /people, then ✅ Who may hold each role, lists who meets the conditions of each role.
 
-As an organizer you can add anyone to any task of a night, with /board in a private chat, in the Crew app Admin tab, or at the sales desk.
+As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk.
 
 /people, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab in the Crew app can do the same.
 
@@ -89,7 +89,7 @@ As an organizer you can add anyone to any task of a night, with /board in a priv
 - 🔹 The sales desk link on the night.
 - 🔹 A welcome message to each new member when they confirm their email, and this guide to each organizer.
 
-The scheduled ones go out only between 09:00 and 21:00. Each goes by Telegram and by email. Members choose which ones they get with 🔔 Notifications under /me; confirmations and reminders always go.
+The scheduled ones go out only between 09:00 and 21:00. Each goes by Telegram and by email. Members choose which ones they get with /settings, 🔔 Choose notifications; confirmations and reminders always go.
 
 📰 The next events announcement, if an administrator has switched it on, emails the coming events to everyone who joined it. Before it goes out, each organizer gets a preview email with a button to stop it; the Crew app Admin tab has the same button. To add your own text to the next announcement, send /newsletter followed by the text in a private chat with the bot, or tell the bot there in your own words what to add (it shows the text with a Confirm button first), or use the Admin tab. Write it in any language: it is translated into every site language.
 

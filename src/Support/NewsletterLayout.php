@@ -24,6 +24,9 @@ namespace EventCrew\Support;
  *      load pictures. A card with no picture writes the date and time, the
  *      title, the Finnish title when it is different and the DJ line as
  *      centred text instead.
+ *    - A card given about_en (the post-event email's card of the event the
+ *      group board's DJ or host text is about): that text right under the
+ *      picture, with its EN label in an email in several languages.
  *    - A card given text_fi and text_en (the post-event email's first
  *      event): that text, Finnish then English, each with its FI / EN
  *      label, aligned left. Other cards show no description and no text
@@ -247,8 +250,9 @@ final class NewsletterLayout
     }
 
     /**
-     * One card as plain text: the date, the title, the DJ line, the card's own text when
-     * it has one, the practical information, then the ticket and music links.
+     * One card as plain text: the date, the title, the DJ line, the DJ or
+     * host text (about_en) and the card's own text when it has them, the
+     * practical information, then the ticket and music links.
      *
      * @param array<string, mixed> $card
      * @param array<string, array<string, string>> $words
@@ -256,6 +260,7 @@ final class NewsletterLayout
      */
     private static function cardText(array $card, array $words, array $langs): string
     {
+        $about = self::bilingualText(self::about($card, $langs));
         $text = self::bilingualText(self::inLanguage(self::byLanguage($card, 'text_'), $langs));
         $practical = self::practicalLines($card, $words);
         $times = self::bilingualText(self::inLanguage(
@@ -265,6 +270,7 @@ final class NewsletterLayout
         $lines = array_merge(
             [self::when($card), self::name($card)],
             '' === self::dj($card) ? [] : [self::dj($card)],
+            '' === $about ? [] : [$about],
             '' === $text ? [] : [$text],
             $practical['plain'],
             '' === $times ? [] : [([] === $practical['plain'] ? '' : "\n") . $times]
@@ -380,6 +386,10 @@ final class NewsletterLayout
                 );
             }
         }
+
+        // Right under the picture: the short text about the event's DJ or
+        // host (the post-event email's about_en, FollowupMail::withAbout()).
+        $body .= self::bilingual(self::about($card, $langs), '0 0 14px');
 
         // A text written for this card alone (the post-event email's first
         // event); the newsletter's cards have none.
@@ -729,8 +739,8 @@ final class NewsletterLayout
     }
 
     /**
-     * "Osta lippu", "Buy a ticket", one per row, and the price on a row of
-     * its own; "Buy a ticket · 22 €" in a one-language email.
+     * "Osta lippu · Buy a ticket · 22 €" on one line (withPrice()); "Buy a
+     * ticket · 22 €" in a one-language email.
      *
      * @param array<string, mixed> $card
      * @param array<string, array<string, string>> $words
@@ -742,14 +752,16 @@ final class NewsletterLayout
         return self::withPrice(self::pair($words, 'buy'), $price);
     }
 
-    /** $label with $price after it: on its own row when $label has several rows. */
+    /**
+     * A ticket label's languages and $price on one line, "Liput · Tickets ·
+     * 27 €": short enough to fit, so the price never drops to a row of its
+     * own (Owner, 2026-11-07).
+     */
     private static function withPrice(string $label, string $price): string
     {
-        if ('' === $price) {
-            return $label;
-        }
+        $line = str_replace("\n", ' · ', $label);
 
-        return $label . (str_contains($label, "\n") ? "\n" : ' · ') . $price;
+        return '' === $price ? $line : $line . ' · ' . $price;
     }
 
     /** @param array<string, array<string, string>> $words */
@@ -867,6 +879,34 @@ final class NewsletterLayout
         }
 
         return $texts;
+    }
+
+    /**
+     * A card's text about its DJ or host (about_en, about_fi, …) for
+     * bilingual() and bilingualText(): in an email in several languages each
+     * of $langs that has one, with its label; in a one-language email that
+     * language's text alone, with no label, and never another language's
+     * instead (the text is written in English only, EventDescription).
+     *
+     * @param array<string, mixed> $card
+     * @param list<string> $langs
+     * @return array<string, string>
+     */
+    private static function about(array $card, array $langs): array
+    {
+        $texts = self::byLanguage($card, 'about_');
+
+        if (1 === count($langs)) {
+            return ['' => $texts[$langs[0]] ?? ''];
+        }
+
+        $labelled = [];
+
+        foreach ($langs as $language) {
+            $labelled[HybridPolicy::tag($language)] = $texts[$language] ?? '';
+        }
+
+        return $labelled;
     }
 
     /**

@@ -848,7 +848,7 @@ final class FollowupMail
         // No coming events, no events part: the newsletter is not sent then.
         if ([] !== $events) {
             $coming = Newsletter::content(
-                $this->withWritten($date, array_slice($events, 0, self::EVENTS)),
+                self::withAbout($this->withWritten($date, array_slice($events, 0, self::EVENTS))),
                 array_slice($events, self::EVENTS),
                 null,
                 1 === count($languages) ? $languages[0] : '',
@@ -878,7 +878,7 @@ final class FollowupMail
                     : EmailBody::toHtml(implode("\n\n", $invites)))
                 . EmailBody::centred(EmailBody::toHtml('', $join, $accent));
             $text .= "\n\n————————\n\n" . implode("\n\n", $invites)
-                . "\n\n" . EmailBody::toText('', $join);
+                . "\n\n" . ltrim(EmailBody::toText('', $join));
         }
 
         // The thank-you only: the crew, and how to join it.
@@ -957,7 +957,7 @@ final class FollowupMail
 
         return [
             'html' => $html,
-            'text' => "\n\n————————\n\n" . implode("\n\n", $invites) . "\n\n" . EmailBody::toText('', $buttons),
+            'text' => "\n\n————————\n\n" . implode("\n\n", $invites) . "\n\n" . ltrim(EmailBody::toText('', $buttons)),
         ];
     }
 
@@ -1359,7 +1359,7 @@ final class FollowupMail
      * email's text in that language (FollowupText::text()). The Messages page
      * text is the whole text; the one-time text and the built-in text get
      * the greeting and the sign-off around them. The subject is the Messages
-     * page subject. $eventId is the night's event ({event_description}).
+     * page subject. $eventId is the night's event (for {venue} and the times).
      *
      * @param array{text: string, next: bool, template: bool} $text
      * @return array{
@@ -1392,6 +1392,10 @@ final class FollowupMail
             $main = '' === $first
                 ? (string) preg_replace('/^[^\n]*\{first_name\}[^\n]*\n?(?:[ \t]*\n)*/m', '', $text['text'])
                 : $text['text'];
+            // The DJ or host text is under the event's picture (withAbout()),
+            // never in the text, also when a saved text still has its
+            // placeholder.
+            $main = EventDetailsText::withoutEventDescription($main);
             $body = trim((string) MessageTemplates::find($id)?->fill($main, $context));
         } else {
             $hello = '' === $first
@@ -1399,7 +1403,7 @@ final class FollowupMail
                 /* translators: %s: the ticket holder's first name */
                 : sprintf(__('Hi %s,', 'eventcrew'), $first);
 
-            $main = self::withEventDescription($text['text'], $eventId);
+            $main = EventDetailsText::withoutEventDescription($text['text']);
             $lines = [$hello, trim(FollowupText::fill($main, $event, $date))];
             $lines[] = __('Warmly,', 'eventcrew') . "\n" . Organization::name();
             $body = implode("\n\n", $lines);
@@ -1414,36 +1418,36 @@ final class FollowupMail
             'subject' => MessageTemplates::subject($id, $context),
             'join' => __('Join the announcement', 'eventcrew'),
             'optout' => __("Don't send me these", 'eventcrew'),
-            'invite' => __('Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            // The subscribe button's line; leaving stays one click away.
+            'invite' => __('Get an email when new events come out. You can leave any time.', 'eventcrew'),
             // The thank-you's crew part (crewInvite()).
-            'crew' => __('The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Thank you, crew! Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            'crew' => __('The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             'crew_web' => __('Join on the web', 'eventcrew'),
             'crew_telegram' => __('Join on Telegram', 'eventcrew'),
         ];
     }
 
     /**
-     * The one-time text or the built-in text ($text, not a Messages page
-     * text) with the event's short description (EventDescription) as its own
-     * paragraph: where the text has {event_description}, else after the
-     * paragraph with {event} (as on the Messages page), else at the end.
-     * Without a description, the text comes back without the placeholder.
+     * $cards with the group board's short text about each card's DJ or host
+     * (EventDescription::short(), English only) as about_en, for the card
+     * whose event the text was written for; NewsletterLayout shows it right
+     * under that card's picture. A card without such a text gets nothing.
+     * The text is never in the paragraphs above the events (Owner, 2026-11-07).
+     *
+     * @param array<int, array<string, mixed>> $cards
+     * @return array<int, array<string, mixed>>
      */
-    private static function withEventDescription(string $text, ?int $eventId): string
+    private static function withAbout(array $cards): array
     {
-        $short = EventDescription::short($eventId);
+        foreach ($cards as $index => $card) {
+            $about = EventDescription::short((int) ($card['id'] ?? 0), Language::ENGLISH);
 
-        if ('' === $short) {
-            return (string) preg_replace('/[ \t]*(?:\r?\n)*[ \t]*\{event_description\}/', '', $text);
+            if ('' !== $about) {
+                $cards[$index]['about_' . Language::ENGLISH] = $about;
+            }
         }
 
-        $with = EventDetailsText::withEventDescription($text);
-
-        if (! str_contains($with, '{event_description}')) {
-            $with = rtrim($with) . "\n\n{event_description}";
-        }
-
-        return str_replace('{event_description}', $short, $with);
+        return $cards;
     }
 
     /**

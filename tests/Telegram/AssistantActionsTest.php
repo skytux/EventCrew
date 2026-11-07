@@ -79,7 +79,7 @@ final class AssistantActionsTest extends TestCase
 
     public function testStaffCommandsAreNotPermittedForAMember(): void
     {
-        foreach (['/roster', '/door', 'menu:doorlist', 'menu:guestlist', 'menu:sales', '/people', 'menu:gift', 'menu:roles', 'menu:eligible', '/door add Anna'] as $action) {
+        foreach (['/door', 'menu:doorlist', 'menu:guestlist', 'menu:sales', '/people', 'menu:gift', 'menu:roles', 'menu:eligible', '/door add Anna'] as $action) {
             $result = self::check($action, self::member(), 'add Anna');
 
             self::assertFalse($result['ok'], $action);
@@ -164,7 +164,16 @@ final class AssistantActionsTest extends TestCase
     {
         $usages = static fn (array $audience): array => array_column(AssistantActions::catalogue($audience), 'usage');
 
-        self::assertNotContains('/roster [date]', $usages(self::member()));
+        // A member gets /roster too: RosterService shows them names only, and
+        // only for a night they work.
+        $memberRoster = array_values(array_filter(
+            AssistantActions::catalogue(self::member()),
+            static fn (array $entry): bool => '/roster [date]' === $entry['usage']
+        ));
+        self::assertStringContainsString('names only', $memberRoster[0]['what']);
+        self::assertNotContains('/assign [date] <task> ; <person>', $usages(self::member()));
+        self::assertContains('/assign [date] <task> ; <person>', $usages(self::organizer()));
+        self::assertContains('/unassign [date] <task> ; <person>', $usages(self::organizer()));
         self::assertNotContains('/people', $usages(self::member()));
         self::assertContains('/join <task>', $usages(self::member()));
         self::assertContains('/people', $usages(self::organizer()));
@@ -185,7 +194,7 @@ final class AssistantActionsTest extends TestCase
             [
                 '/join <task>',
                 '/leave <task>',
-                '/door add [date] <name> [+N] [; note]',
+                '/door add [date] <name> [email] [+N] [; note]',
                 '/door edit [date] <number> [name] [+N] [; note]',
                 '/door remove [date] <number>',
                 '/newsletter <text>',
@@ -201,6 +210,54 @@ final class AssistantActionsTest extends TestCase
             '/newsletter',
             $usages(['organizer' => false, 'welcomeCrew' => true, 'verified' => true])
         );
+    }
+
+    public function testAMemberMayAskForTheRosterOfTheirNight(): void
+    {
+        $roster = self::check('/roster 1.8.', self::member());
+
+        self::assertTrue($roster['ok']);
+        self::assertSame('/roster 2026-08-01', $roster['payload']);
+    }
+
+    public function testAnOrganizerMayAssignAndUnassignAndTheCommandConfirmsItself(): void
+    {
+        $assign = self::check('/assign Host ; Milla', self::organizer());
+
+        self::assertTrue($assign['ok']);
+        self::assertFalse($assign['confirm']);
+        self::assertSame(AssistantActions::RUN_MESSAGE, $assign['run']);
+        self::assertSame('/assign Host ; Milla', $assign['payload']);
+
+        $dated = self::check('/unassign 21.11. Host ; Milla Virtanen', self::organizer());
+
+        self::assertTrue($dated['ok']);
+        self::assertSame('/unassign 21.11. Host ; Milla Virtanen', $dated['payload']);
+    }
+
+    public function testAssignIsForOrganizersOnlyAndNeedsATaskAndAName(): void
+    {
+        $crew = ['organizer' => false, 'welcomeCrew' => true, 'verified' => true];
+
+        self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check('/assign Host ; Milla', self::member())['error']);
+        self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check('/unassign Host ; Milla', $crew)['error']);
+
+        foreach (['/assign', '/assign Host', '/assign Host ;', '/assign ; Milla', '/assign 21.11. ; Milla'] as $action) {
+            self::assertSame(AssistantActions::ERROR_INVALID, self::check($action, self::organizer())['error'], $action);
+        }
+    }
+
+    public function testTheLanguageEntryNamesEverySiteLanguage(): void
+    {
+        \Brain\Monkey\Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => 'eventcrew_site_languages' === $name ? ['en', 'fi', 'sv'] : $default
+        );
+        $language = array_values(array_filter(
+            AssistantActions::catalogue(self::member()),
+            static fn (array $entry): bool => 'menu:language' === $entry['usage']
+        ));
+
+        self::assertStringContainsString('English, Finnish, Swedish', $language[0]['what']);
     }
 
     public function testOnlyAnOrganizerMaySetTheNewsletterText(): void

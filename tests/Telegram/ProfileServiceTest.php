@@ -160,7 +160,15 @@ final class ProfileServiceTest extends TelegramTestCase
             self::assertSame(['✨ My info ✨', '', '🌟 Sam'], array_slice($lines, 0, 3));
             self::assertNotSame('', $lines[3]); // the standing
             self::assertSame(
-                ['', 'Completed tasks: 0', 'Free-entry credits: 0', '', '💫 Coming up:', '• Mon 20 Jul — Decorate (Dance)'],
+                [
+                    'You get a standing score after 3 more tasks.',
+                    '',
+                    'Completed tasks: 0',
+                    'Free-entry credits: 0',
+                    '',
+                    '💫 Coming up:',
+                    '• Mon 20 Jul — Decorate (Dance)',
+                ],
                 array_slice($lines, 4)
             );
 

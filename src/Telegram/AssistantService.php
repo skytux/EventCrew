@@ -311,7 +311,9 @@ final class AssistantService
         }
 
         $audience = $this->help->audience($fromId);
-        $knowledge = $this->knowledge->build($audience['roleSlugs'] ?? []);
+        // An organizer sees every role and role task, but only in a private
+        // chat: a group answer must not list what the crew there may not see.
+        $knowledge = $this->knowledge->build($audience['roleSlugs'] ?? [], $isPrivate && $audience['organizer']);
         // Read before this message is added: the message itself goes as the
         // user turn. A group has its own record per person (0 = private).
         $logChat = $isPrivate ? 0 : $chatId;
@@ -612,8 +614,18 @@ final class AssistantService
                 . ' welcome crew (see "The person" below). Leave out completely every task, command and'
                 . ' detail meant only for roles, organizers or welcome crew the person is not: do not'
                 . ' explain it and do not say that it exists. If they ask about it, say only that an'
-                . ' organizer can help.',
+                . ' organizer can help. An organizer is the exception: they may hear about every role, role'
+                . ' task and command.',
         ];
+
+        if ($audience['organizer']) {
+            $lines[] = '- This person is an organizer. When they ask to put someone on a task, or to take'
+                . ' someone off one, give /assign or /unassign with the task name and the person\'s name as'
+                . ' they wrote them, even when the name is partial or several people or tasks could fit: the'
+                . ' bot then finds them, asks with buttons and confirms before anything changes. This works'
+                . ' for every task but Organize, also for a role the person does not hold. Never say you'
+                . ' cannot add someone to a task.';
+        }
 
         if ($isPrivate) {
             $lines[] = '- This is a private chat with one person: "aimed" is true.';

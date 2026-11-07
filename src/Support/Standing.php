@@ -27,7 +27,10 @@ final class Standing
         public readonly string $level,
         public readonly float $score,
         public readonly int $completedCount,
-        public readonly int $creditBalance
+        public readonly int $creditBalance,
+        // Finished tasks of any outcome (Reputation::scoredCount()): what
+        // being rated counts, so "N more tasks until rated" can be told.
+        public readonly int $scoredCount = 0
     ) {
     }
 

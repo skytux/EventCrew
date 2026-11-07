@@ -254,6 +254,7 @@ final class HelpService
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             __('/people – buttons: 🎁 give credits, 🏷 roles, organizers and passes, ✅ who may hold each role', 'eventcrew'),
             __('/board in a private chat – also ➕ to put a person on a task', 'eventcrew'),
+            __('/assign task ; name – put a member on a task (/unassign takes them off); you confirm first', 'eventcrew'),
             __('/say text – post a message in the group; you see it first', 'eventcrew'),
             __('/events – post the coming events in the group as picture cards; you see them first', 'eventcrew'),
         ]);

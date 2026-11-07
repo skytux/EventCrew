@@ -177,7 +177,7 @@ final class EventVenueTest extends TestCase
             ],
             $this->options[TicketText::OPTION]
         );
-        self::assertSame(['description' => 1, 'venue' => 1, 'signup_email_no_description' => 1], $this->options[EventDetailsText::OPTION]);
+        self::assertSame(['description' => 1, 'venue' => 1, 'signup_email_no_description' => 1, 'followup_no_description' => 1, 'signup_dm_no_description' => 1], $this->options[EventDetailsText::OPTION]);
 
         $this->options[$key . 'free_ticket_dm'] = [MessageTemplates::BODY => 'Ticket for {date}.'];
         EventDetailsText::run();

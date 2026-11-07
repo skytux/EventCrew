@@ -15,6 +15,7 @@ use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\StandingNotice;
 use EventCrew\Telegram\DohResolver;
@@ -123,7 +124,8 @@ final class StandingNoticeTest extends TestCase
         self::assertStringContainsString('Decorate at Party, Fri 17 Jul', $this->mails[0]);
         self::assertStringNotContainsString('2026-07-17', $this->mails[0]);
         // The ledger row that stops the next run repeating it.
-        self::assertStringContainsString('standing_hit', $this->wpdb->lastQuery());
+        $ledger = array_filter($this->wpdb->queries, static fn (string $q): bool => str_contains($q, 'INSERT'));
+        self::assertStringContainsString('standing_hit', implode("\n", $ledger));
     }
 
     /** MessageAiText: the event's AI text when there is one, else the template's text. */
@@ -163,8 +165,8 @@ final class StandingNoticeTest extends TestCase
         self::assertStringContainsString('AI DM about Decorate at Party', (string) $this->sends[0]['text']);
         self::assertStringContainsString('AI mail for Sam.', $this->mails[0]);
         // The tick is on but nothing was written for the event: the template's text.
-        self::assertStringContainsString('You were marked as a no-show', (string) $this->sends[1]['text']);
-        self::assertStringContainsString('You were marked as a no-show', $this->mails[1]);
+        self::assertStringContainsString('We missed you at Decorate at Party', (string) $this->sends[1]['text']);
+        self::assertStringContainsString('We missed you at Decorate at Party', $this->mails[1]);
         self::assertStringNotContainsString('AI ', $this->mails[1]);
     }
 
@@ -207,8 +209,9 @@ final class StandingNoticeTest extends TestCase
 
         self::assertCount(2, $this->mails);
         self::assertStringContainsString(
-            'It counts against your standing. More notice next time keeps it clear: tap Cancel on your task in the'
-                . ' Board tab of the crew page (https://site.test/crew/) as soon as you know.',
+            'It was a late cancellation, and early notice matters: it gives someone else time to take the place. Next'
+                . ' time, tap Cancel on your task in the Board tab of the crew page (https://site.test/crew/) as soon as'
+                . ' you know. You can cancel without it affecting your standing up to 48 hours before the task.',
             $this->mails[0]
         );
         self::assertStringContainsString(
@@ -218,7 +221,8 @@ final class StandingNoticeTest extends TestCase
         self::assertStringNotContainsString('/me', $this->mails[0]);
 
         self::assertStringContainsString(
-            'It counts against your standing. Next time tap Cancel early or find someone to take it.',
+            'Next time, tap Cancel as soon as you know, or find someone to take it over: they send /me to the bot and'
+                . ' tap 🔁 Take over a task.',
             $this->mails[1]
         );
         self::assertStringNotContainsString('Manage my tasks', $this->mails[1]);
@@ -263,11 +267,10 @@ final class StandingNoticeTest extends TestCase
             $this->service()->sendDue(25);
 
             $dm = $this->sends[$i];
-            self::assertStringContainsString('Your standing: ', (string) $dm['text'], $status);
-            self::assertStringContainsString('free-entry credits.', (string) $dm['text'], $status);
+            self::assertStringContainsString('You get a standing score after', (string) $dm['text'], $status);
             $buttons = array_column(array_merge(...$dm['reply_markup']['inline_keyboard']), 'callback_data', 'text');
             self::assertSame(['📋 See open tasks' => 'mn:board'], $buttons, $status);
-            self::assertStringContainsString('Your standing: ', $this->mails[$i], $status);
+            self::assertStringContainsString('You get a standing score after', $this->mails[$i], $status);
             self::assertStringContainsString('See open tasks: https://site.test/crew/', $this->mails[$i], $status);
         }
     }
@@ -316,5 +319,102 @@ final class StandingNoticeTest extends TestCase
         self::assertStringNotContainsString('Tell us', $this->mails[1]);
         self::assertSame(['📋 See open tasks' => 'mn:board'], $tap($this->sends[2]));
         self::assertStringNotContainsString('Tell us', $this->mails[2]);
+    }
+
+    /**
+     * The no-show DM is kind (Owner 2026-11-07): it invites the person to try
+     * again, says how to avoid it next time with the notice hours from
+     * Settings, and keeps the hint for a mistake. The late-cancel DM thanks
+     * them and names the score weights from Settings.
+     */
+    public function testTheNoShowDmInvitesToTryAgainAndKeepsTheMistakeHint(): void
+    {
+        $options = [
+            TelegramClient::TOKEN_OPTION => 'BOT:TOKEN',
+            'eventcrew_link_secret' => 'test-secret',
+            EmailTemplate::HTML_OPTION => false,
+            SignupService::NOTICE_HOURS_OPTION => 36,
+        ];
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => $options[$name] ?? $default
+        );
+
+        $this->queueMark('no_show');
+        $this->service()->sendDue(25);
+        $this->queueMark('late_cancel');
+        $this->service()->sendDue(25);
+
+        $dm = (string) $this->sends[0]['text'];
+        self::assertStringContainsString('We missed you at Decorate at Party', $dm);
+        self::assertStringContainsString('Unexpected things happen', $dm);
+        self::assertStringContainsString('sign up again!', $dm);
+        self::assertStringContainsString('If this is a mistake, tell an organizer.', $dm);
+        self::assertStringContainsString('up to 36 hours before the task', $dm);
+        self::assertStringNotContainsString('⚠️', $dm);
+
+        $late = (string) $this->sends[1]['text'];
+        self::assertStringContainsString('Thanks for letting us know about Decorate at Party', $late);
+        self::assertStringContainsString('A late cancellation counts 40% in your score, a completed task 100%.', $late);
+        self::assertStringContainsString('sign up again!', $late);
+        self::assertStringContainsString('If this is a mistake, tell an organizer.', $late);
+    }
+
+    /**
+     * A completed task is thanked a day later, with the credits and the
+     * standing before and after as a bar; recorded under its own ledger kind.
+     */
+    public function testACompletedTaskIsThankedWithTheStandingBar(): void
+    {
+        $row = static fn (int $id, string $status, string $date): array => [
+            'id' => $id,
+            'task_id' => 5,
+            'person_id' => 7,
+            'status' => $status,
+            'status_changed_at' => $date . ' 23:00:00',
+            'task_date' => $date,
+        ];
+        // needingStandingNotice for the marks against: none.
+        $this->wpdb->nextResults[] = [];
+        // needingStandingNotice for the thank-you: one completed task.
+        $this->wpdb->nextResults[] = [$row(11, 'completed', '2026-07-17')];
+        $this->wpdb->nextRows[] = [
+            'id' => 5,
+            'task_date' => '2026-07-17',
+            'role_slug' => 'decorate',
+            'capacity' => 2,
+            'event_label' => 'Party',
+        ];
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_chat_id' => 4242,
+        ];
+        // historyFor: this task, two more completed and an older no-show.
+        $this->wpdb->nextResults[] = [
+            $row(11, 'completed', '2026-07-17'),
+            $row(10, 'completed', '2026-07-10'),
+            $row(9, 'no_show', '2026-07-03'),
+            $row(8, 'completed', '2026-06-26'),
+        ];
+
+        self::assertSame(1, $this->service()->sendDue(25));
+
+        $dm = (string) $this->sends[0]['text'];
+        self::assertStringContainsString('Thank you for Decorate at Party', $dm);
+        self::assertStringContainsString('│', $dm);
+        self::assertMatchesRegularExpression('/Standing \d+% → \d+%\./', $dm);
+        self::assertStringContainsString('more completed task', $dm);
+        self::assertCount(1, $this->mails);
+        self::assertStringContainsString('│', $this->mails[0]); // the text bar; StandingBarTest draws the HTML one
+        self::assertStringContainsString('task_thanks', $this->wpdb->lastQuery());
+        // The thank-you only looks back a few days, not over every task ever.
+        $thanksQuery = implode("\n", array_filter(
+            $this->wpdb->queries,
+            static fn (string $q): bool => str_contains($q, "'task_thanks'") && str_contains($q, 'SELECT')
+        ));
+        self::assertStringContainsString("a.status IN ('completed','arrived_late')", $thanksQuery);
+        self::assertStringContainsString('a.status_changed_at >= ', $thanksQuery);
     }
 }

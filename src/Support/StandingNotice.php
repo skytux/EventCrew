@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Models\Assignment;
 use EventCrew\Models\Person;
 use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
@@ -13,10 +14,11 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Telegram\TelegramClient;
 
 /**
- * The delayed word to someone whose attendance was marked against them: a
- * no-show, or a late cancellation. It goes out a day after an admin set it, on
- * both channels the person has - a Telegram DM (so the chat keeps the record)
- * and an email.
+ * The delayed word to someone whose attendance was marked: against them (a
+ * no-show, or a late cancellation), or for them (a completed task, or one they
+ * arrived late to: the thank-you, Owner 2026-11-07). It goes out a day after an
+ * admin set it, on both channels the person has - a Telegram DM (so the chat
+ * keeps the record) and an email - with the standing before and after.
  *
  * The day's grace is deliberate: an admin who taps no-show by mistake, or flips
  * it back after the person turns up late, has a window to undo it before the
@@ -28,8 +30,17 @@ final class StandingNotice
     /** The ledger kind for a recorded standing notice. */
     public const KIND = 'standing_hit';
 
+    /** The ledger kind for a recorded thank-you after a completed task. */
+    public const THANKS_KIND = 'task_thanks';
+
     /** How long after the mark before the person is told. */
     public const DELAY_HOURS = 24;
+
+    /**
+     * A thank-you only for marks from the last few days: without it, the
+     * first run would thank everyone for every task they ever completed.
+     */
+    public const THANKS_WINDOW_HOURS = 96;
 
     public function __construct(
         private readonly TaskRepository $tasks,
@@ -44,14 +55,37 @@ final class StandingNotice
 
     /**
      * Sends for up to $limit people whose no-show or late-cancel was marked at
-     * least DELAY_HOURS ago and not yet notified. Returns how many were told.
+     * least DELAY_HOURS ago and not yet notified, then thank-yous for completed
+     * tasks with what is left of $limit. Returns how many were told.
      */
     public function sendDue(int $limit): int
     {
         $cutoff = $this->hoursAgo(self::DELAY_HOURS);
+        $sent = $this->sendFor($this->assignments->needingStandingNotice($cutoff, self::KIND, $limit), self::KIND);
+
+        if ($sent >= $limit) {
+            return $sent;
+        }
+
+        $thanks = $this->assignments->needingStandingNotice(
+            $cutoff,
+            self::THANKS_KIND,
+            $limit - $sent,
+            [AssignmentStatus::COMPLETED, AssignmentStatus::ARRIVED_LATE],
+            $this->hoursAgo(self::DELAY_HOURS + self::THANKS_WINDOW_HOURS)
+        );
+
+        return $sent + $this->sendFor($thanks, self::THANKS_KIND);
+    }
+
+    /**
+     * @param array<int, array{assignment: Assignment, task_date: string}> $due
+     */
+    private function sendFor(array $due, string $ledgerKind): int
+    {
         $sent = 0;
 
-        foreach ($this->assignments->needingStandingNotice($cutoff, self::KIND, $limit) as $entry) {
+        foreach ($due as $entry) {
             $assignment = $entry['assignment'];
             $task = $this->tasks->find($assignment->taskId);
             $person = $this->people->find($assignment->personId);
@@ -59,36 +93,51 @@ final class StandingNotice
             // A vanished person or task can never be told; record the send so the
             // orphan row is not re-scanned on every future run.
             if (null === $task || null === $person) {
-                $this->ledger->recordSent(self::KIND, $assignment->personId, $entry['task_date']);
+                $this->ledger->recordSent($ledgerKind, $assignment->personId, $entry['task_date']);
 
                 continue;
             }
 
-            $this->notify($person, $task, $assignment->status);
-            $this->ledger->recordSent(self::KIND, $person->id, $entry['task_date'], $task->eventPostId);
+            $this->notify($person, $task, $assignment);
+            $this->ledger->recordSent($ledgerKind, $person->id, $entry['task_date'], $task->eventPostId);
             ++$sent;
         }
 
         return $sent;
     }
 
-    private function notify(Person $person, Task $task, string $status): void
+    private function notify(Person $person, Task $task, Assignment $assignment): void
     {
-        Language::forPerson($person, fn () => $this->notifyInLanguage($person, $task, $status));
+        Language::forPerson($person, fn () => $this->notifyInLanguage($person, $task, $assignment));
     }
 
-    private function notifyInLanguage(Person $person, Task $task, string $status): void
+    private function notifyInLanguage(Person $person, Task $task, Assignment $assignment): void
     {
-        $isNoShow = AssignmentStatus::NO_SHOW === $status;
-        $kind = $isNoShow ? 'no_show' : 'late_cancel';
+        $isNoShow = AssignmentStatus::NO_SHOW === $assignment->status;
+        $kind = match ($assignment->status) {
+            AssignmentStatus::NO_SHOW => 'no_show',
+            AssignmentStatus::LATE_CANCEL => 'late_cancel',
+            default => 'task_completed',
+        };
+        [$before, $after] = null === $this->standing
+            ? [null, null]
+            : $this->standing->beforeAndAfter($person->id, $assignment->id);
         $prefs = new NotificationPreferences();
         // The texts are the Messages page templates (MessageTemplates); both
         // versions share one list of actions (MessageTemplates::actions()).
-        $context = ['person' => $person, 'task' => $task, 'standing' => $this->standingLine($person)];
+        // free_cancel: until when a cancel costs nothing, the tip for next time.
+        $context = [
+            'person' => $person,
+            'task' => $task,
+            'standing' => $this->standingLine($after),
+            'standing_before' => $before,
+            'standing_after' => $after,
+            'free_cancel' => ClaimNotifier::freeCancelLine(),
+        ];
 
         if ($prefs->dmAllowed($person, NotificationPreferences::STANDING)) {
             // Framed but not signed: a warm sign-off under "you were marked as a
-            // no-show" would read as sarcasm.
+            // no-show" would read as sarcasm; the thank-you ends with its own.
             $this->telegram->sendMessage(
                 $person->telegramChatId,
                 DmBody::frame($person, MessageAiText::body($kind . '_dm', $context, $task->eventPostId)),
@@ -118,13 +167,11 @@ final class StandingNotice
      * cancel confirmations end with (ClaimNotifier), or '' without a
      * calculator.
      */
-    private function standingLine(Person $person): string
+    private function standingLine(?Standing $standing): string
     {
-        if (null === $this->standing) {
+        if (null === $standing) {
             return '';
         }
-
-        $standing = $this->standing->for($person->id);
 
         return sprintf(
             /* translators: 1: standing level and score, 2: number of free-entry credits */

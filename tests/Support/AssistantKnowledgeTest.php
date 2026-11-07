@@ -92,11 +92,11 @@ final class AssistantKnowledgeTest extends TestCase
     }
 
     /** @param array<int, string> $roleSlugs */
-    private function facts(array $roleSlugs): string
+    private function facts(array $roleSlugs, bool $organizer = false): string
     {
         Functions\when('get_transient')->justReturn('');
 
-        return (new AssistantKnowledge(new TaskRepository()))->build($roleSlugs)['facts'];
+        return (new AssistantKnowledge(new TaskRepository()))->build($roleSlugs, $organizer)['facts'];
     }
 
     /** @return array<string, mixed> */
@@ -156,5 +156,30 @@ final class AssistantKnowledgeTest extends TestCase
 
         self::assertStringNotContainsString('VJ', $facts);
         self::assertStringNotContainsString('role tasks', $facts);
+    }
+
+    /**
+     * An organizer holds no VJ role but can put anyone on a VJ task, so they
+     * see every role and every role task, and are pointed to /assign.
+     */
+    public function testAnOrganizerSeesEveryRoleAndEveryRoleTask(): void
+    {
+        $this->options['eventcrew_roles'] = [
+            ['slug' => 'decorate', 'label' => 'Decorate'],
+            ['slug' => 'vj', 'label' => 'VJ', 'restricted' => true, 'description' => 'Visuals on the screen.'],
+        ];
+        Functions\when('current_time')->justReturn('2026-07-10');
+        $rows = [$this->taskRow(1, 'decorate'), $this->taskRow(2, 'vj')];
+        $this->wpdb->nextResults[] = $rows; // board tasks
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = $rows; // role tasks
+        $this->wpdb->nextResults[] = [['task_id' => 2, 'taken' => 0]];
+
+        $facts = $this->facts([], true);
+
+        self::assertStringContainsString('- VJ: Visuals on the screen.', $facts);
+        self::assertStringContainsString('## Role tasks', $facts);
+        self::assertStringContainsString('2026-08-01 (Saturday), Party: VJ, 0 signed up', $facts);
+        self::assertStringContainsString('/assign <task> ; <person>', $facts);
     }
 }

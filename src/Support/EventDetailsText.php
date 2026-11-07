@@ -25,19 +25,19 @@ final class EventDetailsText
     public const OPTION = 'eventcrew_migr_desc_1106';
 
     /**
-     * The kinds that show the event's description. Not the sign-up email
-     * (signup_confirmed): it shows the task's description instead (Owner,
-     * 2026-11-07), and the step "signup_email_no_description" takes the
-     * event's out of a stored copy.
+     * The kinds that show the event's description. Not the sign-up email or
+     * DM (signup_confirmed, signup_confirmed_dm): they show the task's
+     * description instead (Owner, 2026-11-07), and the steps
+     * "signup_email_no_description" and "signup_dm_no_description" take the
+     * event's out of a stored copy. Not the post-event emails either: the
+     * text goes under the next event's picture there (FollowupMail), and the
+     * step "followup_no_description" takes it out of a stored copy.
      */
     public const DESCRIPTION_KINDS = [
         'reminder',
         'reminder_dm',
-        'signup_confirmed_dm',
         'slot_freed',
         'slot_freed_dm',
-        'followup_came',
-        'followup_missed',
     ];
 
     /** The kinds that show the event's venue. */
@@ -74,6 +74,14 @@ final class EventDetailsText
             // description, which the "description" step gave a stored copy,
             // goes again.
             'signup_email_no_description' => ['signup_confirmed' => self::withoutEventDescription(...)],
+            // The post-event emails show the DJ or host text under the next
+            // event's picture, not in the text (Owner, 2026-11-07).
+            'followup_no_description' => [
+                'followup_came' => self::withoutEventDescription(...),
+                'followup_missed' => self::withoutEventDescription(...),
+            ],
+            // The sign-up DM too (Owner, 2026-11-07).
+            'signup_dm_no_description' => ['signup_confirmed_dm' => self::withoutEventDescription(...)],
         ];
     }
 

@@ -214,8 +214,9 @@ final class EventDescriptionTest extends TestCase
             self::assertArrayHasKey('{event_description}', MessageTemplates::find($id)->placeholderList(), $id);
         }
 
+        self::assertStringNotContainsString('{event_description}', MessageTemplates::find('signup_confirmed_dm')->defaultBody());
         self::assertStringStartsWith(
-            "✅ Signed up: {role} at {event}, {when}.\n{event_times}\n{venue}\n\n{description}\n\n{event_description}\n\n",
+            "✅ Signed up: {role} at {event}, {when}.\n{event_times}\n{venue}\n\n{description}\n\n",
             MessageTemplates::find('signup_confirmed_dm')->defaultBody()
         );
     }
@@ -233,24 +234,54 @@ final class EventDescriptionTest extends TestCase
 
         self::assertSame(
             'Opened.Anna',
-            MessageTemplates::find('followup_came')->fill(
-                "Opened.\n\n{event_description}{first_name}",
-                ['first_name' => 'Anna', 'event_id' => 12]
+            MessageTemplates::find('reminder')->fill(
+                "Opened.\n\n{event_description}{name}",
+                $this->context()
             ),
             'a placeholder written right after it moves up to the line before'
         );
     }
 
-    public function testTheFollowupGetsTheNightsEvent(): void
+    /**
+     * The post-event emails have no {event_description}: they show the text
+     * under the next event's picture (FollowupMail, Owner, 2026-11-07).
+     */
+    public function testTheFollowupsHaveNoEventDescription(): void
     {
-        $this->content = self::RAW;
-        $this->boardText('Free dance in the hall.');
-        $body = MessageTemplates::find('followup_came')->fill(
-            "Thanks for {event}.\n\n{event_description}",
-            ['first_name' => 'Anna', 'event' => 'Ecstatic Dance', 'date' => '21.7.', 'event_id' => 12]
-        );
+        foreach (['followup_came', 'followup_missed'] as $id) {
+            self::assertNotContains($id, EventDetailsText::DESCRIPTION_KINDS);
+            self::assertStringNotContainsString('{event_description}', MessageTemplates::find($id)->defaultBody(), $id);
+            self::assertArrayNotHasKey('{event_description}', MessageTemplates::find($id)->placeholderList(), $id);
+        }
+    }
 
-        self::assertSame("Thanks for Ecstatic Dance.\n\nFree dance in the hall.", $body);
+    /**
+     * A stored post-event email that the "description" step gave the line
+     * loses it again, in the source and every language text. Once.
+     */
+    public function testAStoredFollowupLosesTheEventDescriptionOnce(): void
+    {
+        $key = MessageTemplates::OPTION_PREFIX;
+        $this->options[EventDetailsText::OPTION] = ['venue' => 1, 'description' => 1, 'signup_email_no_description' => 1];
+        $this->options[$key . 'followup_came'] = [MessageTemplates::BODY => [
+            'source' => "Hi {first_name},\n\nThanks for {event}.\n\n{event_description}\n\nSee you.",
+            'texts' => ['fi' => "Hei {first_name},\n\nKiitos.\n\n{event_description}\n\nNähdään.", 'en' => ''],
+        ]];
+        $this->options[$key . 'followup_missed'] = [MessageTemplates::BODY => "We missed you.\n\n{event_description}"];
+        $this->options[$key . 'reminder_dm'] = [MessageTemplates::BODY => "Soon.\n\n{event_description}"];
+
+        EventDetailsText::run();
+
+        self::assertSame(
+            [
+                'source' => "Hi {first_name},\n\nThanks for {event}.\n\nSee you.",
+                'texts' => ['fi' => "Hei {first_name},\n\nKiitos.\n\nNähdään.", 'en' => ''],
+            ],
+            $this->options[$key . 'followup_came'][MessageTemplates::BODY]
+        );
+        self::assertSame('We missed you.', $this->options[$key . 'followup_missed'][MessageTemplates::BODY]);
+        self::assertSame("Soon.\n\n{event_description}", $this->options[$key . 'reminder_dm'][MessageTemplates::BODY]);
+        self::assertSame(1, $this->options[EventDetailsText::OPTION]['followup_no_description']);
     }
 
     public function testTheStoredTextsGetTheLineOnce(): void
@@ -278,13 +309,13 @@ final class EventDescriptionTest extends TestCase
             ],
             $this->options[$key . 'slot_freed'][MessageTemplates::BODY]
         );
-        self::assertSame("Signed up.\n\n{event_description}\n\n{event}", $this->options[$key . 'signup_confirmed_dm'][MessageTemplates::BODY]);
+        self::assertSame("Signed up.\n\n{event}", $this->options[$key . 'signup_confirmed_dm'][MessageTemplates::BODY]);
         self::assertSame(
-            "Hi {first_name},\n\nThanks for {event}.\n{event_times}\n\n{event_description}\n\nSee you.",
+            "Hi {first_name},\n\nThanks for {event}.\n{event_times}\n\nSee you.",
             $this->options[$key . 'followup_came'][MessageTemplates::BODY]
         );
         self::assertSame(
-            ['venue' => 1, 'description' => 1, 'signup_email_no_description' => 1],
+            ['venue' => 1, 'description' => 1, 'signup_email_no_description' => 1, 'followup_no_description' => 1, 'signup_dm_no_description' => 1],
             $this->options[EventDetailsText::OPTION]
         );
 
@@ -296,7 +327,7 @@ final class EventDescriptionTest extends TestCase
 
     /**
      * The sign-up email is a thank-you about the task (Owner, 2026-11-07): the
-     * task's description, never the event's; the DM keeps the event's.
+     * task's description, never the event's; the DM too.
      */
     public function testTheSignupEmailShowsTheTasksDescriptionNotTheEvents(): void
     {
@@ -313,7 +344,8 @@ final class EventDescriptionTest extends TestCase
         self::assertStringNotContainsString('Free dance', $body);
 
         $dm = MessageTemplates::body('signup_confirmed_dm', $this->context() + ['description' => 'Bring a ladder.']);
-        self::assertStringContainsString('Free dance in the hall.', $dm);
+        self::assertStringNotContainsString('Free dance', $dm);
+        self::assertStringContainsString('Bring a ladder.', $dm);
     }
 
     /** No task description: no line, no label, no gap. */
@@ -334,8 +366,8 @@ final class EventDescriptionTest extends TestCase
 
     /**
      * A stored sign-up email that the "description" step gave the event's
-     * description loses it again, in the source and every language text;
-     * the stored DM keeps it. Once.
+     * description loses it again, in the source and every language text,
+     * and so does the stored DM. Once.
      */
     public function testAStoredSignupEmailLosesTheEventDescriptionOnce(): void
     {
@@ -363,7 +395,7 @@ final class EventDescriptionTest extends TestCase
             $this->options[$key . 'signup_confirmed'][MessageTemplates::BODY]
         );
         self::assertSame(['source' => 'In: {role}', 'texts' => []], $this->options[$key . 'signup_confirmed'][MessageTemplates::SUBJECT]);
-        self::assertSame("Signed up.\n\n{event_description}\n\n{event}", $this->options[$key . 'signup_confirmed_dm'][MessageTemplates::BODY]);
+        self::assertSame("Signed up.\n\n{event}", $this->options[$key . 'signup_confirmed_dm'][MessageTemplates::BODY]);
         self::assertSame(1, $this->options[EventDetailsText::OPTION]['signup_email_no_description']);
 
         // Once: an organizer who puts it back keeps it.

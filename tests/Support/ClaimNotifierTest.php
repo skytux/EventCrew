@@ -529,8 +529,9 @@ final class ClaimNotifierTest extends TestCase
     public function testTheCancelMessagesAreTheSameAsBeforeTheTemplates(): void
     {
         $sends = $this->captureWithOptions();
-        $late = 'This was a late cancellation, which counts against your standing. Next time, more notice keeps it'
-            . ' clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.';
+        $late = 'Thanks for letting us know. This close to the task it counts against your standing; cancelling 48'
+            . ' hours or more before has no effect and gives someone else time to take the place. You can also hand'
+            . ' a task over: the other person sends /me to the bot and taps 🔁 Take over a task, and you accept.';
         // Q351: a late cancel says Sign up again undoes it; an early one why it costs nothing.
         $late .= ' Changed your mind? Tap Sign up again while the place is still free: you are back on the task'
             . ' and the late cancellation is removed.';
@@ -703,7 +704,7 @@ final class ClaimNotifierTest extends TestCase
 
         self::assertSame('⚠️ Late cancellation Decorate', (string) $sends->items[0]['text']);
         self::assertSame('Out: Decorate', $this->mails[0]['subject']);
-        self::assertStringStartsWith('Sam: This was a late cancellation', $this->mails[0]['body']);
+        self::assertStringStartsWith('Sam: Thanks for letting us know. This close to the task', $this->mails[0]['body']);
     }
 
     // ---- Web-only crew (E2) ----------------------------------------------
@@ -751,7 +752,8 @@ final class ClaimNotifierTest extends TestCase
         $this->notifier()->confirmCancellation($this->webOnlyPerson(), 5, 'late_cancel');
 
         self::assertStringContainsString(
-            'This was a late cancellation, which counts against your standing. More notice keeps it clear next time.',
+            'Thanks for letting us know. This close to the task it counts against your standing; cancelling 48 hours'
+                . ' or more before has no effect and gives someone else time to take the place. Changed your mind?',
             $this->mails[0]['body']
         );
         self::assertStringNotContainsString('/me', $this->mails[0]['body']);
@@ -790,7 +792,7 @@ final class ClaimNotifierTest extends TestCase
         $this->notifier()->confirmCancellation($this->personInLanguage(null), 5, 'late_cancel');
 
         self::assertStringContainsString(
-            'so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.',
+            'You can also hand a task over: the other person sends /me to the bot and taps 🔁 Take over a task, and you accept.',
             $this->mails[0]['body']
         );
     }

@@ -612,15 +612,27 @@ final class AssignmentRepository
      * bounded batch each run without the already-notified backlog starving out
      * newer rows - the same job reminders solve with reminded_at.
      *
+     * $statuses picks other marks instead (the thank-you after a completed
+     * task); $since leaves out marks older than it.
+     *
+     * @param array<int, string>|null $statuses
      * @return array<int, array{assignment: Assignment, task_date: string}>
      */
-    public function needingStandingNotice(string $cutoff, string $kind, int $limit): array
-    {
+    public function needingStandingNotice(
+        string $cutoff,
+        string $kind,
+        int $limit,
+        ?array $statuses = null,
+        ?string $since = null
+    ): array {
         global $wpdb;
 
         $notifications = Schema::table(Schema::NOTIFICATIONS);
-        $statuses = [AssignmentStatus::NO_SHOW, AssignmentStatus::LATE_CANCEL];
+        $statuses ??= [AssignmentStatus::NO_SHOW, AssignmentStatus::LATE_CANCEL];
         $statusPlaceholders = implode(',', array_fill(0, count($statuses), '%s'));
+        // $since: only marks set after it, so a new kind of notice does not
+        // reach back over every task ever marked.
+        $sinceClause = null === $since ? '' : 'AND a.status_changed_at >= %s';
 
         $sql = "SELECT a.*, s.task_date
             FROM {$this->table()} a
@@ -628,6 +640,7 @@ final class AssignmentRepository
             WHERE a.status IN ({$statusPlaceholders})
               AND a.status_changed_at IS NOT NULL
               AND a.status_changed_at <= %s
+              {$sinceClause}
               AND NOT EXISTS (
                 SELECT 1 FROM {$notifications} n
                 WHERE n.kind = %s AND n.person_id = a.person_id AND n.task_date = s.task_date
@@ -635,7 +648,7 @@ final class AssignmentRepository
             ORDER BY a.status_changed_at ASC
             LIMIT %d";
 
-        $params = array_merge($statuses, [$cutoff, $kind, $limit]);
+        $params = array_merge($statuses, [$cutoff], null === $since ? [] : [$since], [$kind, $limit]);
 
         // Assembled from table-name constants and generated placeholders, then
         // bound through prepare(); the sniff cannot follow a query in a variable.

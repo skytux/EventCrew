@@ -119,9 +119,8 @@ final class FollowupText
      * One time only: moves each text saved in the old wp-admin Settings
      * fields to the Messages page, as the text of the kind's template. The
      * greeting and the sign-off are added around it in each text's own
-     * language, as the email did, with {event_description} after the
-     * paragraph with {event}. A kind that already has a text on the Messages page keeps
-     * it. The old options are not deleted; they stay as a backup.
+     * language, as the email did. A kind that already has a text on the
+     * Messages page keeps it. The old options are not deleted; they stay as a backup.
      */
     public static function moveSettingsText(): void
     {
@@ -147,9 +146,7 @@ final class FollowupText
                 ? ''
                 : (string) Language::run(
                     $lang,
-                    static fn (): string => EventDetailsText::withEventDescription(
-                        MessageTemplates::followupBody($text)
-                    )
+                    static fn (): string => MessageTemplates::followupBody($text)
                 );
             // The source is in the language whose text equals it (the
             // translation keeps the source as that language's text); when no

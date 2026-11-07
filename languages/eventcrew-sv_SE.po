@@ -1180,12 +1180,6 @@ msgstr "Anlänt sent"
 msgid "Arrived late, did the task"
 msgstr "Kom sent, gjorde uppgiften"
 
-#: src/Support/OrganizerGuide.php:245
-msgid ""
-"As an organizer you can add anyone to any task of a night, with /board in a private chat, in the Crew app Admin tab, or at the sales desk."
-msgstr ""
-"Som arrangör kan du lägga till vem som helst på vilken uppgift som helst under en kväll, med /board i en privat chatt, under fliken Admin i Crew-appen, eller vid försäljningsdisken."
-
 #: templates/admin/translations.php:209
 msgid "As written"
 msgstr "Som skriven"
@@ -1506,13 +1500,6 @@ msgid ""
 "Cancelling %1$d hours or more before has no effect. Recent tasks count more than old ones. You get a rating after %2$d finished tasks. %3$d%% or higher is good standing."
 msgstr ""
 "Att avboka %1$d timmar eller mer innan påverkar inget. Nya uppgifter väger tyngre än gamla. Du får ett betyg efter %2$d avslutade uppgifter. %3$d%% eller mer är god pålitlighet."
-
-#: src/Support/OrganizerGuide.php:139
-#. translators: %d: hours of notice, e.g. 48
-msgid ""
-"Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /me to the bot, taps 🔁 Take over a task, and the member accepts."
-msgstr ""
-"Att avboka mindre än %d timmar före uppgiften räknas som en sen avbokning. En medlem som inte kan komma kan hitta en ersättare: ersättaren skickar /me till boten, trycker på 🔁 Ta över en uppgift, och medlemmen godkänner."
 
 #: templates/admin/settings.php:488
 msgid ""
@@ -3316,12 +3303,6 @@ msgid "I remember our private chat for 24 hours, so you can refer back to it."
 msgstr ""
 "Jag minns vår privata chatt i 24 timmar, så du kan hänvisa tillbaka till den."
 
-#: src/Telegram/LanguageService.php:135
-msgid ""
-"I will write to you in English. To change it, tap 🌐 Language under /me."
-msgstr ""
-"Jag skriver till dig på svenska. Tryck på 🌐 Språk under /me för att ändra."
-
 #: templates/admin/settings.php:2384
 msgid "IMAP"
 msgstr "IMAP"
@@ -3530,9 +3511,6 @@ msgstr "Gå med"
 #: src/Support/DoorNewMember.php:117 src/Support/MessageTemplates.php:864
 msgid "Join the Telegram group"
 msgstr "Gå med i Telegram-gruppen"
-
-msgid "The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Thank you, crew! Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
-msgstr "Kvällen blev av tack vare vårt crew: de som jobbade bakom kulisserna så att alla andra kunde dansa. Tack, crew! Vill du vara med? Det är ett fint sätt att lära känna folk, känna dig behövd och spara på biljetter."
 
 msgid "Join on the web"
 msgstr "Gå med på webben"
@@ -3921,13 +3899,6 @@ msgstr "Medlem blockerad efter en förfalskad admin-förfrågan (e-post)"
 msgid "Member name or email"
 msgstr "Medlemmens namn eller e-post"
 
-#: src/Support/OrganizerGuide.php:217
-#. translators: %d: completed tasks needed for one credit
-msgid ""
-"Members earn 1 free-entry credit per %d completed tasks and spend it with 🎟 Free-entry ticket under /me or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
-msgstr ""
-"Medlemmar tjänar 1 fribiljett per %d slutförda uppgifter och använder den med 🎟 Fribiljett under /me eller på webbsidan. Du ger fribiljetter med /people, på sidan Personer eller vid försäljningsdisken. Varje gåva skrivs in i fribiljettsloggen på sidan Personer, och medlemmen meddelas."
-
 #: src/Support/NewsletterConfirmMail.php:86 templates/admin/diagnostics.php:125 templates/admin/settings.php:1559
 msgid "Message"
 msgstr "Meddelande"
@@ -3997,13 +3968,6 @@ msgstr "mån"
 msgctxt "weekday name"
 msgid "Monday"
 msgstr "måndag"
-
-#: src/Support/MessageTemplates.php:1021
-#. translators: %s: link to the crew page
-msgid ""
-"More notice next time keeps it clear: tap Cancel on your task in the Board tab of the crew page (%s) as soon as you know."
-msgstr ""
-"Längre varsel nästa gång håller det rent: tryck på Avboka på din uppgift under fliken Tavlan på crew-sidan (%s) så snart du vet."
 
 #: templates/admin/settings.php:1281
 msgid ""
@@ -4134,10 +4098,6 @@ msgstr "Utskicket om kommande evenemang (prenumeranter utan språk)"
 #. translators: 1: next run time, 2: last run time
 msgid "Next run: %1$s. Last run: %2$s."
 msgstr "Nästa körning: %1$s. Senaste körning: %2$s."
-
-#: src/Support/MessageTemplates.php:1098
-msgid "Next time tap Cancel early or find someone to take it."
-msgstr "Nästa gång: tryck Avbryt i god tid eller hitta någon som tar den."
 
 #: src/Telegram/MessagePages.php:62
 msgid "Next »"
@@ -7215,12 +7175,10 @@ msgstr "Texter för kommande evenemang"
 msgid "Thank you for buying a ticket!"
 msgstr "Tack för att du köpte en biljett!"
 
-#: src/Support/FollowupText.php:102
 #. translators: 1: the event's name, 2: its date, e.g. 14.11.2026
-msgid ""
-"Thank you for coming to %1$s on %2$s. It was lovely to share the evening and the dance floor with you, and we hope some of that warmth went home with you."
-msgstr ""
-"Tack för att du kom till %1$s den %2$s. Det var härligt att dela kvällen och dansgolvet med dig, och vi hoppas att en del av värmen följde med dig hem."
+#: src/Support/FollowupText.php
+msgid "Thank you for coming to %1$s on %2$s. It was lovely to share the evening and the dance floor with you, and we hope some of that warmth went home with you."
+msgstr "Tack för att du kom till %1$s den %2$s. Det var härligt att dela kvällen och dansgolvet med dig, och vi hoppas att en del av värmen följde med dig hem."
 
 #: src/Support/TicketReasons.php:58
 msgid "Thank you for coming! You are on the guest list."
@@ -8074,11 +8032,9 @@ msgstr "Nästa mejl använder en engångstext."
 msgid "The next email uses the text on the Messages page."
 msgstr "Nästa mejl använder texten på sidan Meddelanden."
 
-#: src/Support/FollowupText.php:106
-msgid ""
-"The next evenings are already on their way. Have a look at what is coming and secure your spot for your next ecstatic dance. We would love to dance with you again."
-msgstr ""
-"De kommande kvällarna är redan på väg. Kolla in vad som är på gång och säkra din plats till nästa ecstatic dance. Vi skulle älska att dansa med dig igen."
+#: src/Support/FollowupText.php
+msgid "The next evenings are already on their way. Have a look at what is coming and secure your spot for your next ecstatic dance. We would love to dance with you again."
+msgstr "De kommande kvällarna är redan på väg. Kolla in vad som är på gång och säkra din plats till nästa ecstatic dance. Vi skulle älska att dansa med dig igen."
 
 #: templates/admin/messages-tab-events.php:123 templates/public/signup.php:1909
 msgid ""
@@ -8281,13 +8237,6 @@ msgid ""
 "The same ticket email goes to a guest you add with an email address (wp-admin Roster, the Admin tab, or /door add Name name@example.com) and to a Holvi buyer added at the sales desk with an email address, with the next batch. Crew get a separate ticket email when they take a task or spend a credit. When a guest is removed, or a task or credit is cancelled, after the ticket was emailed, the person gets a short \"Your ticket is cancelled\" email."
 msgstr ""
 "Samma biljettmejl går till en gäst du lägger till med en e-postadress (wp-admin Närvaro, fliken Admin, eller /door add Name name@example.com) och till en Holvi-köpare som läggs till vid försäljningsdisken med en e-postadress, med nästa omgång. Crew får ett separat biljettmejl när de tar en uppgift eller använder en fribiljett. När en gäst tas bort, eller en uppgift eller fribiljett avbokas, efter att biljetten mejlats, får personen ett kort mejl om att \"Din biljett är avbokad\"."
-
-#: src/Support/OrganizerGuide.php:271
-#. translators: 1: opening time, e.g. 09:00, 2: closing time, e.g. 21:00
-msgid ""
-"The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with 🔔 Notifications under /me; confirmations and reminders always go."
-msgstr ""
-"De schemalagda går bara ut mellan %1$s och %2$s. Var och en går via Telegram och e-post. Medlemmar väljer vilka de får med 🔔 Aviseringar under /me; bekräftelser och påminnelser går alltid ut."
 
 #: src/Support/DoorNewMember.php:116 src/Support/MessageTemplates.php:868
 msgid ""
@@ -8617,11 +8566,9 @@ msgstr ""
 msgid "Theme colour"
 msgstr "Temafärg"
 
-#: src/Support/FollowupText.php:115
-msgid ""
-"There are more evenings to come, and there is a place for you on the dance floor. The next ones are below. We hope to see you soon."
-msgstr ""
-"Det kommer fler kvällar, och det finns en plats för dig på dansgolvet. De närmaste finns nedan. Vi hoppas att vi ses snart."
+#: src/Support/FollowupText.php
+msgid "There are more evenings to come, and there is a place for you on the dance floor. The next ones are below. We hope to see you soon."
+msgstr "Det kommer fler kvällar, och det finns en plats för dig på dansgolvet. De närmaste finns nedan. Vi hoppas att vi ses snart."
 
 #: src/Telegram/EventsCommand.php:63 templates/admin/messages-tab-events.php:177
 msgid "There are no coming events."
@@ -8903,18 +8850,6 @@ msgstr "Den här biljetten"
 #: src/Telegram/TicketController.php:342
 msgid "This ticket link is not valid."
 msgstr "Den här biljettlänken är inte giltig."
-
-#: src/Support/ClaimNotifier.php:201
-msgid ""
-"This was a late cancellation, which counts against your standing. More notice keeps it clear next time."
-msgstr ""
-"Det här var en sen avbokning, som räknas mot din pålitlighet. Med mer framförhållning nästa gång slipper du det."
-
-#: src/Support/ClaimNotifier.php:203
-msgid ""
-"This was a late cancellation, which counts against your standing. Next time, more notice keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept."
-msgstr ""
-"Det här var en sen avbokning, som räknas mot din pålitlighet. Nästa gång slipper du det med mer framförhållning, eller med en ersättare: de skickar /me till boten och trycker på 🔁 Ta över en uppgift, och du godkänner."
 
 #: src/Support/TicketFile.php:105
 msgid ""
@@ -9511,12 +9446,10 @@ msgstr[0] ""
 msgstr[1] ""
 "Vi sparar dina uppgifter i %d år efter din senaste aktivitet — den senaste uppgiften du hade, fribiljetten du fick eller fribiljetten du använde."
 
-#: src/Support/FollowupText.php:111
 #. translators: 1: the event's name, 2: its date, e.g. 14.11.2026
-msgid ""
-"We missed you at %1$s on %2$s. We are sorry you could not make it this time. We understand it may have been frustrating, and we hope all is well with you."
-msgstr ""
-"Vi saknade dig på %1$s den %2$s. Vi är ledsna att du inte kunde komma den här gången. Vi förstår att det kan ha varit tråkigt, och vi hoppas att allt är bra med dig."
+#: src/Support/FollowupText.php
+msgid "We missed you at %1$s on %2$s. We are sorry you could not make it this time. We understand it may have been frustrating, and we hope all is well with you."
+msgstr "Vi saknade dig på %1$s den %2$s. Vi är ledsna att du inte kunde komma den här gången. Vi förstår att det kan ha varit tråkigt, och vi hoppas att allt är bra med dig."
 
 #: src/Support/MessageTemplates.php:1406
 msgid "We missed you this time"
@@ -9639,12 +9572,6 @@ msgstr ""
 #: templates/admin/settings.php:1563
 msgid "What is hybrid?"
 msgstr "Vad är hybrid?"
-
-#: src/Support/MessageTemplates.php:1017
-msgid ""
-"What keeps it clear next time: more notice, or a replacement found in the bot. For a person with no Telegram chat: more notice, and the link to the crew page."
-msgstr ""
-"Vad som gör att det inte räknas nästa gång: mer framförhållning, eller en ersättare som hittas i boten. För en person utan Telegram-chatt: mer framförhållning, och länken till crew-sidan."
 
 #: src/Web/NewsletterController.php:663 src/Web/NewsletterController.php:1226
 msgid "What should we call you?"
@@ -9980,12 +9907,6 @@ msgstr "Jobbar i kväll: välj en uppgift"
 msgid "Working: %s"
 msgstr "Jobbar: %s"
 
-#: src/Support/FollowupMail.php:1324
-msgid ""
-"Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time."
-msgstr ""
-"Vill du höra om nya evenemang först? Gå med i utskicket om kommande evenemang: vi mejlar dig när nya evenemang släpps. Ett tryck på knappen räcker, och du kan lämna när du vill."
-
 #: src/Support/MessageAiText.php:77
 msgid "Write a new text with the AI for each event"
 msgstr "Skriv en ny text med AI för varje evenemang"
@@ -10319,20 +10240,6 @@ msgstr "Du blev arrangör (Telegram)"
 msgid "You were made an organizer (email)"
 msgstr "Du blev arrangör (e-post)"
 
-#: src/Support/MessageTemplates.php:1108
-msgid "You were marked as a no-show"
-msgstr "Du markerades som utebliven"
-
-#: src/Support/MessageTemplates.php:1110
-msgid ""
-"You were marked as a no-show for %2$s.\n"
-"\n"
-"No-shows count against your standing. If this is a mistake, contact an organizer and they can correct it."
-msgstr ""
-"Du markerades som utebliven för %2$s.\n"
-"\n"
-"Uteblivanden räknas mot din pålitlighet. Om det är ett misstag, kontakta en arrangör så kan hen rätta det."
-
 #: src/Telegram/BoardService.php:1076 src/Telegram/RoleTaskBot.php:416 src/Web/SignupController.php:1216
 msgid "You weren’t signed up for that one."
 msgstr "Du var inte anmäld till den."
@@ -10427,21 +10334,6 @@ msgstr "Din fribiljett är klar."
 #: src/Web/SignupController.php:1211
 msgid "Your language is saved."
 msgstr "Ditt språk är sparat."
-
-#: src/Support/MessageTemplates.php:1136
-#. translators: 2: role at event, date, 3: what keeps it clear next time
-msgid ""
-"Your late cancellation for %2$s has been recorded.\n"
-"\n"
-"It counts against your standing. %3$s"
-msgstr ""
-"Din sena avbokning för %2$s har registrerats.\n"
-"\n"
-"Den räknas mot din pålitlighet. %3$s"
-
-#: src/Support/MessageTemplates.php:1133
-msgid "Your late cancellation was recorded"
-msgstr "Din sena avbokning registrerades"
 
 #: src/Support/PrivacyPolicy.php:770
 msgid ""
@@ -11022,20 +10914,6 @@ msgstr "⏰ Påminnelse: du är %1$s på %2$s, %3$s. Vi ses där!"
 #: src/Support/ClaimNotifier.php:211
 msgid "⚠️ Late cancellation"
 msgstr "⚠️ Sen avbokning"
-
-#: src/Support/MessageTemplates.php:1123
-#. translators: %s: role at event, date
-msgid ""
-"⚠️ You were marked as a no-show for %s. No-shows count against your standing. If that’s a mistake, tell an organizer."
-msgstr ""
-"⚠️ Du markerades som utebliven för %s. Uteblivanden räknas mot din pålitlighet. Om det är ett misstag, säg till en arrangör."
-
-#: src/Support/MessageTemplates.php:1149
-#. translators: %s: role at event, date
-msgid ""
-"⚠️ Your late cancellation for %s is recorded. It counts against your standing; more notice keeps it clear next time."
-msgstr ""
-"⚠️ Din sena avbokning för %s är registrerad. Den räknas mot din pålitlighet; säg till tidigare så slipper du det nästa gång."
 
 #: src/Telegram/GuestListService.php:267
 #. translators: 1: guest name, 2: event day
@@ -11967,6 +11845,9 @@ msgstr "Tyvärr, biljetten har gått ut"
 msgid "You’re in, welcome!"
 msgstr "Du är inne, välkommen!"
 
+msgid "You’re in. Welcome, %s!"
+msgstr "Du är inne. Välkommen, %s!"
+
 msgid "Checked in at %s"
 msgstr "Incheckad kl. %s"
 
@@ -12150,3 +12031,242 @@ msgstr "Tack för att du tog en uppgift och hjälper till att göra kvällen mö
 #: src/Support/TicketReasons.php
 msgid "Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!"
 msgstr "Tack för att du är en del av crewet och hjälper till att göra kvällarna möjliga. Den här kvällen bjuder vi på: kom och dansa och njut av den som vår gäst!"
+
+msgid "What helps next time: cancelling as soon as you know, or someone found in the bot to take the task over. For a person with no Telegram chat: cancelling early on the crew page, with its link."
+msgstr "Det som hjälper nästa gång: att avboka så snart man vet, eller någon i boten som tar över uppgiften. För en person utan Telegram-chatt: att avboka i tid på crew-sidan, med dess länk."
+
+msgid "Next time, tap Cancel as soon as you know, or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task."
+msgstr "Nästa gång, tryck på Avboka så snart du vet, eller hitta någon som tar över: de skickar /me till boten och trycker på 🔁 Ta över en uppgift."
+
+msgid "Next time, tap Cancel on your task in the Board tab of the crew page (%s) as soon as you know."
+msgstr "Nästa gång, tryck på Avboka vid din uppgift under fliken Tavlan på crew-sidan (%s) så snart du vet."
+
+msgid "The sentence saying what a late cancellation counts in the score next to a completed task, with the weights from Settings (40 and 100 percent by default)."
+msgstr "Meningen om vad en sen avbokning räknas som i poängen jämfört med en utförd uppgift, med vikterna från Inställningar (40 och 100 procent som standard)."
+
+msgid "A late cancellation counts %1$d%% in your score, a completed task %2$d%%."
+msgstr "En sen avbokning räknas som %1$d %% i din poäng, en utförd uppgift %2$d %%."
+
+msgid "We missed you at your task"
+msgstr "Vi saknade dig på din uppgift"
+
+msgid ""
+"We missed you at %2$s, so it was marked as a no-show. Unexpected things happen, and that's OK.\n"
+"\n"
+"The night runs on its crew: a missed task falls on the others or leaves a gap. %3$s%4$s\n"
+"\n"
+"A no-show counts against your standing, but every task you complete lifts it again, and it weighs less over time. Conditions may be better next time, so we hope you sign up again. If this is a mistake, tell an organizer and they will correct it."
+msgstr ""
+"Vi saknade dig på %2$s, så det markerades som uteblivet. Oväntade saker händer, och det är okej.\n"
+"\n"
+"Kvällen bärs av sitt crew: en missad uppgift faller på de andra eller lämnar ett hål. %3$s%4$s\n"
+"\n"
+"Att utebli räknas mot din pålitlighet, men varje uppgift du gör lyfter den igen, och det väger mindre med tiden. Förutsättningarna kan vara bättre nästa gång, så vi hoppas att du anmäler dig igen. Om det är ett misstag, säg till en arrangör så rättar de det."
+
+msgid ""
+"🤍 We missed you at %1$s. Unexpected things happen, and that's OK.\n"
+"\n"
+"The night runs on its crew: a missed task falls on others or leaves a gap. %2$s%3$s\n"
+"\n"
+"A no-show counts against your standing; every task you complete lifts it again. Next time may suit you better, so sign up again! If this is a mistake, tell an organizer."
+msgstr ""
+"🤍 Vi saknade dig på %1$s. Oväntade saker händer, och det är okej.\n"
+"\n"
+"Kvällen bärs av sitt crew: en missad uppgift faller på andra eller lämnar ett hål. %2$s%3$s\n"
+"\n"
+"Att utebli räknas mot din pålitlighet; varje uppgift du gör lyfter den igen. Nästa gång kanske det går bättre, så anmäl dig igen! Om det är ett misstag, säg till en arrangör."
+
+msgid "Thanks for letting us know"
+msgstr "Tack för att du hörde av dig"
+
+msgid ""
+"Thanks for letting the crew know you couldn't make it to %2$s. Telling us is always better than not showing up.\n"
+"\n"
+"It was a late cancellation, and early notice matters: it gives someone else time to take the place. %3$s%4$s\n"
+"\n"
+"%5$s It weighs less over time. Plans change sometimes; we hope you sign up again when it suits you. If this is a mistake, tell an organizer."
+msgstr ""
+"Tack för att du lät crewet veta att du inte kunde komma till %2$s. Att säga till är alltid bättre än att utebli.\n"
+"\n"
+"Det blev en sen avbokning, och tidigt besked gör skillnad: då hinner någon annan ta platsen. %3$s%4$s\n"
+"\n"
+"%5$s Det väger mindre med tiden. Planer ändras ibland; vi hoppas att du anmäler dig igen när det funkar för dig. Om det är ett misstag, säg till en arrangör."
+
+msgid ""
+"🤍 Thanks for letting us know about %1$s. Telling the crew is always better than not showing up.\n"
+"\n"
+"It was a late cancellation: early notice gives someone else time to take the place. %2$s%3$s\n"
+"\n"
+"%4$s It weighs less over time. Next time may suit you better, so sign up again! If this is a mistake, tell an organizer."
+msgstr ""
+"🤍 Tack för att du hörde av dig om %1$s. Att säga till crewet är alltid bättre än att utebli.\n"
+"\n"
+"Det blev en sen avbokning: tidigt besked ger någon annan tid att ta platsen. %2$s%3$s\n"
+"\n"
+"%4$s Det väger mindre med tiden. Nästa gång kanske det går bättre, så anmäl dig igen! Om det är ett misstag, säg till en arrangör."
+
+msgid "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hour or more before has no effect and gives someone else time to take the place."
+msgid_plural "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hours or more before has no effect and gives someone else time to take the place."
+msgstr[0] "Tack för att du hörde av dig. Så här nära uppgiften räknas det mot din pålitlighet; att avboka %d timme eller mer innan påverkar inget och ger någon annan tid att ta platsen."
+msgstr[1] "Tack för att du hörde av dig. Så här nära uppgiften räknas det mot din pålitlighet; att avboka %d timmar eller mer innan påverkar inget och ger någon annan tid att ta platsen."
+
+msgid "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hour or more before has no effect and gives someone else time to take the place. You can also hand a task over: the other person sends /me to the bot and taps 🔁 Take over a task, and you accept."
+msgid_plural "Thanks for letting us know. This close to the task it counts against your standing; cancelling %d hours or more before has no effect and gives someone else time to take the place. You can also hand a task over: the other person sends /me to the bot and taps 🔁 Take over a task, and you accept."
+msgstr[0] "Tack för att du hörde av dig. Så här nära uppgiften räknas det mot din pålitlighet; att avboka %d timme eller mer innan påverkar inget och ger någon annan tid att ta platsen. Du kan också lämna över en uppgift: den andra personen skickar /me till boten och trycker på 🔁 Ta över en uppgift, och du godkänner."
+msgstr[1] "Tack för att du hörde av dig. Så här nära uppgiften räknas det mot din pålitlighet; att avboka %d timmar eller mer innan påverkar inget och ger någon annan tid att ta platsen. Du kan också lämna över en uppgift: den andra personen skickar /me till boten och trycker på 🔁 Ta över en uppgift, och du godkänner."
+
+msgid "Good standing from %d%%"
+msgstr "God pålitlighet från %d %%"
+
+msgid "Standing %1$d%% → %2$d%%."
+msgstr "Pålitlighet %1$d %% → %2$d %%."
+
+msgid "Standing %d%%."
+msgstr "Pålitlighet %d %%."
+
+msgid "You get a standing score after %d more task."
+msgid_plural "You get a standing score after %d more tasks."
+msgstr[0] "Du får ett pålitlighetsvärde efter %d uppgift till."
+msgstr[1] "Du får ett pålitlighetsvärde efter %d uppgifter till."
+
+msgid "Good standing is %d%% or more, so every task is open to you."
+msgstr "God pålitlighet är %d %% eller mer, så alla uppgifter är öppna för dig."
+
+msgid "Still good standing, but close to the %d%% limit."
+msgstr "Fortfarande god pålitlighet, men nära gränsen på %d %%."
+
+msgid "Good standing is %d%% or more."
+msgstr "God pålitlighet är %d %% eller mer."
+
+msgid "The standing as a bar from 0 to 100 percent, with the good-standing limit marked; in the email a coloured bar. On a line of its own; the line goes while the person has no score yet."
+msgstr "Pålitligheten som en stapel från 0 till 100 procent, med gränsen för god pålitlighet markerad; i e-posten en färgad stapel. På en egen rad; raden tas bort så länge personen inte har något värde."
+
+msgid "The standing before and after, like: Standing 82 → 74 percent, with one sentence on what it means. Before the person has a score: how many tasks until they get one."
+msgstr "Pålitligheten före och efter, till exempel: Pålitlighet 82 → 74 procent, med en mening om vad det betyder. Innan personen har ett värde: hur många uppgifter som återstår."
+
+msgid "The free-entry credits the person has now, and how many more completed tasks earn the next one."
+msgstr "Personens fribiljetter just nu och hur många fler slutförda uppgifter som ger nästa."
+
+msgid "%d more completed task earns the next one."
+msgid_plural "%d more completed tasks earn the next one."
+msgstr[0] "%d slutförd uppgift till ger nästa."
+msgstr[1] "%d slutförda uppgifter till ger nästa."
+
+msgid "Thank you for a task (email)"
+msgstr "Tack för en uppgift (e-post)"
+
+msgid "Thank you for a task (Telegram)"
+msgstr "Tack för en uppgift (Telegram)"
+
+msgid "Sent a day after an organizer marks a person's task as completed or arrived late."
+msgstr "Skickas en dag efter att en arrangör markerat en persons uppgift som slutförd eller anlänt sent."
+
+msgid "Thank you for your task"
+msgstr "Tack för din uppgift"
+
+msgid "Thank you for %1$s! The night runs on its crew, and you helped make it happen."
+msgstr "Tack för %1$s! Kvällen bärs av sitt crew, och du hjälpte till att göra den möjlig."
+
+msgid "We hope to see you again soon."
+msgstr "Vi hoppas att vi ses snart igen."
+
+msgid "See you next time!"
+msgstr "Vi ses nästa gång!"
+
+msgid "%1$s does not have the %2$s role. As an organizer you can still add them; they get the role."
+msgstr "%1$s har inte rollen %2$s. Som arrangör kan du ändå lägga till personen; den får då rollen."
+
+msgid "%s is blocked from sign-ups. An organizer can lift it on the People page."
+msgstr "%s är spärrad från anmälningar. En arrangör kan häva spärren på sidan Personer."
+
+msgid "/assign task ; name – put a member on a task (/unassign takes them off); you confirm first"
+msgstr "/assign uppgift ; namn – sätt en medlem på en uppgift (/unassign tar bort); du bekräftar först"
+
+msgid "Add %1$s to %2$s?"
+msgstr "Lägga till %1$s på %2$s?"
+
+msgid "Add, counts"
+msgstr "Lägg till, räknas"
+
+msgid "Add, no credit"
+msgstr "Lägg till, räknas ej"
+
+msgid "As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
+msgstr "Som arrangör kan du lägga till vem som helst på vilken uppgift som helst under en kväll utom Arrangemang, även en uppgift för en roll som personen inte har (den får då rollen): i en privat chatt med /assign uppgift ; namn (/unassign tar bort) eller ➕ Lägg till någon under /board, under fliken Admin i Crew-appen, eller vid försäljningsdisken."
+
+msgid "Cancelled. Nothing was changed."
+msgstr "Avbrutet. Inget ändrades."
+
+msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /tasks to the bot, taps 🔁 Take over a task, and the member accepts."
+msgstr "Att avboka mindre än %d timmar före uppgiften räknas som en sen avbokning. En medlem som inte kan komma kan hitta en ersättare: ersättaren skickar /tasks till boten, trycker på 🔁 Ta över en uppgift, och medlemmen godkänner."
+
+msgid "I will write to you in English. To change it: /settings, 🌐 Change language."
+msgstr "Jag skriver till dig på svenska. För att ändra: /settings, 🌐 Byt språk."
+
+msgid "Many members match “%s”. Write more of the name."
+msgstr "Många medlemmar matchar “%s”. Skriv mer av namnet."
+
+msgid "Members earn 1 free-entry credit per %d completed tasks and spend it with /me, 🎟 Tickets, 🎟 Get a free-entry ticket (or /tickets), or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
+msgstr "Medlemmar tjänar 1 fribiljett per %d slutförda uppgifter och använder den med /me, 🎟 Biljetter, 🎟 Hämta fribiljett (eller /tickets), eller på webbsidan. Du ger fribiljetter med /people, på sidan Personer eller vid försäljningsdisken. Varje gåva skrivs in i fribiljettsloggen på sidan Personer, och medlemmen meddelas."
+
+msgid "No member called “%s” was found."
+msgstr "Ingen medlem som heter “%s” hittades."
+
+msgid "No member called “%s” was found. Someone who is not a member yet: ➕ Add someone under /board."
+msgstr "Ingen medlem som heter “%s” hittades. Någon som inte är medlem än: ➕ Lägg till någon under /board."
+
+msgid "No task called “%1$s”. Tasks on %2$s: %3$s"
+msgstr "Ingen uppgift som heter “%1$s”. Uppgifter den %2$s: %3$s"
+
+msgid "Organize tasks are for organizers only. Make someone an organizer with /people."
+msgstr "Arrangemangsuppgifter är bara för arrangörer. Gör någon till arrangör med /people."
+
+msgid "Put a member on a task: /assign task ; name\nExample: /assign Host ; Milla\nA date first picks another event: /assign 21.11. Host ; Milla"
+msgstr "Sätt en medlem på en uppgift: /assign uppgift ; namn\nExempel: /assign Host ; Milla\nEtt datum först väljer en annan kväll: /assign 21.11. Host ; Milla"
+
+msgid "Take %1$s off %2$s?"
+msgstr "Ta bort %1$s från %2$s?"
+
+msgid "Take a member off a task: /unassign task ; name\nExample: /unassign Host ; Milla\nA date first picks another event: /unassign 21.11. Host ; Milla"
+msgstr "Ta bort en medlem från en uppgift: /unassign uppgift ; namn\nExempel: /unassign Host ; Milla\nEtt datum först väljer en annan kväll: /unassign 21.11. Host ; Milla"
+
+msgid "Taken off the task. If their ticket was emailed, they get an updated one; nothing else is sent."
+msgstr "Borttagen från uppgiften. Om biljetten skickades med e-post får personen en uppdaterad; inget annat skickas."
+
+msgid "That person is not on this task."
+msgstr "Den personen är inte på den här uppgiften."
+
+msgid "That task is full (%1$d of %2$d places taken). Nothing was added."
+msgstr "Uppgiften är full (%1$d av %2$d platser tagna). Inget lades till."
+
+msgid "The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with /settings, 🔔 Choose notifications; confirmations and reminders always go."
+msgstr "De schemalagda går bara ut mellan %1$s och %2$s. Var och en går via Telegram och e-post. Medlemmar väljer vilka de får med /settings, 🔔 Välj aviseringar; bekräftelser och påminnelser går alltid ut."
+
+msgid "There are no tasks on %s."
+msgstr "Det finns inga uppgifter den %s."
+
+msgid "There are no upcoming tasks."
+msgstr "Det finns inga kommande uppgifter."
+
+msgid "This request has expired. Please send it again."
+msgstr "Den här begäran har gått ut. Skicka den igen."
+
+msgid "Use %s in a private chat with me."
+msgstr "Använd %s i en privat chatt med mig."
+
+msgid "Which member?"
+msgstr "Vilken medlem?"
+
+#: src/Support/FollowupMail.php
+msgid "Get an email when new events come out. You can leave any time."
+msgstr "Få ett mejl när nya evenemang kommer ut. Du kan avsluta när som helst."
+
+#: src/Support/FollowupMail.php
+msgid "The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
+msgstr "Kvällen blev av tack vare vårt crew: de som jobbade bakom kulisserna så att alla andra kunde dansa. Vill du vara med? Det är ett fint sätt att lära känna folk, känna dig behövd och spara på biljetter."
+
+msgid "Nothing after a few minutes, not even in spam? Try again, with the same or another address."
+msgstr "Inget efter några minuter, inte ens i skräpposten? Försök igen med samma eller en annan adress."
+
+msgid "✏️ Use another email"
+msgstr "✏️ Använd en annan e-post"

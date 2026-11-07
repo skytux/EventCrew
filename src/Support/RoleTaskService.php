@@ -33,6 +33,8 @@ final class RoleTaskService
     public const FULL = 'full';
     public const FAILED = 'failed';
     public const NO_PERSON = 'no_person';
+    public const REMOVED = 'removed';
+    public const NOT_ON = 'not_on';
 
     /**
      * The domain of the placeholder address a person added without an email
@@ -190,6 +192,50 @@ final class RoleTaskService
     }
 
     /**
+     * An organizer takes someone off a task (any task). The row becomes a
+     * plain cancellation recorded with the organizer's person id, the same
+     * status write the rosters use, so it never counts against the person's
+     * standing. When the night's ticket was emailed, it is sent again with
+     * the tasks left, or cancelled when none is left. No other message goes
+     * to the person.
+     *
+     * @return array{code: string, person: ?Person}
+     */
+    public function removePerson(Person $organizer, int $taskId, int $personId): array
+    {
+        if (! $organizer->isOrganizer) {
+            return ['code' => self::ORGANIZERS_ONLY, 'person' => null];
+        }
+
+        $task = $taskId > 0 ? $this->tasks->find($taskId) : null;
+        $person = $personId > 0 ? $this->people->find($personId) : null;
+
+        if (null === $task) {
+            return ['code' => self::NOT_RESTRICTED, 'person' => $person];
+        }
+
+        if (null === $person) {
+            return ['code' => self::NO_PERSON, 'person' => null];
+        }
+
+        $assignment = $this->assignments->findFor($task->id, $person->id);
+
+        if (null === $assignment || ! $assignment->isOccupying()) {
+            return ['code' => self::NOT_ON, 'person' => $person];
+        }
+
+        $this->assignments->setStatus(
+            $assignment->id,
+            AssignmentStatus::CANCELLED,
+            $organizer->id,
+            MarkedBy::PERSON
+        );
+        $this->notifier->ticketTasksChanged($person, $task->taskDate);
+
+        return ['code' => self::REMOVED, 'person' => $person];
+    }
+
+    /**
      * Gives the task's role if needed, signs the person up, and emails the
      * ticket when they have a real address.
      *
@@ -242,6 +288,9 @@ final class RoleTaskService
             self::BAD_EMAIL => __('That email address does not look right.', 'eventcrew'),
             self::NOT_RESTRICTED => __('That task is no longer available.', 'eventcrew'),
             self::ORGANIZERS_ONLY => __('Only organizers can add people to a task.', 'eventcrew'),
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            self::REMOVED => __('Taken off the task. If their ticket was emailed, they get an updated one; nothing else is sent.', 'eventcrew'),
+            self::NOT_ON => __('That person is not on this task.', 'eventcrew'),
             default => __('The person could not be added. Try again.', 'eventcrew'),
         };
     }

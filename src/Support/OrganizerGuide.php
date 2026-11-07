@@ -143,7 +143,7 @@ final class OrganizerGuide
             __('If a language model is set up in Settings > Telegram bot, the bot also answers plain messages. In a private chat it answers questions about tasks, events, the site\'s pages and the official email address (the contact in Settings > Privacy), and can sign a member up for a task or take them off one; it asks them to confirm with a button first. It remembers a private chat for 24 hours, and in the group what each person wrote to it, separately, also for 24 hours. It knows each person\'s roles and leaves out what is meant only for others. When an organizer writes to it privately, it also knows this guide and the infrastructure note. In the group it answers only when the message is meant for the bot and it knows the answer. When someone in a private chat gives feedback, is unhappy or very happy, or asks for a human, every organizer gets that chat by email and a short Telegram message, at most once per person per hour (switch it off in Settings > Telegram bot).', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             sprintf(
                 /* translators: %d: hours of notice, e.g. 48 */
-                __('Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /me to the bot, taps 🔁 Take over a task, and the member accepts.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /tasks to the bot, taps 🔁 Take over a task, and the member accepts.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 $noticeHours
             ),
         ];
@@ -221,7 +221,7 @@ final class OrganizerGuide
             __('Signing up for a task gives the member a free ticket for that night. The ticket is a web page with a clock that ticks. A clock that does not move is a screenshot.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             sprintf(
                 /* translators: %d: completed tasks needed for one credit */
-                __('Members earn 1 free-entry credit per %d completed tasks and spend it with 🎟 Free-entry ticket under /me or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('Members earn 1 free-entry credit per %d completed tasks and spend it with /me, 🎟 Tickets, 🎟 Get a free-entry ticket (or /tickets), or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 $settings->tasksPerCredit()
             ),
             sprintf(
@@ -249,7 +249,7 @@ final class OrganizerGuide
         $lines = ['## 🔑 ' . __('Roles and permissions', 'eventcrew')];
 
         $lines[] = __('A role can have conditions in EventCrew > Settings: how many tasks of which roles a member has completed. Meeting them does not give the role. You are told, by Telegram and by email, the first time someone meets a role\'s conditions and the first time someone is given a role. /people, then ✅ Who may hold each role, lists who meets the conditions of each role.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-        $lines[] = __('As an organizer you can add anyone to any task of a night, with /board in a private chat, in the Crew app Admin tab, or at the sales desk.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        $lines[] = __('As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
 
         $lines[] = __('/people, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab in the Crew app can do the same.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
 
@@ -275,7 +275,7 @@ final class OrganizerGuide
             ]),
             sprintf(
                 /* translators: 1: opening time, e.g. 09:00, 2: closing time, e.g. 21:00 */
-                __('The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with 🔔 Notifications under /me; confirmations and reminders always go.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with /settings, 🔔 Choose notifications; confirmations and reminders always go.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 self::windowStart(),
                 self::windowEnd()
             ),

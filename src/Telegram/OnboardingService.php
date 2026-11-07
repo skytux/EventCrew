@@ -45,6 +45,13 @@ final class OnboardingService
     /** The auth-token purpose for a bot email confirmation. */
     public const VERIFY_PURPOSE = 'email_verify';
 
+    /**
+     * Callback data of the "Use another email" button under the "Check your
+     * email" message: asks for the address again (start()), for someone
+     * whose link never came or who typed the wrong address.
+     */
+    public const AGAIN_DATA = 'onb:again';
+
     /** Callback data prefix of the newcomer's question buttons: "nwq:<answer>". */
     public const JOIN_PREFIX = 'nwq:';
 
@@ -511,7 +518,41 @@ final class OnboardingService
         $this->telegram->sendMessage(
             $chatId,
             __('Check your email and tap the link to confirm it. Then pick a task on the board.', 'eventcrew')
+            . "\n\n"
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            . __('Nothing after a few minutes, not even in spam? Try again, with the same or another address.', 'eventcrew'),
+            ['inline_keyboard' => [[[
+                'text' => __('✏️ Use another email', 'eventcrew'),
+                'callback_data' => self::AGAIN_DATA,
+            ]]]]
         );
+    }
+
+    /**
+     * A tap on "Use another email": the button goes, and the email question
+     * is asked again, as a /start sent again would. The link already sent
+     * stays valid until it runs out; whichever is opened links the account.
+     *
+     * @param array<string, mixed> $callbackQuery
+     */
+    public function onAgainTap(array $callbackQuery): void
+    {
+        $fromId = (int) ($callbackQuery['from']['id'] ?? 0);
+        $chatId = (int) ($callbackQuery['message']['chat']['id'] ?? 0);
+        $messageId = (int) ($callbackQuery['message']['message_id'] ?? 0);
+        $this->telegram->answerCallbackQuery((string) ($callbackQuery['id'] ?? ''));
+
+        if (0 === $fromId || 0 === $chatId) {
+            return;
+        }
+
+        if (0 !== $messageId) {
+            $this->telegram->editMessageReplyMarkup($chatId, $messageId, ['inline_keyboard' => []]);
+        }
+
+        $from = is_array($callbackQuery['from'] ?? null) ? $callbackQuery['from'] : [];
+        $name = trim((string) ($from['first_name'] ?? '') . ' ' . (string) ($from['last_name'] ?? ''));
+        $this->start($fromId, $chatId, $name);
     }
 
     /**

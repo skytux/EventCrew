@@ -197,7 +197,7 @@ final class NewsletterLayoutLanguagesTest extends TestCase
         self::assertStringContainsString('Vi dansar hela natten.', $html);
         self::assertLessThan(strpos($html, 'Vi dansar'), strpos($html, 'Tanssimme'));
         self::assertLessThan(strpos($html, 'We dance'), strpos($html, 'Vi dansar'));
-        self::assertStringContainsString('Osta lippu<br>Köp en biljett<br>Buy a ticket', $html);
+        self::assertStringContainsString('Osta lippu · Köp en biljett · Buy a ticket', $html);
         self::assertStringStartsWith("TULEVAT TAPAHTUMAT
 KOMMANDE EVENEMANG
 COMING EVENTS

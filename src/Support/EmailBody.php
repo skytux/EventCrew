@@ -381,6 +381,16 @@ final class EmailBody
                 continue;
             }
 
+            // A standing bar ({standing_bar}) on a paragraph of its own is
+            // drawn as a coloured bar; the plain-text part keeps the text one.
+            $barPercent = StandingBar::parse($block);
+
+            if (null !== $barPercent) {
+                $html .= StandingBar::html($barPercent);
+
+                continue;
+            }
+
             // The language tag goes in front of the first paragraph only.
             $html .= self::paragraph($block, $prefix);
             $prefix = '';

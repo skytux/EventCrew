@@ -44,7 +44,7 @@ Uusi jäsen lähettää botille /start yksityisviestinä ja vahvistaa sähköpos
 
 Jos kielimalli on asetettu kohdassa Asetukset > Telegram-botti, botti vastaa myös tavallisiin viesteihin. Yksityisessä keskustelussa se vastaa kysymyksiin tehtävistä, tapahtumista, sivuston sivuista ja virallisesta sähköpostiosoitteesta (yhteystieto kohdassa Asetukset > Tietosuoja), ja voi ilmoittaa jäsenen tehtävään tai poistaa hänet siitä; ensin se pyytää vahvistamaan painikkeella. Se muistaa yksityisen keskustelun 24 tuntia ja ryhmässä sen, mitä kukin on sille kirjoittanut, erikseen, myös 24 tuntia. Se tietää kunkin roolit ja jättää pois sen, mikä on tarkoitettu vain muille. Kun järjestäjä kirjoittaa sille yksityisesti, se tuntee myös tämän oppaan ja infrastruktuurimuistiinpanon. Ryhmässä se vastaa vain, kun viesti on tarkoitettu botille ja se tietää vastauksen. Kun joku antaa yksityisessä keskustelussa palautetta, on tyytymätön tai hyvin tyytyväinen tai pyytää ihmistä, jokainen järjestäjä saa keskustelun sähköpostilla ja lyhyen Telegram-viestin, enintään kerran tunnissa samalta henkilöltä (pois päältä kohdassa Asetukset > Telegram-botti).
 
-Peruminen alle 48 tuntia ennen tehtävää on myöhäinen peruutus. Jäsen, joka ei pääse, voi etsiä tuuraajan: tuuraaja lähettää botille /me, napauttaa 🔁 Ota tehtävä, ja jäsen hyväksyy.
+Peruminen alle 48 tuntia ennen tehtävää on myöhäinen peruutus. Jäsen, joka ei pääse, voi etsiä tuuraajan: tuuraaja lähettää botille /tasks, napauttaa 🔁 Ota tehtävä, ja jäsen hyväksyy.
 
 🌙 Illan aikana: läsnäolo ja myyntipiste
 
@@ -66,7 +66,7 @@ Sama lippusähköposti lähtee seuraavassa erässä vieraalle, jonka lisäät s�
 
 Tehtävään ilmoittautuminen antaa jäsenelle vapaalipun sille illalle. Lippu on verkkosivu, jossa on käyvä kello. Kello, joka ei liiku, on kuvakaappaus.
 
-Jäsenet saavat 1 vapaalipun jokaisesta 2 tehdystä tehtävästä ja käyttävät sen napilla 🎟 Vapaalippu komennon /me alla tai verkkosivulla. Sinä annat vapaalippuja komennolla /people, People-sivulla tai myyntipisteessä. Jokainen lahja kirjataan People-sivun vapaalippulokiin, ja jäsenelle kerrotaan siitä.
+Jäsenet saavat 1 vapaalipun jokaisesta 2 tehdystä tehtävästä ja käyttävät sen: /me, 🎟 Liput, 🎟 Hae vapaalippu (tai /tickets), tai verkkosivulla. Sinä annat vapaalippuja komennolla /people, People-sivulla tai myyntipisteessä. Jokainen lahja kirjataan People-sivun vapaalippulokiin, ja jäsenelle kerrotaan siitä.
 
 Luotettavuus lasketaan joka kerta uudelleen siitä, miten jäsenen aiemmat tehtävät menivät; tuoreet tehtävät painavat enemmän. Jäsen saa arvion 3 tehdyn tehtävän jälkeen. 60% tai enemmän on hyvä luotettavuus. Painot ja rajat ovat kohdassa Asetukset > Luotettavuus.
 
@@ -76,7 +76,7 @@ Ilmoittautumisraja on päällä: jäsen, jonka luotettavuus on alle 60%, ei voi 
 
 Roolilla voi olla ehtoja kohdassa EventCrew > Settings: kuinka monta minkäkin roolin tehtävää jäsen on tehnyt. Ehtojen täyttyminen ei anna roolia. Saat Telegram-viestin ja sähköpostin, kun joku ensimmäisen kerran täyttää roolin ehdot ja kun jollekulle ensimmäisen kerran annetaan rooli. /people ja sitten ✅ Kuka voi saada minkäkin roolin näyttää, kuka täyttää kunkin roolin ehdot.
 
-Järjestäjänä voit lisätä kenet tahansa mihin tahansa illan tehtävään: komennolla /board yksityiskeskustelussa, Crew-sovelluksen Ylläpito-välilehdellä tai myyntipisteessä.
+Järjestäjänä voit lisätä kenet tahansa mihin tahansa illan tehtävään paitsi Järjestelyihin, myös roolin tehtävään, jota hänellä ei ole (hän saa roolin): yksityiskeskustelussa komennolla /assign tehtävä ; nimi (/unassign poistaa) tai napilla ➕ Lisää joku komennon /board alla, Crew-sovelluksen Ylläpito-välilehdellä tai myyntipisteessä.
 
 /people antaa yksityiskeskustelussa botin kanssa myös kertaluvan ilmoittautumisrajan ohi, tekee jostakusta järjestäjän (tai lopettaa sen) ja antaa tai poistaa rooleja, kuten DJ tai VJ. Samaan pystyvät wp-adminin People-sivu ja Crew-sovelluksen Ylläpito-välilehti.
 
@@ -89,7 +89,7 @@ Järjestäjänä voit lisätä kenet tahansa mihin tahansa illan tehtävään: k
 - 🔹 Myyntipisteen linkki illan aikana.
 - 🔹 Tervetuloviesti jokaiselle uudelle jäsenelle, kun hän vahvistaa sähköpostinsa, ja tämä opas jokaiselle järjestäjälle.
 
-Ajastetut lähtevät vain klo 09:00–21:00. Jokainen lähtee Telegramilla ja sähköpostilla. Jäsenet valitsevat saamansa ilmoitukset napilla 🔔 Ilmoitukset komennon /me alla; vahvistukset ja muistutukset lähtevät aina.
+Ajastetut lähtevät vain klo 09:00–21:00. Jokainen lähtee Telegramilla ja sähköpostilla. Jäsenet valitsevat saamansa ilmoitukset: /settings, 🔔 Valitse ilmoitukset; vahvistukset ja muistutukset lähtevät aina.
 
 📰 Tulevien tapahtumien tiedote, jos ylläpitäjä on kytkenyt sen päälle, lähettää tulevat tapahtumat sähköpostilla kaikille sen tilanneille. Ennen lähtöä jokainen järjestäjä saa esikatselusähköpostin, jossa on painike sen pysäyttämiseen; Crew-sovelluksen Ylläpito-välilehdellä on sama painike. Lisää oma teksti seuraavaan tiedotteeseen lähettämällä /newsletter ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla botille siellä omin sanoin, mitä lisätä (se näyttää tekstin ensin Vahvista-painikkeen kanssa), tai käytä Ylläpito-välilehteä. Kirjoita se millä kielellä tahansa: se käännetään jokaiselle sivuston kielelle.
 
