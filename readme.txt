@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.162
+Stable tag: 1.140.163
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,13 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.163 =
+* ❌ No asks to confirm and offers a reason: Unknown to us (the person is told) or No reason (not told)
+* When one organizer answers, the other organizers' copies show the outcome, and emailed organizers get an email
+* A request nobody answers is turned down after 48 hours; the person is told to talk to an organizer at an event
+* Requests show the person's @handle and a link to their Telegram profile
+* wp-admin People has a Turned down tab with Accept
 
 = 1.140.162 =
 * Free-entry ticket message: event and DJs first, then date, venue and times; picker buttons show the event, DJs and day
@@ -1745,6 +1752,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.163 =
+No settings change.
 
 = 1.140.162 =
 No settings change.
