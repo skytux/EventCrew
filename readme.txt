@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.182
+Stable tag: 1.140.183
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,14 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.183 =
+* A member can give their free-entry ticket to another member or, by email, to someone outside the crew, from the bot or the ticket page; the receiver gets a new ticket and the giver's stops working.
+* A spot opened: the event's picture is shown, in the email with the DJ text under it, above the other open tasks.
+* The task reminder no longer includes the DJ text.
+* The thank-you message preview shows the standing going up, not down.
+* The demo ticket and desk are removed.
+* Every language now has all strings translated.
 
 = 1.140.182 =
 * Organizers can, from a private chat with the bot, mark arrived, late, no-show or done (/mark), see a person's standing (/standing), list newcomers (/newcomer), give or take back a free-entry ticket (/ticket, /unticket), lift a block (/unban), open or close free entry (/freeentry), stop a post-event announcement or email (/stop), post a new task board (/newboard), send free-entry tickets (/sendtickets) and message the people on a task or night (/tell), each with a confirm button.
@@ -1867,6 +1875,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.183 =
+No settings change.
 
 = 1.140.182 =
 No settings change.
