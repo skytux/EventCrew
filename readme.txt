@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.173
+Stable tag: 1.140.174
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.174 =
+* The gold you're-in band glows inside its own frame: no light spilling over the card, no growing past its edges, smooth loops and a softer entrance.
+* Show QR code is a large dark tile in the place of the QR code, and showing the code no longer moves the page.
 
 = 1.140.173 =
 * The welcome and the Messages page previews never list a task of an archived role or a role off the board.
@@ -1819,6 +1823,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.174 =
+No settings change.
 
 = 1.140.173 =
 No settings change.

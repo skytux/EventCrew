@@ -2901,7 +2901,7 @@ msgstr ""
 msgid "Guests added for %s"
 msgstr ""
 
-#: src/Telegram/TicketController.php:782
+#: src/Telegram/TicketController.php:790
 msgctxt "date format"
 msgid "H:i, D j M"
 msgstr ""
@@ -3344,7 +3344,7 @@ msgstr ""
 msgid "Installed"
 msgstr ""
 
-#: src/Telegram/TicketController.php:759
+#: src/Telegram/TicketController.php:767
 #. translators: %s: the date and time the ticket was issued
 msgid "Issued %s"
 msgstr ""
@@ -6273,7 +6273,7 @@ msgstr ""
 msgid "Show"
 msgstr ""
 
-#: src/Telegram/TicketController.php:703
+#: src/Telegram/TicketController.php:711
 msgid "Show QR code"
 msgstr ""
 
@@ -7403,7 +7403,7 @@ msgstr ""
 msgid "The chosen signup page is missing or not published."
 msgstr ""
 
-#: src/Telegram/TicketController.php:769
+#: src/Telegram/TicketController.php:777
 msgid "The clock above must match the time now. A frozen clock is a screenshot."
 msgstr ""
 
