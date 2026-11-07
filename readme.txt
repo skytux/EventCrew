@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.166
+Stable tag: 1.140.167
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.167 =
+* The group board shows only the tasks of roles ticked "Show on the guest board"
+* The private board shows a member those tasks plus the tasks of their own roles; organizers see all
+* Tasks of archived roles are shown nowhere, not even to organizers
 
 = 1.140.166 =
 * The sign-up email says "Thank you <first name>!" in the subject and the hero, without a comma
@@ -1770,6 +1775,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.167 =
+No settings change.
 
 = 1.140.166 =
 No settings change.

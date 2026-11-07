@@ -3996,7 +3996,7 @@ msgstr ""
 msgid "No newsletter was sent in this time range."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:482 templates/public/signup-board.php:42
+#: src/Telegram/BoardRenderer.php:489 templates/public/signup-board.php:42
 msgid "No open tasks right now. Check back soon!"
 msgstr ""
 
@@ -4569,7 +4569,7 @@ msgstr ""
 msgid "Open tasks"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:496
+#: src/Telegram/BoardRenderer.php:503
 msgid "Open tasks — tap one to sign up. To cancel, tap 👤 My info."
 msgstr ""
 
@@ -10000,7 +10000,7 @@ msgstr ""
 msgid "free"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:632
+#: src/Telegram/BoardRenderer.php:639
 msgid "full"
 msgstr ""
 
@@ -10161,7 +10161,7 @@ msgstr ""
 msgid "signed up %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:413
+#: src/Telegram/BoardRenderer.php:420
 msgid "someone"
 msgstr ""
 
@@ -10334,7 +10334,7 @@ msgstr ""
 msgid "✅ The team said OK. You can now take tasks."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:305
+#: src/Telegram/BoardRenderer.php:312
 msgid "✋ sign up · ❌ cancel"
 msgstr ""
 
@@ -10366,7 +10366,7 @@ msgstr ""
 msgid "❌ Keep my task"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:309
+#: src/Telegram/BoardRenderer.php:316
 msgid "➕ add someone"
 msgstr ""
 
@@ -10403,7 +10403,7 @@ msgstr ""
 msgid "👋 %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:537
+#: src/Telegram/BoardRenderer.php:544
 msgid "👋 New here? Sign up →"
 msgstr ""
 
@@ -10415,7 +10415,7 @@ msgstr ""
 msgid "👋 arrived · ✓ done · ⏰ late · ✗ no-show"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:528 src/Telegram/MenuButtons.php:178
+#: src/Telegram/BoardRenderer.php:535 src/Telegram/MenuButtons.php:178
 msgid "👤 My info"
 msgstr ""
 
@@ -10435,7 +10435,7 @@ msgstr ""
 msgid "📅 Add to calendar"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:524
+#: src/Telegram/BoardRenderer.php:531
 msgid "📅 More tasks"
 msgstr ""
 
@@ -10448,7 +10448,7 @@ msgstr ""
 msgid "📝 About the task: %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:518
+#: src/Telegram/BoardRenderer.php:525
 msgid "📝 Task info"
 msgstr ""
 
