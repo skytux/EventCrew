@@ -2570,7 +2570,7 @@ msgstr ""
 msgid "Free entry given (email)"
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:586 src/Web/SignupController.php:1244
+#: src/Telegram/TicketRedemptionService.php:587 src/Web/SignupController.php:1244
 msgid "Free entry is closed for that date."
 msgstr ""
 
@@ -2849,7 +2849,7 @@ msgstr[1] ""
 msgid "Hi %1$s,\n\nConfirm your email to finish signing up for %2$s tasks.\n\nThe link works once and expires in a day. If you didn't ask for this, you can ignore this email."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:499
+#: src/Telegram/TicketRedemptionService.php:500
 #. translators: 1: name, 2: event date
 msgid "Hi %1$s,\n\nHere is your free-entry ticket for %2$s. Show it at the door."
 msgstr ""
@@ -4598,7 +4598,7 @@ msgstr ""
 msgid "Open the signup page"
 msgstr ""
 
-#: src/Support/NewcomerApproval.php:709
+#: src/Support/NewcomerApproval.php:710
 msgid "Open their Telegram profile"
 msgstr ""
 
@@ -4910,7 +4910,7 @@ msgstr ""
 msgid "Please sign in first."
 msgstr ""
 
-#: src/Telegram/UpdateRouter.php:612
+#: src/Telegram/UpdateRouter.php:643
 msgid "Please tell an organizer what is not right: they can correct it."
 msgstr ""
 
@@ -6109,7 +6109,7 @@ msgstr ""
 msgid "Show the open tasks"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:361 src/Telegram/TicketRedemptionService.php:503
+#: src/Support/MessageTemplates.php:361 src/Telegram/TicketRedemptionService.php:504
 msgid "Show your ticket"
 msgstr ""
 
@@ -6894,7 +6894,7 @@ msgstr ""
 msgid "That event has no start date recorded, so its tasks cannot be scheduled. Set one on the event and try again."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:588 src/Web/SignupController.php:1246
+#: src/Telegram/TicketRedemptionService.php:589 src/Web/SignupController.php:1246
 msgid "That event is no longer available."
 msgstr ""
 
@@ -9292,7 +9292,7 @@ msgstr ""
 msgid "Write again"
 msgstr ""
 
-#: src/Telegram/UpdateRouter.php:618
+#: src/Telegram/UpdateRouter.php:649
 msgid "Write here in a few words what is not right. The organizers get it and can correct it."
 msgstr ""
 
@@ -9354,7 +9354,7 @@ msgstr ""
 msgid "You already asked to take over this task. %1$s has until %2$s to answer."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:587 src/Web/SignupController.php:1245
+#: src/Telegram/TicketRedemptionService.php:588 src/Web/SignupController.php:1245
 msgid "You already have a free-entry ticket for that night."
 msgstr ""
 
@@ -9520,7 +9520,7 @@ msgstr ""
 msgid "You have left the announcement. You will not get it any more."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:585 src/Web/SignupController.php:1243
+#: src/Telegram/TicketRedemptionService.php:586 src/Web/SignupController.php:1243
 msgid "You have no free-entry credits to spend."
 msgstr ""
 
@@ -9679,7 +9679,7 @@ msgstr ""
 msgid "Your first name (optional)"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:1490 src/Telegram/TicketRedemptionService.php:496
+#: src/Support/MessageTemplates.php:1490 src/Telegram/TicketRedemptionService.php:497
 msgid "Your free-entry ticket"
 msgstr ""
 
@@ -9774,7 +9774,7 @@ msgstr ""
 msgid "Your standing comes from how your past tasks went:"
 msgstr ""
 
-#: src/Support/ClaimNotifier.php:286 src/Support/MessagePreview.php:160 src/Support/StandingNotice.php:131
+#: src/Support/ClaimNotifier.php:287 src/Support/MessagePreview.php:160 src/Support/StandingNotice.php:131
 #. translators: 1: standing level and score, 2: number of free-entry credits
 msgid "Your standing: %1$s · %2$d free-entry credits."
 msgstr ""
@@ -10363,7 +10363,7 @@ msgid_plural "🎁 You’ve been given %d free-entry credits. Tap 🎟 Free-entr
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/MessageTemplates.php:362 src/Support/MessageTemplates.php:1016 src/Telegram/TicketRedemptionService.php:478
+#: src/Support/MessageTemplates.php:362 src/Support/MessageTemplates.php:1016 src/Telegram/TicketRedemptionService.php:479
 msgid "🎟 Show your ticket"
 msgstr ""
 

@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.163
+Stable tag: 1.140.164
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.164 =
+* In a private chat, a button tap on the bot's last message answers in that message instead of posting a new one
+* A tap on an older message, or after the person has written, still posts a new message
+* Tickets, sign-up and cancel confirmations, credit messages and newcomer requests stay as their own messages
 
 = 1.140.163 =
 * ❌ No asks to confirm and offers a reason: Unknown to us (the person is told) or No reason (not told)
@@ -1752,6 +1757,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.164 =
+No settings change.
 
 = 1.140.163 =
 No settings change.
