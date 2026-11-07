@@ -107,11 +107,6 @@ msgstr "%1$s (%2$s) pisze do bota na czacie prywatnym. Oto ten czat, od najstars
 msgid "%1$s agreed, but their task could not be moved to you: %2$s at %3$s, %4$s. Nothing changed."
 msgstr "%1$s się zgadza, ale nie udało się przenieść zadania na ciebie: %2$s, %3$s, %4$s. Nic się nie zmieniło."
 
-#. translators: 1: role, 2: event, 3: free places, 4: places in all
-#: src/Support/OpenTaskCall.php:375
-msgid "%1$s at %2$s (%3$d of %4$d free)"
-msgstr "%1$s w %2$s (wolne: %3$d z %4$d)"
-
 #. translators: 1: role, 2: event, 3: day and time
 #: src/Support/MessageTemplates.php:2983 src/Telegram/BoardService.php:1522
 msgid "%1$s at %2$s, %3$s"
@@ -202,16 +197,6 @@ msgstr "%1$s: zapisanych %2$d"
 #: src/Admin/NewsletterPage.php:381
 msgid "%1$s: %2$d unsubscribed"
 msgstr "%1$s: wypisanych %2$d"
-
-#. translators: 1: day and time, 2: role with emoji, 3: event
-#: src/Support/OpenTaskList.php:148
-msgid "%1$s: %2$s at %3$s"
-msgstr "%1$s: %2$s w %3$s"
-
-#. translators: 1: day and time, 2: role with emoji, 3: event, 4: free places, 5: places in all
-#: src/Support/OpenTaskList.php:155
-msgid "%1$s: %2$s at %3$s (%4$d of %5$d free)"
-msgstr "%1$s: %2$s w %3$s (wolne: %4$d z %5$d)"
 
 #. translators: 1: cancellation kind, 2: role, 3: event, 4: standing note
 #: src/Support/MessageTemplates.php:1582
@@ -11237,3 +11222,7 @@ msgstr "Nie musisz uczyć się poleceń: wszystkie są pod przyciskiem menu bota
 #, php-format
 msgid "Cancelled under %d h before"
 msgstr "Odwołane mniej niż %d h przed"
+
+#: src/Telegram/TicketController.php
+msgid "Show QR code"
+msgstr "Pokaż kod QR"

@@ -635,7 +635,7 @@ final class ClaimNotifierTest extends TestCase
         $dm = $sends->items[0];
         self::assertStringStartsWith(
             "❌ Cancelled: Decorate at Party. Thanks for the notice. This is an early cancellation: it is more than 48"
-                . " hours before the task, so it has no effect on your standing.\n\nOther open tasks at Party:\n📅 Sat 1 Aug\n- ",
+                . " hours before the task, so it has no effect on your standing.\n\nOther open tasks at Party:\n📅 Sat 1 Aug\n\n🔹 ",
             (string) $dm['text']
         );
         self::assertStringNotContainsString('Your standing', (string) $dm['text']);
@@ -645,7 +645,7 @@ final class ClaimNotifierTest extends TestCase
         self::assertStringContainsString('See open tasks', $buttons[1]['text']);
 
         $body = $this->mails[0]['body'];
-        self::assertStringContainsString("so it has no effect on your standing.\n\nOther open tasks at Party:\n📅 Sat 1 Aug\n- ", $body);
+        self::assertStringContainsString("so it has no effect on your standing.\n\nOther open tasks at Party:\n📅 Sat 1 Aug\n\n🔹 ", $body);
         self::assertStringContainsString('Sign up again: https://site.test/crew/#', $body);
         self::assertStringContainsString('https://t.me/crewbot?start=task-5', $body);
         self::assertStringContainsString('See open tasks: https://site.test/crew/', $body);

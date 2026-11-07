@@ -363,7 +363,7 @@ final class TicketControllerTest extends TestCase
         $html = $this->controller()->renderPage($this->sampleTicket());
 
         self::assertStringContainsString(
-            '<div class="t-qr" id="ec-qr"><img class="t-qr-logo" src="https://site.test/logo.png" alt=""></div>',
+            '<div class="t-qr" id="ec-qr" hidden><img class="t-qr-logo" src="https://site.test/logo.png" alt=""></div>',
             $html
         );
         self::assertStringContainsString('assets/vendor/qrcode-generator/qrcode.js?ver=', $html);
@@ -397,7 +397,7 @@ final class TicketControllerTest extends TestCase
     {
         $html = $this->controller()->renderPage($this->sampleTicket());
 
-        self::assertStringContainsString('<div class="t-qr" id="ec-qr"></div>', $html);
+        self::assertStringContainsString('<div class="t-qr" id="ec-qr" hidden></div>', $html);
         self::assertStringNotContainsString('t-qr-logo"', $html);
     }
 
@@ -664,6 +664,20 @@ final class TicketControllerTest extends TestCase
         self::assertFileExists(dirname(__DIR__, 2) . '/' . TicketController::IN_SOUND);
     }
 
+    /** The QR stays hidden behind a Show QR code button; the click reveals it. */
+    public function testTheQrCodeIsHiddenUntilTheShowButtonIsClicked(): void
+    {
+        $html = $this->controller()->renderPage($this->ticketForEventStartingAt('19:00'));
+
+        $button = strpos($html, 'id="ec-qr-show"');
+        $qr = strpos($html, 'id="ec-qr" hidden');
+        self::assertNotFalse($button);
+        self::assertNotFalse($qr);
+        self::assertLessThan($qr, $button);
+        self::assertStringContainsString('>Show QR code</button>', $html);
+        self::assertStringContainsString('h.hidden=false', $html);
+    }
+
     /** Before the doors close the band is VALID and the page knows when they close. */
     public function testBeforeTheDoorsCloseTheTicketIsValidAndCountsDownToThem(): void
     {
@@ -707,6 +721,35 @@ final class TicketControllerTest extends TestCase
         self::assertStringNotContainsString('is-expired" id', $html);
         // Nothing left to wait for: no live script.
         self::assertStringNotContainsString('closesIn', $html);
+    }
+
+    /**
+     * The gold band glows and loops without snapping: the gold drifts by one
+     * whole 200% tile, the glow alternates, and less motion stops it all.
+     */
+    public function testTheGoldBandLoopsSeamlesslyAndStopsForLessMotion(): void
+    {
+        $ticket = $this->ticketForEventStartingAt('10:00');
+        $ticket['used'] = '2026-07-20 10:20:00';
+
+        $html = $this->controller()->renderPage($ticket);
+
+        self::assertStringContainsString('background-size:200% 100%', $html);
+        self::assertStringContainsString(
+            '@keyframes t-gold{from{background-position:0 0}to{background-position:200% 0}}',
+            $html
+        );
+        self::assertStringContainsString('@keyframes t-glow{', $html);
+        self::assertStringContainsString('t-glow 2.8s ease-in-out infinite alternate', $html);
+        self::assertStringContainsString('@keyframes t-sheen{', $html);
+        self::assertStringContainsString('@keyframes t-twinkle{0%,100%{', $html);
+        self::assertMatchesRegularExpression(
+            '/@media \(prefers-reduced-motion:reduce\)\{[^}]*\.t-band\.is-in[^}]*\{animation:none\}'
+            . '\.t-band\.is-in::before\{display:none\}/',
+            $html
+        );
+        // The static glow stays on the band itself, outside any animation.
+        self::assertStringContainsString('box-shadow:0 0 .6em rgba(255,196,40,.45)', $html);
     }
 
     /** With no doors time the ticket never expires on the page. */

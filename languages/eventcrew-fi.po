@@ -8263,20 +8263,8 @@ msgstr "Tyhjä rivi ja tehtävän tiedot: tehtävä, tapahtuma, päivä ja aika,
 msgid "Open now:"
 msgstr "Avoinna nyt:"
 
-#. translators: 1: day and time, 2: role with emoji, 3: event
-msgid "%1$s: %2$s at %3$s"
-msgstr "%1$s: %2$s, %3$s"
-
-#. translators: 1: day and time, 2: role with emoji, 3: event, 4: free places, 5: places in all
-msgid "%1$s: %2$s at %3$s (%4$d of %5$d free)"
-msgstr "%1$s: %2$s, %3$s (%4$d / %5$d vapaana)"
-
 msgid "The Crew app has an Admin tab for you, where you manage tasks and people."
 msgstr "Crew-sovelluksessa on sinulle Ylläpito-välilehti, jossa hoidat tehtäviä ja ihmisiä."
-
-#. translators: 1: role, 2: event, 3: free places, 4: places in all
-msgid "%1$s at %2$s (%3$d of %4$d free)"
-msgstr "%1$s, %2$s (%3$d / %4$d vapaana)"
 
 #, php-format
 msgid "Blank: %s."
@@ -9062,3 +9050,7 @@ msgstr "Komentoja ei tarvitse opetella: ne kaikki löytyvät botin valikkopainik
 #, php-format
 msgid "Cancelled under %d h before"
 msgstr "Peruttu alle %d h ennen"
+
+#: src/Telegram/TicketController.php
+msgid "Show QR code"
+msgstr "Näytä QR-koodi"

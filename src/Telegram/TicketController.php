@@ -697,10 +697,14 @@ final class TicketController
         $lib = EVENTCREW_PLUGIN_URL . 'assets/vendor/qrcode-generator/qrcode.js?ver=' . EVENTCREW_VERSION;
         $content = '' === $data ? 'location.href' : (string) wp_json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP);
 
-        return '<div class="t-qr" id="ec-qr">' . $img . '</div>'
+        // The code stays hidden behind a button (Owner 2026-11-07): the tap
+        // that shows it also lets the browser play the "you're in" sound.
+        return '<button type="button" class="t-qr-show" id="ec-qr-show">'
+            . esc_html__('Show QR code', 'eventcrew') . '</button>'
+            . '<div class="t-qr" id="ec-qr" hidden>' . $img . '</div>'
             . '<script src="' . esc_url($lib) . '"></script>'
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained script; wrapping adds stray whitespace.
-            . '<script>(function(){var h=document.getElementById("ec-qr");if(!h){return;}if("function"!==typeof window.qrcode){h.parentNode.removeChild(h);return;}var q=window.qrcode(0,"H");q.addData(' . $content . ');q.make();h.insertAdjacentHTML("afterbegin",q.createSvgTag({cellSize:4,margin:8,scalable:true}));})();</script>';
+            . '<script>(function(){var h=document.getElementById("ec-qr"),s=document.getElementById("ec-qr-show");if(!h){return;}if("function"!==typeof window.qrcode){h.parentNode.removeChild(h);if(s){s.parentNode.removeChild(s);}return;}var q=window.qrcode(0,"H");q.addData(' . $content . ');q.make();h.insertAdjacentHTML("afterbegin",q.createSvgTag({cellSize:4,margin:8,scalable:true}));if(s){s.addEventListener("click",function(){s.parentNode.removeChild(s);h.hidden=false;});}else{h.hidden=false;}})();</script>';
     }
 
     /**
@@ -803,35 +807,58 @@ final class TicketController
             . '.t-band{margin:0 -1.2em 1em;padding:.45em;color:#fff;font-weight:700;letter-spacing:.15em}'
             . '.t-band.is-valid{background:#1a7f37}.t-band.is-disabled{background:#b32d2e}'
             . '.t-band.is-expired{background:#000;letter-spacing:.04em}'
-            // Gold with dark brown text (over 9:1), a slow shine across it
-            // and eight twinkling stars; a band drawn live also pops in with
-            // a burst of stars (is-new). No motion at all for a reader who
-            // asks for less.
+            // Gold with dark brown text (over 6:1 on the darkest gold). Every
+            // loop starts where it ends, so nothing snaps: the gold drifts by
+            // exactly one 200% tile (t-gold), a warm glow breathes in and out
+            // (t-glow, alternate), a soft white sheen sweeps across from
+            // outside the band to outside it (t-sheen), and eight stars
+            // twinkle (t-twinkle). A band drawn live (is-new) also eases in,
+            // flares (t-flare) and bursts its stars; each ends on the state
+            // its loop starts from. Less motion: no animation, the glow stays.
             . '.t-band.is-in{position:relative;overflow:hidden;padding:.7em .45em;color:#3b2500;letter-spacing:.04em;'
-            . 'background:linear-gradient(110deg,#c8960c,#ffd34d 30%,#fff4c2 50%,#ffd34d 70%,#c8960c);'
-            . 'background-size:250% 100%;animation:t-shine 3.5s linear infinite}'
-            . '.t-in-text,.t-at{display:block;position:relative}.t-in-text{font-size:1.25em}'
+            . 'background:linear-gradient(90deg,#dcaa1f,#ffd34d 25%,#fff2b8 50%,#ffd34d 75%,#dcaa1f);'
+            . 'background-size:200% 100%;'
+            . 'box-shadow:0 0 .6em rgba(255,196,40,.45),inset 0 0 .8em rgba(255,250,220,.5);'
+            . 'animation:t-gold 6s linear infinite,t-glow 2.8s ease-in-out infinite alternate}'
+            . '.t-band.is-in::before{content:"";position:absolute;top:0;bottom:0;left:0;width:40%;pointer-events:none;'
+            . 'background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.6) 50%,rgba(255,255,255,0));'
+            . 'transform:translateX(-160%) skewX(-20deg);animation:t-sheen 5s ease-in-out infinite}'
+            . '.t-in-text,.t-at{display:block;position:relative}'
+            . '.t-in-text{font-size:1.25em;text-shadow:0 0 .35em rgba(255,248,215,.95),0 0 .9em rgba(255,215,90,.8)}'
             . '.t-at{font-size:.8em;font-weight:600;letter-spacing:normal;margin-top:.15em}'
-            . '.t-stars i{position:absolute;font-style:normal;color:#fff;line-height:1;'
-            . 'text-shadow:0 0 4px #a86b00,0 0 10px #fff;animation:t-twinkle 1.8s ease-in-out infinite}'
+            . '.t-stars i{position:absolute;font-style:normal;color:#fff;line-height:1;opacity:.25;'
+            . 'text-shadow:0 0 4px #a86b00,0 0 10px #fff;animation:t-twinkle 2.4s ease-in-out infinite}'
             . '.t-stars i:nth-child(1){left:5%;top:12%;font-size:.9em}'
-            . '.t-stars i:nth-child(2){left:16%;top:58%;font-size:.6em;animation-delay:.4s}'
-            . '.t-stars i:nth-child(3){left:28%;top:8%;font-size:.7em;animation-delay:.9s}'
-            . '.t-stars i:nth-child(4){left:40%;top:70%;font-size:.5em;animation-delay:1.3s}'
-            . '.t-stars i:nth-child(5){left:60%;top:6%;font-size:.6em;animation-delay:.2s}'
-            . '.t-stars i:nth-child(6){left:72%;top:62%;font-size:.8em;animation-delay:1.1s}'
-            . '.t-stars i:nth-child(7){left:84%;top:14%;font-size:.6em;animation-delay:.6s}'
-            . '.t-stars i:nth-child(8){left:93%;top:55%;font-size:.9em;animation-delay:1.5s}'
-            . '.t-band.is-new{animation:t-shine 3.5s linear infinite,t-pop .7s cubic-bezier(.2,1.6,.4,1)}'
-            . '.t-band.is-new .t-stars i{animation:t-burst 1.1s ease-out both,t-twinkle 1.8s ease-in-out 1.1s infinite}'
-            . '@keyframes t-shine{to{background-position:-250% 0}}'
-            . '@keyframes t-twinkle{0%,100%{opacity:.2;transform:scale(.5)}50%{opacity:1;transform:scale(1.2) rotate(25deg)}}'
-            . '@keyframes t-pop{0%{transform:scale(.6);opacity:0}100%{transform:none;opacity:1}}'
-            . '@keyframes t-burst{0%{opacity:0;transform:translateY(1.2em) scale(.2)}'
-            . '60%{opacity:1;transform:translateY(-.3em) scale(1.6) rotate(90deg)}100%{opacity:.6;transform:none}}'
+            . '.t-stars i:nth-child(2){left:16%;top:58%;font-size:.6em;animation-delay:-.5s}'
+            . '.t-stars i:nth-child(3){left:28%;top:8%;font-size:.7em;animation-delay:-1.2s}'
+            . '.t-stars i:nth-child(4){left:40%;top:70%;font-size:.5em;animation-delay:-1.7s}'
+            . '.t-stars i:nth-child(5){left:60%;top:6%;font-size:.6em;animation-delay:-.3s}'
+            . '.t-stars i:nth-child(6){left:72%;top:62%;font-size:.8em;animation-delay:-1.5s}'
+            . '.t-stars i:nth-child(7){left:84%;top:14%;font-size:.6em;animation-delay:-.8s}'
+            . '.t-stars i:nth-child(8){left:93%;top:55%;font-size:.9em;animation-delay:-2s}'
+            . '.t-band.is-new{animation:t-gold 6s linear infinite,t-pop .9s cubic-bezier(.22,1.25,.36,1),'
+            . 't-flare 1.4s ease-out,t-glow 2.8s ease-in-out 1.4s infinite alternate}'
+            . '.t-band.is-new .t-stars i{animation:t-burst 1.2s ease-out both,t-twinkle 2.4s ease-in-out 1.2s infinite}'
+            . '@keyframes t-gold{from{background-position:0 0}to{background-position:200% 0}}'
+            . '@keyframes t-glow{from{box-shadow:0 0 .6em rgba(255,196,40,.45),inset 0 0 .8em rgba(255,250,220,.5)}'
+            . 'to{box-shadow:0 0 1.6em rgba(255,196,40,.85),inset 0 0 1.4em rgba(255,250,220,.85)}}'
+            . '@keyframes t-flare{0%{box-shadow:0 0 0 rgba(255,196,40,0),inset 0 0 0 rgba(255,250,220,0)}'
+            . '35%{box-shadow:0 0 2.4em rgba(255,210,70,1),inset 0 0 2em rgba(255,255,240,1)}'
+            . '100%{box-shadow:0 0 .6em rgba(255,196,40,.45),inset 0 0 .8em rgba(255,250,220,.5)}}'
+            . '@keyframes t-sheen{0%{transform:translateX(-160%) skewX(-20deg)}'
+            . '55%,100%{transform:translateX(320%) skewX(-20deg)}}'
+            . '@keyframes t-twinkle{0%,100%{opacity:.25;transform:scale(.6) rotate(0deg)}'
+            . '50%{opacity:1;transform:scale(1.15) rotate(20deg)}}'
+            . '@keyframes t-pop{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}'
+            . '@keyframes t-burst{0%{opacity:0;transform:translateY(1.2em) scale(.2) rotate(0deg)}'
+            . '60%{opacity:1;transform:translateY(-.3em) scale(1.5) rotate(90deg)}'
+            . '100%{opacity:.25;transform:translateY(0) scale(.6) rotate(0deg)}}'
             . '@media (prefers-reduced-motion:reduce){.t-band.is-in,.t-band.is-new,.t-stars i,'
-            . '.t-band.is-new .t-stars i{animation:none}.t-stars i{opacity:.8}}'
+            . '.t-band.is-new .t-stars i{animation:none}.t-band.is-in::before{display:none}.t-stars i{opacity:.8}}'
             . '.t-qr{position:relative;width:15em;max-width:100%;margin:0 auto 1em}'
+            . '.t-qr[hidden]{display:none}'
+            . '.t-qr-show{display:block;margin:0 auto 1em;padding:.6em 1.2em;font:inherit;font-weight:600;'
+            . 'color:#1d1d1f;background:#fff;border:1px solid #c9c9cf;border-radius:10px;cursor:pointer}'
             . '.t-qr svg{display:block;width:100%;height:auto}'
             . '.t-qr-logo{display:none;position:absolute;left:50%;top:50%;width:20%;height:20%;'
             . 'transform:translate(-50%,-50%);object-fit:contain;background:#fff;padding:3%;border-radius:8px}'

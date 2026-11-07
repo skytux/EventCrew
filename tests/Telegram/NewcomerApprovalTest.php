@@ -402,7 +402,7 @@ final class NewcomerApprovalTest extends TelegramTestCase
         self::assertNotNull($sent);
         self::assertStringEndsWith(
             "✅ The team said OK. You can now take tasks.\n\nOpen now:"
-                . "\n📅 Sat 14 Nov\n- 18:00–20:00: Door at Dance Night (2 of 3 free)",
+                . "\n📅 Sat 14 Nov\n\n🔹 Door 18:00–20:00 at Dance Night\n2 of 3 places free",
             $sent['text']
         );
         self::assertSame(

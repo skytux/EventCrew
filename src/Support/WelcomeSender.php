@@ -813,9 +813,20 @@ final class WelcomeSender
      */
     private function openTasksText(bool $button = true): string
     {
+        return self::openTasksBlock($this->openTasks(), $button);
+    }
+
+    /**
+     * {open_tasks} of the welcome for these open tasks, soonest first; the
+     * Messages page preview draws its sample the same way.
+     *
+     * @param array<int, array{task: Task, free: int}> $open
+     */
+    public static function openTasksBlock(array $open, bool $button = true): string
+    {
         $byDate = [];
 
-        foreach ($this->openTasks() as $row) {
+        foreach ($open as $row) {
             $byDate[$row['task']->taskDate][] = $row;
         }
 
@@ -830,18 +841,10 @@ final class WelcomeSender
 
             foreach ($rows as $row) {
                 $task = $row['task'];
-                $time = $task->timeRange();
-                $name = $task->roleDisplay() . ('' === $time ? '' : ' ' . $time);
-                // The role's emoji is the bullet; a role without one gets 🔹.
-                $name = EmailBody::isEmojiLine('- ' . $name) ? $name : '🔹 ' . $name;
+                $name = OpenTaskList::taskName($task);
                 // The free places on a line of their own, each task its own
                 // block (Owner 2026-11-07); an email draws the break as <br>.
-                $lines[] = $name . "\n" . sprintf(
-                    /* translators: 1: free places, 2: places in total */
-                    __('%1$d of %2$d places free', 'eventcrew'),
-                    $row['free'],
-                    $task->capacity
-                );
+                $lines[] = $name . "\n" . OpenTaskList::freeLine($row['free'], $task->capacity);
             }
 
             $blocks[] = '📅 ' . Dates::dayLabel((string) $date) . "\n\n" . implode("\n\n", $lines);
@@ -869,8 +872,8 @@ final class WelcomeSender
         $dates = [];
 
         foreach ($tasks as $task) {
-            // Never offered to a newcomer: restricted to a role, and no places to count.
-            if ($task->isRestricted()) {
+            // Only what the public board offers: not restricted, the role on the board and not archived.
+            if (! BoardVisibility::onGuestBoard($task)) {
                 continue;
             }
 

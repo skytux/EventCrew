@@ -321,7 +321,7 @@ final class SlotFreedNoticeTest extends TestCase
         self::assertStringContainsString('2 of 3 places free', $body);
         self::assertStringContainsString('Bring gloves.', $body);
         self::assertStringContainsString('Other open tasks at Party:', $body);
-        self::assertStringContainsString(Roles::display('welcome') . ' · 20:00–22:00 · 1 of 2 places free', $body);
+        self::assertStringContainsString(Roles::display('welcome') . ' 20:00–22:00<br>1 of 2 places free', $body);
         self::assertStringNotContainsString(Roles::display('decorate'), $body);
         self::assertStringNotContainsString(Roles::display('organize'), $body);
     }
@@ -336,9 +336,9 @@ final class SlotFreedNoticeTest extends TestCase
         ];
 
         self::assertSame(
-            "Other open tasks at Party:\n📅 Sat 1 Aug\n"
-            . '- ' . Roles::display('welcome') . " · 20:00–22:00 · 1 of 2 places free\n\n📅 Sun 2 Aug\n"
-            . '- ' . Roles::display('decorate') . ' · 3 of 3 places free',
+            "Other open tasks at Party:\n📅 Sat 1 Aug\n\n"
+            . Roles::display('welcome') . " 20:00–22:00\n1 of 2 places free\n\n📅 Sun 2 Aug\n\n"
+            . Roles::display('decorate') . "\n3 of 3 places free",
             SlotFreedNotice::others($task, $rows)
         );
         self::assertSame('', SlotFreedNotice::others($task, []));

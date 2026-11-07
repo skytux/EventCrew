@@ -117,11 +117,6 @@ msgid ""
 msgstr ""
 "%1$s sa ja, men uppgiften kunde inte flyttas till dig: %2$s på %3$s, %4$s. Inget ändrades."
 
-#: src/Support/OpenTaskCall.php:375
-#. translators: 1: role, 2: event, 3: free places, 4: places in all
-msgid "%1$s at %2$s (%3$d of %4$d free)"
-msgstr "%1$s på %2$s (%3$d av %4$d lediga)"
-
 #: src/Support/MessageTemplates.php:2540
 #. translators: 1: role, 2: event, 3: day and time
 msgid "%1$s at %2$s, %3$s"
@@ -200,16 +195,6 @@ msgstr "%1$s: %2$d prenumererade"
 #: src/Admin/NewsletterPage.php:381
 msgid "%1$s: %2$d unsubscribed"
 msgstr "%1$s: %2$d avslutade prenumerationen"
-
-#: src/Support/OpenTaskList.php:148
-#. translators: 1: day and time, 2: role with emoji, 3: event
-msgid "%1$s: %2$s at %3$s"
-msgstr "%1$s: %2$s på %3$s"
-
-#: src/Support/OpenTaskList.php:155
-#. translators: 1: day and time, 2: role with emoji, 3: event, 4: free places, 5: places in all
-msgid "%1$s: %2$s at %3$s (%4$d of %5$d free)"
-msgstr "%1$s: %2$s på %3$s (%4$d av %5$d lediga)"
 
 #: src/Support/MessageTemplates.php:1278
 #. translators: 1: cancellation kind, 2: role, 3: event, 4: standing note
@@ -12108,3 +12093,7 @@ msgstr "Du behöver inte lära dig kommandona: de finns alla under botens menykn
 #, php-format
 msgid "Cancelled under %d h before"
 msgstr "Avbokade under %d h innan"
+
+#: src/Telegram/TicketController.php
+msgid "Show QR code"
+msgstr "Visa QR-kod"

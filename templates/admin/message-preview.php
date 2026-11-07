@@ -157,7 +157,7 @@ $eventcrew_task_id = (int) ($message['task_id'] ?? 0);
         <p><strong><?php echo esc_html((string) $message['error']); ?></strong></p>
     <?php elseif (MessageTemplate::CHANNEL_TELEGRAM === $message['channel']) : ?>
         <div class="ec-chat">
-            <div class="ec-bubble"><?php echo MessagePreview::telegramHtml((string) $message['text']); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in telegramHtml(). ?></div>
+            <div class="ec-bubble"><?php echo MessagePreview::telegramHtml((string) $message['text'], ! empty($message['dm_html'])); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in telegramHtml(). ?></div>
             <?php if ([] !== $message['buttons']) : ?>
                 <ul class="ec-buttons" aria-label="<?php esc_attr_e('Buttons', 'eventcrew'); ?>">
                     <?php foreach ($message['buttons'] as $eventcrew_button) : ?>

@@ -107,11 +107,6 @@ msgstr "%1$s (%2$s) писал(а) боту в личном чате. Вот э�
 msgid "%1$s agreed, but their task could not be moved to you: %2$s at %3$s, %4$s. Nothing changed."
 msgstr "%1$s соглашается, но задачу не удалось передать тебе: %2$s на %3$s, %4$s. Ничего не изменилось."
 
-#. translators: 1: role, 2: event, 3: free places, 4: places in all
-#: src/Support/OpenTaskCall.php:375
-msgid "%1$s at %2$s (%3$d of %4$d free)"
-msgstr "%1$s в %2$s (свободно %3$d из %4$d)"
-
 #. translators: 1: role, 2: event, 3: day and time
 #: src/Support/MessageTemplates.php:2983 src/Telegram/BoardService.php:1522
 msgid "%1$s at %2$s, %3$s"
@@ -202,16 +197,6 @@ msgstr "%1$s: подписались — %2$d"
 #: src/Admin/NewsletterPage.php:381
 msgid "%1$s: %2$d unsubscribed"
 msgstr "%1$s: отписались — %2$d"
-
-#. translators: 1: day and time, 2: role with emoji, 3: event
-#: src/Support/OpenTaskList.php:148
-msgid "%1$s: %2$s at %3$s"
-msgstr "%1$s: %2$s в %3$s"
-
-#. translators: 1: day and time, 2: role with emoji, 3: event, 4: free places, 5: places in all
-#: src/Support/OpenTaskList.php:155
-msgid "%1$s: %2$s at %3$s (%4$d of %5$d free)"
-msgstr "%1$s: %2$s в %3$s (свободно %4$d из %5$d)"
 
 #. translators: 1: cancellation kind, 2: role, 3: event, 4: standing note
 #: src/Support/MessageTemplates.php:1582
@@ -11237,3 +11222,7 @@ msgstr "Команды учить не нужно: все они есть в к�
 #, php-format
 msgid "Cancelled under %d h before"
 msgstr "Отмена менее чем за %d ч"
+
+#: src/Telegram/TicketController.php
+msgid "Show QR code"
+msgstr "Показать QR-код"

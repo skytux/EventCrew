@@ -9,6 +9,7 @@ use EventCrew\Models\Person;
 use EventCrew\Support\OrganizerGuide;
 use EventCrew\Support\ReputationSettings;
 use EventCrew\Support\RoleGuide;
+use EventCrew\Support\Roles;
 use EventCrew\Support\WelcomeSender;
 
 /**
@@ -325,6 +326,34 @@ final class WelcomeSenderTest extends SalesDeskTestCase
 
         self::assertStringContainsString('Decorate', $open);
         self::assertSame(1, substr_count($open, 'places free'));
+    }
+
+    /** A task of an archived role is never offered, like on the board (Owner 2026-11-07). */
+    public function testTheDmNeverOffersATaskOfAnArchivedRole(): void
+    {
+        $this->options[WelcomeSender::ENABLED_OPTION] = '1';
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'decorate', 'label' => 'Decorate', 'emoji' => '🎈'],
+            ['slug' => 'random', 'label' => 'Random', 'archived' => true],
+        ];
+
+        // The four ledger lists, all empty.
+        array_push($this->wpdb->nextCols, [], [], [], []);
+
+        $this->wpdb->nextResults[] = [$this->memberRow(1)];
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(5, 'decorate', '13:00', '14:00'),
+            $this->taskRow(6, 'random', '15:00', '16:00'),
+        ];
+        $this->wpdb->nextResults[] = [];
+
+        $this->welcomeSender()->sendDue(25);
+
+        $text = $this->lastCallTo('sendMessage')['text'];
+
+        self::assertStringContainsString('Decorate', $text);
+        self::assertStringNotContainsString('Random', $text);
+        self::assertSame(1, substr_count($text, 'places free'));
     }
 
     /** The open tasks come grouped by date, at most 3 dates (Owner 2026-11-07). */

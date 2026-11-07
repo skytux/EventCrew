@@ -104,6 +104,7 @@ final class MessagePreview
                 'from' => '',
                 'headers' => [],
                 'html' => '',
+                'dm_html' => false,
                 'text' => '',
                 'buttons' => [],
                 'error' => '',
@@ -213,7 +214,9 @@ final class MessagePreview
     private function compose(MessageTemplate $template, ?string $lang, ?Task $task = null): array
     {
         $preview = $template->preview;
-        $context = (isset($preview['context']) ? ($preview['context'])() : []) + $this->sampleContext($lang, $task);
+        $sample = $this->sampleContext($lang, $task);
+        // A kind's own context may build on the sample (its task, ...).
+        $context = (isset($preview['context']) ? ($preview['context'])($sample) : []) + $sample;
         $buttons = $preview['buttons'] ?? [];
         $buttons = array_values($buttons instanceof \Closure ? $buttons($context) : $buttons);
         $mailer = new Mailer($this->logger, new EmailTemplate($this->logger, true), true);
@@ -241,14 +244,17 @@ final class MessagePreview
 
         if (MessageTemplate::CHANNEL_TELEGRAM === $template->channel) {
             $text = MessageAiText::body($template->id, $context, $eventId);
-            $text = true === ($preview['dm_format'] ?? false) ? EmailBody::forDm($text) : $text;
             $frame = $preview['frame'] ?? MessageTemplate::FRAME_PLAIN;
 
             if (MessageTemplate::FRAME_NONE !== $frame) {
                 $text = DmBody::frame($context['person'], $text, MessageTemplate::FRAME_SIGNED === $frame);
             }
 
-            return ['text' => $text, 'buttons' => $buttons];
+            // As the sender does: framed first, then the DM layout as
+            // Telegram HTML (bold headings, links).
+            $html = true === ($preview['dm_format'] ?? false);
+
+            return ['text' => $html ? EmailBody::forDm($text, true) : $text, 'dm_html' => $html, 'buttons' => $buttons];
         }
 
         $send = $preview['send'] ?? MessageTemplate::PREVIEW_PERSON;
@@ -420,7 +426,7 @@ final class MessagePreview
             $all = [];
 
             foreach (MessageTemplates::all() as $id => $template) {
-                $context = (isset($template->preview['context']) ? ($template->preview['context'])() : []) + $base;
+                $context = (isset($template->preview['context']) ? ($template->preview['context'])($base) : []) + $base;
                 $list = [];
 
                 foreach ($template->placeholders as $name => $placeholder) {
@@ -584,10 +590,12 @@ final class MessagePreview
     private function sampleTask(): Task
     {
         $role = (string) (Roles::active()[0]['slug'] ?? 'door');
-        $next = null === $this->tasks ? [] : $this->tasks->upcoming(1);
-
-        if ([] !== $next) {
-            return array_values($next)[0];
+        // The next task the public board offers: never one of an archived
+        // role or a role off the board (Owner 2026-11-07).
+        foreach (null === $this->tasks ? [] : $this->tasks->upcoming(50) as $next) {
+            if (BoardVisibility::onGuestBoard($next)) {
+                return $next;
+            }
         }
 
         $today = (string) current_time('Y-m-d');
@@ -634,10 +642,16 @@ final class MessagePreview
     /**
      * $text as the Telegram app shows it: the DMs are sent as plain text, so
      * every mark stays as typed, line breaks are kept and addresses become
-     * links.
+     * links. $isHtml: $text is Telegram HTML (a welcome DM), drawn as such.
      */
-    public static function telegramHtml(string $text): string
+    public static function telegramHtml(string $text, bool $isHtml = false): string
     {
+        if ($isHtml) {
+            // Telegram HTML from EmailBody::forDm(): already escaped, with
+            // only these tags.
+            return nl2br(wp_kses($text, ['b' => [], 'i' => [], 'a' => ['href' => true]]));
+        }
+
         $html = (string) preg_replace_callback(
             '#https?://[^\s<>"]+#',
             static fn (array $m): string => '<a href="' . esc_url(html_entity_decode($m[0]))

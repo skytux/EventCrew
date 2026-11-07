@@ -144,9 +144,9 @@ final class OpenTaskListTest extends TelegramTestCase
         self::assertSame('', OpenTaskList::block([]));
         self::assertSame('', OpenTaskList::block([OpenTaskList::CONTEXT_KEY => []]));
         self::assertSame(
-            "\n\nOpen now:\n📅 Sat 14 Nov\n- 18:00–20:00: Door at Dance Night (2 of 3 free)"
-                . "\n- 18:00–20:00: DJ at Dance Night"
-                . "\n\n📅 Sun 15 Nov\n- Bar at Dance Night (1 of 2 free)",
+            "\n\nOpen now:\n📅 Sat 14 Nov\n\n🔹 Door 18:00–20:00 at Dance Night\n2 of 3 places free"
+                . "\n\n🔹 DJ 18:00–20:00 at Dance Night"
+                . "\n\n📅 Sun 15 Nov\n\n🔹 Bar at Dance Night\n1 of 2 places free",
             OpenTaskList::block([OpenTaskList::CONTEXT_KEY => [
                 ['task' => $door, 'free' => 2],
                 ['task' => $dj, 'free' => null],
@@ -174,7 +174,7 @@ final class OpenTaskListTest extends TelegramTestCase
             $many[] = ['task' => Task::fromRow($this->taskRow($id, 'door')), 'free' => 1];
         }
 
-        self::assertSame(OpenTaskList::MAX_TASKS, substr_count(OpenTaskList::grouped($many), "\n- "));
+        self::assertSame(OpenTaskList::MAX_TASKS, substr_count(OpenTaskList::grouped($many), 'places free'));
     }
 
     public function testForPersonStopsBeforeAFourthDate(): void

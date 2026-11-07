@@ -502,6 +502,27 @@ final class MessageTemplatesTest extends TestCase
         self::assertFalse(MessageTemplates::isChanged('credit_granted'));
     }
 
+    /**
+     * The built-in English with machine texts only (a Translations page
+     * save) is not stored: it would freeze the built-in text (Owner 2026-11-07).
+     */
+    public function testAMachineCopyOfTheBuiltInTextIsNotStored(): void
+    {
+        $body = MessageTemplates::defaultValue('credit_granted', MessageTemplates::BODY);
+        $body['texts'][Language::FINNISH] = 'Konekäännös {name}';
+        $body['manual'] = array_fill_keys(array_keys($body['texts']), false);
+
+        MessageTemplates::storePart('credit_granted', MessageTemplates::BODY, $body);
+
+        self::assertArrayNotHasKey($this->option('credit_granted'), $this->options);
+
+        // Written by hand: kept.
+        $body['manual'][Language::FINNISH] = true;
+        MessageTemplates::storePart('credit_granted', MessageTemplates::BODY, $body);
+
+        self::assertSame('Konekäännös {name}', MessageTemplates::stored('credit_granted')[MessageTemplates::BODY]['texts'][Language::FINNISH]);
+    }
+
     public function testSavingAChangedTextStoresItAndSendsIt(): void
     {
         $subject = MessageTemplates::defaultValue('credit_granted', MessageTemplates::SUBJECT);

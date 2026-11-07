@@ -105,11 +105,6 @@ msgstr "%1$s (%2$s) heeft de bot in een privéchat geschreven. Hier is die chat,
 msgid "%1$s agreed, but their task could not be moved to you: %2$s at %3$s, %4$s. Nothing changed."
 msgstr "%1$s ging akkoord, maar de taak kon niet naar jou worden verplaatst: %2$s bij %3$s, %4$s. Er is niets veranderd."
 
-#. translators: 1: role, 2: event, 3: free places, 4: places in all
-#: src/Support/OpenTaskCall.php:375
-msgid "%1$s at %2$s (%3$d of %4$d free)"
-msgstr "%1$s bij %2$s (%3$d van %4$d vrij)"
-
 #. translators: 1: role, 2: event, 3: day and time
 #: src/Support/MessageTemplates.php:2983 src/Telegram/BoardService.php:1522
 msgid "%1$s at %2$s, %3$s"
@@ -199,16 +194,6 @@ msgstr "%1$s: %2$d aangemeld"
 #: src/Admin/NewsletterPage.php:381
 msgid "%1$s: %2$d unsubscribed"
 msgstr "%1$s: %2$d afgemeld"
-
-#. translators: 1: day and time, 2: role with emoji, 3: event
-#: src/Support/OpenTaskList.php:148
-msgid "%1$s: %2$s at %3$s"
-msgstr "%1$s: %2$s bij %3$s"
-
-#. translators: 1: day and time, 2: role with emoji, 3: event, 4: free places, 5: places in all
-#: src/Support/OpenTaskList.php:155
-msgid "%1$s: %2$s at %3$s (%4$d of %5$d free)"
-msgstr "%1$s: %2$s bij %3$s (%4$d van %5$d vrij)"
 
 #. translators: 1: cancellation kind, 2: role, 3: event, 4: standing note
 #: src/Support/MessageTemplates.php:1582
@@ -11225,3 +11210,7 @@ msgstr "Je hoeft de commando’s niet te leren: ze staan allemaal onder de menuk
 #, php-format
 msgid "Cancelled under %d h before"
 msgstr "Minder dan %d u vooraf afgezegd"
+
+#: src/Telegram/TicketController.php
+msgid "Show QR code"
+msgstr "QR-code tonen"

@@ -179,57 +179,62 @@ final class OpenTaskList
 
         $blocks = [];
 
+        // A task on two lines (its free places under it) is a block of its
+        // own, with an empty line around it; one-line tasks stay together
+        // (Owner 2026-11-07).
+        $gap = "\n";
+
+        foreach ($days as $lines) {
+            foreach ($lines as $text) {
+                $gap = str_contains($text, "\n") ? "\n\n" : $gap;
+            }
+        }
+
         foreach ($days as $date => $lines) {
-            $blocks[] = '📅 ' . Dates::dayLabel((string) $date) . "\n" . implode("\n", $lines);
+            $blocks[] = '📅 ' . Dates::dayLabel((string) $date) . $gap . implode($gap, $lines);
         }
 
         return implode("\n\n", $blocks);
     }
 
     /**
-     * "- 18:00–20:00: 🚪 Door at Dance Night (2 of 3 free)", under the day's
+     * "🚪 Door 18:00–20:00 at Dance Night", then the free places on a line
+     * of their own, "2 of 3 places free" (Owner 2026-11-07), under the day's
      * heading (grouped()): without the time when the task has none, without
-     * the places for a task with no limit.
+     * the places line for a task with no limit.
      */
     public static function line(Task $task, ?int $free): string
     {
-        $time = $task->timeRange();
+        $name = sprintf(
+            /* translators: 1: role with emoji, 2: event */
+            __('%1$s at %2$s', 'eventcrew'),
+            self::taskName($task),
+            $task->eventName()
+        );
 
-        if ('' === $time) {
-            return '- ' . (null === $free
-                ? sprintf(
-                    /* translators: 1: role with emoji, 2: event */
-                    __('%1$s at %2$s', 'eventcrew'),
-                    $task->roleDisplay(),
-                    $task->eventName()
-                )
-                : sprintf(
-                    /* translators: 1: role, 2: event, 3: free places, 4: places in all */
-                    __('%1$s at %2$s (%3$d of %4$d free)', 'eventcrew'),
-                    $task->roleDisplay(),
-                    $task->eventName(),
-                    $free,
-                    $task->capacity
-                ));
-        }
+        return null === $free ? $name : $name . "\n" . self::freeLine($free, $task->capacity);
+    }
 
-        return '- ' . (null === $free
-            ? sprintf(
-                /* translators: 1: the time, like 18:00–20:00, 2: role with emoji, 3: event */
-                __('%1$s: %2$s at %3$s', 'eventcrew'),
-                $time,
-                $task->roleDisplay(),
-                $task->eventName()
-            )
-            : sprintf(
-                /* translators: 1: the time, like 18:00–20:00, 2: role with emoji, 3: event, 4: free places, 5: places in all */
-                __('%1$s: %2$s at %3$s (%4$d of %5$d free)', 'eventcrew'),
-                $time,
-                $task->roleDisplay(),
-                $task->eventName(),
-                $free,
-                $task->capacity
-            ));
+    /**
+     * "🎈 Decorate 13:00–14:00": the role and the time, as the welcome
+     * lists them. The role's emoji is the bullet; a role without one gets 🔹.
+     */
+    public static function taskName(Task $task): string
+    {
+        $name = trim($task->roleDisplay() . ' ' . $task->timeRange());
+
+        return EmailBody::isEmojiLine('- ' . $name) ? $name : '🔹 ' . $name;
+    }
+
+    /** "2 of 3 places free", the second line of a task in a list. */
+    public static function freeLine(int $free, int $capacity): string
+    {
+        return sprintf(
+            /* translators: 1: free places, 2: places in total */
+            __('%1$d of %2$d places free', 'eventcrew'),
+            $free,
+            $capacity
+        );
     }
 
     /**

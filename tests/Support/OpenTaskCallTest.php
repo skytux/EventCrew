@@ -411,7 +411,7 @@ final class OpenTaskCallTest extends TestCase
     }
 
     /** The open tasks under their date, then a short line on each role. */
-    private const OPEN = "📅 Sat 1 Aug\n- 20:00: 🎈 Decorate at Party (2 of 2 free)\n\n📝 What each task involves\n"
+    private const OPEN = "📅 Sat 1 Aug\n\n🎈 Decorate 20:00 at Party\n2 of 2 places free\n\n📝 What each task involves\n"
         . '🎈 Decorate: Set up before the dance: close the curtains, check the bathrooms, place the LED candles…';
 
     /**

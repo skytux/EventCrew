@@ -315,7 +315,7 @@ final class SlotFreedNotice
             sprintf(__('Event: %s', 'eventcrew'), $task->eventName()),
             /* translators: %s: the day and the time, like Sat 14 Nov 18:00–20:00 */
             sprintf(__('When: %s', 'eventcrew'), self::when($task)),
-            self::freeText(max(0, $free), $task->capacity),
+            OpenTaskList::freeLine(max(0, $free), $task->capacity),
         ];
         $about = self::description($task);
 
@@ -325,8 +325,8 @@ final class SlotFreedNotice
     /**
      * The short board of the other open tasks: a heading, then the tasks
      * under a line with each date (OpenTaskList::grouped(), at most three
-     * dates and eight tasks, Owner 2026-11-07), one "- " line per task (role,
-     * time, free places); '' when there are none.
+     * dates and eight tasks, Owner 2026-11-07), each task its role and time,
+     * then its free places on the next line; '' when there are none.
      *
      * @param list<array{task: Task, free: int}> $rows
      */
@@ -342,11 +342,9 @@ final class SlotFreedNotice
             $task->eventName()
         ) . "\n" . OpenTaskList::grouped(
             array_map(static fn (array $row): array => ['task' => $row['task'], 'free' => (int) $row['free']], $rows),
-            static fn (Task $other, ?int $free): string => '- ' . implode(' · ', array_filter([
-                $other->roleDisplay(),
-                $other->timeRange(),
-                self::freeText((int) $free, $other->capacity),
-            ]))
+            // The task, then its free places on a line of their own (Owner 2026-11-07).
+            static fn (Task $other, ?int $free): string => OpenTaskList::taskName($other)
+                . "\n" . OpenTaskList::freeLine((int) $free, $other->capacity)
         );
     }
 
@@ -413,16 +411,6 @@ final class SlotFreedNotice
         $day = Dates::dayLabel($task->taskDate);
 
         return '' === $task->timeRange() ? $day : $day . ' ' . $task->timeRange();
-    }
-
-    private static function freeText(int $free, int $capacity): string
-    {
-        return sprintf(
-            /* translators: 1: free places, 2: places in total */
-            __('%1$d of %2$d places free', 'eventcrew'),
-            $free,
-            $capacity
-        );
     }
 
     /**

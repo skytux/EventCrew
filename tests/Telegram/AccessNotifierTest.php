@@ -141,7 +141,7 @@ final class AccessNotifierTest extends TelegramTestCase
 
         self::assertSame(
             "📣 Test Site\n\nHi Sam,\n\nYou now have the role DJ, so you can sign up for its tasks.\n\nOpen now:"
-                . "\n📅 Sat 14 Nov\n- 22:00–23:00: DJ at Dance Night",
+                . "\n📅 Sat 14 Nov\n🔹 DJ 22:00–23:00 at Dance Night",
             $this->dm()
         );
         self::assertSame(
@@ -151,7 +151,7 @@ final class AccessNotifierTest extends TelegramTestCase
             $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
         );
         self::assertStringContainsString(
-            "Open now:\n📅 Sat 14 Nov\n- 22:00–23:00: DJ at Dance Night\n\n"
+            "Open now:\n📅 Sat 14 Nov\n🔹 DJ 22:00–23:00 at Dance Night\n\n"
                 . 'See open tasks: https://site.test/crew/#eventcrew-panel-board',
             $this->mailText()
         );

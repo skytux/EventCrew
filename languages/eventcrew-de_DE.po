@@ -105,11 +105,6 @@ msgstr "%1$s (%2$s) hat dem Bot in einem privaten Chat geschrieben. Hier ist der
 msgid "%1$s agreed, but their task could not be moved to you: %2$s at %3$s, %4$s. Nothing changed."
 msgstr "%1$s hat zugestimmt, aber die Aufgabe konnte nicht auf dich übertragen werden: %2$s am %3$s, %4$s. Nichts wurde geändert."
 
-#. translators: 1: role, 2: event, 3: free places, 4: places in all
-#: src/Support/OpenTaskCall.php:375
-msgid "%1$s at %2$s (%3$d of %4$d free)"
-msgstr "%1$s bei %2$s (%3$d von %4$d frei)"
-
 #. translators: 1: role, 2: event, 3: day and time
 #: src/Support/MessageTemplates.php:2983 src/Telegram/BoardService.php:1522
 msgid "%1$s at %2$s, %3$s"
@@ -199,16 +194,6 @@ msgstr "%1$s: %2$d angemeldet"
 #: src/Admin/NewsletterPage.php:381
 msgid "%1$s: %2$d unsubscribed"
 msgstr "%1$s: %2$d abgemeldet"
-
-#. translators: 1: day and time, 2: role with emoji, 3: event
-#: src/Support/OpenTaskList.php:148
-msgid "%1$s: %2$s at %3$s"
-msgstr "%1$s: %2$s bei %3$s"
-
-#. translators: 1: day and time, 2: role with emoji, 3: event, 4: free places, 5: places in all
-#: src/Support/OpenTaskList.php:155
-msgid "%1$s: %2$s at %3$s (%4$d of %5$d free)"
-msgstr "%1$s: %2$s bei %3$s (%4$d von %5$d frei)"
 
 #. translators: 1: cancellation kind, 2: role, 3: event, 4: standing note
 #: src/Support/MessageTemplates.php:1582
@@ -11246,3 +11231,7 @@ msgstr "Du musst die Befehle nicht lernen: Sie sind alle unter der Menütaste de
 #, php-format
 msgid "Cancelled under %d h before"
 msgstr "Unter %d h vorher abgesagt"
+
+#: src/Telegram/TicketController.php
+msgid "Show QR code"
+msgstr "QR-Code anzeigen"

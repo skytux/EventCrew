@@ -788,9 +788,34 @@ final class MessageTemplates
         $stored = self::stored($id);
         $stored[$part] = $value === self::defaultValue($id, $part)
             || '' === $value['source'] . implode('', $value['texts'])
+            || self::onlyMachineCopyOfBuiltIn($id, $part, $value)
             ? null
             : $value;
         self::write($id, $stored);
+    }
+
+    /**
+     * Whether $value is the built-in English with nothing written by hand,
+     * in languages the plugin ships translations for. Storing it would only
+     * freeze today's built-in text: a Translations page save once stored
+     * every message so, and later built-in changes never showed (Owner
+     * 2026-11-07).
+     *
+     * @param array{source: string, lang: string, detected: bool, texts: array<string, string>, manual: array<string, bool>} $value
+     */
+    private static function onlyMachineCopyOfBuiltIn(string $id, string $part, array $value): bool
+    {
+        if ([] !== array_filter($value['manual']) || $value['source'] !== self::defaultValue($id, $part)['source']) {
+            return false;
+        }
+
+        foreach ($value['texts'] as $lang => $text) {
+            if ('' !== $text && Language::ENGLISH !== $lang && ! SiteLanguages::hasCatalog((string) $lang)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -1033,6 +1058,11 @@ final class MessageTemplates
             gmdate('Y-m-d', time() + 14 * DAY_IN_SECONDS) => Dates::dayLabel(gmdate('Y-m-d', time() + 14 * DAY_IN_SECONDS)),
         ]]];
 
+        // {open_tasks} as the welcome draws it, for the sample task.
+        $welcomeOpenTasks = static fn (array $c): array => ['open_tasks' => WelcomeSender::openTasksBlock([
+            ['task' => $c['task'], 'free' => max(1, $c['task']->capacity - 1)],
+        ])];
+
         return [
             'credit_granted' => $sampleNights,
             'credit_granted_dm' => $sampleNights,
@@ -1097,6 +1127,7 @@ final class MessageTemplates
                     __('See open tasks', 'eventcrew'),
                     RoleGuide::label(),
                 ],
+                'context' => $welcomeOpenTasks,
             ],
             'welcome_dm' => $signed + [
                 'dm_format' => true,
@@ -1107,6 +1138,7 @@ final class MessageTemplates
                     RoleGuide::label(),
                     '📖 ' . __('Help', 'eventcrew'),
                 ],
+                'context' => $welcomeOpenTasks,
             ],
             'welcome_org_email' => [
                 'buttons' => static fn (): array => [
