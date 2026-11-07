@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.164
+Stable tag: 1.140.165
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,14 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.165 =
+* The private board includes the special tasks of your roles, with ✋ sign up, ❌ cancel and organizer ➕ add buttons; no separate third message
+* Names of the people on a task are on their own line under it
+* The group board lists special tasks too, without buttons
+* Board banner: a wide strip of a chosen page's picture shown above every board message (Settings → Telegram bot)
+* The next event's picture is posted to the group on its own: once when it becomes the next event and again on its morning, never with /board
+* The sign-up email is a thank-you, shows the task's description instead of the event's, and opens with a hero band
 
 = 1.140.164 =
 * In a private chat, a button tap on the bot's last message answers in that message instead of posting a new one
@@ -1757,6 +1765,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.165 =
+No settings change.
 
 = 1.140.164 =
 No settings change.
