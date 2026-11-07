@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.168
+Stable tag: 1.140.169
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,19 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.169 =
+* Door lists: a free-entry ticket is its own row (with its own short code) even when the holder also works that night
+* Joining asks: worked on the crew here before, about how many times, and how many free-entry tickets they think they should have; organizers see the answers in the email, DM and Admin tab, with a link to the person's @username
+* Three ticks per role: Guest display, Guest sign up, Anonymous display; Telegram and web boards follow them
+* Web board: signed out, Sign up leads to the sign-in card and back to the task; signed in and approved, first names show under each task; pending accounts see Awaiting approval
+* Ticket page: a short code under the QR, an expired band after doors close, and a golden band the moment the door checks the ticket in
+* Greetings use the first name only
+* Board text shows only the picked day and leaves out tasks nobody has signed up for
+* Member welcome: opens with a spacious, starry welcome; My info button on top; no task-info or wp-admin button; open tasks of one date without empty lines
+* Organizer welcome: Admin menu button on top, Help at the bottom, no People button; new section on how EventCrew uses AI, also in the organizer help
+* What each task involves: an empty line between tasks
+* Post-event thank-you email credits the crew and invites to join, on the web or in Telegram
 
 = 1.140.168 =
 * Open-task lists in messages are grouped under a line per date (at most 3 dates, 8 tasks), with one See open tasks button instead of a button per task
@@ -1785,6 +1798,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.169 =
+No settings change.
 
 = 1.140.168 =
 No settings change.
