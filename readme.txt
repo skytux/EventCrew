@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.158
+Stable tag: 1.140.159
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.159 =
+* The Tasks screen under My info has a 📅 Open tasks button that opens the board
+* The board in a private chat has no New here? Sign up row
+* The helper knows the coming tasks of the person's own roles (DJ, VJ, ...) and sends them to /board for these
 
 = 1.140.158 =
 * My info shows only facts: standing, completed tasks, credits and coming tasks
@@ -1722,6 +1727,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.159 =
+No settings change.
 
 = 1.140.158 =
 No settings change.
