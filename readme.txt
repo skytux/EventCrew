@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.179
+Stable tag: 1.140.180
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,12 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.180 =
+* Organizers can edit, delete and add tasks, create a night's tasks from the roles and send the open-task email from a private chat with the bot (/edittask, /deletetask, /addtask, /maketasks, /mailtasks), each with a confirm button.
+* A person taken off a task by an organizer gets a Telegram message.
+* Messages the person did not ask for open with 💌 and end with the crew sign-off; every person email opens with Hi Name.
+* Message review fixes: plurals, cancel help, times, labels and the Crew app name.
 
 = 1.140.179 =
 * Free-entry ticket: checking in plays a gold animation with falling stars and says "You're in. Welcome, Firstname!"; the page no longer shifts.
@@ -1851,6 +1857,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.180 =
+No settings change.
 
 = 1.140.179 =
 No settings change.
