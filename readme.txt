@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.180
+Stable tag: 1.140.181
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,12 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.181 =
+* Signing up for a task sends one email: the sign-up details on top and the ticket at the bottom, instead of two emails.
+* Ticket emails show every ticket the person holds that night, crew and free-entry, each with its own QR code.
+* The web ticket page shows one card per ticket of the night, stacked.
+* A free-entry ticket's short code in emails is now its own code, not the person's crew code.
 
 = 1.140.180 =
 * Organizers can edit, delete and add tasks, create a night's tasks from the roles and send the open-task email from a private chat with the bot (/edittask, /deletetask, /addtask, /maketasks, /mailtasks), each with a confirm button.
@@ -1857,6 +1863,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.181 =
+No settings change.
 
 = 1.140.180 =
 No settings change.
