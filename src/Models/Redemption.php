@@ -22,7 +22,9 @@ final class Redemption
         public readonly string $note = '',
         public readonly ?string $cancelledAt = null,
         /** when the "Your ticket" email was sent for this credit; null when none was */
-        public readonly ?string $ticketMailedAt = null
+        public readonly ?string $ticketMailedAt = null,
+        /** the ticket transfer this ticket was given away with (TicketTransfer id); null when not given away */
+        public readonly ?int $transferredTo = null
     ) {
     }
 
@@ -30,6 +32,15 @@ final class Redemption
     public function isCancelled(): bool
     {
         return null !== $this->cancelledAt;
+    }
+
+    /**
+     * Whether the ticket was given to someone else. It is then cancelled too,
+     * but the credit stays spent: the receiver holds the ticket.
+     */
+    public function isTransferred(): bool
+    {
+        return null !== $this->transferredTo;
     }
 
     /**
@@ -46,7 +57,8 @@ final class Redemption
             (string) ($row['redeemed_at'] ?? ''),
             (string) ($row['note'] ?? ''),
             self::nullableString($row['cancelled_at'] ?? null),
-            self::nullableString($row['ticket_mailed_at'] ?? null)
+            self::nullableString($row['ticket_mailed_at'] ?? null),
+            self::nullableInt($row['transferred_to'] ?? null)
         );
     }
 

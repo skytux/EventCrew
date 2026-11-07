@@ -7,6 +7,7 @@ namespace EventCrew\Telegram;
 use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
+use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -15,6 +16,7 @@ use EventCrew\Support\Dates;
 use EventCrew\Support\StandingBar;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketList;
+use EventCrew\Support\TicketTransferService;
 
 /**
  * /me (My info), /tasks, /tickets, /settings and /me history: a person's own
@@ -36,7 +38,8 @@ final class ProfileService
         private readonly AssignmentRepository $assignments,
         private readonly TaskRepository $tasks,
         private readonly StandingCalculator $standing,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        private readonly ?TicketTransferService $transfers = null
     ) {
     }
 
@@ -181,7 +184,13 @@ final class ProfileService
             return;
         }
 
-        $tickets = (new TicketList($this->assignments, $this->tasks, new RedemptionRepository()))->forPerson($person->id);
+        $tickets = (new TicketList(
+            $this->assignments,
+            $this->tasks,
+            new RedemptionRepository(),
+            new CheckinRepository(),
+            $this->transfers
+        ))->forPerson($person->id);
         $lines = ['🎟 ' . __('Your tickets', 'eventcrew')];
         // Each upcoming ticket is a named button; a past one is only listed,
         // since there is no door left to show it at.
@@ -200,6 +209,7 @@ final class ProfileService
                         'text' => '🎟 ' . $ticket['label'] . ' — ' . $ticket['when'],
                         'url' => $ticket['url'],
                     ]];
+                    $lines = array_merge($lines, $this->giveAway($ticket, $person->id, $buttons));
                 }
             }
 
@@ -217,6 +227,42 @@ final class ProfileService
             implode("\n", $lines),
             ['inline_keyboard' => array_merge($buttons, MenuButtons::ticketsRows())]
         );
+    }
+
+    /**
+     * The 🎁 Give away button under a credit ticket that can be given, or,
+     * while an email offer waits, ✖️ Cancel offer and the line naming the
+     * address (returned). Nothing when giving is off.
+     *
+     * @param array<string, mixed> $ticket
+     * @param array<int, mixed> $buttons
+     * @return list<string>
+     */
+    private function giveAway(array $ticket, int $personId, array &$buttons): array
+    {
+        $redemptionId = (int) ($ticket['redemption_id'] ?? 0);
+
+        if (null === $this->transfers || $redemptionId <= 0) {
+            return [];
+        }
+
+        $offer = $this->transfers->pendingOffer($redemptionId);
+
+        if (null !== $offer) {
+            $buttons[] = TransferBot::cancelRow($redemptionId, (string) $ticket['when']);
+
+            return ['⏳ ' . sprintf(
+                /* translators: %s: the email address the ticket was offered to */
+                __('Waiting for %s to accept', 'eventcrew'),
+                $offer->email
+            )];
+        }
+
+        if ($this->transfers->canGive($this->transfers->redemption($redemptionId), $personId)) {
+            $buttons[] = TransferBot::giveRow($redemptionId, (string) $ticket['when']);
+        }
+
+        return [];
     }
 
     /**

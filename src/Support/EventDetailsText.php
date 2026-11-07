@@ -34,8 +34,6 @@ final class EventDetailsText
      * step "followup_no_description" takes it out of a stored copy.
      */
     public const DESCRIPTION_KINDS = [
-        'reminder',
-        'reminder_dm',
         'slot_freed',
         'slot_freed_dm',
     ];
@@ -82,7 +80,36 @@ final class EventDetailsText
             ],
             // The sign-up DM too (Owner, 2026-11-07).
             'signup_dm_no_description' => ['signup_confirmed_dm' => self::withoutEventDescription(...)],
+            // And the task reminder, email and DM (Owner, 2026-11-08).
+            'reminder_no_description' => [
+                'reminder' => self::withoutEventDescription(...),
+                'reminder_dm' => self::withoutEventDescription(...),
+            ],
+            // "A spot opened" email: the event's picture, the DJ text under
+            // it, then the other open tasks (Owner, 2026-11-08).
+            'slot_freed_picture' => ['slot_freed' => self::withPicture(...)],
         ];
+    }
+
+    /**
+     * $text with "{event_picture}" right before {other_tasks} (else at the
+     * end), and its {event_description}, if it has one, moved to right under
+     * the picture. A text that has {event_picture} already comes back as it is.
+     */
+    public static function withPicture(string $text): string
+    {
+        if (str_contains($text, '{event_picture}')) {
+            return $text;
+        }
+
+        $hasDescription = str_contains($text, '{event_description}');
+        $text = self::withoutEventDescription($text);
+        $insert = '{event_picture}' . ($hasDescription ? "\n\n{event_description}" : '');
+        $at = strpos($text, '{other_tasks}');
+
+        return false === $at
+            ? rtrim($text) . $insert
+            : substr($text, 0, $at) . $insert . substr($text, $at);
     }
 
     /** Runs every step not yet done. Does nothing once all have run. */

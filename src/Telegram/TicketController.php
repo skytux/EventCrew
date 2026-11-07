@@ -23,6 +23,8 @@ use EventCrew\Support\ShortCode;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\SiteTexts;
 use EventCrew\Support\TicketMail;
+use EventCrew\Support\TicketTransferService;
+use EventCrew\Models\TicketTransfer;
 use EventCrew\Web\SignupBoardView;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -80,7 +82,8 @@ final class TicketController
         private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository(),
         private readonly GuestRepository $guests = new GuestRepository(),
         private readonly CheckinRepository $checkins = new CheckinRepository(),
-        ?\Closure $sleep = null
+        ?\Closure $sleep = null,
+        private readonly ?TicketTransferService $transfers = null
     ) {
         $this->sleep = $sleep ?? static function (int $seconds): void {
             sleep($seconds);
@@ -223,6 +226,12 @@ final class TicketController
                 ];
         }
 
+        $transfer = $this->issuedTransfer($token);
+
+        if (null !== $transfer) {
+            return ['date' => $transfer->eventDate, 'kinds' => [CheckinRepository::KIND_TRANSFER], 'ref' => $transfer->id];
+        }
+
         $parts = TicketMail::guestTokenParts($token);
 
         if (null !== $parts) {
@@ -307,6 +316,16 @@ final class TicketController
             }
         }
 
+        // The tickets given to them for the night.
+        foreach (null === $this->transfers ? [] : $this->transfers->heldBy($assignment->personId) as $transfer) {
+            $given = $task->taskDate === $transfer->eventDate ? SignedLink::sign('xfer_ticket', $transfer->id) : '';
+            $ticket = '' === $given ? null : $this->transferTicket($given);
+
+            if (null !== $ticket) {
+                $more[] = $ticket + ['poll' => self::stateUrl($given)];
+            }
+        }
+
         return $more;
     }
 
@@ -332,8 +351,62 @@ final class TicketController
     {
         return $this->assignmentTicket($token)
             ?? $this->creditTicket($token)
+            ?? $this->transferTicket($token)
             ?? $this->guestTicket($token)
             ?? $this->buyerTicket($token);
+    }
+
+    /**
+     * The transfer an issued given-away ticket's link names, or null when
+     * the link is bad, the feature is off, or the ticket was never issued
+     * (an offer still waiting, or one that lapsed).
+     */
+    private function issuedTransfer(string $token): ?TicketTransfer
+    {
+        $id = null === $this->transfers ? null : SignedLink::verify('xfer_ticket', $token);
+        $transfer = null === $id ? null : $this->transfers?->find($id);
+
+        return null === $transfer || null === $transfer->issuedAt ? null : $transfer;
+    }
+
+    /**
+     * A given-away free-entry ticket: the receiver's name, "Free entry ·
+     * from Sam", its own short code. Valid while issued; DISABLED once an
+     * organizer cancelled it.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function transferTicket(string $token): ?array
+    {
+        $transfer = $this->issuedTransfer($token);
+
+        if (null === $transfer || null === $this->transfers) {
+            return null;
+        }
+
+        $receiver = null === $transfer->receiverPersonId ? null : $this->people->find($transfer->receiverPersonId);
+        $language = null === $receiver ? ('' === $transfer->language ? null : $transfer->language) : $receiver->language;
+        $from = $this->transfers->nameOf($transfer->giverPersonId);
+        $role = static fn (): string => '' === $from
+            ? __('Free entry', 'eventcrew')
+            /* translators: %s: the name of the member who gave the ticket away */
+            : sprintf(__('Free entry · from %s', 'eventcrew'), $from);
+        $task = $this->tasks->forDate($transfer->eventDate)[0] ?? null;
+
+        return [
+            'valid' => $transfer->isIssued(),
+            'name' => $this->transfers->receiverName($transfer),
+            'event' => null === $task ? (string) get_bloginfo('name') : $task->eventName(),
+            'event_id' => $transfer->eventPostId ?? $task?->eventPostId,
+            'date' => $transfer->eventDate,
+            'role' => Language::run($language, $role),
+            'time' => '',
+            'issued' => (string) $transfer->issuedAt,
+            'language' => $language,
+            'image' => SignupBoardView::eventImage($transfer->eventPostId ?? $task?->eventPostId),
+            'used' => $this->checkins->inAt($transfer->eventDate, [CheckinRepository::KIND_TRANSFER], $transfer->id),
+            'short' => ShortCode::forTransfer($transfer->id),
+        ];
     }
 
     /**
@@ -527,7 +600,38 @@ final class TicketController
                 $person->id
             ),
             'short' => ShortCode::forCredit($person->id, $redemption->redeemedFor),
-        ];
+        ] + $this->giveState($redemption, $token);
+    }
+
+    /**
+     * What a credit ticket's page says about giving it away: 'given_to'
+     * once it moved to someone, 'offer_to' and 'cancel_url' while an email
+     * offer waits, 'give_url' while it can be given. Nothing when the
+     * feature is off.
+     *
+     * @return array<string, string>
+     */
+    private function giveState(\EventCrew\Models\Redemption $redemption, string $token): array
+    {
+        if (null === $this->transfers) {
+            return [];
+        }
+
+        if ($redemption->isTransferred()) {
+            $moved = $this->transfers->movedTo($redemption);
+
+            return null === $moved ? [] : ['given_to' => $this->transfers->receiverName($moved)];
+        }
+
+        $offer = $this->transfers->pendingOffer($redemption->id);
+
+        if (null !== $offer) {
+            return ['offer_to' => $offer->email, 'give_url' => TransferPage::giveUrl($token)];
+        }
+
+        return $this->transfers->canGive($redemption, $redemption->personId)
+            ? ['give_url' => TransferPage::giveUrl($token)]
+            : [];
     }
 
     private function redemptionEvent(\EventCrew\Models\Redemption $redemption): string
@@ -595,9 +699,6 @@ final class TicketController
     {
         $eventId = null === ($ticket['event_id'] ?? null) ? null : (int) $ticket['event_id'];
         $used = $ticket['used'] ?? null;
-        // The demo ticket (DemoTicket) keeps waiting after it is in, since
-        // its desk can tick it out again.
-        $demo = ! empty($ticket['demo']);
         $closeAt = EventTimes::doorsCloseAt($eventId, $ticket['date']);
         // Seconds until the doors close, by the site's clock; null when the
         // event has no doors time. Counted from the site's own "now", so the
@@ -638,11 +739,59 @@ final class TicketController
             . '<div class="t-body"' . ('' === $watermark ? '' : ' style="' . $watermark . '"') . '>'
             . $body . $band . $this->qrBlock((string) ($ticket['qr'] ?? ''), $suffix)
             . $this->shortBlock((string) ($ticket['short'] ?? '')) . $this->codeBlock((string) ($ticket['code'] ?? ''))
-            . $this->noteBlock($eventId) . $this->antiFraudBlock((string) $ticket['issued'], $suffix)
-            . ($ticket['valid'] && (null === $used || $demo)
-                ? $this->liveScript((string) ($ticket['poll'] ?? ''), $closesIn, $demo, $first, $suffix)
+            . $this->noteBlock($eventId) . $this->giveBlock($ticket) . $this->antiFraudBlock((string) $ticket['issued'], $suffix)
+            . ($ticket['valid'] && null === $used
+                ? $this->liveScript((string) ($ticket['poll'] ?? ''), $closesIn, $first, $suffix)
                 : '')
             . '</div>';
+    }
+
+    /**
+     * The line about giving a credit ticket away: "Given to Sam" on a ticket
+     * that moved, "Waiting for x@y to accept · Cancel" while an email offer
+     * waits, else a Give away link. A link, not a button (one button per
+     * card).
+     *
+     * @param array<string, mixed> $ticket
+     */
+    private function giveBlock(array $ticket): string
+    {
+        if (isset($ticket['given_to'])) {
+            return '<p class="t-give">' . esc_html(sprintf(
+                /* translators: %s: the name of the person the ticket was given to */
+                __('Given to %s', 'eventcrew'),
+                (string) $ticket['given_to']
+            )) . '</p>';
+        }
+
+        if (! isset($ticket['give_url'])) {
+            return '';
+        }
+
+        $url = esc_url((string) $ticket['give_url']);
+
+        if (isset($ticket['offer_to'])) {
+            return '<p class="t-give">' . esc_html(sprintf(
+                /* translators: %s: the email address the ticket was offered to */
+                __('Waiting for %s to accept', 'eventcrew'),
+                (string) $ticket['offer_to']
+            )) . ' · <a href="' . $url . '">' . esc_html__('Cancel', 'eventcrew') . '</a></p>';
+        }
+
+        return '<p class="t-give"><a href="' . $url . '">🎁 ' . esc_html__('Give away', 'eventcrew') . '</a></p>';
+    }
+
+    /**
+     * A plain page in the ticket's look: one card with a title and $body
+     * (literal markup, escaped by the caller). TransferPage uses it.
+     */
+    public function plainPage(string $title, string $body): string
+    {
+        return $this->document(
+            $title,
+            '<header class="t-head"><h1 class="t-event">' . esc_html($title) . '</h1></header>'
+            . '<div class="t-body">' . $body . '</div>'
+        );
     }
 
     /**
@@ -719,10 +868,6 @@ final class TicketController
      * once the ticket is in or the night is over. Errors back off up to a
      * minute.
      *
-     * $again (the demo ticket) keeps asking after the ticket is in, sends
-     * what the band shows (in=0 or 1) so the wait answers on any change, and
-     * turns the band back to VALID when the desk ticks the ticket out.
-     *
      * Turning gold plays finger cymbals at 30% volume (Owner 2026-11-07).
      * Phones only play sound on a page the person has touched, so the first
      * touch on the page unlocks it silently.
@@ -730,7 +875,6 @@ final class TicketController
     private function liveScript(
         string $poll,
         ?int $closesIn,
-        bool $again = false,
         string $first = '',
         string $suffix = ''
     ): string {
@@ -738,8 +882,6 @@ final class TicketController
             'band' => 'ec-band' . $suffix,
             'poll' => $poll,
             'closesIn' => $closesIn,
-            'again' => $again,
-            'valid' => __('VALID', 'eventcrew'),
             'expired' => __('Sorry, this ticket has expired', 'eventcrew'),
             'inHtml' => $this->inBandInner('%s', $first),
             'ghost' => $this->openGhost($first),
@@ -748,7 +890,7 @@ final class TicketController
         $json = (string) wp_json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
 
         // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained script; wrapping adds stray whitespace.
-        return '<script>(function(){var c=' . $json . ';var b=document.getElementById(c.band);if(!b){return;}var done=false,busy=false,timer=null,fails=0,isIn=-1!==b.className.indexOf("is-in");var snd=null;if(c.sound&&window.Audio){snd=new Audio(c.sound);snd.preload="auto";snd.volume=0.3;var unlock=function(){document.removeEventListener("pointerdown",unlock,true);snd.muted=true;var p=snd.play();if(p&&p.then){p.then(function(){snd.pause();snd.currentTime=0;snd.muted=false;},function(){snd.muted=false;});}else{snd.pause();snd.muted=false;}};document.addEventListener("pointerdown",unlock,true);}function ding(){if(!snd){return;}try{snd.muted=false;snd.currentTime=0;var p=snd.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}var closeAt=null===c.closesIn?null:Date.now()+c.closesIn*1000;function show(k,s){b.className=k;b.innerHTML=c.ghost;var e=document.createElement("span");e.className="t-state";e.textContent=s;b.insertBefore(e,b.firstChild);}function expire(){if(done||isIn||null===closeAt||Date.now()<closeAt||"t-band is-expired"===b.className){return;}show("t-band is-expired",c.expired);}function burst(){var k=b.closest?b.closest(".t"):null;if(!k){return;}var o=k.querySelector(".t-fx");if(o){o.parentNode.removeChild(o);}var f=document.createElement("span"),w=k.clientWidth,h=k.clientHeight,y=b.offsetTop+b.offsetHeight/2,g="✦★•✦★✦";f.className="t-fx";f.setAttribute("aria-hidden","true");for(var i=0;i<48;i++){var e=document.createElement("i"),a=Math.random()*6.2832,r=.3+Math.random()*.7;e.textContent=g.charAt(i%6);e.style.cssText="left:"+(6+Math.random()*88).toFixed(1)+"%;top:"+Math.round(y)+"px;font-size:"+(.7+Math.random()*1.1).toFixed(2)+"em;--dx:"+Math.round(Math.cos(a)*r*w*.5)+"px;--dy:"+Math.round(Math.sin(a)*r*h*.45)+"px;--r:"+Math.round(Math.random()*360-180)+"deg;--s:"+(.5+Math.random()*.5).toFixed(2)+";--d:"+(Math.random()*.8).toFixed(2)+"s;--t:"+(5.5+Math.random()*2.7).toFixed(2)+"s";f.appendChild(e);}k.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},9500);}function welcome(at){isIn=true;if(!c.again){done=true;if(timer){clearTimeout(timer);}}b.className="t-band is-in is-new";b.innerHTML=c.inHtml;ding();burst();var t=b.querySelector(".t-at");if(t){t.textContent=t.textContent.replace("%s",at);}}function out(){isIn=false;var k=b.closest?b.closest(".t"):null,x=k?k.querySelector(".t-fx"):null;if(x){x.parentNode.removeChild(x);}show("t-band is-valid",c.valid);expire();}function later(ms){if(timer){clearTimeout(timer);}timer=setTimeout(ask,ms);}function ask(){timer=null;if(done||busy||!c.poll||document.hidden){return;}busy=true;fetch(c.poll+(-1===c.poll.indexOf("?")?"?":"&")+(c.again?"in="+(isIn?1:0)+"&":"")+"_="+Date.now(),{cache:"no-store",credentials:"same-origin"}).then(function(r){if(404===r.status){c.poll="";}if(!r.ok){throw new Error(String(r.status));}return r.json();}).then(function(d){busy=false;fails=0;if(d&&d.in){if(!isIn){welcome(d.at||"");}if(!c.again){return;}}else if(d&&isIn&&c.again){out();}if(!d||null===d.next){c.poll="";return;}later(1000*d.next);},function(){busy=false;fails++;later(Math.min(60000,2000*fails));});}document.addEventListener("visibilitychange",function(){if(!document.hidden){expire();if(!busy){later(0);}}});setInterval(expire,1000);expire();ask();})();</script>';
+        return '<script>(function(){var c=' . $json . ';var b=document.getElementById(c.band);if(!b){return;}var done=false,busy=false,timer=null,fails=0,isIn=-1!==b.className.indexOf("is-in");var snd=null;if(c.sound&&window.Audio){snd=new Audio(c.sound);snd.preload="auto";snd.volume=0.3;var unlock=function(){document.removeEventListener("pointerdown",unlock,true);snd.muted=true;var p=snd.play();if(p&&p.then){p.then(function(){snd.pause();snd.currentTime=0;snd.muted=false;},function(){snd.muted=false;});}else{snd.pause();snd.muted=false;}};document.addEventListener("pointerdown",unlock,true);}function ding(){if(!snd){return;}try{snd.muted=false;snd.currentTime=0;var p=snd.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}var closeAt=null===c.closesIn?null:Date.now()+c.closesIn*1000;function show(k,s){b.className=k;b.innerHTML=c.ghost;var e=document.createElement("span");e.className="t-state";e.textContent=s;b.insertBefore(e,b.firstChild);}function expire(){if(done||isIn||null===closeAt||Date.now()<closeAt||"t-band is-expired"===b.className){return;}show("t-band is-expired",c.expired);}function burst(){var k=b.closest?b.closest(".t"):null;if(!k){return;}var o=k.querySelector(".t-fx");if(o){o.parentNode.removeChild(o);}var f=document.createElement("span"),w=k.clientWidth,h=k.clientHeight,y=b.offsetTop+b.offsetHeight/2,g="✦★•✦★✦";f.className="t-fx";f.setAttribute("aria-hidden","true");for(var i=0;i<48;i++){var e=document.createElement("i"),a=Math.random()*6.2832,r=.3+Math.random()*.7;e.textContent=g.charAt(i%6);e.style.cssText="left:"+(6+Math.random()*88).toFixed(1)+"%;top:"+Math.round(y)+"px;font-size:"+(.7+Math.random()*1.1).toFixed(2)+"em;--dx:"+Math.round(Math.cos(a)*r*w*.5)+"px;--dy:"+Math.round(Math.sin(a)*r*h*.45)+"px;--r:"+Math.round(Math.random()*360-180)+"deg;--s:"+(.5+Math.random()*.5).toFixed(2)+";--d:"+(Math.random()*.8).toFixed(2)+"s;--t:"+(5.5+Math.random()*2.7).toFixed(2)+"s";f.appendChild(e);}k.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},9500);}function welcome(at){isIn=true;done=true;if(timer){clearTimeout(timer);}b.className="t-band is-in is-new";b.innerHTML=c.inHtml;ding();burst();var t=b.querySelector(".t-at");if(t){t.textContent=t.textContent.replace("%s",at);}}function later(ms){if(timer){clearTimeout(timer);}timer=setTimeout(ask,ms);}function ask(){timer=null;if(done||busy||!c.poll||document.hidden){return;}busy=true;fetch(c.poll+(-1===c.poll.indexOf("?")?"?":"&")+"_="+Date.now(),{cache:"no-store",credentials:"same-origin"}).then(function(r){if(404===r.status){c.poll="";}if(!r.ok){throw new Error(String(r.status));}return r.json();}).then(function(d){busy=false;fails=0;if(d&&d.in){if(!isIn){welcome(d.at||"");}return;}if(!d||null===d.next){c.poll="";return;}later(1000*d.next);},function(){busy=false;fails++;later(Math.min(60000,2000*fails));});}document.addEventListener("visibilitychange",function(){if(!document.hidden){expire();if(!busy){later(0);}}});setInterval(expire,1000);expire();ask();})();</script>';
     }
 
     /**
@@ -1072,6 +1214,13 @@ final class TicketController
             . '.t-short+.t-code{margin-top:0}'
             . '.t-clock{font-size:2em;font-variant-numeric:tabular-nums;margin:.3em 0}'
             . '.t-small{opacity:.7;font-size:.82em}'
+            . '.t-give{margin:0 0 1em}.t-give a{color:#0a58ca}'
+            . '.t-form{text-align:left}.t-form label{display:block;margin:.6em 0}'
+            . '.t-form input[type=text],.t-form input[type=email]{width:100%;box-sizing:border-box;padding:.6em;'
+            . 'font-size:1em;border:1px solid #888;border-radius:8px}'
+            . '.t-form button{margin-top:.8em;padding:.7em 1.4em;font-size:1em;border:0;border-radius:8px;'
+            . 'background:#1d1d1f;color:#fff;cursor:pointer}.t-form .t-link{background:none;color:#0a58ca;padding:0;'
+            . 'text-decoration:underline}'
             . '.t-stack{max-width:26em;margin:0 auto}.t-stack>.t+.t{margin-top:1.5em}';
 
         return sprintf(

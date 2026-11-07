@@ -926,7 +926,6 @@ final class TicketControllerTest extends TestCase
         self::assertStringContainsString('for(var i=0;i<48;i++)', $html);
         // The sparkles' own scale (--s) stays at most 1.
         self::assertStringContainsString('--s:"+(.5+Math.random()*.5).toFixed(2)', $html);
-        self::assertStringContainsString('function out(){isIn=false;var k=b.closest?b.closest(".t"):null,x=k?k.querySelector(".t-fx"):null;', $html);
         self::assertStringContainsString('animation:t-fly var(--t,6.5s) linear var(--d,0s) both', $html);
         // They stay about twice as long (Owner 2026-11-07): 5.5 to 8.2 s each,
         // cleared after 9.5 s, once the last has faded.
@@ -969,7 +968,7 @@ final class TicketControllerTest extends TestCase
      * Turning gold moves nothing on the page (Owner 2026-11-07: it moved
      * down): the open band holds the gold band's words hidden in the same
      * grid cell, with the gold band's padding, and the live script keeps
-     * them whenever it rewrites the band (expired, ticked out again).
+     * them whenever it rewrites the band (expired).
      */
     public function testTheOpenBandReservesTheGoldBandsSpace(): void
     {
@@ -997,29 +996,7 @@ final class TicketControllerTest extends TestCase
         );
         self::assertStringContainsString('function show(k,s){b.className=k;b.innerHTML=c.ghost;', $html);
         self::assertStringContainsString('show("t-band is-expired",c.expired);', $html);
-        self::assertStringContainsString('show("t-band is-valid",c.valid);', $html);
         self::assertStringNotContainsString('b.textContent=', $html);
-    }
-
-    /**
-     * The first touch unlocks the sound even on a page opened already in:
-     * the demo desk can tick it out and in again, and the band then turns
-     * gold live and must ring (it was silent: the unlock skipped an "in" page).
-     */
-    public function testTheFirstTouchUnlocksTheSoundOnAPageAlreadyIn(): void
-    {
-        $ticket = $this->ticketForEventStartingAt('19:00');
-        $ticket['demo'] = true;
-        $ticket['used'] = '2026-07-20 18:50:00';
-
-        $html = $this->controller()->renderPage($ticket);
-
-        self::assertStringContainsString('<p class="t-band is-in" id="ec-band"', $html);
-        self::assertStringContainsString(
-            'var unlock=function(){document.removeEventListener("pointerdown",unlock,true);snd.muted=true;',
-            $html
-        );
-        self::assertStringNotContainsString('if(isIn){return;}', $html);
     }
 
     /** With no doors time the ticket never expires on the page. */

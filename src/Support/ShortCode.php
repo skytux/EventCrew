@@ -56,10 +56,10 @@ final class ShortCode
         return self::make('short_code|credit|' . $date, $personId);
     }
 
-    /** The demo ticket's code (DemoTicket), never a real row's. */
-    public static function forDemo(int $demoId): string
+    /** A ticket someone gave away: the receiver's door row (TicketTransfer id). */
+    public static function forTransfer(int $transferId): string
     {
-        return self::make('short_code|demo', $demoId);
+        return self::make('short_code|transfer', $transferId);
     }
 
     /** The code of the door row "kind:ref" on $date. */
@@ -69,6 +69,7 @@ final class ShortCode
             CheckinRepository::KIND_BUYER => self::forBuyer($ref),
             CheckinRepository::KIND_GUEST => self::forGuest($ref),
             CheckinRepository::KIND_CREDIT => self::forCredit($ref, $date),
+            CheckinRepository::KIND_TRANSFER => self::forTransfer($ref),
             default => self::forPerson($ref, $date),
         };
     }

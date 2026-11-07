@@ -22,11 +22,16 @@ namespace EventCrew\Models;
  *
  * $personId is the ticket holder, for the short code under the QR code
  * (ShortCode::forPerson()); 0 when not known, and then there is none.
+ *
+ * KIND_TRANSFER is a free-entry ticket someone gave away ($id is the
+ * TicketTransfer id): $from is the giver's name, $personId the receiver
+ * when they are a member (0 for someone reached by email).
  */
 final class CrewTicket
 {
     public const KIND_CREW = 'crew';
     public const KIND_CREDIT = 'credit';
+    public const KIND_TRANSFER = 'transfer';
 
     /**
      * @param list<Task> $tasks
@@ -39,12 +44,18 @@ final class CrewTicket
         public readonly string $email,
         public readonly array $tasks = [],
         public readonly ?string $language = null,
-        public readonly int $personId = 0
+        public readonly int $personId = 0,
+        public readonly string $from = ''
     ) {
     }
 
     public function isCredit(): bool
     {
         return self::KIND_CREDIT === $this->kind;
+    }
+
+    public function isTransfer(): bool
+    {
+        return self::KIND_TRANSFER === $this->kind;
     }
 }

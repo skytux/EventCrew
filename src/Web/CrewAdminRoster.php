@@ -342,7 +342,9 @@ final class CrewAdminRoster
         // Also emails "Your ticket is cancelled" when the ticket was emailed.
         $this->tickets->cancelRedemption($redemption->id);
 
-        return 'admin_door_returned';
+        // A ticket that was given away: the receiver's ticket is cancelled,
+        // and the giver's credit stays spent.
+        return $redemption->isTransferred() ? 'admin_door_transfer_cancelled' : 'admin_door_returned';
     }
 
     /**
@@ -595,6 +597,7 @@ final class CrewAdminRoster
             'admin_door_already' => __('They already have free entry for this date.', 'eventcrew'),
             'admin_door_redeemed' => __('Credit redeemed — they’re on the door list.', 'eventcrew'),
             'admin_door_returned' => __('Credit handed back.', 'eventcrew'),
+            'admin_door_transfer_cancelled' => __('Transferred ticket cancelled.', 'eventcrew'),
             'admin_guest_no_name' => __('A guest needs a name.', 'eventcrew'),
             'admin_guest_bad_email' => __('That email address is not valid. Correct it or leave it empty.', 'eventcrew'),
             'admin_guest_added' => __('Guest added.', 'eventcrew'),

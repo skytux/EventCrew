@@ -374,6 +374,9 @@ final class MessagePreview
         }
 
         $eventId = $task->eventPostId;
+        // "A spot opened" shows the event's picture (SlotFreedNotice::tell()).
+        $picture = 'slot_freed' === $template->id ? SlotFreedNotice::emailPicture($task) : null;
+        $context += ['event_picture' => SlotFreedNotice::pictureMark($picture)];
         $body = self::tidied($template, MessageAiText::body($template->id, $context, $eventId));
         $body = true === ($template->preview['greeting'] ?? false)
             ? EmailBody::withGreeting($person->name(), $body)
@@ -386,7 +389,7 @@ final class MessagePreview
             return;
         }
 
-        $mailer->toPerson($person->id, $to, $subject, $body, $actions, EmailHero::for($template->id, $context));
+        $mailer->toPerson($person->id, $to, $subject, $body, $actions, EmailHero::for($template->id, $context), $picture);
     }
 
     /**

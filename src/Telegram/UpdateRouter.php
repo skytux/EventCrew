@@ -71,7 +71,8 @@ final class UpdateRouter
         private readonly ?PrivateChatGate $gate = null,
         private readonly ?AssignCommand $assign = null,
         private readonly ?TaskCommand $taskCommand = null,
-        private readonly ?ChatCommands $chatCommands = null
+        private readonly ?ChatCommands $chatCommands = null,
+        private readonly ?TransferBot $transfer = null
     ) {
     }
 
@@ -203,6 +204,8 @@ final class UpdateRouter
                 $this->tickets->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'gift:')) {
                 $this->gift->onSelect($callbackQuery);
+            } elseif (null !== $this->transfer && str_starts_with($data, TransferBot::PREFIX)) {
+                $this->transfer->onSelect($callbackQuery);
             } elseif (null !== $this->roleTasks && str_starts_with($data, RoleTaskBot::PREFIX)) {
                 $this->roleTasks->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'perm:')) {
@@ -528,7 +531,9 @@ final class UpdateRouter
         if ($isPrivate && 0 !== $fromId) {
             $entities = is_array($message['entities'] ?? null) ? $message['entities'] : [];
 
-            if ($this->replacement->isAwaitingTarget($fromId)) {
+            if (null !== $this->transfer && $this->transfer->isAwaiting($fromId)) {
+                $this->transfer->capture($fromId, $chatId, $text, $entities);
+            } elseif ($this->replacement->isAwaitingTarget($fromId)) {
                 $this->replacement->captureTarget($fromId, $chatId, $text, $entities);
             } elseif ($this->gift->isAwaitingTarget($fromId)) {
                 $this->gift->captureTarget($fromId, $chatId, $text, $entities);
@@ -735,6 +740,7 @@ final class UpdateRouter
             $this->permissions->cancelPending($fromId),
             null !== $this->roleTasks && $this->roleTasks->cancelPending($fromId),
             $this->onboarding->cancelPending($fromId),
+            null !== $this->transfer && $this->transfer->cancelPending($fromId),
         ];
 
         $this->help?->onCancel($chatId, $isPrivate, in_array(true, $stopped, true));

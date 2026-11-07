@@ -19,7 +19,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '33';
+    public const DB_VERSION = '34';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -45,6 +45,7 @@ final class Schema
     public const BOT_LOG = 'eventcrew_bot_log';
     public const NEWSLETTER_CHANGES = 'eventcrew_newsletter_changes';
     public const NEWSLETTER_SENDS = 'eventcrew_newsletter_sends';
+    public const TICKET_TRANSFERS = 'eventcrew_ticket_transfers';
 
     /**
      * @return array<int, string>
@@ -67,6 +68,7 @@ final class Schema
             self::BOT_LOG,
             self::NEWSLETTER_CHANGES,
             self::NEWSLETTER_SENDS,
+            self::TICKET_TRANSFERS,
         ];
     }
 
@@ -119,6 +121,9 @@ final class Schema
         // Schema 33: the people columns approval and approval_by. dbDelta adds
         // them with their default '', so everyone already in the people list
         // is OK; only a newcomer who signs in after the update waits.
+
+        // Schema 34: the ticket transfers table and the redemptions column
+        // transferred_to. dbDelta adds both; nothing to copy.
 
         update_option(self::VERSION_OPTION, self::DB_VERSION);
     }
@@ -430,6 +435,7 @@ final class Schema
         $botLog = self::table(self::BOT_LOG);
         $newsletterChanges = self::table(self::NEWSLETTER_CHANGES);
         $newsletterSends = self::table(self::NEWSLETTER_SENDS);
+        $ticketTransfers = self::table(self::TICKET_TRANSFERS);
 
         return [
             // anonymized_at is the retention purge's high-water mark. Without it
@@ -589,9 +595,44 @@ final class Schema
                 note varchar(191) NOT NULL DEFAULT '',
                 cancelled_at datetime DEFAULT NULL,
                 ticket_mailed_at datetime DEFAULT NULL,
+                transferred_to bigint(20) unsigned DEFAULT NULL,
                 PRIMARY KEY  (id),
                 KEY person_id (person_id),
                 KEY redeemed_for (redeemed_for)
+            ) ENGINE=InnoDB {$charsetCollate};",
+
+            // A free-entry ticket given to someone else (schema 34). One row
+            // is first an offer and, once it moves, the new ticket itself:
+            // status 'pending' (an offer to an email address, waiting for the
+            // receiver to accept), 'issued' (the ticket moved: the original
+            // redemption is cancelled with transferred_to naming this row),
+            // 'cancelled' (the giver withdrew the offer, or an organizer
+            // cancelled the moved ticket) or 'lapsed' (never accepted before
+            // the doors opened). receiver_person_id is the member it went to,
+            // NULL for someone who is not a member. name and email are the
+            // receiver's; email is emptied after the night with the guests'
+            // addresses (RetentionPurge).
+            "CREATE TABLE {$ticketTransfers} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                redemption_id bigint(20) unsigned NOT NULL,
+                event_date date NOT NULL,
+                event_post_id bigint(20) unsigned DEFAULT NULL,
+                giver_person_id bigint(20) unsigned NOT NULL,
+                receiver_person_id bigint(20) unsigned DEFAULT NULL,
+                name varchar(191) NOT NULL DEFAULT '',
+                email varchar(191) DEFAULT NULL,
+                language varchar(10) DEFAULT NULL,
+                status varchar(10) NOT NULL DEFAULT 'pending',
+                created_at datetime NOT NULL,
+                issued_at datetime DEFAULT NULL,
+                ended_at datetime DEFAULT NULL,
+                ticket_mailed_at datetime DEFAULT NULL,
+                PRIMARY KEY  (id),
+                KEY redemption_id (redemption_id),
+                KEY event_date (event_date),
+                KEY giver_person_id (giver_person_id),
+                KEY receiver_person_id (receiver_person_id),
+                KEY email (email)
             ) ENGINE=InnoDB {$charsetCollate};",
 
             // A manual credit an organizer hands someone - a bonus outside the

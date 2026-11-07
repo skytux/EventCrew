@@ -22,7 +22,9 @@ final class RedemptionRepository
 
     /**
      * How many credits this person has spent, all-time. Paired with their
-     * completed-task count to give the current balance.
+     * completed-task count to give the current balance. A ticket the person
+     * gave to someone else is cancelled but still counts: its credit was
+     * spent, the receiver holds the ticket.
      */
     public function countFor(int $personId): int
     {
@@ -30,7 +32,8 @@ final class RedemptionRepository
 
         return (int) $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$this->table()} WHERE person_id = %d AND cancelled_at IS NULL",
+                "SELECT COUNT(*) FROM {$this->table()} WHERE person_id = %d
+                AND (cancelled_at IS NULL OR transferred_to IS NOT NULL)",
                 $personId
             )
         );
@@ -209,6 +212,29 @@ final class RedemptionRepository
                 $id
             )
         );
+    }
+
+    /**
+     * Cancels a ticket because it was given away: cancelled_at is set and
+     * transferred_to names the transfer, so the credit stays spent
+     * (countFor()). Only a ticket that is neither cancelled nor given away
+     * already; false when it was, so two taps cannot give one ticket twice.
+     */
+    public function markTransferred(int $id, int $transferId): bool
+    {
+        global $wpdb;
+
+        $changed = $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$this->table()} SET cancelled_at = %s, transferred_to = %d
+                WHERE id = %d AND cancelled_at IS NULL AND transferred_to IS NULL",
+                current_time('mysql'),
+                $transferId,
+                $id
+            )
+        );
+
+        return is_int($changed) && $changed > 0;
     }
 
     /** Records that the "Your ticket" email (TicketMail) was sent for this credit, now. */

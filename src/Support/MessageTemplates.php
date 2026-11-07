@@ -1044,6 +1044,12 @@ final class MessageTemplates
         $admin = [DoorLinkSender::adminButtonLabel()];
         // A spot opened: one free place, and made-up other open tasks.
         $sampleOthers = ['context' => static fn (): array => ['free' => 1, 'sample_other_tasks' => true]];
+        // A thank-you: one more task done, so the standing goes up (74% -> 82%),
+        // not down like the no-show sample (Owner 2026-11-08).
+        $sampleThanks = ['context' => static fn (): array => [
+            'standing_before' => new Standing(Standing::GOOD, 0.74, 5, 1, 7),
+            'standing_after' => new Standing(Standing::GOOD, 0.82, 6, 2, 8),
+        ]];
         // A takeover request: the asker has done a few tasks.
         $sampleRecord = ['context' => static fn (): array => [
             'cover_record' => TakeoverService::coverRecord(__('Sample Helper', 'eventcrew'), 4),
@@ -1087,6 +1093,8 @@ final class MessageTemplates
         return [
             'credit_granted' => $sampleNights,
             'credit_granted_dm' => $sampleNights,
+            'task_completed' => $sampleThanks,
+            'task_completed_dm' => $sampleThanks,
             'slot_freed' => $sampleOthers,
             'slot_freed_dm' => $sampleOthers,
             'task_cancelled' => $sampleOthers,
@@ -1453,11 +1461,11 @@ final class MessageTemplates
                     __('Reminder: %1$s for %2$s', 'eventcrew'),
                     ['%1$s' => '{role}', '%2$s' => '{event}']
                 ),
-                static fn (): string => EventDetailsText::withVenue(EventDetailsText::withEventDescription(self::withDescription(self::tag(
+                static fn (): string => EventDetailsText::withVenue(self::withDescription(self::tag(
                     /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: how to cancel */
                     __("Hi %1\$s,\n\nJust a reminder that you’re on %2\$s at %3\$s, %4\$s.\n\n%5\$s", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}', '%5$s' => '{cancel_help}']
-                )))),
+                ))),
                 [
                     'name' => $name,
                     'role' => $role,
@@ -1473,11 +1481,11 @@ final class MessageTemplates
                 $telegram,
                 __('Sent the day before a task to each person signed up for it who uses the bot.', 'eventcrew'),
                 null,
-                static fn (): string => EventDetailsText::withVenue(EventDetailsText::withEventDescription(self::withDescription(self::tag(
+                static fn (): string => EventDetailsText::withVenue(self::withDescription(self::tag(
                     /* translators: 1: role, 2: event, 3: date/time */
                     __('⏰ Reminder: you’re on %1$s at %2$s, %3$s. See you there!', 'eventcrew'),
                     ['%1$s' => '{role}', '%2$s' => '{event}', '%3$s' => '{when}']
-                ) . "\n\n" . self::cancelHelpDm()))),
+                ) . "\n\n" . self::cancelHelpDm())),
                 ['role' => $role, 'event' => $event, 'when' => $when, 'description' => $description]
             ),
             new MessageTemplate(
@@ -1486,12 +1494,19 @@ final class MessageTemplates
                 $email,
                 __('Sent to the crew when someone cancels a task late and its place is free again.', 'eventcrew'),
                 static fn (): string => __('A spot just opened up', 'eventcrew'),
-                static fn (): string => EventDetailsText::withVenue(EventDetailsText::withEventDescription(self::tag(
+                // The event's picture, the DJ text under it, then the other
+                // open tasks (Owner, 2026-11-08).
+                static fn (): string => EventDetailsText::withVenue(self::tag(
                     /* translators: 1: name, 2: the opening line */
                     __("Hi %1\$s,\n\n%2\$s", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => $spot()]
-                ) . SlotFreedNotice::NEW_PLACEHOLDERS)),
-                ['name' => $name, 'role' => $role, 'event' => $event, 'when' => $when] + $spotPlaceholders
+                ) . SlotFreedNotice::EMAIL_PLACEHOLDERS),
+                ['name' => $name, 'role' => $role, 'event' => $event, 'when' => $when] + $spotPlaceholders + [
+                    'event_picture' => self::placeholder(
+                        __('An empty line and the event\'s picture. Empty when the event has none.', 'eventcrew'),
+                        static fn (array $c): string => (string) ($c['event_picture'] ?? '')
+                    ),
+                ]
             ),
             new MessageTemplate(
                 'slot_freed_dm',

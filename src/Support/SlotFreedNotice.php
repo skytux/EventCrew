@@ -9,6 +9,7 @@ use EventCrew\Models\Task;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Telegram\TelegramClient;
+use EventCrew\Web\SignupBoardView;
 
 /**
  * When a late cancellation frees a slot - close to the event, when it most needs
@@ -53,6 +54,12 @@ final class SlotFreedNotice
      * at the end of the text as they are.
      */
     public const NEW_PLACEHOLDERS = '{task_details}{other_tasks}';
+
+    /**
+     * The end of the built-in email: the task's details, the event's picture,
+     * the DJ text under it, then the other open tasks (Owner, 2026-11-08).
+     */
+    public const EMAIL_PLACEHOLDERS = "{task_details}{event_picture}\n\n{event_description}{other_tasks}";
 
     /** Set to '1' once migrateStoredTexts() has run. */
     public const MIGRATED_OPTION = 'eventcrew_slot_freed_details_migrated';
@@ -414,6 +421,53 @@ final class SlotFreedNotice
     }
 
     /**
+     * The event's picture (the one its cards show, EventSource::card(), else
+     * the post's featured image), '' when it has none.
+     */
+    public static function pictureUrl(Task $task): string
+    {
+        $postId = (int) ($task->eventPostId ?? 0);
+
+        if ($postId <= 0) {
+            return '';
+        }
+
+        $image = (string) (EventSource::card($postId)['image'] ?? '');
+
+        return '' !== $image ? $image : SignupBoardView::eventImage($postId);
+    }
+
+    /**
+     * The email's picture area for Mailer::toPerson() (it goes where the
+     * {event_picture} line is), or null when the event has no picture.
+     *
+     * @return array{html: string, text: string}|null
+     */
+    public static function emailPicture(Task $task): ?array
+    {
+        $url = self::pictureUrl($task);
+
+        if ('' === $url) {
+            return null;
+        }
+
+        $html = sprintf(
+            '<div style="margin:16px 0 0"><img src="%s" width="560" alt="%s" '
+                . 'style="display:block;width:100%%;max-width:560px;height:auto;border:0;border-radius:12px"></div>',
+            esc_url($url),
+            esc_attr($task->eventName())
+        );
+
+        return ['html' => $html, 'text' => ''];
+    }
+
+    /** What {event_picture} is filled with: the mark Mailer puts the picture at, or ''. */
+    public static function pictureMark(?array $picture): string
+    {
+        return null === $picture ? '' : "\n\n" . Mailer::TICKETS_MARK;
+    }
+
+    /**
      * One person, in the language they chose. Returns whether anything was sent.
      *
      * @param array{free: int, other_rows: list<array{task: Task, free: int}>} $facts
@@ -424,22 +478,34 @@ final class SlotFreedNotice
         $context = ['person' => $person, 'task' => $task] + $facts;
         $sent = false;
 
+        $picture = self::pictureUrl($task);
+
         if ($prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK)) {
+            // The event's picture as a large preview above the text (Owner, 2026-11-08).
             $this->telegram->sendMessage(
                 (int) $person->telegramChatId,
                 DmBody::frame($person, MessageAiText::body('slot_freed_dm', $context, $task->eventPostId)),
-                MessageActions::replyMarkup(MessageActions::of('slot_freed_dm', $context, $this->mailer))
+                MessageActions::replyMarkup(MessageActions::of('slot_freed_dm', $context, $this->mailer)),
+                '' === $picture ? [] : ['link_preview_options' => [
+                    'url' => $picture,
+                    'prefer_large_media' => true,
+                    'show_above_text' => true,
+                ]]
             );
             $sent = true;
         }
 
         if ($prefs->emailAllowed($person, NotificationPreferences::OPEN_TASK)) {
+            $emailPicture = self::emailPicture($task);
+            $emailContext = $context + ['event_picture' => self::pictureMark($emailPicture)];
             $this->mailer->toPerson(
                 $person->id,
                 $person->email,
-                MessageTemplates::subject('slot_freed', $context),
-                MessageAiText::body('slot_freed', $context, $task->eventPostId),
-                MessageActions::email(MessageActions::of('slot_freed', $context, $this->mailer))
+                MessageTemplates::subject('slot_freed', $emailContext),
+                MessageAiText::body('slot_freed', $emailContext, $task->eventPostId),
+                MessageActions::email(MessageActions::of('slot_freed', $emailContext, $this->mailer)),
+                null,
+                $emailPicture
             );
             $sent = true;
         }

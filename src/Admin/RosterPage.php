@@ -188,14 +188,19 @@ final class RosterPage
         $date = isset($_POST['roster_date']) ? sanitize_text_field(wp_unslash($_POST['roster_date'])) : '';
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
+        $transferred = false;
+
         if ($redemptionId > 0) {
+            // A ticket that was given away: the receiver's ticket is
+            // cancelled, and the giver's credit stays spent.
+            $transferred = (bool) $this->redemptions->find($redemptionId)?->isTransferred();
             // Also emails "Your ticket is cancelled" when the ticket was emailed.
             $this->tickets->cancelRedemption($redemptionId);
         }
 
         Admin::redirectTo(
             self::PAGE_SLUG,
-            __('Credit handed back.', 'eventcrew'),
+            $transferred ? __('Transferred ticket cancelled.', 'eventcrew') : __('Credit handed back.', 'eventcrew'),
             'success',
             $this->dateArg($date)
         );

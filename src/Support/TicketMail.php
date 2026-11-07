@@ -9,11 +9,13 @@ use EventCrew\Models\Guest;
 use EventCrew\Models\Person;
 use EventCrew\Models\Task;
 use EventCrew\Models\TicketBuyer;
+use EventCrew\Models\TicketTransfer;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
+use EventCrew\Repositories\TicketTransferRepository;
 use EventCrew\Web\SignupBoardView;
 
 /**
@@ -146,7 +148,8 @@ final class TicketMail
         private readonly Mailer $mailer,
         private readonly TicketQr $qr = new TicketQr(),
         private readonly ?AssignmentRepository $assignments = null,
-        private readonly ?RedemptionRepository $redemptions = null
+        private readonly ?RedemptionRepository $redemptions = null,
+        private readonly ?TicketTransferRepository $transfers = null
     ) {
     }
 
@@ -651,6 +654,10 @@ final class TicketMail
     public static function qrData(TicketBuyer|Guest|CrewTicket $row): string
     {
         if ($row instanceof CrewTicket) {
+            if ($row->isTransfer()) {
+                return self::transferCode($row->id);
+            }
+
             return $row->isCredit() ? self::creditCode($row->id) : self::crewCode($row->id);
         }
 
@@ -732,6 +739,27 @@ final class TicketMail
     }
 
     /**
+     * "EC-T12-0123456789abcdef": the code in a given-away ticket's email, a
+     * TicketTransfer id signed like that ticket's link (transferUrl()).
+     */
+    public static function transferCode(int $transferId): string
+    {
+        return self::shortCode('T', 'xfer_ticket', $transferId);
+    }
+
+    /** The TicketTransfer id in a transferCode(), or null. */
+    public static function transferIdFromCode(string $text): ?int
+    {
+        return self::idFromShortCode('T', 'xfer_ticket', $text);
+    }
+
+    /** The ticket page of a given-away ticket (TicketTransfer id). */
+    public static function transferUrl(int $transferId): string
+    {
+        return add_query_arg(['token' => SignedLink::sign('xfer_ticket', $transferId)], rest_url(self::PAGE_ROUTE));
+    }
+
+    /**
      * "EC-B12-0123456789abcdef": the ticket code given to a buyer added at the
      * sales desk with an email address, so their emailed ticket has a code.
      */
@@ -754,6 +782,10 @@ final class TicketMail
     public static function shortCodeOf(TicketBuyer|Guest|CrewTicket $row): string
     {
         if ($row instanceof CrewTicket) {
+            if ($row->isTransfer()) {
+                return ShortCode::forTransfer($row->id);
+            }
+
             if ($row->personId <= 0) {
                 return '';
             }
@@ -793,6 +825,10 @@ final class TicketMail
      */
     public static function crewUrl(CrewTicket $ticket): string
     {
+        if ($ticket->isTransfer()) {
+            return self::transferUrl($ticket->id);
+        }
+
         return add_query_arg(
             ['token' => SignedLink::sign($ticket->isCredit() ? 'credit_ticket' : 'ticket', $ticket->id)],
             rest_url(self::PAGE_ROUTE)
@@ -960,7 +996,169 @@ final class TicketMail
 
         usort($tickets, static fn (CrewTicket $a, CrewTicket $b): int => $a->id <=> $b->id);
 
+        // Tickets other people gave this person for the night come after
+        // their own.
+        foreach (null === $this->transfers ? [] : $this->transfers->heldBy($person->id) as $transfer) {
+            if ($date === $transfer->eventDate) {
+                $tickets[] = $this->transferTicket($transfer, $person);
+            }
+        }
+
         return $tickets;
+    }
+
+    /**
+     * A given-away ticket as a ticket for the email: the receiver's name and
+     * address, the giver's name as $from.
+     */
+    private function transferTicket(TicketTransfer $transfer, ?Person $receiver, string $from = ''): CrewTicket
+    {
+        return new CrewTicket(
+            CrewTicket::KIND_TRANSFER,
+            $transfer->id,
+            $transfer->eventDate,
+            null === $receiver ? $transfer->name : $receiver->name(),
+            null === $receiver ? $transfer->email : $receiver->email,
+            language: null === $receiver
+                ? ('' === $transfer->language ? null : $transfer->language)
+                : HybridPolicy::personLanguage($receiver),
+            personId: null === $receiver ? 0 : $receiver->id,
+            from: $from
+        );
+    }
+
+    /**
+     * Emails the receiver of a given-away ticket their ticket, at once, and
+     * records that it was sent: a member ($receiver) as their other tickets,
+     * following their "Free-entry ticket ready" email choice and with every
+     * ticket they hold that night; someone reached by email alone. $from is
+     * the giver's name.
+     */
+    public function sendTransferTicket(TicketTransfer $transfer, ?Person $receiver, string $from): bool
+    {
+        if (
+            null !== $receiver
+            && ! (new NotificationPreferences())->emailAllowed($receiver, NotificationPreferences::TICKET)
+        ) {
+            return false;
+        }
+
+        $ticket = $this->transferTicket($transfer, $receiver, $from);
+        $night = [$ticket];
+
+        if (null !== $receiver) {
+            $night = array_map(
+                static fn (CrewTicket $t): CrewTicket => $t->isTransfer() && $t->id === $transfer->id ? $ticket : $t,
+                $this->nightTickets($receiver, $transfer->eventDate)
+            );
+
+            if ([] === array_filter($night, static fn (CrewTicket $t): bool => $t->isTransfer() && $t->id === $transfer->id)) {
+                $night[] = $ticket;
+            }
+        }
+
+        $sent = $this->sendPersonTicket($ticket, null, $night);
+
+        if ($sent && null !== $this->transfers) {
+            $this->transfers->markTicketMailed($transfer->id);
+        }
+
+        return $sent;
+    }
+
+    /**
+     * The email to someone who is not a member, offered a ticket: "$from is
+     * giving you their free-entry ticket", with an Accept button to $acceptUrl.
+     * In the ticket email's languages (the receiver's are not known). Not
+     * sent to a placeholder or invalid address, or for a night already past.
+     */
+    public function sendTransferOffer(string $email, string $from, string $date, string $acceptUrl): bool
+    {
+        if ('' === $email || Person::isPlaceholderEmail($email) || ! is_email($email)) {
+            return false;
+        }
+
+        if ('' === $date || $date < (string) current_time('Y-m-d')) {
+            return false;
+        }
+
+        $mail = $this->composeTransferOffer($from, $date, $acceptUrl);
+
+        return $this->mailer->toTicketHolder(
+            $email,
+            $mail['subject'],
+            $mail['html'],
+            $mail['text'],
+            self::offerFooter(),
+            true,
+            '',
+            [],
+            HybridPolicy::languagesFor(HybridPolicy::TICKET, null)
+        );
+    }
+
+    /**
+     * The offer email: subject, HTML and plain text, in each language
+     * HybridPolicy picks for a ticket whose reader is not known.
+     *
+     * @return array{subject: string, html: string, text: string}
+     */
+    public function composeTransferOffer(string $from, string $date, string $acceptUrl): array
+    {
+        $short = self::shortDate($date);
+        [$event, , $eventId] = $this->event($date);
+        $words = static function () use ($from, $event, $eventId, $short): array {
+            $night = trim(self::eventIn($event, $eventId, EventName::lang()) . ' ' . $short);
+
+            return [
+                'body' => __('Hi,', 'eventcrew') . "\n\n" . sprintf(
+                    /* translators: 1: the giver's name, 2: the night, e.g. "Club night 14.11.2026" */
+                    __('%1$s is giving you their free-entry ticket for %2$s.', 'eventcrew'),
+                    $from,
+                    $night
+                ) . "\n\n" . __(
+                    'Accept it and write your name, and we will email you the ticket. The offer ends when the doors open.',
+                    'eventcrew'
+                ),
+                'subject' => __('A free-entry ticket for you', 'eventcrew'),
+                'accept' => __('Accept the ticket', 'eventcrew'),
+            ];
+        };
+        $parts = HybridPolicy::inEach(HybridPolicy::languagesFor(HybridPolicy::TICKET, null), $words);
+        $both = static fn (string $key, string $glue = ' / '): string => HybridPolicy::join(
+            HybridPolicy::field($parts, $key),
+            $glue
+        );
+        $bodies = HybridPolicy::field($parts, 'body');
+        $tags = HybridPolicy::tags($bodies);
+        $html = [];
+
+        foreach ($bodies as $lang => $body) {
+            $html[] = EmailBody::toHtml($body, [], EmailTemplate::accent(), $tags[$lang]);
+        }
+
+        $title = '' === $event ? $short : $event . "\n" . $short;
+
+        return [
+            'subject' => $both('subject') . ' – ' . $short,
+            'html' => EmailBody::title($title)
+                . implode('<hr style="border:0;border-top:1px solid #ead9bf;margin:22px 0">', $html)
+                . EmailBody::centred(EmailBody::toHtml(
+                    '',
+                    [['label' => $both('accept', "\n"), 'url' => $acceptUrl]],
+                    EmailTemplate::accent()
+                )),
+            'text' => implode("\n\n", $bodies) . "\n\n" . $both('accept') . ': ' . $acceptUrl,
+        ];
+    }
+
+    /** The footer line of the offer email. */
+    private static function offerFooter(): string
+    {
+        return HybridPolicy::join(HybridPolicy::inEach(
+            HybridPolicy::languagesFor(HybridPolicy::TICKET, null),
+            static fn (): string => __('You get this email because someone gave you a ticket to this event.', 'eventcrew')
+        ));
     }
 
     /** The person's first sign-up on the night that holds a task, or null. */
@@ -1588,6 +1786,11 @@ final class TicketMail
     ): array {
         if (null !== $deleted) {
             $reason = self::deletedSentence($deleted);
+        } elseif ($row instanceof CrewTicket && $row->isTransfer()) {
+            $reason = '' === $row->from
+                ? __('Someone gave you their free-entry ticket.', 'eventcrew')
+                /* translators: %s: the name of the person who gave the ticket */
+                : sprintf(__('%s gave you their free-entry ticket.', 'eventcrew'), $row->from);
         } elseif ($row instanceof CrewTicket) {
             $reason = TicketReasons::text($row->isCredit() ? TicketReasons::CREDIT : TicketReasons::TASK, $lang);
         } else {
@@ -1597,7 +1800,7 @@ final class TicketMail
         // A crew ticket lists the person's tasks on the night.
         $tasks = '';
 
-        if ($row instanceof CrewTicket && ! $row->isCredit()) {
+        if ($row instanceof CrewTicket && ! $row->isCredit() && ! $row->isTransfer()) {
             $tasks = implode("\n", array_map(
                 static function (Task $task): string {
                     $time = $task->timeRange();
@@ -1651,13 +1854,15 @@ final class TicketMail
     /**
      * The words of the ticket area (area()), in the current language.
      *
-     * @return array{crew: string, credit: string, open: string, short: string, offline: string, offline_all: string}
+     * @return array{crew: string, credit: string, transfer: string, open: string, short: string,
+     *     offline: string, offline_all: string}
      */
     private static function areaWords(): array
     {
         return [
             'crew' => __('Crew ticket', 'eventcrew'),
             'credit' => __('Free-entry ticket', 'eventcrew'),
+            'transfer' => __('Transferred ticket', 'eventcrew'),
             'open' => __('Open my ticket', 'eventcrew'),
             'short' => __('Short code', 'eventcrew'),
             'offline' => __('No internet? Show this QR code at the door.', 'eventcrew'),
@@ -1687,7 +1892,7 @@ final class TicketMail
         $last = $count - 1;
 
         foreach (array_values($tickets) as $i => $ticket) {
-            $label = $labels ? $say($ticket->isCredit() ? 'credit' : 'crew') : '';
+            $label = $labels ? $say($ticket->isTransfer() ? 'transfer' : ($ticket->isCredit() ? 'credit' : 'crew')) : '';
             $url = self::crewUrl($ticket);
             $short = self::shortCodeOf($ticket);
             $tasks = array_map(
@@ -1696,7 +1901,7 @@ final class TicketMail
 
                     return $task->roleDisplay() . ('' === $time ? '' : ', ' . $time);
                 },
-                $ticket->isCredit() ? [] : $ticket->tasks
+                $ticket->isCredit() || $ticket->isTransfer() ? [] : $ticket->tasks
             );
             $extra = implode('', array_map(
                 static fn (string $line): string => sprintf(

@@ -11784,3 +11784,548 @@ msgstr "Seus outros ingressos para esta noite continuam valendo. Estão abaixo."
 
 msgid "Every ticket the person has for the night, each with its QR code, for the door. On a line of its own; when the text has no such line, the tickets go at the end."
 msgstr "Todos os ingressos da pessoa para a noite, cada um com seu código QR, para a porta. Em uma linha própria; se o texto não tiver essa linha, os ingressos vão no final."
+
+msgid "An empty line and the event's picture. Empty when the event has none."
+msgstr "Uma linha vazia e a imagem do evento. Vazio quando o evento não tem."
+
+#: src/Support/MessageTemplates.php:1309
+msgid "\"Thanks for the notice.\" and why it has no effect on the standing (an early cancellation, more than the notice hours before the task), or for a late cancellation the sentences saying it counts against the standing and that Sign up again undoes it."
+msgstr "\"Obrigado pelo aviso.\" e por que isso não afeta a reputação (um cancelamento antecipado, antes do prazo de aviso em horas), ou, num cancelamento tardio, as frases dizendo que conta contra a reputação e que Inscrever-se de novo desfaz isso."
+
+#: src/Support/MessageTemplates.php:2191
+msgid "A newcomer is unknown to the organizers (Telegram)"
+msgstr "Um recém-chegado é desconhecido dos organizadores (Telegram)"
+
+#: src/Support/MessageTemplates.php:2183
+msgid "A newcomer is unknown to the organizers (email)"
+msgstr "Um recém-chegado é desconhecido dos organizadores (email)"
+
+#: src/Support/MessageTemplates.php:2207
+msgid "A newcomer request timed out (Telegram)"
+msgstr "O pedido de um recém-chegado expirou (Telegram)"
+
+#: src/Support/MessageTemplates.php:2199
+msgid "A newcomer request timed out (email)"
+msgstr "O pedido de um recém-chegado expirou (email)"
+
+#: src/Support/MessageTemplates.php:2652
+msgid "A newcomer request was answered (email)"
+msgstr "O pedido de um recém-chegado foi respondido (email)"
+
+#: src/Support/MessageTemplates.php:2186
+msgid "About your sign-up"
+msgstr "Sobre sua inscrição"
+
+#: templates/admin/people.php:354
+msgid "Accept"
+msgstr "Aceitar"
+
+#: src/Admin/PeoplePage.php:148
+msgid "Accepted. They can take tasks now, and they are told."
+msgstr "Aceito. A pessoa já pode pegar tarefas e foi avisada."
+
+#: src/Support/WelcomeSender.php:556
+msgid "And every task earns you free entry."
+msgstr "E cada tarefa te dá entrada grátis."
+
+#. translators: %s: the person's name
+#: src/Support/MessageTemplates.php:2657
+msgid "Answered: %s"
+msgstr "Respondido: %s"
+
+#: src/Support/CancelNote.php:77
+msgid "Changed your mind? Tap Sign up again while the place is still free: you are back on the task and the late cancellation is removed."
+msgstr "Mudou de ideia? Toque em Inscrever-se de novo enquanto a vaga ainda estiver livre: você volta para a tarefa e o cancelamento tardio é removido."
+
+#. translators: %d: completed tasks
+#: src/Telegram/ProfileService.php:75
+msgid "Completed tasks: %d"
+msgstr "Tarefas concluídas: %d"
+
+#: src/Web/DemoController.php:85
+msgid "Demo event"
+msgstr "Evento demo"
+
+#: src/Web/DemoController.php:173 templates/admin/diagnostics.php:164
+msgid "Demo sales desk"
+msgstr "Balcão de vendas demo"
+
+#: src/Web/DemoController.php:88 templates/admin/diagnostics.php:162
+msgid "Demo ticket"
+msgstr "Ingresso demo"
+
+#: templates/admin/diagnostics.php:157
+msgid "Demo ticket and desk"
+msgstr "Ingresso e balcão demo"
+
+#: src/Support/WelcomeSender.php:555
+msgid "Every task you take keeps the door open, the room ready and the music going."
+msgstr "Cada tarefa que você pega mantém a porta aberta, a sala pronta e a música tocando."
+
+#. translators: %d: free-entry credits
+#: src/Telegram/ProfileService.php:80 src/Telegram/TicketRedemptionService.php:165
+msgid "Free-entry credits: %d"
+msgstr "Créditos de entrada grátis: %d"
+
+#: src/Support/CancelNote.php:38
+msgid "It has no effect on your standing."
+msgstr "Isso não afeta sua reputação."
+
+#: src/Support/FollowupMail.php:1426
+msgid "Join on Telegram"
+msgstr "Entrar pelo Telegram"
+
+#: src/Support/FollowupMail.php:1425
+msgid "Join on the web"
+msgstr "Entrar pela web"
+
+#: templates/admin/settings.php:1625
+msgid "Languages shown in multi-language texts and buttons"
+msgstr "Idiomas mostrados em textos e botões multilíngues"
+
+#: src/Telegram/ProfileService.php:66
+msgid "My info"
+msgstr "Meus dados"
+
+#: templates/admin/people.php:320
+msgid "Newcomers an organizer turned down, and requests nobody answered in 48 hours. Accept gives the OK as the OK button does: they can take tasks, and they are told."
+msgstr "Recém-chegados que um organizador recusou e pedidos que ninguém respondeu em 48 horas. Aceitar dá o OK como o botão OK: eles podem pegar tarefas e são avisados."
+
+#. translators: %s: when, like 2 Nov 14:05
+#: src/Support/NewcomerApproval.php:422
+msgid "No organizer answered in 48 hours, so the request timed out on %s."
+msgstr "Nenhum organizador respondeu em 48 horas, então o pedido expirou em %s."
+
+#: src/Support/NewcomerApproval.php:419
+msgid "No organizer answered in 48 hours, so the request timed out."
+msgstr "Nenhum organizador respondeu em 48 horas, então o pedido expirou."
+
+#: src/Admin/PeoplePage.php:119
+msgid "No organizer answered in 48 hours. They were told."
+msgstr "Nenhum organizador respondeu em 48 horas. A pessoa foi avisada."
+
+#: src/Support/NewcomerApproval.php:143
+msgid "No reason (not told)"
+msgstr "Sem motivo (não avisado)"
+
+#: src/Admin/PeoplePage.php:121
+msgid "No reason. They were not told."
+msgstr "Sem motivo. A pessoa não foi avisada."
+
+#: src/Support/NewcomerApproval.php:441
+msgid "No, by %1$s, %2$s."
+msgstr "Não, por %1$s, %2$s."
+
+#: src/Admin/PeoplePage.php:117
+msgid "Nobody (timed out)"
+msgstr "Ninguém (expirou)"
+
+#: templates/admin/people.php:323
+msgid "Nobody was turned down."
+msgstr "Ninguém foi recusado."
+
+#: src/Web/DemoController.php:185
+msgid "Not in yet"
+msgstr "Ainda não entrou"
+
+#: src/Support/NewcomerApproval.php:434
+msgid "OK, by %1$s, %2$s."
+msgstr "OK, por %1$s, %2$s."
+
+#: templates/admin/settings.php:2019
+msgid "On by default. Someone who is not yet in the crew and not in the group gets no answer from the bot. If they open the bot from a link in an email or on the website, they get a button to the crew group. Members who are already set up are not affected. Turn this off if the bot cannot check who is in the group."
+msgstr "Ligado por padrão. Quem ainda não está na equipe nem no grupo não recebe resposta do bot. Se abrir o bot por um link num email ou no site, recebe um botão para o grupo da equipe. Membros já configurados não são afetados. Desligue isto se o bot não conseguir verificar quem está no grupo."
+
+#: templates/admin/settings.php:2016
+msgid "Only people in the crew group can start the bot"
+msgstr "Só pessoas no grupo da equipe podem iniciar o bot"
+
+#: templates/admin/diagnostics.php:159
+msgid "Open the ticket on one device and the desk on another, then tick the row: the ticket turns gold by itself. No login needed; the links work for 24 hours. Nothing in the demo touches real data."
+msgstr "Abra o ingresso num aparelho e o balcão em outro, depois marque a linha: o ingresso fica dourado sozinho. Sem login; os links funcionam por 24 horas. Nada na demo toca em dados reais."
+
+#: src/Support/NewcomerApproval.php:730
+msgid "Open their Telegram profile"
+msgstr "Abrir o perfil no Telegram"
+
+#: src/Support/PrivacyPolicy.php:564
+msgid "Other crew members can see your name and the tasks you are on. Crew on the same night see them in the bot’s /roster, and the task board in the crew Telegram group shows the first name of each person on a task for the next event. A crew member can also open the board for any coming day in a private chat with the bot. Your name also appears in the group when someone covers a task for you, or you cover one for someone else."
+msgstr "Outros membros da equipe podem ver seu nome e as tarefas em que você está. A equipe da mesma noite os vê no /roster do bot, e o quadro de tarefas no grupo da equipe no Telegram mostra o primeiro nome de cada pessoa numa tarefa do próximo evento. Um membro da equipe também pode abrir o quadro de qualquer dia futuro num chat privado com o bot. Seu nome também aparece no grupo quando alguém cobre uma tarefa por você, ou você cobre uma por outra pessoa."
+
+#: src/Support/WelcomeSender.php:554
+msgid "Our nights happen because people like you lend a hand."
+msgstr "Nossas noites acontecem porque pessoas como você dão uma mão."
+
+#: src/Telegram/TicketRedemptionService.php:168
+msgid "Pick an event:"
+msgstr "Escolha um evento:"
+
+#: templates/admin/settings.php:2008
+msgid "Private chats"
+msgstr "Chats privados"
+
+#: src/Support/MessageTemplates.php:2193
+msgid "Sent to a new person who uses the bot when an organizer turns down their request with the reason Unknown to us. With No reason the person is not told."
+msgstr "Enviado a uma pessoa nova que usa o bot quando um organizador recusa o pedido dela com o motivo Desconhecido para nós. Com Sem motivo a pessoa não é avisada."
+
+#: src/Support/MessageTemplates.php:2209
+msgid "Sent to a new person who uses the bot when no organizer answered their request in 48 hours. The request is then turned down."
+msgstr "Enviado a uma pessoa nova que usa o bot quando nenhum organizador respondeu ao pedido dela em 48 horas. O pedido é então recusado."
+
+#: src/Support/MessageTemplates.php:2185
+msgid "Sent to a new person without Telegram when an organizer turns down their request with the reason Unknown to us. The greeting is added above the text. With No reason the person is not told."
+msgstr "Enviado a uma pessoa nova sem Telegram quando um organizador recusa o pedido dela com o motivo Desconhecido para nós. A saudação é adicionada acima do texto. Com Sem motivo a pessoa não é avisada."
+
+#: src/Support/MessageTemplates.php:2201
+msgid "Sent to a new person without Telegram when no organizer answered their request in 48 hours. The request is then turned down. The greeting is added above the text."
+msgstr "Enviado a uma pessoa nova sem Telegram quando nenhum organizador respondeu ao pedido dela em 48 horas. O pedido é então recusado. A saudação é adicionada acima do texto."
+
+#: src/Support/MessageTemplates.php:2654
+msgid "Sent to the organizers who got the email about a new person, when another organizer answers the request or when it times out after 48 hours."
+msgstr "Enviado aos organizadores que receberam o email sobre uma pessoa nova, quando outro organizador responde ao pedido ou quando ele expira após 48 horas."
+
+#: src/Support/CancelNote.php:84
+msgid "Sign up for it again while the place is free and the late cancellation is removed."
+msgstr "Inscreva-se de novo enquanto a vaga estiver livre e o cancelamento tardio é removido."
+
+#: templates/admin/settings.php:1631
+msgid "Telegram, emails and web pages. The reader’s own language first, then the next ones in the site’s order. Default 2."
+msgstr "Telegram, emails e páginas web. Primeiro o idioma do leitor, depois os próximos na ordem do site. Padrão 2."
+
+#. translators: 1: languages shown, 2: number of site languages
+#: src/Support/HybridPolicy.php:377
+msgid "Texts and buttons in several languages show %1$d of the %2$d site languages: the reader’s own first, then the next ones. Change it in Settings > Email > Hybrid messages."
+msgstr "Textos e botões em vários idiomas mostram %1$d dos %2$d idiomas do site: primeiro o do leitor, depois os próximos. Mude em Configurações > Email > Mensagens híbridas."
+
+#: src/Admin/PeoplePage.php:145
+msgid "That person could not be accepted. Someone may have done it already."
+msgstr "Não foi possível aceitar essa pessoa. Talvez alguém já tenha feito isso."
+
+#: src/Support/MessageTemplates.php:2669
+msgid "The answer: OK or No, who gave it and when, and whether the person was told."
+msgstr "A resposta: OK ou Não, quem deu e quando, e se a pessoa foi avisada."
+
+#: src/Support/MessageTemplates.php:1745
+msgid "The name of the event and its DJs, like Ecstatic Dance · Esimerkki. On a line of its own; the line goes when it is not known."
+msgstr "O nome do evento e dos DJs, como Ecstatic Dance · Esimerkki. Numa linha própria; a linha some quando não é conhecido."
+
+#: src/Support/MessageTemplates.php:2187 src/Support/MessageTemplates.php:2195
+msgid "The organizers do not know you yet, so they could not say OK to your sign-up. Please come and talk to us at an event; an organizer can then say OK."
+msgstr "Os organizadores ainda não conhecem você, então não puderam dar OK à sua inscrição. Venha falar com a gente num evento; aí um organizador pode dar OK."
+
+#. translators: 1: the person's name, 2: their email
+#: src/Support/MessageTemplates.php:2662
+msgid "The request of %1$s (%2$s) to join the crew is answered:"
+msgstr "O pedido de %1$s (%2$s) para entrar na equipe foi respondido:"
+
+#: src/Support/NewcomerApproval.php:446
+msgid "They were not told."
+msgstr "A pessoa não foi avisada."
+
+#: src/Support/NewcomerApproval.php:424
+msgid "They were told to talk to an organizer at an event."
+msgstr "A pessoa foi orientada a falar com um organizador num evento."
+
+#: src/Support/NewcomerApproval.php:444
+msgid "They were told: unknown to the organizers."
+msgstr "A pessoa foi avisada: desconhecida dos organizadores."
+
+#: src/Web/DemoController.php:176
+msgid "This demo has ended."
+msgstr "Esta demo terminou."
+
+#. translators: %d: the late-cancellation notice in hours
+#: src/Support/CancelNote.php:49
+msgid "This is an early cancellation: it is more than %d hour before the task, so it has no effect on your standing."
+msgid_plural "This is an early cancellation: it is more than %d hours before the task, so it has no effect on your standing."
+msgstr[0] "Este é um cancelamento antecipado: mais de %d hora antes da tarefa, então não afeta sua reputação."
+msgstr[1] "Este é um cancelamento antecipado: mais de %d horas antes da tarefa, então não afeta sua reputação."
+
+#. translators: %s: where to see your own numbers
+#: src/Support/WelcomeSender.php:559
+msgid "This message explains how it all works. %s"
+msgstr "Esta mensagem explica como tudo funciona. %s"
+
+#: src/Web/DemoController.php:195
+msgid "Tick the row and the demo ticket turns gold by itself. Nothing here is in the real door list."
+msgstr "Marque a linha e o ingresso demo fica dourado sozinho. Nada aqui está na lista real da porta."
+
+#: src/Telegram/PrivateChatGate.php:140
+msgid "To join the crew, open the crew group first:"
+msgstr "Para entrar na equipe, abra primeiro o grupo da equipe:"
+
+#. translators: %s: the person's name
+#: src/Support/NewcomerApproval.php:153
+msgid "Turn down %s?"
+msgstr "Recusar %s?"
+
+#: templates/admin/people.php:31
+msgid "Turned down"
+msgstr "Recusado"
+
+#: templates/admin/people.php:332
+msgid "Turned down by"
+msgstr "Recusado por"
+
+#: src/Admin/PeoplePage.php:120
+msgid "Unknown to the organizers. They were told."
+msgstr "Desconhecido dos organizadores. A pessoa foi avisada."
+
+#: src/Support/NewcomerApproval.php:142
+msgid "Unknown to us (they are told)"
+msgstr "Desconhecido para nós (é avisado)"
+
+#. translators: %s: the crew's name (the site name)
+#: src/Support/WelcomeSender.php:551
+msgid "Welcome to the %s crew!"
+msgstr "Bem-vindo à equipe %s!"
+
+#: src/Support/NewcomerApproval.php:155
+msgid "With “Unknown to us” they get a message asking them to talk to an organizer at an event. With “No reason” they are not told."
+msgstr "Com “Desconhecido para nós” a pessoa recebe uma mensagem pedindo que fale com um organizador num evento. Com “Sem motivo” ela não é avisada."
+
+#: src/Support/CancelNote.php:43
+msgid "You took this task only minutes ago, so cancelling it has no effect on your standing."
+msgstr "Você pegou esta tarefa há poucos minutos, então cancelar não afeta sua reputação."
+
+#: src/Support/MessageTemplates.php:2203 src/Support/MessageTemplates.php:2211
+msgid "Your request to join the crew timed out: no organizer answered it in 48 hours. This can mean that no organizer recognized you. To finish signing up, please talk to an organizer directly at an event."
+msgstr "Seu pedido para entrar na equipe expirou: nenhum organizador respondeu em 48 horas. Isso pode significar que nenhum organizador reconheceu você. Para terminar a inscrição, fale diretamente com um organizador num evento."
+
+#: src/Support/MessageTemplates.php:2202
+msgid "Your sign-up request timed out"
+msgstr "Seu pedido de inscrição expirou"
+
+#: src/Web/SignupController.php:1253
+msgid "You’ve cancelled that task. This close to the event it counts as a late cancellation."
+msgstr "Você cancelou essa tarefa. Tão perto do evento, isso conta como cancelamento tardio."
+
+#: src/Telegram/BoardRenderer.php:350
+msgid "✋ sign up · ❌ cancel"
+msgstr "✋ inscrever-se · ❌ cancelar"
+
+#: src/Telegram/BoardRenderer.php:354
+msgid "➕ add someone"
+msgstr "➕ adicionar alguém"
+
+#: src/Telegram/PrivateChatGate.php:146
+msgid "👥 Open the crew group"
+msgstr "👥 Abrir o grupo da equipe"
+
+#: src/Support/TicketTransferService.php:518
+#. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "%1$s accepted your free-entry ticket for %2$s. Your own ticket no longer works."
+msgstr "%1$s aceitou seu ingresso grátis para %2$s. Seu ingresso não vale mais."
+
+#: src/Support/TicketTransferService.php:495
+#. translators: 1: the giver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "%1$s gave you their free-entry ticket for %2$s."
+msgstr "%1$s te deu o ingresso grátis para %2$s."
+
+#: src/Support/TicketMail.php:1115 src/Telegram/TransferPage.php:399
+#. translators: 1: the giver's name, 2: the night, e.g. "Club night 14.11.2026"
+#. translators: 1: the giver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "%1$s is giving you their free-entry ticket for %2$s."
+msgstr "%1$s está te dando o ingresso grátis para %2$s."
+
+#: src/Support/TicketMail.php:1792
+msgid "%s gave you their free-entry ticket."
+msgstr "%s te deu o ingresso grátis."
+
+#: src/Support/DoorList.php:92 src/Support/DoorList.php:111
+msgid "(name erased)"
+msgstr "(nome apagado)"
+
+#: src/Support/TicketMail.php:1122 src/Telegram/TransferPage.php:362
+msgid "A free-entry ticket for you"
+msgstr "Um ingresso grátis para você"
+
+#: src/Support/TicketMail.php:1118
+msgid "Accept it and write your name, and we will email you the ticket. The offer ends when the doors open."
+msgstr "Aceite e escreva seu nome, e enviaremos o ingresso por email. A oferta termina quando as portas abrirem."
+
+#: src/Support/TicketMail.php:1123 src/Telegram/TransferPage.php:411
+msgid "Accept the ticket"
+msgstr "Aceitar o ingresso"
+
+#: src/Telegram/TransferPage.php:115
+msgid "Back to your ticket"
+msgstr "Voltar ao seu ingresso"
+
+#: src/Telegram/TransferBot.php:64
+msgid "Cancel offer"
+msgstr "Cancelar oferta"
+
+#: src/Telegram/TransferPage.php:137
+msgid "Cancel the offer"
+msgstr "Cancelar a oferta"
+
+#: src/Support/TicketTransferService.php:461
+msgid "Done."
+msgstr "Pronto."
+
+#: src/Telegram/TransferBot.php:281 src/Telegram/TransferPage.php:162
+#. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "Done. %1$s has your ticket for %2$s now. Your own ticket no longer works."
+msgstr "Pronto. %1$s está com seu ingresso para %2$s. Seu ingresso não vale mais."
+
+#: src/Telegram/TransferPage.php:195
+#. translators: %s: the receiver's name
+msgid "Done. %s has your ticket now. Your own ticket no longer works."
+msgstr "Pronto. %s está com seu ingresso. Seu ingresso não vale mais."
+
+#: src/Support/PrivacyExporter.php:266
+msgid "EventCrew given tickets"
+msgstr "EventCrew: ingressos repassados"
+
+#: src/Support/TicketList.php:112 src/Telegram/TicketController.php:393
+msgid "Free entry · from %s"
+msgstr "Entrada grátis · de %s"
+
+#: src/Telegram/TransferBot.php:237
+msgid "Give"
+msgstr "Dar"
+
+#: src/Telegram/TicketController.php:784 src/Telegram/TransferBot.php:51
+msgid "Give away"
+msgstr "Repassar"
+
+#: src/Telegram/TransferPage.php:334
+msgid "Give the ticket"
+msgstr "Dar o ingresso"
+
+#: src/Telegram/TransferPage.php:111
+msgid "Give your ticket away"
+msgstr "Repasse seu ingresso"
+
+#: src/Telegram/TransferPage.php:294
+#. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "Give your ticket for %2$s to %1$s? It moves at once and your own ticket stops working."
+msgstr "Dar seu ingresso para %2$s a %1$s? Ele muda na hora e seu ingresso deixa de valer."
+
+#: src/Support/DoorList.php:110 src/Support/TicketList.php:92 src/Telegram/TicketController.php:765
+#. translators: %s: the name of the person the ticket was given to
+msgid "Given to %s"
+msgstr "Repassado a %s"
+
+#: src/Telegram/TransferBot.php:298
+msgid "Kept. The ticket stays with you."
+msgstr "Ok. O ingresso continua com você."
+
+#: src/Telegram/TransferPage.php:286
+msgid "No member found by that name. Write their name again, or an email address."
+msgstr "Nenhum membro com esse nome. Escreva o nome de novo, ou um email."
+
+#: src/Telegram/TransferBot.php:309 src/Telegram/TransferPage.php:124
+msgid "Offer cancelled. Your ticket is yours again."
+msgstr "Oferta cancelada. O ingresso é seu de novo."
+
+#: src/Telegram/TransferPage.php:305
+#. translators: 1: an email address, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "Offer your ticket for %2$s to %1$s? They must accept before the doors open. Until then your ticket works."
+msgstr "Oferecer seu ingresso para %2$s a %1$s? É preciso aceitar antes de as portas abrirem. Até lá seu ingresso vale."
+
+#: src/Telegram/TransferPage.php:325
+msgid "Pick the member who gets your ticket. It moves at once and your own ticket stops working."
+msgstr "Escolha o membro que recebe seu ingresso. Ele muda na hora e seu ingresso deixa de valer."
+
+#: src/Support/TicketTransferService.php:467
+msgid "Please write your name."
+msgstr "Escreva seu nome."
+
+#: src/Telegram/TransferPage.php:251
+msgid "Send the offer"
+msgstr "Enviar a oferta"
+
+#: src/Telegram/TransferBot.php:289 src/Telegram/TransferPage.php:202
+#. translators: %s: an email address
+msgid "Sent. When %s accepts, the ticket moves to them. Until then your own ticket works."
+msgstr "Enviado. Quando %s aceitar, o ingresso passa para essa pessoa. Até lá seu ingresso vale."
+
+#: src/Support/TicketTransferService.php:496
+msgid "Someone"
+msgstr "Alguém"
+
+#: src/Support/TicketMail.php:1790
+msgid "Someone gave you their free-entry ticket."
+msgstr "Alguém te deu o ingresso grátis."
+
+#: src/Support/TicketTransferService.php:464
+msgid "That is not an email address. Write a name or an email address."
+msgstr "Isso não é um email. Escreva um nome ou um email."
+
+#: src/Support/TicketTransferService.php:463
+msgid "That is you. Pick someone else."
+msgstr "É você. Escolha outra pessoa."
+
+#: src/Support/TicketTransferService.php:466
+msgid "The doors are already open. Give the ticket to a member instead."
+msgstr "As portas já abriram. Dê o ingresso a um membro."
+
+#: src/Support/PrivacyEraser.php:120
+msgid "The name and email address were erased from the free-entry tickets given to this address. The tickets stay on the door list with no name."
+msgstr "O nome e o email foram apagados dos ingressos grátis repassados a este endereço. Os ingressos continuam na lista da porta sem nome."
+
+#: src/Support/TicketTransferService.php:369
+#. translators: %s: the night, like "Sat 14 Nov · Dance Night"
+msgid "The organizers cancelled the free-entry ticket you were given for %s."
+msgstr "A organização cancelou o ingresso grátis que você recebeu para %s."
+
+#: src/Telegram/TransferPage.php:419
+#. translators: %s: an email address
+msgid "The ticket is yours. We emailed it to %s."
+msgstr "O ingresso é seu. Enviamos para %s."
+
+#: src/Support/TicketTransferService.php:468
+msgid "This offer is no longer open."
+msgstr "Esta oferta não está mais disponível."
+
+#: src/Support/TicketTransferService.php:469
+msgid "This ticket cannot be given away."
+msgstr "Este ingresso não pode ser repassado."
+
+#: src/Support/TicketTransferService.php:462
+msgid "This ticket is already offered to someone. Cancel that offer first."
+msgstr "Este ingresso já foi oferecido a alguém. Cancele essa oferta primeiro."
+
+#: src/Support/DoorDesk.php:227 src/Support/DoorList.php:93
+msgid "Transferred"
+msgstr "Repassado"
+
+#: src/Support/TicketMail.php:1864
+msgid "Transferred ticket"
+msgstr "Ingresso repassado"
+
+#: src/Admin/RosterPage.php:203 src/Web/CrewAdminRoster.php:600
+msgid "Transferred ticket cancelled."
+msgstr "Ingresso repassado cancelado."
+
+#: src/Telegram/ProfileService.php:256 src/Telegram/TicketController.php:779 src/Telegram/TransferPage.php:134
+#. translators: %s: the email address the ticket was offered to
+msgid "Waiting for %s to accept"
+msgstr "Aguardando %s aceitar"
+
+#: src/Telegram/TransferBot.php:204
+msgid "Who gets your ticket?"
+msgstr "Quem recebe seu ingresso?"
+
+#: src/Telegram/TransferPage.php:225
+msgid "Who gets your ticket? Write a member’s name, or the email address of someone who is not a member."
+msgstr "Quem recebe seu ingresso? Escreva o nome de um membro, ou o email de alguém que não é membro."
+
+#: src/Support/TicketTransferService.php:465
+msgid "You already have 3 offers waiting. Cancel one first."
+msgstr "Você já tem 3 ofertas aguardando. Cancele uma primeiro."
+
+#: src/Support/TicketMail.php:1159
+msgid "You get this email because someone gave you a ticket to this event."
+msgstr "Você recebe este email porque alguém te deu um ingresso para este evento."
+
+#: src/Telegram/TransferPage.php:409
+msgid "Your name"
+msgstr "Seu nome"
+
+#: src/Support/DoorDesk.php:774 src/Support/DoorList.php:95
+#. translators: %s: the name of the person who gave the ticket away
+msgid "from %s"
+msgstr "de %s"

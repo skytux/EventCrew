@@ -209,6 +209,17 @@ final class MessagePreviewTest extends TestCase
         }
     }
 
+    /** The thank-you previews show the standing going up, not down (Owner 2026-11-08). */
+    public function testTheThankYouPreviewShowsTheStandingGoingUp(): void
+    {
+        foreach (['task_completed', 'task_completed_dm'] as $kind) {
+            $message = $this->preview()->render($kind);
+
+            self::assertNotNull($message);
+            self::assertStringContainsString('74% → 82%', (string) $message['text'], $kind);
+        }
+    }
+
     public function testAnUnknownKindIsNull(): void
     {
         self::assertNull($this->preview()->render('no_such_kind'));

@@ -7,6 +7,8 @@ namespace EventCrew\Support;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\TicketTransferRepository;
+use EventCrew\Models\TicketTransfer;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
@@ -38,7 +40,8 @@ final class PrivacyExporter
         private readonly CreditGrantRepository $credits,
         private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository(),
         private readonly GuestRepository $guests = new GuestRepository(),
-        private readonly NewsletterSubscriberRepository $subscribers = new NewsletterSubscriberRepository()
+        private readonly NewsletterSubscriberRepository $subscribers = new NewsletterSubscriberRepository(),
+        private readonly ?TicketTransferRepository $transfers = null
     ) {
     }
 
@@ -102,6 +105,11 @@ final class PrivacyExporter
 
         // Guests from a mailed guest list that carried their email address.
         foreach ($this->guestTickets($email) as $item) {
+            $data[] = $item;
+        }
+
+        // Free-entry tickets given to this address or to this member.
+        foreach ($this->givenTickets($email, $person?->id ?? 0) as $item) {
             $data[] = $item;
         }
 
@@ -224,6 +232,44 @@ final class PrivacyExporter
                     ['name' => __('Name', 'eventcrew'), 'value' => (string) ($row['name'] ?? '')],
                     ['name' => __('Email', 'eventcrew'), 'value' => (string) ($row['email'] ?? '')],
                     ['name' => __('Ticket code', 'eventcrew'), 'value' => (string) ($row['ticket_code'] ?? '')],
+                ],
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Free-entry tickets given to this address or to member $personId: one
+     * item per transfer.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function givenTickets(string $email, int $personId): array
+    {
+        if (null === $this->transfers) {
+            return [];
+        }
+
+        $rows = [];
+
+        foreach (array_merge($this->transfers->rowsForEmail($email), $this->transfers->heldBy($personId)) as $transfer) {
+            $rows[$transfer->id] = $transfer;
+        }
+
+        $items = [];
+
+        foreach (array_values($rows) as $index => $transfer) {
+            /** @var TicketTransfer $transfer */
+            $items[] = [
+                'group_id' => self::GROUP . '-given-tickets',
+                'group_label' => __('EventCrew given tickets', 'eventcrew'),
+                'item_id' => self::GROUP . '-given-' . $index,
+                'data' => [
+                    ['name' => __('Event date', 'eventcrew'), 'value' => $transfer->eventDate],
+                    ['name' => __('Name', 'eventcrew'), 'value' => $transfer->name],
+                    ['name' => __('Email', 'eventcrew'), 'value' => $transfer->email],
+                    ['name' => __('Status', 'eventcrew'), 'value' => $transfer->status],
                 ],
             ];
         }

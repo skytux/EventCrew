@@ -24,7 +24,8 @@ final class TicketList
         private readonly AssignmentRepository $assignments,
         private readonly TaskRepository $tasks,
         private readonly RedemptionRepository $redemptions,
-        private readonly CheckinRepository $checkins = new CheckinRepository()
+        private readonly CheckinRepository $checkins = new CheckinRepository(),
+        private readonly ?TicketTransferService $transfers = null
     ) {
     }
 
@@ -82,21 +83,49 @@ final class TicketList
                 continue;
             }
 
+            $moved = null === $this->transfers ? null : $this->transfers->movedTo($redemption);
             $item = [
-                'label' => __('Free entry', 'eventcrew'),
+                'label' => null === $moved
+                    ? __('Free entry', 'eventcrew')
+                    : __('Free entry', 'eventcrew') . ' · ' . sprintf(
+                        /* translators: %s: the name of the person the ticket was given to */
+                        __('Given to %s', 'eventcrew'),
+                        $this->transfers?->receiverName($moved)
+                    ),
                 'when' => $redemption->redeemedFor,
                 'url' => self::url('credit_ticket', $redemption->id),
                 'kinds' => CheckinRepository::CREDIT_TICKET_KINDS,
+                'redemption_id' => $redemption->id,
             ];
 
             $redemption->redeemedFor >= $today ? $upcoming[] = $item : $past[] = $item;
+        }
+
+        // The tickets other members gave them. Each is checked in under its
+        // own row (CheckinRepository::KIND_TRANSFER), so its time is read here.
+        foreach (null === $this->transfers ? [] : $this->transfers->heldBy($personId) as $transfer) {
+            $from = $this->transfers->nameOf($transfer->giverPersonId);
+            $item = [
+                'label' => '' === $from
+                    ? __('Free entry', 'eventcrew')
+                    /* translators: %s: the name of the member who gave the ticket away */
+                    : sprintf(__('Free entry · from %s', 'eventcrew'), $from),
+                'when' => $transfer->eventDate,
+                'url' => TicketMail::transferUrl($transfer->id),
+                'kinds' => [],
+                'used' => $this->checkins->inAt($transfer->eventDate, [CheckinRepository::KIND_TRANSFER], $transfer->id),
+            ];
+
+            $transfer->eventDate >= $today ? $upcoming[] = $item : $past[] = $item;
         }
 
         // When the door marked each ticket in, under the check-in kinds it is
         // marked as: one read answers every ticket.
         $times = [] === $upcoming && [] === $past ? [] : $this->checkins->personTimes($personId);
         $fill = static function (array $item) use ($times): array {
-            $item['used'] = CheckinRepository::inAtFrom($times, $item['when'], $item['kinds']);
+            $item['used'] = array_key_exists('used', $item)
+                ? $item['used']
+                : CheckinRepository::inAtFrom($times, $item['when'], $item['kinds']);
             unset($item['kinds']);
 
             return $item;

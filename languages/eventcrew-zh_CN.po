@@ -11725,3 +11725,547 @@ msgstr "你今晚的其他票仍然有效，见下方。"
 
 msgid "Every ticket the person has for the night, each with its QR code, for the door. On a line of its own; when the text has no such line, the tickets go at the end."
 msgstr "此人当晚的所有门票，每张都带二维码，供门口查验。单独占一行；如果正文没有这一行，门票会放在末尾。"
+
+msgid "An empty line and the event's picture. Empty when the event has none."
+msgstr "一个空行和活动图片。活动没有图片时为空。"
+
+#: src/Support/MessageTemplates.php:1309
+msgid "\"Thanks for the notice.\" and why it has no effect on the standing (an early cancellation, more than the notice hours before the task), or for a late cancellation the sentences saying it counts against the standing and that Sign up again undoes it."
+msgstr "“感谢告知。”以及为什么不影响信誉（提前取消，早于任务前的通知时限），如果是临时取消，则是说明这会影响信誉、并可用“重新报名”撤销的句子。"
+
+#: src/Support/MessageTemplates.php:2191
+msgid "A newcomer is unknown to the organizers (Telegram)"
+msgstr "组织者不认识新成员（Telegram）"
+
+#: src/Support/MessageTemplates.php:2183
+msgid "A newcomer is unknown to the organizers (email)"
+msgstr "组织者不认识新成员（邮件）"
+
+#: src/Support/MessageTemplates.php:2207
+msgid "A newcomer request timed out (Telegram)"
+msgstr "新成员的申请已超时（Telegram）"
+
+#: src/Support/MessageTemplates.php:2199
+msgid "A newcomer request timed out (email)"
+msgstr "新成员的申请已超时（邮件）"
+
+#: src/Support/MessageTemplates.php:2652
+msgid "A newcomer request was answered (email)"
+msgstr "新成员的申请已有回复（邮件）"
+
+#: src/Support/MessageTemplates.php:2186
+msgid "About your sign-up"
+msgstr "关于你的报名"
+
+#: templates/admin/people.php:354
+msgid "Accept"
+msgstr "接受"
+
+#: src/Admin/PeoplePage.php:148
+msgid "Accepted. They can take tasks now, and they are told."
+msgstr "已接受。对方现在可以领取任务，并已收到通知。"
+
+#: src/Support/WelcomeSender.php:556
+msgid "And every task earns you free entry."
+msgstr "而且每个任务都能让你免费入场。"
+
+#. translators: %s: the person's name
+#: src/Support/MessageTemplates.php:2657
+msgid "Answered: %s"
+msgstr "已回复：%s"
+
+#: src/Support/CancelNote.php:77
+msgid "Changed your mind? Tap Sign up again while the place is still free: you are back on the task and the late cancellation is removed."
+msgstr "改主意了？名额仍空着时点“重新报名”：你会回到任务上，临时取消也会被撤销。"
+
+#. translators: %d: completed tasks
+#: src/Telegram/ProfileService.php:75
+msgid "Completed tasks: %d"
+msgstr "已完成任务：%d"
+
+#: src/Web/DemoController.php:85
+msgid "Demo event"
+msgstr "演示活动"
+
+#: src/Web/DemoController.php:173 templates/admin/diagnostics.php:164
+msgid "Demo sales desk"
+msgstr "演示售票台"
+
+#: src/Web/DemoController.php:88 templates/admin/diagnostics.php:162
+msgid "Demo ticket"
+msgstr "演示票"
+
+#: templates/admin/diagnostics.php:157
+msgid "Demo ticket and desk"
+msgstr "演示票和售票台"
+
+#: src/Support/WelcomeSender.php:555
+msgid "Every task you take keeps the door open, the room ready and the music going."
+msgstr "你领取的每个任务，都让大门敞开、场地就绪、音乐不停。"
+
+#. translators: %d: free-entry credits
+#: src/Telegram/ProfileService.php:80 src/Telegram/TicketRedemptionService.php:165
+msgid "Free-entry credits: %d"
+msgstr "免费入场积分：%d"
+
+#: src/Support/CancelNote.php:38
+msgid "It has no effect on your standing."
+msgstr "这不会影响你的信誉。"
+
+#: src/Support/FollowupMail.php:1426
+msgid "Join on Telegram"
+msgstr "通过 Telegram 加入"
+
+#: src/Support/FollowupMail.php:1425
+msgid "Join on the web"
+msgstr "通过网页加入"
+
+#: templates/admin/settings.php:1625
+msgid "Languages shown in multi-language texts and buttons"
+msgstr "多语言文本和按钮中显示的语言"
+
+#: src/Telegram/ProfileService.php:66
+msgid "My info"
+msgstr "我的信息"
+
+#: templates/admin/people.php:320
+msgid "Newcomers an organizer turned down, and requests nobody answered in 48 hours. Accept gives the OK as the OK button does: they can take tasks, and they are told."
+msgstr "被组织者拒绝的新成员，以及 48 小时内无人回复的申请。“接受”与“确定”按钮一样给予确认：对方可以领取任务，并会收到通知。"
+
+#. translators: %s: when, like 2 Nov 14:05
+#: src/Support/NewcomerApproval.php:422
+msgid "No organizer answered in 48 hours, so the request timed out on %s."
+msgstr "48 小时内没有组织者回复，因此申请已于 %s 超时。"
+
+#: src/Support/NewcomerApproval.php:419
+msgid "No organizer answered in 48 hours, so the request timed out."
+msgstr "48 小时内没有组织者回复，因此申请已超时。"
+
+#: src/Admin/PeoplePage.php:119
+msgid "No organizer answered in 48 hours. They were told."
+msgstr "48 小时内没有组织者回复。已通知对方。"
+
+#: src/Support/NewcomerApproval.php:143
+msgid "No reason (not told)"
+msgstr "无理由（不通知）"
+
+#: src/Admin/PeoplePage.php:121
+msgid "No reason. They were not told."
+msgstr "无理由。未通知对方。"
+
+#: src/Support/NewcomerApproval.php:441
+msgid "No, by %1$s, %2$s."
+msgstr "否，由 %1$s 于 %2$s。"
+
+#: src/Admin/PeoplePage.php:117
+msgid "Nobody (timed out)"
+msgstr "无人（超时）"
+
+#: templates/admin/people.php:323
+msgid "Nobody was turned down."
+msgstr "没有人被拒绝。"
+
+#: src/Web/DemoController.php:185
+msgid "Not in yet"
+msgstr "尚未入场"
+
+#: src/Support/NewcomerApproval.php:434
+msgid "OK, by %1$s, %2$s."
+msgstr "确定，由 %1$s 于 %2$s。"
+
+#: templates/admin/settings.php:2019
+msgid "On by default. Someone who is not yet in the crew and not in the group gets no answer from the bot. If they open the bot from a link in an email or on the website, they get a button to the crew group. Members who are already set up are not affected. Turn this off if the bot cannot check who is in the group."
+msgstr "默认开启。尚未加入团队且不在群里的人，机器人不会回复。如果他们从邮件或网站上的链接打开机器人，会收到一个进入团队群的按钮。已设置好的成员不受影响。如果机器人无法检查谁在群里，请关闭此项。"
+
+#: templates/admin/settings.php:2016
+msgid "Only people in the crew group can start the bot"
+msgstr "只有团队群里的人才能启动机器人"
+
+#: templates/admin/diagnostics.php:159
+msgid "Open the ticket on one device and the desk on another, then tick the row: the ticket turns gold by itself. No login needed; the links work for 24 hours. Nothing in the demo touches real data."
+msgstr "在一台设备上打开票，在另一台上打开售票台，然后勾选该行：票会自动变成金色。无需登录；链接 24 小时内有效。演示不会触及真实数据。"
+
+#: src/Support/NewcomerApproval.php:730
+msgid "Open their Telegram profile"
+msgstr "打开其 Telegram 资料"
+
+#: src/Support/PrivacyPolicy.php:564
+msgid "Other crew members can see your name and the tasks you are on. Crew on the same night see them in the bot’s /roster, and the task board in the crew Telegram group shows the first name of each person on a task for the next event. A crew member can also open the board for any coming day in a private chat with the bot. Your name also appears in the group when someone covers a task for you, or you cover one for someone else."
+msgstr "其他团队成员可以看到你的名字和你参加的任务。同一晚的团队成员可以在机器人的 /roster 中看到，团队 Telegram 群里的任务板会显示下一场活动中每个任务上的人的名字。团队成员也可以在与机器人的私聊中打开今后任意一天的任务板。当有人替你接手任务，或你替别人接手任务时，你的名字也会出现在群里。"
+
+#: src/Support/WelcomeSender.php:554
+msgid "Our nights happen because people like you lend a hand."
+msgstr "我们的夜晚能够举办，是因为有像你这样的人伸出援手。"
+
+#: src/Telegram/TicketRedemptionService.php:168
+msgid "Pick an event:"
+msgstr "选择一个活动："
+
+#: templates/admin/settings.php:2008
+msgid "Private chats"
+msgstr "私聊"
+
+#: src/Support/MessageTemplates.php:2193
+msgid "Sent to a new person who uses the bot when an organizer turns down their request with the reason Unknown to us. With No reason the person is not told."
+msgstr "当组织者以“我们不认识”为理由拒绝使用机器人的新成员的申请时发给对方。选择“无理由”时不通知对方。"
+
+#: src/Support/MessageTemplates.php:2209
+msgid "Sent to a new person who uses the bot when no organizer answered their request in 48 hours. The request is then turned down."
+msgstr "当 48 小时内没有组织者回复使用机器人的新成员的申请时发给对方。随后申请会被拒绝。"
+
+#: src/Support/MessageTemplates.php:2185
+msgid "Sent to a new person without Telegram when an organizer turns down their request with the reason Unknown to us. The greeting is added above the text. With No reason the person is not told."
+msgstr "当组织者以“我们不认识”为理由拒绝没有 Telegram 的新成员的申请时发给对方。文本上方加问候语。选择“无理由”时不通知对方。"
+
+#: src/Support/MessageTemplates.php:2201
+msgid "Sent to a new person without Telegram when no organizer answered their request in 48 hours. The request is then turned down. The greeting is added above the text."
+msgstr "当 48 小时内没有组织者回复没有 Telegram 的新成员的申请时发给对方。随后申请会被拒绝。文本上方加问候语。"
+
+#: src/Support/MessageTemplates.php:2654
+msgid "Sent to the organizers who got the email about a new person, when another organizer answers the request or when it times out after 48 hours."
+msgstr "当另一位组织者回复了申请，或申请在 48 小时后超时时，发给收到新成员邮件的组织者。"
+
+#: src/Support/CancelNote.php:84
+msgid "Sign up for it again while the place is free and the late cancellation is removed."
+msgstr "在名额空着时重新报名，临时取消就会被撤销。"
+
+#: templates/admin/settings.php:1631
+msgid "Telegram, emails and web pages. The reader’s own language first, then the next ones in the site’s order. Default 2."
+msgstr "Telegram、邮件和网页。先显示读者自己的语言，再按网站顺序显示后面的语言。默认 2。"
+
+#. translators: 1: languages shown, 2: number of site languages
+#: src/Support/HybridPolicy.php:377
+msgid "Texts and buttons in several languages show %1$d of the %2$d site languages: the reader’s own first, then the next ones. Change it in Settings > Email > Hybrid messages."
+msgstr "多语言的文本和按钮会显示网站 %2$d 种语言中的 %1$d 种：先显示读者自己的语言，再显示后面的语言。可在 设置 > 邮件 > 混合消息 中更改。"
+
+#: src/Admin/PeoplePage.php:145
+msgid "That person could not be accepted. Someone may have done it already."
+msgstr "无法接受此人。可能已有人处理过。"
+
+#: src/Support/MessageTemplates.php:2669
+msgid "The answer: OK or No, who gave it and when, and whether the person was told."
+msgstr "回复：确定或否，由谁、何时回复，以及是否已通知对方。"
+
+#: src/Support/MessageTemplates.php:1745
+msgid "The name of the event and its DJs, like Ecstatic Dance · Esimerkki. On a line of its own; the line goes when it is not known."
+msgstr "活动名称及其 DJ，例如 Ecstatic Dance · Esimerkki。单独占一行；未知时该行省略。"
+
+#: src/Support/MessageTemplates.php:2187 src/Support/MessageTemplates.php:2195
+msgid "The organizers do not know you yet, so they could not say OK to your sign-up. Please come and talk to us at an event; an organizer can then say OK."
+msgstr "组织者还不认识你，所以无法确认你的报名。请在活动现场来和我们聊聊；之后组织者就可以确认。"
+
+#. translators: 1: the person's name, 2: their email
+#: src/Support/MessageTemplates.php:2662
+msgid "The request of %1$s (%2$s) to join the crew is answered:"
+msgstr "%1$s（%2$s）加入团队的申请已有回复："
+
+#: src/Support/NewcomerApproval.php:446
+msgid "They were not told."
+msgstr "未通知对方。"
+
+#: src/Support/NewcomerApproval.php:424
+msgid "They were told to talk to an organizer at an event."
+msgstr "已告知对方在活动现场找组织者谈谈。"
+
+#: src/Support/NewcomerApproval.php:444
+msgid "They were told: unknown to the organizers."
+msgstr "已告知对方：组织者不认识。"
+
+#: src/Web/DemoController.php:176
+msgid "This demo has ended."
+msgstr "此演示已结束。"
+
+#. translators: %d: the late-cancellation notice in hours
+#: src/Support/CancelNote.php:49
+msgid "This is an early cancellation: it is more than %d hour before the task, so it has no effect on your standing."
+msgid_plural "This is an early cancellation: it is more than %d hours before the task, so it has no effect on your standing."
+msgstr[0] "这是提前取消：距离任务开始超过 %d 小时，因此不影响你的信誉。"
+
+#. translators: %s: where to see your own numbers
+#: src/Support/WelcomeSender.php:559
+msgid "This message explains how it all works. %s"
+msgstr "这条消息说明了一切如何运作。%s"
+
+#: src/Web/DemoController.php:195
+msgid "Tick the row and the demo ticket turns gold by itself. Nothing here is in the real door list."
+msgstr "勾选该行，演示票会自动变成金色。这里的内容都不在真实的入场名单上。"
+
+#: src/Telegram/PrivateChatGate.php:140
+msgid "To join the crew, open the crew group first:"
+msgstr "要加入团队，请先打开团队群："
+
+#. translators: %s: the person's name
+#: src/Support/NewcomerApproval.php:153
+msgid "Turn down %s?"
+msgstr "拒绝 %s？"
+
+#: templates/admin/people.php:31
+msgid "Turned down"
+msgstr "已拒绝"
+
+#: templates/admin/people.php:332
+msgid "Turned down by"
+msgstr "拒绝人"
+
+#: src/Admin/PeoplePage.php:120
+msgid "Unknown to the organizers. They were told."
+msgstr "组织者不认识。已通知对方。"
+
+#: src/Support/NewcomerApproval.php:142
+msgid "Unknown to us (they are told)"
+msgstr "我们不认识（会通知）"
+
+#. translators: %s: the crew's name (the site name)
+#: src/Support/WelcomeSender.php:551
+msgid "Welcome to the %s crew!"
+msgstr "欢迎加入 %s 团队！"
+
+#: src/Support/NewcomerApproval.php:155
+msgid "With “Unknown to us” they get a message asking them to talk to an organizer at an event. With “No reason” they are not told."
+msgstr "选择“我们不认识”时，对方会收到一条消息，请其在活动现场找组织者谈谈。选择“无理由”时不通知对方。"
+
+#: src/Support/CancelNote.php:43
+msgid "You took this task only minutes ago, so cancelling it has no effect on your standing."
+msgstr "你几分钟前才领取这个任务，所以取消不会影响你的信誉。"
+
+#: src/Support/MessageTemplates.php:2203 src/Support/MessageTemplates.php:2211
+msgid "Your request to join the crew timed out: no organizer answered it in 48 hours. This can mean that no organizer recognized you. To finish signing up, please talk to an organizer directly at an event."
+msgstr "你加入团队的申请已超时：48 小时内没有组织者回复。这可能意味着没有组织者认出你。要完成报名，请在活动现场直接找组织者。"
+
+#: src/Support/MessageTemplates.php:2202
+msgid "Your sign-up request timed out"
+msgstr "你的报名申请已超时"
+
+#: src/Web/SignupController.php:1253
+msgid "You’ve cancelled that task. This close to the event it counts as a late cancellation."
+msgstr "你已取消该任务。离活动这么近，这算作临时取消。"
+
+#: src/Telegram/BoardRenderer.php:350
+msgid "✋ sign up · ❌ cancel"
+msgstr "✋ 报名 · ❌ 取消"
+
+#: src/Telegram/BoardRenderer.php:354
+msgid "➕ add someone"
+msgstr "➕ 添加某人"
+
+#: src/Telegram/PrivateChatGate.php:146
+msgid "👥 Open the crew group"
+msgstr "👥 打开团队群"
+
+#: src/Support/TicketTransferService.php:518
+#. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "%1$s accepted your free-entry ticket for %2$s. Your own ticket no longer works."
+msgstr "%1$s 已接受你 %2$s 的免费入场券。你自己的票已失效。"
+
+#: src/Support/TicketTransferService.php:495
+#. translators: 1: the giver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "%1$s gave you their free-entry ticket for %2$s."
+msgstr "%1$s 把 %2$s 的免费入场券送给了你。"
+
+#: src/Support/TicketMail.php:1115 src/Telegram/TransferPage.php:399
+#. translators: 1: the giver's name, 2: the night, e.g. "Club night 14.11.2026"
+#. translators: 1: the giver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "%1$s is giving you their free-entry ticket for %2$s."
+msgstr "%1$s 要把 %2$s 的免费入场券送给你。"
+
+#: src/Support/TicketMail.php:1792
+msgid "%s gave you their free-entry ticket."
+msgstr "%s 把免费入场券送给了你。"
+
+#: src/Support/DoorList.php:92 src/Support/DoorList.php:111
+msgid "(name erased)"
+msgstr "（姓名已删除）"
+
+#: src/Support/TicketMail.php:1122 src/Telegram/TransferPage.php:362
+msgid "A free-entry ticket for you"
+msgstr "送你一张免费入场券"
+
+#: src/Support/TicketMail.php:1118
+msgid "Accept it and write your name, and we will email you the ticket. The offer ends when the doors open."
+msgstr "接受并填写你的姓名，我们会把票发到你的邮箱。开门后此邀请失效。"
+
+#: src/Support/TicketMail.php:1123 src/Telegram/TransferPage.php:411
+msgid "Accept the ticket"
+msgstr "接受门票"
+
+#: src/Telegram/TransferPage.php:115
+msgid "Back to your ticket"
+msgstr "返回你的门票"
+
+#: src/Telegram/TransferBot.php:64
+msgid "Cancel offer"
+msgstr "取消转让"
+
+#: src/Telegram/TransferPage.php:137
+msgid "Cancel the offer"
+msgstr "取消转让"
+
+#: src/Support/TicketTransferService.php:461
+msgid "Done."
+msgstr "完成。"
+
+#: src/Telegram/TransferBot.php:281 src/Telegram/TransferPage.php:162
+#. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "Done. %1$s has your ticket for %2$s now. Your own ticket no longer works."
+msgstr "完成。%1$s 现在持有你 %2$s 的票。你自己的票已失效。"
+
+#: src/Telegram/TransferPage.php:195
+#. translators: %s: the receiver's name
+msgid "Done. %s has your ticket now. Your own ticket no longer works."
+msgstr "完成。%s 现在持有你的票。你自己的票已失效。"
+
+#: src/Support/PrivacyExporter.php:266
+msgid "EventCrew given tickets"
+msgstr "EventCrew：转让的门票"
+
+#: src/Support/TicketList.php:112 src/Telegram/TicketController.php:393
+msgid "Free entry · from %s"
+msgstr "免费入场 · 来自 %s"
+
+#: src/Telegram/TransferBot.php:237
+msgid "Give"
+msgstr "转让"
+
+#: src/Telegram/TicketController.php:784 src/Telegram/TransferBot.php:51
+msgid "Give away"
+msgstr "转让"
+
+#: src/Telegram/TransferPage.php:334
+msgid "Give the ticket"
+msgstr "转让门票"
+
+#: src/Telegram/TransferPage.php:111
+msgid "Give your ticket away"
+msgstr "转让你的门票"
+
+#: src/Telegram/TransferPage.php:294
+#. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "Give your ticket for %2$s to %1$s? It moves at once and your own ticket stops working."
+msgstr "把你 %2$s 的票转给 %1$s？会立即转移，你自己的票将失效。"
+
+#: src/Support/DoorList.php:110 src/Support/TicketList.php:92 src/Telegram/TicketController.php:765
+#. translators: %s: the name of the person the ticket was given to
+msgid "Given to %s"
+msgstr "已转给 %s"
+
+#: src/Telegram/TransferBot.php:298
+msgid "Kept. The ticket stays with you."
+msgstr "好的，票仍归你。"
+
+#: src/Telegram/TransferPage.php:286
+msgid "No member found by that name. Write their name again, or an email address."
+msgstr "没有找到这个名字的成员。请重新输入名字，或输入邮箱地址。"
+
+#: src/Telegram/TransferBot.php:309 src/Telegram/TransferPage.php:124
+msgid "Offer cancelled. Your ticket is yours again."
+msgstr "已取消转让，票又归你了。"
+
+#: src/Telegram/TransferPage.php:305
+#. translators: 1: an email address, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "Offer your ticket for %2$s to %1$s? They must accept before the doors open. Until then your ticket works."
+msgstr "把你 %2$s 的票转给 %1$s？对方须在开门前接受。在此之前你的票仍然有效。"
+
+#: src/Telegram/TransferPage.php:325
+msgid "Pick the member who gets your ticket. It moves at once and your own ticket stops working."
+msgstr "选择接收你门票的成员。会立即转移，你自己的票将失效。"
+
+#: src/Support/TicketTransferService.php:467
+msgid "Please write your name."
+msgstr "请填写你的姓名。"
+
+#: src/Telegram/TransferPage.php:251
+msgid "Send the offer"
+msgstr "发送转让"
+
+#: src/Telegram/TransferBot.php:289 src/Telegram/TransferPage.php:202
+#. translators: %s: an email address
+msgid "Sent. When %s accepts, the ticket moves to them. Until then your own ticket works."
+msgstr "已发送。%s 接受后，票会转给对方。在此之前你的票仍然有效。"
+
+#: src/Support/TicketTransferService.php:496
+msgid "Someone"
+msgstr "有人"
+
+#: src/Support/TicketMail.php:1790
+msgid "Someone gave you their free-entry ticket."
+msgstr "有人把免费入场券送给了你。"
+
+#: src/Support/TicketTransferService.php:464
+msgid "That is not an email address. Write a name or an email address."
+msgstr "这不是邮箱地址。请输入名字或邮箱地址。"
+
+#: src/Support/TicketTransferService.php:463
+msgid "That is you. Pick someone else."
+msgstr "这是你自己。请选择其他人。"
+
+#: src/Support/TicketTransferService.php:466
+msgid "The doors are already open. Give the ticket to a member instead."
+msgstr "已经开门了。请把票转给成员。"
+
+#: src/Support/PrivacyEraser.php:120
+msgid "The name and email address were erased from the free-entry tickets given to this address. The tickets stay on the door list with no name."
+msgstr "已从转给此地址的免费入场券中删除姓名和邮箱地址。这些票仍以无名形式留在入场名单上。"
+
+#: src/Support/TicketTransferService.php:369
+#. translators: %s: the night, like "Sat 14 Nov · Dance Night"
+msgid "The organizers cancelled the free-entry ticket you were given for %s."
+msgstr "组织者取消了别人转给你的 %s 免费入场券。"
+
+#: src/Telegram/TransferPage.php:419
+#. translators: %s: an email address
+msgid "The ticket is yours. We emailed it to %s."
+msgstr "票归你了。我们已发送到 %s。"
+
+#: src/Support/TicketTransferService.php:468
+msgid "This offer is no longer open."
+msgstr "此转让已失效。"
+
+#: src/Support/TicketTransferService.php:469
+msgid "This ticket cannot be given away."
+msgstr "这张票不能转让。"
+
+#: src/Support/TicketTransferService.php:462
+msgid "This ticket is already offered to someone. Cancel that offer first."
+msgstr "这张票已在转让给别人。请先取消那次转让。"
+
+#: src/Support/DoorDesk.php:227 src/Support/DoorList.php:93
+msgid "Transferred"
+msgstr "已转让"
+
+#: src/Support/TicketMail.php:1864
+msgid "Transferred ticket"
+msgstr "转让的门票"
+
+#: src/Admin/RosterPage.php:203 src/Web/CrewAdminRoster.php:600
+msgid "Transferred ticket cancelled."
+msgstr "已取消转让的门票。"
+
+#: src/Telegram/ProfileService.php:256 src/Telegram/TicketController.php:779 src/Telegram/TransferPage.php:134
+#. translators: %s: the email address the ticket was offered to
+msgid "Waiting for %s to accept"
+msgstr "等待 %s 接受"
+
+#: src/Telegram/TransferBot.php:204
+msgid "Who gets your ticket?"
+msgstr "谁来接收你的票？"
+
+#: src/Telegram/TransferPage.php:225
+msgid "Who gets your ticket? Write a member’s name, or the email address of someone who is not a member."
+msgstr "谁来接收你的票？请输入成员的名字，或非成员的邮箱地址。"
+
+#: src/Support/TicketTransferService.php:465
+msgid "You already have 3 offers waiting. Cancel one first."
+msgstr "你已有 3 个待接受的转让。请先取消一个。"
+
+#: src/Support/TicketMail.php:1159
+msgid "You get this email because someone gave you a ticket to this event."
+msgstr "你收到这封邮件，是因为有人把这场活动的票转给了你。"
+
+#: src/Telegram/TransferPage.php:409
+msgid "Your name"
+msgstr "你的姓名"
+
+#: src/Support/DoorDesk.php:774 src/Support/DoorList.php:95
+#. translators: %s: the name of the person who gave the ticket away
+msgid "from %s"
+msgstr "来自 %s"

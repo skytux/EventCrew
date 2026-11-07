@@ -8,6 +8,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Repositories\TicketTransferRepository;
 
 /**
  * Who gets in free on one event date: everyone working it, plus everyone
@@ -28,7 +29,8 @@ final class DoorList
         private readonly AssignmentRepository $assignments,
         private readonly PersonRepository $people,
         private readonly RedemptionRepository $redemptions,
-        private readonly StandingCalculator $standing
+        private readonly StandingCalculator $standing,
+        private readonly ?TicketTransferRepository $transfers = null
     ) {
     }
 
@@ -74,6 +76,42 @@ final class DoorList
                 'detail' => __('Free-entry credit', 'eventcrew'),
                 'standing' => $this->standing->for($redemption->personId),
                 'redemption_id' => $redemption->id,
+            ];
+        }
+
+        foreach (null === $this->transfers ? [] : $this->transfers->issuedForDate($date) as $transfer) {
+            $giver = $this->people->find($transfer->giverPersonId);
+            $giverName = null === $giver ? __('(deleted person)', 'eventcrew') : $giver->name();
+            $receiver = null === $transfer->receiverPersonId ? null : $this->people->find($transfer->receiverPersonId);
+            $receiverName = null === $receiver ? $transfer->name : $receiver->name();
+
+            // The receiver's ticket, its own category. Its Remove reaches the
+            // original ticket, which cancels the transfer (TicketRedemptionService).
+            $entrants['transfer:' . $transfer->id] = [
+                'person_id' => null === $receiver ? 0 : $receiver->id,
+                'name' => '' === $receiverName ? __('(name erased)', 'eventcrew') : $receiverName,
+                'detail' => __('Transferred', 'eventcrew') . ' · ' . sprintf(
+                    /* translators: %s: the name of the person who gave the ticket away */
+                    __('from %s', 'eventcrew'),
+                    $giverName
+                ),
+                'standing' => null === $receiver
+                    ? new Standing(Standing::UNRATED, 0.0, 0, 0)
+                    : $this->standing->for($receiver->id),
+                'redemption_id' => $transfer->redemptionId,
+            ];
+
+            // The giver's cancelled ticket, so the list says where it went.
+            $entrants['given:' . $transfer->id] = [
+                'person_id' => $transfer->giverPersonId,
+                'name' => $giverName,
+                'detail' => sprintf(
+                    /* translators: %s: the name of the person the ticket was given to */
+                    __('Given to %s', 'eventcrew'),
+                    '' === $receiverName ? __('(name erased)', 'eventcrew') : $receiverName
+                ),
+                'standing' => $this->standing->for($transfer->giverPersonId),
+                'redemption_id' => null,
             ];
         }
 

@@ -326,6 +326,80 @@ final class SlotFreedNoticeTest extends TestCase
         self::assertStringNotContainsString(Roles::display('organize'), $body);
     }
 
+    /**
+     * The event's picture (Owner, 2026-11-08): in the email between the task's
+     * details and the other open tasks, with nothing of it in the plain text;
+     * in the DM as a large preview above the text.
+     */
+    public function testTheEventsPictureIsInTheEmailAndAboveTheDm(): void
+    {
+        Functions\when('post_type_exists')->justReturn(false);
+        Functions\when('get_the_post_thumbnail_url')->justReturn('https://site.test/night.jpg');
+        $dms = [];
+        Functions\when('wp_remote_post')->alias(function (string $url, array $args) use (&$dms): string {
+            $dms[] = (array) json_decode((string) $args['body'], true);
+
+            return (string) json_encode(['ok' => true, 'result' => ['message_id' => 4]]);
+        });
+        $this->options[TelegramClient::TOKEN_OPTION] = 'token';
+        Functions\when('wp_json_encode')->alias(static fn (mixed $data): string => (string) json_encode($data));
+        Functions\when('is_wp_error')->justReturn(false);
+        Functions\when('wp_remote_retrieve_body')->returnArg(1);
+        Functions\when('set_transient')->justReturn(true);
+        Functions\when('get_transient')->justReturn(false);
+        $task = $this->taskRow(['event_post_id' => 42]);
+        $this->queueAndPrepare($task, 1, [$this->person(8, 'bo@example.com', ['telegram_chat_id' => 99])]);
+        $this->wpdb->nextResults[] = [
+            $task,
+            $this->taskRow(['id' => 6, 'role_slug' => 'welcome', 'capacity' => 2, 'event_post_id' => 42]),
+        ];
+        $this->wpdb->nextResults[] = [];
+
+        $this->notice()->sendDue(25);
+
+        $body = $this->mails[0]['body'];
+        $picture = strpos($body, 'https://site.test/night.jpg');
+        self::assertNotFalse($picture);
+        self::assertLessThan($picture, strpos($body, 'places free'), 'under the task details');
+        self::assertGreaterThan($picture, strpos($body, 'Other open tasks'), 'above the other open tasks');
+        self::assertStringNotContainsString(Mailer::TICKETS_MARK, $body);
+
+        $dm = array_values(array_filter($dms, static fn (array $d): bool => 99 === ($d['chat_id'] ?? null)));
+        self::assertNotEmpty($dm);
+        self::assertSame(
+            ['url' => 'https://site.test/night.jpg', 'prefer_large_media' => true, 'show_above_text' => true],
+            $dm[0]['link_preview_options'] ?? null
+        );
+    }
+
+    /** No picture: no gap where it would be. */
+    public function testWithoutAPictureTheEmailHasNoGap(): void
+    {
+        $text = MessageTemplates::find('slot_freed')->fill(
+            "Hi.{event_picture}\n\n{event_description}{other_tasks}",
+            ['event_picture' => '']
+        );
+        self::assertSame('Hi.', $text);
+    }
+
+    /** A saved email gets the picture once, with its DJ text moved under it. */
+    public function testASavedEmailGetsThePictureWithTheDjTextUnderIt(): void
+    {
+        self::assertSame(
+            "Hi {name},\n\nOpen: {when}.{task_details}{event_picture}\n\n{event_description}{other_tasks}",
+            \EventCrew\Support\EventDetailsText::withPicture(
+                "Hi {name},\n\nOpen: {when}.\n\n{event_description}{task_details}{other_tasks}"
+            )
+        );
+        self::assertSame("Hi.\n\nThanks.{event_picture}", \EventCrew\Support\EventDetailsText::withPicture("Hi.\n\nThanks."));
+        $done = "A{event_picture}{other_tasks}";
+        self::assertSame($done, \EventCrew\Support\EventDetailsText::withPicture($done));
+        self::assertStringEndsWith(
+            "{task_details}{event_picture}\n\n{event_description}{other_tasks}",
+            MessageTemplates::find('slot_freed')->defaultBody()
+        );
+    }
+
     public function testTheOtherTasksAreOnlyRolesTimesAndCounts(): void
     {
         $task = Task::fromRow($this->taskRow(['starts_at' => '2026-08-01 18:00:00']));

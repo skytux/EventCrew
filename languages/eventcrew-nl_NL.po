@@ -11804,3 +11804,548 @@ msgstr "Je andere tickets voor deze avond blijven geldig. Ze staan hieronder."
 
 msgid "Every ticket the person has for the night, each with its QR code, for the door. On a line of its own; when the text has no such line, the tickets go at the end."
 msgstr "Alle tickets van de persoon voor de avond, elk met zijn QR-code, voor de deur. Op een eigen regel; staat die regel niet in de tekst, dan komen de tickets aan het eind."
+
+msgid "An empty line and the event's picture. Empty when the event has none."
+msgstr "Een lege regel en de afbeelding van het evenement. Leeg als er geen is."
+
+#: src/Support/MessageTemplates.php:1309
+msgid "\"Thanks for the notice.\" and why it has no effect on the standing (an early cancellation, more than the notice hours before the task), or for a late cancellation the sentences saying it counts against the standing and that Sign up again undoes it."
+msgstr "\"Bedankt voor het laten weten.\" en waarom het geen invloed heeft op de status (een vroege annulering, eerder dan de meldtermijn voor de taak), of bij een late annulering de zinnen dat die meetelt voor de status en dat Opnieuw inschrijven het ongedaan maakt."
+
+#: src/Support/MessageTemplates.php:2191
+msgid "A newcomer is unknown to the organizers (Telegram)"
+msgstr "Een nieuwkomer is onbekend bij de organisatoren (Telegram)"
+
+#: src/Support/MessageTemplates.php:2183
+msgid "A newcomer is unknown to the organizers (email)"
+msgstr "Een nieuwkomer is onbekend bij de organisatoren (e-mail)"
+
+#: src/Support/MessageTemplates.php:2207
+msgid "A newcomer request timed out (Telegram)"
+msgstr "Een aanvraag van een nieuwkomer is verlopen (Telegram)"
+
+#: src/Support/MessageTemplates.php:2199
+msgid "A newcomer request timed out (email)"
+msgstr "Een aanvraag van een nieuwkomer is verlopen (e-mail)"
+
+#: src/Support/MessageTemplates.php:2652
+msgid "A newcomer request was answered (email)"
+msgstr "Een aanvraag van een nieuwkomer is beantwoord (e-mail)"
+
+#: src/Support/MessageTemplates.php:2186
+msgid "About your sign-up"
+msgstr "Over je inschrijving"
+
+#: templates/admin/people.php:354
+msgid "Accept"
+msgstr "Accepteren"
+
+#: src/Admin/PeoplePage.php:148
+msgid "Accepted. They can take tasks now, and they are told."
+msgstr "Geaccepteerd. Die persoon kan nu taken nemen en heeft een bericht gekregen."
+
+#: src/Support/WelcomeSender.php:556
+msgid "And every task earns you free entry."
+msgstr "En elke taak levert je gratis toegang op."
+
+#. translators: %s: the person's name
+#: src/Support/MessageTemplates.php:2657
+msgid "Answered: %s"
+msgstr "Beantwoord: %s"
+
+#: src/Support/CancelNote.php:77
+msgid "Changed your mind? Tap Sign up again while the place is still free: you are back on the task and the late cancellation is removed."
+msgstr "Toch van gedachten veranderd? Tik op Opnieuw inschrijven zolang de plek nog vrij is: je staat weer op de taak en de late annulering wordt verwijderd."
+
+#. translators: %d: completed tasks
+#: src/Telegram/ProfileService.php:75
+msgid "Completed tasks: %d"
+msgstr "Voltooide taken: %d"
+
+#: src/Web/DemoController.php:85
+msgid "Demo event"
+msgstr "Demo-evenement"
+
+#: src/Web/DemoController.php:173 templates/admin/diagnostics.php:164
+msgid "Demo sales desk"
+msgstr "Demokassa"
+
+#: src/Web/DemoController.php:88 templates/admin/diagnostics.php:162
+msgid "Demo ticket"
+msgstr "Demoticket"
+
+#: templates/admin/diagnostics.php:157
+msgid "Demo ticket and desk"
+msgstr "Demoticket en kassa"
+
+#: src/Support/WelcomeSender.php:555
+msgid "Every task you take keeps the door open, the room ready and the music going."
+msgstr "Elke taak die je neemt houdt de deur open, de zaal klaar en de muziek aan."
+
+#. translators: %d: free-entry credits
+#: src/Telegram/ProfileService.php:80 src/Telegram/TicketRedemptionService.php:165
+msgid "Free-entry credits: %d"
+msgstr "Credits voor gratis toegang: %d"
+
+#: src/Support/CancelNote.php:38
+msgid "It has no effect on your standing."
+msgstr "Het heeft geen invloed op je status."
+
+#: src/Support/FollowupMail.php:1426
+msgid "Join on Telegram"
+msgstr "Aanmelden via Telegram"
+
+#: src/Support/FollowupMail.php:1425
+msgid "Join on the web"
+msgstr "Aanmelden via het web"
+
+#: templates/admin/settings.php:1625
+msgid "Languages shown in multi-language texts and buttons"
+msgstr "Talen in meertalige teksten en knoppen"
+
+#: src/Telegram/ProfileService.php:66
+msgid "My info"
+msgstr "Mijn info"
+
+#: templates/admin/people.php:320
+msgid "Newcomers an organizer turned down, and requests nobody answered in 48 hours. Accept gives the OK as the OK button does: they can take tasks, and they are told."
+msgstr "Nieuwkomers die een organisator heeft afgewezen, en aanvragen die niemand binnen 48 uur heeft beantwoord. Accepteren geeft het OK zoals de OK-knop: ze kunnen taken nemen en krijgen een bericht."
+
+#. translators: %s: when, like 2 Nov 14:05
+#: src/Support/NewcomerApproval.php:422
+msgid "No organizer answered in 48 hours, so the request timed out on %s."
+msgstr "Geen organisator heeft binnen 48 uur geantwoord, dus de aanvraag is verlopen op %s."
+
+#: src/Support/NewcomerApproval.php:419
+msgid "No organizer answered in 48 hours, so the request timed out."
+msgstr "Geen organisator heeft binnen 48 uur geantwoord, dus de aanvraag is verlopen."
+
+#: src/Admin/PeoplePage.php:119
+msgid "No organizer answered in 48 hours. They were told."
+msgstr "Geen organisator heeft binnen 48 uur geantwoord. De persoon heeft een bericht gekregen."
+
+#: src/Support/NewcomerApproval.php:143
+msgid "No reason (not told)"
+msgstr "Geen reden (geen bericht)"
+
+#: src/Admin/PeoplePage.php:121
+msgid "No reason. They were not told."
+msgstr "Geen reden. De persoon heeft geen bericht gekregen."
+
+#: src/Support/NewcomerApproval.php:441
+msgid "No, by %1$s, %2$s."
+msgstr "Nee, door %1$s, %2$s."
+
+#: src/Admin/PeoplePage.php:117
+msgid "Nobody (timed out)"
+msgstr "Niemand (verlopen)"
+
+#: templates/admin/people.php:323
+msgid "Nobody was turned down."
+msgstr "Niemand is afgewezen."
+
+#: src/Web/DemoController.php:185
+msgid "Not in yet"
+msgstr "Nog niet ingecheckt"
+
+#: src/Support/NewcomerApproval.php:434
+msgid "OK, by %1$s, %2$s."
+msgstr "OK, door %1$s, %2$s."
+
+#: templates/admin/settings.php:2019
+msgid "On by default. Someone who is not yet in the crew and not in the group gets no answer from the bot. If they open the bot from a link in an email or on the website, they get a button to the crew group. Members who are already set up are not affected. Turn this off if the bot cannot check who is in the group."
+msgstr "Standaard aan. Wie nog niet in de crew en niet in de groep zit, krijgt geen antwoord van de bot. Wie de bot opent via een link in een e-mail of op de website, krijgt een knop naar de crewgroep. Leden die al zijn ingesteld merken er niets van. Zet dit uit als de bot niet kan controleren wie er in de groep zit."
+
+#: templates/admin/settings.php:2016
+msgid "Only people in the crew group can start the bot"
+msgstr "Alleen mensen in de crewgroep kunnen de bot starten"
+
+#: templates/admin/diagnostics.php:159
+msgid "Open the ticket on one device and the desk on another, then tick the row: the ticket turns gold by itself. No login needed; the links work for 24 hours. Nothing in the demo touches real data."
+msgstr "Open het ticket op het ene apparaat en de kassa op het andere, en vink dan de rij aan: het ticket wordt vanzelf goud. Geen login nodig; de links werken 24 uur. Niets in de demo raakt echte gegevens."
+
+#: src/Support/NewcomerApproval.php:730
+msgid "Open their Telegram profile"
+msgstr "Telegram-profiel openen"
+
+#: src/Support/PrivacyPolicy.php:564
+msgid "Other crew members can see your name and the tasks you are on. Crew on the same night see them in the bot’s /roster, and the task board in the crew Telegram group shows the first name of each person on a task for the next event. A crew member can also open the board for any coming day in a private chat with the bot. Your name also appears in the group when someone covers a task for you, or you cover one for someone else."
+msgstr "Andere crewleden zien je naam en de taken waarop je staat. De crew van dezelfde avond ziet ze in /roster van de bot, en het takenbord in de Telegram-groep van de crew toont de voornaam van iedereen met een taak bij het volgende evenement. Een crewlid kan het bord voor elke komende dag ook openen in een privéchat met de bot. Je naam verschijnt ook in de groep als iemand een taak van je overneemt, of jij er een van iemand anders."
+
+#: src/Support/WelcomeSender.php:554
+msgid "Our nights happen because people like you lend a hand."
+msgstr "Onze avonden bestaan omdat mensen zoals jij een handje helpen."
+
+#: src/Telegram/TicketRedemptionService.php:168
+msgid "Pick an event:"
+msgstr "Kies een evenement:"
+
+#: templates/admin/settings.php:2008
+msgid "Private chats"
+msgstr "Privéchats"
+
+#: src/Support/MessageTemplates.php:2193
+msgid "Sent to a new person who uses the bot when an organizer turns down their request with the reason Unknown to us. With No reason the person is not told."
+msgstr "Verstuurd naar een nieuwe persoon die de bot gebruikt als een organisator de aanvraag afwijst met de reden Onbekend bij ons. Bij Geen reden krijgt de persoon geen bericht."
+
+#: src/Support/MessageTemplates.php:2209
+msgid "Sent to a new person who uses the bot when no organizer answered their request in 48 hours. The request is then turned down."
+msgstr "Verstuurd naar een nieuwe persoon die de bot gebruikt als geen organisator de aanvraag binnen 48 uur heeft beantwoord. De aanvraag wordt dan afgewezen."
+
+#: src/Support/MessageTemplates.php:2185
+msgid "Sent to a new person without Telegram when an organizer turns down their request with the reason Unknown to us. The greeting is added above the text. With No reason the person is not told."
+msgstr "Verstuurd naar een nieuwe persoon zonder Telegram als een organisator de aanvraag afwijst met de reden Onbekend bij ons. De begroeting wordt boven de tekst gezet. Bij Geen reden krijgt de persoon geen bericht."
+
+#: src/Support/MessageTemplates.php:2201
+msgid "Sent to a new person without Telegram when no organizer answered their request in 48 hours. The request is then turned down. The greeting is added above the text."
+msgstr "Verstuurd naar een nieuwe persoon zonder Telegram als geen organisator de aanvraag binnen 48 uur heeft beantwoord. De aanvraag wordt dan afgewezen. De begroeting wordt boven de tekst gezet."
+
+#: src/Support/MessageTemplates.php:2654
+msgid "Sent to the organizers who got the email about a new person, when another organizer answers the request or when it times out after 48 hours."
+msgstr "Verstuurd naar de organisatoren die de e-mail over een nieuwe persoon kregen, als een andere organisator de aanvraag beantwoordt of als die na 48 uur verloopt."
+
+#: src/Support/CancelNote.php:84
+msgid "Sign up for it again while the place is free and the late cancellation is removed."
+msgstr "Schrijf je opnieuw in zolang de plek vrij is en de late annulering wordt verwijderd."
+
+#: templates/admin/settings.php:1631
+msgid "Telegram, emails and web pages. The reader’s own language first, then the next ones in the site’s order. Default 2."
+msgstr "Telegram, e-mails en webpagina’s. Eerst de eigen taal van de lezer, dan de volgende in de volgorde van de site. Standaard 2."
+
+#. translators: 1: languages shown, 2: number of site languages
+#: src/Support/HybridPolicy.php:377
+msgid "Texts and buttons in several languages show %1$d of the %2$d site languages: the reader’s own first, then the next ones. Change it in Settings > Email > Hybrid messages."
+msgstr "Teksten en knoppen in meerdere talen tonen %1$d van de %2$d sitetalen: eerst die van de lezer, dan de volgende. Wijzig het in Instellingen > E-mail > Hybride berichten."
+
+#: src/Admin/PeoplePage.php:145
+msgid "That person could not be accepted. Someone may have done it already."
+msgstr "Die persoon kon niet worden geaccepteerd. Misschien heeft iemand het al gedaan."
+
+#: src/Support/MessageTemplates.php:2669
+msgid "The answer: OK or No, who gave it and when, and whether the person was told."
+msgstr "Het antwoord: OK of Nee, wie het gaf en wanneer, en of de persoon een bericht kreeg."
+
+#: src/Support/MessageTemplates.php:1745
+msgid "The name of the event and its DJs, like Ecstatic Dance · Esimerkki. On a line of its own; the line goes when it is not known."
+msgstr "De naam van het evenement en de dj’s, zoals Ecstatic Dance · Esimerkki. Op een eigen regel; de regel vervalt als die niet bekend is."
+
+#: src/Support/MessageTemplates.php:2187 src/Support/MessageTemplates.php:2195
+msgid "The organizers do not know you yet, so they could not say OK to your sign-up. Please come and talk to us at an event; an organizer can then say OK."
+msgstr "De organisatoren kennen je nog niet, dus ze konden je inschrijving geen OK geven. Kom ons op een evenement even spreken; dan kan een organisator OK geven."
+
+#. translators: 1: the person's name, 2: their email
+#: src/Support/MessageTemplates.php:2662
+msgid "The request of %1$s (%2$s) to join the crew is answered:"
+msgstr "De aanvraag van %1$s (%2$s) om bij de crew te komen is beantwoord:"
+
+#: src/Support/NewcomerApproval.php:446
+msgid "They were not told."
+msgstr "De persoon heeft geen bericht gekregen."
+
+#: src/Support/NewcomerApproval.php:424
+msgid "They were told to talk to an organizer at an event."
+msgstr "De persoon kreeg te horen dat die een organisator op een evenement moet spreken."
+
+#: src/Support/NewcomerApproval.php:444
+msgid "They were told: unknown to the organizers."
+msgstr "De persoon kreeg te horen: onbekend bij de organisatoren."
+
+#: src/Web/DemoController.php:176
+msgid "This demo has ended."
+msgstr "Deze demo is afgelopen."
+
+#. translators: %d: the late-cancellation notice in hours
+#: src/Support/CancelNote.php:49
+msgid "This is an early cancellation: it is more than %d hour before the task, so it has no effect on your standing."
+msgid_plural "This is an early cancellation: it is more than %d hours before the task, so it has no effect on your standing."
+msgstr[0] "Dit is een vroege annulering: het is meer dan %d uur voor de taak, dus het heeft geen invloed op je status."
+msgstr[1] "Dit is een vroege annulering: het is meer dan %d uur voor de taak, dus het heeft geen invloed op je status."
+
+#. translators: %s: where to see your own numbers
+#: src/Support/WelcomeSender.php:559
+msgid "This message explains how it all works. %s"
+msgstr "Dit bericht legt uit hoe het allemaal werkt. %s"
+
+#: src/Web/DemoController.php:195
+msgid "Tick the row and the demo ticket turns gold by itself. Nothing here is in the real door list."
+msgstr "Vink de rij aan en het demoticket wordt vanzelf goud. Niets hier staat op de echte deurlijst."
+
+#: src/Telegram/PrivateChatGate.php:140
+msgid "To join the crew, open the crew group first:"
+msgstr "Open eerst de crewgroep om bij de crew te komen:"
+
+#. translators: %s: the person's name
+#: src/Support/NewcomerApproval.php:153
+msgid "Turn down %s?"
+msgstr "%s afwijzen?"
+
+#: templates/admin/people.php:31
+msgid "Turned down"
+msgstr "Afgewezen"
+
+#: templates/admin/people.php:332
+msgid "Turned down by"
+msgstr "Afgewezen door"
+
+#: src/Admin/PeoplePage.php:120
+msgid "Unknown to the organizers. They were told."
+msgstr "Onbekend bij de organisatoren. De persoon heeft een bericht gekregen."
+
+#: src/Support/NewcomerApproval.php:142
+msgid "Unknown to us (they are told)"
+msgstr "Onbekend bij ons (krijgt bericht)"
+
+#. translators: %s: the crew's name (the site name)
+#: src/Support/WelcomeSender.php:551
+msgid "Welcome to the %s crew!"
+msgstr "Welkom bij de %s-crew!"
+
+#: src/Support/NewcomerApproval.php:155
+msgid "With “Unknown to us” they get a message asking them to talk to an organizer at an event. With “No reason” they are not told."
+msgstr "Bij “Onbekend bij ons” krijgt de persoon een bericht met de vraag een organisator op een evenement te spreken. Bij “Geen reden” krijgt die geen bericht."
+
+#: src/Support/CancelNote.php:43
+msgid "You took this task only minutes ago, so cancelling it has no effect on your standing."
+msgstr "Je hebt deze taak pas een paar minuten geleden genomen, dus annuleren heeft geen invloed op je status."
+
+#: src/Support/MessageTemplates.php:2203 src/Support/MessageTemplates.php:2211
+msgid "Your request to join the crew timed out: no organizer answered it in 48 hours. This can mean that no organizer recognized you. To finish signing up, please talk to an organizer directly at an event."
+msgstr "Je aanvraag om bij de crew te komen is verlopen: geen organisator heeft die binnen 48 uur beantwoord. Dat kan betekenen dat geen organisator je herkende. Spreek een organisator op een evenement direct aan om je inschrijving af te ronden."
+
+#: src/Support/MessageTemplates.php:2202
+msgid "Your sign-up request timed out"
+msgstr "Je inschrijvingsaanvraag is verlopen"
+
+#: src/Web/SignupController.php:1253
+msgid "You’ve cancelled that task. This close to the event it counts as a late cancellation."
+msgstr "Je hebt die taak geannuleerd. Zo kort voor het evenement telt dat als late annulering."
+
+#: src/Telegram/BoardRenderer.php:350
+msgid "✋ sign up · ❌ cancel"
+msgstr "✋ inschrijven · ❌ annuleren"
+
+#: src/Telegram/BoardRenderer.php:354
+msgid "➕ add someone"
+msgstr "➕ iemand toevoegen"
+
+#: src/Telegram/PrivateChatGate.php:146
+msgid "👥 Open the crew group"
+msgstr "👥 Crewgroep openen"
+
+#: src/Support/TicketTransferService.php:518
+#. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "%1$s accepted your free-entry ticket for %2$s. Your own ticket no longer works."
+msgstr "%1$s heeft je gratis ticket voor %2$s aangenomen. Je eigen ticket werkt niet meer."
+
+#: src/Support/TicketTransferService.php:495
+#. translators: 1: the giver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "%1$s gave you their free-entry ticket for %2$s."
+msgstr "%1$s heeft je zijn of haar gratis ticket voor %2$s gegeven."
+
+#: src/Support/TicketMail.php:1115 src/Telegram/TransferPage.php:399
+#. translators: 1: the giver's name, 2: the night, e.g. "Club night 14.11.2026"
+#. translators: 1: the giver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "%1$s is giving you their free-entry ticket for %2$s."
+msgstr "%1$s geeft je zijn of haar gratis ticket voor %2$s."
+
+#: src/Support/TicketMail.php:1792
+msgid "%s gave you their free-entry ticket."
+msgstr "%s heeft je zijn of haar gratis ticket gegeven."
+
+#: src/Support/DoorList.php:92 src/Support/DoorList.php:111
+msgid "(name erased)"
+msgstr "(naam gewist)"
+
+#: src/Support/TicketMail.php:1122 src/Telegram/TransferPage.php:362
+msgid "A free-entry ticket for you"
+msgstr "Een gratis ticket voor jou"
+
+#: src/Support/TicketMail.php:1118
+msgid "Accept it and write your name, and we will email you the ticket. The offer ends when the doors open."
+msgstr "Neem het aan en vul je naam in, dan mailen we je het ticket. Het aanbod vervalt als de deuren opengaan."
+
+#: src/Support/TicketMail.php:1123 src/Telegram/TransferPage.php:411
+msgid "Accept the ticket"
+msgstr "Ticket aannemen"
+
+#: src/Telegram/TransferPage.php:115
+msgid "Back to your ticket"
+msgstr "Terug naar je ticket"
+
+#: src/Telegram/TransferBot.php:64
+msgid "Cancel offer"
+msgstr "Aanbod intrekken"
+
+#: src/Telegram/TransferPage.php:137
+msgid "Cancel the offer"
+msgstr "Aanbod intrekken"
+
+#: src/Support/TicketTransferService.php:461
+msgid "Done."
+msgstr "Klaar."
+
+#: src/Telegram/TransferBot.php:281 src/Telegram/TransferPage.php:162
+#. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "Done. %1$s has your ticket for %2$s now. Your own ticket no longer works."
+msgstr "Klaar. %1$s heeft nu je ticket voor %2$s. Je eigen ticket werkt niet meer."
+
+#: src/Telegram/TransferPage.php:195
+#. translators: %s: the receiver's name
+msgid "Done. %s has your ticket now. Your own ticket no longer works."
+msgstr "Klaar. %s heeft nu je ticket. Je eigen ticket werkt niet meer."
+
+#: src/Support/PrivacyExporter.php:266
+msgid "EventCrew given tickets"
+msgstr "EventCrew: weggegeven tickets"
+
+#: src/Support/TicketList.php:112 src/Telegram/TicketController.php:393
+msgid "Free entry · from %s"
+msgstr "Gratis entree · van %s"
+
+#: src/Telegram/TransferBot.php:237
+msgid "Give"
+msgstr "Geven"
+
+#: src/Telegram/TicketController.php:784 src/Telegram/TransferBot.php:51
+msgid "Give away"
+msgstr "Weggeven"
+
+#: src/Telegram/TransferPage.php:334
+msgid "Give the ticket"
+msgstr "Ticket geven"
+
+#: src/Telegram/TransferPage.php:111
+msgid "Give your ticket away"
+msgstr "Je ticket weggeven"
+
+#: src/Telegram/TransferPage.php:294
+#. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "Give your ticket for %2$s to %1$s? It moves at once and your own ticket stops working."
+msgstr "Je ticket voor %2$s aan %1$s geven? Het gaat meteen over en je eigen ticket werkt niet meer."
+
+#: src/Support/DoorList.php:110 src/Support/TicketList.php:92 src/Telegram/TicketController.php:765
+#. translators: %s: the name of the person the ticket was given to
+msgid "Given to %s"
+msgstr "Gegeven aan %s"
+
+#: src/Telegram/TransferBot.php:298
+msgid "Kept. The ticket stays with you."
+msgstr "Oké. Het ticket blijft van jou."
+
+#: src/Telegram/TransferPage.php:286
+msgid "No member found by that name. Write their name again, or an email address."
+msgstr "Geen lid gevonden met die naam. Schrijf de naam opnieuw, of een e-mailadres."
+
+#: src/Telegram/TransferBot.php:309 src/Telegram/TransferPage.php:124
+msgid "Offer cancelled. Your ticket is yours again."
+msgstr "Aanbod ingetrokken. Het ticket is weer van jou."
+
+#: src/Telegram/TransferPage.php:305
+#. translators: 1: an email address, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "Offer your ticket for %2$s to %1$s? They must accept before the doors open. Until then your ticket works."
+msgstr "Je ticket voor %2$s aanbieden aan %1$s? Het moet worden aangenomen voordat de deuren opengaan. Tot dan werkt je ticket."
+
+#: src/Telegram/TransferPage.php:325
+msgid "Pick the member who gets your ticket. It moves at once and your own ticket stops working."
+msgstr "Kies het lid dat je ticket krijgt. Het gaat meteen over en je eigen ticket werkt niet meer."
+
+#: src/Support/TicketTransferService.php:467
+msgid "Please write your name."
+msgstr "Vul je naam in."
+
+#: src/Telegram/TransferPage.php:251
+msgid "Send the offer"
+msgstr "Aanbod versturen"
+
+#: src/Telegram/TransferBot.php:289 src/Telegram/TransferPage.php:202
+#. translators: %s: an email address
+msgid "Sent. When %s accepts, the ticket moves to them. Until then your own ticket works."
+msgstr "Verstuurd. Zodra %s het aanneemt, gaat het ticket over. Tot dan werkt je eigen ticket."
+
+#: src/Support/TicketTransferService.php:496
+msgid "Someone"
+msgstr "Iemand"
+
+#: src/Support/TicketMail.php:1790
+msgid "Someone gave you their free-entry ticket."
+msgstr "Iemand heeft je een gratis ticket gegeven."
+
+#: src/Support/TicketTransferService.php:464
+msgid "That is not an email address. Write a name or an email address."
+msgstr "Dat is geen e-mailadres. Schrijf een naam of een e-mailadres."
+
+#: src/Support/TicketTransferService.php:463
+msgid "That is you. Pick someone else."
+msgstr "Dat ben jij. Kies iemand anders."
+
+#: src/Support/TicketTransferService.php:466
+msgid "The doors are already open. Give the ticket to a member instead."
+msgstr "De deuren zijn al open. Geef het ticket aan een lid."
+
+#: src/Support/PrivacyEraser.php:120
+msgid "The name and email address were erased from the free-entry tickets given to this address. The tickets stay on the door list with no name."
+msgstr "Naam en e-mailadres zijn gewist van de gratis tickets die aan dit adres zijn gegeven. De tickets blijven zonder naam op de deurlijst."
+
+#: src/Support/TicketTransferService.php:369
+#. translators: %s: the night, like "Sat 14 Nov · Dance Night"
+msgid "The organizers cancelled the free-entry ticket you were given for %s."
+msgstr "De organisatie heeft het gratis ticket geannuleerd dat je kreeg voor %s."
+
+#: src/Telegram/TransferPage.php:419
+#. translators: %s: an email address
+msgid "The ticket is yours. We emailed it to %s."
+msgstr "Het ticket is van jou. We hebben het naar %s gemaild."
+
+#: src/Support/TicketTransferService.php:468
+msgid "This offer is no longer open."
+msgstr "Dit aanbod geldt niet meer."
+
+#: src/Support/TicketTransferService.php:469
+msgid "This ticket cannot be given away."
+msgstr "Dit ticket kan niet worden weggegeven."
+
+#: src/Support/TicketTransferService.php:462
+msgid "This ticket is already offered to someone. Cancel that offer first."
+msgstr "Dit ticket is al aan iemand aangeboden. Trek dat aanbod eerst in."
+
+#: src/Support/DoorDesk.php:227 src/Support/DoorList.php:93
+msgid "Transferred"
+msgstr "Overgedragen"
+
+#: src/Support/TicketMail.php:1864
+msgid "Transferred ticket"
+msgstr "Overgedragen ticket"
+
+#: src/Admin/RosterPage.php:203 src/Web/CrewAdminRoster.php:600
+msgid "Transferred ticket cancelled."
+msgstr "Overgedragen ticket geannuleerd."
+
+#: src/Telegram/ProfileService.php:256 src/Telegram/TicketController.php:779 src/Telegram/TransferPage.php:134
+#. translators: %s: the email address the ticket was offered to
+msgid "Waiting for %s to accept"
+msgstr "Wacht tot %s het aanneemt"
+
+#: src/Telegram/TransferBot.php:204
+msgid "Who gets your ticket?"
+msgstr "Wie krijgt je ticket?"
+
+#: src/Telegram/TransferPage.php:225
+msgid "Who gets your ticket? Write a member’s name, or the email address of someone who is not a member."
+msgstr "Wie krijgt je ticket? Schrijf de naam van een lid, of het e-mailadres van iemand die geen lid is."
+
+#: src/Support/TicketTransferService.php:465
+msgid "You already have 3 offers waiting. Cancel one first."
+msgstr "Je hebt al 3 openstaande aanbiedingen. Trek er eerst een in."
+
+#: src/Support/TicketMail.php:1159
+msgid "You get this email because someone gave you a ticket to this event."
+msgstr "Je krijgt deze e-mail omdat iemand je een ticket voor dit evenement heeft gegeven."
+
+#: src/Telegram/TransferPage.php:409
+msgid "Your name"
+msgstr "Je naam"
+
+#: src/Support/DoorDesk.php:774 src/Support/DoorList.php:95
+#. translators: %s: the name of the person who gave the ticket away
+msgid "from %s"
+msgstr "van %s"

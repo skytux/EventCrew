@@ -33,6 +33,7 @@ use EventCrew\Repositories\TakeoverRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
+use EventCrew\Repositories\TicketTransferRepository;
 use EventCrew\Support\AccessNotifier;
 use EventCrew\Support\AccessTextsMigration;
 use EventCrew\Support\AssistantKnowledge;
@@ -100,6 +101,7 @@ use EventCrew\Support\TaskCancelledNotice;
 use EventCrew\Support\TaskTemplateApplier;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\TicketMail;
+use EventCrew\Support\TicketTransferService;
 use EventCrew\Support\TicketQr;
 use EventCrew\Support\TicketReasons;
 use EventCrew\Support\TicketText;
@@ -145,6 +147,8 @@ use EventCrew\Telegram\CommandMenu;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\CalendarController;
 use EventCrew\Telegram\TicketController;
+use EventCrew\Telegram\TransferBot;
+use EventCrew\Telegram\TransferPage;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\LanguageService;
@@ -162,7 +166,6 @@ use EventCrew\Web\CrewAdminPeople;
 use EventCrew\Web\CrewAdminRoster;
 use EventCrew\Web\CrewAdminTasks;
 use EventCrew\Web\CrewAppPage;
-use EventCrew\Web\DemoController;
 use EventCrew\Web\DoorController;
 use EventCrew\Web\FollowupController;
 use EventCrew\Web\NewsletterController;
@@ -258,8 +261,7 @@ final class Kernel
         $this->container->get(WebhookController::class)->boot();
         $this->container->get(VerificationController::class)->boot();
         $this->container->get(TicketController::class)->boot();
-        // The demo ticket and its one-row desk (DemoTicket): no real data.
-        $this->container->get(DemoController::class)->boot();
+        $this->container->get(TransferPage::class)->boot();
         $this->container->get(CalendarController::class)->boot();
         $this->container->get(ManageController::class)->boot();
         $this->container->get(BoardRefreshListener::class)->boot();
@@ -1012,7 +1014,45 @@ final class Kernel
                 $container->get(Mailer::class),
                 new TicketQr(),
                 $container->get(AssignmentRepository::class),
-                $container->get(RedemptionRepository::class)
+                $container->get(RedemptionRepository::class),
+                transfers: $container->get(TicketTransferRepository::class)
+            )
+        );
+
+        $this->container->singleton(
+            TicketTransferRepository::class,
+            fn () => new TicketTransferRepository()
+        );
+
+        $this->container->singleton(
+            TicketTransferService::class,
+            fn (Container $container) => new TicketTransferService(
+                $container->get(TicketTransferRepository::class),
+                $container->get(RedemptionRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(CheckinRepository::class),
+                $container->get(TicketMail::class),
+                $container->get(TelegramClient::class),
+                $container->get(SalesDeskGate::class)
+            )
+        );
+
+        $this->container->singleton(
+            TransferBot::class,
+            fn (Container $container) => new TransferBot(
+                $container->get(TicketTransferService::class),
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
+            TransferPage::class,
+            fn (Container $container) => new TransferPage(
+                $container->get(TicketTransferService::class),
+                $container->get(PersonRepository::class),
+                $container->get(TicketController::class)
             )
         );
 
@@ -1065,7 +1105,8 @@ final class Kernel
                 $container->get(SalesDeskGate::class),
                 $container->get(CreditGrantRepository::class),
                 $container->get(ClaimNotifier::class),
-                $container->get(TicketMail::class)
+                $container->get(TicketMail::class),
+                transfers: $container->get(TicketTransferRepository::class)
             )
         );
 
@@ -1136,7 +1177,8 @@ final class Kernel
                 $container->get(CreditGrantRepository::class),
                 $container->get(AuthTokenRepository::class),
                 $container->get(NotificationsRepository::class),
-                $container->get(TakeoverRepository::class)
+                $container->get(TakeoverRepository::class),
+                transfers: $container->get(TicketTransferRepository::class)
             )
         );
 
@@ -1147,7 +1189,8 @@ final class Kernel
                 $container->get(PersonEraser::class),
                 $container->get(TicketBuyerRepository::class),
                 $container->get(GuestRepository::class),
-                $container->get(NewsletterSubscriberRepository::class)
+                $container->get(NewsletterSubscriberRepository::class),
+                transfers: $container->get(TicketTransferRepository::class)
             )
         );
 
@@ -1161,7 +1204,8 @@ final class Kernel
                 $container->get(CreditGrantRepository::class),
                 $container->get(TicketBuyerRepository::class),
                 $container->get(GuestRepository::class),
-                $container->get(NewsletterSubscriberRepository::class)
+                $container->get(NewsletterSubscriberRepository::class),
+                transfers: $container->get(TicketTransferRepository::class)
             )
         );
 
@@ -1172,7 +1216,8 @@ final class Kernel
                 $container->get(PersonEraser::class),
                 $container->get(TicketBuyerRepository::class),
                 $container->get(GuestRepository::class),
-                $container->get(NewsletterSubscriberRepository::class)
+                $container->get(NewsletterSubscriberRepository::class),
+                transfers: $container->get(TicketTransferRepository::class)
             )
         );
 
@@ -1197,7 +1242,8 @@ final class Kernel
                 $container->get(AssignmentRepository::class),
                 $container->get(PersonRepository::class),
                 $container->get(RedemptionRepository::class),
-                $container->get(StandingCalculator::class)
+                $container->get(StandingCalculator::class),
+                transfers: $container->get(TicketTransferRepository::class)
             )
         );
 
@@ -1319,7 +1365,8 @@ final class Kernel
                 $container->get(AssignmentRepository::class),
                 $container->get(TaskRepository::class),
                 $container->get(StandingCalculator::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                transfers: $container->get(TicketTransferService::class)
             )
         );
 
@@ -1333,7 +1380,8 @@ final class Kernel
                 $container->get(FreeEntryGate::class),
                 $container->get(TelegramClient::class),
                 $container->get(Mailer::class),
-                $container->get(TicketMail::class)
+                $container->get(TicketMail::class),
+                transfers: $container->get(TicketTransferService::class)
             )
         );
 
@@ -1415,7 +1463,8 @@ final class Kernel
                 $container->get(PrivateChatGate::class),
                 $container->get(AssignCommand::class),
                 $container->get(TaskCommand::class),
-                $container->get(ChatCommands::class)
+                $container->get(ChatCommands::class),
+                transfer: $container->get(TransferBot::class)
             )
         );
 
@@ -1643,13 +1692,9 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(RedemptionRepository::class),
                 $container->get(TicketBuyerRepository::class),
-                $container->get(GuestRepository::class)
+                $container->get(GuestRepository::class),
+                transfers: $container->get(TicketTransferService::class)
             )
-        );
-
-        $this->container->singleton(
-            DemoController::class,
-            fn (Container $container) => new DemoController($container->get(TicketController::class))
         );
 
         $this->container->singleton(

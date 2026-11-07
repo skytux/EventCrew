@@ -111,7 +111,8 @@ final class RedemptionRepositoryTest extends TestCase
     {
         $this->wpdb->nextVars[] = 0;
         $this->repository()->countFor(9);
-        self::assertStringContainsString('person_id = 9 AND cancelled_at IS NULL', $this->wpdb->lastQuery());
+        self::assertStringContainsString('person_id = 9', $this->wpdb->lastQuery());
+        self::assertStringContainsString('(cancelled_at IS NULL OR transferred_to IS NOT NULL)', $this->wpdb->lastQuery());
 
         $this->wpdb->nextResults[] = [];
         $this->repository()->forDate('2026-08-01');

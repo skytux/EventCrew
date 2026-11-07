@@ -166,11 +166,10 @@ final class EventDescriptionTest extends TestCase
 
         $body = Language::run(
             Language::FINNISH,
-            fn (): string => MessageTemplates::body('reminder_dm', $this->context() + ['description' => ''])
+            fn (): string => MessageTemplates::body('slot_freed_dm', $this->context() + ['description' => '', 'name' => 'Anna'])
         );
-        // The cancel hint comes after it (cancelHelpDm()).
         self::assertStringContainsString(
-            "\n\nDJ Aino avaa illan lämpimillä grooveilla. Luvassa hidas nousu syvään tanssiin.\n\n",
+            "DJ Aino avaa illan lämpimillä grooveilla. Luvassa hidas nousu syvään tanssiin.",
             $body
         );
         self::assertStringNotContainsString('warm grooves', $body);
@@ -229,12 +228,17 @@ final class EventDescriptionTest extends TestCase
     {
         $this->content = self::RAW;
         $this->boardText('Free dance in the hall. Bring water. Doors at 19.');
+        // The task reminder has no event text (Owner, 2026-11-08): the board text stays out.
         $body = MessageTemplates::body('reminder_dm', $this->context() + ['description' => '']);
-        self::assertStringEndsWith("See you there!\n\nFree dance in the hall. Bring water.\n\nCan’t make it? Tap Cancel below: there you can also hand the task over to someone else.", $body);
-
-        $this->options = [];
-        $body = MessageTemplates::body('reminder_dm', $this->context() + ['description' => '']);
+        self::assertStringNotContainsString('Free dance', $body);
         self::assertStringEndsWith("See you there!\n\nCan’t make it? Tap Cancel below: there you can also hand the task over to someone else.", $body);
+
+        self::assertStringContainsString(
+            "\n\nFree dance in the hall. Bring water.",
+            MessageTemplates::find('slot_freed')->fill("Opened.\n\n{event_description}", $this->context())
+        );
+        $this->options = [];
+        self::assertSame('Opened.', MessageTemplates::find('slot_freed')->fill("Opened.\n\n{event_description}", $this->context()));
 
         self::assertSame(
             'Opened.Anna',
@@ -284,7 +288,7 @@ final class EventDescriptionTest extends TestCase
             $this->options[$key . 'followup_came'][MessageTemplates::BODY]
         );
         self::assertSame('We missed you.', $this->options[$key . 'followup_missed'][MessageTemplates::BODY]);
-        self::assertSame("Soon.\n\n{event_description}", $this->options[$key . 'reminder_dm'][MessageTemplates::BODY]);
+        self::assertSame('Soon.', $this->options[$key . 'reminder_dm'][MessageTemplates::BODY], 'the reminder step');
         self::assertSame(1, $this->options[EventDetailsText::OPTION]['followup_no_description']);
     }
 
@@ -303,13 +307,14 @@ final class EventDescriptionTest extends TestCase
         EventDetailsText::run();
 
         self::assertSame(
-            "On {role} at {event}, {when}.\n\n{description}\n\n{event_description}",
+            "On {role} at {event}, {when}.\n\n{description}",
             $this->options[$key . 'reminder_dm'][MessageTemplates::BODY]
         );
         self::assertSame(
             [
-                'source' => "Hi {name},\n\nOpen: {role} at {event}, {when}.\n\n{event_description}{task_details}",
-                'texts' => ['fi' => "Hei {name},\n\nVapaa: {role}, {event}, {when}.\n\n{event_description}{task_details}", 'en' => ''],
+                // Then the picture step moves it under the picture (Owner, 2026-11-08).
+                'source' => "Hi {name},\n\nOpen: {role} at {event}, {when}.{task_details}{event_picture}\n\n{event_description}",
+                'texts' => ['fi' => "Hei {name},\n\nVapaa: {role}, {event}, {when}.{task_details}{event_picture}\n\n{event_description}", 'en' => ''],
             ],
             $this->options[$key . 'slot_freed'][MessageTemplates::BODY]
         );
@@ -319,7 +324,7 @@ final class EventDescriptionTest extends TestCase
             $this->options[$key . 'followup_came'][MessageTemplates::BODY]
         );
         self::assertSame(
-            ['venue' => 1, 'description' => 1, 'signup_email_no_description' => 1, 'followup_no_description' => 1, 'signup_dm_no_description' => 1],
+            ['venue' => 1, 'description' => 1, 'signup_email_no_description' => 1, 'followup_no_description' => 1, 'signup_dm_no_description' => 1, 'reminder_no_description' => 1, 'slot_freed_picture' => 1],
             $this->options[EventDetailsText::OPTION]
         );
 

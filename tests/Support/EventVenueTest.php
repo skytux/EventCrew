@@ -165,7 +165,7 @@ final class EventVenueTest extends TestCase
         EventDetailsText::run();
 
         self::assertSame(
-            "On {role} at {event}, {when}.\n{venue}\n\n{description}\n\n{event_description}",
+            "On {role} at {event}, {when}.\n{venue}\n\n{description}",
             $this->options[$key . 'reminder_dm'][MessageTemplates::BODY]
         );
         self::assertSame("Ticket for {date}.\n{venue}", $this->options[$key . 'free_ticket_dm'][MessageTemplates::BODY]);
@@ -177,7 +177,7 @@ final class EventVenueTest extends TestCase
             ],
             $this->options[TicketText::OPTION]
         );
-        self::assertSame(['description' => 1, 'venue' => 1, 'signup_email_no_description' => 1, 'followup_no_description' => 1, 'signup_dm_no_description' => 1], $this->options[EventDetailsText::OPTION]);
+        self::assertSame(['description' => 1, 'venue' => 1, 'signup_email_no_description' => 1, 'followup_no_description' => 1, 'signup_dm_no_description' => 1, 'reminder_no_description' => 1, 'slot_freed_picture' => 1], $this->options[EventDetailsText::OPTION]);
 
         $this->options[$key . 'free_ticket_dm'] = [MessageTemplates::BODY => 'Ticket for {date}.'];
         EventDetailsText::run();

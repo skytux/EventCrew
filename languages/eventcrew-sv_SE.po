@@ -11757,30 +11757,6 @@ msgstr "Med en AI-tjänst inställd under Inställningar > Telegram-bot skickar 
 msgid "Previews: changes asked in the bot come with Confirm and Cancel, the announcement and the post-event email come to you first as a preview you can stop, and the AI texts of each event can be changed in EventCrew > Messages > Coming events or in the Admin tab. The full guide says how to switch each use off."
 msgstr "Förhandsvisningar: ändringar du ber om i boten kommer med Bekräfta och Avbryt, utskicket och mejlet efter evenemanget kommer först till dig som förhandsmejl som du kan stoppa, och AI-texterna för varje evenemang kan ändras under EventCrew > Meddelanden > Kommande evenemang eller i Admin-fliken. Hela guiden visar hur du stänger av varje användning."
 
-msgid "Demo event"
-msgstr "Demoevenemang"
-
-msgid "Demo ticket"
-msgstr "Demobiljett"
-
-msgid "Demo sales desk"
-msgstr "Demodisk"
-
-msgid "Demo ticket and desk"
-msgstr "Demobiljett och demodisk"
-
-msgid "This demo has ended."
-msgstr "Den här demon har tagit slut."
-
-msgid "Not in yet"
-msgstr "Inte inne än"
-
-msgid "Tick the row and the demo ticket turns gold by itself. Nothing here is in the real door list."
-msgstr "Bocka för raden så blir demobiljetten guld av sig själv. Inget här finns i den riktiga dörrlistan."
-
-msgid "Open the ticket on one device and the desk on another, then tick the row: the ticket turns gold by itself. No login needed; the links work for 24 hours. Nothing in the demo touches real data."
-msgstr "Öppna biljetten på en enhet och disken på en annan och bocka för raden: biljetten blir guld av sig själv. Ingen inloggning behövs; länkarna fungerar i 24 timmar. Demon rör inga riktiga uppgifter."
-
 msgid "You don’t have to learn the commands: they are all under the bot’s menu button. You can also just write to the bot what you need, in your own words. It usually understands, in most languages."
 msgstr "Du behöver inte lära dig kommandona: de finns alla under botens menyknapp. Du kan också bara skriva till boten vad du behöver, med egna ord. Den förstår oftast, på de flesta språk."
 
@@ -12621,3 +12597,224 @@ msgstr "Dina andra biljetter för kvällen gäller fortfarande. De finns nedan."
 
 msgid "Every ticket the person has for the night, each with its QR code, for the door. On a line of its own; when the text has no such line, the tickets go at the end."
 msgstr "Alla biljetter personen har för kvällen, var och en med sin QR-kod, för dörren. På en egen rad; saknar texten den raden hamnar biljetterna sist."
+
+msgid "An empty line and the event's picture. Empty when the event has none."
+msgstr "En tom rad och evenemangets bild. Tom när evenemanget saknar bild."
+
+#: src/Support/TicketTransferService.php:518
+#. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "%1$s accepted your free-entry ticket for %2$s. Your own ticket no longer works."
+msgstr "%1$s tog emot din fribiljett till %2$s. Din egen biljett gäller inte längre."
+
+#: src/Support/TicketTransferService.php:495
+#. translators: 1: the giver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "%1$s gave you their free-entry ticket for %2$s."
+msgstr "%1$s gav dig sin fribiljett till %2$s."
+
+#: src/Support/TicketMail.php:1115 src/Telegram/TransferPage.php:399
+#. translators: 1: the giver's name, 2: the night, e.g. "Club night 14.11.2026"
+#. translators: 1: the giver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "%1$s is giving you their free-entry ticket for %2$s."
+msgstr "%1$s ger dig sin fribiljett till %2$s."
+
+#: src/Support/TicketMail.php:1792
+msgid "%s gave you their free-entry ticket."
+msgstr "%s gav dig sin fribiljett."
+
+#: src/Support/DoorList.php:92 src/Support/DoorList.php:111
+msgid "(name erased)"
+msgstr "(namn raderat)"
+
+#: src/Support/TicketMail.php:1122 src/Telegram/TransferPage.php:362
+msgid "A free-entry ticket for you"
+msgstr "En fribiljett till dig"
+
+#: src/Support/TicketMail.php:1118
+msgid "Accept it and write your name, and we will email you the ticket. The offer ends when the doors open."
+msgstr "Ta emot den och skriv ditt namn, så mejlar vi biljetten till dig. Erbjudandet upphör när dörrarna öppnar."
+
+#: src/Support/TicketMail.php:1123 src/Telegram/TransferPage.php:411
+msgid "Accept the ticket"
+msgstr "Ta emot biljetten"
+
+#: src/Telegram/TransferPage.php:115
+msgid "Back to your ticket"
+msgstr "Tillbaka till biljetten"
+
+#: src/Telegram/TransferBot.php:64
+msgid "Cancel offer"
+msgstr "Avbryt erbjudandet"
+
+#: src/Telegram/TransferPage.php:137
+msgid "Cancel the offer"
+msgstr "Avbryt erbjudandet"
+
+#: src/Support/TicketTransferService.php:461
+msgid "Done."
+msgstr "Klart."
+
+#: src/Telegram/TransferBot.php:281 src/Telegram/TransferPage.php:162
+#. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "Done. %1$s has your ticket for %2$s now. Your own ticket no longer works."
+msgstr "Klart. %1$s har nu din biljett till %2$s. Din egen biljett gäller inte längre."
+
+#: src/Telegram/TransferPage.php:195
+#. translators: %s: the receiver's name
+msgid "Done. %s has your ticket now. Your own ticket no longer works."
+msgstr "Klart. %s har nu din biljett. Din egen biljett gäller inte längre."
+
+#: src/Support/PrivacyExporter.php:266
+msgid "EventCrew given tickets"
+msgstr "EventCrew: givna biljetter"
+
+#: src/Support/TicketList.php:112 src/Telegram/TicketController.php:393
+msgid "Free entry · from %s"
+msgstr "Fri entré · från %s"
+
+#: src/Telegram/TransferBot.php:237
+msgid "Give"
+msgstr "Ge"
+
+#: src/Telegram/TicketController.php:784 src/Telegram/TransferBot.php:51
+msgid "Give away"
+msgstr "Ge bort"
+
+#: src/Telegram/TransferPage.php:334
+msgid "Give the ticket"
+msgstr "Ge biljetten"
+
+#: src/Telegram/TransferPage.php:111
+msgid "Give your ticket away"
+msgstr "Ge bort din biljett"
+
+#: src/Telegram/TransferPage.php:294
+#. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "Give your ticket for %2$s to %1$s? It moves at once and your own ticket stops working."
+msgstr "Ge din biljett till %2$s till %1$s? Den flyttas direkt och din egen biljett slutar gälla."
+
+#: src/Support/DoorList.php:110 src/Support/TicketList.php:92 src/Telegram/TicketController.php:765
+#. translators: %s: the name of the person the ticket was given to
+msgid "Given to %s"
+msgstr "Given till %s"
+
+#: src/Telegram/TransferBot.php:298
+msgid "Kept. The ticket stays with you."
+msgstr "Okej. Biljetten stannar hos dig."
+
+#: src/Telegram/TransferPage.php:286
+msgid "No member found by that name. Write their name again, or an email address."
+msgstr "Ingen medlem hittades med det namnet. Skriv namnet igen, eller en e-postadress."
+
+#: src/Telegram/TransferBot.php:309 src/Telegram/TransferPage.php:124
+msgid "Offer cancelled. Your ticket is yours again."
+msgstr "Erbjudandet avbrutet. Biljetten är din igen."
+
+#: src/Telegram/TransferPage.php:305
+#. translators: 1: an email address, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "Offer your ticket for %2$s to %1$s? They must accept before the doors open. Until then your ticket works."
+msgstr "Erbjuda din biljett till %2$s till %1$s? Mottagaren måste ta emot den innan dörrarna öppnar. Tills dess gäller din biljett."
+
+#: src/Telegram/TransferPage.php:325
+msgid "Pick the member who gets your ticket. It moves at once and your own ticket stops working."
+msgstr "Välj medlemmen som får din biljett. Den flyttas direkt och din egen biljett slutar gälla."
+
+#: src/Support/TicketTransferService.php:467
+msgid "Please write your name."
+msgstr "Skriv ditt namn."
+
+#: src/Telegram/TransferPage.php:251
+msgid "Send the offer"
+msgstr "Skicka erbjudandet"
+
+#: src/Telegram/TransferBot.php:289 src/Telegram/TransferPage.php:202
+#. translators: %s: an email address
+msgid "Sent. When %s accepts, the ticket moves to them. Until then your own ticket works."
+msgstr "Skickat. När %s tar emot den flyttas biljetten. Tills dess gäller din egen biljett."
+
+#: src/Support/TicketTransferService.php:496
+msgid "Someone"
+msgstr "Någon"
+
+#: src/Support/TicketMail.php:1790
+msgid "Someone gave you their free-entry ticket."
+msgstr "Någon gav dig sin fribiljett."
+
+#: src/Support/TicketTransferService.php:464
+msgid "That is not an email address. Write a name or an email address."
+msgstr "Det är ingen e-postadress. Skriv ett namn eller en e-postadress."
+
+#: src/Support/TicketTransferService.php:463
+msgid "That is you. Pick someone else."
+msgstr "Det är du. Välj någon annan."
+
+#: src/Support/TicketTransferService.php:466
+msgid "The doors are already open. Give the ticket to a member instead."
+msgstr "Dörrarna är redan öppna. Ge biljetten till en medlem i stället."
+
+#: src/Support/PrivacyEraser.php:120
+msgid "The name and email address were erased from the free-entry tickets given to this address. The tickets stay on the door list with no name."
+msgstr "Namn och e-postadress raderades från fribiljetterna som getts till den här adressen. Biljetterna står kvar på dörrlistan utan namn."
+
+#: src/Support/TicketTransferService.php:369
+#. translators: %s: the night, like "Sat 14 Nov · Dance Night"
+msgid "The organizers cancelled the free-entry ticket you were given for %s."
+msgstr "Arrangörerna avbokade fribiljetten du fick till %s."
+
+#: src/Telegram/TransferPage.php:419
+#. translators: %s: an email address
+msgid "The ticket is yours. We emailed it to %s."
+msgstr "Biljetten är din. Vi mejlade den till %s."
+
+#: src/Support/TicketTransferService.php:468
+msgid "This offer is no longer open."
+msgstr "Erbjudandet gäller inte längre."
+
+#: src/Support/TicketTransferService.php:469
+msgid "This ticket cannot be given away."
+msgstr "Den här biljetten kan inte ges bort."
+
+#: src/Support/TicketTransferService.php:462
+msgid "This ticket is already offered to someone. Cancel that offer first."
+msgstr "Biljetten är redan erbjuden till någon. Avbryt det erbjudandet först."
+
+#: src/Support/DoorDesk.php:227 src/Support/DoorList.php:93
+msgid "Transferred"
+msgstr "Överlåten"
+
+#: src/Support/TicketMail.php:1864
+msgid "Transferred ticket"
+msgstr "Överlåten biljett"
+
+#: src/Admin/RosterPage.php:203 src/Web/CrewAdminRoster.php:600
+msgid "Transferred ticket cancelled."
+msgstr "Den överlåtna biljetten avbokad."
+
+#: src/Telegram/ProfileService.php:256 src/Telegram/TicketController.php:779 src/Telegram/TransferPage.php:134
+#. translators: %s: the email address the ticket was offered to
+msgid "Waiting for %s to accept"
+msgstr "Väntar på att %s tar emot"
+
+#: src/Telegram/TransferBot.php:204
+msgid "Who gets your ticket?"
+msgstr "Vem får din biljett?"
+
+#: src/Telegram/TransferPage.php:225
+msgid "Who gets your ticket? Write a member’s name, or the email address of someone who is not a member."
+msgstr "Vem får din biljett? Skriv en medlems namn, eller e-postadressen till någon som inte är medlem."
+
+#: src/Support/TicketTransferService.php:465
+msgid "You already have 3 offers waiting. Cancel one first."
+msgstr "Du har redan 3 erbjudanden som väntar. Avbryt ett först."
+
+#: src/Support/TicketMail.php:1159
+msgid "You get this email because someone gave you a ticket to this event."
+msgstr "Du får det här mejlet för att någon gav dig en biljett till evenemanget."
+
+#: src/Telegram/TransferPage.php:409
+msgid "Your name"
+msgstr "Ditt namn"
+
+#: src/Support/DoorDesk.php:774 src/Support/DoorList.php:95
+#. translators: %s: the name of the person who gave the ticket away
+msgid "from %s"
+msgstr "från %s"

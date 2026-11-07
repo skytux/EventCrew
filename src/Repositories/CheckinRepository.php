@@ -19,6 +19,8 @@ final class CheckinRepository
     public const KIND_CREDIT = 'credit';
     public const KIND_GUEST = 'guest';
     public const KIND_BUYER = 'buyer';
+    /** A ticket someone gave away (TicketTransfer): ref_id is the transfer id. */
+    public const KIND_TRANSFER = 'transfer';
 
     /** The kinds a task's ticket is marked in as, for inAt(), in order. */
     public const TASK_TICKET_KINDS = [self::KIND_CREW];
@@ -39,7 +41,7 @@ final class CheckinRepository
      */
     public static function kinds(): array
     {
-        return [self::KIND_CREW, self::KIND_CREDIT, self::KIND_GUEST, self::KIND_BUYER];
+        return [self::KIND_CREW, self::KIND_CREDIT, self::KIND_GUEST, self::KIND_BUYER, self::KIND_TRANSFER];
     }
 
     /**

@@ -11841,3 +11841,549 @@ msgstr "Другие твои билеты на этот вечер по-пре�
 
 msgid "Every ticket the person has for the night, each with its QR code, for the door. On a line of its own; when the text has no such line, the tickets go at the end."
 msgstr "Все билеты человека на этот вечер, каждый со своим QR-кодом, для входа. На отдельной строке; если в тексте нет такой строки, билеты идут в конце."
+
+msgid "An empty line and the event's picture. Empty when the event has none."
+msgstr "Пустая строка и картинка события. Пусто, если её нет."
+
+#: src/Support/MessageTemplates.php:1309
+msgid "\"Thanks for the notice.\" and why it has no effect on the standing (an early cancellation, more than the notice hours before the task), or for a late cancellation the sentences saying it counts against the standing and that Sign up again undoes it."
+msgstr "«Спасибо, что предупредил(а).» и почему это не влияет на статус (ранняя отмена, раньше срока уведомления до задачи), а при поздней отмене — фразы о том, что это засчитывается против статуса и что «Записаться снова» это отменяет."
+
+#: src/Support/MessageTemplates.php:2191
+msgid "A newcomer is unknown to the organizers (Telegram)"
+msgstr "Новичок неизвестен организаторам (Telegram)"
+
+#: src/Support/MessageTemplates.php:2183
+msgid "A newcomer is unknown to the organizers (email)"
+msgstr "Новичок неизвестен организаторам (email)"
+
+#: src/Support/MessageTemplates.php:2207
+msgid "A newcomer request timed out (Telegram)"
+msgstr "Запрос новичка истёк (Telegram)"
+
+#: src/Support/MessageTemplates.php:2199
+msgid "A newcomer request timed out (email)"
+msgstr "Запрос новичка истёк (email)"
+
+#: src/Support/MessageTemplates.php:2652
+msgid "A newcomer request was answered (email)"
+msgstr "На запрос новичка ответили (email)"
+
+#: src/Support/MessageTemplates.php:2186
+msgid "About your sign-up"
+msgstr "О твоей записи"
+
+#: templates/admin/people.php:354
+msgid "Accept"
+msgstr "Принять"
+
+#: src/Admin/PeoplePage.php:148
+msgid "Accepted. They can take tasks now, and they are told."
+msgstr "Принято. Теперь человек может брать задачи, и ему сообщили."
+
+#: src/Support/WelcomeSender.php:556
+msgid "And every task earns you free entry."
+msgstr "И каждая задача даёт тебе бесплатный вход."
+
+#. translators: %s: the person's name
+#: src/Support/MessageTemplates.php:2657
+msgid "Answered: %s"
+msgstr "Ответ: %s"
+
+#: src/Support/CancelNote.php:77
+msgid "Changed your mind? Tap Sign up again while the place is still free: you are back on the task and the late cancellation is removed."
+msgstr "Передумал(а)? Нажми «Записаться снова», пока место свободно: ты снова на задаче, а поздняя отмена снимается."
+
+#. translators: %d: completed tasks
+#: src/Telegram/ProfileService.php:75
+msgid "Completed tasks: %d"
+msgstr "Выполнено задач: %d"
+
+#: src/Web/DemoController.php:85
+msgid "Demo event"
+msgstr "Демо-событие"
+
+#: src/Web/DemoController.php:173 templates/admin/diagnostics.php:164
+msgid "Demo sales desk"
+msgstr "Демо-касса"
+
+#: src/Web/DemoController.php:88 templates/admin/diagnostics.php:162
+msgid "Demo ticket"
+msgstr "Демо-билет"
+
+#: templates/admin/diagnostics.php:157
+msgid "Demo ticket and desk"
+msgstr "Демо-билет и касса"
+
+#: src/Support/WelcomeSender.php:555
+msgid "Every task you take keeps the door open, the room ready and the music going."
+msgstr "Каждая задача, которую ты берёшь, держит дверь открытой, зал готовым, а музыку играющей."
+
+#. translators: %d: free-entry credits
+#: src/Telegram/ProfileService.php:80 src/Telegram/TicketRedemptionService.php:165
+msgid "Free-entry credits: %d"
+msgstr "Баллы за бесплатный вход: %d"
+
+#: src/Support/CancelNote.php:38
+msgid "It has no effect on your standing."
+msgstr "Это не влияет на твой статус."
+
+#: src/Support/FollowupMail.php:1426
+msgid "Join on Telegram"
+msgstr "Присоединиться в Telegram"
+
+#: src/Support/FollowupMail.php:1425
+msgid "Join on the web"
+msgstr "Присоединиться на сайте"
+
+#: templates/admin/settings.php:1625
+msgid "Languages shown in multi-language texts and buttons"
+msgstr "Языки в многоязычных текстах и кнопках"
+
+#: src/Telegram/ProfileService.php:66
+msgid "My info"
+msgstr "Мои данные"
+
+#: templates/admin/people.php:320
+msgid "Newcomers an organizer turned down, and requests nobody answered in 48 hours. Accept gives the OK as the OK button does: they can take tasks, and they are told."
+msgstr "Новички, которым организатор отказал, и запросы без ответа за 48 часов. «Принять» даёт OK так же, как кнопка OK: они могут брать задачи, и им сообщают."
+
+#. translators: %s: when, like 2 Nov 14:05
+#: src/Support/NewcomerApproval.php:422
+msgid "No organizer answered in 48 hours, so the request timed out on %s."
+msgstr "Ни один организатор не ответил за 48 часов, поэтому запрос истёк %s."
+
+#: src/Support/NewcomerApproval.php:419
+msgid "No organizer answered in 48 hours, so the request timed out."
+msgstr "Ни один организатор не ответил за 48 часов, поэтому запрос истёк."
+
+#: src/Admin/PeoplePage.php:119
+msgid "No organizer answered in 48 hours. They were told."
+msgstr "Ни один организатор не ответил за 48 часов. Человеку сообщили."
+
+#: src/Support/NewcomerApproval.php:143
+msgid "No reason (not told)"
+msgstr "Без причины (не сообщается)"
+
+#: src/Admin/PeoplePage.php:121
+msgid "No reason. They were not told."
+msgstr "Без причины. Человеку не сообщили."
+
+#: src/Support/NewcomerApproval.php:441
+msgid "No, by %1$s, %2$s."
+msgstr "Нет, %1$s, %2$s."
+
+#: src/Admin/PeoplePage.php:117
+msgid "Nobody (timed out)"
+msgstr "Никто (истёк срок)"
+
+#: templates/admin/people.php:323
+msgid "Nobody was turned down."
+msgstr "Никому не отказали."
+
+#: src/Web/DemoController.php:185
+msgid "Not in yet"
+msgstr "Входа ещё нет"
+
+#: src/Support/NewcomerApproval.php:434
+msgid "OK, by %1$s, %2$s."
+msgstr "OK, %1$s, %2$s."
+
+#: templates/admin/settings.php:2019
+msgid "On by default. Someone who is not yet in the crew and not in the group gets no answer from the bot. If they open the bot from a link in an email or on the website, they get a button to the crew group. Members who are already set up are not affected. Turn this off if the bot cannot check who is in the group."
+msgstr "Включено по умолчанию. Тот, кто ещё не в команде и не в группе, не получает ответа от бота. Если он открывает бота по ссылке из письма или с сайта, он получает кнопку для перехода в группу команды. Участников, которые уже настроены, это не касается. Выключи, если бот не может проверить, кто состоит в группе."
+
+#: templates/admin/settings.php:2016
+msgid "Only people in the crew group can start the bot"
+msgstr "Запускать бота могут только люди из группы команды"
+
+#: templates/admin/diagnostics.php:159
+msgid "Open the ticket on one device and the desk on another, then tick the row: the ticket turns gold by itself. No login needed; the links work for 24 hours. Nothing in the demo touches real data."
+msgstr "Открой билет на одном устройстве, а кассу на другом, затем отметь строку: билет сам станет золотым. Вход не нужен; ссылки работают 24 часа. Демо не затрагивает реальные данные."
+
+#: src/Support/NewcomerApproval.php:730
+msgid "Open their Telegram profile"
+msgstr "Открыть профиль в Telegram"
+
+#: src/Support/PrivacyPolicy.php:564
+msgid "Other crew members can see your name and the tasks you are on. Crew on the same night see them in the bot’s /roster, and the task board in the crew Telegram group shows the first name of each person on a task for the next event. A crew member can also open the board for any coming day in a private chat with the bot. Your name also appears in the group when someone covers a task for you, or you cover one for someone else."
+msgstr "Другие участники команды видят твоё имя и задачи, на которые ты записан(а). Команда того же вечера видит их в /roster бота, а доска задач в Telegram-группе команды показывает имя каждого, кто записан на задачу на следующем событии. Участник команды может также открыть доску на любой предстоящий день в личном чате с ботом. Твоё имя также появляется в группе, когда кто-то берёт задачу вместо тебя или ты берёшь её вместо кого-то."
+
+#: src/Support/WelcomeSender.php:554
+msgid "Our nights happen because people like you lend a hand."
+msgstr "Наши вечера проходят благодаря таким людям, как ты, которые помогают."
+
+#: src/Telegram/TicketRedemptionService.php:168
+msgid "Pick an event:"
+msgstr "Выбери событие:"
+
+#: templates/admin/settings.php:2008
+msgid "Private chats"
+msgstr "Личные чаты"
+
+#: src/Support/MessageTemplates.php:2193
+msgid "Sent to a new person who uses the bot when an organizer turns down their request with the reason Unknown to us. With No reason the person is not told."
+msgstr "Отправляется новому человеку, который пользуется ботом, когда организатор отклоняет его запрос с причиной «Нам неизвестен». При «Без причины» человеку не сообщают."
+
+#: src/Support/MessageTemplates.php:2209
+msgid "Sent to a new person who uses the bot when no organizer answered their request in 48 hours. The request is then turned down."
+msgstr "Отправляется новому человеку, который пользуется ботом, когда ни один организатор не ответил на его запрос за 48 часов. Затем запрос отклоняется."
+
+#: src/Support/MessageTemplates.php:2185
+msgid "Sent to a new person without Telegram when an organizer turns down their request with the reason Unknown to us. The greeting is added above the text. With No reason the person is not told."
+msgstr "Отправляется новому человеку без Telegram, когда организатор отклоняет его запрос с причиной «Нам неизвестен». Над текстом добавляется приветствие. При «Без причины» человеку не сообщают."
+
+#: src/Support/MessageTemplates.php:2201
+msgid "Sent to a new person without Telegram when no organizer answered their request in 48 hours. The request is then turned down. The greeting is added above the text."
+msgstr "Отправляется новому человеку без Telegram, когда ни один организатор не ответил на его запрос за 48 часов. Затем запрос отклоняется. Над текстом добавляется приветствие."
+
+#: src/Support/MessageTemplates.php:2654
+msgid "Sent to the organizers who got the email about a new person, when another organizer answers the request or when it times out after 48 hours."
+msgstr "Отправляется организаторам, получившим письмо о новом человеке, когда другой организатор отвечает на запрос или когда запрос истекает через 48 часов."
+
+#: src/Support/CancelNote.php:84
+msgid "Sign up for it again while the place is free and the late cancellation is removed."
+msgstr "Запишись снова, пока место свободно, и поздняя отмена снимется."
+
+#: templates/admin/settings.php:1631
+msgid "Telegram, emails and web pages. The reader’s own language first, then the next ones in the site’s order. Default 2."
+msgstr "Telegram, письма и веб-страницы. Сначала язык читателя, затем следующие по порядку сайта. По умолчанию 2."
+
+#. translators: 1: languages shown, 2: number of site languages
+#: src/Support/HybridPolicy.php:377
+msgid "Texts and buttons in several languages show %1$d of the %2$d site languages: the reader’s own first, then the next ones. Change it in Settings > Email > Hybrid messages."
+msgstr "Тексты и кнопки на нескольких языках показывают %1$d из %2$d языков сайта: сначала язык читателя, затем следующие. Изменить можно в Настройки > Email > Гибридные сообщения."
+
+#: src/Admin/PeoplePage.php:145
+msgid "That person could not be accepted. Someone may have done it already."
+msgstr "Не удалось принять этого человека. Возможно, кто-то уже это сделал."
+
+#: src/Support/MessageTemplates.php:2669
+msgid "The answer: OK or No, who gave it and when, and whether the person was told."
+msgstr "Ответ: OK или «Нет», кто его дал и когда, и сообщили ли человеку."
+
+#: src/Support/MessageTemplates.php:1745
+msgid "The name of the event and its DJs, like Ecstatic Dance · Esimerkki. On a line of its own; the line goes when it is not known."
+msgstr "Название события и его диджеи, например Ecstatic Dance · Esimerkki. На отдельной строке; строка пропадает, если название неизвестно."
+
+#: src/Support/MessageTemplates.php:2187 src/Support/MessageTemplates.php:2195
+msgid "The organizers do not know you yet, so they could not say OK to your sign-up. Please come and talk to us at an event; an organizer can then say OK."
+msgstr "Организаторы тебя пока не знают, поэтому не смогли дать OK на твою запись. Пожалуйста, подойди и поговори с нами на событии; тогда организатор сможет дать OK."
+
+#. translators: 1: the person's name, 2: their email
+#: src/Support/MessageTemplates.php:2662
+msgid "The request of %1$s (%2$s) to join the crew is answered:"
+msgstr "На запрос %1$s (%2$s) о вступлении в команду ответили:"
+
+#: src/Support/NewcomerApproval.php:446
+msgid "They were not told."
+msgstr "Человеку не сообщили."
+
+#: src/Support/NewcomerApproval.php:424
+msgid "They were told to talk to an organizer at an event."
+msgstr "Человека попросили поговорить с организатором на событии."
+
+#: src/Support/NewcomerApproval.php:444
+msgid "They were told: unknown to the organizers."
+msgstr "Человеку сообщили: неизвестен организаторам."
+
+#: src/Web/DemoController.php:176
+msgid "This demo has ended."
+msgstr "Это демо завершено."
+
+#. translators: %d: the late-cancellation notice in hours
+#: src/Support/CancelNote.php:49
+msgid "This is an early cancellation: it is more than %d hour before the task, so it has no effect on your standing."
+msgid_plural "This is an early cancellation: it is more than %d hours before the task, so it has no effect on your standing."
+msgstr[0] "Это ранняя отмена: больше чем за %d час до задачи, поэтому она не влияет на твой статус."
+msgstr[1] "Это ранняя отмена: больше чем за %d часа до задачи, поэтому она не влияет на твой статус."
+msgstr[2] "Это ранняя отмена: больше чем за %d часов до задачи, поэтому она не влияет на твой статус."
+
+#. translators: %s: where to see your own numbers
+#: src/Support/WelcomeSender.php:559
+msgid "This message explains how it all works. %s"
+msgstr "Это сообщение объясняет, как всё устроено. %s"
+
+#: src/Web/DemoController.php:195
+msgid "Tick the row and the demo ticket turns gold by itself. Nothing here is in the real door list."
+msgstr "Отметь строку, и демо-билет сам станет золотым. Ничего здесь не попадает в настоящий список на входе."
+
+#: src/Telegram/PrivateChatGate.php:140
+msgid "To join the crew, open the crew group first:"
+msgstr "Чтобы присоединиться к команде, сначала открой группу команды:"
+
+#. translators: %s: the person's name
+#: src/Support/NewcomerApproval.php:153
+msgid "Turn down %s?"
+msgstr "Отклонить %s?"
+
+#: templates/admin/people.php:31
+msgid "Turned down"
+msgstr "Отклонён"
+
+#: templates/admin/people.php:332
+msgid "Turned down by"
+msgstr "Кем отклонён"
+
+#: src/Admin/PeoplePage.php:120
+msgid "Unknown to the organizers. They were told."
+msgstr "Неизвестен организаторам. Человеку сообщили."
+
+#: src/Support/NewcomerApproval.php:142
+msgid "Unknown to us (they are told)"
+msgstr "Нам неизвестен (сообщается)"
+
+#. translators: %s: the crew's name (the site name)
+#: src/Support/WelcomeSender.php:551
+msgid "Welcome to the %s crew!"
+msgstr "Добро пожаловать в команду %s!"
+
+#: src/Support/NewcomerApproval.php:155
+msgid "With “Unknown to us” they get a message asking them to talk to an organizer at an event. With “No reason” they are not told."
+msgstr "При «Нам неизвестен» человек получает сообщение с просьбой поговорить с организатором на событии. При «Без причины» ему не сообщают."
+
+#: src/Support/CancelNote.php:43
+msgid "You took this task only minutes ago, so cancelling it has no effect on your standing."
+msgstr "Ты взял(а) эту задачу всего несколько минут назад, поэтому отмена не влияет на твой статус."
+
+#: src/Support/MessageTemplates.php:2203 src/Support/MessageTemplates.php:2211
+msgid "Your request to join the crew timed out: no organizer answered it in 48 hours. This can mean that no organizer recognized you. To finish signing up, please talk to an organizer directly at an event."
+msgstr "Твой запрос на вступление в команду истёк: ни один организатор не ответил на него за 48 часов. Возможно, никто из организаторов тебя не узнал. Чтобы завершить запись, поговори с организатором лично на событии."
+
+#: src/Support/MessageTemplates.php:2202
+msgid "Your sign-up request timed out"
+msgstr "Срок твоего запроса на запись истёк"
+
+#: src/Web/SignupController.php:1253
+msgid "You’ve cancelled that task. This close to the event it counts as a late cancellation."
+msgstr "Ты отменил(а) эту задачу. Так близко к событию это считается поздней отменой."
+
+#: src/Telegram/BoardRenderer.php:350
+msgid "✋ sign up · ❌ cancel"
+msgstr "✋ записаться · ❌ отменить"
+
+#: src/Telegram/BoardRenderer.php:354
+msgid "➕ add someone"
+msgstr "➕ добавить человека"
+
+#: src/Telegram/PrivateChatGate.php:146
+msgid "👥 Open the crew group"
+msgstr "👥 Открыть группу команды"
+
+#: src/Support/TicketTransferService.php:518
+#. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "%1$s accepted your free-entry ticket for %2$s. Your own ticket no longer works."
+msgstr "%1$s принял(а) твой бесплатный билет на %2$s. Твой билет больше не действует."
+
+#: src/Support/TicketTransferService.php:495
+#. translators: 1: the giver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "%1$s gave you their free-entry ticket for %2$s."
+msgstr "%1$s отдал(а) тебе свой бесплатный билет на %2$s."
+
+#: src/Support/TicketMail.php:1115 src/Telegram/TransferPage.php:399
+#. translators: 1: the giver's name, 2: the night, e.g. "Club night 14.11.2026"
+#. translators: 1: the giver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "%1$s is giving you their free-entry ticket for %2$s."
+msgstr "%1$s отдаёт тебе свой бесплатный билет на %2$s."
+
+#: src/Support/TicketMail.php:1792
+msgid "%s gave you their free-entry ticket."
+msgstr "%s отдал(а) тебе свой бесплатный билет."
+
+#: src/Support/DoorList.php:92 src/Support/DoorList.php:111
+msgid "(name erased)"
+msgstr "(имя удалено)"
+
+#: src/Support/TicketMail.php:1122 src/Telegram/TransferPage.php:362
+msgid "A free-entry ticket for you"
+msgstr "Бесплатный билет для тебя"
+
+#: src/Support/TicketMail.php:1118
+msgid "Accept it and write your name, and we will email you the ticket. The offer ends when the doors open."
+msgstr "Прими его и напиши своё имя, и мы пришлём билет на почту. Предложение действует до открытия дверей."
+
+#: src/Support/TicketMail.php:1123 src/Telegram/TransferPage.php:411
+msgid "Accept the ticket"
+msgstr "Принять билет"
+
+#: src/Telegram/TransferPage.php:115
+msgid "Back to your ticket"
+msgstr "Назад к билету"
+
+#: src/Telegram/TransferBot.php:64
+msgid "Cancel offer"
+msgstr "Отменить предложение"
+
+#: src/Telegram/TransferPage.php:137
+msgid "Cancel the offer"
+msgstr "Отменить предложение"
+
+#: src/Support/TicketTransferService.php:461
+msgid "Done."
+msgstr "Готово."
+
+#: src/Telegram/TransferBot.php:281 src/Telegram/TransferPage.php:162
+#. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "Done. %1$s has your ticket for %2$s now. Your own ticket no longer works."
+msgstr "Готово. Теперь у %1$s твой билет на %2$s. Твой билет больше не действует."
+
+#: src/Telegram/TransferPage.php:195
+#. translators: %s: the receiver's name
+msgid "Done. %s has your ticket now. Your own ticket no longer works."
+msgstr "Готово. Теперь у %s твой билет. Твой билет больше не действует."
+
+#: src/Support/PrivacyExporter.php:266
+msgid "EventCrew given tickets"
+msgstr "EventCrew: переданные билеты"
+
+#: src/Support/TicketList.php:112 src/Telegram/TicketController.php:393
+msgid "Free entry · from %s"
+msgstr "Бесплатный вход · от %s"
+
+#: src/Telegram/TransferBot.php:237
+msgid "Give"
+msgstr "Отдать"
+
+#: src/Telegram/TicketController.php:784 src/Telegram/TransferBot.php:51
+msgid "Give away"
+msgstr "Отдать"
+
+#: src/Telegram/TransferPage.php:334
+msgid "Give the ticket"
+msgstr "Отдать билет"
+
+#: src/Telegram/TransferPage.php:111
+msgid "Give your ticket away"
+msgstr "Отдать свой билет"
+
+#: src/Telegram/TransferPage.php:294
+#. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "Give your ticket for %2$s to %1$s? It moves at once and your own ticket stops working."
+msgstr "Отдать твой билет на %2$s: %1$s? Он перейдёт сразу, а твой билет перестанет действовать."
+
+#: src/Support/DoorList.php:110 src/Support/TicketList.php:92 src/Telegram/TicketController.php:765
+#. translators: %s: the name of the person the ticket was given to
+msgid "Given to %s"
+msgstr "Передан: %s"
+
+#: src/Telegram/TransferBot.php:298
+msgid "Kept. The ticket stays with you."
+msgstr "Хорошо. Билет остаётся у тебя."
+
+#: src/Telegram/TransferPage.php:286
+msgid "No member found by that name. Write their name again, or an email address."
+msgstr "Участник с таким именем не найден. Напиши имя ещё раз или адрес почты."
+
+#: src/Telegram/TransferBot.php:309 src/Telegram/TransferPage.php:124
+msgid "Offer cancelled. Your ticket is yours again."
+msgstr "Предложение отменено. Билет снова твой."
+
+#: src/Telegram/TransferPage.php:305
+#. translators: 1: an email address, 2: the night, like "Sat 14 Nov · Dance Night"
+msgid "Offer your ticket for %2$s to %1$s? They must accept before the doors open. Until then your ticket works."
+msgstr "Предложить твой билет на %2$s адресу %1$s? Его нужно принять до открытия дверей. До тех пор твой билет действует."
+
+#: src/Telegram/TransferPage.php:325
+msgid "Pick the member who gets your ticket. It moves at once and your own ticket stops working."
+msgstr "Выбери участника, который получит твой билет. Он перейдёт сразу, а твой билет перестанет действовать."
+
+#: src/Support/TicketTransferService.php:467
+msgid "Please write your name."
+msgstr "Напиши своё имя."
+
+#: src/Telegram/TransferPage.php:251
+msgid "Send the offer"
+msgstr "Отправить предложение"
+
+#: src/Telegram/TransferBot.php:289 src/Telegram/TransferPage.php:202
+#. translators: %s: an email address
+msgid "Sent. When %s accepts, the ticket moves to them. Until then your own ticket works."
+msgstr "Отправлено. Когда %s примет билет, он перейдёт к ней. До тех пор твой билет действует."
+
+#: src/Support/TicketTransferService.php:496
+msgid "Someone"
+msgstr "Кто-то"
+
+#: src/Support/TicketMail.php:1790
+msgid "Someone gave you their free-entry ticket."
+msgstr "Кто-то отдал тебе свой бесплатный билет."
+
+#: src/Support/TicketTransferService.php:464
+msgid "That is not an email address. Write a name or an email address."
+msgstr "Это не адрес почты. Напиши имя или адрес почты."
+
+#: src/Support/TicketTransferService.php:463
+msgid "That is you. Pick someone else."
+msgstr "Это ты. Выбери кого-то другого."
+
+#: src/Support/TicketTransferService.php:466
+msgid "The doors are already open. Give the ticket to a member instead."
+msgstr "Двери уже открыты. Отдай билет участнику."
+
+#: src/Support/PrivacyEraser.php:120
+msgid "The name and email address were erased from the free-entry tickets given to this address. The tickets stay on the door list with no name."
+msgstr "Имя и адрес почты удалены из бесплатных билетов, переданных на этот адрес. Билеты остаются в списке на входе без имени."
+
+#: src/Support/TicketTransferService.php:369
+#. translators: %s: the night, like "Sat 14 Nov · Dance Night"
+msgid "The organizers cancelled the free-entry ticket you were given for %s."
+msgstr "Организаторы отменили бесплатный билет, который тебе передали на %s."
+
+#: src/Telegram/TransferPage.php:419
+#. translators: %s: an email address
+msgid "The ticket is yours. We emailed it to %s."
+msgstr "Билет твой. Мы отправили его на %s."
+
+#: src/Support/TicketTransferService.php:468
+msgid "This offer is no longer open."
+msgstr "Это предложение больше не действует."
+
+#: src/Support/TicketTransferService.php:469
+msgid "This ticket cannot be given away."
+msgstr "Этот билет нельзя отдать."
+
+#: src/Support/TicketTransferService.php:462
+msgid "This ticket is already offered to someone. Cancel that offer first."
+msgstr "Этот билет уже кому-то предложен. Сначала отмени это предложение."
+
+#: src/Support/DoorDesk.php:227 src/Support/DoorList.php:93
+msgid "Transferred"
+msgstr "Передан"
+
+#: src/Support/TicketMail.php:1864
+msgid "Transferred ticket"
+msgstr "Переданный билет"
+
+#: src/Admin/RosterPage.php:203 src/Web/CrewAdminRoster.php:600
+msgid "Transferred ticket cancelled."
+msgstr "Переданный билет отменён."
+
+#: src/Telegram/ProfileService.php:256 src/Telegram/TicketController.php:779 src/Telegram/TransferPage.php:134
+#. translators: %s: the email address the ticket was offered to
+msgid "Waiting for %s to accept"
+msgstr "Ждём, пока %s примет"
+
+#: src/Telegram/TransferBot.php:204
+msgid "Who gets your ticket?"
+msgstr "Кто получит твой билет?"
+
+#: src/Telegram/TransferPage.php:225
+msgid "Who gets your ticket? Write a member’s name, or the email address of someone who is not a member."
+msgstr "Кто получит твой билет? Напиши имя участника или адрес почты того, кто не участник."
+
+#: src/Support/TicketTransferService.php:465
+msgid "You already have 3 offers waiting. Cancel one first."
+msgstr "У тебя уже 3 ожидающих предложения. Сначала отмени одно."
+
+#: src/Support/TicketMail.php:1159
+msgid "You get this email because someone gave you a ticket to this event."
+msgstr "Ты получаешь это письмо, потому что кто-то отдал тебе билет на это мероприятие."
+
+#: src/Telegram/TransferPage.php:409
+msgid "Your name"
+msgstr "Твоё имя"
+
+#: src/Support/DoorDesk.php:774 src/Support/DoorList.php:95
+#. translators: %s: the name of the person who gave the ticket away
+msgid "from %s"
+msgstr "от %s"

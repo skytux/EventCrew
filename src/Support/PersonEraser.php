@@ -11,6 +11,7 @@ use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TakeoverRepository;
+use EventCrew\Repositories\TicketTransferRepository;
 
 /**
  * The one place a person stops being personal data, in the two ways that can
@@ -38,7 +39,8 @@ final class PersonEraser
         private readonly CreditGrantRepository $grants,
         private readonly AuthTokenRepository $tokens,
         private readonly NotificationsRepository $notifications,
-        private readonly TakeoverRepository $takeovers = new TakeoverRepository()
+        private readonly TakeoverRepository $takeovers = new TakeoverRepository(),
+        private readonly ?TicketTransferRepository $transfers = null
     ) {
     }
 
@@ -62,6 +64,7 @@ final class PersonEraser
         $this->takeovers->deleteForPerson($personId);
         $this->assignments->deleteForPerson($personId);
         $this->redemptions->deleteForPerson($personId);
+        $this->transfers?->deleteForReceiver($personId);
         $this->grants->deleteForPerson($personId);
         $this->people->delete($personId);
     }

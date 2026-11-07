@@ -6,6 +6,7 @@ namespace EventCrew\Support;
 
 use EventCrew\Models\Person;
 use EventCrew\Models\Task;
+use EventCrew\Models\TicketTransfer;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CheckinRepository;
@@ -15,6 +16,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
+use EventCrew\Repositories\TicketTransferRepository;
 use EventCrew\Telegram\TicketRedemptionService;
 
 /**
@@ -88,7 +90,8 @@ final class DoorDesk
         private readonly SalesDeskGate $gate,
         private readonly CreditGrantRepository $grants,
         private readonly ?ClaimNotifier $notifier = null,
-        private readonly ?TicketMail $ticketMail = null
+        private readonly ?TicketMail $ticketMail = null,
+        private readonly ?TicketTransferRepository $transfers = null
     ) {
     }
 
@@ -216,13 +219,16 @@ final class DoorDesk
         $guests = $this->guestRows($date);
         [$holvi, $door] = $this->ticketRows($date);
 
-        $sections = [
+        $transferred = $this->transferRows($date);
+        $sections = array_values(array_filter([
             $this->section('crew', __('Crew working', 'eventcrew'), $crew, $checkins),
             $this->section('credit', __('Free-entry credit', 'eventcrew'), $credit, $checkins),
+            // Given-away tickets, their own category; only on a night that has some.
+            [] === $transferred ? null : $this->section('transfer', __('Transferred', 'eventcrew'), $transferred, $checkins),
             $this->section('guest', __('Guests', 'eventcrew'), $guests, $checkins),
             $this->section('buyer', __('Holvi tickets', 'eventcrew'), $holvi, $checkins),
             $this->section('door', __('Door tickets', 'eventcrew'), $door, $checkins),
-        ];
+        ]));
 
         $in = 0;
         $expected = 0;
@@ -423,6 +429,13 @@ final class DoorDesk
             return $this->scanRedemption($date, $redemptionId);
         }
 
+        // A ticket someone gave away: the receiver's new code.
+        $transferId = TicketMail::transferIdFromCode($text);
+
+        if (null !== $transferId) {
+            return $this->scanTransfer($date, $transferId);
+        }
+
         $buyerId = TicketMail::deskBuyerIdFromCode($text);
 
         if (null !== $buyerId) {
@@ -442,6 +455,12 @@ final class DoorDesk
 
             if (null !== $redemptionId) {
                 return $this->scanRedemption($date, $redemptionId);
+            }
+
+            $transferId = SignedLink::verify('xfer_ticket', $token);
+
+            if (null !== $transferId) {
+                return $this->scanTransfer($date, $transferId);
             }
 
             $parts = TicketMail::guestTokenParts($token);
@@ -701,6 +720,66 @@ final class DoorDesk
         }
 
         return $this->scanPerson($date, $redemption->personId, $name, CheckinRepository::KIND_CREDIT);
+    }
+
+    /**
+     * A given-away ticket (TicketTransfer): its own row in the Transferred
+     * section. A transfer that is not issued (still an offer, cancelled by
+     * an organizer, lapsed) does not get anyone in.
+     *
+     * @return array{code: string, key: string, name: string, date: string, at: string}
+     */
+    private function scanTransfer(string $date, int $transferId): array
+    {
+        $transfer = null === $this->transfers ? null : $this->transfers->find($transferId);
+
+        if (null === $transfer || ! $transfer->isIssued()) {
+            return self::scanAnswer(self::SCAN_DISABLED, '', null === $transfer ? '' : $this->transferName($transfer));
+        }
+
+        $name = $this->transferName($transfer);
+
+        if ($transfer->eventDate !== $date) {
+            return self::scanAnswer(self::SCAN_OTHER_NIGHT, '', $name, $transfer->eventDate);
+        }
+
+        return $this->inScanWindow($date)
+            ?? self::scanAnswer(self::SCAN_OK, CheckinRepository::KIND_TRANSFER . ':' . $transfer->id, $name, $date);
+    }
+
+    /** The receiver's name on a given-away ticket. */
+    private function transferName(TicketTransfer $transfer): string
+    {
+        return null === $transfer->receiverPersonId ? $transfer->name : $this->nameOf($transfer->receiverPersonId);
+    }
+
+    /**
+     * Tonight's given-away tickets: the receiver's name, "from" the giver.
+     * Each admits one person.
+     *
+     * @return array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int, short: string}>
+     */
+    private function transferRows(string $date): array
+    {
+        $rows = [];
+
+        foreach (null === $this->transfers ? [] : $this->transfers->issuedForDate($date) as $transfer) {
+            $name = $this->transferName($transfer);
+            $rows[] = $this->row(
+                CheckinRepository::KIND_TRANSFER,
+                $transfer->id,
+                '' === $name ? __('No name', 'eventcrew') : $name,
+                sprintf(
+                    /* translators: %s: the name of the person who gave the ticket away */
+                    __('from %s', 'eventcrew'),
+                    $this->nameOf($transfer->giverPersonId)
+                ),
+                null,
+                ShortCode::forTransfer($transfer->id)
+            );
+        }
+
+        return $this->sorted($rows);
     }
 
     /**
@@ -1299,7 +1378,7 @@ final class DoorDesk
         ?int $max = null,
         string $short = ''
     ): array {
-        $alone = [CheckinRepository::KIND_CREW, CheckinRepository::KIND_CREDIT];
+        $alone = [CheckinRepository::KIND_CREW, CheckinRepository::KIND_CREDIT, CheckinRepository::KIND_TRANSFER];
         $max ??= in_array($kind, $alone, true) ? 0 : CheckinRepository::MAX_PLUS_ONES;
 
         return [
@@ -1377,6 +1456,7 @@ final class DoorDesk
         $rows = match ($kind) {
             CheckinRepository::KIND_GUEST => $this->guestRows($date),
             CheckinRepository::KIND_BUYER => array_merge(...$this->ticketRows($date)),
+            CheckinRepository::KIND_TRANSFER => $this->transferRows($date),
             default => array_merge(...$this->entrants($date)),
         };
 

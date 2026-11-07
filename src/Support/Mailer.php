@@ -112,9 +112,11 @@ final class Mailer
             $content = '' === $after
                 ? EmailBody::toHtml($before, $actions, $accent) . $tickets['html']
                 : EmailBody::toHtml($before, [], $accent) . $tickets['html'] . EmailBody::toHtml($after, $actions, $accent);
+            // An area with no text part (the event's picture) adds nothing to it.
+            $middle = '' === $tickets['text'] ? '' : "\n\n" . $tickets['text'];
             $text = '' === $after
-                ? EmailBody::toText($before, $actions) . "\n\n" . $tickets['text']
-                : EmailBody::toText($before) . "\n\n" . $tickets['text'] . "\n\n" . EmailBody::toText($after, $actions);
+                ? EmailBody::toText($before, $actions) . $middle
+                : EmailBody::toText($before) . $middle . "\n\n" . EmailBody::toText($after, $actions);
         }
 
         $text .= $this->signatureText() . "\n\n" . $this->footerText($manageUrl);

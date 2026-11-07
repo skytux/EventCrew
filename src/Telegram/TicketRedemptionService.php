@@ -17,6 +17,7 @@ use EventCrew\Support\ReputationSettings;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketMail;
+use EventCrew\Support\TicketTransferService;
 
 /**
  * Self-service free entry: a person spends one of their earned credits on an
@@ -55,7 +56,8 @@ final class TicketRedemptionService
         private readonly FreeEntryGate $freeEntry,
         private readonly TelegramClient $telegram,
         private readonly Mailer $mailer,
-        private readonly ?TicketMail $ticketMail = null
+        private readonly ?TicketMail $ticketMail = null,
+        private readonly ?TicketTransferService $transfers = null
     ) {
     }
 
@@ -480,7 +482,11 @@ final class TicketRedemptionService
                 $person->telegramChatId,
                 // The Messages page template (MessageTemplates).
                 MessageAiText::body('free_ticket_dm', $context, $eventPostId),
-                ['inline_keyboard' => [[['text' => __('🎟 Show your ticket', 'eventcrew'), 'url' => $url]]]]
+                ['inline_keyboard' => array_merge(
+                    [[['text' => __('🎟 Show your ticket', 'eventcrew'), 'url' => $url]]],
+                    // Giving the ticket away (TransferBot), when that is on.
+                    null === $this->transfers ? [] : [TransferBot::giveRow($redemptionId)]
+                )]
             );
         }
 
@@ -513,11 +519,26 @@ final class TicketRedemptionService
      * Cancels a redemption (the credit goes back to the person) and, when its
      * ticket was emailed, emails the person that the ticket is cancelled. The
      * one place an organizer or the door desk undoes a spent credit.
+     *
+     * A ticket that was given away is the receiver's now: cancelling it
+     * cancels the receiver's ticket (TicketTransferService::cancelIssued())
+     * and the giver's credit stays spent. An offer waiting on the ticket
+     * ends with it.
      */
     public function cancelRedemption(int $redemptionId): void
     {
-        $redemption = null === $this->ticketMail ? null : $this->redemptions->find($redemptionId);
+        $redemption = null === $this->ticketMail && null === $this->transfers
+            ? null
+            : $this->redemptions->find($redemptionId);
+
+        if (null !== $this->transfers && null !== $redemption && $redemption->isTransferred()) {
+            $this->transfers->cancelIssued((int) $redemption->transferredTo);
+
+            return;
+        }
+
         $this->redemptions->cancel($redemptionId);
+        $this->transfers?->dropOffer($redemptionId);
 
         if (null === $redemption || $redemption->isCancelled() || null === $redemption->ticketMailedAt) {
             return;
