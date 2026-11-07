@@ -1423,7 +1423,7 @@ final class BoardService
                 $callbackId,
                 '',
                 false,
-                'https://t.me/' . $username . '?start=' . self::CANCEL_START_PREFIX . $taskId
+                'https://t.me/' . $username . '?start=' . StartCode::append(self::CANCEL_START_PREFIX . $taskId)
             );
 
             return;

@@ -78,7 +78,7 @@
  * @var array<int, array{id: string, name: string, columns: array<string, string|array<int, string>>, decoder_js: string}> $ticket_formats The ticket file formats.
  * @var array{protocol: string, server: string, port: int, security: string, username: string, password: string, folder: string, imported_folder: string, rejected_folder: string, authserv_id: string} $mail_fetch How the site reads the import mailbox itself.
  * @var array{time: int, ok: bool, message: string} $mail_fetch_status The last mailbox check.
- * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, board_cards: bool, profile: array{about: array{source: string, texts: array<string, string>, manual: array<string, bool>}, description: array{source: string, texts: array<string, string>, manual: array<string, bool>}}, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
+ * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, group_gate: bool, board_cards: bool, profile: array{about: array{source: string, texts: array<string, string>, manual: array<string, bool>}, description: array{source: string, texts: array<string, string>, manual: array<string, bool>}}, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  * @var array{enabled: bool, forward: bool, url: string, model: string, key_status: string, private_limit: int, group_limit: int, pages: array<int, int>, page_choices: array<int, string>, default_pages: array<int, string>, test_url: string, remove_key_url: string} $assistant The language-model helper for plain bot messages.
  * @var array{controller: string, address: string, contact: string, dpo_name: string, dpo_contact: string, retention_years: int, retention_min: int, retention_max: int, purge: bool, page_id: int, configured: bool, notice_url: string, buyer_page_id: int, buyer_notice_url: string, create_buyer_url: string, core_policy_url: string, create_nonce_action: string} $privacy Who is answerable for the crew's data, and how long it is kept.
  */
@@ -1943,6 +1943,22 @@ if (! defined('ABSPATH')) {
                     </label>
                     <p class="description">
                         <?php esc_html_e('On by default. While locked, adding the bot to another group — or running /board there — will not move the board, so no one can hijack it into a different chat. To move the board on purpose (for example, going live): untick this, save, add the bot to the new group (or run /board in it), then tick it again and save.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Private chats', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="telegram_group_gate"
+                            value="1"
+                            <?php checked($telegram['group_gate']); ?>>
+                        <?php esc_html_e('Only people in the crew group can start the bot', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('On by default. Someone who is not yet in the crew and not in the group gets no answer from the bot. If they open the bot from a link in an email or on the website, they get a button to the crew group. Members who are already set up are not affected. Turn this off if the bot cannot check who is in the group.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>

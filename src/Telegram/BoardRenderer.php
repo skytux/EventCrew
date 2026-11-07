@@ -549,7 +549,7 @@ final class BoardRenderer
 
         return [
             'text' => $text,
-            'url' => 'https://t.me/' . $username . '?start=' . rawurlencode($payload),
+            'url' => 'https://t.me/' . $username . '?start=' . rawurlencode(StartCode::append($payload)),
         ];
     }
 }

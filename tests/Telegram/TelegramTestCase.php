@@ -193,7 +193,8 @@ abstract class TelegramTestCase extends TestCase
         ?\EventCrew\Telegram\WebLoginBot $webLogin = null,
         ?\EventCrew\Telegram\BotLog $botLog = null,
         bool $blockCheck = false,
-        ?\EventCrew\Telegram\BuyerListReset $buyerListReset = null
+        ?\EventCrew\Telegram\BuyerListReset $buyerListReset = null,
+        ?\EventCrew\Telegram\PrivateChatGate $gate = null
     ): UpdateRouter {
         $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
 
@@ -262,7 +263,9 @@ abstract class TelegramTestCase extends TestCase
             null,
             $blockCheck ? new PersonRepository() : null,
             $blockCheck ? $this->client() : null,
-            $buyerListReset
+            $buyerListReset,
+            null,
+            $gate
         );
     }
 

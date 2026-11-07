@@ -11733,3 +11733,23 @@ msgstr "Dina biljetter och fribiljett"
 #: src/Telegram/CommandMenu.php
 msgid "Notifications, language, web sign-in"
 msgstr "Aviseringar, språk, webbinloggning"
+
+#: src/Telegram/PrivateChatGate.php
+msgid "To join the crew, open the crew group first:"
+msgstr "För att gå med i crewet, öppna först crew-gruppen:"
+
+#: src/Telegram/PrivateChatGate.php
+msgid "👥 Open the crew group"
+msgstr "👥 Öppna crew-gruppen"
+
+#: templates/admin/settings.php
+msgid "Private chats"
+msgstr "Privata chattar"
+
+#: templates/admin/settings.php
+msgid "Only people in the crew group can start the bot"
+msgstr "Bara personer i crew-gruppen kan starta boten"
+
+#: templates/admin/settings.php
+msgid "On by default. Someone who is not yet in the crew and not in the group gets no answer from the bot. If they open the bot from a link in an email or on the website, they get a button to the crew group. Members who are already set up are not affected. Turn this off if the bot cannot check who is in the group."
+msgstr "På som standard. Den som ännu inte är med i crewet och inte är med i gruppen får inget svar från boten. Om hen öppnar boten från en länk i ett mejl eller på webbplatsen får hen en knapp till crew-gruppen. Medlemmar som redan är registrerade påverkas inte. Stäng av detta om boten inte kan kontrollera vem som är med i gruppen."

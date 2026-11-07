@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Telegram\MenuButtons;
+use EventCrew\Telegram\StartCode;
 
 /**
  * Draws the actions a message kind declares (MessageTemplates::actions(),
@@ -156,7 +157,8 @@ final class MessageActions
     /**
      * The deep link that opens the bot's private chat with $payload, or ''
      * when the bot is not set up or $payload is not one Telegram takes. The
-     * payload is never a token or anything personal.
+     * payload is never a token or anything personal. While the private chat
+     * gate is on, the week's code goes on its end (StartCode).
      */
     public static function payloadUrl(string $payload): string
     {
@@ -166,7 +168,7 @@ final class MessageActions
             return '';
         }
 
-        return 'https://t.me/' . $username . '?start=' . $payload;
+        return 'https://t.me/' . $username . '?start=' . StartCode::append($payload);
     }
 
     /** True for a start payload Telegram takes: 1 to 64 of A-Z, a-z, 0-9, _ and -. */

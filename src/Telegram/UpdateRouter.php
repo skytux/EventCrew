@@ -64,7 +64,8 @@ final class UpdateRouter
         private readonly ?PersonRepository $people = null,
         private readonly ?TelegramClient $telegram = null,
         private readonly ?BuyerListReset $buyerListReset = null,
-        private readonly ?NewcomerApproval $newcomers = null
+        private readonly ?NewcomerApproval $newcomers = null,
+        private readonly ?PrivateChatGate $gate = null
     ) {
     }
 
@@ -129,6 +130,12 @@ final class UpdateRouter
         GroupChat::learn($update);
 
         if ($this->refusedAsBlocked($update)) {
+            return;
+        }
+
+        // A private chat with someone who is neither linked nor in the crew
+        // group goes no further (PrivateChatGate).
+        if (null !== $this->gate && ! $this->gate->admits($update)) {
             return;
         }
 
@@ -241,7 +248,9 @@ final class UpdateRouter
             // payload: "onboard" (or none) is the sign-up flow, "me" is the
             // returning member asking for their summary in the DM.
             // "login-<code>" is the crew app's Telegram sign-in button.
-            $payload = $this->commandPayload($text, 'start');
+            // The weekly code on the end of a deep link (StartCode) only
+            // mattered to the gate.
+            [$payload] = StartCode::split($this->commandPayload($text, 'start'));
 
             if ('me' === $payload) {
                 $this->profile->onMe($fromId, $chatId, $isPrivate);

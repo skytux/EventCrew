@@ -125,6 +125,7 @@ use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\GiftService;
 use EventCrew\Telegram\NotificationSettingsService;
 use EventCrew\Telegram\PermissionService;
+use EventCrew\Telegram\PrivateChatGate;
 use EventCrew\Telegram\RoleTaskBot;
 use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\ReplacementService;
@@ -1380,7 +1381,19 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(TelegramClient::class),
                 $container->get(BuyerListReset::class),
-                $container->get(NewcomerApproval::class)
+                $container->get(NewcomerApproval::class),
+                $container->get(PrivateChatGate::class)
+            )
+        );
+
+        $this->container->singleton(
+            PrivateChatGate::class,
+            fn (Container $container) => new PrivateChatGate(
+                $container->get(TelegramClient::class),
+                $container->get(PersonRepository::class),
+                $container->get(Logger::class),
+                $container->get(BoardService::class),
+                $container->get(TelegramLogin::class)
             )
         );
 

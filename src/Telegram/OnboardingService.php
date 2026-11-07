@@ -159,7 +159,7 @@ final class OnboardingService
             __('Let’s set you up in a private chat — tap below to open the bot.', 'eventcrew'),
             ['inline_keyboard' => [[[
                 'text' => __('Set me up →', 'eventcrew'),
-                'url' => 'https://t.me/' . $username . '?start=onboard',
+                'url' => 'https://t.me/' . $username . '?start=' . StartCode::append('onboard'),
             ]]]]
         );
     }

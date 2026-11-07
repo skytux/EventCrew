@@ -53,6 +53,7 @@ use EventCrew\Support\WelcomeSender;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\CommandMenu;
 use EventCrew\Telegram\GroupChat;
+use EventCrew\Telegram\PrivateChatGate;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\TicketController;
 use EventCrew\Telegram\UpdateRouter;
@@ -380,6 +381,7 @@ final class SettingsPage
             'group_link' => (string) get_option(BoardService::GROUP_LINK_OPTION, ''),
             'group_link_auto' => (string) get_option(BoardService::GROUP_LINK_AUTO_OPTION, ''),
             'group_lock' => (bool) get_option(BoardService::LOCK_OPTION, true),
+            'group_gate' => PrivateChatGate::isOn(),
             'board_cards' => BoardService::cardsOn(),
             'profile' => [
                 'about' => BotProfileSettings::value('about'),
@@ -608,6 +610,10 @@ final class SettingsPage
         // Checkbox: absent means unticked (unlocked), so the board can be moved
         // to another group on the next add / /board. Default is on.
         update_option(BoardService::LOCK_OPTION, isset($_POST['telegram_group_lock']) ? '1' : '0');
+
+        // Checkbox, default on: only people in the crew group (or already
+        // linked) can start the bot in a private chat (PrivateChatGate).
+        update_option(PrivateChatGate::ENABLED_OPTION, isset($_POST['telegram_group_gate']) ? '1' : '0');
 
         $noticeHours = isset($_POST['notice_hours']) ? max(0, (int) $_POST['notice_hours']) : 48;
         update_option(SignupService::NOTICE_HOURS_OPTION, $noticeHours);

@@ -8618,3 +8618,23 @@ msgstr "Lippusi ja vapaalippu"
 #: src/Telegram/CommandMenu.php
 msgid "Notifications, language, web sign-in"
 msgstr "Ilmoitukset, kieli, verkkokirjautuminen"
+
+#: src/Telegram/PrivateChatGate.php
+msgid "To join the crew, open the crew group first:"
+msgstr "Liittyäksesi crew'hun avaa ensin crew-ryhmä:"
+
+#: src/Telegram/PrivateChatGate.php
+msgid "👥 Open the crew group"
+msgstr "👥 Avaa crew-ryhmä"
+
+#: templates/admin/settings.php
+msgid "Private chats"
+msgstr "Yksityiskeskustelut"
+
+#: templates/admin/settings.php
+msgid "Only people in the crew group can start the bot"
+msgstr "Vain crew-ryhmän jäsenet voivat aloittaa botin"
+
+#: templates/admin/settings.php
+msgid "On by default. Someone who is not yet in the crew and not in the group gets no answer from the bot. If they open the bot from a link in an email or on the website, they get a button to the crew group. Members who are already set up are not affected. Turn this off if the bot cannot check who is in the group."
+msgstr "Oletuksena päällä. Botti ei vastaa lainkaan henkilölle, joka ei ole vielä crew'ssa eikä ryhmässä. Jos hän avaa botin sähköpostin tai verkkosivun linkistä, hän saa painikkeen crew-ryhmään. Tämä ei koske jo rekisteröityneitä jäseniä. Kytke tämä pois, jos botti ei pysty tarkistamaan, kuka on ryhmässä."

@@ -6572,7 +6572,7 @@ msgstr "Убрать из подсчёта одного человека без 
 
 #: src/Support/MessageTemplates.php:192 src/Telegram/MenuButtons.php:133
 msgid "Take over a task"
-msgstr "Передать задачу"
+msgstr "Взять задачу"
 
 #: src/Support/MessageTemplates.php:2690
 msgid "Takeover could not be done (Telegram)"

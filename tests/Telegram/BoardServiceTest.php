@@ -19,6 +19,7 @@ use EventCrew\Support\SignupService;
 use EventCrew\Tests\Support\FakeEventNames;
 use EventCrew\Telegram\BoardRenderer;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\StartCode;
 use EventCrew\Telegram\TelegramClient;
 
 final class BoardServiceTest extends TelegramTestCase
@@ -646,7 +647,7 @@ final class BoardServiceTest extends TelegramTestCase
         // and does not claim a message is waiting there.
         self::assertSame(['sendMessage', 'answerCallbackQuery'], $this->calledMethods());
         $answer = $this->lastCallTo('answerCallbackQuery');
-        self::assertSame('https://t.me/crew_bot?start=cancel-5', $answer['url']);
+        self::assertSame('https://t.me/crew_bot?start=cancel-5_' . StartCode::current(), $answer['url']);
         self::assertStringNotContainsString('private chat', (string) $answer['text']);
         self::assertSame([], $this->wpdb->updates);
     }
@@ -1102,7 +1103,7 @@ final class BoardServiceTest extends TelegramTestCase
 
         self::assertSame(['sendMessage', 'answerCallbackQuery'], $this->calledMethods());
         $answer = $this->lastCallTo('answerCallbackQuery');
-        self::assertSame('https://t.me/crew_bot?start=board-20260808', $answer['url']);
+        self::assertSame('https://t.me/crew_bot?start=board-20260808_' . StartCode::current(), $answer['url']);
         self::assertStringNotContainsString('private chat', (string) ($answer['text'] ?? ''));
     }
 
