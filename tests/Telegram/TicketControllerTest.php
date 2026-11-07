@@ -748,7 +748,8 @@ final class TicketControllerTest extends TestCase
 
     /**
      * The gold band glows and loops without snapping: the gold drifts by one
-     * whole 200% tile, the glow alternates, and less motion stops it all.
+     * whole 200% tile, the glows alternate, the rim's light turns a full
+     * circle, and less motion stops it all, the card's rim and glow too.
      */
     public function testTheGoldBandLoopsSeamlesslyAndStopsForLessMotion(): void
     {
@@ -757,28 +758,37 @@ final class TicketControllerTest extends TestCase
 
         $html = $this->controller()->renderPage($ticket);
 
-        self::assertStringContainsString('background-size:200% 100%', $html);
+        self::assertStringContainsString('background-size:100% 100%,200% 100%', $html);
         self::assertStringContainsString(
-            '@keyframes t-gold{from{background-position:0 0}to{background-position:200% 0}}',
+            '@keyframes t-gold{from{background-position:0 0,0 0}to{background-position:0 0,200% 0}}',
             $html
         );
         self::assertStringContainsString('@keyframes t-glow{', $html);
         self::assertStringContainsString('t-glow 3s ease-in-out infinite alternate', $html);
+        self::assertStringContainsString('t-halo 3.5s ease-in-out infinite alternate', $html);
+        self::assertStringContainsString('@keyframes t-rim{from{--t-rim:0deg}to{--t-rim:360deg}}', $html);
         self::assertStringContainsString('@keyframes t-sheen{', $html);
         self::assertStringContainsString('@keyframes t-twinkle{0%,100%{', $html);
-        self::assertMatchesRegularExpression(
-            '/@media \\(prefers-reduced-motion:reduce\\)\\{[^}]*\\.t-band\\.is-in[^}]*\\{animation:none\\}'
-            . '\\.t-band\\.is-in::before,\\.t-band\\.is-new::after\\{display:none\\}/',
-            $html
-        );
-        // The static glow stays on the band itself, outside any animation.
-        self::assertStringContainsString('inset 0 0 .9em rgba(255,250,220,.55);animation:t-gold', $html);
+        self::assertSame(1, preg_match('/@media \(prefers-reduced-motion:reduce\)\{(.*?\})\}/', $html, $m));
+        [$off, $hidden] = explode('{animation:none}', $m[1], 2);
+        foreach (
+            [
+                '.t-band.is-in', '.t-band.is-new', '.t-stars i', '.t:has(.t-band.is-in)::before',
+                '.t:has(.t-band.is-in)::after', '.t:has(.t-band.is-new)::before', '.t:has(.t-band.is-new)::after',
+            ] as $selector
+        ) {
+            self::assertContains($selector, explode(',', $off), $selector . ' still moves');
+        }
+        self::assertStringStartsWith('.t-band.is-in::before,.t-band.is-new::after,.t-fx{display:none}', $hidden);
+        // The static gold and its glows stay, outside any animation.
+        self::assertStringContainsString('inset 0 0 1em rgba(255,250,220,.5);animation:t-gold', $html);
+        self::assertStringContainsString('box-shadow:inset 0 0 1.2em rgba(235,175,30,.35);background:', $html);
     }
 
     /**
-     * Nothing of the gold band reaches outside it (Owner 2026-11-07): every
-     * glow is inset, nothing grows above its own size, and the band clips
-     * what moves inside it.
+     * Nothing of the gold moment reaches outside the card (Owner 2026-11-07):
+     * every glow is inset, nothing full-width grows above its own size, and
+     * the card, which clips, holds the rim, glow, sweep and sparkles.
      */
     public function testTheGoldBandStaysInsideItsFrame(): void
     {
@@ -787,24 +797,76 @@ final class TicketControllerTest extends TestCase
 
         $html = $this->controller()->renderPage($ticket);
 
+        self::assertStringContainsString('.t{position:relative;isolation:isolate;', $html);
+        self::assertMatchesRegularExpression('/\.t\{[^}]*border-radius:16px;overflow:hidden;/', $html);
         self::assertStringContainsString('.t-band.is-in{position:relative;overflow:hidden;', $html);
-        // The gold band's rules and keyframes, up to the QR code's.
-        self::assertSame(1, preg_match('/\\.t-band\\.is-in\\{.*(?=\\.t-qr-wrap\\{)/s', $html, $m));
+        // The rim, the glow and the sparkles lie on the card, inside its edge.
+        self::assertStringContainsString('.t:has(.t-band.is-in)::before{content:"";position:absolute;inset:0;', $html);
+        self::assertStringContainsString('.t:has(.t-band.is-in)::after{content:"";position:absolute;inset:0;', $html);
+        self::assertStringContainsString('.t-fx{position:absolute;inset:0;', $html);
+        // The gold rules and keyframes, up to the QR code's.
+        self::assertSame(1, preg_match('/\.t-band\.is-in\{.*(?=\.t-qr-wrap\{)/s', $html, $m));
         $css = $m[0];
         preg_match_all('/box-shadow:([^;}]*)/', $css, $shadows);
-        self::assertNotEmpty($shadows[1]);
+        self::assertGreaterThan(5, count($shadows[1]));
         foreach ($shadows[1] as $shadow) {
-            foreach (preg_split('/,(?![^(]*\\))/', $shadow) ?: [] as $layer) {
-                self::assertStringStartsWith('inset', trim($layer), 'outer glow on the band: ' . $layer);
+            foreach (preg_split('/,(?![^(]*\))/', $shadow) ?: [] as $layer) {
+                self::assertStringStartsWith('inset', trim($layer), 'outer glow: ' . $layer);
             }
         }
-        preg_match_all('/scale\\(([\\d.]+)\\)/', $css, $scales);
+        preg_match_all('/scale[XY]?\(([\d.]+)\)/', $css, $scales);
         self::assertNotEmpty($scales[1]);
         foreach ($scales[1] as $scale) {
             self::assertLessThanOrEqual(1.0, (float) $scale);
         }
         self::assertStringNotContainsString('t-pop', $css);
-        self::assertStringNotContainsString('cubic-bezier', $css);
+    }
+
+    /**
+     * Turning gold live is a moment (Owner 2026-11-07: it must feel magical):
+     * the band opens, the card flares and a golden light sweeps across it,
+     * the rim's light races round, and sparkles fly from the band across
+     * the card; the out tick clears them.
+     */
+    public function testTurningGoldLiveSweepsTheCardAndThrowsSparkles(): void
+    {
+        $html = $this->controller()->renderPage($this->ticketForEventStartingAt('19:00'));
+
+        self::assertStringContainsString('t-open .7s', $html);
+        self::assertStringContainsString(
+            '.t:has(.t-band.is-new)::after{animation:t-flare 2.2s ease-out both,t-sweep 1.8s',
+            $html
+        );
+        self::assertStringContainsString('@keyframes t-sweep{from{background-position:130% 0}to{background-position:-30% 0}}', $html);
+        self::assertStringContainsString('.t:has(.t-band.is-new)::before{animation:t-rim 1.5s linear 2 both,', $html);
+        self::assertStringContainsString('b.innerHTML=c.inHtml;ding();burst();', $html);
+        self::assertStringContainsString('f.className="t-fx";f.setAttribute("aria-hidden","true");', $html);
+        self::assertStringContainsString('for(var i=0;i<48;i++)', $html);
+        // The sparkles' own scale (--s) stays at most 1.
+        self::assertStringContainsString('--s:"+(.5+Math.random()*.5).toFixed(2)', $html);
+        self::assertStringContainsString('function out(){isIn=false;var x=document.querySelector(".t-fx");', $html);
+        self::assertStringContainsString('animation:t-fly var(--t,2.6s) linear var(--d,0s) both', $html);
+    }
+
+    /**
+     * The first touch unlocks the sound even on a page opened already in:
+     * the demo desk can tick it out and in again, and the band then turns
+     * gold live and must ring (it was silent: the unlock skipped an "in" page).
+     */
+    public function testTheFirstTouchUnlocksTheSoundOnAPageAlreadyIn(): void
+    {
+        $ticket = $this->ticketForEventStartingAt('19:00');
+        $ticket['demo'] = true;
+        $ticket['used'] = '2026-07-20 18:50:00';
+
+        $html = $this->controller()->renderPage($ticket);
+
+        self::assertStringContainsString('<p class="t-band is-in" id="ec-band"', $html);
+        self::assertStringContainsString(
+            'var unlock=function(){document.removeEventListener("pointerdown",unlock,true);snd.muted=true;',
+            $html
+        );
+        self::assertStringNotContainsString('if(isIn){return;}', $html);
     }
 
     /** With no doors time the ticket never expires on the page. */

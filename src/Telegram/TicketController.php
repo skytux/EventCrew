@@ -602,7 +602,7 @@ final class TicketController
 
     private function inBandInner(string $at): string
     {
-        return '<span class="t-stars" aria-hidden="true">' . str_repeat('<i>★</i>', 8) . '</span>'
+        return '<span class="t-stars" aria-hidden="true">' . str_repeat('<i>★</i><i>✦</i>', 5) . '</span>'
             . '<span class="t-in-text">' . esc_html__('You’re in, welcome!', 'eventcrew') . '</span>'
             . '<span class="t-at">' . esc_html(sprintf(
                 /* translators: %s: the time the door checked the ticket in, like 21:05 */
@@ -644,7 +644,7 @@ final class TicketController
         $json = (string) wp_json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
 
         // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained script; wrapping adds stray whitespace.
-        return '<script>(function(){var c=' . $json . ';var b=document.getElementById("ec-band");if(!b){return;}var done=false,busy=false,timer=null,fails=0,isIn=-1!==b.className.indexOf("is-in");var snd=null;if(c.sound&&window.Audio){snd=new Audio(c.sound);snd.preload="auto";snd.volume=0.3;var unlock=function(){document.removeEventListener("pointerdown",unlock,true);if(isIn){return;}snd.muted=true;var p=snd.play();if(p&&p.then){p.then(function(){snd.pause();snd.currentTime=0;snd.muted=false;},function(){snd.muted=false;});}else{snd.pause();snd.muted=false;}};document.addEventListener("pointerdown",unlock,true);}function ding(){if(!snd){return;}try{snd.muted=false;snd.currentTime=0;var p=snd.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}var closeAt=null===c.closesIn?null:Date.now()+c.closesIn*1000;function expire(){if(done||isIn||null===closeAt||Date.now()<closeAt||"t-band is-expired"===b.className){return;}b.className="t-band is-expired";b.textContent=c.expired;}function welcome(at){isIn=true;if(!c.again){done=true;if(timer){clearTimeout(timer);}}b.className="t-band is-in is-new";b.innerHTML=c.inHtml;ding();var t=b.querySelector(".t-at");if(t){t.textContent=t.textContent.replace("%s",at);}}function out(){isIn=false;b.className="t-band is-valid";b.textContent=c.valid;expire();}function later(ms){if(timer){clearTimeout(timer);}timer=setTimeout(ask,ms);}function ask(){timer=null;if(done||busy||!c.poll||document.hidden){return;}busy=true;fetch(c.poll+(-1===c.poll.indexOf("?")?"?":"&")+(c.again?"in="+(isIn?1:0)+"&":"")+"_="+Date.now(),{cache:"no-store",credentials:"same-origin"}).then(function(r){if(404===r.status){c.poll="";}if(!r.ok){throw new Error(String(r.status));}return r.json();}).then(function(d){busy=false;fails=0;if(d&&d.in){if(!isIn){welcome(d.at||"");}if(!c.again){return;}}else if(d&&isIn&&c.again){out();}if(!d||null===d.next){c.poll="";return;}later(1000*d.next);},function(){busy=false;fails++;later(Math.min(60000,2000*fails));});}document.addEventListener("visibilitychange",function(){if(!document.hidden){expire();if(!busy){later(0);}}});setInterval(expire,1000);expire();ask();})();</script>';
+        return '<script>(function(){var c=' . $json . ';var b=document.getElementById("ec-band");if(!b){return;}var done=false,busy=false,timer=null,fails=0,isIn=-1!==b.className.indexOf("is-in");var snd=null;if(c.sound&&window.Audio){snd=new Audio(c.sound);snd.preload="auto";snd.volume=0.3;var unlock=function(){document.removeEventListener("pointerdown",unlock,true);snd.muted=true;var p=snd.play();if(p&&p.then){p.then(function(){snd.pause();snd.currentTime=0;snd.muted=false;},function(){snd.muted=false;});}else{snd.pause();snd.muted=false;}};document.addEventListener("pointerdown",unlock,true);}function ding(){if(!snd){return;}try{snd.muted=false;snd.currentTime=0;var p=snd.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}var closeAt=null===c.closesIn?null:Date.now()+c.closesIn*1000;function expire(){if(done||isIn||null===closeAt||Date.now()<closeAt||"t-band is-expired"===b.className){return;}b.className="t-band is-expired";b.textContent=c.expired;}function burst(){var k=b.closest?b.closest(".t"):null;if(!k){return;}var o=k.querySelector(".t-fx");if(o){o.parentNode.removeChild(o);}var f=document.createElement("span"),w=k.clientWidth,h=k.clientHeight,y=b.offsetTop+b.offsetHeight/2,g="✦★•✦★✦";f.className="t-fx";f.setAttribute("aria-hidden","true");for(var i=0;i<48;i++){var e=document.createElement("i"),a=Math.random()*6.2832,r=.3+Math.random()*.7;e.textContent=g.charAt(i%6);e.style.cssText="left:"+(6+Math.random()*88).toFixed(1)+"%;top:"+Math.round(y)+"px;font-size:"+(.7+Math.random()*1.1).toFixed(2)+"em;--dx:"+Math.round(Math.cos(a)*r*w*.5)+"px;--dy:"+Math.round(Math.sin(a)*r*h*.45)+"px;--r:"+Math.round(Math.random()*360-180)+"deg;--s:"+(.5+Math.random()*.5).toFixed(2)+";--d:"+(Math.random()*.6).toFixed(2)+"s;--t:"+(2.2+Math.random()*1.8).toFixed(2)+"s";f.appendChild(e);}k.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},5500);}function welcome(at){isIn=true;if(!c.again){done=true;if(timer){clearTimeout(timer);}}b.className="t-band is-in is-new";b.innerHTML=c.inHtml;ding();burst();var t=b.querySelector(".t-at");if(t){t.textContent=t.textContent.replace("%s",at);}}function out(){isIn=false;var x=document.querySelector(".t-fx");if(x){x.parentNode.removeChild(x);}b.className="t-band is-valid";b.textContent=c.valid;expire();}function later(ms){if(timer){clearTimeout(timer);}timer=setTimeout(ask,ms);}function ask(){timer=null;if(done||busy||!c.poll||document.hidden){return;}busy=true;fetch(c.poll+(-1===c.poll.indexOf("?")?"?":"&")+(c.again?"in="+(isIn?1:0)+"&":"")+"_="+Date.now(),{cache:"no-store",credentials:"same-origin"}).then(function(r){if(404===r.status){c.poll="";}if(!r.ok){throw new Error(String(r.status));}return r.json();}).then(function(d){busy=false;fails=0;if(d&&d.in){if(!isIn){welcome(d.at||"");}if(!c.again){return;}}else if(d&&isIn&&c.again){out();}if(!d||null===d.next){c.poll="";return;}later(1000*d.next);},function(){busy=false;fails++;later(Math.min(60000,2000*fails));});}document.addEventListener("visibilitychange",function(){if(!document.hidden){expire();if(!busy){later(0);}}});setInterval(expire,1000);expire();ask();})();</script>';
     }
 
     /**
@@ -800,7 +800,8 @@ final class TicketController
     {
         $css = 'html{background:#e8e6e3}'
             . 'body{margin:0;padding:1.5em 1em;font-family:system-ui,sans-serif;color:#1d1d1f;text-align:center}'
-            . '.t{max-width:26em;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;'
+            . '.t{position:relative;isolation:isolate;max-width:26em;margin:0 auto;background:#fff;border-radius:16px;'
+            . 'overflow:hidden;'
             . 'box-shadow:0 2px 12px rgba(0,0,0,.18)}'
             . '.t-head{background:#2b2b30 center 25%/cover no-repeat;color:#fff;padding:1.2em;'
             . 'display:flex;flex-direction:column;justify-content:flex-end}'
@@ -816,74 +817,121 @@ final class TicketController
             . '.t-band.is-valid{background:#1a7f37}.t-band.is-disabled{background:#b32d2e}'
             . '.t-band.is-expired{background:#000;letter-spacing:.04em}'
             // Gold with dark brown text (over 6:1 on the darkest gold). It all
-            // stays inside the band (Owner 2026-11-07: it went out of the
-            // frame): the glow is inset only, nothing scales above 1 and the
-            // band clips its sheen, bloom and stars. Every loop starts where
-            // it ends, so nothing snaps: the gold drifts by exactly one 200%
-            // tile (t-gold), the inner glow breathes (t-glow, alternate), a
-            // soft sheen sweeps from outside the band to outside it (t-sheen)
-            // and eight stars twinkle (t-twinkle). A band drawn live (is-new)
-            // fades in, blooms from the middle (t-bloom), flares (t-flare),
-            // lifts its text in (t-rise) and bursts its stars one by one;
-            // each ends on the state its loop starts from. Less motion: no
-            // animation, the gold and its glow stay.
+            // stays inside the card (Owner 2026-11-07: it went out of the
+            // frame): every glow is inset, nothing full-width scales above 1,
+            // and the card (overflow hidden, radius 16px) clips the rest.
+            //
+            // The calm loop, also on a page opened already in: the band is
+            // a deep metallic gold (a light top, a darker foot, a shimmer
+            // drifting by exactly one 200% tile, t-gold), its inner glow
+            // breathes (t-glow), a soft sheen crosses it (t-sheen) and ten
+            // stars twinkle (t-twinkle). The card's edge catches gold light
+            // that travels along it (t-rim) and the card breathes a warm
+            // inset glow (t-halo). Every loop starts where it ends.
+            //
+            // The moment itself (is-new, drawn live): the band opens from
+            // the middle (t-open) and blooms (t-bloom), the whole card
+            // flares gold from its edges (t-flare), a golden light sweeps
+            // across the whole card (t-sweep), the stars burst in one by
+            // one (t-burst), the words rise in (t-rise), and liveScript()
+            // throws about 40 sparkles (.t-fx) from the band across the card
+            // that fly out, drift down and fade (t-fly). Each ends on the
+            // state its loop starts from. Less motion: plain gold and a gold
+            // edge, nothing moves.
             . '.t-band.is-in{position:relative;overflow:hidden;isolation:isolate;padding:.7em .45em;color:#3b2500;'
             . 'letter-spacing:.04em;'
-            . 'background:linear-gradient(90deg,#d9a51c,#f7c843 25%,#fff0b0 50%,#f7c843 75%,#d9a51c);'
-            . 'background-size:200% 100%;'
-            . 'box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -1px 0 rgba(140,90,0,.35),'
-            . 'inset 0 0 .9em rgba(255,250,220,.55);'
-            . 'animation:t-gold 8s linear infinite,t-glow 3s ease-in-out infinite alternate}'
+            . 'background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 45%,rgba(150,85,0,.18)),'
+            . 'linear-gradient(90deg,#d9a21f,#f7cf55 16%,#fff6cf 30%,#f9d462 44%,#e2ab2a 58%,#ffeaa0 74%,#efbf3c 88%,'
+            . '#d9a21f);'
+            . 'background-size:100% 100%,200% 100%;'
+            . 'box-shadow:inset 0 1px 0 rgba(255,255,255,.85),inset 0 -2px 0 rgba(120,70,0,.3),'
+            . 'inset 0 0 1em rgba(255,250,220,.5);'
+            . 'animation:t-gold 10s linear infinite,t-glow 3s ease-in-out infinite alternate}'
             . '.t-band.is-in::before{content:"";position:absolute;top:0;bottom:0;left:0;width:35%;pointer-events:none;'
-            . 'background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.55) 50%,rgba(255,255,255,0));'
+            . 'background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.6) 50%,rgba(255,255,255,0));'
             . 'transform:translateX(-150%) skewX(-20deg);animation:t-sheen 6s ease-in-out infinite}'
             . '.t-in-text,.t-at{display:block;position:relative;z-index:1}'
-            . '.t-in-text{font-size:1.25em;text-shadow:0 0 .3em rgba(255,248,215,.95),0 0 .7em rgba(255,225,120,.7)}'
+            . '.t-in-text{font-size:1.25em;text-shadow:0 0 .3em rgba(255,250,225,.95),0 0 .8em rgba(255,230,140,.8)}'
             . '.t-at{font-size:.8em;font-weight:600;letter-spacing:normal;margin-top:.15em}'
             . '.t-stars i{position:absolute;z-index:1;font-style:normal;color:#fff;line-height:1;opacity:.3;'
             . 'transform:scale(.5);text-shadow:0 0 3px #b07000,0 0 8px #fff;'
             . 'animation:t-twinkle 2.6s ease-in-out calc(var(--d,0s)*-6) infinite}'
-            . '.t-stars i:nth-child(1){left:5%;top:14%;font-size:.9em}'
-            . '.t-stars i:nth-child(2){left:16%;top:56%;font-size:.6em;--d:.2s}'
-            . '.t-stars i:nth-child(3){left:28%;top:12%;font-size:.7em;--d:.05s}'
-            . '.t-stars i:nth-child(4){left:40%;top:66%;font-size:.5em;--d:.3s}'
-            . '.t-stars i:nth-child(5){left:60%;top:10%;font-size:.6em;--d:.1s}'
-            . '.t-stars i:nth-child(6){left:72%;top:58%;font-size:.8em;--d:.25s}'
-            . '.t-stars i:nth-child(7){left:84%;top:16%;font-size:.6em;--d:.15s}'
-            . '.t-stars i:nth-child(8){left:91%;top:54%;font-size:.9em;--d:.35s}'
-            . '.t-band.is-new{animation:t-gold 8s linear infinite,t-in .6s ease-out both,t-flare 1.6s ease-out,'
-            . 't-glow 3s ease-in-out 1.6s infinite alternate}'
+            . '.t-stars i:nth-child(1){left:4%;top:14%;font-size:1.17em}'
+            . '.t-stars i:nth-child(2){left:13%;top:58%;font-size:.78em;--d:.2s}'
+            . '.t-stars i:nth-child(3){left:23%;top:10%;font-size:.91em;--d:.05s}'
+            . '.t-stars i:nth-child(4){left:33%;top:68%;font-size:.65em;--d:.3s}'
+            . '.t-stars i:nth-child(5){left:45%;top:6%;font-size:.715em;--d:.4s}'
+            . '.t-stars i:nth-child(6){left:58%;top:70%;font-size:.78em;--d:.1s}'
+            . '.t-stars i:nth-child(7){left:68%;top:12%;font-size:1.04em;--d:.25s}'
+            . '.t-stars i:nth-child(8){left:78%;top:60%;font-size:.78em;--d:.15s}'
+            . '.t-stars i:nth-child(9){left:87%;top:14%;font-size:.845em;--d:.45s}'
+            . '.t-stars i:nth-child(10){left:93%;top:56%;font-size:1.17em;--d:.35s}'
+            // The card around a gold band: its rim (::before, a 3px ring cut
+            // out with a mask, its light turning round the card) and its inner
+            // glow and sweep (::after).
+            . '.t:has(.t-band.is-in)::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;'
+            . 'border-radius:inherit;padding:3px;'
+            . 'background:conic-gradient(from var(--t-rim,0deg),#c88d14,#ffe9a0 10%,#d9a020 22%,#c88d14 35%,'
+            . '#fff7d6 50%,#d9a020 62%,#c88d14 75%,#ffe9a0 88%,#c88d14);'
+            . '-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);'
+            . '-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);'
+            . 'animation:t-rim 6s linear infinite}'
+            . '.t:has(.t-band.is-in)::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;'
+            . 'border-radius:inherit;box-shadow:inset 0 0 1.2em rgba(235,175,30,.35);'
+            . 'background:linear-gradient(110deg,rgba(255,220,110,0) 38%,rgba(255,215,100,.45) 45%,'
+            . 'rgba(255,250,225,.85) 50%,rgba(255,215,100,.45) 55%,rgba(255,220,110,0) 62%) 130% 0/250% 100% no-repeat;'
+            . 'animation:t-halo 3.5s ease-in-out infinite alternate}'
+            . '.t-band.is-new{animation:t-gold 10s linear infinite,t-open .7s cubic-bezier(.2,.8,.2,1) both,'
+            . 't-glow 3s ease-in-out .7s infinite alternate}'
             . '.t-band.is-new::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;'
-            . 'background:radial-gradient(ellipse at center,rgba(255,255,245,.95),rgba(255,240,180,.5) 40%,'
-            . 'rgba(255,220,120,0) 70%);animation:t-bloom 1.6s ease-out}'
-            . '.t-band.is-new .t-in-text{animation:t-rise .7s ease-out .15s both}'
-            . '.t-band.is-new .t-at{animation:t-rise .7s ease-out .35s both}'
-            . '.t-band.is-new .t-stars i{animation:t-burst 1.2s ease-out var(--d,0s) both,'
-            . 't-twinkle 2.6s ease-in-out calc(1.2s + var(--d,0s)) infinite}'
-            . '@keyframes t-gold{from{background-position:0 0}to{background-position:200% 0}}'
-            . '@keyframes t-glow{from{box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -1px 0 rgba(140,90,0,.35),'
-            . 'inset 0 0 .9em rgba(255,250,220,.55)}'
-            . 'to{box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(140,90,0,.35),'
-            . 'inset 0 0 1.8em rgba(255,252,232,.95)}}'
-            . '@keyframes t-flare{0%{box-shadow:inset 0 1px 0 rgba(255,255,255,0),inset 0 -1px 0 rgba(140,90,0,0),'
-            . 'inset 0 0 0 rgba(255,250,220,0)}'
-            . '30%{box-shadow:inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 0 rgba(140,90,0,.35),'
-            . 'inset 0 0 3em rgba(255,255,245,1)}'
-            . '100%{box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -1px 0 rgba(140,90,0,.35),'
-            . 'inset 0 0 .9em rgba(255,250,220,.55)}}'
+            . 'background:radial-gradient(ellipse at center,rgba(255,255,245,1),rgba(255,240,180,.6) 40%,'
+            . 'rgba(255,220,120,0) 70%);animation:t-bloom 1.6s ease-out .15s}'
+            . '.t-band.is-new .t-in-text{animation:t-rise .8s cubic-bezier(.2,.8,.2,1) .3s both}'
+            . '.t-band.is-new .t-at{animation:t-rise .8s cubic-bezier(.2,.8,.2,1) .5s both}'
+            . '.t-band.is-new .t-stars i{animation:t-burst 1.2s ease-out calc(.4s + var(--d,0s)) both,'
+            . 't-twinkle 2.6s ease-in-out calc(1.6s + var(--d,0s)) infinite}'
+            . '.t:has(.t-band.is-new)::after{animation:t-flare 2.2s ease-out both,'
+            . 't-sweep 1.8s cubic-bezier(.45,.05,.35,1) .25s both,t-halo 3.5s ease-in-out 2.2s infinite alternate}'
+            . '.t:has(.t-band.is-new)::before{animation:t-rim 1.5s linear 2 both,t-rim 6s linear 3s infinite}'
+            . '.t-fx{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}'
+            . '.t-fx i{position:absolute;font-style:normal;line-height:1;color:#ffd24d;opacity:0;'
+            . 'text-shadow:0 0 3px #fff6c8,0 0 9px rgba(255,185,30,.95);'
+            . 'animation:t-fly var(--t,2.6s) linear var(--d,0s) both}'
+            . '.t-fx i:nth-child(3n){color:#fff}.t-fx i:nth-child(4n){color:#f0a81a}'
+            . '@keyframes t-gold{from{background-position:0 0,0 0}to{background-position:0 0,200% 0}}'
+            . '@keyframes t-glow{from{box-shadow:inset 0 1px 0 rgba(255,255,255,.85),inset 0 -2px 0 rgba(120,70,0,.3),'
+            . 'inset 0 0 1em rgba(255,250,220,.5)}'
+            . 'to{box-shadow:inset 0 1px 0 rgba(255,255,255,1),inset 0 -2px 0 rgba(120,70,0,.3),'
+            . 'inset 0 0 2em rgba(255,252,232,.95)}}'
             . '@keyframes t-sheen{0%{transform:translateX(-150%) skewX(-20deg)}'
             . '50%,100%{transform:translateX(400%) skewX(-20deg)}}'
             . '@keyframes t-twinkle{0%,100%{opacity:.3;transform:scale(.5) rotate(0deg)}'
             . '50%{opacity:1;transform:scale(1) rotate(45deg)}}'
-            . '@keyframes t-in{from{opacity:0}to{opacity:1}}'
-            . '@keyframes t-bloom{0%{opacity:0;transform:scaleX(.3)}25%{opacity:1}100%{opacity:0;transform:scaleX(1)}}'
-            . '@keyframes t-rise{from{opacity:0;transform:translateY(.35em)}to{opacity:1;transform:translateY(0)}}'
+            . '@property --t-rim{syntax:"<angle>";inherits:false;initial-value:0deg}'
+            . '@keyframes t-rim{from{--t-rim:0deg}to{--t-rim:360deg}}'
+            . '@keyframes t-halo{from{box-shadow:inset 0 0 1.2em rgba(235,175,30,.35)}'
+            . 'to{box-shadow:inset 0 0 2.4em rgba(240,185,40,.55)}}'
+            . '@keyframes t-flare{0%{box-shadow:inset 0 0 0 rgba(255,205,70,0)}'
+            . '20%{box-shadow:inset 0 0 0 4px rgba(255,214,90,.95),inset 0 0 9em rgba(255,200,60,.8)}'
+            . '100%{box-shadow:inset 0 0 0 0 rgba(255,214,90,0),inset 0 0 1.2em rgba(235,175,30,.35)}}'
+            . '@keyframes t-sweep{from{background-position:130% 0}to{background-position:-30% 0}}'
+            . '@keyframes t-open{from{clip-path:inset(0 50%)}to{clip-path:inset(0 0)}}'
+            . '@keyframes t-bloom{0%{opacity:0;transform:scaleX(.2)}25%{opacity:1}100%{opacity:0;transform:scaleX(1)}}'
+            . '@keyframes t-rise{from{opacity:0;transform:translateY(.4em)}to{opacity:1;transform:translateY(0)}}'
             . '@keyframes t-burst{0%{opacity:0;transform:translateY(.5em) scale(.2) rotate(-90deg)}'
             . '60%{opacity:1;transform:translateY(0) scale(1) rotate(30deg)}'
             . '100%{opacity:.3;transform:translateY(0) scale(.5) rotate(0deg)}}'
+            . '@keyframes t-fly{0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(0deg);'
+            . 'animation-timing-function:cubic-bezier(.1,.75,.3,1)}'
+            . '8%{opacity:1}'
+            . '40%{opacity:1;transform:translate(calc(var(--dx) - 50%),calc(var(--dy) - 50%)) scale(var(--s,.8))'
+            . ' rotate(var(--r,90deg));animation-timing-function:ease-in-out}'
+            . '100%{opacity:0;transform:translate(calc(var(--dx)*1.15 - 50%),calc(var(--dy) + 4em - 50%))'
+            . ' scale(.3) rotate(calc(var(--r,90deg)*2))}}'
             . '@media (prefers-reduced-motion:reduce){.t-band.is-in,.t-band.is-new,.t-band.is-new .t-in-text,'
-            . '.t-band.is-new .t-at,.t-stars i,.t-band.is-new .t-stars i{animation:none}'
-            . '.t-band.is-in::before,.t-band.is-new::after{display:none}.t-stars i{opacity:.8;transform:none}}'
+            . '.t-band.is-new .t-at,.t-stars i,.t-band.is-new .t-stars i,.t:has(.t-band.is-in)::before,'
+            . '.t:has(.t-band.is-in)::after,.t:has(.t-band.is-new)::before,.t:has(.t-band.is-new)::after{animation:none}'
+            . '.t-band.is-in::before,.t-band.is-new::after,.t-fx{display:none}.t-stars i{opacity:.8;transform:none}}'
             // The code's square is always laid out, hidden until the tap, and
             // the button covers it: showing the code moves nothing.
             . '.t-qr-wrap{position:relative;width:15em;max-width:100%;margin:0 auto 1em}'
