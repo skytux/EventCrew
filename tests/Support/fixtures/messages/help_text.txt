@@ -18,10 +18,10 @@ You earn 1 free-entry credit for every 2 tasks you complete. To spend a credit, 
 
 Your standing comes from how your past tasks went:
 
-- 🔹 Completed the task: 100%
-- 🔹 Arrived late, did the task: 90%
-- 🔹 Found a replacement: 80%
-- 🔹 Cancelled less than 48 hours before: 40%
-- 🔹 No-show: 0%
+- 🔹 100%: Completed the task
+- 🔹 90%: Arrived late, did the task
+- 🔹 80%: Found a replacement
+- 🔹 40%: Cancelled under 48 h before
+- 🔹 0%: No-show
 
 Cancelling 48 hours or more before has no effect. Recent tasks count more than old ones. You get a rating after 3 finished tasks. 60% or higher is good standing. Below 60%, you cannot sign up for new tasks until you talk to an organizer.

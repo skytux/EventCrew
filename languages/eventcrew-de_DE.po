@@ -1449,10 +1449,6 @@ msgstr "Eine Aufgabe abgesagt (E-Mail)"
 msgid "Cancelled late"
 msgstr "Spät abgesagt"
 
-#. translators: %d: hours of notice, e.g. 48
-#: src/Support/WelcomeSender.php:612
-msgid "Cancelled less than %d hours before"
-msgstr "Weniger als %d Stunden vorher abgesagt"
 
 #: src/Telegram/AssistantService.php:194 src/Telegram/AssistantService.php:195
 #: src/Telegram/BuyerListReset.php:105 src/Telegram/EventsCommand.php:145
@@ -11246,3 +11242,7 @@ msgstr "Vorschauen: im Bot gewünschte Änderungen kommen mit Bestätigen und Ab
 
 msgid "You don’t have to learn the commands: they are all under the bot’s menu button. You can also just write to the bot what you need, in your own words. It usually understands, in most languages."
 msgstr "Du musst die Befehle nicht lernen: Sie sind alle unter der Menütaste des Bots. Du kannst dem Bot auch einfach in eigenen Worten schreiben, was du brauchst. Er versteht meistens, in den meisten Sprachen."
+
+#, php-format
+msgid "Cancelled under %d h before"
+msgstr "Unter %d h vorher abgesagt"

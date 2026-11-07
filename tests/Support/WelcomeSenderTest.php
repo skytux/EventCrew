@@ -263,8 +263,8 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         self::assertStringContainsString('To sign up, tap 📋 See open tasks below.', $dm['text']);
     }
 
-    /** Open tasks on the same date sit on consecutive lines in the DM (Owner 2026-11-07). */
-    public function testTheDmListsTasksOfOneDateWithoutEmptyLines(): void
+    /** Each open task is its name and time, then its free places on the next line (Owner 2026-11-07). */
+    public function testTheDmPutsEachTasksFreePlacesOnALineOfItsOwn(): void
     {
         $this->options[WelcomeSender::ENABLED_OPTION] = '1';
         $this->queueRun([$this->memberRow(1)]);
@@ -276,7 +276,7 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         $this->welcomeSender()->sendDue(25);
 
         self::assertMatchesRegularExpression(
-            "/2 of 3 places free\n[^\n]+2 of 3 places free/u",
+            "/\d\d:\d\d\n2 of 3 places free\n\n[^\n]+\d\d:\d\d\n2 of 3 places free/u",
             $this->lastCallTo('sendMessage')['text']
         );
     }

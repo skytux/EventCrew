@@ -311,7 +311,7 @@ final class WelcomeSender
 
         $context = [
             'person' => $person,
-            'open_tasks' => $this->openTasksText(true, true),
+            'open_tasks' => $this->openTasksText(true),
         ];
         $text = EmailBody::forDm(DmBody::frame($person, self::tidy(MessageTemplates::body(self::KIND_DM, $context)), true), true);
 
@@ -759,7 +759,8 @@ final class WelcomeSender
     }
 
     /**
-     * The outcome weights, best to worst, from the live settings. The late
+     * The outcome weights, best to worst, from the live settings, each line
+     * "100%: Completed the task". The late
      * cancellation line names the notice period, which "Cancelled late" alone
      * does not say.
      *
@@ -773,13 +774,14 @@ final class WelcomeSender
         foreach (Reputation::outcomeLabels() as $status => $label) {
             if (AssignmentStatus::LATE_CANCEL === $status) {
                 $label = sprintf(
-                    /* translators: %d: hours of notice, e.g. 48 */
-                    __('Cancelled less than %d hours before', 'eventcrew'),
+                    /* translators: %d: hours of notice, e.g. 48 ("h" = hours) */
+                    __('Cancelled under %d h before', 'eventcrew'),
                     $noticeHours
                 );
             }
 
-            $lines[] = sprintf('- 🔹 %s: %d%%', $label, $percents[$status] ?? 0);
+            // The percent first, so the numbers line up (Owner 2026-11-07).
+            $lines[] = sprintf('- 🔹 %d%%: %s', $percents[$status] ?? 0, $label);
         }
 
         return $lines;
@@ -807,11 +809,9 @@ final class WelcomeSender
      * The open tasks grouped by date (Owner 2026-11-07): the day, then a line
      * per task. Signing up is the one See open tasks button, not a button
      * per task. Without that button (no crew page and no bot), the line
-     * pointing at it is left out. $dm: the lines without their "- ", so
-     * EmailBody::forDm() puts no empty line between the tasks of one date
-     * (Owner 2026-11-07).
+     * pointing at it is left out.
      */
-    private function openTasksText(bool $button = true, bool $dm = false): string
+    private function openTasksText(bool $button = true): string
     {
         $byDate = [];
 
@@ -831,18 +831,20 @@ final class WelcomeSender
             foreach ($rows as $row) {
                 $task = $row['task'];
                 $time = $task->timeRange();
-                $line = '- ' . $task->roleDisplay() . ('' === $time ? '' : ' ' . $time) . ': ' . sprintf(
+                $name = $task->roleDisplay() . ('' === $time ? '' : ' ' . $time);
+                // The role's emoji is the bullet; a role without one gets 🔹.
+                $name = EmailBody::isEmojiLine('- ' . $name) ? $name : '🔹 ' . $name;
+                // The free places on a line of their own, each task its own
+                // block (Owner 2026-11-07); an email draws the break as <br>.
+                $lines[] = $name . "\n" . sprintf(
                     /* translators: 1: free places, 2: places in total */
                     __('%1$d of %2$d places free', 'eventcrew'),
                     $row['free'],
                     $task->capacity
                 );
-                // The role's emoji is the bullet; a role without one gets 🔹.
-                $line = EmailBody::isEmojiLine($line) ? $line : '- 🔹 ' . substr($line, 2);
-                $lines[] = $dm ? substr($line, 2) : $line;
             }
 
-            $blocks[] = '📅 ' . Dates::dayLabel((string) $date) . "\n\n" . implode("\n", $lines);
+            $blocks[] = '📅 ' . Dates::dayLabel((string) $date) . "\n\n" . implode("\n\n", $lines);
         }
 
         $text = implode("\n\n", $blocks);

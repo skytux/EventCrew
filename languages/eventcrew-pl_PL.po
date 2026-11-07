@@ -1464,10 +1464,6 @@ msgstr "Anulowano zadanie (e-mail)"
 msgid "Cancelled late"
 msgstr "Późna rezygnacja"
 
-#. translators: %d: hours of notice, e.g. 48
-#: src/Support/WelcomeSender.php:612
-msgid "Cancelled less than %d hours before"
-msgstr "Rezygnacja mniej niż %d godzin przed"
 
 #: src/Telegram/AssistantService.php:194 src/Telegram/AssistantService.php:195
 #: src/Telegram/BuyerListReset.php:105 src/Telegram/EventsCommand.php:145
@@ -11237,3 +11233,7 @@ msgstr "Podglądy: zmiany, o które prosisz w bocie, przychodzą z Potwierdź i 
 
 msgid "You don’t have to learn the commands: they are all under the bot’s menu button. You can also just write to the bot what you need, in your own words. It usually understands, in most languages."
 msgstr "Nie musisz uczyć się poleceń: wszystkie są pod przyciskiem menu bota. Możesz też po prostu napisać do bota własnymi słowami, czego potrzebujesz. Zwykle rozumie, w większości języków."
+
+#, php-format
+msgid "Cancelled under %d h before"
+msgstr "Odwołane mniej niż %d h przed"

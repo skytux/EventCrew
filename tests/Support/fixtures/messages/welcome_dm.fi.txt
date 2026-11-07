@@ -32,11 +32,11 @@ Saat 1 vapaalipun jokaisesta 2 tekemästäsi tehtävästä. Saat silloin lipun v
 
 Luotettavuutesi perustuu siihen, miten menneet tehtäväsi sujuivat:
 
-🔹 Teki tehtävän: 100%
-🔹 Saapui myöhässä, teki tehtävän: 90%
-🔹 Löysi tuuraajan: 80%
-🔹 Peruttu alle 48 tuntia ennen: 40%
-🔹 Ei saapunut: 0%
+🔹 100%: Teki tehtävän
+🔹 90%: Saapui myöhässä, teki tehtävän
+🔹 80%: Löysi tuuraajan
+🔹 40%: Peruttu alle 48 h ennen
+🔹 0%: Ei saapunut
 
 Jos perut vähintään 48 tuntia ennen, sillä ei ole vaikutusta. Tuoreet tehtävät painavat enemmän kuin vanhat. Saat arvion, kun olet tehnyt 3 tehtävää. 60 % tai enemmän on hyvä taso. Alle 60 %:n tasolla et voi ilmoittautua uusiin tehtäviin ennen kuin olet puhunut järjestäjän kanssa.
 
@@ -44,7 +44,8 @@ Jos perut vähintään 48 tuntia ennen, sillä ei ole vaikutusta. Tuoreet tehtä
 
 📅 ma 20.7.
 
-🎈 Somistus 13:00–14:00: 2 / 3 paikkaa vapaana
+🎈 Somistus 13:00–14:00
+2 / 3 paikkaa vapaana
 
 Ilmoittaudu napauttamalla alta 📋 Avoimet tehtävät.
 

@@ -1464,10 +1464,6 @@ msgstr "Отменена задача (email)"
 msgid "Cancelled late"
 msgstr "Поздняя отмена"
 
-#. translators: %d: hours of notice, e.g. 48
-#: src/Support/WelcomeSender.php:612
-msgid "Cancelled less than %d hours before"
-msgstr "Отменено меньше чем за %d ч"
 
 #: src/Telegram/AssistantService.php:194 src/Telegram/AssistantService.php:195
 #: src/Telegram/BuyerListReset.php:105 src/Telegram/EventsCommand.php:145
@@ -11237,3 +11233,7 @@ msgstr "Превью: изменения, о которых просят в бо
 
 msgid "You don’t have to learn the commands: they are all under the bot’s menu button. You can also just write to the bot what you need, in your own words. It usually understands, in most languages."
 msgstr "Команды учить не нужно: все они есть в кнопке меню бота. Можно просто написать боту своими словами, что вам нужно. Обычно он понимает, на большинстве языков."
+
+#, php-format
+msgid "Cancelled under %d h before"
+msgstr "Отмена менее чем за %d ч"
