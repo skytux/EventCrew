@@ -10,6 +10,7 @@ use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Telegram\MenuButtons;
 use EventCrew\Telegram\TelegramClient;
 
 /**
@@ -251,10 +252,17 @@ final class DoorLinkSender
         $chatId = $dmChatId ?? $person->telegramChatId;
 
         if (null !== $chatId) {
+            $markup = MessageActions::replyMarkup(MessageActions::of('sales_desk_link_dm', $context, $this->mailer));
+
+            // An answer to 💳 Sales desk, under /door: Back goes there.
+            if (null !== $dmChatId) {
+                $markup = MenuButtons::withBack($markup, MenuButtons::DOOR);
+            }
+
             $this->telegram->sendMessage(
                 $chatId,
                 DmBody::frame($person, MessageTemplates::body('sales_desk_link_dm', $context)),
-                MessageActions::replyMarkup(MessageActions::of('sales_desk_link_dm', $context, $this->mailer))
+                $markup
             );
         }
 

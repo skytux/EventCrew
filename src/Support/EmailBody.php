@@ -65,6 +65,13 @@ final class EmailBody
      */
     public const STYLE_TELEGRAM = 'telegram';
 
+    /**
+     * An action with this 'style' is a plain web link: drawn as one line of
+     * small links under the buttons (and the Telegram line), for the links
+     * that come after at most three buttons (Owner 2026-11-07).
+     */
+    public const STYLE_LINK = 'link';
+
     /** The colour of the FI / EN language tag on a light background: a muted gold. */
     public const TAG_COLOR = '#9a7440';
 
@@ -87,7 +94,39 @@ final class EmailBody
             $html .= $button;
         }
 
-        return $html . self::telegramLinks($actions);
+        return $html . self::telegramLinks($actions) . self::plainLinks($actions);
+    }
+
+    /**
+     * The STYLE_LINK actions as one centred line of small links, '' when
+     * there are none.
+     *
+     * @param array<int, array{label: string, url: string, style?: string}> $actions
+     */
+    private static function plainLinks(array $actions): string
+    {
+        $links = [];
+
+        foreach ($actions as $action) {
+            if (self::STYLE_LINK !== ($action['style'] ?? '') || '' === trim($action['url'])) {
+                continue;
+            }
+
+            $links[] = sprintf(
+                '<a href="%s" style="color:%s;text-decoration:underline">%s</a>',
+                esc_url($action['url']),
+                self::MUTED_COLOR,
+                esc_html($action['label'])
+            );
+        }
+
+        return [] === $links ? '' : sprintf(
+            '<p style="margin:4px 0 16px;text-align:center;font-family:%s;font-size:14px;line-height:1.7;'
+                . 'color:%s">%s</p>',
+            self::FONT,
+            self::MUTED_COLOR,
+            implode(' · ', $links)
+        );
     }
 
     /**
@@ -540,7 +579,7 @@ final class EmailBody
         foreach ($actions as $action) {
             $url = trim($action['url']);
 
-            if ('' === $url || self::STYLE_TELEGRAM === ($action['style'] ?? '')) {
+            if ('' === $url || in_array($action['style'] ?? '', [self::STYLE_TELEGRAM, self::STYLE_LINK], true)) {
                 continue;
             }
 

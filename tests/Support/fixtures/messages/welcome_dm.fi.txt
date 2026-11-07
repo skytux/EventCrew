@@ -2,7 +2,7 @@ DM 📣 Test Crew
 
 Hei Person 3,
 
-Tervetuloa Test Crew-crew’hun. Tämä viesti kertoo, miten kaikki toimii. Omat lukusi, lippusi ja vapaalippusi: lähetä botille /me.
+Tervetuloa Test Crew-crew’hun! Illat toteutuvat, koska kaltaisesi ihmiset auttavat: jokainen tehtävä pitää oven auki, salin valmiina ja musiikin soimassa, ja ansaitsee sinulle vapaan sisäänpääsyn. Tämä viesti kertoo, miten kaikki toimii. Kysy botilta yksityisviestillä, niin näet lukusi, lippusi tai vapaalippusi.
 
 🧩 Tehtävät
 
@@ -38,8 +38,18 @@ Jos perut vähintään 48 tuntia ennen, sillä ei ole vaikutusta. Tuoreet tehtä
 
 📋 Avoimet tehtävät
 
-📅 ma 20.7. 13:00–14:00: 🎈 Somistus (2 / 3 paikkaa vapaana)
+📅 ma 20.7.
 
-Ilmoittaudu napauttamalla alla olevaa painiketta.
+🎈 Somistus 13:00–14:00: 2 / 3 paikkaa vapaana
 
-📖 Tämä opas on myös Crew-sovelluksessa Ohje-välilehdellä, kun olet kirjautunut: https://site.test/crew/#eventcrew-panel-help
+Ilmoittaudu napauttamalla alta 📋 Avoimet tehtävät.
+
+💬 Juttele botin kanssa
+
+Yksityisviestissä botille riittää yleensä, että kirjoitat omin sanoin, mitä haluat. Komentoja tai avainsanoja ei tarvitse muistaa.
+
+Ongelma, palautetta tai bugi? Kerro botille: se välittää asian järjestäjille.
+
+Jos botti ei vastaa, ota yhteyttä ylläpitäjään, maintainer@example.org tai @maintainer, tai yritä hetken päästä uudelleen.
+
+<a href="https://site.test/crew/#eventcrew-panel-help">📖 Ohje</a>

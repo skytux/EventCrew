@@ -35,6 +35,9 @@ final class MessageTemplates
     /** The option of one kind is this followed by its id. */
     public const OPTION_PREFIX = 'eventcrew_message_template_';
 
+    /** The crew page's board panel, where an email's See open tasks lands. */
+    public const BOARD_ANCHOR = 'eventcrew-panel-board';
+
     /** Set to '1' once migrateReminderDescription() has run. */
     public const REMINDER_DESCRIPTION_OPTION = 'eventcrew_reminder_description_migrated';
 
@@ -174,21 +177,21 @@ final class MessageTemplates
                 self::boardAction($m),
                 self::tellAction($c),
             ]),
-            // The call for open tasks: a Sign up for each task listed, the
-            // board, and the crew's group when its link is known.
+            // The call for open tasks: the board (one button for the whole
+            // list, Owner 2026-11-07), and the crew's group when its link is
+            // known.
             'open_task_call open_task_call_dm' => static fn (array $c, Mailer $m): array => self::present([
-                ...OpenTaskList::actions($c, $m),
                 self::boardAction($m),
                 self::groupAction(),
             ]),
             // A takeover done: nothing to do, the board for another task.
             'takeover_done takeover_done_dm' => static fn (array $c, Mailer $m): array => [self::boardAction($m)],
-            // A takeover that did not happen: Sign up for another open task at
-            // the event, ask someone else to hand theirs over, or the board.
+            // A takeover that did not happen: ask someone else to hand theirs
+            // over, or the board for the open tasks listed (one button, not
+            // one per task, Owner 2026-11-07).
             'takeover_refused takeover_refused_dm takeover_expired takeover_expired_dm'
                 . ' takeover_failed takeover_failed_dm takeover_closed takeover_closed_dm' =>
                 static fn (array $c, Mailer $m): array => [
-                    ...OpenTaskList::actions($c, $m),
                     new MessageAction('replace', __('Take over a task', 'eventcrew'), '🔁 ' . __('Take over a task', 'eventcrew'), null, '', 'replace'),
                     self::boardAction($m),
                 ],
@@ -209,11 +212,12 @@ final class MessageTemplates
             ],
             // New access: the open tasks, or the Admin tab for a new organizer
             // (also under the organizer guide).
-            // A role, a pass or the team's OK: Sign up for each open task
-            // listed ({open_tasks}), then the board.
+            // A role, a pass or the team's OK: the board for the open tasks
+            // listed ({open_tasks}), one button (Owner 2026-11-07).
             'access_role access_role_dm access_pass access_pass_dm newcomer_ok newcomer_ok_dm' =>
-                static fn (array $c, Mailer $m): array => [...OpenTaskList::actions($c, $m), self::boardAction($m)],
-            'access_organizer access_organizer_dm welcome_org_email welcome_org_dm' => static fn (): array => self::present([
+                static fn (array $c, Mailer $m): array => [self::boardAction($m)],
+            // The organizer guide draws its own buttons and links (WelcomeSender, Owner 2026-11-07).
+            'access_organizer access_organizer_dm' => static fn (): array => self::present([
                 self::adminAction(),
                 new MessageAction('people', '👥 ' . __('People', 'eventcrew'), '', null, '', 'people'),
                 self::newDeskLinkAction(),
@@ -471,14 +475,25 @@ final class MessageTemplates
         );
     }
 
-    /** The open tasks: the web board, and the bot's board in Telegram. */
+    /**
+     * The open tasks, one button for a whole list (Owner 2026-11-07): in the
+     * DM the bot's board (MenuButtons::BOARD), in the email the crew page's
+     * board panel and the "Open in Telegram" link to the bot's board. Both
+     * open on the next date with open tasks (Q363): the board's own first
+     * day, which also has the special tasks, so no date is fixed here and a
+     * mail read later is not stale.
+     */
     private static function boardAction(Mailer $m): MessageAction
     {
         return new MessageAction(
             'board',
             __('See open tasks', 'eventcrew'),
-            '',
-            static fn (): string => $m->boardUrl(),
+            '📋 ' . __('See open tasks', 'eventcrew'),
+            static function () use ($m): string {
+                $url = $m->boardUrl();
+
+                return '' === $url ? '' : $url . '#' . self::BOARD_ANCHOR;
+            },
             '',
             'board'
         );
@@ -979,7 +994,6 @@ final class MessageTemplates
      */
     private static function previews(): array
     {
-        $openTasks = [__('See open tasks', 'eventcrew')];
         $greet = ['greeting' => true];
         $none = ['frame' => MessageTemplate::FRAME_NONE];
         $signed = ['frame' => MessageTemplate::FRAME_SIGNED];
@@ -1011,7 +1025,7 @@ final class MessageTemplates
             'reminder_dm' => $signed,
             'slot_freed' => $sampleOthers,
             'slot_freed_dm' => $signed + $sampleOthers,
-            'task_cancelled' => ['buttons' => $openTasks] + $sampleOthers,
+            'task_cancelled' => $sampleOthers,
             'task_cancelled_dm' => $none + $sampleOthers,
             'free_ticket_dm' => $none + ['buttons' => [__('🎟 Show your ticket', 'eventcrew')]],
             'signup_confirmed_dm' => $none,
@@ -1059,43 +1073,48 @@ final class MessageTemplates
             'import_guests' => ['buttons' => [__('Open the Roster page', 'eventcrew')]],
             'import_tickets_dm' => ['buttons' => ['🗑 ' . __('Reset the list', 'eventcrew'), __('Open the Roster page', 'eventcrew')]],
             'import_guests_dm' => ['buttons' => [__('Open the Roster page', 'eventcrew')]],
+            // What WelcomeSender draws: at most three buttons (wp-admin on top
+            // for organizers), then the links (Owner 2026-11-07).
             'welcome_email' => [
-                'buttons' => static fn (array $c): array => [
-                    $c['task'] instanceof Task ? OpenTaskList::label($c['task']) : '',
-                    RoleGuide::descriptionsLabel(),
-                    __('Open our group in Telegram', 'eventcrew'),
+                'buttons' => static fn (): array => [
+                    '📋 ' . __('See open tasks', 'eventcrew'),
+                    '💬 ' . __('Open our group in Telegram', 'eventcrew'),
+                    '📖 ' . __('Help', 'eventcrew'),
+                    __('See open tasks', 'eventcrew'),
+                    RoleGuide::label(),
                 ],
-                'context' => static fn (): array => ['help_line' => WelcomeSender::webLine(HelpPage::PANEL_ANCHOR)],
             ],
             'welcome_dm' => $signed + [
                 'dm_format' => true,
-                'buttons' => static fn (array $c): array => [
-                    sprintf(
-                        /* translators: 1: the role with its emoji, 2: the day, e.g. "Sat 7 Nov" */
-                        __('Sign up: %1$s · %2$s', 'eventcrew'),
-                        $c['task'] instanceof Task ? $c['task']->roleDisplay() : '',
-                        $c['task'] instanceof Task ? Dates::dayLabel($c['task']->taskDate) : ''
-                    ),
+                'buttons' => static fn (): array => [
+                    '📋 ' . __('See open tasks', 'eventcrew'),
                     RoleGuide::descriptionsLabel(),
+                    '💬 ' . __('Open the group', 'eventcrew'),
+                    RoleGuide::label(),
+                    '📖 ' . __('Help', 'eventcrew'),
                 ],
-                'context' => static fn (): array => ['help_line' => WelcomeSender::webLine(HelpPage::PANEL_ANCHOR)],
             ],
             'welcome_org_email' => [
-                'buttons' => [
-                    __('Open our group in Telegram', 'eventcrew'),
-                    __('Open EventCrew in wp-admin', 'eventcrew'),
+                'buttons' => static fn (): array => [
+                    DoorLinkSender::adminButtonLabel(),
+                    '📖 ' . __('Help', 'eventcrew'),
+                    '💬 ' . __('Open our group in Telegram', 'eventcrew'),
+                    '🧰 ' . __('Open EventCrew in wp-admin', 'eventcrew'),
+                    '👥 ' . __('People', 'eventcrew'),
+                    '💳 ' . __('Sales desk', 'eventcrew'),
                 ],
-                'context' => static fn (): array => [
-                    'help_line' => WelcomeSender::webLine(HelpPage::ORGANIZER_ANCHOR),
-                    'guide' => OrganizerGuide::full(),
-                ],
+                'context' => static fn (): array => ['guide' => OrganizerGuide::full(false)],
             ],
             'welcome_org_dm' => [
                 'dm_format' => true,
-                'context' => static fn (): array => [
-                    'help_line' => WelcomeSender::webLine(HelpPage::ORGANIZER_ANCHOR),
-                    'guide' => OrganizerGuide::short(),
+                'buttons' => static fn (): array => [
+                    '📖 ' . __('Help', 'eventcrew'),
+                    DoorLinkSender::adminButtonLabel(),
+                    '👥 ' . __('People', 'eventcrew'),
+                    '🧰 ' . __('Open EventCrew in wp-admin', 'eventcrew'),
+                    '💳 ' . __('Sales desk', 'eventcrew'),
                 ],
+                'context' => static fn (): array => ['guide' => OrganizerGuide::short(false)],
             ],
             'door_new_member' => $greet + [
                 'buttons' => static fn (): array => [
@@ -1237,7 +1256,7 @@ final class MessageTemplates
                     : ''
             ),
             'other_tasks' => self::placeholder(
-                __('An empty line and the other open tasks of the event, one per line, with no names. Empty when there are none.', 'eventcrew'),
+                __('An empty line and the other open tasks of the event, under a line with each date, with no names. Empty when there are none.', 'eventcrew'),
                 static function (array $c): string {
                     $task = $c['task'] ?? null;
 
@@ -2445,40 +2464,26 @@ final class MessageTemplates
             __('The organization’s name (Settings > Web page, else the site name).', 'eventcrew'),
             static fn (): string => Organization::name()
         );
-        $helpLine = self::placeholder(
-            __('An empty line, then the line with the link to the Help tab of the Crew app. Empty when no crew page is set.', 'eventcrew'),
-            $given('help_line')
-        );
         $welcome = [
             'crew' => $crew,
+            // No visible address (Owner 2026-11-07): the crew page is the
+            // email's See open tasks and Help buttons.
             'me_help' => self::botOrWeb(
-                __('Where to see your own numbers: in the bot, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
+                __('Where to see your own numbers: ask the bot, or, for a person with no Telegram chat, the Me tab of the Crew app.', 'eventcrew'),
                 // One line for the numbers, tickets and credits: the bot's
                 // {credit_help} and {tickets_help} are empty.
                 static fn (): string => WelcomeSender::meBotLine(),
-                static fn (string $url): string => sprintf(
-                    /* translators: %s: link to the crew page */
-                    __('You can see your own numbers any time in the Me tab of the crew page (%s).', 'eventcrew'),
-                    $url
-                )
+                static fn (): string => __('You can see your own numbers any time in the Me tab of the Crew app.', 'eventcrew')
             ),
             'credit_help' => self::botOrWeb(
-                __('How to spend a credit: in the bot or on the web page, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
+                __('How to spend a credit: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app.', 'eventcrew'),
                 static fn (): string => '',
-                static fn (string $url): string => sprintf(
-                    /* translators: %s: link to the crew page */
-                    __('To spend a credit, pick a night under Tickets in the Me tab of the crew page (%s).', 'eventcrew'),
-                    $url
-                )
+                static fn (): string => __('To spend a credit, pick a night under Tickets in the Me tab of the Crew app.', 'eventcrew')
             ),
             'tickets_help' => self::botOrWeb(
-                __('Where all your tickets are: in the bot, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
+                __('Where all your tickets are: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app.', 'eventcrew'),
                 static fn (): string => '',
-                static fn (string $url): string => sprintf(
-                    /* translators: %s: link to the crew page */
-                    __('It is the first button in your sign-up confirmation, and the Me tab of the crew page (%s) lists all your tickets.', 'eventcrew'),
-                    $url
-                )
+                static fn (): string => __('It is the first button in your sign-up confirmation, and the Me tab of the Crew app lists all your tickets.', 'eventcrew')
             ),
             'roles' => self::placeholder(
                 __('The tasks on offer, one line each, with what each one involves.', 'eventcrew'),
@@ -2509,10 +2514,13 @@ final class MessageTemplates
                 $setting('gate_rule')
             ),
             'open_tasks' => self::placeholder(
-                __('The next open tasks, one line each, and the line about how to sign up. When there are none, a line that says so.', 'eventcrew'),
+                __('The next open tasks by date (at most 3 dates and 8 tasks), and the line about how to sign up. When there are none, a line that says so.', 'eventcrew'),
                 $given('open_tasks')
             ),
-            'help_line' => $helpLine,
+            'maintainer' => self::placeholder(
+                __('Whom to contact when the bot cannot be reached (Settings > Welcome message).', 'eventcrew'),
+                static fn (): string => WelcomeSender::maintainerContact()
+            ),
         ];
         $day = self::placeholder(__('The day of the event, like Sat 1 Aug.', 'eventcrew'), $given('day'));
 
@@ -2570,7 +2578,7 @@ final class MessageTemplates
                 WelcomeSender::KIND_DM,
                 __('Welcome message (Telegram)', 'eventcrew'),
                 $telegram,
-                __('Sent once to each member who uses the bot, with a button for each open task. Only when the welcome message is on in Settings.', 'eventcrew'),
+                __('Sent once to each member who uses the bot, with the open tasks by date and a button to the board. Only when the welcome message is on in Settings.', 'eventcrew'),
                 null,
                 static fn (): string => WelcomeSender::bodyTemplate(),
                 $welcome
@@ -2581,11 +2589,10 @@ final class MessageTemplates
                 $email,
                 __('Sent once to each organizer, with the whole organizer guide. Only when the welcome message is on in Settings.', 'eventcrew'),
                 static fn (): string => OrganizerGuide::subject(),
-                static fn (): string => $hi() . WelcomeSender::organizerIntroTemplate() . "{help_line}\n\n{guide}",
+                static fn (): string => $hi() . WelcomeSender::organizerIntroTemplate() . "\n\n{guide}",
                 [
                     'name' => $name,
                     'crew' => $crew,
-                    'help_line' => $helpLine,
                     'guide' => self::placeholder(
                         __('The whole organizer guide. It is made from the settings when it is sent.', 'eventcrew'),
                         $given('guide')
@@ -2599,14 +2606,13 @@ final class MessageTemplates
                 __('Sent once to each organizer who uses the bot, with the short part of the organizer guide. Only when the welcome message is on in Settings.', 'eventcrew'),
                 null,
                 static fn (): string => WelcomeSender::organizerIntroTemplate() . "\n\n{guide}\n\n"
-                    . __('The full guide, with the details, is in your email.', 'eventcrew') . '{help_line}',
+                    . __('The full guide, with the details, is in your email.', 'eventcrew'),
                 [
                     'crew' => $crew,
                     'guide' => self::placeholder(
                         __('The short part of the organizer guide ("In short"). It is made from the settings when it is sent.', 'eventcrew'),
                         $given('guide')
                     ),
-                    'help_line' => $helpLine,
                 ]
             ),
             new MessageTemplate(

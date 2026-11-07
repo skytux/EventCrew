@@ -122,32 +122,95 @@ final class OpenTaskListTest extends TelegramTestCase
         self::assertCount(1, $this->wpdb->queries);
     }
 
-    public function testTheBlockHasOneNamelessLinePerTaskAndVanishesWhenEmpty(): void
+    public function testTheBlockGroupsTheTasksByDateAndVanishesWhenEmpty(): void
     {
         $door = Task::fromRow($this->taskRow(4, 'door', 3));
         $dj = Task::fromRow($this->taskRow(3, 'dj'));
+        $bar = Task::fromRow(['task_date' => '2099-11-15', 'starts_at' => null, 'ends_at' => null] + $this->taskRow(5, 'bar', 2));
 
         self::assertSame('', OpenTaskList::block([]));
         self::assertSame('', OpenTaskList::block([OpenTaskList::CONTEXT_KEY => []]));
         self::assertSame(
-            "\n\nOpen now:\n- 📅 Sat 14 Nov 18:00–20:00: Door at Dance Night (2 of 3 free)"
-                . "\n- 📅 Sat 14 Nov 18:00–20:00: DJ at Dance Night",
+            "\n\nOpen now:\n📅 Sat 14 Nov\n- 18:00–20:00: Door at Dance Night (2 of 3 free)"
+                . "\n- 18:00–20:00: DJ at Dance Night"
+                . "\n\n📅 Sun 15 Nov\n- Bar at Dance Night (1 of 2 free)",
             OpenTaskList::block([OpenTaskList::CONTEXT_KEY => [
                 ['task' => $door, 'free' => 2],
                 ['task' => $dj, 'free' => null],
+                ['task' => $bar, 'free' => 1],
             ]])
         );
     }
 
-    public function testEachRowSignsUpWithTheJoinOnlyCallbackOrTheRoleListsSignUp(): void
+    public function testAListShowsAtMostThreeDatesAndEightTasks(): void
+    {
+        $rows = [];
+
+        foreach (['2099-11-14', '2099-11-15', '2099-11-16', '2099-11-17'] as $index => $date) {
+            $rows[] = ['task' => Task::fromRow(['task_date' => $date] + $this->taskRow(10 + $index, 'door')), 'free' => 1];
+        }
+
+        $text = OpenTaskList::grouped($rows);
+
+        self::assertSame(3, substr_count($text, '📅'));
+        self::assertStringNotContainsString('17 Nov', $text);
+
+        $many = [];
+
+        for ($id = 1; $id <= 10; ++$id) {
+            $many[] = ['task' => Task::fromRow($this->taskRow($id, 'door')), 'free' => 1];
+        }
+
+        self::assertSame(OpenTaskList::MAX_TASKS, substr_count(OpenTaskList::grouped($many), "\n- "));
+    }
+
+    public function testForPersonStopsBeforeAFourthDate(): void
+    {
+        $this->queue([
+            ['task_date' => '2099-11-14'] + $this->taskRow(1, 'door'),
+            ['task_date' => '2099-11-15'] + $this->taskRow(2, 'door'),
+            ['task_date' => '2099-11-16'] + $this->taskRow(3, 'door'),
+            ['task_date' => '2099-11-17'] + $this->taskRow(4, 'door'),
+        ]);
+
+        $rows = (new OpenTaskList())->forPerson($this->person());
+
+        self::assertSame([1, 2, 3], array_map(static fn (array $row): int => $row['task']->id, $rows));
+    }
+
+    public function testDescriptionsGiveOneShortLinePerRoleListed(): void
+    {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'door', 'label' => 'Door', 'description' => 'Check tickets at the door. Smile a lot and keep the queue moving.'],
+            ['slug' => 'bar', 'label' => 'Bar', 'description' => str_repeat('Pour drinks and wash glasses ', 6)],
+            ['slug' => 'dj', 'label' => 'DJ'],
+        ];
+        $rows = [
+            ['task' => Task::fromRow($this->taskRow(1, 'door')), 'free' => 1],
+            ['task' => Task::fromRow($this->taskRow(2, 'door')), 'free' => 1],
+            ['task' => Task::fromRow($this->taskRow(3, 'bar')), 'free' => 1],
+            ['task' => Task::fromRow($this->taskRow(4, 'dj')), 'free' => null],
+        ];
+
+        $text = OpenTaskList::descriptions($rows);
+        $lines = explode("\n", $text);
+
+        self::assertSame('📝 What each task involves', $lines[0]);
+        self::assertSame('Door: Check tickets at the door.', $lines[1]);
+        self::assertStringStartsWith('Bar: Pour drinks', $lines[2]);
+        self::assertStringEndsWith('…', $lines[2]);
+        self::assertLessThanOrEqual(OpenTaskList::SHORT_DESCRIPTION_MAX + 1, mb_strlen(substr($lines[2], 5)));
+        self::assertCount(3, $lines, 'one line per role, none for a role without a description');
+        self::assertSame('', OpenTaskList::descriptions([]));
+    }
+
+    public function testOneTaskStillSignsUpWithTheJoinOnlyCallbackOrTheRoleListsSignUp(): void
     {
         $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
-        $context = [OpenTaskList::CONTEXT_KEY => [
-            ['task' => Task::fromRow($this->taskRow(4, 'door')), 'free' => 1],
-            ['task' => Task::fromRow($this->taskRow(3, 'dj')), 'free' => null],
-        ]];
-
-        $actions = OpenTaskList::actions($context, $mailer);
+        $actions = [
+            OpenTaskList::action(Task::fromRow($this->taskRow(4, 'door')), $mailer),
+            OpenTaskList::action(Task::fromRow($this->taskRow(3, 'dj')), $mailer),
+        ];
 
         self::assertSame(
             [

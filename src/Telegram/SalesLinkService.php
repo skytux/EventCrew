@@ -58,7 +58,8 @@ final class SalesLinkService
         if (SalesDeskGate::OK !== $code || ! $this->sender->send($person, $date, false, $telegramUserId)) {
             $this->telegram->sendMessage(
                 $telegramUserId,
-                SalesDeskGate::message(SalesDeskGate::OK === $code ? SalesDeskGate::CLOSED : $code)
+                SalesDeskGate::message(SalesDeskGate::OK === $code ? SalesDeskGate::CLOSED : $code),
+                MenuButtons::back(MenuButtons::DOOR)
             );
             $this->sentDmNote($chatId, $isPrivate);
 

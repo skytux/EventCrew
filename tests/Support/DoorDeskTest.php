@@ -509,6 +509,26 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame([CheckinRepository::MAX_PLUS_ONES], array_column($sections[4]['rows'], 'max'));
     }
 
+    /**
+     * One buyer with two tickets is two rows: they may give one away, and
+     * each ticket is checked in on its own (Owner 2026-11-07).
+     */
+    public function testABuyerWithTwoTicketsIsTwoRowsCheckedInApart(): void
+    {
+        $this->wpdb->nextResults[] = [['kind' => 'buyer', 'ref_id' => 11, 'plus_ones' => 0]]; // check-ins
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $ticket = ['event_date' => self::NIGHT, 'name' => 'Ada', 'email' => 'ada@example.com', 'source' => 'file'];
+        $this->wpdb->nextResults[] = [['id' => 11] + $ticket, ['id' => 12] + $ticket];
+
+        $rows = $this->desk()->state(self::NIGHT)['sections'][3]['rows'];
+
+        self::assertSame(['Ada', 'Ada'], array_column($rows, 'name'));
+        self::assertSame(['buyer:11', 'buyer:12'], array_column($rows, 'key'));
+        self::assertSame([true, false], array_column($rows, 'in'));
+    }
+
     public function testTheCountWithoutANameIsChangedInsideTheDatabaseInOneStatement(): void
     {
         global $wpdb;

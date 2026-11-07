@@ -6,7 +6,7 @@ Olet Test Crew:n järjestäjä. Tämä opas kertoo, miten EventCrew toimii, ensi
 
 ⚡ Lyhyesti
 
-🗓️ Tehtävät: luot ne wp-adminissa kohdassa EventCrew > Tehtävät. Yhdellä napsautuksella syntyvät illan kaikki tehtävät.
+🗓️ Tehtävät: luot ne wp-adminissa kohdassa EventCrew &gt; Tehtävät. Yhdellä napsautuksella syntyvät illan kaikki tehtävät.
 
 ✋ Ilmoittautuminen: jäsenet napauttavat tehtävää Telegram-ryhmän taululla tai käyttävät verkon ilmoittautumissivua. /board julkaisee ryhmään uuden taulun.
 
@@ -22,10 +22,6 @@ Olet Test Crew:n järjestäjä. Tämä opas kertoo, miten EventCrew toimii, ensi
 
 🔔 Viestit: muistutukset ja kutsut lähtevät itsestään, vain klo 09:00–21:00.
 
-⚙️ Wp-adminin EventCrew > Asetukset muuttaa toimintaa. EventCrew > Diagnostiikka näyttää, toimiiko kaikki.
-
-🔗 Avaa EventCrew wp-adminissa: https://site.test/wp-admin/admin.php?page=eventcrew
+⚙️ Wp-adminin EventCrew &gt; Asetukset muuttaa toimintaa. EventCrew &gt; Diagnostiikka näyttää, toimiiko kaikki.
 
 Koko opas yksityiskohtineen on sähköpostissasi.
-
-📖 Tämä opas on myös Crew-sovelluksessa Ohje-välilehdellä, kun olet kirjautunut: https://site.test/crew/#eventcrew-help-organizer

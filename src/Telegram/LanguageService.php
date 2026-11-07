@@ -73,12 +73,17 @@ final class LanguageService
 
     /**
      * Sends the language question, keeping $pendingMessage (the
-     * command the person sent) to be run once they answer.
+     * command the person sent) to be run once they answer. $fromSettings
+     * (the 🌐 Language button under Settings) puts Back to Settings under it.
      *
      * @param array<string, mixed>|null $pendingMessage
      */
-    public function ask(int $telegramUserId, int $chatId, ?array $pendingMessage = null): void
-    {
+    public function ask(
+        int $telegramUserId,
+        int $chatId,
+        ?array $pendingMessage = null,
+        bool $fromSettings = false
+    ): void {
         if (null !== $pendingMessage) {
             set_transient(self::PENDING_PREFIX . $telegramUserId, $pendingMessage, self::PENDING_TTL);
         } else {
@@ -95,11 +100,13 @@ final class LanguageService
             $buttons[] = ['text' => $name, 'callback_data' => self::PREFIX . $code];
         }
 
-        $this->telegram->sendMessage(
-            $chatId,
-            'Valitse kieli · Choose your language',
-            ['inline_keyboard' => array_chunk($buttons, self::BUTTONS_PER_ROW)]
-        );
+        $rows = array_chunk($buttons, self::BUTTONS_PER_ROW);
+
+        if ($fromSettings) {
+            $rows[] = MenuButtons::backRow(MenuButtons::SETTINGS);
+        }
+
+        $this->telegram->sendMessage($chatId, 'Valitse kieli · Choose your language', ['inline_keyboard' => $rows]);
     }
 
     /**

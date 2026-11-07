@@ -113,18 +113,17 @@ final class GuestListService
             + ($withEmail ? self::RESERVED_PENDING : 0);
         $rendered = $this->render($person, $date, 0, $reserved);
         $text = '' === $done ? $rendered['text'] : $done . "\n\n" . $rendered['text'];
-        $markup = $this->markup($person, $date, $rendered['pages']);
         // A guest added with an email address starts the waiting ticket send:
         // say when it goes out, with a button that cancels it.
         $pending = $withEmail ? $this->ticketMail?->pendingSummary() : null;
+        $extra = [];
 
         if (null !== $pending) {
             $text .= "\n\n" . TicketMail::pendingLine($pending);
-            $markup = ['inline_keyboard' => array_merge(
-                $markup['inline_keyboard'] ?? [],
-                [[['text' => __('Cancel sending', 'eventcrew'), 'callback_data' => self::CANCEL_DATA]]]
-            )];
+            $extra[] = [['text' => __('Cancel sending', 'eventcrew'), 'callback_data' => self::CANCEL_DATA]];
         }
+
+        $markup = $this->markup($person, $date, $rendered['pages'], $extra);
 
         $this->telegram->sendMessage($telegramUserId, $text, $markup);
         $this->sentDmNote($chatId, $isPrivate);
@@ -387,21 +386,26 @@ final class GuestListService
     /**
      * The previous/next row of a paged list ($pages), then the date selector
      * (DayPicker): the shown night marked, with arrows to the nights before
-     * and after it that this person may see. Null when there is none.
+     * and after it that this person may see, then the $extra rows and Back
+     * to /door.
      *
      * @param array<int, array{text: string, callback_data: string}> $pages
-     * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}|null
+     * @param array<int, array<int, array{text: string, callback_data: string}>> $extra
+     * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
      */
-    private function markup(Person $person, string $shown, array $pages = []): ?array
+    private function markup(Person $person, string $shown, array $pages = [], array $extra = []): array
     {
         $rows = array_merge([] === $pages ? [] : [$pages], DayPicker::rows(
             $this->access->dates(),
             $shown,
             self::SELECT_PREFIX,
             fn (string $date): bool => $this->access->canView($person, $date)
-        ));
+        ), $extra);
 
-        return [] === $rows ? null : ['inline_keyboard' => $rows];
+        // Back to /door, where 👥 Guest list is, as the last row.
+        $rows[] = MenuButtons::backRow(MenuButtons::DOOR);
+
+        return ['inline_keyboard' => $rows];
     }
 
     private function errorMessage(string $error): string

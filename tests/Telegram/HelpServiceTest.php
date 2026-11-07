@@ -11,6 +11,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\DoorAccess;
 use EventCrew\Support\Language;
 use EventCrew\Telegram\HelpService;
+use EventCrew\Telegram\MenuButtons;
 
 /**
  * /help, /door, /people, the Cancel button, /me history, /me tickets and
@@ -292,6 +293,90 @@ final class HelpServiceTest extends TelegramTestCase
         self::assertSame(['mn:me'], $this->lastButtons());
     }
 
+    /**
+     * Owner 2026-11-07: every menu sub-screen ends with one ⬅️ Back row that
+     * opens its parent; the top-level screens and question screens do not.
+     */
+    public function testTheMenuKeyboardsEndWithBackToTheirParent(): void
+    {
+        $parents = [
+            'mn:me' => [MenuButtons::settings(), MenuButtons::admin(), ['inline_keyboard' => MenuButtons::ticketsRows()],
+                ['inline_keyboard' => MenuButtons::tasksRows()], MenuButtons::back()],
+            'mn:admin' => [MenuButtons::door('1.8.', true), MenuButtons::people()],
+            'mn:door' => [MenuButtons::withBack(null, MenuButtons::DOOR)],
+        ];
+
+        foreach ($parents as $parent => $keyboards) {
+            foreach ($keyboards as $keyboard) {
+                $last = end($keyboard['inline_keyboard']);
+                self::assertSame([['text' => '⬅️ Back', 'callback_data' => $parent]], $last);
+
+                foreach (array_merge(...$keyboard['inline_keyboard']) as $button) {
+                    self::assertLessThanOrEqual(64, strlen((string) ($button['callback_data'] ?? '')));
+                }
+            }
+        }
+
+        // The welcome crew's /door is their top level: no Back.
+        $rows = MenuButtons::door('1.8.')['inline_keyboard'];
+        self::assertNotContains('mn:admin', array_column(array_merge(...$rows), 'callback_data'));
+        // Question screens keep Cancel and get no Back.
+        self::assertSame([MenuButtons::cancelRow()], MenuButtons::cancel()['inline_keyboard']);
+    }
+
+    public function testPastTasksGoBackToTasks(): void
+    {
+        $this->person();
+        $this->wpdb->nextResults[] = []; // no past tasks
+
+        $this->tapMenu('mn:hist');
+
+        self::assertSame('mn:mytasks', $this->lastBackTarget());
+    }
+
+    public function testWebSignInWithoutAPageGoesBackToSettings(): void
+    {
+        $this->person();
+
+        $this->tapMenu('mn:web');
+
+        self::assertStringStartsWith('There’s no public sign-up page', $this->lastText());
+        self::assertSame(['mn:set'], $this->lastButtons());
+    }
+
+    public function testBackTapsOpenTheParentScreens(): void
+    {
+        $this->person(true);
+        $this->tapMenu('mn:set');
+        self::assertSame('⚙️ Settings', $this->lastText());
+
+        $this->person(true);
+        $this->tapMenu('mn:admin');
+        self::assertSame('🛠 Admin', $this->lastText());
+
+        $this->person(true);
+        $this->tapMenu('mn:people');
+        self::assertSame('mn:admin', $this->lastBackTarget());
+
+        $this->person(true);
+        $this->tapMenu('mn:tix');
+        self::assertStringStartsWith('🎟 Your tickets', $this->lastText());
+
+        $this->person(true);
+        $this->wpdb->nextCols[] = [];
+        $this->tapMenu('mn:door');
+        self::assertSame('mn:admin', $this->lastBackTarget());
+    }
+
+    private function lastBackTarget(): string
+    {
+        $keyboard = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'] ?? [];
+        $last = end($keyboard);
+        self::assertSame('⬅️ Back', $last[0]['text'] ?? null);
+
+        return (string) $last[0]['callback_data'];
+    }
+
     private function tapMenu(string $data): void
     {
         $this->updateRouter()->dispatch(['callback_query' => [
@@ -352,7 +437,8 @@ final class HelpServiceTest extends TelegramTestCase
         $this->send('/door 1.8.');
 
         self::assertSame('🚪 The door on 1.8.: choose what to open.', $this->lastText());
-        self::assertSame(['mn:dl:1.8.', 'mn:gl:1.8.', 'mn:sales'], $this->lastButtons());
+        // An organizer also gets Back to Admin, as the last row.
+        self::assertSame(['mn:dl:1.8.', 'mn:gl:1.8.', 'mn:sales', 'mn:admin'], $this->lastButtons());
     }
 
     public function testDoorFromTheWelcomeCrewInTheGroupGoesToTheDm(): void
@@ -380,7 +466,7 @@ final class HelpServiceTest extends TelegramTestCase
         $this->person(true);
         $this->send('/people');
         self::assertSame('👥 People: choose what to do.', $this->lastText());
-        self::assertSame(['mn:gift', 'mn:roles', 'mn:elig'], $this->lastButtons());
+        self::assertSame(['mn:gift', 'mn:roles', 'mn:elig', 'mn:admin'], $this->lastButtons());
     }
 
     public function testMeComesWithItsButtons(): void

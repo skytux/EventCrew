@@ -502,14 +502,14 @@ final class TakeoverService
         };
         // Other open tasks of the same event the cover can sign up for.
         $rows = array_values(array_filter(
-            (new OpenTaskList($this->tasks, $this->assignments))->forPerson($cover, $task->eventPostId, OpenTaskList::DEFAULT_MAX + 1),
+            (new OpenTaskList($this->tasks, $this->assignments))->forPerson($cover, $task->eventPostId, OpenTaskList::MAX_TASKS + 1),
             static fn (array $row): bool => $row['task']->id !== $task->id
         ));
         $context = [
             'person' => $cover,
             'holder' => $holder,
             'task' => $task,
-            OpenTaskList::CONTEXT_KEY => array_slice($rows, 0, OpenTaskList::DEFAULT_MAX),
+            OpenTaskList::CONTEXT_KEY => array_slice($rows, 0, OpenTaskList::MAX_TASKS),
         ];
         $actions = MessageActions::of($kind, $context, $this->mailer);
 

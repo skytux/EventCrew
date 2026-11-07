@@ -38,8 +38,8 @@ final class HelpService
     }
 
     /**
-     * @param bool $fromMe True for the ❓ Help button under /me, which puts a
-     *                     👤 My info button under the list.
+     * @param bool $fromMe True for the ❓ Help button under /me, which puts
+     *                     Back to My info under the list.
      */
     public function onHelp(int $telegramUserId, int $chatId, bool $isPrivate = true, bool $fromMe = false): void
     {
@@ -133,7 +133,7 @@ final class HelpService
             /* translators: %s: the night as typed after /door, e.g. 1.8. */
             : sprintf(__('🚪 The door on %s: choose what to open.', 'eventcrew'), $date);
 
-        $this->telegram->sendMessage($telegramUserId, $text, MenuButtons::door($date));
+        $this->telegram->sendMessage($telegramUserId, $text, MenuButtons::door($date, $person->isOrganizer));
         $this->sentDmNote($chatId, $isPrivate);
     }
 

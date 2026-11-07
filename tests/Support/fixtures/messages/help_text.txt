@@ -1,4 +1,4 @@
-How the Test Crew crew works. Your own numbers are in the Me tab, and /me sends them to you in a private chat with the bot.
+How the Test Crew crew works. Your own numbers are in the Me tab, and the bot shows them when you ask in a private chat.
 
 ## 🧩 The tasks
 
@@ -12,7 +12,7 @@ When you sign up for a task, you get a free ticket for that night. Show it at th
 
 ## 🎁 Credits
 
-You earn 1 free-entry credit for every 2 tasks you complete. To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits.
+You earn 1 free-entry credit for every 2 tasks you complete. To spend a credit, ask the bot for a free-entry ticket, or use the web page. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits.
 
 ## 📈 Standing
 

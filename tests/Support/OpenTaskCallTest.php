@@ -14,6 +14,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\OpenTaskCall;
+use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\TestCase;
@@ -65,16 +66,16 @@ final class OpenTaskCallTest extends TestCase
         return $taken > 0 ? [['task_id' => 5, 'taken' => $taken]] : [];
     }
 
-    private function taskRow(): array
+    private function taskRow(string $date = '2026-08-01'): array
     {
         return [
             'id' => 5,
-            'task_date' => '2026-08-01',
+            'task_date' => $date,
             'role_slug' => 'decorate',
             'capacity' => 2,
             'event_post_id' => null,
             'event_label' => 'Party',
-            'starts_at' => '2026-08-01 20:00:00',
+            'starts_at' => $date . ' 20:00:00',
             'ends_at' => null,
         ];
     }
@@ -95,9 +96,9 @@ final class OpenTaskCallTest extends TestCase
     }
 
     /** Queues the open-task lookup for one date: forDate, then occupancyFor. */
-    private function queueOpenDate(int $taken = 0): void
+    private function queueOpenDate(int $taken = 0, string $date = '2026-08-01'): void
     {
-        $this->wpdb->nextResults[] = [$this->taskRow()];
+        $this->wpdb->nextResults[] = [$this->taskRow($date)];
         $this->wpdb->nextResults[] = $this->occupancyRows($taken);
     }
 
@@ -106,9 +107,9 @@ final class OpenTaskCallTest extends TestCase
      * asks for so a lead counts back from when the work begins rather than from
      * the date's midnight. Early in the day, so the lead is always reached.
      */
-    private function queueDueDate(int $taken = 0): void
+    private function queueDueDate(int $taken = 0, string $date = '2026-08-01'): void
     {
-        $this->queueOpenDate($taken);
+        $this->queueOpenDate($taken, $date);
         $this->wpdb->nextVars[] = '2026-07-21 09:00:00';
     }
 
@@ -313,7 +314,7 @@ final class OpenTaskCallTest extends TestCase
         $this->wpdb->nextResults[] = [$this->activePerson()];
         $this->wpdb->nextVars[] = null;                          // daily cap clear
         $this->wpdb->nextCols[] = ['2026-07-21', '2026-08-01'];  // upcomingDates
-        $this->queueDueDate();                                  // 07-21 open
+        $this->queueDueDate(0, '2026-07-21');                   // 07-21 open
         $this->wpdb->nextVars[] = null;                          // sentAt week
         $this->wpdb->nextVars[] = null;                          // sentAt soon
         // 08-01 is past the furthest lead, so the due loop stops there - but the
@@ -409,17 +410,22 @@ final class OpenTaskCallTest extends TestCase
         return $dms;
     }
 
+    /** The open tasks under their date, then a short line on each role. */
+    private const OPEN = "📅 Sat 1 Aug\n- 20:00: 🎈 Decorate at Party (2 of 2 free)\n\n📝 What each task involves\n"
+        . '🎈 Decorate: Set up before the dance: close the curtains, check the bathrooms, place the LED candles…';
+
     /**
-     * With nothing stored: the built-in texts, each task with its free
-     * places, and a Sign up for each before the board and the group.
+     * With nothing stored: the built-in texts, the tasks under their date
+     * with what each role involves, and one See open tasks instead of a
+     * Sign up per task (Owner 2026-11-07).
      */
-    public function testWithNothingStoredTheBuiltInTextsAndASignUpPerTaskAreSent(): void
+    public function testWithNothingStoredTheBuiltInTextsAndOneBoardButtonAreSent(): void
     {
         $dms = $this->sendToSam();
 
         self::assertSame('Some tasks still need people', $this->mails[0]['subject']);
         self::assertSame(
-            "Hi Sam,\n\nSome tasks still need people:\n\nSat 1 Aug\n- Decorate at Party (2 of 2 free)"
+            "Hi Sam,\n\nSome tasks still need people:\n\n" . self::OPEN
                 . "\n\nThis will be your first task — welcome!\n\nTasks completed in total: 0.\n\n"
                 . "Open the group in Telegram: https://t.me/+abc\n\n—\nManage your account or stop these emails: "
                 . 'https://example.test/wp-json/eventcrew/v1/manage?token='
@@ -427,18 +433,36 @@ final class OpenTaskCallTest extends TestCase
             $this->mails[0]['body']
         );
         self::assertSame(
-            "📣 Test Site\n\nHi Sam,\n\n🔔 Some tasks still need people:\n\nSat 1 Aug\n- Decorate at Party (2 of 2 free)",
+            "📣 Test Site\n\nHi Sam,\n\n🔔 Some tasks still need people:\n\n" . self::OPEN,
             (string) $dms[0]['text']
         );
-        // The DM has the email's actions: Sign up, the board, the group.
+        // The DM has the email's actions: the board, the group.
         self::assertSame(
             [
-                [['text' => 'Sign up: 🎈 Decorate · Sat 1 Aug', 'callback_data' => 'j:5']],
-                [['text' => 'See open tasks', 'callback_data' => 'mn:board']],
+                [['text' => '📋 See open tasks', 'callback_data' => 'mn:board']],
                 [['text' => 'Open the group', 'url' => 'https://t.me/+abc']],
             ],
             $dms[0]['reply_markup']['inline_keyboard']
         );
+    }
+
+    /**
+     * In the email the one button is a link to the crew page's board, with
+     * the bot's board as the Telegram link (Owner 2026-11-07).
+     */
+    public function testTheEmailLinksTheCrewPageBoardAndTheBotsBoard(): void
+    {
+        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
+
+        $this->sendToSam([
+            'eventcrew_signup_page_id' => 9,
+            BoardService::USERNAME_OPTION => 'crewbot',
+        ]);
+
+        $body = $this->mails[0]['body'];
+        self::assertStringContainsString('See open tasks: https://site.test/crew/#eventcrew-panel-board', $body);
+        self::assertStringContainsString('https://t.me/crewbot?start=board', $body);
+        self::assertStringNotContainsString('Sign up:', $body);
     }
 
     /** A text saved on the Messages page is what is sent, with its placeholders filled. */
@@ -462,11 +486,11 @@ final class OpenTaskCallTest extends TestCase
 
         self::assertSame('Help, Sam', $this->mails[0]['subject']);
         self::assertStringStartsWith(
-            "Open:\nSat 1 Aug\n- Decorate at Party (2 of 2 free)\nThis will be your first task — welcome!",
+            "Open:\n" . self::OPEN . "\nThis will be your first task — welcome!",
             $this->mails[0]['body']
         );
         self::assertSame(
-            "📣 Test Site\n\nHi Sam,\n\nOpen: Sat 1 Aug\n- Decorate at Party (2 of 2 free)",
+            "📣 Test Site\n\nHi Sam,\n\nOpen: " . self::OPEN,
             (string) $dms[0]['text']
         );
     }

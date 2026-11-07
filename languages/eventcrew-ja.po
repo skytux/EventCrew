@@ -1009,14 +1009,6 @@ msgstr "空行と、タスクの役割の「タスクについて」のテキス
 msgid "An empty line and the next nights a free-entry credit can be spent on, one per line. On lines of their own; they go when there are none."
 msgstr "空行と、無料入場クレジットを使える次の夜 (1行に1つ)。独立した行に表示し、なければ消えます。"
 
-#: src/Support/OpenTaskList.php:215
-msgid "An empty line and the open tasks this person can sign up for, one line each, with no names. Empty when there are none."
-msgstr "空行と、この人が申し込める空きタスク (1行に1つ、名前なし)。なければ空です。"
-
-#: src/Support/MessageTemplates.php:1223
-msgid "An empty line and the other open tasks of the event, one per line, with no names. Empty when there are none."
-msgstr "空行と、イベントのほかの空きタスク (1行に1つ、名前なし)。なければ空です。"
-
 #: src/Support/MessageTemplates.php:1217
 msgid "An empty line and the task's details: the task, the event, the day and time, the free places, and the description of the task or its role."
 msgstr "空行と、タスクの詳細: タスク、イベント、日時、空き席、タスクまたはその役割の説明。"
@@ -1024,10 +1016,6 @@ msgstr "空行と、タスクの詳細: タスク、イベント、日時、空�
 #: src/Support/MessageTemplates.php:2543
 msgid "An empty line, then the line about the button that opens the crew’s Telegram group. Empty when no group link is known; then there is no such button."
 msgstr "空行と、クルーの Telegram グループを開くボタンについての行。グループのリンクが不明なときは空で、そのボタンもありません。"
-
-#: src/Support/MessageTemplates.php:2368
-msgid "An empty line, then the line with the link to the Help tab of the Crew app. Empty when no crew page is set."
-msgstr "空行と、クルーアプリのヘルプタブへのリンクの行。クルーページが設定されていないときは空です。"
 
 #: templates/admin/settings.php:901
 msgid "An outcome this many days old counts half as much toward the score as a same-day one. Default 180."
@@ -3098,11 +3086,6 @@ msgstr "追加された数。"
 msgid "How tasks, tickets, credits and standing work, by email and Telegram, once to each member. Organizers also get the organizer guide. New members get it when they confirm their email; everyone else from the hourly run, inside the notification hours, 25 people per hour. Use \"Send me the welcome message\" below to check it first."
 msgstr "タスク、チケット、クレジット、評価の仕組みを、メールと Telegram で各メンバーに 1 回送ります。主催者には主催者ガイドも届きます。新しいメンバーにはメールを確認したときに、それ以外の人には通知時間内の毎時の実行で、1 時間あたり 25 人ずつ送ります。先に確認するには、下の「歓迎メッセージを自分に送る」を使ってください。"
 
-#. translators: %s: the crew's name (the site name)
-#: src/Support/WelcomeSender.php:491
-msgid "How the %s crew works. Your own numbers are in the Me tab, and /me sends them to you in a private chat with the bot."
-msgstr "%s クルーの仕組み。あなた自身の数字は「自分」タブにあり、ボットとのプライベートチャットで /me を送ると届きます。"
-
 #: templates/admin/settings.php:1234
 msgid "How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the Crew app. A line starting with \"## \" is a heading, lines starting with \"- \" are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing."
 msgstr "このサイトの運用方法: ホスト先、必要な回避策、メールの送受信、外部サービス。Crew アプリのヘルプタブで、主催者にのみ表示されます。「## 」で始まる行は見出し、「- 」で始まる行はリスト、空行で新しい段落になります。パスワードやキーは書かないでください。空欄にすると何も表示されません。"
@@ -3118,10 +3101,6 @@ msgstr "販売デスクの別のリンクを得る方法: ボットで、また�
 #: src/Support/MessageTemplates.php:1440
 msgid "How to get the free ticket: in the bot or the Crew app, or, for a person with no Telegram chat, on the crew page, with its link."
 msgstr "無料チケットを得る方法: ボットかクルーアプリで、または Telegram チャットのない人はクルーページで (リンク付き)。"
-
-#: src/Support/MessageTemplates.php:2385
-msgid "How to spend a credit: in the bot or on the web page, or, for a person with no Telegram chat, on the crew page, with its link."
-msgstr "クレジットを使う方法: ボットかウェブページで、または Telegram チャットのない人はクルーページで (リンク付き)。"
 
 #: templates/admin/settings.php:1476
 msgid "How your crew signs off. It closes every notification email, and the Telegram messages that go out to everyone — the open-task call, the reminders and the “a spot just opened” notice. Leave it blank for no sign-off."
@@ -3317,18 +3296,9 @@ msgstr "インストール済み"
 msgid "Issued %s"
 msgstr "%s 発行"
 
-#: src/Support/WelcomeSender.php:476
-msgid "It is the first button in your sign-up confirmation, and /me tickets lists all your tickets."
-msgstr "申し込み確認の最初のボタンで、/me tickets ですべてのチケットを一覧できます。"
-
 #: src/Support/WelcomeSender.php:497
 msgid "It is the first button in your sign-up confirmation, and the Me tab lists all your tickets."
 msgstr "申し込み確認の最初のボタンで、Me タブにすべてのチケットが一覧されます。"
-
-#. translators: %s: link to the crew page
-#: src/Support/MessageTemplates.php:2398
-msgid "It is the first button in your sign-up confirmation, and the Me tab of the crew page (%s) lists all your tickets."
-msgstr "申し込み確認の最初のボタンで、クルーページ (%s) の Me タブにすべてのチケットが一覧されます。"
 
 #. translators: %d: hours before the task starts
 #: src/Support/TakeoverService.php:609
@@ -5389,10 +5359,6 @@ msgstr "付与された役割と新しい主催者"
 msgid "Roles saved."
 msgstr "役割を保存しました。"
 
-#: src/Telegram/MenuButtons.php:208
-msgid "Roles, organizers and passes"
-msgstr "役割、主催者、パス"
-
 #: src/Support/OrganizerGuide.php:88
 msgid "Roles: /people, then 🏷 Roles, organizers and passes, makes someone an organizer, gives a one-time pass past the sign-up gate, and gives or takes away roles such as DJ."
 msgstr "役割: /people の 🏷 役割・主催者・パス で、誰かを主催者にしたり、申し込み制限を 1 回だけ越えるパスを渡したり、DJ などの役割を付与・解除したりできます。"
@@ -5832,10 +5798,6 @@ msgstr "イベントの夜、販売デスクのタスクの人が到着済みに
 #: src/Support/MessageTemplates.php:2483
 msgid "Sent once to each member when their email address is confirmed: how tasks, tickets, credits and standing work, and the open tasks. Only when the welcome message is on in Settings."
 msgstr "メールアドレスが確認されたときに各メンバーへ1回送られます: タスク、チケット、クレジット、評価の仕組みと空きタスク。設定でウェルカムメッセージがオンのときだけです。"
-
-#: src/Support/MessageTemplates.php:2492
-msgid "Sent once to each member who uses the bot, with a button for each open task. Only when the welcome message is on in Settings."
-msgstr "ボットを使う各メンバーへ1回、空きタスクごとのボタン付きで送られます。設定でウェルカムメッセージがオンのときだけです。"
 
 #: src/Support/MessageTemplates.php:2518
 msgid "Sent once to each organizer who uses the bot, with the short part of the organizer guide. Only when the welcome message is on in Settings."
@@ -6584,10 +6546,6 @@ msgstr "イベントでチームと話す"
 #: src/Support/MessageTemplates.php:2473
 msgid "Tap Sales desk in the Me tab of the crew page (%s)."
 msgstr "クルーページ (%s) の Me タブで「販売デスク」をタップしてください。"
-
-#: src/Support/WelcomeSender.php:664
-msgid "Tap a button below to sign up."
-msgstr "下のボタンをタップして申し込んでください。"
 
 #: src/Support/MessageTemplates.php:2462
 msgid "Tap 💳 Sales desk below."
@@ -7654,10 +7612,6 @@ msgstr "次回イベントのお知らせはオフになっています。管理
 msgid "The next ones are below."
 msgstr "次のものは下にあります。"
 
-#: src/Support/MessageTemplates.php:2431
-msgid "The next open tasks, one line each, and the line about how to sign up. When there are none, a line that says so."
-msgstr "次の空きタスク (1行に1つ) と申し込み方法の行。ない場合はその旨の行。"
-
 #: src/Support/MessageTemplates.php:1209
 msgid "The next open tasks, under a line with each date."
 msgstr "次の空きタスク (日付ごとの行の下に)。"
@@ -8237,11 +8191,6 @@ msgstr "このイベント独自の会場。デフォルトの会場を使うに
 msgid "This goes to the group:"
 msgstr "グループにはこれが送られます:"
 
-#. translators: %s: link to the Help tab of the crew web page
-#: src/Support/WelcomeSender.php:397
-msgid "This guide is also in the Crew app, in the Help tab, after you sign in: %s"
-msgstr "このガイドは、サインイン後に Crew アプリのヘルプタブでも見られます: %s"
-
 #: templates/admin/people.php:58 templates/public/signup.php:881
 msgid "This is how a person is identified across Telegram and the web."
 msgstr "Telegram とウェブで人を識別するために使います。"
@@ -8590,15 +8539,6 @@ msgstr "次のイベント後メールだけの文面を設定するには、/fo
 #: src/Telegram/WebLoginBot.php:86
 msgid "To sign in to the crew app, press the code that the crew app on your screen shows. If you did not just press Telegram on the crew app yourself, press nothing."
 msgstr "Crew アプリにサインインするには、画面の Crew アプリに表示されているコードを押してください。Crew アプリで自分で Telegram を押したのでなければ、何も押さないでください。"
-
-#. translators: %s: link to the crew page
-#: src/Support/MessageTemplates.php:2389
-msgid "To spend a credit, pick a night under Tickets in the Me tab of the crew page (%s)."
-msgstr "クレジットを使うには、クルーページ (%s) の Me タブの「チケット」で夜を選んでください。"
-
-#: src/Support/WelcomeSender.php:462
-msgid "To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page."
-msgstr "クレジットを使うには、ボットに /me を送って 🎟 無料入場チケット をタップするか、ウェブページを使ってください。"
 
 #: templates/public/signup.php:631
 msgid "To stop individual emails, use Notifications above. To leave for good, delete your data — this erases your account and history and cannot be undone."
@@ -8963,10 +8903,6 @@ msgstr "お知らせであいさつするためだけに使います。各お知
 msgid "Web page"
 msgstr "ウェブページ"
 
-#: src/Telegram/MenuButtons.php:150
-msgid "Web sign-in"
-msgstr "ウェブでのサインイン"
-
 #: templates/admin/settings.php:2532
 msgid "Webhook"
 msgstr "Webhook"
@@ -9024,11 +8960,6 @@ msgstr "ウェルカムメッセージ (メール)"
 #: src/Support/Roles.php:148
 msgid "Welcome people at the door, check and sell tickets, and count how many people come in."
 msgstr "入口で人を迎え、チケットの確認と販売をし、入場者数を数えます。"
-
-#. translators: 1: the crew's name (the site name), 2: where to see your own numbers
-#: src/Support/WelcomeSender.php:426
-msgid "Welcome to the %1$s crew. This message explains how it works. %2$s"
-msgstr "%1$s のクルーへようこそ。このメッセージで仕組みを説明します。%2$s"
 
 #: src/Support/MessageTemplates.php:2536
 msgid "Welcome to the crew"
@@ -9166,10 +9097,6 @@ msgstr "あなたのチケットが受付リストに追加されると、チケ
 msgid "When: %s"
 msgstr "日時: %s"
 
-#: src/Support/MessageTemplates.php:2394
-msgid "Where all your tickets are: in the bot, or, for a person with no Telegram chat, on the crew page, with its link."
-msgstr "すべてのチケットの場所: ボットで、または Telegram チャットのない人はクルーページで (リンク付き)。"
-
 #: templates/admin/settings.php:2450
 msgid "Where imported lists go. Created if missing."
 msgstr "インポートしたリストの移動先。なければ作成します。"
@@ -9185,10 +9112,6 @@ msgstr "却下したメッセージの移動先。なければ作成します。
 #: src/Support/MessageTemplates.php:542
 msgid "Where the event is, like “📍 Dance hall”: the event’s own venue, else the default venue (Settings > Web page), else the venue from EventMesh. On a line of its own; the line goes when no venue is known."
 msgstr "イベントの場所。例: 「📍 ダンスホール」: イベント独自の会場、なければデフォルトの会場 (設定 > ウェブページ)、なければ EventMesh の会場。独立した行に表示し、会場が不明なときはその行は消えます。"
-
-#: src/Support/MessageTemplates.php:2374
-msgid "Where to see your own numbers: in the bot, or, for a person with no Telegram chat, on the crew page, with its link."
-msgstr "自分の数字を見られる場所: ボットで、または Telegram チャットのない人はクルーページで (リンク付き)。"
 
 #. translators: %d: number of days
 #: templates/admin/bot-log.php:39
@@ -9522,11 +9445,6 @@ msgstr "代わりに wp-config.php で EVENTCREW_TELEGRAM_TOKEN を定義すれ�
 msgid "You can return to Telegram and sign up for tasks."
 msgstr "Telegram に戻ってタスクに申し込めます。"
 
-#. translators: %s: link to the crew page
-#: src/Support/MessageTemplates.php:2380
-msgid "You can see your own numbers any time in the Me tab of the crew page (%s)."
-msgstr "自分の数字は、クルーページ (%s) の Me タブでいつでも見られます。"
-
 #: src/Admin/Admin.php:596 src/Admin/JobsStatus.php:138
 #: src/Admin/PeoplePage.php:331 src/Admin/TasksPage.php:271
 msgid "You do not have permission to do this."
@@ -9798,10 +9716,6 @@ msgstr "名前を保存しました。新しいアドレスにリンクを送り
 #: src/Web/SignupController.php:1210
 msgid "Your notification preferences are saved."
 msgstr "通知の設定を保存しました。"
-
-#: src/Support/WelcomeSender.php:443
-msgid "Your numbers, tickets and credits: send /me to the bot."
-msgstr "数字、チケット、クレジット: ボットに /me を送ってください。"
 
 #: src/Support/MessagePreview.php:442
 msgid "Your own AI placeholder (Messages > AI), written for each event."
@@ -10996,3 +10910,97 @@ msgstr "このページの画像の横長の帯を、Telegram のボードのテ
 
 msgid "The first name of the person the message is for, without the last name."
 msgstr "メッセージの宛先の人の名（姓なし）。"
+
+msgid "An empty line and the open tasks this person can sign up for, under a line with each date, with no names. Empty when there are none."
+msgstr "空行と、この人が申し込める空きタスク (日付ごとの見出しの下に、名前なし)。なければ空です。"
+
+msgid "An empty line and the other open tasks of the event, under a line with each date, with no names. Empty when there are none."
+msgstr "空行と、イベントのほかの空きタスク (日付ごとの見出しの下に、名前なし)。なければ空です。"
+
+#, php-format
+msgid "%1$s at %2$s"
+msgstr "%2$s の %1$s"
+
+msgid "⬅️ Back"
+msgstr "⬅️ 戻る"
+
+msgid "Get a free-entry ticket"
+msgstr "無料入場チケットを受け取る"
+
+msgid "Choose notifications"
+msgstr "通知を選ぶ"
+
+msgid "Change language"
+msgstr "言語を変更"
+
+msgid "Get a web sign-in link"
+msgstr "ウェブのサインインリンクを受け取る"
+
+msgid "Give or remove roles"
+msgstr "役割を付与・解除"
+
+msgid "%1$s or %2$s"
+msgstr "%1$s または %2$s"
+
+msgid "Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers."
+msgstr "困ったこと、ご意見、不具合があれば、ボットにそのまま伝えてください。主催者に転送されます。"
+
+msgid "How the %s crew works. Your own numbers are in the Me tab, and the bot shows them when you ask in a private chat."
+msgstr "%s クルーの仕組み。あなた自身の数字は「自分」タブにあり、ボットとのプライベートチャットで尋ねると表示されます。"
+
+msgid "How to spend a credit: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app."
+msgstr "クレジットの使い方: Telegram チャットがある人は空。ない人は Crew アプリの「自分」タブ。"
+
+msgid "If you cannot reach the bot, contact the maintainer, %s, or just try again a bit later."
+msgstr "ボットにつながらない場合は、管理者 (%s) に連絡するか、少し時間をおいて試してください。"
+
+msgid "In a private chat with the bot, it is usually enough to write what you want in your own words. There are no commands or keywords to remember."
+msgstr "ボットとのプライベートチャットでは、たいてい自分の言葉でしたいことを書くだけで十分です。覚えるべきコマンドやキーワードはありません。"
+
+msgid "It is the first button in your sign-up confirmation, and the Me tab of the Crew app lists all your tickets."
+msgstr "申し込み確認の最初のボタンで、Crew アプリの「自分」タブにすべてのチケットが一覧されます。"
+
+msgid "It is the first button in your sign-up confirmation, and the bot lists all your tickets when you ask."
+msgstr "申し込み確認の最初のボタンで、尋ねればボットがすべてのチケットを一覧します。"
+
+msgid "Maintainer contact"
+msgstr "管理者の連絡先"
+
+msgid "Sent once to each member who uses the bot, with the open tasks by date and a button to the board. Only when the welcome message is on in Settings."
+msgstr "ボットを使う各メンバーに一度だけ送られ、日付ごとの空きタスクとボードへのボタンが入ります。設定で歓迎メッセージがオンのときのみ。"
+
+msgid "Talking to the bot"
+msgstr "ボットとの会話"
+
+msgid "The next open tasks by date (at most 3 dates and 8 tasks), and the line about how to sign up. When there are none, a line that says so."
+msgstr "日付ごとの次の空きタスク (最大 3 日分・8 件) と申し込み方法の行。ない場合はその旨の行。"
+
+msgid "To see your numbers, tickets or credits, just ask the bot in a private chat."
+msgstr "数字、チケット、クレジットを見るには、プライベートチャットでボットに尋ねてください。"
+
+msgid "To sign up, tap 📋 See open tasks below."
+msgstr "申し込むには、下の 📋 空きタスクを見る をタップしてください。"
+
+msgid "To spend a credit, ask the bot for a free-entry ticket, or use the web page."
+msgstr "クレジットを使うには、ボットに無料入場チケットを頼むか、ウェブページを使ってください。"
+
+msgid "To spend a credit, pick a night under Tickets in the Me tab of the Crew app."
+msgstr "クレジットを使うには、Crew アプリの「自分」タブのチケットで夜を選んでください。"
+
+msgid "Welcome to the %1$s crew! Our nights happen because people like you lend a hand: every task you take keeps the door open, the room ready and the music going, and earns you free entry. This message explains how it works. %2$s"
+msgstr "%1$s のクルーへようこそ！私たちの夜は、あなたのような人が手を貸してくれるから成り立っています。引き受けるタスクの一つひとつが、ドアを開け、会場を整え、音楽を流し続け、あなたには無料入場をもたらします。このメッセージで仕組みを説明します。%2$s"
+
+msgid "Where all your tickets are: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app."
+msgstr "すべてのチケットの場所: Telegram チャットがある人は空。ない人は Crew アプリの「自分」タブ。"
+
+msgid "Where to see your own numbers: ask the bot, or, for a person with no Telegram chat, the Me tab of the Crew app."
+msgstr "自分の数字を見る場所: ボットに尋ねる。Telegram チャットがない人は Crew アプリの「自分」タブ。"
+
+msgid "Whom to contact when the bot cannot be reached (Settings > Welcome message)."
+msgstr "ボットにつながらないときの連絡先 (設定 > 歓迎メッセージ)。"
+
+msgid "Whom to contact when the bot cannot be reached, for example an email address and a Telegram name. Shown in the welcome message. Empty: the text in the box."
+msgstr "ボットにつながらないときの連絡先。例: メールアドレスと Telegram 名。歓迎メッセージに表示されます。空欄: 欄内のテキスト。"
+
+msgid "You can see your own numbers any time in the Me tab of the Crew app."
+msgstr "自分の数字は、Crew アプリの「自分」タブでいつでも見られます。"

@@ -11,7 +11,10 @@ use EventCrew\Repositories\TaskRepository;
 
 /**
  * The open tasks one person may take, for a message that ends in "sign up":
- * one line per task (no names), and one Sign up action per task.
+ * grouped under a heading per date (grouped()), one line per task (no
+ * names), at most MAX_DATES dates and MAX_TASKS tasks. The message has one
+ * See open tasks button for them all, not one per task (Owner 2026-11-07:
+ * too many buttons).
  *
  * A task is listed when it has not started, the person can see it on the
  * board (BoardVisibility), its role does not shut them out
@@ -20,20 +23,31 @@ use EventCrew\Repositories\TaskRepository;
  * (standing, the team's OK) stay with SignupService: the Sign up tap runs
  * them and answers with the normal result.
  *
- * Sign up, in the DM: the board's join-only callback (j:, never a cancel),
- * or for a restricted task the role list's sign-up (rt:s:, which asks the
- * credit question first). In the email: the crew page at that task's row.
+ * action() is one task's Sign up, for the messages that still offer a
+ * single task: in the DM the board's join-only callback (j:, never a
+ * cancel), or for a restricted task the role list's sign-up (rt:s:, which
+ * asks the credit question first). In the email: the crew page at that
+ * task's row.
  *
  * The senders put the rows in the context under CONTEXT_KEY; the
- * {open_tasks} placeholder and the actions read them from there.
+ * {open_tasks} placeholder reads them from there.
  */
 final class OpenTaskList
 {
     /** The context key of the rows: list<array{task: Task, free: int|null}>. */
     public const CONTEXT_KEY = 'open_rows';
 
-    /** How many tasks a message lists, unless the caller says otherwise. */
+    /** How many Sign up buttons the welcome message offers (WelcomeSender). */
     public const DEFAULT_MAX = 3;
+
+    /** The most tasks a list shows (Owner 2026-11-07, Q365). */
+    public const MAX_TASKS = 8;
+
+    /** The most dates a list shows (Owner 2026-11-07, Q365). */
+    public const MAX_DATES = 3;
+
+    /** The longest short description of a role under a list, in characters. */
+    public const SHORT_DESCRIPTION_MAX = 90;
 
     /** The crew page element of one task row: this followed by the task id. */
     public const ANCHOR_PREFIX = 'eventcrew-task-';
@@ -48,15 +62,16 @@ final class OpenTaskList
     }
 
     /**
-     * Up to $max open tasks $person may take, soonest first: of one event
-     * when $eventId is given, of one role when $roleSlug is.
+     * Up to $max open tasks $person may take, soonest first, on at most
+     * MAX_DATES dates: of one event when $eventId is given, of one role when
+     * $roleSlug is.
      *
      * @return list<array{task: Task, free: int|null}> free is null for a task with no limit
      */
     public function forPerson(
         Person $person,
         ?int $eventId = null,
-        int $max = self::DEFAULT_MAX,
+        int $max = self::MAX_TASKS,
         string $roleSlug = ''
     ): array {
         if ($max <= 0) {
@@ -93,10 +108,15 @@ final class OpenTaskList
 
         $occupancy = $this->tasks->occupancyFor(array_map(static fn (Task $task): int => $task->id, $candidates));
         $rows = [];
+        $dates = [];
 
         foreach ($candidates as $task) {
             if (isset($on[$task->id])) {
                 continue;
+            }
+
+            if (! isset($dates[$task->taskDate]) && count($dates) >= self::MAX_DATES) {
+                break;
             }
 
             $free = $task->hasNoLimit() ? null : $task->capacity - ($occupancy[$task->id] ?? 0);
@@ -106,6 +126,7 @@ final class OpenTaskList
             }
 
             $rows[] = ['task' => $task, 'free' => $free];
+            $dates[$task->taskDate] = true;
 
             if (count($rows) >= $max) {
                 break;
@@ -116,44 +137,92 @@ final class OpenTaskList
     }
 
     /**
-     * The {open_tasks} of a message: an empty line, "Open now:" and one line
-     * per row; '' when there are no rows.
+     * The {open_tasks} of a message: an empty line, "Open now:" and the rows
+     * grouped by date (grouped()); '' when there are no rows.
      *
      * @param array<string, mixed> $context
      */
     public static function block(array $context): string
     {
-        $rows = self::rows($context);
+        $text = self::grouped(self::rows($context));
 
-        if ([] === $rows) {
-            return '';
-        }
-
-        return "\n\n" . __('Open now:', 'eventcrew') . "\n"
-            . implode("\n", array_map(static fn (array $row): string => self::line($row['task'], $row['free']), $rows));
+        return '' === $text ? '' : "\n\n" . __('Open now:', 'eventcrew') . "\n" . $text;
     }
 
     /**
-     * "- 📅 Sat 14 Nov 18:00–20:00: 🚪 Door at Dance Night (2 of 3 free)",
-     * without the places for a task with no limit.
+     * $rows under a "📅 Sat 14 Nov" heading per date, an empty line between
+     * the dates, one line per row ($line, line() by default). At most
+     * MAX_DATES dates and MAX_TASKS rows, the soonest; '' when there are no
+     * rows (Owner 2026-11-07, Q365).
+     *
+     * @param list<array{task: Task, free: int|null}> $rows Soonest first.
+     * @param (callable(Task, int|null): string)|null $line
+     */
+    public static function grouped(array $rows, ?callable $line = null): string
+    {
+        $line ??= static fn (Task $task, ?int $free): string => self::line($task, $free);
+        $days = [];
+        $count = 0;
+
+        foreach ($rows as $row) {
+            $date = $row['task']->taskDate;
+
+            if ($count >= self::MAX_TASKS || (! isset($days[$date]) && count($days) >= self::MAX_DATES)) {
+                break;
+            }
+
+            $days[$date][] = $line($row['task'], $row['free']);
+            ++$count;
+        }
+
+        $blocks = [];
+
+        foreach ($days as $date => $lines) {
+            $blocks[] = '📅 ' . Dates::dayLabel((string) $date) . "\n" . implode("\n", $lines);
+        }
+
+        return implode("\n\n", $blocks);
+    }
+
+    /**
+     * "- 18:00–20:00: 🚪 Door at Dance Night (2 of 3 free)", under the day's
+     * heading (grouped()): without the time when the task has none, without
+     * the places for a task with no limit.
      */
     public static function line(Task $task, ?int $free): string
     {
         $time = $task->timeRange();
-        $day = Dates::dayLabel($task->taskDate) . ('' === $time ? '' : ' ' . $time);
 
-        return '- 📅 ' . (null === $free
+        if ('' === $time) {
+            return '- ' . (null === $free
+                ? sprintf(
+                    /* translators: 1: role with emoji, 2: event */
+                    __('%1$s at %2$s', 'eventcrew'),
+                    $task->roleDisplay(),
+                    $task->eventName()
+                )
+                : sprintf(
+                    /* translators: 1: role, 2: event, 3: free places, 4: places in all */
+                    __('%1$s at %2$s (%3$d of %4$d free)', 'eventcrew'),
+                    $task->roleDisplay(),
+                    $task->eventName(),
+                    $free,
+                    $task->capacity
+                ));
+        }
+
+        return '- ' . (null === $free
             ? sprintf(
-                /* translators: 1: day and time, 2: role with emoji, 3: event */
+                /* translators: 1: the time, like 18:00–20:00, 2: role with emoji, 3: event */
                 __('%1$s: %2$s at %3$s', 'eventcrew'),
-                $day,
+                $time,
                 $task->roleDisplay(),
                 $task->eventName()
             )
             : sprintf(
-                /* translators: 1: day and time, 2: role with emoji, 3: event, 4: free places, 5: places in all */
+                /* translators: 1: the time, like 18:00–20:00, 2: role with emoji, 3: event, 4: free places, 5: places in all */
                 __('%1$s: %2$s at %3$s (%4$d of %5$d free)', 'eventcrew'),
-                $day,
+                $time,
                 $task->roleDisplay(),
                 $task->eventName(),
                 $free,
@@ -162,17 +231,52 @@ final class OpenTaskList
     }
 
     /**
-     * One Sign up action per row (MessageTemplates::actions()).
+     * What the roles of $rows involve, for the foot of a list (Owner
+     * 2026-11-07): "📝 What each task involves" and one "🚪 Door: ..." line
+     * per role, in the order listed, each description cut short
+     * (shortDescription()). Roles without a description are left out; ''
+     * when none has one.
      *
-     * @param array<string, mixed> $context
-     * @return list<MessageAction>
+     * @param list<array{task: Task, free: int|null}> $rows
      */
-    public static function actions(array $context, Mailer $mailer): array
+    public static function descriptions(array $rows): string
     {
-        return array_map(
-            static fn (array $row): MessageAction => self::action($row['task'], $mailer),
-            self::rows($context)
-        );
+        $lines = [];
+
+        foreach ($rows as $row) {
+            $task = $row['task'];
+            $short = self::shortDescription($task->roleDescription());
+
+            if ('' === $short || isset($lines[$task->roleSlug])) {
+                continue;
+            }
+
+            $lines[$task->roleSlug] = $task->roleDisplay() . ': ' . $short;
+        }
+
+        return [] === $lines ? '' : RoleGuide::descriptionsLabel() . "\n" . implode("\n", $lines);
+    }
+
+    /**
+     * $text on one short line: its first sentence when that is short enough,
+     * else cut at a word before SHORT_DESCRIPTION_MAX characters, with "…".
+     */
+    public static function shortDescription(string $text): string
+    {
+        $text = trim((string) preg_replace('/\s+/u', ' ', $text));
+
+        if (1 === preg_match('/^.+?[.!?](?=\s|$)/u', $text, $match) && mb_strlen($match[0]) <= self::SHORT_DESCRIPTION_MAX) {
+            return $match[0];
+        }
+
+        if (mb_strlen($text) <= self::SHORT_DESCRIPTION_MAX) {
+            return $text;
+        }
+
+        $cut = mb_substr($text, 0, self::SHORT_DESCRIPTION_MAX);
+        $space = mb_strrpos($cut, ' ');
+
+        return rtrim(false === $space ? $cut : mb_substr($cut, 0, $space), ' ,;:-–') . '…';
     }
 
     /** Sign up for $task: the DM's callback, the crew page's row on the web. */
@@ -212,7 +316,7 @@ final class OpenTaskList
     public static function placeholder(): array
     {
         return [
-            'description' => __('An empty line and the open tasks this person can sign up for, one line each, with no names. Empty when there are none.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+            'description' => __('An empty line and the open tasks this person can sign up for, under a line with each date, with no names. Empty when there are none.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
             'resolve' => static fn (array $c): string => self::block($c),
             'required' => false,
         ];

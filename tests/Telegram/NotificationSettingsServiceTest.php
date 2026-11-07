@@ -33,6 +33,9 @@ final class NotificationSettingsServiceTest extends TelegramTestCase
 
         $rows = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
 
+        // The last row is Back to Settings.
+        self::assertSame([['text' => '⬅️ Back', 'callback_data' => 'mn:set']], array_pop($rows));
+
         // A header row plus one row per type, every row three cells wide.
         foreach ($rows as $row) {
             self::assertCount(3, $row);
@@ -76,6 +79,10 @@ final class NotificationSettingsServiceTest extends TelegramTestCase
         $saved = json_decode((string) $this->wpdb->updates[0]['data']['notify_prefs'], true);
         self::assertFalse($saved['credit']['dm']);
         self::assertContains('editMessageText', $this->calledMethods());
+
+        // The redrawn menu keeps Back to Settings as its last row.
+        $rows = $this->lastCallTo('editMessageText')['reply_markup']['inline_keyboard'];
+        self::assertSame('mn:set', end($rows)[0]['callback_data']);
     }
 
     /** @return list<string> the types with a row in the keyboard */
@@ -83,7 +90,8 @@ final class NotificationSettingsServiceTest extends TelegramTestCase
     {
         $types = [];
 
-        foreach (array_slice($this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'], 1) as $row) {
+        // Skip the header row and the Back row.
+        foreach (array_slice($this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'], 1, -1) as $row) {
             $types[] = explode(':', (string) $row[1]['callback_data'])[1];
         }
 

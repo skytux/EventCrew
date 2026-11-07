@@ -183,6 +183,7 @@ final class SettingsPage
                 'door_max_people' => DoorQuota::max(),
                 'door_allow_over_max' => DoorQuota::allowsOver(),
                 'welcome_enabled' => WelcomeSender::enabled(),
+                'maintainer_contact' => (string) get_option(WelcomeSender::MAINTAINER_OPTION, ''),
                 'newsletter_enabled' => Newsletter::enabled(),
                 'followup_enabled' => FollowupMail::enabled(),
                 'newsletter_days' => Newsletter::days(),
@@ -773,6 +774,13 @@ final class SettingsPage
         );
         update_option(DoorQuota::OVER_OPTION, isset($_POST['door_allow_over_max']) ? '1' : '0');
         update_option(WelcomeSender::ENABLED_OPTION, isset($_POST['welcome_enabled']) ? '1' : '0');
+        // Free text shown in the welcome message; empty means the default (Owner 2026-11-07, Q367).
+        if (isset($_POST['maintainer_contact'])) {
+            update_option(
+                WelcomeSender::MAINTAINER_OPTION,
+                sanitize_text_field(wp_unslash((string) $_POST['maintainer_contact']))
+            );
+        }
         update_option(Newsletter::ENABLED_OPTION, isset($_POST['newsletter_enabled']) ? '1' : '0');
         FollowupMail::setEnabled(isset($_POST['followup_enabled']));
         update_option(

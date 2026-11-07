@@ -2,7 +2,7 @@ DM 📣 Test Crew
 
 Hi Person 3,
 
-Welcome to the Test Crew crew. This message explains how it works. Your numbers, tickets and credits: send /me to the bot.
+Welcome to the Test Crew crew! Our nights happen because people like you lend a hand: every task you take keeps the door open, the room ready and the music going, and earns you free entry. This message explains how it works. To see your numbers, tickets or credits, just ask the bot in a private chat.
 
 🧩 The tasks
 
@@ -38,6 +38,16 @@ Cancelling 48 hours or more before has no effect. Recent tasks count more than o
 
 📋 Open tasks
 
-📅 Mon 20 Jul 13:00–14:00: 🎈 Decorate (2 of 3 places free)
+📅 Mon 20 Jul
 
-Tap a button below to sign up.
+🎈 Decorate 13:00–14:00: 2 of 3 places free
+
+To sign up, tap 📋 See open tasks below.
+
+💬 Talking to the bot
+
+In a private chat with the bot, it is usually enough to write what you want in your own words. There are no commands or keywords to remember.
+
+Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers.
+
+If you cannot reach the bot, contact the maintainer, maintainer@example.org or @maintainer, or just try again a bit later.

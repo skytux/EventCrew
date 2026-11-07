@@ -115,7 +115,7 @@ final class MenuButtons
     public static function ticketsRows(): array
     {
         return [
-            [self::button('🎟 ' . __('Free-entry ticket', 'eventcrew'), self::TICKET)],
+            [self::button('🎟 ' . __('Get a free-entry ticket', 'eventcrew'), self::TICKET)],
             self::backRow(),
         ];
     }
@@ -129,7 +129,7 @@ final class MenuButtons
     public static function tasksRows(): array
     {
         return [
-            [self::button('📅 ' . __('Open tasks', 'eventcrew'), self::BOARD)],
+            [self::button('📅 ' . __('See open tasks', 'eventcrew'), self::BOARD)],
             [self::button('🔁 ' . __('Take over a task', 'eventcrew'), self::REPLACE)],
             [self::button('🕘 ' . __('Past tasks', 'eventcrew'), self::HISTORY)],
             self::backRow(),
@@ -145,9 +145,9 @@ final class MenuButtons
     public static function settings(): array
     {
         return ['inline_keyboard' => [
-            [self::button('🔔 ' . __('Notifications', 'eventcrew'), self::NOTIFICATIONS)],
-            [self::button('🌐 ' . __('Language', 'eventcrew'), self::LANGUAGE)],
-            [self::button('🔑 ' . __('Web sign-in', 'eventcrew'), self::WEB)],
+            [self::button('🔔 ' . __('Choose notifications', 'eventcrew'), self::NOTIFICATIONS)],
+            [self::button('🌐 ' . __('Change language', 'eventcrew'), self::LANGUAGE)],
+            [self::button('🔑 ' . __('Get a web sign-in link', 'eventcrew'), self::WEB)],
             self::backRow(),
         ]];
     }
@@ -169,35 +169,70 @@ final class MenuButtons
     }
 
     /**
-     * The "👤 My info" row that takes a screen under /me back to it.
+     * The "⬅️ Back" row, the last row of every screen under a menu (Owner
+     * 2026-11-07: "In the menus always put a back button"). $parent is the
+     * callback data of the screen it goes back to: My info by default.
      *
      * @return array<int, array{text: string, callback_data: string}>
      */
-    public static function backRow(): array
+    public static function backRow(string $parent = self::ME): array
     {
-        return [self::button(__('👤 My info', 'eventcrew'), self::ME)];
+        return [self::button(__('⬅️ Back', 'eventcrew'), $parent)];
+    }
+
+    /**
+     * A keyboard of the Back row alone.
+     *
+     * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
+     */
+    public static function back(string $parent = self::ME): array
+    {
+        return ['inline_keyboard' => [self::backRow($parent)]];
+    }
+
+    /**
+     * $markup (a reply markup or null) with the Back row to $parent as its
+     * last row.
+     *
+     * @param array<string, mixed>|null $markup
+     * @return array<string, mixed>
+     */
+    public static function withBack(?array $markup, string $parent): array
+    {
+        $rows = is_array($markup['inline_keyboard'] ?? null) ? $markup['inline_keyboard'] : [];
+        $rows[] = self::backRow($parent);
+
+        return ['inline_keyboard' => $rows];
     }
 
     /**
      * The buttons under /door. $date is what was typed after /door, or "".
+     * An organizer gets Back to Admin under them, however /door was opened
+     * (Admin is theirs alone; for the welcome crew /door is the top).
      *
      * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
      */
-    public static function door(string $date): array
+    public static function door(string $date, bool $organizer = false): array
     {
         // Telegram allows 64 bytes of callback data; a date is far shorter,
         // and anything longer is not a date anyway.
         $date = substr($date, 0, 40);
 
-        return ['inline_keyboard' => [
+        $rows = [
             [self::button('📋 ' . __('Door list', 'eventcrew'), self::DOOR_LIST . $date)],
             [self::button('👥 ' . __('Guest list', 'eventcrew'), self::GUEST_LIST . $date)],
             [self::button('💳 ' . __('Sales desk', 'eventcrew'), self::SALES)],
-        ]];
+        ];
+
+        if ($organizer) {
+            $rows[] = self::backRow(self::ADMIN);
+        }
+
+        return ['inline_keyboard' => $rows];
     }
 
     /**
-     * The buttons under /people.
+     * The buttons under /people (organizers only), then Back to Admin.
      *
      * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
      */
@@ -205,8 +240,9 @@ final class MenuButtons
     {
         return ['inline_keyboard' => [
             [self::button('🎁 ' . __('Give credits', 'eventcrew'), self::GIFT)],
-            [self::button('🏷 ' . __('Roles, organizers and passes', 'eventcrew'), self::ROLES)],
+            [self::button('🏷 ' . __('Give or remove roles', 'eventcrew'), self::ROLES)],
             [self::button('✅ ' . __('Who may hold each role', 'eventcrew'), self::ELIGIBLE)],
+            self::backRow(self::ADMIN),
         ]];
     }
 

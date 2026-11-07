@@ -365,7 +365,7 @@ final class GuestListServiceTest extends TelegramTestCase
                 ['text' => DayPicker::BLANK, 'callback_data' => BoardRenderer::SPACER_DATA],
                 ['text' => '📅 Sat 1 Aug ✓', 'callback_data' => 'gl:2026-08-01'],
                 ['text' => 'Sat 8 Aug ▶', 'callback_data' => 'gl:2026-08-08'],
-            ]]],
+            ], [['text' => '⬅️ Back', 'callback_data' => 'mn:door']]]],
             $sent['reply_markup']
         );
     }
@@ -481,9 +481,10 @@ final class GuestListServiceTest extends TelegramTestCase
         self::assertStringStartsWith('✅ Added Long Name', $sent['text']);
         self::assertStringContainsString('Ticket emails go out at ', $sent['text']);
         self::assertStringContainsString('· page 1 of ', $sent['text']);
-        // The page buttons come first, the Cancel sending button last.
+        // The page buttons come first, then Cancel sending, then Back to /door.
         self::assertSame('gl:2026-08-01:1', $this->callbackOf($sent, 'Next »'));
         $rows = $sent['reply_markup']['inline_keyboard'];
-        self::assertSame('gl:cancel', $rows[count($rows) - 1][0]['callback_data']);
+        self::assertSame('gl:cancel', $rows[count($rows) - 2][0]['callback_data']);
+        self::assertSame('mn:door', $rows[count($rows) - 1][0]['callback_data']);
     }
 }

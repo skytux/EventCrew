@@ -266,7 +266,7 @@ final class StandingNoticeTest extends TestCase
             self::assertStringContainsString('Your standing: ', (string) $dm['text'], $status);
             self::assertStringContainsString('free-entry credits.', (string) $dm['text'], $status);
             $buttons = array_column(array_merge(...$dm['reply_markup']['inline_keyboard']), 'callback_data', 'text');
-            self::assertSame(['See open tasks' => 'mn:board'], $buttons, $status);
+            self::assertSame(['📋 See open tasks' => 'mn:board'], $buttons, $status);
             self::assertStringContainsString('Your standing: ', $this->mails[$i], $status);
             self::assertStringContainsString('See open tasks: https://site.test/crew/', $this->mails[$i], $status);
         }
@@ -308,13 +308,13 @@ final class StandingNoticeTest extends TestCase
             'text'
         );
         self::assertSame(
-            ['See open tasks' => 'mn:board', '💬 Not right? Tell us' => 'mn:tell'],
+            ['📋 See open tasks' => 'mn:board', '💬 Not right? Tell us' => 'mn:tell'],
             $tap($this->sends[0])
         );
         self::assertStringContainsString('Not right? Tell us in Telegram: https://t.me/crewbot?start=tell', $this->mails[0]);
-        self::assertSame(['See open tasks' => 'mn:board'], $tap($this->sends[1]));
+        self::assertSame(['📋 See open tasks' => 'mn:board'], $tap($this->sends[1]));
         self::assertStringNotContainsString('Tell us', $this->mails[1]);
-        self::assertSame(['See open tasks' => 'mn:board'], $tap($this->sends[2]));
+        self::assertSame(['📋 See open tasks' => 'mn:board'], $tap($this->sends[2]));
         self::assertStringNotContainsString('Tell us', $this->mails[2]);
     }
 }

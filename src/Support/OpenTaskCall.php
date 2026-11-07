@@ -44,10 +44,11 @@ final class OpenTaskCall
     public const LEAD_SOON_DEFAULT = 48;
 
     /**
-     * How many open tasks the message lists. Enough to show what is coming
-     * without turning a nudge into a wall of text nobody reads to the end of.
+     * How many open tasks the message lists, on at most OpenTaskList::MAX_DATES
+     * dates. Enough to show what is coming without turning a nudge into a
+     * wall of text nobody reads to the end of (Owner 2026-11-07, Q365).
      */
-    private const DIGEST_TASKS = 5;
+    private const DIGEST_TASKS = OpenTaskList::MAX_TASKS;
 
     /**
      * The configured leads, as the ledger kind each records under. Two sends per
@@ -252,12 +253,11 @@ final class OpenTaskCall
         }
 
         $digest = $this->digest(self::DIGEST_TASKS);
-        // The texts are the Messages page templates (MessageTemplates); a
-        // Sign up for each task listed (OpenTaskList::actions()).
+        // The texts are the Messages page templates (MessageTemplates). One
+        // See open tasks button, no Sign up per task (Owner 2026-11-07).
         $context = [
             'person' => $person,
-            'open_tasks' => $this->openTasksText($digest),
-            OpenTaskList::CONTEXT_KEY => self::signupRows($digest),
+            'open_tasks' => self::openTasksText($digest),
         ];
 
         if ($emailOk) {
@@ -338,7 +338,7 @@ final class OpenTaskCall
         $counted = 0;
 
         foreach ($this->upcomingDates() as $date) {
-            if ($counted >= $limit) {
+            if ($counted >= $limit || count($blocks) >= OpenTaskList::MAX_DATES) {
                 break;
             }
 
@@ -357,42 +357,15 @@ final class OpenTaskCall
     }
 
     /**
-     * The digest as text, a heading per date (Dates::dayLabel(), like
-     * "Sat 1 Aug", in the reader's language). The heading is always shown, even
-     * for a single date: the list now reaches past whatever made the send due,
-     * so "when" is no longer implied by the message around it.
+     * The digest as text: a heading per date (OpenTaskList::grouped(), like
+     * "📅 Sat 1 Aug", in the reader's language), then what the listed roles
+     * involve, one short line each (Owner 2026-11-07). The heading is always
+     * shown, even for a single date: the list reaches past whatever made the
+     * send due, so "when" is not implied by the message around it.
      *
      * @param array<string, array<int, array{0: Task, 1: int}>> $blocks
      */
-    private function openTasksText(array $blocks): string
-    {
-        $rendered = [];
-
-        foreach ($blocks as $date => $lines) {
-            $text = array_map(
-                static fn (array $line): string => '- ' . sprintf(
-                    /* translators: 1: role, 2: event, 3: free places, 4: places in all */
-                    __('%1$s at %2$s (%3$d of %4$d free)', 'eventcrew'),
-                    $line[0]->roleLabel(),
-                    $line[0]->eventName(),
-                    $line[0]->capacity - $line[1],
-                    $line[0]->capacity
-                ),
-                $lines
-            );
-            $rendered[] = Dates::dayLabel((string) $date) . "\n" . implode("\n", $text);
-        }
-
-        return implode("\n\n", $rendered);
-    }
-
-    /**
-     * The digest's tasks as OpenTaskList rows, in the order listed.
-     *
-     * @param array<string, array<int, array{0: Task, 1: int}>> $blocks
-     * @return list<array{task: Task, free: int}>
-     */
-    private static function signupRows(array $blocks): array
+    public static function openTasksText(array $blocks): string
     {
         $rows = [];
 
@@ -402,7 +375,10 @@ final class OpenTaskCall
             }
         }
 
-        return $rows;
+        $text = OpenTaskList::grouped($rows);
+        $about = OpenTaskList::descriptions($rows);
+
+        return '' === $about || '' === $text ? $text : $text . "\n\n" . $about;
     }
 
     /**

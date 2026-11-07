@@ -125,7 +125,7 @@ final class PermissionService
             }
         }
 
-        $this->telegram->sendMessage($telegramUserId, implode("\n", $lines));
+        $this->telegram->sendMessage($telegramUserId, implode("\n", $lines), MenuButtons::back(MenuButtons::PEOPLE));
         $this->sentDmNote($chatId, $isPrivate);
     }
 

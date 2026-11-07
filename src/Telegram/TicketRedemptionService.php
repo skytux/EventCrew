@@ -92,7 +92,8 @@ final class TicketRedemptionService
                         'eventcrew'
                     ),
                     $perCredit
-                )
+                ),
+                MenuButtons::back(MenuButtons::TICKETS)
             );
             // phpcs:enable WordPress.WP.I18n.MissingSingularPlaceholder
             $this->sentDmNote($chatId, $isPrivate);
@@ -105,7 +106,8 @@ final class TicketRedemptionService
         if ([] === $dates) {
             $this->telegram->sendMessage(
                 $telegramUserId,
-                __('No upcoming events to spend a credit on right now — check back when the next one is on the board.', 'eventcrew')
+                __('No upcoming events to spend a credit on right now — check back when the next one is on the board.', 'eventcrew'),
+                MenuButtons::back(MenuButtons::TICKETS)
             );
             $this->sentDmNote($chatId, $isPrivate);
 
@@ -117,6 +119,8 @@ final class TicketRedemptionService
         foreach (array_keys($dates) as $date) {
             $keyboard[] = [['text' => $this->pickerLabel($date), 'callback_data' => 'tkt:' . $date]];
         }
+
+        $keyboard[] = MenuButtons::backRow(MenuButtons::TICKETS);
 
         $this->telegram->sendMessage($telegramUserId, self::pickerText($balance), ['inline_keyboard' => $keyboard]);
         $this->sentDmNote($chatId, $isPrivate);

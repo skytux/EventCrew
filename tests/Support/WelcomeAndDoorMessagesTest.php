@@ -427,6 +427,7 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
 
     // ---- A person with no Telegram chat gets the crew page (E2) -----------
 
+    /** The web-only lines name the Me tab of the Crew app, with no visible address (Owner 2026-11-07). */
     public function testAWebOnlyPersonsWelcomeEmailPointsToTheCrewPage(): void
     {
         $this->webOnly = true;
@@ -434,24 +435,22 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
 
         $sent = $this->sent();
         self::assertCount(2, $sent);
+        $body = explode("\n\n—\n", $sent[0])[0];
         self::assertStringContainsString(
-            'This message explains how it works. You can see your own numbers any time in the Me tab of the crew'
-                . ' page (https://site.test/crew/).',
-            $sent[0]
+            'This message explains how it works. You can see your own numbers any time in the Me tab of the Crew app.',
+            $body
         );
         self::assertStringContainsString(
-            'It is the first button in your sign-up confirmation, and the Me tab of the crew page'
-                . ' (https://site.test/crew/) lists all your tickets.',
-            $sent[0]
+            'It is the first button in your sign-up confirmation, and the Me tab of the Crew app lists all your tickets.',
+            $body
         );
         self::assertStringContainsString(
-            'tasks you complete. To spend a credit, pick a night under Tickets in the Me tab of the crew page'
-                . ' (https://site.test/crew/). You then get a ticket for the night you choose.',
-            $sent[0]
+            'tasks you complete. To spend a credit, pick a night under Tickets in the Me tab of the Crew app.'
+                . ' You then get a ticket for the night you choose.',
+            $body
         );
-        self::assertStringNotContainsString('send /me to the bot in a private chat', $sent[0]);
-        self::assertStringNotContainsString('/me tickets', $sent[0]);
-        self::assertStringNotContainsString('send /me', $sent[0]);
+        self::assertStringNotContainsString('/me', $body);
+        self::assertStringNotContainsString('(https://', $body);
     }
 
     public function testAWebOnlyPersonsWelcomeEmailPointsToTheCrewPageInFinnish(): void
@@ -461,16 +460,14 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
 
         $sent = $this->sent();
         self::assertStringContainsString(
-            'Omat lukusi näet milloin vain crew-sivun Minä-välilehdellä (https://site.test/crew/).',
+            'Omat lukusi näet milloin vain Crew-sovelluksen Minä-välilehdellä.',
             $sent[0]
         );
         self::assertStringContainsString(
-            'Käytä vapaalippu valitsemalla ilta kohdasta Liput crew-sivun Minä-välilehdellä (https://site.test/crew/).'
-                . ' Saat silloin lipun',
+            'Käytä vapaalippu valitsemalla ilta kohdasta Liput Crew-sovelluksen Minä-välilehdellä. Saat silloin lipun',
             $sent[0]
         );
-        self::assertStringNotContainsString('/me tickets', $sent[0]);
-        self::assertStringNotContainsString('botille /me', $sent[0]);
+        self::assertStringNotContainsString('/me', $sent[0]);
     }
 
     public function testAWebOnlyPersonsSalesDeskLinkPointsToTheCrewPage(): void

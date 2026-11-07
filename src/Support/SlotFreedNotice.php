@@ -57,8 +57,8 @@ final class SlotFreedNotice
     /** Set to '1' once migrateStoredTexts() has run. */
     public const MIGRATED_OPTION = 'eventcrew_slot_freed_details_migrated';
 
-    /** The most other open tasks listed under the notice. */
-    public const MAX_OTHERS = 10;
+    /** The most other open tasks listed under the notice (Owner 2026-11-07, Q365). */
+    public const MAX_OTHERS = OpenTaskList::MAX_TASKS;
 
     public function __construct(
         private readonly TaskRepository $tasks,
@@ -317,9 +317,10 @@ final class SlotFreedNotice
     }
 
     /**
-     * The short board of the other open tasks: a heading and one "- " line
-     * per task (role, time, free places), or '' when there are none. The day
-     * is named only when it is not $task's day.
+     * The short board of the other open tasks: a heading, then the tasks
+     * under a line with each date (OpenTaskList::grouped(), at most three
+     * dates and eight tasks, Owner 2026-11-07), one "- " line per task (role,
+     * time, free places); '' when there are none.
      *
      * @param list<array{task: Task, free: int}> $rows
      */
@@ -329,22 +330,18 @@ final class SlotFreedNotice
             return '';
         }
 
-        $lines = [sprintf(
+        return sprintf(
             /* translators: %s: the name of the event */
             __('Other open tasks at %s:', 'eventcrew'),
             $task->eventName()
-        )];
-
-        foreach ($rows as $row) {
-            $other = $row['task'];
-            $time = $other->taskDate === $task->taskDate
-                ? $other->timeRange()
-                : trim(Dates::dayLabel($other->taskDate) . ' ' . $other->timeRange());
-            $parts = array_filter([$other->roleDisplay(), $time, self::freeText($row['free'], $other->capacity)]);
-            $lines[] = '- ' . implode(' · ', $parts);
-        }
-
-        return implode("\n", $lines);
+        ) . "\n" . OpenTaskList::grouped(
+            array_map(static fn (array $row): array => ['task' => $row['task'], 'free' => (int) $row['free']], $rows),
+            static fn (Task $other, ?int $free): string => '- ' . implode(' · ', array_filter([
+                $other->roleDisplay(),
+                $other->timeRange(),
+                self::freeText((int) $free, $other->capacity),
+            ]))
+        );
     }
 
     /**

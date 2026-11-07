@@ -1009,14 +1009,6 @@ msgstr "一个空行，以及该任务角色的“关于任务”文本。角色
 msgid "An empty line and the next nights a free-entry credit can be spent on, one per line. On lines of their own; they go when there are none."
 msgstr "一个空行，以及接下来可以使用免费入场积分的晚上，每行一个。各占一行；没有时省略。"
 
-#: src/Support/OpenTaskList.php:215
-msgid "An empty line and the open tasks this person can sign up for, one line each, with no names. Empty when there are none."
-msgstr "一个空行，以及此人可以报名的空缺任务，每行一个，不含姓名。没有时为空。"
-
-#: src/Support/MessageTemplates.php:1223
-msgid "An empty line and the other open tasks of the event, one per line, with no names. Empty when there are none."
-msgstr "一个空行，以及该活动的其他空缺任务，每行一个，不含姓名。没有时为空。"
-
 #: src/Support/MessageTemplates.php:1217
 msgid "An empty line and the task's details: the task, the event, the day and time, the free places, and the description of the task or its role."
 msgstr "一个空行，以及任务详情：任务、活动、日期和时间、空余名额，以及任务或其角色的描述。"
@@ -1024,10 +1016,6 @@ msgstr "一个空行，以及任务详情：任务、活动、日期和时间、
 #: src/Support/MessageTemplates.php:2543
 msgid "An empty line, then the line about the button that opens the crew’s Telegram group. Empty when no group link is known; then there is no such button."
 msgstr "一个空行，然后是关于打开团队 Telegram 群组按钮的说明行。不知道群组链接时为空，也不会有该按钮。"
-
-#: src/Support/MessageTemplates.php:2368
-msgid "An empty line, then the line with the link to the Help tab of the Crew app. Empty when no crew page is set."
-msgstr "一个空行，然后是指向团队应用“帮助”标签的链接行。未设置团队页面时为空。"
 
 #: templates/admin/settings.php:901
 msgid "An outcome this many days old counts half as much toward the score as a same-day one. Default 180."
@@ -3098,11 +3086,6 @@ msgstr "添加了多少个。"
 msgid "How tasks, tickets, credits and standing work, by email and Telegram, once to each member. Organizers also get the organizer guide. New members get it when they confirm their email; everyone else from the hourly run, inside the notification hours, 25 people per hour. Use \"Send me the welcome message\" below to check it first."
 msgstr "任务、票、积分和信誉如何运作，通过邮件和 Telegram 给每位成员发一次。组织者还会收到组织者指南。新成员在确认邮箱时收到；其他人则由每小时的运行在通知时段内发送，每小时 25 人。可以先用下面的“给我发送欢迎消息”检查一下。"
 
-#. translators: %s: the crew's name (the site name)
-#: src/Support/WelcomeSender.php:491
-msgid "How the %s crew works. Your own numbers are in the Me tab, and /me sends them to you in a private chat with the bot."
-msgstr "%s 团队如何运作。你自己的数据在“我”标签中，/me 也会在与机器人的私聊中发给你。"
-
 #: templates/admin/settings.php:1234
 msgid "How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the Crew app. A line starting with \"## \" is a heading, lines starting with \"- \" are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing."
 msgstr "这个网站如何运行：托管在哪里、需要哪些变通办法、邮件如何收发、外部服务。只显示给组织者，在团队应用的“帮助”标签中。以“## ”开头的行是标题，以“- ”开头的行是列表，空行开始新段落。不要在这里放密码或密钥。留空则不显示任何内容。"
@@ -3118,10 +3101,6 @@ msgstr "如何获取新的售票台链接：在机器人中；没有 Telegram �
 #: src/Support/MessageTemplates.php:1440
 msgid "How to get the free ticket: in the bot or the Crew app, or, for a person with no Telegram chat, on the crew page, with its link."
 msgstr "如何领取免费票：在机器人或团队应用中；没有 Telegram 聊天的人则在团队页面中，附带其链接。"
-
-#: src/Support/MessageTemplates.php:2385
-msgid "How to spend a credit: in the bot or on the web page, or, for a person with no Telegram chat, on the crew page, with its link."
-msgstr "如何使用积分：在机器人或网页上；没有 Telegram 聊天的人则在团队页面中，附带其链接。"
 
 #: templates/admin/settings.php:1476
 msgid "How your crew signs off. It closes every notification email, and the Telegram messages that go out to everyone — the open-task call, the reminders and the “a spot just opened” notice. Leave it blank for no sign-off."
@@ -3317,18 +3296,9 @@ msgstr "已安装"
 msgid "Issued %s"
 msgstr "签发于 %s"
 
-#: src/Support/WelcomeSender.php:476
-msgid "It is the first button in your sign-up confirmation, and /me tickets lists all your tickets."
-msgstr "它是你报名确认中的第一个按钮，/me 的票务部分会列出你所有的票。"
-
 #: src/Support/WelcomeSender.php:497
 msgid "It is the first button in your sign-up confirmation, and the Me tab lists all your tickets."
 msgstr "它是你报名确认中的第一个按钮，“我”标签会列出你所有的票。"
-
-#. translators: %s: link to the crew page
-#: src/Support/MessageTemplates.php:2398
-msgid "It is the first button in your sign-up confirmation, and the Me tab of the crew page (%s) lists all your tickets."
-msgstr "它是你报名确认中的第一个按钮，团队页面（%s）的“我”标签会列出你所有的票。"
 
 #. translators: %d: hours before the task starts
 #: src/Support/TakeoverService.php:609
@@ -5389,10 +5359,6 @@ msgstr "授予的角色和新组织者"
 msgid "Roles saved."
 msgstr "角色已保存。"
 
-#: src/Telegram/MenuButtons.php:208
-msgid "Roles, organizers and passes"
-msgstr "角色、组织者和通行证"
-
 #: src/Support/OrganizerGuide.php:88
 msgid "Roles: /people, then 🏷 Roles, organizers and passes, makes someone an organizer, gives a one-time pass past the sign-up gate, and gives or takes away roles such as DJ."
 msgstr "角色：/people，然后 🏷 角色、组织者和通行证，可以把某人设为组织者、发放跳过报名门槛的一次性通行证，以及授予或收回 DJ 等角色。"
@@ -5832,10 +5798,6 @@ msgstr "活动当晚，发给售票台任务上已标记到场的人。文本下
 #: src/Support/MessageTemplates.php:2483
 msgid "Sent once to each member when their email address is confirmed: how tasks, tickets, credits and standing work, and the open tasks. Only when the welcome message is on in Settings."
 msgstr "每位成员的邮箱确认后发送一次：说明任务、票、积分和信誉如何运作，以及空缺任务。仅在设置中开启欢迎消息时发送。"
-
-#: src/Support/MessageTemplates.php:2492
-msgid "Sent once to each member who uses the bot, with a button for each open task. Only when the welcome message is on in Settings."
-msgstr "发给每位使用机器人的成员一次，每个空缺任务都有一个按钮。仅在设置中开启欢迎消息时发送。"
 
 #: src/Support/MessageTemplates.php:2518
 msgid "Sent once to each organizer who uses the bot, with the short part of the organizer guide. Only when the welcome message is on in Settings."
@@ -6584,10 +6546,6 @@ msgstr "在活动中与团队交流"
 #: src/Support/MessageTemplates.php:2473
 msgid "Tap Sales desk in the Me tab of the crew page (%s)."
 msgstr "在团队页面（%s）的“我”标签中点“售票台”。"
-
-#: src/Support/WelcomeSender.php:664
-msgid "Tap a button below to sign up."
-msgstr "点击下面的按钮报名。"
 
 #: src/Support/MessageTemplates.php:2462
 msgid "Tap 💳 Sales desk below."
@@ -7654,10 +7612,6 @@ msgstr "下一次活动公告已关闭。管理员可以在 wp-admin 的 EventCr
 msgid "The next ones are below."
 msgstr "后续的在下方。"
 
-#: src/Support/MessageTemplates.php:2431
-msgid "The next open tasks, one line each, and the line about how to sign up. When there are none, a line that says so."
-msgstr "接下来的空缺任务，每行一个，以及说明如何报名的一行。没有时，显示一行说明。"
-
 #: src/Support/MessageTemplates.php:1209
 msgid "The next open tasks, under a line with each date."
 msgstr "接下来的空缺任务，按日期分行列出。"
@@ -8237,11 +8191,6 @@ msgstr "此活动自己的场地。清除后使用默认场地。"
 msgid "This goes to the group:"
 msgstr "这条会发到群里："
 
-#. translators: %s: link to the Help tab of the crew web page
-#: src/Support/WelcomeSender.php:397
-msgid "This guide is also in the Crew app, in the Help tab, after you sign in: %s"
-msgstr "登录后，本指南也在团队应用的“帮助”标签中：%s"
-
 #: templates/admin/people.php:58 templates/public/signup.php:881
 msgid "This is how a person is identified across Telegram and the web."
 msgstr "这是在 Telegram 和网页上识别一个人的方式。"
@@ -8590,15 +8539,6 @@ msgstr "要只为下一封活动后邮件设置文本，请发送 /followup came
 #: src/Telegram/WebLoginBot.php:86
 msgid "To sign in to the crew app, press the code that the crew app on your screen shows. If you did not just press Telegram on the crew app yourself, press nothing."
 msgstr "要登录团队应用，请点击你屏幕上团队应用显示的代码。如果你刚才没有自己在团队应用上点击 Telegram，就什么也别点。"
-
-#. translators: %s: link to the crew page
-#: src/Support/MessageTemplates.php:2389
-msgid "To spend a credit, pick a night under Tickets in the Me tab of the crew page (%s)."
-msgstr "要使用积分，请在团队页面（%s）“我”标签的“票”下选择一个晚上。"
-
-#: src/Support/WelcomeSender.php:462
-msgid "To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page."
-msgstr "要使用积分，请给机器人发送 /me 并点 🎟 免费入场票，或使用网页。"
 
 #: templates/public/signup.php:631
 msgid "To stop individual emails, use Notifications above. To leave for good, delete your data — this erases your account and history and cannot be undone."
@@ -8963,10 +8903,6 @@ msgstr "我们只用它在公告中称呼你。你可以用每条公告末尾的
 msgid "Web page"
 msgstr "网页"
 
-#: src/Telegram/MenuButtons.php:150
-msgid "Web sign-in"
-msgstr "网页登录"
-
 #: templates/admin/settings.php:2532
 msgid "Webhook"
 msgstr "Webhook"
@@ -9024,11 +8960,6 @@ msgstr "欢迎消息（邮件）"
 #: src/Support/Roles.php:148
 msgid "Welcome people at the door, check and sell tickets, and count how many people come in."
 msgstr "在门口迎接大家，查票和卖票，并统计入场人数。"
-
-#. translators: 1: the crew's name (the site name), 2: where to see your own numbers
-#: src/Support/WelcomeSender.php:426
-msgid "Welcome to the %1$s crew. This message explains how it works. %2$s"
-msgstr "欢迎加入 %1$s 团队。这条消息说明团队如何运作。%2$s"
 
 #: src/Support/MessageTemplates.php:2536
 msgid "Welcome to the crew"
@@ -9166,10 +9097,6 @@ msgstr "当你的票被加入我们的门口名单时，我们会发给你一封
 msgid "When: %s"
 msgstr "时间：%s"
 
-#: src/Support/MessageTemplates.php:2394
-msgid "Where all your tickets are: in the bot, or, for a person with no Telegram chat, on the crew page, with its link."
-msgstr "你所有的票在哪里：在机器人中；没有 Telegram 聊天的人则在团队页面中，附带其链接。"
-
 #: templates/admin/settings.php:2450
 msgid "Where imported lists go. Created if missing."
 msgstr "导入的名单放在哪里。不存在时会自动创建。"
@@ -9185,10 +9112,6 @@ msgstr "被拒绝的消息放在哪里。不存在时会自动创建。"
 #: src/Support/MessageTemplates.php:542
 msgid "Where the event is, like “📍 Dance hall”: the event’s own venue, else the default venue (Settings > Web page), else the venue from EventMesh. On a line of its own; the line goes when no venue is known."
 msgstr "活动地点，例如“📍 舞厅”：活动自己的场地，否则为默认场地（设置 > 网页），否则为 EventMesh 中的场地。单独占一行；不知道场地时该行省略。"
-
-#: src/Support/MessageTemplates.php:2374
-msgid "Where to see your own numbers: in the bot, or, for a person with no Telegram chat, on the crew page, with its link."
-msgstr "在哪里查看自己的数据：在机器人中；没有 Telegram 聊天的人则在团队页面中，附带其链接。"
 
 #. translators: %d: number of days
 #: templates/admin/bot-log.php:39
@@ -9522,11 +9445,6 @@ msgstr "你也可以改为在 wp-config.php 中定义 EVENTCREW_TELEGRAM_TOKEN�
 msgid "You can return to Telegram and sign up for tasks."
 msgstr "你可以回到 Telegram 报名任务了。"
 
-#. translators: %s: link to the crew page
-#: src/Support/MessageTemplates.php:2380
-msgid "You can see your own numbers any time in the Me tab of the crew page (%s)."
-msgstr "你随时可以在团队页面（%s）的“我”标签中查看自己的数据。"
-
 #: src/Admin/Admin.php:596 src/Admin/JobsStatus.php:138
 #: src/Admin/PeoplePage.php:331 src/Admin/TasksPage.php:271
 msgid "You do not have permission to do this."
@@ -9798,10 +9716,6 @@ msgstr "你的名字已保存。我们已把链接发送到新地址。你打开
 #: src/Web/SignupController.php:1210
 msgid "Your notification preferences are saved."
 msgstr "你的通知偏好已保存。"
-
-#: src/Support/WelcomeSender.php:443
-msgid "Your numbers, tickets and credits: send /me to the bot."
-msgstr "你的数据、票和积分：给机器人发送 /me。"
 
 #: src/Support/MessagePreview.php:442
 msgid "Your own AI placeholder (Messages > AI), written for each event."
@@ -10996,3 +10910,97 @@ msgstr "此页面图片的一条宽幅横条显示在 Telegram 看板文字上�
 
 msgid "The first name of the person the message is for, without the last name."
 msgstr "消息收件人的名字，不含姓氏。"
+
+msgid "An empty line and the open tasks this person can sign up for, under a line with each date, with no names. Empty when there are none."
+msgstr "一个空行，以及此人可以报名的空缺任务，按日期分组列出，不含姓名。没有时为空。"
+
+msgid "An empty line and the other open tasks of the event, under a line with each date, with no names. Empty when there are none."
+msgstr "一个空行，以及该活动的其他空缺任务，按日期分组列出，不含姓名。没有时为空。"
+
+#, php-format
+msgid "%1$s at %2$s"
+msgstr "%1$s，%2$s"
+
+msgid "⬅️ Back"
+msgstr "⬅️ 返回"
+
+msgid "Get a free-entry ticket"
+msgstr "领取免费入场券"
+
+msgid "Choose notifications"
+msgstr "选择通知"
+
+msgid "Change language"
+msgstr "更改语言"
+
+msgid "Get a web sign-in link"
+msgstr "获取网页登录链接"
+
+msgid "Give or remove roles"
+msgstr "授予或移除角色"
+
+msgid "%1$s or %2$s"
+msgstr "%1$s 或 %2$s"
+
+msgid "Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers."
+msgstr "遇到困难、有反馈或发现 bug？直接告诉机器人：它会转告组织者。"
+
+msgid "How the %s crew works. Your own numbers are in the Me tab, and the bot shows them when you ask in a private chat."
+msgstr "%s 团队如何运作。你自己的数据在“我”标签中，在与机器人的私聊中问一下，它也会显示给你。"
+
+msgid "How to spend a credit: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app."
+msgstr "如何使用积分：有 Telegram 聊天的人为空；没有的人为团队应用的“我”标签。"
+
+msgid "If you cannot reach the bot, contact the maintainer, %s, or just try again a bit later."
+msgstr "如果联系不上机器人，请联系维护者 %s，或者稍后再试。"
+
+msgid "In a private chat with the bot, it is usually enough to write what you want in your own words. There are no commands or keywords to remember."
+msgstr "在与机器人的私聊中，通常用自己的话写下想做的事就够了。没有需要记住的命令或关键词。"
+
+msgid "It is the first button in your sign-up confirmation, and the Me tab of the Crew app lists all your tickets."
+msgstr "它是你报名确认中的第一个按钮，团队应用的“我”标签会列出你所有的票。"
+
+msgid "It is the first button in your sign-up confirmation, and the bot lists all your tickets when you ask."
+msgstr "它是你报名确认中的第一个按钮，问一下机器人，它会列出你所有的票。"
+
+msgid "Maintainer contact"
+msgstr "维护者联系方式"
+
+msgid "Sent once to each member who uses the bot, with the open tasks by date and a button to the board. Only when the welcome message is on in Settings."
+msgstr "向每位使用机器人的成员发送一次，包含按日期排列的空缺任务和一个前往任务板的按钮。仅在设置中开启欢迎消息时发送。"
+
+msgid "Talking to the bot"
+msgstr "和机器人对话"
+
+msgid "The next open tasks by date (at most 3 dates and 8 tasks), and the line about how to sign up. When there are none, a line that says so."
+msgstr "按日期排列的接下来的空缺任务（最多 3 个日期、8 个任务），以及说明如何报名的一行。没有时，显示一行说明。"
+
+msgid "To see your numbers, tickets or credits, just ask the bot in a private chat."
+msgstr "想查看你的数据、票或积分，直接在私聊中问机器人即可。"
+
+msgid "To sign up, tap 📋 See open tasks below."
+msgstr "要报名，请点下方的 📋 查看空缺任务。"
+
+msgid "To spend a credit, ask the bot for a free-entry ticket, or use the web page."
+msgstr "要使用积分，请向机器人要一张免费入场票，或使用网页。"
+
+msgid "To spend a credit, pick a night under Tickets in the Me tab of the Crew app."
+msgstr "要使用积分，请在团队应用“我”标签的“票”下选择一个晚上。"
+
+msgid "Welcome to the %1$s crew! Our nights happen because people like you lend a hand: every task you take keeps the door open, the room ready and the music going, and earns you free entry. This message explains how it works. %2$s"
+msgstr "欢迎加入 %1$s 团队！我们的活动之所以能办起来，是因为有像你这样的人搭把手：你接下的每个任务都让大门敞开、场地就绪、音乐不停，也为你赢得免费入场。这条消息说明团队如何运作。%2$s"
+
+msgid "Where all your tickets are: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app."
+msgstr "你所有票的位置：有 Telegram 聊天的人为空；没有的人为团队应用的“我”标签。"
+
+msgid "Where to see your own numbers: ask the bot, or, for a person with no Telegram chat, the Me tab of the Crew app."
+msgstr "在哪里查看自己的数据：问机器人；没有 Telegram 聊天的人则为团队应用的“我”标签。"
+
+msgid "Whom to contact when the bot cannot be reached (Settings > Welcome message)."
+msgstr "联系不上机器人时联系谁（设置 > 欢迎消息）。"
+
+msgid "Whom to contact when the bot cannot be reached, for example an email address and a Telegram name. Shown in the welcome message. Empty: the text in the box."
+msgstr "联系不上机器人时联系谁，例如一个邮箱地址和一个 Telegram 用户名。显示在欢迎消息中。留空：使用框中的文字。"
+
+msgid "You can see your own numbers any time in the Me tab of the Crew app."
+msgstr "你随时可以在团队应用的“我”标签中查看自己的数据。"

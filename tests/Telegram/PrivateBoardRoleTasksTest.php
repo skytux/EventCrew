@@ -164,9 +164,11 @@ final class PrivateBoardRoleTasksTest extends TelegramTestCase
         self::assertStringNotContainsString('VJ', $sent['text']);
         // The legend is under the tasks, the last line (Owner 2026-11-07).
         self::assertStringEndsWith("🎧 DJ\n–\n\n✋ sign up · ❌ cancel", $sent['text']);
-        // One run of buttons: the blank ones only on the last row.
+        // The day's button, then one run of buttons: the blank ones only on
+        // the last row.
         $rows = $sent['reply_markup']['inline_keyboard'] ?? $sent['keyboard'] ?? [];
-        self::assertSame(['🎈 Decorate', '✋ 🎧 DJ', DayPicker::BLANK], array_column($rows[0], 'text'));
+        self::assertSame(['📅 Sat 1 Aug'], array_column($rows[0], 'text'));
+        self::assertSame(['🎈 Decorate', '✋ 🎧 DJ', DayPicker::BLANK], array_column($rows[1], 'text'));
         self::assertStringNotContainsString('➕', $sent['text']);
         $buttons = self::buttons($sent);
         self::assertSame('t:1', $buttons['🎈 Decorate'] ?? null);

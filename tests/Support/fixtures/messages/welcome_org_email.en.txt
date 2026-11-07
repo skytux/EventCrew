@@ -4,8 +4,6 @@ Hi Person 3,
 
 You are an organizer of Test Crew. This guide explains how EventCrew works, first in short and then in detail.
 
-📖 This guide is also in the Crew app, in the Help tab, after you sign in: https://site.test/crew/#eventcrew-help-organizer
-
 📑 Contents
 
 - ⚡ In short
@@ -28,7 +26,6 @@ You are an organizer of Test Crew. This guide explains how EventCrew works, firs
 - 🎧 Role tasks (DJ, VJ, Organize, ...) are not on the group board. People with the role see them with /board in a private chat and in the Crew app. You can add someone there, even a person who is not a crew member.
 - 🔔 Messages: reminders and calls go out by themselves, only between 09:00 and 21:00.
 - ⚙️ wp-admin, EventCrew > Settings changes how things work. EventCrew > Diagnostics shows whether everything is running.
-- 🔗 Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew
 
 🗓️ Tasks and events
 
@@ -109,10 +106,9 @@ The scheduled ones go out only between 09:00 and 21:00. Each goes by Telegram an
 - 🔹 Bot log: which bot commands and buttons each person used on a day. Message text is not stored.
 - 🔹 Diagnostics: a check of the database, bot, scheduled sends, sign-up page and mail.
 
-🔗 Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew
-
-Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew
 🛠️ Open the Admin tab: https://site.test/crew/#eventcrew-panel-admin
+📖 Help: https://site.test/crew/#eventcrew-help-organizer
+🧰 Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew
 
 —
 Manage your account or stop these emails: https://site.test/crew/?eventcrew_login=TOKEN

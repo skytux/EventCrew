@@ -10,6 +10,7 @@ use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\MenuButtons;
 use EventCrew\Telegram\TelegramClient;
 
 /**
@@ -54,8 +55,19 @@ final class WelcomeSender
      */
     public const LEDGER_DATE = '2000-01-01';
 
-    /** The most open tasks the message lists, and offers DM buttons for. */
+    /** The most open tasks the message lists, over at most MAX_DATES dates (Owner 2026-11-07). */
     private const MAX_TASKS = 8;
+
+    private const MAX_DATES = 3;
+
+    /** The crew page's Board tab, where the email's See open tasks goes. */
+    public const BOARD_ANCHOR = 'eventcrew-panel-board';
+
+    /**
+     * Who to contact when the bot cannot be reached, free text (Settings >
+     * Welcome message); '' = maintainerDefault() (Owner 2026-11-07, Q367).
+     */
+    public const MAINTAINER_OPTION = 'eventcrew_maintainer_contact';
 
     /** @var array<int, array{task: Task, free: int}>|null Open tasks, memoised for one run. */
     private ?array $open = null;
@@ -214,52 +226,42 @@ final class WelcomeSender
         return __('Welcome to the crew: how tasks, tickets and credits work', 'eventcrew');
     }
 
+    /**
+     * Same channel (Owner 2026-11-07): web buttons, then the bot's board as an
+     * "Open in Telegram" link. At most three buttons (an organizer also gets
+     * wp-admin) and three links, and no link repeats a button.
+     */
     private function sendEmail(Person $person): bool
     {
-        $board = $this->mailer->boardUrl();
-        $open = $this->openTasks();
-        $shown = array_slice($open, 0, OpenTaskList::DEFAULT_MAX);
-        // A Sign up for each of the first tasks, then the board: as a button
-        // only when it shows more than those (or there are none), and in
-        // Telegram.
-        $actions = MessageActions::email([
-            ...array_map(fn (array $row): MessageAction => OpenTaskList::action($row['task'], $this->mailer), $shown),
-            new MessageAction(
-                'board',
-                __('See open tasks', 'eventcrew'),
-                '',
-                count($open) === count($shown) && [] !== $open ? null : static fn (): string => $board,
-                '',
-                'board'
-            ),
-        ]);
+        $board = $this->webBoardAction();
+        $buttons = array_values(array_filter([
+            $board,
+            self::groupAction(),
+            self::helpAction(HelpPage::PANEL_ANCHOR),
+        ]));
 
-        if ('' !== $board) {
-            $actions[] = ['label' => RoleGuide::descriptionsLabel(), 'url' => RoleGuide::descriptionsUrl()];
-        }
-
-        $guide = RoleGuide::emailAction();
-
-        if (null !== $guide) {
-            $actions[] = $guide;
-        }
-
-        $group = self::groupAction();
-
-        if (null !== $group) {
-            $actions[] = $group;
-        }
-
-        // Only an organizer can use wp-admin.
+        // Only an organizer can use wp-admin: their one extra button.
         if ($person->isOrganizer) {
-            $actions[] = self::wpAdminAction();
+            $buttons[] = self::wpAdminAction();
+        }
+
+        $links = [];
+        $bot = $this->botBoardUrl();
+
+        if ('' !== $bot) {
+            $links[] = ['label' => __('See open tasks', 'eventcrew'), 'url' => $bot, 'style' => EmailBody::STYLE_TELEGRAM];
+        }
+
+        $guide = Roles::guideUrl();
+
+        if ('' !== $guide && ! in_array($guide, array_column($buttons, 'url'), true)) {
+            $links[] = ['label' => RoleGuide::label(), 'url' => $guide, 'style' => EmailBody::STYLE_LINK];
         }
 
         // The texts are the Messages page templates (MessageTemplates).
         $context = [
             'person' => $person,
-            'open_tasks' => $this->openTasksText(),
-            'help_line' => self::webLine(HelpPage::PANEL_ANCHOR),
+            'open_tasks' => $this->openTasksText(null !== $board || '' !== $bot),
         ];
 
         return $this->mailer->toPerson(
@@ -267,70 +269,154 @@ final class WelcomeSender
             $person->email,
             MessageTemplates::subject(self::KIND_EMAIL, $context),
             self::tidy(MessageTemplates::body(self::KIND_EMAIL, $context)),
-            $actions
+            [...$buttons, ...$links]
         );
     }
 
+    /**
+     * Telegram to Telegram (Owner 2026-11-07): the board and the task
+     * descriptions open in the bot, then the group; the web pages are links
+     * in the text, with no visible address.
+     */
     private function sendDm(Person $person): bool
     {
-        $keyboard = [];
+        $board = '📋 ' . __('See open tasks', 'eventcrew');
+        $day = [] === $this->openTasks() ? '' : $this->botBoardUrl();
+        $keyboard = [
+            // board-<Ymd> opens the next date with open tasks as a new
+            // message; with no such date, the bot's own board button.
+            [
+                '' !== $day
+                    ? ['text' => $board, 'url' => $day]
+                    : ['text' => $board, 'callback_data' => MenuButtons::BOARD],
+            ],
+            [['text' => RoleGuide::descriptionsLabel(), 'callback_data' => MenuButtons::TASK_INFO]],
+        ];
+        $group = BoardService::groupLink();
 
-        foreach ($this->openTasks() as $row) {
-            $keyboard[] = [[
-                'text' => sprintf(
-                    /* translators: 1: the role with its emoji, 2: the day, e.g. "Sat 7 Nov" */
-                    __('Sign up: %1$s · %2$s', 'eventcrew'),
-                    $row['task']->roleDisplay(),
-                    Dates::dayLabel($row['task']->taskDate)
-                ),
-                // 'j' joins only. The board's 't' would turn a second tap into
-                // a cancel, which a button in a welcome message must never do.
-                'callback_data' => 'j:' . $row['task']->id,
-            ]];
+        if ('' !== $group) {
+            $keyboard[] = [['text' => '💬 ' . __('Open the group', 'eventcrew'), 'url' => $group]];
         }
 
-        $descriptions = RoleGuide::descriptionsUrl();
+        $links = [];
+        $guide = Roles::guideUrl();
 
-        if ('' !== $descriptions) {
-            $keyboard[] = [['text' => RoleGuide::descriptionsLabel(), 'url' => $descriptions]];
+        if ('' !== $guide) {
+            $links[] = ['label' => RoleGuide::label(), 'url' => $guide];
         }
 
-        $guide = RoleGuide::button();
+        $help = HelpPage::url(HelpPage::PANEL_ANCHOR);
 
-        if (null !== $guide) {
-            $keyboard[] = [$guide];
+        if ('' !== $help) {
+            $links[] = ['label' => self::helpLabel(), 'url' => $help];
         }
 
         $context = [
             'person' => $person,
             'open_tasks' => $this->openTasksText(),
-            'help_line' => self::webLine(HelpPage::PANEL_ANCHOR),
         ];
+        $text = DmBody::frame($person, EmailBody::forDm(self::tidy(MessageTemplates::body(self::KIND_DM, $context))), true);
+
+        return $this->sendHtmlDm($person, $text, $keyboard, $links);
+    }
+
+    /**
+     * A welcome DM as Telegram HTML, so its links show only their label:
+     * $text escaped, then $links on one line under it.
+     *
+     * @param list<list<array<string, string>>> $keyboard
+     * @param list<array{label: string, url: string}> $links
+     */
+    private function sendHtmlDm(Person $person, string $text, array $keyboard, array $links): bool
+    {
+        $html = htmlspecialchars($text, ENT_NOQUOTES, 'UTF-8');
+        $anchors = array_map(
+            static fn (array $link): string => sprintf(
+                '<a href="%s">%s</a>',
+                htmlspecialchars($link['url'], ENT_QUOTES, 'UTF-8'),
+                htmlspecialchars($link['label'], ENT_NOQUOTES, 'UTF-8')
+            ),
+            $links
+        );
+
+        if ([] !== $anchors) {
+            $html .= "\n\n" . implode(' · ', $anchors);
+        }
 
         return null !== $this->telegram->sendMessage(
             (int) $person->telegramChatId,
-            DmBody::frame($person, EmailBody::forDm(self::tidy(MessageTemplates::body(self::KIND_DM, $context))), true),
-            [] === $keyboard ? null : ['inline_keyboard' => $keyboard]
+            $html,
+            [] === $keyboard ? null : ['inline_keyboard' => $keyboard],
+            ['parse_mode' => 'HTML', 'link_preview_options' => ['is_disabled' => true]]
         );
     }
 
+    /** The crew page's Board tab, as the email's first button, or null when no crew page is set. */
+    private function webBoardAction(): ?array
+    {
+        $url = $this->mailer->boardUrl();
+
+        return '' === $url ? null : ['label' => '📋 ' . __('See open tasks', 'eventcrew'), 'url' => $url . '#' . self::BOARD_ANCHOR];
+    }
+
+    /**
+     * The bot's board on the next date with open tasks (board-<Ymd>,
+     * BoardService::openDay()), else the bot's board; '' when the bot is not
+     * set up.
+     */
+    private function botBoardUrl(): string
+    {
+        $open = $this->openTasks();
+        $day = [] === $open ? '' : MessageActions::startUrl(BoardService::START_VERB, str_replace('-', '', $open[0]['task']->taskDate));
+
+        return '' !== $day ? $day : MessageActions::startUrl(BoardService::START_VERB);
+    }
+
+    /**
+     * The Help button: the Help tab of the crew page at $anchor, else the
+     * crew guide; null when neither is set.
+     *
+     * @return array{label: string, url: string}|null
+     */
+    private static function helpAction(string $anchor): ?array
+    {
+        $url = HelpPage::url($anchor);
+        $url = '' !== $url ? $url : Roles::guideUrl();
+
+        return '' === $url ? null : ['label' => self::helpLabel(), 'url' => $url];
+    }
+
+    private static function helpLabel(): string
+    {
+        return '📖 ' . __('Help', 'eventcrew');
+    }
+
+    /**
+     * The organizer guide by email, with the same rules as the welcome (Owner
+     * 2026-11-07, Q368): Admin tab, Help and the group, plus wp-admin, as
+     * buttons; People and Sales desk as "Open in Telegram" links.
+     */
     private function sendOrganizerEmail(Person $person): bool
     {
-        $actions = [];
-        $group = self::groupAction();
+        $actions = array_values(array_filter([
+            self::adminTabAction(),
+            self::helpAction(HelpPage::ORGANIZER_ANCHOR),
+            self::groupAction(),
+        ]));
+        $actions[] = self::wpAdminAction();
 
-        if (null !== $group) {
-            $actions[] = $group;
+        foreach (self::organizerBotLinks() as $verb => $label) {
+            $url = MessageActions::startUrl($verb);
+
+            if ('' !== $url) {
+                $actions[] = ['label' => $label, 'url' => $url, 'style' => EmailBody::STYLE_TELEGRAM];
+            }
         }
 
-        $actions[] = self::wpAdminAction();
         $context = [
             'person' => $person,
-            'help_line' => self::webLine(HelpPage::ORGANIZER_ANCHOR),
-            'guide' => OrganizerGuide::full(),
+            'guide' => OrganizerGuide::full(false),
         ];
-        // The Admin tab, then 👥 People and 💳 Sales desk in the bot, as in the DM.
-        $actions = [...$actions, ...MessageActions::email(MessageActions::of(self::KIND_ORG_EMAIL, $context, $this->mailer))];
 
         return $this->mailer->toPerson(
             $person->id,
@@ -342,13 +428,38 @@ final class WelcomeSender
     }
 
     /**
+     * The bot screens the organizer messages offer: verb => label.
+     *
+     * @return array<string, string>
+     */
+    private static function organizerBotLinks(): array
+    {
+        return [
+            'people' => '👥 ' . __('People', 'eventcrew'),
+            'sales' => '💳 ' . __('Sales desk', 'eventcrew'),
+        ];
+    }
+
+    /**
+     * The Admin tab of the crew page, or null when no crew page is set.
+     *
+     * @return array{label: string, url: string}|null
+     */
+    private static function adminTabAction(): ?array
+    {
+        $url = HelpPage::url(DoorLinkSender::ADMIN_ANCHOR);
+
+        return '' === $url ? null : ['label' => DoorLinkSender::adminButtonLabel(), 'url' => $url];
+    }
+
+    /**
      * The button to EventCrew in wp-admin.
      *
      * @return array{label: string, url: string}
      */
     private static function wpAdminAction(): array
     {
-        return ['label' => __('Open EventCrew in wp-admin', 'eventcrew'), 'url' => OrganizerGuide::wpAdminUrl()];
+        return ['label' => '🧰 ' . __('Open EventCrew in wp-admin', 'eventcrew'), 'url' => OrganizerGuide::wpAdminUrl()];
     }
 
     /**
@@ -361,41 +472,43 @@ final class WelcomeSender
     {
         $url = BoardService::groupLink();
 
-        return '' === $url ? null : ['label' => __('Open our group in Telegram', 'eventcrew'), 'url' => $url];
-    }
-
-    private function sendOrganizerDm(Person $person): bool
-    {
-        $context = [
-            'person' => $person,
-            'help_line' => self::webLine(HelpPage::ORGANIZER_ANCHOR),
-            'guide' => OrganizerGuide::short(),
-        ];
-
-        return null !== $this->telegram->sendMessage(
-            (int) $person->telegramChatId,
-            DmBody::frame($person, EmailBody::forDm(MessageTemplates::body(self::KIND_ORG_DM, $context))),
-            MessageActions::replyMarkup(MessageActions::of(self::KIND_ORG_DM, $context, $this->mailer))
-        );
+        return '' === $url ? null : ['label' => '💬 ' . __('Open our group in Telegram', 'eventcrew'), 'url' => $url];
     }
 
     /**
-     * Where the same guide is on the web: the Help tab of the crew page, which
-     * shows only after signing in. Starts with the paragraph break; empty when
-     * no crew page is set.
+     * The short organizer guide by DM (Owner 2026-11-07, Q368): Help, the Admin
+     * tab and the bot's People as buttons, plus wp-admin; the bot's Sales
+     * desk as a link.
      */
-    public static function webLine(string $anchor): string
+    private function sendOrganizerDm(Person $person): bool
     {
-        $url = HelpPage::url($anchor);
+        $keyboard = [];
 
-        if ('' === $url) {
-            return '';
+        foreach (array_filter([self::helpAction(HelpPage::ORGANIZER_ANCHOR), self::adminTabAction()]) as $action) {
+            $keyboard[] = [['text' => $action['label'], 'url' => $action['url']]];
         }
 
-        return "\n\n📖 " . sprintf(
-            /* translators: %s: link to the Help tab of the crew web page */
-            __('This guide is also in the Crew app, in the Help tab, after you sign in: %s', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            $url
+        $keyboard[] = [['text' => self::organizerBotLinks()['people'], 'callback_data' => MenuButtons::PEOPLE]];
+        $wpAdmin = self::wpAdminAction();
+        $keyboard[] = [['text' => $wpAdmin['label'], 'url' => $wpAdmin['url']]];
+
+        $links = [];
+        $sales = MessageActions::startUrl('sales');
+
+        if ('' !== $sales) {
+            $links[] = ['label' => self::organizerBotLinks()['sales'], 'url' => $sales];
+        }
+
+        $context = [
+            'person' => $person,
+            'guide' => OrganizerGuide::short(false),
+        ];
+
+        return $this->sendHtmlDm(
+            $person,
+            DmBody::frame($person, EmailBody::forDm(MessageTemplates::body(self::KIND_ORG_DM, $context))),
+            $keyboard,
+            $links
         );
     }
 
@@ -416,31 +529,73 @@ final class WelcomeSender
      * The message itself, after the greeting, with {placeholders}: the
      * built-in text of the welcome_email and welcome_dm templates in
      * MessageTemplates. Plain text with "## " headings; EmailBody draws those
-     * as headings and strips them for the DM.
+     * as headings and strips them for the DM. It opens with why the crew
+     * matters, and names no bot command (Owner 2026-11-07).
      */
     public static function bodyTemplate(): string
     {
         return implode("\n\n", [
             MessageTemplates::tag(
                 /* translators: 1: the crew's name (the site name), 2: where to see your own numbers */
-                __('Welcome to the %1$s crew. This message explains how it works. %2$s', 'eventcrew'),
+                __('Welcome to the %1$s crew! Our nights happen because people like you lend a hand: every task you take keeps the door open, the room ready and the music going, and earns you free entry. This message explains how it works. %2$s', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 ['%1$s' => '{crew}', '%2$s' => '{me_help}']
             ),
             ...self::sectionsTemplate(),
             '## 📋 ' . __('Open tasks', 'eventcrew'),
             '{open_tasks}',
-        ]) . '{help_line}';
+            ...self::botTalkTemplate(),
+        ]);
+    }
+
+    /**
+     * The "Talking to the bot" section (Owner 2026-11-07): plain words work in
+     * the private chat, the bot passes problems on to the organizers
+     * (ChatForwarder), and whom to contact when the bot cannot be reached.
+     *
+     * @return array<int, string>
+     */
+    private static function botTalkTemplate(): array
+    {
+        return [
+            '## 💬 ' . __('Talking to the bot', 'eventcrew'),
+            __('In a private chat with the bot, it is usually enough to write what you want in your own words. There are no commands or keywords to remember.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers.', 'eventcrew'),
+            MessageTemplates::tag(
+                /* translators: %s: how to reach the maintainer, e.g. an email address and a Telegram name */
+                __('If you cannot reach the bot, contact the maintainer, %s, or just try again a bit later.', 'eventcrew'),
+                ['%s' => '{maintainer}']
+            ),
+        ];
+    }
+
+    /** The maintainer contact from Settings, or the default when none is set. */
+    public static function maintainerContact(): string
+    {
+        $stored = trim((string) get_option(self::MAINTAINER_OPTION, ''));
+
+        return '' !== $stored ? $stored : self::maintainerDefault();
+    }
+
+    public static function maintainerDefault(): string
+    {
+        return sprintf(
+            /* translators: 1: an email address, 2: a Telegram user name */
+            __('%1$s or %2$s', 'eventcrew'),
+            'maintainer@example.org',
+            '@maintainer'
+        );
     }
 
     /**
      * The {me_help} of the welcome message for a person with a Telegram chat:
      * where their own numbers, tickets and credits are, in one line, so the
      * {credit_help} and {tickets_help} are empty for them. A person without
-     * one gets the crew page (MessageTemplates, CrewPageHelp).
+     * one gets the crew page (MessageTemplates, CrewPageHelp). In plain words,
+     * no command (Owner 2026-11-07).
      */
     public static function meBotLine(): string
     {
-        return __('Your numbers, tickets and credits: send /me to the bot.', 'eventcrew');
+        return __('To see your numbers, tickets or credits, just ask the bot in a private chat.', 'eventcrew');
     }
 
     /**
@@ -459,10 +614,7 @@ final class WelcomeSender
      */
     public static function creditBotLine(): string
     {
-        return __(
-            'To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page.',
-            'eventcrew'
-        );
+        return __('To spend a credit, ask the bot for a free-entry ticket, or use the web page.', 'eventcrew');
     }
 
     /**
@@ -474,7 +626,7 @@ final class WelcomeSender
     public static function ticketsBotLine(): string
     {
         return __(
-            'It is the first button in your sign-up confirmation, and /me tickets lists all your tickets.',
+            'It is the first button in your sign-up confirmation, and the bot lists all your tickets when you ask.',
             'eventcrew'
         );
     }
@@ -488,7 +640,7 @@ final class WelcomeSender
         return implode("\n\n", [
             sprintf(
                 /* translators: %s: the crew's name (the site name) */
-                __('How the %s crew works. Your own numbers are in the Me tab, and /me sends them to you in a private chat with the bot.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('How the %s crew works. Your own numbers are in the Me tab, and the bot shows them when you ask in a private chat.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 Organization::name()
             ),
             ...self::sections([
@@ -638,30 +790,48 @@ final class WelcomeSender
         );
     }
 
-    private function openTasksText(): string
+    /**
+     * The open tasks grouped by date (Owner 2026-11-07): the day, then a line
+     * per task. Signing up is the one See open tasks button, not a button
+     * per task. Without that button (no crew page and no bot), the line
+     * pointing at it is left out.
+     */
+    private function openTasksText(bool $button = true): string
     {
-        $lines = [];
+        $byDate = [];
 
         foreach ($this->openTasks() as $row) {
-            $task = $row['task'];
-            $time = $task->timeRange();
-
-            $lines[] = '- 📅 ' . sprintf(
-                /* translators: 1: day, 2: time range or '', 3: role with emoji, 4: free places, 5: places in total */
-                __('%1$s%2$s: %3$s (%4$d of %5$d places free)', 'eventcrew'),
-                Dates::dayLabel($task->taskDate),
-                '' === $time ? '' : ' ' . $time,
-                $task->roleDisplay(),
-                $row['free'],
-                $task->capacity
-            );
+            $byDate[$row['task']->taskDate][] = $row;
         }
 
-        if ([] === $lines) {
+        if ([] === $byDate) {
             return __('No open tasks right now. New ones are posted on the board and in the Telegram group.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
         }
 
-        return implode("\n", $lines) . "\n\n" . __('Tap a button below to sign up.', 'eventcrew');
+        $blocks = [];
+
+        foreach ($byDate as $date => $rows) {
+            $lines = [];
+
+            foreach ($rows as $row) {
+                $task = $row['task'];
+                $time = $task->timeRange();
+                $line = '- ' . $task->roleDisplay() . ('' === $time ? '' : ' ' . $time) . ': ' . sprintf(
+                    /* translators: 1: free places, 2: places in total */
+                    __('%1$d of %2$d places free', 'eventcrew'),
+                    $row['free'],
+                    $task->capacity
+                );
+                // The role's emoji is the bullet; a role without one gets 🔹.
+                $lines[] = EmailBody::isEmojiLine($line) ? $line : '- 🔹 ' . substr($line, 2);
+            }
+
+            $blocks[] = '📅 ' . Dates::dayLabel((string) $date) . "\n\n" . implode("\n", $lines);
+        }
+
+        $text = implode("\n\n", $blocks);
+
+        return $button ? $text . "\n\n" . __('To sign up, tap 📋 See open tasks below.', 'eventcrew') : $text;
     }
 
     /**
@@ -678,6 +848,7 @@ final class WelcomeSender
         $tasks = $this->tasks->upcoming();
         $occupancy = $this->tasks->occupancyFor(array_map(static fn (Task $task): int => $task->id, $tasks));
         $open = [];
+        $dates = [];
 
         foreach ($tasks as $task) {
             // Never offered to a newcomer: restricted to a role, and no places to count.
@@ -687,9 +858,18 @@ final class WelcomeSender
 
             $free = $task->capacity - ($occupancy[$task->id] ?? 0);
 
-            if ($free > 0) {
-                $open[] = ['task' => $task, 'free' => $free];
+            if ($free <= 0) {
+                continue;
             }
+
+            // Upcoming is soonest first: a new date past the last one allowed ends the list.
+            $dates[$task->taskDate] = true;
+
+            if (count($dates) > self::MAX_DATES) {
+                break;
+            }
+
+            $open[] = ['task' => $task, 'free' => $free];
 
             if (count($open) >= self::MAX_TASKS) {
                 break;

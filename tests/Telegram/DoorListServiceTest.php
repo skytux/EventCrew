@@ -88,7 +88,12 @@ final class DoorListServiceTest extends TelegramTestCase
         self::assertStringContainsString('Tickets — Sat 1 Aug', $sent['text']);
         $buttons = array_column(array_merge(...$sent['reply_markup']['inline_keyboard']), 'callback_data', 'text');
         self::assertSame(
-            ['◀ Fri 10 Jul' => 'dl:2026-07-10', '📅 Sat 1 Aug ✓' => 'dl:2026-08-01', 'Sat 8 Aug ▶' => 'dl:2026-08-08'],
+            [
+                '◀ Fri 10 Jul' => 'dl:2026-07-10',
+                '📅 Sat 1 Aug ✓' => 'dl:2026-08-01',
+                'Sat 8 Aug ▶' => 'dl:2026-08-08',
+                '⬅️ Back' => 'mn:door',
+            ],
             $buttons
         );
     }
@@ -116,9 +121,11 @@ final class DoorListServiceTest extends TelegramTestCase
         self::assertStringContainsString('• Alex — Working: ', $list['text']);
         self::assertStringContainsString('• Bo — Free-entry credit', $list['text']);
 
-        // One row: the night before, the shown night marked, the night after.
+        // One row: the night before, the shown night marked, the night
+        // after; then Back to /door.
         $rows = $list['reply_markup']['inline_keyboard'];
-        self::assertCount(1, $rows);
+        self::assertCount(2, $rows);
+        self::assertSame([['text' => '⬅️ Back', 'callback_data' => 'mn:door']], $rows[1]);
         self::assertSame(
             ['◀ Fri 10 Jul' => 'dl:2026-07-10', '📅 Sat 1 Aug ✓' => 'dl:2026-08-01', 'Sat 8 Aug ▶' => 'dl:2026-08-08'],
             array_column($rows[0], 'callback_data', 'text')
@@ -231,7 +238,7 @@ final class DoorListServiceTest extends TelegramTestCase
                 ['text' => DayPicker::BLANK, 'callback_data' => BoardRenderer::SPACER_DATA],
                 ['text' => '📅 Sat 1 Aug ✓', 'callback_data' => 'dl:2026-08-01'],
                 ['text' => 'Sat 8 Aug ▶', 'callback_data' => 'dl:2026-08-08'],
-            ]]],
+            ], [['text' => '⬅️ Back', 'callback_data' => 'mn:door']]]],
             $sent['reply_markup']
         );
     }

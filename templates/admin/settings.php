@@ -27,6 +27,7 @@
  * @var int $open_task_lead_soon Hours before an open date the last-call open-task call goes out.
  * @var int $door_link_lead Minutes before the night's first task start organizers get the sales desk link.
  * @var bool $welcome_enabled Whether the welcome message goes out.
+ * @var string $maintainer_contact Whom to contact when the bot cannot be reached ('' = the default).
  * @var bool $newsletter_enabled Whether the newsletter goes out.
  * @var bool $followup_enabled Whether the post-event email goes out the day after each event.
  * @var int $newsletter_days Days before an event the newsletter goes out.
@@ -810,6 +811,24 @@ if (! defined('ABSPATH')) {
                     </label>
                     <p class="description">
                         <?php esc_html_e('How tasks, tickets, credits and standing work, by email and Telegram, once to each member. Organizers also get the organizer guide. New members get it when they confirm their email; everyone else from the hourly run, inside the notification hours, 25 people per hour. Use "Send me the welcome message" below to check it first.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-maintainer-contact"><?php esc_html_e('Maintainer contact', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="text"
+                        class="regular-text"
+                        id="eventcrew-maintainer-contact"
+                        name="maintainer_contact"
+                        value="<?php echo esc_attr($maintainer_contact); ?>"
+                        placeholder="<?php echo esc_attr(\EventCrew\Support\WelcomeSender::maintainerDefault()); ?>"
+                    >
+                    <p class="description">
+                        <?php esc_html_e('Whom to contact when the bot cannot be reached, for example an email address and a Telegram name. Shown in the welcome message. Empty: the text in the box.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>

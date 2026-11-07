@@ -184,21 +184,23 @@ final class WelcomeSenderTest extends SalesDeskTestCase
             'The full guide, with the details, is in your email.',
             $this->lastCallTo('sendMessage')['text']
         );
-        // The DM opens the Admin tab, the bot's 👥 People and 💳 Sales desk.
+        // Help, the Admin tab, the bot's 👥 People, then wp-admin: at most
+        // three buttons plus wp-admin (Owner 2026-11-07).
         self::assertSame(
-            ['🛠️ Open the Admin tab', '👥 People', '💳 Sales desk'],
+            ['📖 Help', '🛠️ Open the Admin tab', '👥 People', '🧰 Open EventCrew in wp-admin'],
             array_map(
                 static fn (array $row): string => $row[0]['text'],
                 $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
             )
         );
         self::assertSame(
-            ['mn:people', 'mn:sales'],
+            ['mn:people'],
             array_values(array_filter(array_map(
                 static fn (array $row): ?string => $row[0]['callback_data'] ?? null,
                 $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
             )))
         );
+        self::assertStringNotContainsString('https://', self::withoutLinks($this->lastCallTo('sendMessage')['text']));
         self::assertSame(
             [
                 WelcomeSender::KIND_EMAIL,
@@ -232,31 +234,55 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         self::assertSame('p1@example.com', $this->mails[0]['to']);
     }
 
-    public function testTheDmHasAJoinOnlyButtonPerOpenTaskAndSkipsFullOnes(): void
+    /**
+     * One See open tasks button and the task descriptions, in the bot, and no
+     * button per task (Owner 2026-11-07). The full task is not listed.
+     */
+    public function testTheDmHasOneSeeOpenTasksButtonAndNoButtonPerTask(): void
     {
         $this->options[WelcomeSender::ENABLED_OPTION] = '1';
         $this->queueRun([$this->memberRow(1)]);
 
         $this->welcomeSender()->sendDue(25);
 
-        $rows = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
-        $callbacks = array_values(array_filter(array_map(
-            static fn (array $row): ?string => $row[0]['callback_data'] ?? null,
-            $rows
-        )));
+        $dm = $this->lastCallTo('sendMessage');
+        $rows = $dm['reply_markup']['inline_keyboard'];
 
-        // Task 5 has places; task 6 is full. 'j' joins only, never cancels.
-        self::assertSame(['j:5'], $callbacks);
-        self::assertSame(
-            'https://site.test/crew/#' . RoleGuide::DESCRIPTIONS_ANCHOR,
-            $rows[1][0]['url']
-        );
-        self::assertStringContainsString('2 of 3 places free', $this->lastCallTo('sendMessage')['text']);
+        self::assertSame(['📋 See open tasks', '📝 What each task involves'], array_map(
+            static fn (array $row): string => $row[0]['text'],
+            $rows
+        ));
+        // No bot username in the test: the bot's own menu buttons.
+        self::assertSame(['mn:board', 'mn:tasks'], array_map(
+            static fn (array $row): string => $row[0]['callback_data'] ?? '',
+            $rows
+        ));
+        self::assertStringContainsString('2 of 3 places free', $dm['text']);
+        self::assertStringNotContainsString('0 of 3 places free', $dm['text']);
+        self::assertStringContainsString('To sign up, tap 📋 See open tasks below.', $dm['text']);
+    }
+
+    /** With the bot set up, See open tasks opens the next date's board in the bot (board-<Ymd>). */
+    public function testTheDmSeeOpenTasksOpensTheNextDateInTheBot(): void
+    {
+        $this->options[\EventCrew\Telegram\BoardService::USERNAME_OPTION] = 'crewbot';
+        $this->options[\EventCrew\Telegram\BoardService::GROUP_LINK_OPTION] = 'https://t.me/+crew';
+        $this->options[WelcomeSender::ENABLED_OPTION] = '1';
+        $this->queueRun([$this->memberRow(1)]);
+
+        $this->welcomeSender()->sendDue(25);
+
+        $rows = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
+
+        self::assertCount(3, $rows);
+        self::assertStringStartsWith('https://t.me/crewbot?start=board-20260720', $rows[0][0]['url']);
+        self::assertSame('💬 Open the group', $rows[2][0]['text']);
+        self::assertSame('https://t.me/+crew', $rows[2][0]['url']);
     }
 
     /**
      * The organize task is for organizers only, so a newcomer's welcome never
-     * offers it - not even to an organizer, since it has no places to count.
+     * lists it - not even to an organizer, since it has no places to count.
      */
     public function testTheDmNeverOffersTheOrganizeTask(): void
     {
@@ -274,12 +300,37 @@ final class WelcomeSenderTest extends SalesDeskTestCase
 
         $this->welcomeSender()->sendDue(25);
 
-        $callbacks = array_values(array_filter(array_map(
-            static fn (array $row): ?string => $row[0]['callback_data'] ?? null,
-            $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
-        )));
+        $text = $this->lastCallTo('sendMessage')['text'];
+        $open = substr($text, (int) strpos($text, '📋 Open tasks'));
+        $open = substr($open, 0, (int) strpos($open, 'To sign up'));
 
-        self::assertSame(['j:5'], $callbacks);
+        self::assertStringContainsString('Decorate', $open);
+        self::assertSame(1, substr_count($open, 'places free'));
+    }
+
+    /** The open tasks come grouped by date, at most 3 dates (Owner 2026-11-07). */
+    public function testTheOpenTasksAreGroupedByDateAtMostThree(): void
+    {
+        $tasks = [];
+        $counts = [];
+
+        foreach (['2026-07-20', '2026-07-20', '2026-07-21', '2026-07-22', '2026-07-23'] as $i => $date) {
+            $tasks[] = array_merge($this->taskRow(10 + $i, 'decorate', '13:00', '14:00'), [
+                'task_date' => $date,
+                'starts_at' => $date . ' 13:00:00',
+                'ends_at' => $date . ' 14:00:00',
+            ]);
+            $counts[] = ['task_id' => 10 + $i, 'taken' => 0];
+        }
+        $this->wpdb->nextResults[] = $tasks;
+        $this->wpdb->nextResults[] = $counts;
+
+        $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(2)));
+
+        $body = $this->mails[0]['body'];
+        self::assertSame(3, substr_count($body, '📅 '));
+        self::assertSame(4, substr_count($body, '3 of 3 places free'));
+        self::assertStringNotContainsString('23 Jul', $body);
     }
 
     public function testTheNumbersComeFromTheLiveSettings(): void
@@ -355,20 +406,170 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         self::assertStringNotContainsString('wp-admin', $this->mails[0]['body']);
     }
 
-    public function testTheEmailsAndDmsSayTheGuideIsInTheHelpTab(): void
+    /**
+     * No visible web address in the welcome text (Owner 2026-11-07): the email
+     * has buttons and links, the DM shows its links by their label only.
+     */
+    public function testTheWelcomeShowsNoAddressInItsText(): void
     {
+        $this->options['eventcrew_email_html'] = '1';
         $this->queueOpenTasks();
 
         $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(1, true)));
 
-        $line = 'This guide is also in the Crew app, in the Help tab, after you sign in: ';
-        self::assertStringContainsString($line . 'https://site.test/crew/#eventcrew-panel-help', $this->mails[0]['body']);
-        self::assertStringContainsString($line . 'https://site.test/crew/#eventcrew-help-organizer', $this->mails[1]['body']);
+        foreach ($this->mails as $mail) {
+            self::assertStringNotContainsString('https://', self::withoutLinks($mail['body']), $mail['subject']);
+        }
+
+        foreach ($this->telegramCalls as $call) {
+            if ('sendMessage' !== $call['method']) {
+                continue;
+            }
+
+            self::assertSame('HTML', $call['body']['parse_mode']);
+            self::assertStringNotContainsString('https://', self::withoutLinks($call['body']['text']));
+        }
+
         self::assertStringContainsString(
-            $line . 'https://site.test/crew/#eventcrew-help-organizer',
+            '<a href="https://site.test/crew/#eventcrew-panel-help">📖 Help</a>',
+            $this->telegramCalls[0]['body']['text'] ?? $this->lastCallTo('sendMessage')['text']
+        );
+        self::assertStringNotContainsString('This guide is also in the Crew app', $this->mails[0]['body']);
+        self::assertStringContainsString('Contents', $this->mails[1]['body']);
+    }
+
+    /** No bot command anywhere in the member's welcome (Owner 2026-11-07): people just write to the bot. */
+    public function testTheMemberWelcomeNamesNoBotCommand(): void
+    {
+        $this->queueOpenTasks();
+
+        $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(2)));
+
+        $texts = [
+            self::withoutLinks($this->mails[0]['body']),
+            self::withoutLinks($this->lastCallTo('sendMessage')['text']),
+            WelcomeSender::helpText(),
+        ];
+
+        foreach ($texts as $text) {
+            self::assertSame(0, preg_match('~(^|[\s(])/[a-z]+~m', $text), $text);
+        }
+    }
+
+    /** The "Talking to the bot" section, with the maintainer from Settings or the default. */
+    public function testTheWelcomeExplainsTalkingToTheBotAndNamesTheMaintainer(): void
+    {
+        $this->queueOpenTasks();
+        $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(2)));
+
+        $body = $this->mails[0]['body'];
+        self::assertStringContainsString('Talking to the bot', $body);
+        self::assertStringContainsString('write what you want in your own words', $body);
+        self::assertStringContainsString('it passes it on to the organizers', $body);
+        self::assertStringContainsString(
+            'contact the maintainer, maintainer@example.org or @maintainer, or just try again a bit later.',
+            $body
+        );
+        self::assertStringContainsString('Talking to the bot', $this->lastCallTo('sendMessage')['text']);
+
+        $this->mails = [];
+        $this->options[WelcomeSender::MAINTAINER_OPTION] = 'Kim, kim@example.com';
+        $this->queueOpenTasks();
+        $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(2)));
+
+        self::assertStringContainsString('contact the maintainer, Kim, kim@example.com, or', $this->mails[0]['body']);
+        self::assertStringNotContainsString('maintainer', $this->mails[0]['body']);
+    }
+
+    /**
+     * At most three buttons, then links that do not repeat a button (Owner
+     * 2026-11-07). A member gets See open tasks, the group and Help; the bot's
+     * board is an "Open in Telegram" link and the guide a plain link.
+     */
+    public function testTheMemberEmailHasThreeButtonsAndLinksThatDoNotRepeatThem(): void
+    {
+        $this->options['eventcrew_email_html'] = '1';
+        $this->options[\EventCrew\Telegram\BoardService::USERNAME_OPTION] = 'crewbot';
+        $this->options[\EventCrew\Telegram\BoardService::GROUP_LINK_OPTION] = 'https://t.me/+crew';
+        $this->queueOpenTasks();
+
+        $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(2)));
+
+        $body = $this->mails[0]['body'];
+        $buttons = self::buttonUrls($body);
+
+        self::assertSame(
+            ['https://site.test/crew/#eventcrew-panel-board', 'https://t.me/+crew', 'https://site.test/crew/#eventcrew-panel-help'],
+            $buttons
+        );
+        self::assertStringContainsString('https://t.me/crewbot?start=board-20260720', $body);
+
+        preg_match_all('~<a href="([^"]+)"~', $body, $all);
+        $links = array_diff($all[1], $buttons);
+        self::assertSame(array_values(array_unique($links)), array_values($links));
+        self::assertSame([], array_intersect($links, $buttons));
+    }
+
+    /** An organizer's welcome email has wp-admin as the one extra button. */
+    public function testAnOrganizersWelcomeEmailAddsWpAdminAsAFourthButton(): void
+    {
+        $this->options['eventcrew_email_html'] = '1';
+        $this->options[\EventCrew\Telegram\BoardService::GROUP_LINK_OPTION] = 'https://t.me/+crew';
+        $this->queueOpenTasks();
+
+        $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(1, true)));
+
+        self::assertCount(4, self::buttonUrls($this->mails[0]['body']));
+        self::assertSame(
+            'https://site.test/wp-admin/admin.php?page=eventcrew',
+            self::buttonUrls($this->mails[0]['body'])[3]
+        );
+        // The organizer guide: the Admin tab, Help, the group, then wp-admin.
+        self::assertSame(
+            [
+                'https://site.test/crew/#eventcrew-panel-admin',
+                'https://site.test/crew/#eventcrew-help-organizer',
+                'https://t.me/+crew',
+                'https://site.test/wp-admin/admin.php?page=eventcrew',
+            ],
+            self::buttonUrls($this->mails[1]['body'])
+        );
+        self::assertStringNotContainsString('Open EventCrew in wp-admin:', $this->mails[1]['body']);
+    }
+
+    /** The organizer guide's People and Sales desk open in the bot, as links. */
+    public function testTheOrganizerGuideLinksToPeopleAndTheSalesDeskInTheBot(): void
+    {
+        $this->options['eventcrew_email_html'] = '1';
+        $this->options[\EventCrew\Telegram\BoardService::USERNAME_OPTION] = 'crewbot';
+        $this->queueOpenTasks();
+
+        $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(1, true)));
+
+        self::assertStringContainsString('https://t.me/crewbot?start=people', $this->mails[1]['body']);
+        self::assertStringContainsString('https://t.me/crewbot?start=sales', $this->mails[1]['body']);
+        self::assertStringContainsString(
+            'https://t.me/crewbot?start=sales',
             $this->lastCallTo('sendMessage')['text']
         );
-        self::assertStringContainsString('Contents', $this->mails[1]['body']);
+    }
+
+    /** $text without its <a> tags, their addresses with them. */
+    private static function withoutLinks(string $text): string
+    {
+        return (string) preg_replace('~<a\s[^>]*>~', '', $text);
+    }
+
+    /**
+     * The addresses of an HTML email's buttons, in order.
+     *
+     * @return list<string>
+     */
+    private static function buttonUrls(string $html): array
+    {
+        preg_match_all('~<td bgcolor="[^"]*"[^>]*><a href="([^"]+)"~', $html, $m);
+
+        return $m[1];
     }
 
     public function testTheHelpTabTextHasNoOpenTasks(): void

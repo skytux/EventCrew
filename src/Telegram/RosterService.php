@@ -364,18 +364,26 @@ final class RosterService
      * The date selector under the roster (DayPicker): the shown day marked,
      * with arrows to the days before and after it. Someone who is not an
      * organizer steps only through the days they are rostered on, since those
-     * are the only ones they may open.
+     * are the only ones they may open. Then, for an organizer, Back to Admin.
      *
      * @return array<int, array<int, array{text: string, callback_data: string}>>
      */
     private function pickerRows(Person $person, string $shown): array
     {
-        return DayPicker::rows(
+        $rows = DayPicker::rows(
             $this->tasks->datesWithTasks(),
             $shown,
             self::SELECT_PREFIX,
             $person->isOrganizer ? null : fn (string $date): bool => $this->isRosteredOn($person->id, $date)
         );
+
+        // Roster is under Admin, an organizer's menu: Back goes there, below
+        // the day buttons, however the roster was opened.
+        if ($person->isOrganizer) {
+            $rows[] = MenuButtons::backRow(MenuButtons::ADMIN);
+        }
+
+        return $rows;
     }
 
     /**

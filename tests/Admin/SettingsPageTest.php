@@ -586,6 +586,14 @@ final class SettingsPageTest extends TelegramTestCase
         self::assertFalse(\EventCrew\Telegram\WebhookController::secretTravelsInUrl());
     }
 
+    /** The welcome message's maintainer contact saves as typed (Owner 2026-11-07). */
+    public function testTheMaintainerContactSaves(): void
+    {
+        $this->saveUntil(['maintainer_contact' => 'Kim, kim@example.com'], \EventCrew\Support\WelcomeSender::MAINTAINER_OPTION);
+
+        self::assertSame('Kim, kim@example.com', $this->options[\EventCrew\Support\WelcomeSender::MAINTAINER_OPTION]);
+    }
+
     public function testTheTelegramSignInSwitchSaves(): void
     {
         $this->saveTelegramSection(['telegram_web_login' => '1']);

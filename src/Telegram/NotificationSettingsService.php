@@ -144,6 +144,9 @@ final class NotificationSettingsService
             ];
         }
 
+        // Back to Settings, where 🔔 Notifications is.
+        $rows[] = MenuButtons::backRow(MenuButtons::SETTINGS);
+
         return $rows;
     }
 

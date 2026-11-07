@@ -237,11 +237,15 @@ final class BoardCardsTest extends TelegramTestCase
         self::assertSame(['sendMessage'], $this->calledMethods());
 
         $text = $this->lastCallTo('sendMessage');
-        // Owner 2026-11-06: only the next event. Owner 2026-11-07: three task
-        // buttons to a row, and no day buttons on the group's message.
-        self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug\nParty\n\n🎈 Decorate · 0/2\n–", $text['text']);
+        // Owner 2026-11-07: the text lists the next three dates, but only the
+        // next one has buttons, under its date; three task buttons to a row,
+        // and no day buttons on the group's message.
+        self::assertSame(
+            self::INTRO . "\n\n📅 Sat 1 Aug\nParty\n\n🎈 Decorate · 0/2\n–\n\n📅 Sun 2 Aug\nCleanup\n\n🎈 Decorate · 0/2\n–",
+            $text['text']
+        );
         self::assertSame(['t:1'], self::taskTargets($text));
-        self::assertSame(['🎈 Decorate', DayPicker::BLANK, DayPicker::BLANK], self::labels($text));
+        self::assertSame(['📅 Sat 1 Aug', '🎈 Decorate', DayPicker::BLANK, DayPicker::BLANK], self::labels($text));
 
         self::assertSame(
             ['chat_id' => self::CHAT, 'message_id' => 62],
@@ -685,8 +689,11 @@ final class BoardCardsTest extends TelegramTestCase
         $this->board()->refresh();
 
         $text = $this->lastCallTo('sendMessage');
-        self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug\nParty\n\n🎈 Decorate · 2/2\nAnna, someone", $text['text']);
-        // A full task has no button.
+        self::assertSame(
+            self::INTRO . "\n\n📅 Sat 1 Aug\nParty\n\n🎈 Decorate · 2/2\nAnna, someone\n\n📅 Sun 2 Aug\nCleanup\n\n🎈 Decorate · 1/2\nBen",
+            $text['text']
+        );
+        // A full task has no button, and the later day's tasks have none.
         self::assertSame([], self::taskTargets($text));
 
         // The names come from display_name; the query never reads an email.
@@ -699,7 +706,11 @@ final class BoardCardsTest extends TelegramTestCase
         self::assertStringNotContainsString('@', $text['text']);
     }
 
-    public function testOnlyTheNextEventHasItsInformationAndButtons(): void
+    /**
+     * The next three dates are in the text; only the next one has buttons
+     * (Owner 2026-11-07, Q365).
+     */
+    public function testThreeDatesAreListedAndOnlyTheNextEventHasButtons(): void
     {
         $rows = [];
 
@@ -712,9 +723,9 @@ final class BoardCardsTest extends TelegramTestCase
         $this->board()->refresh();
 
         $text = $this->lastCallTo('sendMessage');
-        self::assertSame(1, substr_count($text['text'], '📅 '));
-        self::assertStringContainsString('Night 1', $text['text']);
-        self::assertStringNotContainsString('Night 2', $text['text']);
+        self::assertSame(3, substr_count($text['text'], '📅 '));
+        self::assertStringContainsString('Night 3', $text['text']);
+        self::assertStringNotContainsString('Night 4', $text['text']);
         self::assertSame(['t:1'], self::taskTargets($text));
         // No day buttons on the group's message (Owner 2026-11-07).
         $picker = array_values(array_filter(
@@ -814,7 +825,10 @@ final class BoardCardsTest extends TelegramTestCase
 
         self::assertSame(['sendMessage'], $this->calledMethods());
         $sent = $this->lastCallTo('sendMessage');
-        self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug\nParty\n\n🎈 Decorate · 1/2", $sent['text']);
+        self::assertSame(
+            self::INTRO . "\n\n📅 Sat 1 Aug\nParty\n\n🎈 Decorate · 1/2\n\n📅 Sun 2 Aug\nCleanup\n\n🎈 Decorate · 0/2",
+            $sent['text']
+        );
         self::assertSame(['t:1'], self::taskTargets($sent));
         self::assertNotContains('bd:2026-08-02', self::targets($sent));
         self::assertContains('🎈 Decorate', self::labels($sent));

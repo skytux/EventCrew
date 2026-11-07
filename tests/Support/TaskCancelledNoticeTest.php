@@ -135,11 +135,13 @@ final class TaskCancelledNoticeTest extends TestCase
         self::assertCount(1, $sends, 'only the bot user gets a DM');
         self::assertSame(700, $sends[0]['chat_id']);
         self::assertStringStartsWith('🚫 The organizers have cancelled the task ', (string) $sends[0]['text']);
-        self::assertStringContainsString("standing.\n\nOther open tasks at Party:\n- ", (string) $sends[0]['text']);
+        self::assertStringContainsString("standing.\n\nOther open tasks at Party:\n📅 Sat 1 Aug\n- ", (string) $sends[0]['text']);
         $buttons = array_merge(...$sends[0]['reply_markup']['inline_keyboard']);
-        self::assertSame(['See open tasks'], array_column($buttons, 'text'));
+        self::assertSame(['📋 See open tasks'], array_column($buttons, 'text'));
         self::assertSame(['anna@example.com', 'bo@example.com'], array_column($this->mails, 'to'));
         self::assertStringContainsString('Other open tasks at Party:', $this->mails[1]['body']);
+        // The email's button opens the crew page's board (Owner 2026-11-07).
+        self::assertStringContainsString('#eventcrew-panel-board', $this->mails[1]['body']);
         // Bo has not chosen a language, so he reads English alone (Owner, 2026-11-06).
         self::assertStringNotContainsString('Muut avoimet tehtävät', $this->mails[1]['body']);
     }

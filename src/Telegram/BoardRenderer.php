@@ -25,10 +25,12 @@ use EventCrew\Support\RoleTaskService;
  * too tall). Boards posted before that still carry heading rows with
  * SPACER_DATA, which no handler acts on.
  *
- * Only one event day is shown at a time: the next one, unless another day was
- * picked from the row of day buttons under it (DayPicker, BoardService::PICK_PREFIX). On
- * a picked day the task buttons carry that day (t:<id>:<Y-m-d>), so the redraw
- * after a join or leave stays on it; on the next day they stay plain t:<id>.
+ * The buttons are for one day at a time: the next one, unless another day was
+ * picked from the row of day buttons under it (DayPicker, BoardService::PICK_PREFIX),
+ * under a full-width button naming that day. The text shows that day and the
+ * next two (TEXT_DAYS, Owner 2026-11-07). On a picked day the task buttons
+ * carry that day (t:<id>:<Y-m-d>), so the redraw after a join or leave stays
+ * on it; on the next day they stay plain t:<id>.
  *
  * With the card format on (BoardService::CARDS_OPTION), nextCard() is the
  * photo message for the next event and crewBoard() the text board under it:
@@ -63,6 +65,12 @@ final class BoardRenderer
 
     /** Telegram's limit for a message's text, in UTF-16 units. */
     public const TEXT_LIMIT = 4096;
+
+    /**
+     * How many days the text shows: the shown day and the next ones after
+     * it (Owner 2026-11-07, Q365). The buttons are for the shown day only.
+     */
+    public const TEXT_DAYS = 3;
 
     public function __construct(
         private readonly TaskRepository $tasks,
@@ -136,8 +144,12 @@ final class BoardRenderer
         $dates = $this->dates($days);
         $shown = in_array($date, $dates, true) ? $date : $dates[0];
         $daySuffix = $shown === $dates[0] ? '' : ':' . $shown;
-        $tasks = array_values(array_filter($tasks, static fn (Task $t): bool => $t->taskDate === $shown));
-        $ids = array_map(static fn (Task $t): int => $t->id, $tasks);
+        // The text shows the shown day and the next two after it; the
+        // buttons are only for the shown day (Owner 2026-11-07, Q365).
+        $textDates = array_slice($dates, (int) array_search($shown, $dates, true), self::TEXT_DAYS);
+        $listed = array_values(array_filter($tasks, static fn (Task $t): bool => in_array($t->taskDate, $textDates, true)));
+        $tasks = array_values(array_filter($listed, static fn (Task $t): bool => $t->taskDate === $shown));
+        $ids = array_map(static fn (Task $t): int => $t->id, $listed);
         $occupants = [];
 
         if ($withNames) {
@@ -155,7 +167,7 @@ final class BoardRenderer
 
         // The event's heading and each task's time and count go in the text;
         // the keyboard has only the task buttons (taskButtons()).
-        foreach ($this->groupByEvent($tasks) as $heading) {
+        foreach ($this->groupByEvent($listed) as $heading) {
             // One empty line before a heading; a task already ends with one.
             if (! str_ends_with((string) end($lines), "\n")) {
                 $lines[] = '';
@@ -179,16 +191,16 @@ final class BoardRenderer
             }
         }
 
-        // The legend of the special-task buttons under the tasks, next to the
-        // buttons it explains (Owner 2026-11-07).
-        if ('' !== $role['legend']) {
-            $lines[] = $role['legend'];
-        }
-
         // The guest board's buttons and the special-task ones in one run,
         // blank buttons only on the last row: no gap between them (Owner
-        // 2026-11-07).
-        $keyboard = self::rowsOfThree(array_merge($this->taskButtons($guest, $taken, $daySuffix), $role['buttons']));
+        // 2026-11-07). Above them, across the whole row, the day they are
+        // for, as the text now shows more days than the buttons (Q365).
+        $buttons = array_merge($this->taskButtons($guest, $taken, $daySuffix), $role['buttons']);
+        $keyboard = [] === $buttons ? [] : [[self::dayButton($shown)]];
+
+        foreach (self::rowsOfThree($buttons) as $row) {
+            $keyboard[] = $row;
+        }
 
         if (! $group) {
             foreach (DayPicker::rows($dates, $shown, BoardService::PICK_PREFIX) as $row) {
@@ -200,7 +212,21 @@ final class BoardRenderer
             $keyboard[] = $row;
         }
 
-        return ['text' => self::fit($lines), 'keyboard' => $keyboard];
+        // The legend of the special-task buttons under the tasks, next to the
+        // buttons it explains (Owner 2026-11-07); kept when fit() shortens.
+        return ['text' => self::fit($lines, $role['legend']), 'keyboard' => $keyboard];
+    }
+
+    /**
+     * The full-width "📅 Sat 14 Nov" over the task buttons: it only names
+     * their day, so a tap does nothing (SPACER_DATA). The day picker under
+     * them changes the day.
+     *
+     * @return array{text: string, callback_data: string}
+     */
+    private static function dayButton(string $date): array
+    {
+        return ['text' => '📅 ' . Dates::dayLabel($date), 'callback_data' => self::SPACER_DATA];
     }
 
     /**
@@ -434,16 +460,23 @@ final class BoardRenderer
     /**
      * $lines as one text within Telegram's TEXT_LIMIT, whole entries dropped
      * from the end when it is longer (a task and its names line are one).
+     * $tail (the legend) goes after them after an empty line and is never
+     * dropped.
      *
      * @param array<int, string> $lines
      */
-    private static function fit(array $lines): string
+    private static function fit(array $lines, string $tail = ''): string
     {
-        $text = rtrim(implode("\n", $lines));
+        $join = static function (array $lines) use ($tail): string {
+            $text = rtrim(implode("\n", $lines));
+
+            return '' === $tail ? $text : $text . "\n\n" . $tail;
+        };
+        $text = $join($lines);
 
         while (count($lines) > 1 && EntityHtml::units($text) > self::TEXT_LIMIT) {
             array_pop($lines);
-            $text = rtrim(implode("\n", $lines));
+            $text = $join($lines);
         }
 
         return $text;
@@ -651,8 +684,9 @@ final class BoardRenderer
         $groups = [];
 
         foreach ($tasks as $task) {
+            // By day too: the text shows more than one day (TEXT_DAYS).
             $key = null !== $task->eventPostId
-                ? 'e:' . $task->eventPostId
+                ? 'e:' . $task->eventPostId . '|' . $task->taskDate
                 : 'l:' . $task->eventLabel . '|' . $task->taskDate;
 
             if (! isset($groups[$key])) {

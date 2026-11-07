@@ -465,6 +465,8 @@ final class RosterServiceTest extends TelegramTestCase
                     ['text' => '⏰ Kim', 'callback_data' => 'rm:12:l'],
                     ['text' => '✗ Kim', 'callback_data' => 'rm:12:n'],
                 ],
+                // Roster is under Admin: Back goes there, as the last row.
+                [['text' => '⬅️ Back', 'callback_data' => 'mn:admin']],
             ],
             $sent['reply_markup']['inline_keyboard']
         );
@@ -498,7 +500,7 @@ final class RosterServiceTest extends TelegramTestCase
         // The edited roster drops Sam's 👋 (now arrived) and keeps ✓ ⏰ ✗.
         $edit = $this->lastCallTo('editMessageText');
         self::assertSame(
-            ['rm:11:c', 'rm:11:l', 'rm:11:n'],
+            ['rm:11:c', 'rm:11:l', 'rm:11:n', 'mn:admin'],
             array_column(array_merge(...$edit['reply_markup']['inline_keyboard']), 'callback_data')
         );
     }
@@ -516,7 +518,12 @@ final class RosterServiceTest extends TelegramTestCase
 
         $buttons = array_merge(...$this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']);
         self::assertSame(
-            [DayPicker::BLANK => 'x', '📅 Mon 20 Jul ✓' => 'rd:2026-07-20', 'Mon 27 Jul ▶' => 'rd:2026-07-27'],
+            [
+                DayPicker::BLANK => 'x',
+                '📅 Mon 20 Jul ✓' => 'rd:2026-07-20',
+                'Mon 27 Jul ▶' => 'rd:2026-07-27',
+                '⬅️ Back' => 'mn:admin',
+            ],
             array_column($buttons, 'callback_data', 'text')
         );
     }

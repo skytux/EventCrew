@@ -168,15 +168,9 @@ final class MessagePreview
                 : __('Sample description: what the task involves.', 'eventcrew'),
             'note' => __('Thanks for the notice.', 'eventcrew') . ' ' . CancelNote::early(),
             'cancelled' => __('❌ Cancelled', 'eventcrew'),
-            'open_tasks' => '- 📅 ' . sprintf(
-                /* translators: 1: day, 2: time range or '', 3: role with emoji, 4: free places, 5: places in total */
-                __('%1$s%2$s: %3$s (%4$d of %5$d places free)', 'eventcrew'),
-                Dates::dayLabel($task->taskDate),
-                '' === $task->timeRange() ? '' : ' ' . $task->timeRange(),
-                $task->roleDisplay(),
-                2,
-                max(2, $task->capacity)
-            ),
+            'open_tasks' => OpenTaskCall::openTasksText([
+                $task->taskDate => [[$task, max(0, $task->capacity - 2)]],
+            ]),
             OpenTaskList::CONTEXT_KEY => [
                 ['task' => $task, 'free' => $task->hasNoLimit() ? null : max(1, $task->capacity - 1)],
             ],
@@ -207,7 +201,6 @@ final class MessagePreview
                 __('Bot', 'eventcrew'),
                 __('Sample answer from the bot.', 'eventcrew')
             ),
-            'help_line' => '',
             'guide' => '',
             'group_line' => '',
             'events' => '',

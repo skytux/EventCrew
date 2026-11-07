@@ -598,7 +598,7 @@ final class UpdateRouter
             MenuButtons::REPLACE => $this->replacement->start($fromId, $chatId, $isPrivate),
             MenuButtons::WEB => $this->profile->onWeb($fromId, $chatId, $isPrivate),
             MenuButtons::NOTIFICATIONS => $this->notifications->start($fromId, $chatId, $isPrivate),
-            MenuButtons::LANGUAGE => $this->language?->ask($fromId, $chatId),
+            MenuButtons::LANGUAGE => $this->language?->ask($fromId, $chatId, null, true),
             MenuButtons::SALES => $this->salesLink->onSalesCommand($fromId, $chatId, $isPrivate),
             MenuButtons::GIFT => $this->gift->start($fromId, $chatId, $isPrivate),
             MenuButtons::ROLES => $this->permissions->start($fromId, $chatId, $isPrivate),

@@ -272,8 +272,8 @@ final class NewcomerApprovalTest extends TelegramTestCase
 
     // ---- Deciding -------------------------------------------------------
 
-    /** The OK lists the open tasks the newcomer can take, a Sign up each, then See open tasks. */
-    public function testTheOkListsTheOpenTasksWithASignUpEach(): void
+    /** The OK lists the open tasks the newcomer can take under their date, then See open tasks (Owner 2026-11-07). */
+    public function testTheOkListsTheOpenTasksUnderTheirDateAndOneBoardButton(): void
     {
         $this->options[Roles::OPTION_NAME] = [['slug' => 'door', 'label' => 'Door']];
         $this->wpdb->nextRows[] = self::kim();
@@ -300,13 +300,12 @@ final class NewcomerApprovalTest extends TelegramTestCase
         self::assertNotNull($sent);
         self::assertStringEndsWith(
             "✅ The team said OK. You can now take tasks.\n\nOpen now:"
-                . "\n- 📅 Sat 14 Nov 18:00–20:00: Door at Dance Night (2 of 3 free)",
+                . "\n📅 Sat 14 Nov\n- 18:00–20:00: Door at Dance Night (2 of 3 free)",
             $sent['text']
         );
         self::assertSame(
             [
-                [['text' => 'Sign up: Door · Sat 14 Nov', 'callback_data' => 'j:40']],
-                [['text' => 'See open tasks', 'callback_data' => MenuButtons::BOARD]],
+                [['text' => '📋 See open tasks', 'callback_data' => MenuButtons::BOARD]],
             ],
             $sent['reply_markup']['inline_keyboard']
         );
@@ -342,7 +341,7 @@ final class NewcomerApprovalTest extends TelegramTestCase
             $sent['text']
         );
         self::assertSame(
-            [[['text' => 'See open tasks', 'callback_data' => MenuButtons::BOARD]]],
+            [[['text' => '📋 See open tasks', 'callback_data' => MenuButtons::BOARD]]],
             $sent['reply_markup']['inline_keyboard']
         );
 

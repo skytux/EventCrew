@@ -136,7 +136,9 @@ final class TaskCancelledNotice
             return [
                 'subject' => MessageTemplates::subject('task_cancelled', $context),
                 'body' => MessageAiText::body('task_cancelled', $context, $task->eventPostId),
-                'button' => __('See open tasks', 'eventcrew'),
+                // See open tasks: the crew page's board and the bot's board
+                // (Owner 2026-11-07: the same one button as the other lists).
+                'actions' => MessageActions::email(MessageActions::of('task_cancelled', $context, $this->mailer)),
             ];
         };
 
@@ -149,7 +151,27 @@ final class TaskCancelledNotice
             $person->email,
             $both('subject'),
             $body,
-            [['label' => $both('button'), 'url' => $this->mailer->boardUrl()]]
+            self::joinedActions(array_values(array_map(static fn (array $part): array => (array) $part['actions'], $parts)))
         );
+    }
+
+    /**
+     * The first language's email actions, each label in every language
+     * ("Avoimet tehtävät / See open tasks"), as the subject.
+     *
+     * @param list<list<array{label: string, url: string, style?: string}>> $lists One list per language.
+     * @return list<array{label: string, url: string, style?: string}>
+     */
+    private static function joinedActions(array $lists): array
+    {
+        $actions = $lists[0] ?? [];
+
+        foreach ($actions as $index => $action) {
+            $actions[$index]['label'] = HybridPolicy::join(
+                array_map(static fn (array $list): string => (string) ($list[$index]['label'] ?? $action['label']), $lists)
+            );
+        }
+
+        return $actions;
     }
 }

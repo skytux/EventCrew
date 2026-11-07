@@ -1024,14 +1024,6 @@ msgstr "Eine Leerzeile und der Text „Über die Aufgabe“ der Rolle der Aufgab
 msgid "An empty line and the next nights a free-entry credit can be spent on, one per line. On lines of their own; they go when there are none."
 msgstr "Eine Leerzeile und die nächsten Abende, für die ein Freikarten-Credit eingelöst werden kann, einer pro Zeile. In eigenen Zeilen; sie entfallen, wenn es keine gibt."
 
-#: src/Support/OpenTaskList.php:215
-msgid "An empty line and the open tasks this person can sign up for, one line each, with no names. Empty when there are none."
-msgstr "Eine Leerzeile und die offenen Aufgaben, für die sich diese Person anmelden kann, eine pro Zeile, ohne Namen. Leer, wenn es keine gibt."
-
-#: src/Support/MessageTemplates.php:1223
-msgid "An empty line and the other open tasks of the event, one per line, with no names. Empty when there are none."
-msgstr "Eine Leerzeile und die anderen offenen Aufgaben des Events, eine pro Zeile, ohne Namen. Leer, wenn es keine gibt."
-
 #: src/Support/MessageTemplates.php:1217
 msgid "An empty line and the task's details: the task, the event, the day and time, the free places, and the description of the task or its role."
 msgstr "Eine Leerzeile und die Details der Aufgabe: die Aufgabe, das Event, Tag und Uhrzeit, die freien Plätze und die Beschreibung der Aufgabe oder ihrer Rolle."
@@ -1039,10 +1031,6 @@ msgstr "Eine Leerzeile und die Details der Aufgabe: die Aufgabe, das Event, Tag 
 #: src/Support/MessageTemplates.php:2543
 msgid "An empty line, then the line about the button that opens the crew’s Telegram group. Empty when no group link is known; then there is no such button."
 msgstr "Eine Leerzeile, dann die Zeile über den Button, der die Telegram-Gruppe der Crew öffnet. Leer, wenn kein Gruppenlink bekannt ist; dann gibt es keinen solchen Button."
-
-#: src/Support/MessageTemplates.php:2368
-msgid "An empty line, then the line with the link to the Help tab of the Crew app. Empty when no crew page is set."
-msgstr "Eine Leerzeile, dann die Zeile mit dem Link zum Hilfe-Tab der Crew-App. Leer, wenn keine Crew-Seite eingestellt ist."
 
 #: templates/admin/settings.php:901
 msgid "An outcome this many days old counts half as much toward the score as a same-day one. Default 180."
@@ -3140,11 +3128,6 @@ msgstr "Wie viele hinzugefügt wurden."
 msgid "How tasks, tickets, credits and standing work, by email and Telegram, once to each member. Organizers also get the organizer guide. New members get it when they confirm their email; everyone else from the hourly run, inside the notification hours, 25 people per hour. Use \"Send me the welcome message\" below to check it first."
 msgstr "Wie Aufgaben, Tickets, Credits und der Stand funktionieren, per E-Mail und Telegram, einmal an jedes Mitglied. Organisatoren bekommen auch die Anleitung für Organisatoren. Neue Mitglieder bekommen sie, wenn sie ihre E-Mail bestätigen; alle anderen über den stündlichen Lauf, innerhalb der Benachrichtigungszeiten, 25 Personen pro Stunde. Prüf sie vorher mit „Schick mir die Willkommensnachricht“ unten."
 
-#. translators: %s: the crew's name (the site name)
-#: src/Support/WelcomeSender.php:491
-msgid "How the %s crew works. Your own numbers are in the Me tab, and /me sends them to you in a private chat with the bot."
-msgstr "Wie die Crew von %s funktioniert. Deine eigenen Zahlen stehen im Tab „Ich“, und /me schickt sie dir in einem privaten Chat mit dem Bot."
-
 #: templates/admin/settings.php:1234
 msgid "How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the Crew app. A line starting with \"## \" is a heading, lines starting with \"- \" are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing."
 msgstr "Wie diese Website betrieben wird: wo sie gehostet ist, welche Umgehungen sie braucht, wie E-Mails rein- und rausgehen, externe Dienste. Nur für Organisatoren sichtbar, im Hilfe-Tab der Crew-App. Eine Zeile, die mit „## “ beginnt, ist eine Überschrift, Zeilen mit „- “ am Anfang sind eine Liste, und eine leere Zeile beginnt einen neuen Absatz. Keine Passwörter oder Schlüssel hier eintragen. Leer lassen, um nichts anzuzeigen."
@@ -3160,10 +3143,6 @@ msgstr "Wie man einen neuen Kassenlink bekommt: im Bot, oder, für eine Person o
 #: src/Support/MessageTemplates.php:1440
 msgid "How to get the free ticket: in the bot or the Crew app, or, for a person with no Telegram chat, on the crew page, with its link."
 msgstr "Wie man die Freikarte bekommt: im Bot oder in der Crew-App, oder, für eine Person ohne Telegram-Chat, auf der Crew-Seite, mit ihrem Link."
-
-#: src/Support/MessageTemplates.php:2385
-msgid "How to spend a credit: in the bot or on the web page, or, for a person with no Telegram chat, on the crew page, with its link."
-msgstr "Wie man einen Credit einlöst: im Bot oder auf der Webseite, oder, für eine Person ohne Telegram-Chat, auf der Crew-Seite, mit ihrem Link."
 
 #: templates/admin/settings.php:1476
 msgid "How your crew signs off. It closes every notification email, and the Telegram messages that go out to everyone — the open-task call, the reminders and the “a spot just opened” notice. Leave it blank for no sign-off."
@@ -3359,18 +3338,9 @@ msgstr "Installiert"
 msgid "Issued %s"
 msgstr "Ausgestellt %s"
 
-#: src/Support/WelcomeSender.php:476
-msgid "It is the first button in your sign-up confirmation, and /me tickets lists all your tickets."
-msgstr "Es ist der erste Button in deiner Anmeldebestätigung, und /me tickets listet alle deine Tickets."
-
 #: src/Support/WelcomeSender.php:497
 msgid "It is the first button in your sign-up confirmation, and the Me tab lists all your tickets."
 msgstr "Es ist der erste Button in deiner Anmeldebestätigung, und der Ich-Tab listet alle deine Tickets."
-
-#. translators: %s: link to the crew page
-#: src/Support/MessageTemplates.php:2398
-msgid "It is the first button in your sign-up confirmation, and the Me tab of the crew page (%s) lists all your tickets."
-msgstr "Es ist der erste Button in deiner Anmeldebestätigung, und der Ich-Tab der Crew-Seite (%s) listet alle deine Tickets."
 
 #. translators: %d: hours before the task starts
 #: src/Support/TakeoverService.php:609
@@ -5435,10 +5405,6 @@ msgstr "Vergebene Rollen und neue Organisatoren"
 msgid "Roles saved."
 msgstr "Rollen gespeichert."
 
-#: src/Telegram/MenuButtons.php:208
-msgid "Roles, organizers and passes"
-msgstr "Rollen, Organisatoren und Pässe"
-
 #: src/Support/OrganizerGuide.php:88
 msgid "Roles: /people, then 🏷 Roles, organizers and passes, makes someone an organizer, gives a one-time pass past the sign-up gate, and gives or takes away roles such as DJ."
 msgstr "Rollen: /people und dann 🏷 Rollen, Organisatoren und Pässe macht jemanden zum Organisator, gibt einen einmaligen Pass an der Anmeldesperre vorbei und vergibt oder entzieht Rollen wie DJ."
@@ -5878,10 +5844,6 @@ msgstr "Wird an einem Event-Abend an die Personen mit einer Kassen-Aufgabe gesen
 #: src/Support/MessageTemplates.php:2483
 msgid "Sent once to each member when their email address is confirmed: how tasks, tickets, credits and standing work, and the open tasks. Only when the welcome message is on in Settings."
 msgstr "Wird einmal an jedes Mitglied gesendet, wenn seine E-Mail-Adresse bestätigt ist: wie Aufgaben, Tickets, Credits und Stand funktionieren, und die offenen Aufgaben. Nur wenn die Willkommensnachricht in den Einstellungen an ist."
-
-#: src/Support/MessageTemplates.php:2492
-msgid "Sent once to each member who uses the bot, with a button for each open task. Only when the welcome message is on in Settings."
-msgstr "Wird einmal an jedes Mitglied gesendet, das den Bot nutzt, mit einem Button für jede offene Aufgabe. Nur wenn die Willkommensnachricht in den Einstellungen an ist."
 
 #: src/Support/MessageTemplates.php:2518
 msgid "Sent once to each organizer who uses the bot, with the short part of the organizer guide. Only when the welcome message is on in Settings."
@@ -6630,10 +6592,6 @@ msgstr "Bei einem Event mit dem Team sprechen"
 #: src/Support/MessageTemplates.php:2473
 msgid "Tap Sales desk in the Me tab of the crew page (%s)."
 msgstr "Tippe im Ich-Tab der Crew-Seite (%s) auf Kasse."
-
-#: src/Support/WelcomeSender.php:664
-msgid "Tap a button below to sign up."
-msgstr "Tippe unten auf einen Button, um dich einzutragen."
 
 #: src/Support/MessageTemplates.php:2462
 msgid "Tap 💳 Sales desk below."
@@ -7705,10 +7663,6 @@ msgstr "Die nächste Event-Ankündigung ist ausgeschaltet. Ein Administrator kan
 msgid "The next ones are below."
 msgstr "Die nächsten stehen unten."
 
-#: src/Support/MessageTemplates.php:2431
-msgid "The next open tasks, one line each, and the line about how to sign up. When there are none, a line that says so."
-msgstr "Die nächsten offenen Aufgaben, eine pro Zeile, und die Zeile, wie man sich anmeldet. Wenn es keine gibt, eine Zeile, die das sagt."
-
 #: src/Support/MessageTemplates.php:1209
 msgid "The next open tasks, under a line with each date."
 msgstr "Die nächsten offenen Aufgaben, unter einer Zeile mit jedem Datum."
@@ -8288,11 +8242,6 @@ msgstr "Der eigene Ort dieses Events. Leere ihn, um den Standard-Ort zu verwende
 msgid "This goes to the group:"
 msgstr "Das geht an die Gruppe:"
 
-#. translators: %s: link to the Help tab of the crew web page
-#: src/Support/WelcomeSender.php:397
-msgid "This guide is also in the Crew app, in the Help tab, after you sign in: %s"
-msgstr "Diese Anleitung steht auch in der Crew-App, im Hilfe-Tab, nachdem du dich eingeloggt hast: %s"
-
 #: templates/admin/people.php:58 templates/public/signup.php:881
 msgid "This is how a person is identified across Telegram and the web."
 msgstr "Darüber wird eine Person in Telegram und im Web erkannt."
@@ -8642,15 +8591,6 @@ msgstr "Um einen Text nur für die nächste E-Mail nach dem Event festzulegen, s
 #: src/Telegram/WebLoginBot.php:86
 msgid "To sign in to the crew app, press the code that the crew app on your screen shows. If you did not just press Telegram on the crew app yourself, press nothing."
 msgstr "Um dich in der Crew-App einzuloggen, drück den Code, den die Crew-App auf deinem Bildschirm zeigt. Wenn du nicht gerade selbst in der Crew-App auf Telegram gedrückt hast, drück nichts."
-
-#. translators: %s: link to the crew page
-#: src/Support/MessageTemplates.php:2389
-msgid "To spend a credit, pick a night under Tickets in the Me tab of the crew page (%s)."
-msgstr "Um einen Credit einzulösen, wähle einen Abend unter Tickets im Ich-Tab der Crew-Seite (%s)."
-
-#: src/Support/WelcomeSender.php:462
-msgid "To spend a credit, send /me to the bot and tap 🎟 Free-entry ticket, or use the web page."
-msgstr "Um einen Credit einzulösen, schick /me an den Bot und tippe auf 🎟 Freikarte, oder nutze die Webseite."
 
 #: templates/public/signup.php:631
 msgid "To stop individual emails, use Notifications above. To leave for good, delete your data — this erases your account and history and cannot be undone."
@@ -9016,10 +8956,6 @@ msgstr "Wir nutzen ihn nur, um dich in der Ankündigung zu begrüßen. Du kannst
 msgid "Web page"
 msgstr "Webseite"
 
-#: src/Telegram/MenuButtons.php:150
-msgid "Web sign-in"
-msgstr "Web-Login"
-
 #: templates/admin/settings.php:2532
 msgid "Webhook"
 msgstr "Webhook"
@@ -9077,11 +9013,6 @@ msgstr "Willkommensnachricht (E-Mail)"
 #: src/Support/Roles.php:148
 msgid "Welcome people at the door, check and sell tickets, and count how many people come in."
 msgstr "Leute an der Tür empfangen, Tickets prüfen und verkaufen und zählen, wie viele reinkommen."
-
-#. translators: 1: the crew's name (the site name), 2: where to see your own numbers
-#: src/Support/WelcomeSender.php:426
-msgid "Welcome to the %1$s crew. This message explains how it works. %2$s"
-msgstr "Willkommen in der Crew von %1$s. Diese Nachricht erklärt, wie es funktioniert. %2$s"
 
 #: src/Support/MessageTemplates.php:2536
 msgid "Welcome to the crew"
@@ -9219,10 +9150,6 @@ msgstr "Wenn dein Ticket auf unsere Türliste kommt, schicken wir dir eine Danke
 msgid "When: %s"
 msgstr "Wann: %s"
 
-#: src/Support/MessageTemplates.php:2394
-msgid "Where all your tickets are: in the bot, or, for a person with no Telegram chat, on the crew page, with its link."
-msgstr "Wo alle deine Tickets sind: im Bot, oder, für eine Person ohne Telegram-Chat, auf der Crew-Seite, mit ihrem Link."
-
 #: templates/admin/settings.php:2450
 msgid "Where imported lists go. Created if missing."
 msgstr "Wohin importierte Listen kommen. Wird erstellt, falls er fehlt."
@@ -9238,10 +9165,6 @@ msgstr "Wohin abgelehnte Nachrichten kommen. Wird erstellt, falls er fehlt."
 #: src/Support/MessageTemplates.php:542
 msgid "Where the event is, like “📍 Dance hall”: the event’s own venue, else the default venue (Settings > Web page), else the venue from EventMesh. On a line of its own; the line goes when no venue is known."
 msgstr "Wo das Event stattfindet, etwa „📍 Tanzsaal“: der eigene Ort des Events, sonst der Standard-Ort (Einstellungen > Webseite), sonst der Ort aus EventMesh. In einer eigenen Zeile; die Zeile entfällt, wenn kein Ort bekannt ist."
-
-#: src/Support/MessageTemplates.php:2374
-msgid "Where to see your own numbers: in the bot, or, for a person with no Telegram chat, on the crew page, with its link."
-msgstr "Wo man die eigenen Zahlen sieht: im Bot, oder, für eine Person ohne Telegram-Chat, auf der Crew-Seite, mit ihrem Link."
 
 #. translators: %d: number of days
 #: templates/admin/bot-log.php:39
@@ -9576,11 +9499,6 @@ msgstr "Du kannst stattdessen EVENTCREW_TELEGRAM_TOKEN in wp-config.php definier
 msgid "You can return to Telegram and sign up for tasks."
 msgstr "Du kannst zu Telegram zurückgehen und dich für Aufgaben eintragen."
 
-#. translators: %s: link to the crew page
-#: src/Support/MessageTemplates.php:2380
-msgid "You can see your own numbers any time in the Me tab of the crew page (%s)."
-msgstr "Du kannst deine eigenen Zahlen jederzeit im Ich-Tab der Crew-Seite (%s) sehen."
-
 #: src/Admin/Admin.php:596 src/Admin/JobsStatus.php:138
 #: src/Admin/PeoplePage.php:331 src/Admin/TasksPage.php:271
 msgid "You do not have permission to do this."
@@ -9858,10 +9776,6 @@ msgstr "Dein Name ist gespeichert. Wir haben einen Link an die neue Adresse gesc
 #: src/Web/SignupController.php:1210
 msgid "Your notification preferences are saved."
 msgstr "Deine Benachrichtigungseinstellungen sind gespeichert."
-
-#: src/Support/WelcomeSender.php:443
-msgid "Your numbers, tickets and credits: send /me to the bot."
-msgstr "Deine Zahlen, Tickets und Credits: Schick /me an den Bot."
 
 #: src/Support/MessagePreview.php:442
 msgid "Your own AI placeholder (Messages > AI), written for each event."
@@ -11091,3 +11005,97 @@ msgstr "Ein breiter Streifen des Bildes dieser Seite wird in Telegram über dem 
 
 msgid "The first name of the person the message is for, without the last name."
 msgstr "Der Vorname der Person, an die die Nachricht geht, ohne Nachnamen."
+
+msgid "An empty line and the open tasks this person can sign up for, under a line with each date, with no names. Empty when there are none."
+msgstr "Eine Leerzeile und die offenen Aufgaben, für die sich diese Person anmelden kann, unter einer Zeile je Datum, ohne Namen. Leer, wenn es keine gibt."
+
+msgid "An empty line and the other open tasks of the event, under a line with each date, with no names. Empty when there are none."
+msgstr "Eine Leerzeile und die anderen offenen Aufgaben des Events, unter einer Zeile je Datum, ohne Namen. Leer, wenn es keine gibt."
+
+#, php-format
+msgid "%1$s at %2$s"
+msgstr "%1$s bei %2$s"
+
+msgid "⬅️ Back"
+msgstr "⬅️ Zurück"
+
+msgid "Get a free-entry ticket"
+msgstr "Freikarte holen"
+
+msgid "Choose notifications"
+msgstr "Benachrichtigungen wählen"
+
+msgid "Change language"
+msgstr "Sprache ändern"
+
+msgid "Get a web sign-in link"
+msgstr "Web-Login-Link holen"
+
+msgid "Give or remove roles"
+msgstr "Rollen geben oder entziehen"
+
+msgid "%1$s or %2$s"
+msgstr "%1$s oder %2$s"
+
+msgid "Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers."
+msgstr "Schwierigkeiten, Feedback oder ein Fehler? Sag es einfach dem Bot: Er gibt es an die Organisatoren weiter."
+
+msgid "How the %s crew works. Your own numbers are in the Me tab, and the bot shows them when you ask in a private chat."
+msgstr "Wie die Crew von %s funktioniert. Deine eigenen Zahlen stehen im Ich-Tab, und der Bot zeigt sie dir, wenn du im privaten Chat fragst."
+
+msgid "How to spend a credit: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app."
+msgstr "Wie man einen Credit einlöst: leer für eine Person mit Telegram-Chat; für eine Person ohne, der Ich-Tab der Crew-App."
+
+msgid "If you cannot reach the bot, contact the maintainer, %s, or just try again a bit later."
+msgstr "Wenn du den Bot nicht erreichst, wende dich an den Betreuer, %s, oder versuch es etwas später noch einmal."
+
+msgid "In a private chat with the bot, it is usually enough to write what you want in your own words. There are no commands or keywords to remember."
+msgstr "Im privaten Chat mit dem Bot reicht es meist, in eigenen Worten zu schreiben, was du möchtest. Es gibt keine Befehle oder Stichwörter zum Merken."
+
+msgid "It is the first button in your sign-up confirmation, and the Me tab of the Crew app lists all your tickets."
+msgstr "Es ist der erste Button in deiner Anmeldebestätigung, und der Ich-Tab der Crew-App listet alle deine Tickets."
+
+msgid "It is the first button in your sign-up confirmation, and the bot lists all your tickets when you ask."
+msgstr "Es ist der erste Button in deiner Anmeldebestätigung, und der Bot listet alle deine Tickets, wenn du fragst."
+
+msgid "Maintainer contact"
+msgstr "Kontakt zum Betreuer"
+
+msgid "Sent once to each member who uses the bot, with the open tasks by date and a button to the board. Only when the welcome message is on in Settings."
+msgstr "Wird einmal an jedes Mitglied geschickt, das den Bot nutzt, mit den offenen Aufgaben nach Datum und einem Button zum Board. Nur wenn die Willkommensnachricht in den Einstellungen an ist."
+
+msgid "Talking to the bot"
+msgstr "Mit dem Bot reden"
+
+msgid "The next open tasks by date (at most 3 dates and 8 tasks), and the line about how to sign up. When there are none, a line that says so."
+msgstr "Die nächsten offenen Aufgaben nach Datum (höchstens 3 Daten und 8 Aufgaben) und die Zeile, wie man sich anmeldet. Wenn es keine gibt, eine Zeile, die das sagt."
+
+msgid "To see your numbers, tickets or credits, just ask the bot in a private chat."
+msgstr "Um deine Zahlen, Tickets oder Credits zu sehen, frag einfach den Bot in einem privaten Chat."
+
+msgid "To sign up, tap 📋 See open tasks below."
+msgstr "Zum Anmelden tippe unten auf 📋 Offene Aufgaben ansehen."
+
+msgid "To spend a credit, ask the bot for a free-entry ticket, or use the web page."
+msgstr "Um einen Credit einzulösen, bitte den Bot um eine Freikarte, oder nutze die Webseite."
+
+msgid "To spend a credit, pick a night under Tickets in the Me tab of the Crew app."
+msgstr "Um einen Credit einzulösen, wähle einen Abend unter Tickets im Ich-Tab der Crew-App."
+
+msgid "Welcome to the %1$s crew! Our nights happen because people like you lend a hand: every task you take keeps the door open, the room ready and the music going, and earns you free entry. This message explains how it works. %2$s"
+msgstr "Willkommen in der Crew von %1$s! Unsere Abende gibt es, weil Leute wie du mit anpacken: Jede Aufgabe, die du übernimmst, hält die Tür offen, den Raum bereit und die Musik am Laufen, und bringt dir freien Eintritt. Diese Nachricht erklärt, wie es funktioniert. %2$s"
+
+msgid "Where all your tickets are: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app."
+msgstr "Wo alle deine Tickets sind: leer für eine Person mit Telegram-Chat; für eine Person ohne, der Ich-Tab der Crew-App."
+
+msgid "Where to see your own numbers: ask the bot, or, for a person with no Telegram chat, the Me tab of the Crew app."
+msgstr "Wo man die eigenen Zahlen sieht: den Bot fragen, oder, für eine Person ohne Telegram-Chat, der Ich-Tab der Crew-App."
+
+msgid "Whom to contact when the bot cannot be reached (Settings > Welcome message)."
+msgstr "Wen man kontaktiert, wenn der Bot nicht erreichbar ist (Einstellungen > Willkommensnachricht)."
+
+msgid "Whom to contact when the bot cannot be reached, for example an email address and a Telegram name. Shown in the welcome message. Empty: the text in the box."
+msgstr "Wen man kontaktiert, wenn der Bot nicht erreichbar ist, zum Beispiel eine E-Mail-Adresse und ein Telegram-Name. Steht in der Willkommensnachricht. Leer: der Text im Feld."
+
+msgid "You can see your own numbers any time in the Me tab of the Crew app."
+msgstr "Du kannst deine eigenen Zahlen jederzeit im Ich-Tab der Crew-App sehen."

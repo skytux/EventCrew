@@ -84,6 +84,9 @@ final class SalesLinkServiceTest extends SalesDeskTestCase
         $this->salesLinkService()->onSalesCommand(501, 501, true);
 
         self::assertCount(1, $this->messages());
+        // 💳 Sales desk is under /door: the link's last row is Back there.
+        $rows = $this->messages()[0]['reply_markup']['inline_keyboard'];
+        self::assertSame([['text' => '⬅️ Back', 'callback_data' => 'mn:door']], end($rows));
     }
 
     public function testArrivedWelcomeCrewGetALink(): void
@@ -151,6 +154,10 @@ final class SalesLinkServiceTest extends SalesDeskTestCase
         self::assertSame(
             'Only organizers and tonight’s welcome crew can open it.',
             $this->messages()[0]['text']
+        );
+        self::assertSame(
+            [[['text' => '⬅️ Back', 'callback_data' => 'mn:door']]],
+            $this->messages()[0]['reply_markup']['inline_keyboard']
         );
     }
 

@@ -828,7 +828,9 @@ final class UpdateRouterTest extends TelegramTestCase
         $router = $this->languageRouter();
         $router->dispatch($this->tap('mn:lang'));
 
-        $buttons = array_merge(...$this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']);
+        $rows = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
+        self::assertSame('mn:set', array_pop($rows)[0]['callback_data']);
+        $buttons = array_merge(...$rows);
         self::assertSame(['Suomi', 'English', 'Svenska'], array_column($buttons, 'text'));
         self::assertSame(['lang:fi', 'lang:en', 'lang:sv'], array_column($buttons, 'callback_data'));
 
@@ -851,7 +853,9 @@ final class UpdateRouterTest extends TelegramTestCase
 
         $this->languageRouter()->dispatch($this->tap('mn:lang'));
 
-        $buttons = array_merge(...$this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']);
+        $rows = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
+        array_pop($rows);
+        $buttons = array_merge(...$rows);
         self::assertSame(['Español', 'Suomi', 'English'], array_column($buttons, 'text'));
     }
 

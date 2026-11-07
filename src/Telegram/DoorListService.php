@@ -206,12 +206,12 @@ final class DoorListService
     /**
      * The previous/next row of a paged list ($pages), then the date selector
      * (DayPicker): the shown night marked, with arrows to the nights before
-     * and after it that this person may see. Null when there is none.
+     * and after it that this person may see, then Back to /door.
      *
      * @param array<int, array{text: string, callback_data: string}> $pages
-     * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}|null
+     * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
      */
-    private function markup(Person $person, string $shown, array $pages = []): ?array
+    private function markup(Person $person, string $shown, array $pages = []): array
     {
         $rows = array_merge([] === $pages ? [] : [$pages], DayPicker::rows(
             $this->access->dates(),
@@ -220,7 +220,10 @@ final class DoorListService
             fn (string $date): bool => $this->access->canView($person, $date)
         ));
 
-        return [] === $rows ? null : ['inline_keyboard' => $rows];
+        // Back to /door, where 📋 Door list is.
+        $rows[] = MenuButtons::backRow(MenuButtons::DOOR);
+
+        return ['inline_keyboard' => $rows];
     }
 
     private function deniedMessage(): string

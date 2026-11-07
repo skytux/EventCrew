@@ -104,24 +104,23 @@ final class AccessNotifierTest extends TelegramTestCase
             $this->dm()
         );
         self::assertSame(
-            [[['text' => 'See open tasks', 'callback_data' => MenuButtons::BOARD]]],
+            [[['text' => '📋 See open tasks', 'callback_data' => MenuButtons::BOARD]]],
             $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
         );
         self::assertCount(1, $this->mails);
         self::assertSame('sam@example.com', $this->mails[0]['to']);
         self::assertSame(
             "You have a new role: DJ\n---\nHi Sam,\n\nYou now have the role DJ. Its tasks are open to you on the crew"
-                . " page, and you can sign up for them.\n\nSee open tasks: https://site.test/crew/",
+                . " page, and you can sign up for them.\n\nSee open tasks: https://site.test/crew/#eventcrew-panel-board",
             $this->mailText()
         );
     }
 
     /**
-     * A new role lists that role's open tasks, each with its Sign up: the DM
-     * by the role list's sign-up (the role is restricted), the email by a
-     * link to the task on the crew page. Then See open tasks.
+     * A new role lists that role's open tasks under their date, then one See
+     * open tasks instead of a Sign up per task (Owner 2026-11-07).
      */
-    public function testARoleListsItsOpenTasksWithASignUpEach(): void
+    public function testARoleListsItsOpenTasksUnderTheirDateAndOneBoardButton(): void
     {
         $this->sam(['role_slugs' => 'dj']);
         $task = [
@@ -142,20 +141,18 @@ final class AccessNotifierTest extends TelegramTestCase
 
         self::assertSame(
             "📣 Test Site\n\nHi Sam Lee,\n\nYou now have the role DJ, so you can sign up for its tasks.\n\nOpen now:"
-                . "\n- 📅 Sat 14 Nov 22:00–23:00: DJ at Dance Night",
+                . "\n📅 Sat 14 Nov\n- 22:00–23:00: DJ at Dance Night",
             $this->dm()
         );
         self::assertSame(
             [
-                [['text' => 'Sign up: DJ · Sat 14 Nov', 'callback_data' => 'rt:s:31']],
-                [['text' => 'See open tasks', 'callback_data' => MenuButtons::BOARD]],
+                [['text' => '📋 See open tasks', 'callback_data' => MenuButtons::BOARD]],
             ],
             $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
         );
         self::assertStringContainsString(
-            "Open now:\n- 📅 Sat 14 Nov 22:00–23:00: DJ at Dance Night\n\n"
-                . "Sign up: DJ · Sat 14 Nov: https://site.test/crew/#eventcrew-task-31\n"
-                . 'See open tasks: https://site.test/crew/',
+            "Open now:\n📅 Sat 14 Nov\n- 22:00–23:00: DJ at Dance Night\n\n"
+                . 'See open tasks: https://site.test/crew/#eventcrew-panel-board',
             $this->mailText()
         );
     }
@@ -174,7 +171,7 @@ final class AccessNotifierTest extends TelegramTestCase
         self::assertSame(
             "You have a one-time pass\n---\nHi Sam,\n\nYou have a one-time pass to sign up for your next task, even"
                 . ' while your standing is low. It is used up the next time you sign up.'
-                . "\n\nSee open tasks: https://site.test/crew/",
+                . "\n\nSee open tasks: https://site.test/crew/#eventcrew-panel-board",
             $this->mailText()
         );
     }

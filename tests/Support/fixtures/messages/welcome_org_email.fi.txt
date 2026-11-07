@@ -4,8 +4,6 @@ Hei Person 3,
 
 Olet Test Crew:n järjestäjä. Tämä opas kertoo, miten EventCrew toimii, ensin lyhyesti ja sitten tarkemmin.
 
-📖 Tämä opas on myös Crew-sovelluksessa Ohje-välilehdellä, kun olet kirjautunut: https://site.test/crew/#eventcrew-help-organizer
-
 📑 Sisältö
 
 - ⚡ Lyhyesti
@@ -28,7 +26,6 @@ Olet Test Crew:n järjestäjä. Tämä opas kertoo, miten EventCrew toimii, ensi
 - 🎧 Roolitehtävät (DJ, VJ, Organize, ...) eivät ole ryhmän taululla. Ne, joilla rooli on, näkevät ne komennolla /board yksityiskeskustelussa ja Crew-sovelluksessa. Voit lisätä siellä jonkun, myös henkilön, joka ei ole tiimin jäsen.
 - 🔔 Viestit: muistutukset ja kutsut lähtevät itsestään, vain klo 09:00–21:00.
 - ⚙️ Wp-adminin EventCrew > Asetukset muuttaa toimintaa. EventCrew > Diagnostiikka näyttää, toimiiko kaikki.
-- 🔗 Avaa EventCrew wp-adminissa: https://site.test/wp-admin/admin.php?page=eventcrew
 
 🗓️ Tehtävät ja tapahtumat
 
@@ -109,10 +106,9 @@ Ajastetut lähtevät vain klo 09:00–21:00. Jokainen lähtee Telegramilla ja s�
 - 🔹 Bottiloki: mitä botin komentoja ja painikkeita kukin käytti päivän aikana. Viestien tekstiä ei tallenneta.
 - 🔹 Diagnostiikka: tietokannan, botin, ajastettujen lähetysten, ilmoittautumissivun ja sähköpostin tarkistus.
 
-🔗 Avaa EventCrew wp-adminissa: https://site.test/wp-admin/admin.php?page=eventcrew
-
-Avaa EventCrew wp-adminissa: https://site.test/wp-admin/admin.php?page=eventcrew
 🛠️ Avaa Ylläpito-välilehti: https://site.test/crew/#eventcrew-panel-admin
+📖 Ohje: https://site.test/crew/#eventcrew-help-organizer
+🧰 Avaa EventCrew wp-adminissa: https://site.test/wp-admin/admin.php?page=eventcrew
 
 —
 Hallitse tiliäsi tai lopeta nämä sähköpostit: https://site.test/crew/?eventcrew_login=TOKEN

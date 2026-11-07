@@ -359,7 +359,11 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         $dm = $this->lastCallTo('sendMessage');
         self::assertSame("✨ Free-entry ticket ✨\n\n🎟 Free-entry credits: 2\n\nPick an event:", $dm['text']);
         self::assertSame(
-            [[['text' => '✨ Ecstatic Dance · Esimerkki & Aino Testinen · Sat 1 Aug', 'callback_data' => 'tkt:2026-08-01']]],
+            [
+                [['text' => '✨ Ecstatic Dance · Esimerkki & Aino Testinen · Sat 1 Aug', 'callback_data' => 'tkt:2026-08-01']],
+                // Back to the Tickets screen, as the last row.
+                [['text' => '⬅️ Back', 'callback_data' => 'mn:tix']],
+            ],
             $dm['reply_markup']['inline_keyboard']
         );
     }

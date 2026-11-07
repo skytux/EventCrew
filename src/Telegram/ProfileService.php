@@ -158,7 +158,8 @@ final class ProfileService
             ? __('No past tasks yet — your history starts once you’ve worked one.', 'eventcrew')
             : implode("\n", array_merge([__('Your past tasks:', 'eventcrew')], $past));
 
-        $this->deliver($telegramUserId, $chatId, $isPrivate, $body, ['inline_keyboard' => [MenuButtons::backRow()]]);
+        // Past tasks is a button under Tasks, so Back goes there.
+        $this->deliver($telegramUserId, $chatId, $isPrivate, $body, MenuButtons::back(MenuButtons::MY_TASKS));
     }
 
     /**
@@ -242,7 +243,8 @@ final class ProfileService
         if (! is_string($pageUrl) || '' === $pageUrl) {
             $this->telegram->sendMessage(
                 $telegramUserId,
-                __('There’s no public sign-up page set up yet, so there’s nothing to sign in to on the web.', 'eventcrew')
+                __('There’s no public sign-up page set up yet, so there’s nothing to sign in to on the web.', 'eventcrew'),
+                MenuButtons::back(MenuButtons::SETTINGS)
             );
             $this->sentDmNote($chatId, $isPrivate);
 
@@ -260,7 +262,10 @@ final class ProfileService
             $chatId,
             $isPrivate,
             __('Here’s your sign-in link for the web board — good for 30 minutes, one use.', 'eventcrew'),
-            ['inline_keyboard' => [[['text' => __('🔑 Sign in on the web', 'eventcrew'), 'url' => $url]]]]
+            ['inline_keyboard' => [
+                [['text' => __('🔑 Sign in on the web', 'eventcrew'), 'url' => $url]],
+                MenuButtons::backRow(MenuButtons::SETTINGS),
+            ]]
         );
     }
 

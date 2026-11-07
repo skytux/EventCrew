@@ -6,7 +6,7 @@ You are an organizer of Test Crew. This guide explains how EventCrew works, firs
 
 ⚡ In short
 
-🗓️ Tasks: you create them in wp-admin, EventCrew > Tasks. One click makes all the tasks of a night.
+🗓️ Tasks: you create them in wp-admin, EventCrew &gt; Tasks. One click makes all the tasks of a night.
 
 ✋ Sign-up: members tap a task on the board in the Telegram group, or use the web sign-up page. /board posts a new board in the group.
 
@@ -22,10 +22,6 @@ You are an organizer of Test Crew. This guide explains how EventCrew works, firs
 
 🔔 Messages: reminders and calls go out by themselves, only between 09:00 and 21:00.
 
-⚙️ wp-admin, EventCrew > Settings changes how things work. EventCrew > Diagnostics shows whether everything is running.
-
-🔗 Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew
+⚙️ wp-admin, EventCrew &gt; Settings changes how things work. EventCrew &gt; Diagnostics shows whether everything is running.
 
 The full guide, with the details, is in your email.
-
-📖 This guide is also in the Crew app, in the Help tab, after you sign in: https://site.test/crew/#eventcrew-help-organizer

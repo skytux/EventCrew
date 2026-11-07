@@ -322,9 +322,9 @@ final class SlotFreedNoticeTest extends TestCase
         ];
 
         self::assertSame(
-            "Other open tasks at Party:\n"
-            . '- ' . Roles::display('welcome') . " · 20:00–22:00 · 1 of 2 places free\n"
-            . '- ' . Roles::display('decorate') . ' · Sun 2 Aug · 3 of 3 places free',
+            "Other open tasks at Party:\n📅 Sat 1 Aug\n"
+            . '- ' . Roles::display('welcome') . " · 20:00–22:00 · 1 of 2 places free\n\n📅 Sun 2 Aug\n"
+            . '- ' . Roles::display('decorate') . ' · 3 of 3 places free',
             SlotFreedNotice::others($task, $rows)
         );
         self::assertSame('', SlotFreedNotice::others($task, []));

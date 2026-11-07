@@ -41,11 +41,13 @@ final class OrganizerGuide
 
     /**
      * The contents list, the short part and the details: the whole email, and
-     * the organizer part of the web Help tab.
+     * the organizer part of the web Help tab. Without $links, the lines with
+     * the wp-admin address are left out: the welcome message has a wp-admin
+     * button instead and shows no address (Owner 2026-11-07).
      */
-    public static function full(): string
+    public static function full(bool $links = true): string
     {
-        return self::contents() . "\n\n" . self::short() . "\n\n" . self::details();
+        return self::contents() . "\n\n" . self::short($links) . "\n\n" . self::details($links);
     }
 
     /**
@@ -66,7 +68,7 @@ final class OrganizerGuide
     }
 
     /** The "In short" part: the email's first section, and the whole DM. */
-    public static function short(): string
+    public static function short(bool $links = true): string
     {
         $settings = new ReputationSettings();
 
@@ -97,11 +99,15 @@ final class OrganizerGuide
             '- ' . self::wpAdminLine(),
         ];
 
+        if (! $links) {
+            array_pop($lines);
+        }
+
         return '## ⚡ ' . __('In short', 'eventcrew') . "\n\n" . implode("\n", $lines);
     }
 
     /** The detailed sections, after the short part, for the email only. */
-    public static function details(): string
+    public static function details(bool $links = true): string
     {
         return implode("\n\n", [
             ...self::tasks(),
@@ -110,7 +116,7 @@ final class OrganizerGuide
             ...self::credits(),
             ...self::permissions(),
             ...self::messages(),
-            ...self::admin(),
+            ...self::admin($links),
         ]);
     }
 
@@ -284,9 +290,9 @@ final class OrganizerGuide
     }
 
     /** @return array<int, string> */
-    private static function admin(): array
+    private static function admin(bool $links = true): array
     {
-        return [
+        $section = [
             '## ⚙️ ' . __('The wp-admin pages', 'eventcrew'),
             implode("\n", [
                 '- 🔹 ' . __('Tasks: create, change and remove tasks.', 'eventcrew'),
@@ -299,6 +305,8 @@ final class OrganizerGuide
             ]),
             self::wpAdminLine(),
         ];
+
+        return $links ? $section : array_slice($section, 0, 2);
     }
 
     private static function windowStart(): string
