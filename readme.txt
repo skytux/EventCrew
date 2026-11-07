@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.161
+Stable tag: 1.140.162
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,13 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.162 =
+* Free-entry ticket message: event and DJs first, then date, venue and times; picker buttons show the event, DJs and day
+* My info: a title and spaced blocks with a few ✨
+* New setting: how many languages multi-language texts and buttons show (default 2), the reader's own first
+* Sign up again after a late cancel removes the mark; the late-cancel message says so
+* Early cancels say they are more than N hours before the task and have no effect on standing
 
 = 1.140.161 =
 * Private chats: a person not linked to the bot must be in the crew group; anyone else gets no answer
@@ -1738,6 +1745,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.162 =
+No settings change.
 
 = 1.140.161 =
 No settings change.
