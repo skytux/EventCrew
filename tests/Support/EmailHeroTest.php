@@ -48,12 +48,23 @@ final class EmailHeroTest extends TestCase
         ];
     }
 
+    public function testTheHeroAndSubjectUseTheFirstNameWithoutAComma(): void
+    {
+        $context = $this->context('Anna Virtanen');
+
+        self::assertSame('Thank you Anna!', EmailHero::for('signup_confirmed', $context)?->title);
+        self::assertStringStartsWith(
+            'Thank you Anna! ✨',
+            \EventCrew\Support\MessageTemplates::subject('signup_confirmed', $context)
+        );
+    }
+
     public function testOnlyTheSignupEmailHasAHero(): void
     {
         $hero = EmailHero::for('signup_confirmed', $this->context());
 
         self::assertNotNull($hero);
-        self::assertSame('Thank you, Anna!', $hero->title);
+        self::assertSame('Thank you Anna!', $hero->title);
         self::assertSame('Decorate · Sat 1 Aug 18:00–20:00', $hero->line);
 
         foreach (['signup_confirmed_dm', 'cancel_confirmed', 'reminder', 'slot_freed', 'nope'] as $id) {

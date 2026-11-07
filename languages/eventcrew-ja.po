@@ -10595,7 +10595,7 @@ msgstr "🧭 主催者ガイド ↓"
 #. translators: 1: name, 2: event
 #: src/Support/MessageTemplates.php
 #, php-format
-msgid "Thank you, %1$s! ✨ You’re on the crew for %2$s"
+msgid "Thank you %1$s! ✨ You’re on the crew for %2$s"
 msgstr "%1$s さん、ありがとう！✨ %2$s のクルーに加わりました"
 
 #. translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line, 6: how to cancel
@@ -10607,7 +10607,7 @@ msgstr "%1$s さん\n\nクルーに加わってくれてありがとうござい
 #. translators: %s: the person's first name
 #: src/Support/EmailHero.php
 #, php-format
-msgid "Thank you, %s!"
+msgid "Thank you %s!"
 msgstr "%s さん、ありがとう！"
 
 #: src/Support/EmailHero.php
@@ -10993,3 +10993,6 @@ msgstr "ボードのバナー"
 
 msgid "A wide strip of this page's picture is shown above the board text in Telegram: its first cover block, around the cover's focal point, or else its featured image. Change the picture on the page and the banner follows."
 msgstr "このページの画像の横長の帯を、Telegram のボードのテキストの上に表示します。ページ最初のカバーブロック(カバーの焦点の周り)、なければアイキャッチ画像を使います。ページの画像を変えるとバナーも変わります。"
+
+msgid "The first name of the person the message is for, without the last name."
+msgstr "メッセージの宛先の人の名（姓なし）。"

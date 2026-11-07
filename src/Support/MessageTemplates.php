@@ -1142,6 +1142,12 @@ final class MessageTemplates
             __('The first name of the person the message is for.', 'eventcrew'),
             static fn (array $c): string => ($c['person'] ?? null) instanceof Person ? $c['person']->name() : ''
         );
+        $personFirstName = self::placeholder(
+            __('The first name of the person the message is for, without the last name.', 'eventcrew'),
+            static fn (array $c): string => ($c['person'] ?? null) instanceof Person
+                ? DoorDesk::firstName($c['person']->name())
+                : ''
+        );
         $role = self::placeholder(
             __('The name of the task, like Door.', 'eventcrew'),
             static fn (array $c): string => ($c['task'] ?? null) instanceof Task ? $c['task']->roleLabel() : ''
@@ -1521,9 +1527,9 @@ final class MessageTemplates
                 // A thank-you (Owner, 2026-11-07); the HTML email opens with a
                 // "Thank you" hero above the text (EmailHero).
                 static fn (): string => self::tag(
-                    /* translators: 1: name, 2: event */
-                    __('Thank you, %1$s! ✨ You’re on the crew for %2$s', 'eventcrew'),
-                    ['%1$s' => '{name}', '%2$s' => '{event}']
+                    /* translators: 1: first name, 2: event. No comma after "Thank you" (Owner, 2026-11-07). */
+                    __('Thank you %1$s! ✨ You’re on the crew for %2$s', 'eventcrew'),
+                    ['%1$s' => '{first_name}', '%2$s' => '{event}']
                 ),
                 // The when line, the event's times and venue, then the task's
                 // description ({description} takes the place of {about}). No
@@ -1536,6 +1542,7 @@ final class MessageTemplates
                 ) . '{free_cancel}'))),
                 [
                     'name' => $name,
+                    'first_name' => $personFirstName,
                     'role' => $role,
                     'event' => $event,
                     'when' => $when,

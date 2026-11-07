@@ -10662,8 +10662,8 @@ msgstr "🧭 Organisator-Anleitung ↓"
 #. translators: 1: name, 2: event
 #: src/Support/MessageTemplates.php
 #, php-format
-msgid "Thank you, %1$s! ✨ You’re on the crew for %2$s"
-msgstr "Danke, %1$s! ✨ Du bist in der Crew für %2$s"
+msgid "Thank you %1$s! ✨ You’re on the crew for %2$s"
+msgstr "Danke %1$s! ✨ Du bist in der Crew für %2$s"
 
 #. translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line, 6: how to cancel
 #: src/Support/MessageTemplates.php
@@ -10674,8 +10674,8 @@ msgstr "Hallo %1$s,\n\ndanke, dass du Teil der Crew bist! Du bist für %2$s bei 
 #. translators: %s: the person's first name
 #: src/Support/EmailHero.php
 #, php-format
-msgid "Thank you, %s!"
-msgstr "Danke, %s!"
+msgid "Thank you %s!"
+msgstr "Danke %s!"
 
 #: src/Support/EmailHero.php
 msgid "Thank you!"
@@ -11088,3 +11088,6 @@ msgstr "Banner der Tafel"
 
 msgid "A wide strip of this page's picture is shown above the board text in Telegram: its first cover block, around the cover's focal point, or else its featured image. Change the picture on the page and the banner follows."
 msgstr "Ein breiter Streifen des Bildes dieser Seite wird in Telegram über dem Text der Tafel gezeigt: ihr erster Cover-Block, rund um den Fokuspunkt des Covers, sonst ihr Beitragsbild. Ändere das Bild auf der Seite, und das Banner folgt."
+
+msgid "The first name of the person the message is for, without the last name."
+msgstr "Der Vorname der Person, an die die Nachricht geht, ohne Nachnamen."

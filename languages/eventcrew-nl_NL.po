@@ -10662,8 +10662,8 @@ msgstr "🧭 Gids voor organisatoren ↓"
 #. translators: 1: name, 2: event
 #: src/Support/MessageTemplates.php
 #, php-format
-msgid "Thank you, %1$s! ✨ You’re on the crew for %2$s"
-msgstr "Dank je, %1$s! ✨ Je zit in de crew voor %2$s"
+msgid "Thank you %1$s! ✨ You’re on the crew for %2$s"
+msgstr "Dank je %1$s! ✨ Je zit in de crew voor %2$s"
 
 #. translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line, 6: how to cancel
 #: src/Support/MessageTemplates.php
@@ -10674,8 +10674,8 @@ msgstr "Hoi %1$s,\n\nDank je dat je bij de crew komt! Je bent ingeschreven voor 
 #. translators: %s: the person's first name
 #: src/Support/EmailHero.php
 #, php-format
-msgid "Thank you, %s!"
-msgstr "Dank je, %s!"
+msgid "Thank you %s!"
+msgstr "Dank je %s!"
 
 #: src/Support/EmailHero.php
 msgid "Thank you!"
@@ -11067,3 +11067,6 @@ msgstr "Banner van het bord"
 
 msgid "A wide strip of this page's picture is shown above the board text in Telegram: its first cover block, around the cover's focal point, or else its featured image. Change the picture on the page and the banner follows."
 msgstr "Een brede strook van de afbeelding van deze pagina staat in Telegram boven de tekst van het bord: het eerste omslagblok, rond het focuspunt van de omslag, of anders de uitgelichte afbeelding. Verander de afbeelding op de pagina en de banner volgt."
+
+msgid "The first name of the person the message is for, without the last name."
+msgstr "De voornaam van de persoon voor wie het bericht is, zonder achternaam."

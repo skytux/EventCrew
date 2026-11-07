@@ -10595,7 +10595,7 @@ msgstr "🧭 组织者指南 ↓"
 #. translators: 1: name, 2: event
 #: src/Support/MessageTemplates.php
 #, php-format
-msgid "Thank you, %1$s! ✨ You’re on the crew for %2$s"
+msgid "Thank you %1$s! ✨ You’re on the crew for %2$s"
 msgstr "谢谢你，%1$s！✨ 你已加入 %2$s 的团队"
 
 #. translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line, 6: how to cancel
@@ -10607,7 +10607,7 @@ msgstr "%1$s 你好，\n\n谢谢你加入团队！你已报名 %4$s 在 %3$s 的
 #. translators: %s: the person's first name
 #: src/Support/EmailHero.php
 #, php-format
-msgid "Thank you, %s!"
+msgid "Thank you %s!"
 msgstr "谢谢你，%s！"
 
 #: src/Support/EmailHero.php
@@ -10993,3 +10993,6 @@ msgstr "看板横幅"
 
 msgid "A wide strip of this page's picture is shown above the board text in Telegram: its first cover block, around the cover's focal point, or else its featured image. Change the picture on the page and the banner follows."
 msgstr "此页面图片的一条宽幅横条显示在 Telegram 看板文字上方:取页面的第一个封面区块(围绕封面焦点),否则取特色图片。更换页面上的图片,横幅随之更新。"
+
+msgid "The first name of the person the message is for, without the last name."
+msgstr "消息收件人的名字，不含姓氏。"

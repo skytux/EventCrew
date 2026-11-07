@@ -10,6 +10,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Roles;
 use EventCrew\Telegram\BoardRenderer;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\DayPicker;
 use EventCrew\Tests\Support\RoleBoardWpdb;
 
 /**
@@ -120,7 +121,7 @@ final class PrivateBoardRoleTasksTest extends TelegramTestCase
         $board = $this->renderer()->crewBoard();
 
         self::assertStringContainsString("🎈 Decorate · 2/2\nAnna, Ben\n", $board['text']);
-        self::assertStringContainsString("🎧 DJ · 0/1\n–", $board['text']);
+        self::assertStringContainsString("🎧 DJ\n–", $board['text']);
         self::assertStringNotContainsString(': ', $board['text']);
     }
 
@@ -132,8 +133,8 @@ final class PrivateBoardRoleTasksTest extends TelegramTestCase
 
         $board = $this->renderer()->crewBoard('', true, $person);
 
-        self::assertStringContainsString("🎧 DJ · 0/1\n–", $board['text']);
-        self::assertStringContainsString("📽 VJ · 0/1\n–", $board['text']);
+        self::assertStringContainsString("🎧 DJ\n–", $board['text']);
+        self::assertStringContainsString("📽 VJ\n–", $board['text']);
         self::assertStringNotContainsString('✋', $board['text']);
         $data = self::buttons($board);
         self::assertSame(['t:1'], array_values(array_filter($data, static fn (string $d): bool => ! str_starts_with($d, 'bd:'))));
@@ -159,9 +160,13 @@ final class PrivateBoardRoleTasksTest extends TelegramTestCase
 
         self::assertSame(['sendMessage'], $this->calledMethods());
         $sent = $this->lastCallTo('sendMessage');
-        self::assertStringContainsString("🎧 DJ · 0/1\n–", $sent['text']);
-        self::assertStringContainsString("📽 VJ · 0/1\n–", $sent['text']);
-        self::assertStringContainsString('✋ sign up · ❌ cancel', $sent['text']);
+        self::assertStringContainsString("🎧 DJ\n–", $sent['text']);
+        self::assertStringContainsString("📽 VJ\n–", $sent['text']);
+        // The legend is under the tasks, the last line (Owner 2026-11-07).
+        self::assertStringEndsWith("📽 VJ\n–\n\n✋ sign up · ❌ cancel", $sent['text']);
+        // One run of buttons: the blank ones only on the last row.
+        $rows = $sent['reply_markup']['inline_keyboard'] ?? $sent['keyboard'] ?? [];
+        self::assertSame(['🎈 Decorate', '✋ 🎧 DJ', DayPicker::BLANK], array_column($rows[0], 'text'));
         self::assertStringNotContainsString('➕', $sent['text']);
         $buttons = self::buttons($sent);
         self::assertSame('t:1', $buttons['🎈 Decorate'] ?? null);
@@ -179,8 +184,9 @@ final class PrivateBoardRoleTasksTest extends TelegramTestCase
         $this->boardService()->sendPrivate(555);
 
         $sent = $this->lastCallTo('sendMessage');
-        self::assertStringContainsString("🎧 DJ · 1/1\nSam", $sent['text']);
+        self::assertStringContainsString("🎧 DJ\nSam", $sent['text']);
         self::assertSame('rt:c:2', self::buttons($sent)['❌ 🎧 DJ'] ?? null);
+        self::assertStringNotContainsString('1/1', $sent['text'], 'no count on a task with no limit');
     }
 
     public function testAnOrganizerGetsAddSomeoneOnTheSpecialTasksOnly(): void
@@ -197,7 +203,7 @@ final class PrivateBoardRoleTasksTest extends TelegramTestCase
         self::assertNotContains('rt:a:1', $buttons);
         self::assertNotContains('rt:s:2', $buttons);
         // Only what there is to tap is explained.
-        self::assertStringContainsString("\n➕ add someone\n", $sent['text']);
+        self::assertStringContainsString("\n➕ add someone", $sent['text']);
         self::assertStringNotContainsString('✋', $sent['text']);
     }
 
@@ -232,7 +238,7 @@ final class PrivateBoardRoleTasksTest extends TelegramTestCase
         ]);
 
         $edit = $this->lastCallTo('editMessageText');
-        self::assertStringContainsString("🎧 DJ · 0/1\n–", $edit['text']);
+        self::assertStringContainsString("🎧 DJ\n–", $edit['text']);
         self::assertSame('rt:s:2', self::buttons($edit)['✋ 🎧 DJ'] ?? null);
     }
 

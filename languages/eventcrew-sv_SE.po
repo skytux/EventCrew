@@ -11926,8 +11926,8 @@ msgstr "En bred remsa av sidans bild visas ovanför tavlans text i Telegram: sid
 #. translators: 1: name, 2: event
 #: src/Support/MessageTemplates.php
 #, php-format
-msgid "Thank you, %1$s! ✨ You’re on the crew for %2$s"
-msgstr "Tack, %1$s! ✨ Du är med i crewet på %2$s"
+msgid "Thank you %1$s! ✨ You’re on the crew for %2$s"
+msgstr "Tack %1$s! ✨ Du är med i crewet på %2$s"
 
 #. translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line, 6: how to cancel
 #: src/Support/MessageTemplates.php
@@ -11938,9 +11938,12 @@ msgstr "Hej %1$s,\n\ntack för att du är med i crewet! Du är anmäld till %2$s
 #. translators: %s: the person's first name
 #: src/Support/EmailHero.php
 #, php-format
-msgid "Thank you, %s!"
-msgstr "Tack, %s!"
+msgid "Thank you %s!"
+msgstr "Tack %s!"
 
 #: src/Support/EmailHero.php
 msgid "Thank you!"
 msgstr "Tack!"
+
+msgid "The first name of the person the message is for, without the last name."
+msgstr "Förnamnet på personen som meddelandet är till, utan efternamn."

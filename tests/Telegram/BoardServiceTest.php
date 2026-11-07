@@ -232,7 +232,7 @@ final class BoardServiceTest extends TelegramTestCase
         $callbacks = array_column(array_map(static fn (array $row): array => $row[0], $rendered['keyboard']), 'callback_data');
         self::assertContains('t:1', $callbacks);
         self::assertNotContains('t:2', $callbacks);
-        self::assertStringContainsString("Decorate · 0/2\n🎧 DJ · 0/1", $rendered['text']);
+        self::assertStringContainsString("Decorate · 0/2\n\n🎧 DJ", $rendered['text']);
         self::assertStringNotContainsString('DJ', implode(' ', array_column(array_merge(...$rendered['keyboard']), 'text')));
     }
 

@@ -19,7 +19,7 @@ use EventCrew\Support\RoleTaskService;
  *
  * Each event is headed in the text (📅 date · name); the keyboard holds only
  * buttons that do something: the open tasks by role, three to a row
- * (taskRows()), the day buttons (private copies only), then the links at the
+ * (taskButtons()), the day buttons (private copies only), then the links at the
  * foot (footRows()). No
  * headings in the keyboard and no full tasks (Owner 2026-11-06: the board was
  * too tall). Boards posted before that still carry heading rows with
@@ -78,7 +78,7 @@ final class BoardRenderer
      *                            open tasks shows the next one.
      * @param bool        $group  Whether this is the group's message, not a private copy.
      * @param Person|null $viewer The person a private copy is for: the tasks
-     *                            of their roles are added (roleRows()). Not
+     *                            of their roles are added (roleButtons()). Not
      *                            used on the group's message.
      * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
      */
@@ -92,7 +92,7 @@ final class BoardRenderer
      * text board that goes under the next event's card. It shows one day:
      * the next event, or $date when it has open tasks. The text lists, per
      * task, who is signed up, by first name, on the line under the task; the
-     * keyboard has the day's task buttons (taskRows()), the row of day
+     * keyboard has the day's task buttons (taskButtons()), the row of day
      * buttons (DayPicker), and the links at the foot. The group's message
      * always shows the next event (Owner, 2026-11-06: the board was too long
      * with three); another day is shown only in a private copy. The group's
@@ -102,7 +102,7 @@ final class BoardRenderer
      * A private copy for a known person ($viewer) also lists the tasks of
      * their roles, which the group's message never shows, under the same
      * event headings, with the ✋ / ❌ / ➕ buttons of RoleTaskBot under the
-     * board's own task buttons (roleRows()). Its day buttons include the days
+     * board's own task buttons (roleButtons()). Its day buttons include the days
      * that have only such tasks.
      *
      * @param string      $date   The day to show (Y-m-d); '' or a day with no open
@@ -148,18 +148,18 @@ final class BoardRenderer
 
         $guest = array_values(array_filter($tasks, static fn (Task $t): bool => BoardVisibility::onGuestBoard($t)));
         $own = array_values(array_filter($tasks, static fn (Task $t): bool => isset($extra[$t->id])));
-        $role = null === $viewer ? ['rows' => [], 'legend' => ''] : $this->roleRows($own, $addable, $taken, $viewer);
+        $role = null === $viewer ? ['buttons' => [], 'legend' => ''] : $this->roleButtons($own, $addable, $taken, $viewer);
 
         $lines = $this->introLines();
 
-        if ('' !== $role['legend']) {
-            $lines[] = $role['legend'];
-        }
-
         // The event's heading and each task's time and count go in the text;
-        // the keyboard has only the task buttons (taskRows()).
+        // the keyboard has only the task buttons (taskButtons()).
         foreach ($this->groupByEvent($tasks) as $heading) {
-            $lines[] = '';
+            // One empty line before a heading; a task already ends with one.
+            if (! str_ends_with((string) end($lines), "\n")) {
+                $lines[] = '';
+            }
+
             // Date, then title, then an empty line before the tasks (Owner 2026-11-07).
             $lines[] = '📅 ' . $heading['date'];
 
@@ -169,18 +169,25 @@ final class BoardRenderer
 
             $lines[] = '';
 
+            // An empty line after each task (Owner 2026-11-07). fit() drops
+            // whole entries, so the task and its empty line are one entry.
             foreach ($heading['tasks'] as $task) {
-                $lines[] = $withNames
+                $lines[] = ($withNames
                     ? $this->taskLine($task, $occupants[$task->id] ?? [])
-                    : $this->countLine($task, $taken[$task->id] ?? 0);
+                    : $this->countLine($task, $taken[$task->id] ?? 0)) . "\n";
             }
         }
 
-        $keyboard = $this->taskRows($guest, $taken, $daySuffix);
-
-        foreach ($role['rows'] as $row) {
-            $keyboard[] = $row;
+        // The legend of the special-task buttons under the tasks, next to the
+        // buttons it explains (Owner 2026-11-07).
+        if ('' !== $role['legend']) {
+            $lines[] = $role['legend'];
         }
+
+        // The guest board's buttons and the special-task ones in one run,
+        // blank buttons only on the last row: no gap between them (Owner
+        // 2026-11-07).
+        $keyboard = self::rowsOfThree(array_merge($this->taskButtons($guest, $taken, $daySuffix), $role['buttons']));
 
         if (! $group) {
             foreach (DayPicker::rows($dates, $shown, BoardService::PICK_PREFIX) as $row) {
@@ -204,7 +211,7 @@ final class BoardRenderer
      *   private copy also the ones $viewer can act on;
      * - the ids of the special tasks $viewer can act on (a restricted task of
      *   their role, or for an organizer any they can add someone to), which
-     *   get RoleTaskBot's buttons (roleRows());
+     *   get RoleTaskBot's buttons (roleButtons());
      * - the ids $viewer, an organizer, can add someone to.
      * Without a viewer (or without RoleTaskService) the last two are empty.
      *
@@ -257,9 +264,9 @@ final class BoardRenderer
      * @param array<int, Task> $tasks
      * @param array<int, true> $addable
      * @param array<int, int>  $taken
-     * @return array{rows: array<int, array<int, array<string, string>>>, legend: string}
+     * @return array{buttons: array<int, array<string, string>>, legend: string}
      */
-    private function roleRows(array $tasks, array $addable, array $taken, Person $viewer): array
+    private function roleButtons(array $tasks, array $addable, array $taken, Person $viewer): array
     {
         $roles = array_count_values(array_map(static fn (Task $t): string => $t->roleDisplay(), $tasks));
         $buttons = [];
@@ -273,7 +280,8 @@ final class BoardRenderer
                 $label .= ' · ' . $task->timeRange();
             }
 
-            $free = ($taken[$task->id] ?? 0) < $task->capacity;
+            // A task with no limit on people always has a place.
+            $free = $task->hasNoLimit() || ($taken[$task->id] ?? 0) < $task->capacity;
 
             if ($task->isRestricted() && $viewer->hasRole($task->roleSlug)) {
                 if (null !== $this->roleTasks && $this->roleTasks->isOn($task->id, $viewer->id)) {
@@ -301,7 +309,7 @@ final class BoardRenderer
             $legend[] = __('➕ add someone', 'eventcrew');
         }
 
-        return ['rows' => self::rowsOfThree($buttons), 'legend' => implode(' · ', $legend)];
+        return ['buttons' => $buttons, 'legend' => implode(' · ', $legend)];
     }
 
     /**
@@ -407,8 +415,11 @@ final class BoardRenderer
             $names
         );
 
-        // The count moved here from the button, which has only the role.
-        $parts[] = sprintf('%d/%d', count($names), $task->capacity);
+        // The count moved here from the button, which has only the role. No
+        // count for a task with no limit on people (Owner 2026-11-07).
+        if (! $task->hasNoLimit()) {
+            $parts[] = sprintf('%d/%d', count($names), $task->capacity);
+        }
 
         return implode(' · ', $parts) . "\n" . ([] === $first ? '–' : implode(', ', $first));
     }
@@ -421,7 +432,7 @@ final class BoardRenderer
      */
     private static function fit(array $lines): string
     {
-        $text = implode("\n", $lines);
+        $text = rtrim(implode("\n", $lines));
 
         while (count($lines) > 1 && EntityHtml::units($text) > self::TEXT_LIMIT) {
             array_pop($lines);
@@ -558,9 +569,9 @@ final class BoardRenderer
      *
      * @param array<int, Task> $tasks
      * @param array<int, int>  $taken Places taken, by task id.
-     * @return array<int, array<int, array<string, string>>>
+     * @return array<int, array<string, string>>
      */
-    private function taskRows(array $tasks, array $taken, string $daySuffix): array
+    private function taskButtons(array $tasks, array $taken, string $daySuffix): array
     {
         $open = array_values(array_filter(
             $tasks,
@@ -579,7 +590,7 @@ final class BoardRenderer
             $buttons[] = ['text' => $label, 'callback_data' => 't:' . $task->id . $daySuffix];
         }
 
-        return self::rowsOfThree($buttons);
+        return $buttons;
     }
 
     /**
@@ -609,6 +620,10 @@ final class BoardRenderer
 
         if ('' !== $time) {
             $parts[] = $time;
+        }
+
+        if ($task->hasNoLimit()) {
+            return implode(' · ', $parts);
         }
 
         $parts[] = sprintf('%d/%d', $taken, $task->capacity);

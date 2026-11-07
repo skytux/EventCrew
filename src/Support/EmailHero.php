@@ -9,7 +9,7 @@ use EventCrew\Models\Person;
 /**
  * The hero at the top of an HTML email: a night-sky band with a row of
  * sparkles, a large glowing title and a line of facts under it. Only the
- * sign-up email has one (for()): "Thank you, Anna!" over "Door · Fri 14 Nov
+ * sign-up email has one (for()): "Thank you Anna!" over "Door · Fri 14 Nov
  * 18:00–20:00" (Owner, 2026-11-07). Mailer::toPerson() draws it above the
  * text; the plain-text part leaves it out, as the text itself says thank you.
  *
@@ -49,7 +49,7 @@ final class EmailHero
 
     /**
      * The hero of message kind $id, or null when that kind has none. For the
-     * sign-up email: "Thank you, <first name>!" (or "Thank you!" without a
+     * sign-up email: "Thank you <first name>!" (or "Thank you!" without a
      * name), and the task and its time, in the current language.
      *
      * @param array<string, mixed> $context The message's context, as for
@@ -66,7 +66,7 @@ final class EmailHero
         $title = '' === $first
             ? __('Thank you!', 'eventcrew')
             /* translators: %s: the person's first name */
-            : sprintf(__('Thank you, %s!', 'eventcrew'), $first);
+            : sprintf(__('Thank you %s!', 'eventcrew'), $first);
 
         $template = MessageTemplates::find($id);
         $role = null === $template ? '' : trim($template->fill('{role}', $context));
