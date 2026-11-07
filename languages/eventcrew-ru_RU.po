@@ -92,11 +92,6 @@ msgstr[2] "%1$s (сейчас %2$d баллов)"
 msgid "%1$s (%2$d credits)"
 msgstr "%1$s (баллов: %2$d)"
 
-#. translators: 1: the person's name, 2: their email
-#: src/Support/MessageTemplates.php:2322
-msgid "%1$s (%2$s) signed in for the first time and wants to join the crew. Press OK or No in the Admin tab of the Crew app."
-msgstr "%1$s (%2$s) вошёл(вошла) впервые и хочет присоединиться к команде. Нажми OK или «Нет» на вкладке «Админ» в приложении Crew."
-
 #. translators: 1: the person's name, 2: their email address
 #: src/Support/MessageTemplates.php:2285
 msgid "%1$s (%2$s) wrote to the bot in a private chat. Here is that chat, oldest first."
@@ -198,11 +193,6 @@ msgstr "%1$s: подписались — %2$d"
 msgid "%1$s: %2$d unsubscribed"
 msgstr "%1$s: отписались — %2$d"
 
-#. translators: 1: cancellation kind, 2: role, 3: event, 4: standing note
-#: src/Support/MessageTemplates.php:1582
-msgid "%1$s: %2$s at %3$s, %4$s. Your ticket is now disabled. %5$s"
-msgstr "%1$s: %2$s на %3$s, %4$s. Твой билет теперь недействителен. %5$s"
-
 #: templates/public/door.php:92
 msgid "%1$s: already used · %2$s"
 msgstr "%1$s: уже использован · %2$s"
@@ -259,14 +249,6 @@ msgid_plural "%d marks were not saved because they changed after you opened the 
 msgstr[0] "%d отметка не сохранена, потому что она изменилась после того, как ты открыл(а) страницу; обнови страницу, чтобы её увидеть."
 msgstr[1] "%d отметки не сохранены, потому что они изменились после того, как ты открыл(а) страницу; обнови страницу, чтобы их увидеть."
 msgstr[2] "%d отметок не сохранено, потому что они изменились после того, как ты открыл(а) страницу; обнови страницу, чтобы их увидеть."
-
-#. translators: %d: number of names skipped
-#: src/Support/MessageTemplates.php:2118
-msgid "%d name was skipped because it was already on the guest list."
-msgid_plural "%d names were skipped because they were already on the guest list."
-msgstr[0] "Пропущено имён, которые уже были в списке гостей: %d."
-msgstr[1] "Пропущено имён, которые уже были в списке гостей: %d."
-msgstr[2] "Пропущено имён, которые уже были в списке гостей: %d."
 
 #. translators: %d: number of people
 #: src/Support/TicketMail.php:1435 src/Telegram/DoorListService.php:167
@@ -328,14 +310,6 @@ msgid_plural "%d ticket buyers deleted."
 msgstr[0] "Удалён %d покупатель билетов."
 msgstr[1] "Удалено %d покупателя билетов."
 msgstr[2] "Удалено %d покупателей билетов."
-
-#. translators: %d: number of tickets skipped
-#: src/Support/MessageTemplates.php:2092
-msgid "%d ticket was skipped because it was already on the list."
-msgid_plural "%d tickets were skipped because they were already on the list."
-msgstr[0] "Пропущено билетов, которые уже были в списке: %d."
-msgstr[1] "Пропущено билетов, которые уже были в списке: %d."
-msgstr[2] "Пропущено билетов, которые уже были в списке: %d."
 
 #: templates/public/door.php:97
 msgid "%d tickets with this code. Mark them arrived one at a time."
@@ -1146,6 +1120,10 @@ msgstr "Опоздание"
 msgid "Arrived late, did the task"
 msgstr "Опоздание, задача выполнена"
 
+#: src/Support/OrganizerGuide.php:245
+msgid "As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
+msgstr "Как организатор ты можешь добавить кого угодно на любую задачу вечера, кроме «Организация», даже на задачу роли, которой у человека нет (тогда он получит роль): в личном чате через /assign задача ; имя (/unassign снимает) или через ➕ Добавить кого-то в /board, на вкладке «Админ» в приложении Crew или на кассе."
+
 #: templates/admin/translations.php:213
 msgid "As written"
 msgstr "Как написано"
@@ -1391,15 +1369,6 @@ msgstr "Кнопки"
 msgid "Buy a ticket"
 msgstr "Купить билет"
 
-#: src/Support/MessageTemplates.php:1251
-msgid "Can’t make it? Tap Cancel below. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
-msgstr "Не получается прийти? Нажми «Отмена» ниже. Или найди того, кто возьмёт задачу: он отправляет боту /me и нажимает 🔁 Взять задачу, а ты соглашаешься."
-
-#. translators: %s: link to the crew page
-#: src/Support/MessageTemplates.php:1254
-msgid "Can’t make it? Tap Cancel on your task in the Board tab of the crew page (%s)."
-msgstr "Не получается прийти? Нажми «Отмена» у своей задачи на вкладке «Доска» страницы команды (%s)."
-
 #: src/Telegram/AssistantService.php:525 src/Telegram/BuyerListReset.php:155
 #: src/Telegram/EventsCommand.php:98 src/Telegram/MenuButtons.php:220
 #: src/Telegram/SayCommand.php:95 templates/admin/people.php:120
@@ -1470,6 +1439,11 @@ msgstr "Отменено: %1$s на %2$s"
 #: src/Support/WelcomeSender.php:554
 msgid "Cancelling %1$d hours or more before has no effect. Recent tasks count more than old ones. You get a rating after %2$d finished tasks. %3$d%% or higher is good standing."
 msgstr "Отмена за %1$d ч или раньше ни на что не влияет. Недавние задачи весят больше старых. Оценка появляется после %2$d выполненных задач. %3$d%% и выше — хороший статус."
+
+#. translators: %d: hours of notice, e.g. 48
+#: src/Support/OrganizerGuide.php:139
+msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /tasks to the bot, taps 🔁 Take over a task, and the member accepts."
+msgstr "Отмена менее чем за %d ч до задачи считается поздней. Участник, который не может прийти, может найти замену: замена отправляет боту /tasks, нажимает 🔁 Взять задачу, и участник соглашается."
 
 #: templates/admin/settings.php:490
 msgid "Cancelling this many hours or less before a task starts is recorded as a late cancellation, which counts against reputation; earlier than that carries no penalty. Default 48."
@@ -2000,10 +1974,6 @@ msgstr "Удалено покупателей билетов на %2$s: %1$d."
 #: src/Telegram/ManageController.php:208 src/Telegram/ManageController.php:221
 msgid "Deleting erases your account and history for good. This cannot be undone."
 msgstr "Удаление стирает твой аккаунт и историю навсегда. Это нельзя отменить."
-
-#: templates/admin/settings.php:1479
-msgid "Not added to the bot’s direct reply to something the person just did, such as a sign-up or cancellation confirmation: they are mid-conversation."
-msgstr "Не добавляется к прямому ответу бота на то, что человек только что сделал, например к подтверждению записи или отмены: он в этот момент посреди разговора."
 
 #: src/Admin/BotProfileSettings.php:367 templates/admin/settings.php:384
 #: templates/admin/settings.php:1974 templates/public/signup.php:1888
@@ -2892,11 +2862,6 @@ msgstr ""
 "\n"
 "Вот твой билет на бесплатный вход на %2$s. Покажи его на входе."
 
-#. translators: 1: name, 2: role, 3: event, 4: date/time, 5: how to cancel
-#: src/Support/MessageTemplates.php:1281
-msgid "Hi %1$s,\n\nJust a reminder that you’re on %2$s at %3$s, %4$s.\n\n%5$s"
-msgstr "Привет, %1$s!\n\nНапоминаем: ты на задаче %2$s в %3$s, %4$s.\n\n%5$s"
-
 #. translators: 1: name, 2: open-task list grouped by date, 3: personal recap
 #: src/Support/MessageTemplates.php:1605
 msgid ""
@@ -2919,11 +2884,6 @@ msgstr ""
 "Привет, %1$s!\n"
 "\n"
 "Организаторы отменили задачу %2$s на %3$s, %4$s. Ты больше на неё не записан, и её билет на входе больше не работает. На твой статус это не влияет."
-
-#. translators: 1: name, 2: role, 3: event, 4: standing note, 5: standing line
-#: src/Support/MessageTemplates.php:1562
-msgid "Hi %1$s,\n\nYou’ve cancelled %2$s at %3$s, %4$s, and your ticket is now disabled.\n\n%5$s\n\n%6$s"
-msgstr "Привет, %1$s!\n\nТы отменил(а) %2$s на %3$s, %4$s, и твой билет теперь недействителен.\n\n%5$s\n\n%6$s"
 
 #: src/Support/NewsletterLayout.php:192
 msgid "Hi %s!"
@@ -3085,10 +3045,6 @@ msgstr "Как получить ещё одну ссылку на кассу: в
 msgid "How to get the free ticket: in the bot or the Crew app, or, for a person with no Telegram chat, on the crew page, with its link."
 msgstr "Как получить бесплатный билет: в боте или в приложении Crew, или, для человека без чата в Telegram, на странице команды, со ссылкой на неё."
 
-#: templates/admin/settings.php:1476
-msgid "How your crew signs off. It closes every notification email, and every Telegram message the person did not just ask for: reminders, calls, and news about their tasks, standing or access. Leave it blank for no sign-off."
-msgstr "Как ваша команда подписывается. Подпись завершает каждое письмо-уведомление и каждое сообщение в Telegram, о котором человек сам только что не просил: напоминания, призывы и новости о его задачах, надёжности или правах. Оставьте пустым, чтобы не подписываться."
-
 #: templates/public/signup.php:379
 msgid "How your score works"
 msgstr "Как считается твоя оценка"
@@ -3145,6 +3101,10 @@ msgstr "Я передал этот чат организаторам."
 #: src/Telegram/HelpService.php:222
 msgid "I remember our private chat for 24 hours, so you can refer back to it."
 msgstr "Я помню наш личный чат 24 часа, так что можно на него ссылаться."
+
+#: src/Telegram/LanguageService.php:135
+msgid "I will write to you in English. To change it: /settings, 🌐 Change language."
+msgstr "Я буду писать тебе по-английски. Чтобы изменить: /settings, 🌐 Сменить язык."
 
 #: templates/admin/settings.php:2405
 msgid "IMAP"
@@ -3691,6 +3651,11 @@ msgstr "Участник заблокирован после поддельно�
 #: templates/public/door.php:288
 msgid "Member name or email"
 msgstr "Имя или email участника"
+
+#. translators: %d: completed tasks needed for one credit
+#: src/Support/OrganizerGuide.php:217
+msgid "Members earn 1 free-entry credit per %d completed tasks and spend it with /me, 🎟 Tickets, 🎟 Get a free-entry ticket (or /tickets), or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
+msgstr "Участники получают 1 балл за бесплатный вход за каждые %d выполненных задач и тратят его через /me, 🎟 Билеты, 🎟 Получить бесплатный билет (или /tickets), или на странице сайта. Баллы выдаются через /people, на странице «Люди» или на кассе. Каждый подарок записывается в журнал баллов на странице «Люди», и участнику об этом сообщают."
 
 #: src/Support/NewsletterConfirmMail.php:86 templates/admin/diagnostics.php:125
 #: templates/admin/settings.php:1580
@@ -7721,6 +7686,11 @@ msgstr "Тот же запрос с секретом в заголовке, а �
 msgid "The same ticket email goes to a guest you add with an email address (wp-admin Roster, the Admin tab, or /door add Name name@example.com) and to a Holvi buyer added at the sales desk with an email address, with the next batch. Crew get a separate ticket email when they take a task or spend a credit. When a guest is removed, or a task or credit is cancelled, after the ticket was emailed, the person gets a short \"Your ticket is cancelled\" email."
 msgstr "Такое же письмо с билетом получает гость, которого ты добавляешь с адресом email (Состав в wp-admin, вкладка «Админ» или /door add Имя name@example.com), и покупатель Holvi, добавленный на кассе с адресом email, — вместе со следующей партией. Команда получает отдельное письмо с билетом, когда берёт задачу или тратит балл. Если после отправки билета гостя убирают или задачу или балл отменяют, человек получает короткое письмо «Твой билет отменён»."
 
+#. translators: 1: opening time, e.g. 09:00, 2: closing time, e.g. 21:00
+#: src/Support/OrganizerGuide.php:271
+msgid "The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with /settings, 🔔 Choose notifications; confirmations and reminders always go."
+msgstr "Запланированные уходят только между %1$s и %2$s. Каждое приходит в Telegram и по email. Участники выбирают, какие получать, через /settings, 🔔 Выбрать уведомления; подтверждения и напоминания приходят всегда."
+
 #: src/Support/DoorNewMember.php:116 src/Support/MessageTemplates.php:1097
 msgid "The second button opens the crew’s Telegram group, where tasks are posted."
 msgstr "Вторая кнопка открывает группу команды в Telegram, где публикуются задачи."
@@ -7842,10 +7812,6 @@ msgstr "Команда сказала OK новичку (Telegram)"
 #: src/Support/MessageTemplates.php:1897
 msgid "The team said OK to a newcomer (email)"
 msgstr "Команда сказала OK новичку (email)"
-
-#: src/Support/MessageTemplates.php:1901
-msgid "The team said OK. You can now take tasks in the Crew app."
-msgstr "Команда сказала OK. Теперь ты можешь брать задачи в приложении Crew."
 
 #: src/Admin/RosterPage.php:725 src/Admin/RosterPage.php:747
 msgid "The test email could not be sent. Check the site’s email setup."
@@ -8039,14 +8005,6 @@ msgstr "У человека уже есть бесплатный вход на �
 #: src/Support/DoorDesk.php:1153
 msgid "They already have free entry tonight."
 msgstr "У человека уже есть бесплатный вход сегодня."
-
-#. translators: %d: total number of plus-ones the added guests bring
-#: src/Support/MessageTemplates.php:2108
-msgid "They bring %d plus-one in total."
-msgid_plural "They bring %d plus-ones in total."
-msgstr[0] "Всего они приводят сопровождающих: %d."
-msgstr[1] "Всего они приводят сопровождающих: %d."
-msgstr[2] "Всего они приводят сопровождающих: %d."
 
 #: src/Support/DoorDesk.php:1128
 msgid "They could not be signed up for that task."
@@ -9318,15 +9276,6 @@ msgstr "У тебя нет прав на это. Твой аккаунт заб�
 msgid "You are not signed in in this browser. Go back to the browser where you pressed Telegram, or press Telegram again here."
 msgstr "Ты не вошёл в этом браузере. Вернись в браузер, где ты нажал Telegram, или нажми Telegram ещё раз здесь."
 
-#. translators: %s: the organization's name
-#: src/Support/MessageTemplates.php:1920
-msgid "You are now an organizer of %s"
-msgstr "Теперь ты организатор %s"
-
-#: src/Support/MessageTemplates.php:1923
-msgid "You are now an organizer."
-msgstr "Теперь ты организатор."
-
 #: src/Web/NewsletterController.php:624 src/Web/NewsletterController.php:1070
 msgid "You are now subscribed to the next events announcement. Thank you!"
 msgstr "Теперь ты подписан на рассылку о ближайших событиях. Спасибо!"
@@ -9470,11 +9419,6 @@ msgstr[2] "Теперь у тебя %d баллов за бесплатный в
 #: src/Support/MessageTemplates.php:1872
 msgid "You now have the role %s, so you can sign up for its tasks."
 msgstr "Теперь у тебя роль %s, так что ты можешь записываться на её задачи."
-
-#. translators: %s: role name, such as DJ
-#: src/Support/MessageTemplates.php:1859
-msgid "You now have the role %s. Its tasks are open to you in the Crew app, and you can sign up for them."
-msgstr "Теперь у тебя роль %s. Её задачи открыты тебе в приложении Crew, и ты можешь на них записываться."
 
 #: src/Support/MessageTemplates.php:2537
 msgid ""
@@ -9667,15 +9611,6 @@ msgstr "Время твоего сайта (%s). По умолчанию 09:00."
 #: src/Support/WelcomeSender.php:550
 msgid "Your standing comes from how your past tasks went:"
 msgstr "Твой статус зависит от того, как прошли твои прошлые задачи:"
-
-#. translators: 1: standing level and score, 2: number of free-entry credits
-#: src/Support/ClaimNotifier.php:282 src/Support/MessagePreview.php:160
-#: src/Support/StandingNotice.php:131
-msgid "Your standing: %1$s · %2$d free-entry credit."
-msgid_plural "Your standing: %1$s · %2$d free-entry credits."
-msgstr[0] "Твой статус: %1$s · баллов за бесплатный вход: %2$d."
-msgstr[1] "Твой статус: %1$s · баллов за бесплатный вход: %2$d."
-msgstr[2] "Твой статус: %1$s · баллов за бесплатный вход: %2$d."
 
 #. translators: %s: cover's name
 #: src/Support/MessageTemplates.php:2750
@@ -10035,10 +9970,6 @@ msgstr "записался %s"
 msgid "someone"
 msgstr "кто-то"
 
-#: src/Support/MessageTemplates.php:1441
-msgid "tap 🎟 Free-entry ticket below."
-msgstr "нажми ниже 🎟 Билет на бесплатный вход."
-
 #: src/Support/PrivacyPolicy.php:310
 msgid "the English original"
 msgstr "английский оригинал"
@@ -10190,11 +10121,6 @@ msgstr "✅ Готово: теперь твоя задача у %1$s: %2$s на 
 msgid "✅ Let them take it"
 msgstr "✅ Пусть забирает"
 
-#. translators: 1: role, 2: event, 3: date/time
-#: src/Support/MessageTemplates.php:1539
-msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door – it is the first button below."
-msgstr "✅ Ты записан(а): %1$s в %2$s, %3$s.\n\nПокажи билет на входе — это первая кнопка ниже."
-
 #: src/Support/MessageTemplates.php:1910
 msgid "✅ The team said OK. You can now take tasks."
 msgstr "✅ Команда сказала OK. Теперь ты можешь брать задачи."
@@ -10259,10 +10185,6 @@ msgstr "🎟 Показать билет"
 #: src/Support/MessageTemplates.php:1479
 msgid "🎟 Your free-entry ticket for %s — show it at the door."
 msgstr "🎟 Твой билет на бесплатный вход на %s — покажи его на входе."
-
-#: src/Support/MessageTemplates.php:1892
-msgid "🎟 You have a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up."
-msgstr "🎟 У тебя есть одноразовый пропуск, чтобы записаться на следующую задачу, даже пока твой статус низкий. Он расходуется при следующей записи."
 
 #: src/Telegram/RosterService.php:645
 msgid "👋 %s"
@@ -11152,21 +11074,6 @@ msgid "an administrator"
 msgstr "администратор"
 
 #: src/Support/MessageTemplates.php
-msgid "Can’t make it? Tap Cancel below: there you can also hand the task over to someone else."
-msgstr "Не получается прийти? Нажми «Отмена» ниже: там можно и передать задачу кому-то другому."
-
-#: src/Support/MessageTemplates.php:565
-msgid "The AI’s short text about the event from the group board (at most two sentences), in the reader’s language; never the event’s own description. On a line of its own; the line goes when there is no such text in that language."
-msgstr "Короткий текст ИИ о мероприятии с доски группы (не более двух предложений), на языке читателя; никогда не собственное описание мероприятия. На отдельной строке; строка исчезает, если такого текста на этом языке нет."
-
-#: templates/admin/settings.php
-msgid "messages per organizer in a private chat"
-msgstr "сообщений на организатора в личном чате"
-
-msgid "You’re in. Welcome, %s!"
-msgstr "Вход отмечен. Добро пожаловать, %s!"
-
-#: src/Support/MessageTemplates.php
 msgid "Thank you for being part of the crew and helping make these nights happen."
 msgstr "Спасибо, что ты в нашей команде и помогаешь создавать эти вечера."
 
@@ -11181,6 +11088,476 @@ msgstr "Спасибо, что взял задачу и помогаешь со�
 #: src/Support/TicketReasons.php
 msgid "Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!"
 msgstr "Спасибо, что ты в нашей команде и помогаешь создавать эти вечера. Этот вечер за наш счёт: приходи танцевать и наслаждайся им как наш гость!"
+
+msgid "%1$s does not have the %2$s role. As an organizer you can still add them; they get the role."
+msgstr "У %1$s нет роли %2$s. Как организатор ты всё равно можешь добавить этого человека; он получит роль."
+
+msgid "%s is blocked from sign-ups. An organizer can lift it on the People page."
+msgstr "%s заблокирован(а) для записи. Организатор может снять блокировку на странице «Люди»."
+
+msgid "/assign task ; name – put a member on a task (/unassign takes them off); you confirm first"
+msgstr "/assign задача ; имя – поставить участника на задачу (/unassign снимает); сначала подтверждаешь"
+
+msgid "Add %1$s to %2$s?"
+msgstr "Добавить %1$s на %2$s?"
+
+msgid "Add, counts"
+msgstr "Добавить, засчитать"
+
+msgid "Add, no credit"
+msgstr "Добавить, без балла"
+
+msgid "Cancelled. Nothing was changed."
+msgstr "Отменено. Ничего не изменено."
+
+msgid "Many members match “%s”. Write more of the name."
+msgstr "Под «%s» подходит много участников. Напиши имя подробнее."
+
+msgid "No member called “%s” was found."
+msgstr "Участник с именем «%s» не найден."
+
+msgid "No member called “%s” was found. Someone who is not a member yet: ➕ Add someone under /board."
+msgstr "Участник с именем «%s» не найден. Если человек ещё не участник: ➕ Добавить кого-то в /board."
+
+msgid "No task called “%1$s”. Tasks on %2$s: %3$s"
+msgstr "Нет задачи «%1$s». Задачи на %2$s: %3$s"
+
+msgid "Organize tasks are for organizers only. Make someone an organizer with /people."
+msgstr "Задачи «Организация» только для организаторов. Сделай кого-то организатором через /people."
+
+msgid "Put a member on a task: /assign task ; name\nExample: /assign Host ; Milla\nA date first picks another event: /assign 21.11. Host ; Milla"
+msgstr "Поставить участника на задачу: /assign задача ; имя\nПример: /assign Host ; Milla\nДата в начале выбирает другой вечер: /assign 21.11. Host ; Milla"
+
+msgid "Take %1$s off %2$s?"
+msgstr "Снять %1$s с %2$s?"
+
+msgid "Take a member off a task: /unassign task ; name\nExample: /unassign Host ; Milla\nA date first picks another event: /unassign 21.11. Host ; Milla"
+msgstr "Снять участника с задачи: /unassign задача ; имя\nПример: /unassign Host ; Milla\nДата в начале выбирает другой вечер: /unassign 21.11. Host ; Milla"
+
+msgid "Taken off the task. If their ticket was emailed, they get an updated one; nothing else is sent."
+msgstr "Снят(а) с задачи. Если билет был отправлен по email, придёт обновлённый; больше ничего не отправляется."
+
+msgid "That person is not on this task."
+msgstr "Этого человека нет в этой задаче."
+
+msgid "That task is full (%1$d of %2$d places taken). Nothing was added."
+msgstr "Эта задача заполнена (занято %1$d из %2$d мест). Ничего не добавлено."
+
+msgid "There are no tasks on %s."
+msgstr "На %s задач нет."
+
+msgid "There are no upcoming tasks."
+msgstr "Ближайших задач нет."
+
+msgid "This request has expired. Please send it again."
+msgstr "Этот запрос устарел. Отправь его ещё раз."
+
+msgid "Use %s in a private chat with me."
+msgstr "Используй %s в личном чате со мной."
+
+msgid "Which member?"
+msgstr "Какой участник?"
+
+msgid "%1$s has no free-entry ticket for %2$s."
+msgstr "У %1$s нет билета на бесплатный вход на %2$s."
+
+msgid "%1$s has no task in the last %2$d days. Put the date first: /mark 14.11. name"
+msgstr "У %1$s нет задач за последние %2$d дн. Укажи сначала дату: /mark 14.11. имя"
+
+msgid "%1$s has no task on %2$s."
+msgstr "У %1$s нет задачи на %2$s."
+
+msgid "%1$s wrote to the crew of %2$s:"
+msgstr "%1$s пишет команде %2$s:"
+
+msgid "%d task done"
+msgid_plural "%d tasks done"
+msgstr[0] "%d задача выполнена"
+msgstr[1] "%d задачи выполнены"
+msgstr[2] "%d задач выполнено"
+
+msgid "%s is not blocked."
+msgstr "%s не заблокирован(а)."
+
+msgid "/crew – who works with you on your next nights"
+msgstr "/crew – кто работает с тобой в ближайшие вечера"
+
+msgid "/freeentry close – close free entry for a night (or open)"
+msgstr "/freeentry close – закрыть бесплатный вход на вечер (или open)"
+
+msgid "/mark name ; late – arrived, late, noshow or done"
+msgstr "/mark имя ; late – arrived, late, noshow или done"
+
+msgid "/name, /email – change your name or email"
+msgstr "/name, /email – изменить имя или email"
+
+msgid "/newboard – post a new board in the group"
+msgstr "/newboard – опубликовать новую доску в группе"
+
+msgid "/newcomer – a newcomer waiting for your OK"
+msgstr "/newcomer – новичок, который ждёт твоего OK"
+
+msgid "/sendtickets – send the ticket emails now (or cancel)"
+msgstr "/sendtickets – отправить письма с билетами сейчас (или cancel)"
+
+msgid "/standing name – standing, credits and log"
+msgstr "/standing имя – статус, баллы и журнал"
+
+msgid "/stop announcement or /stop email – stop the next send"
+msgstr "/stop announcement или /stop email – остановить следующую отправку"
+
+msgid "/tell task ; message sends your message to everyone on that task: by Telegram in their own language, under a one-line header, or by email when they have no Telegram. You see it first. You can send 5 an hour."
+msgstr "/tell задача ; сообщение отправляет твоё сообщение всем на этой задаче: в Telegram на их языке под однострочным заголовком или по email, если у них нет Telegram. Сначала ты его видишь. Можно отправлять 5 в час."
+
+msgid "/tell task ; text – message everyone on a task"
+msgstr "/tell задача ; текст – сообщение всем на задаче"
+
+msgid "/ticket name – free entry for a credit (/unticket undoes it)"
+msgstr "/ticket имя – бесплатный вход за балл (/unticket отменяет)"
+
+msgid "/unban name – lift a block"
+msgstr "/unban имя – снять блокировку"
+
+msgid "A link is on its way to %s. Your email changes when you open it."
+msgstr "Ссылка уже отправлена на %s. Email изменится, когда ты её откроешь."
+
+msgid "A task can be marked on its day or later."
+msgstr "Задачу можно отметить в её день или позже."
+
+msgid "Blocked from sign-ups."
+msgstr "Запись заблокирована."
+
+msgid "Cancel a free-entry ticket: /unticket name\nExample: /unticket Milla\nA date first picks another night: /unticket 21.11. Milla"
+msgstr "Отменить билет на бесплатный вход: /unticket имя\nПример: /unticket Milla\nДата в начале выбирает другой вечер: /unticket 21.11. Milla"
+
+msgid "Cancel send"
+msgstr "Отменить отправку"
+
+msgid "Cancel the free-entry ticket of %1$s for %2$s? The credit goes back."
+msgstr "Отменить билет на бесплатный вход для %1$s на %2$s? Балл вернётся."
+
+msgid "Cancel this send?"
+msgstr "Отменить эту отправку?"
+
+msgid "Cancel ticket"
+msgstr "Отменить билет"
+
+msgid "Change"
+msgstr "Изменить"
+
+msgid "Change your email to %s? A link goes there first; the email changes when you open it."
+msgstr "Изменить email на %s? Сначала туда придёт ссылка; email изменится, когда ты её откроешь."
+
+msgid "Change your name from %1$s to %2$s?"
+msgstr "Изменить имя с %1$s на %2$s?"
+
+msgid "Close free entry for %s? Nobody can use a credit for that night."
+msgstr "Закрыть бесплатный вход на %s? Никто не сможет потратить балл на этот вечер."
+
+msgid "Close or reopen free entry: /freeentry close or /freeentry open\nA date first picks another night: /freeentry 21.11. close"
+msgstr "Закрыть или снова открыть бесплатный вход: /freeentry close или /freeentry open\nДата в начале выбирает другой вечер: /freeentry 21.11. close"
+
+msgid "Commands in a private chat"
+msgstr "Команды в личном чате"
+
+msgid "Credits:"
+msgstr "Баллы:"
+
+msgid "Every member can use /crew to see who works with them on their next nights, and /name or /email to change their own name or email. A new email changes only after they open the link sent to it."
+msgstr "Любой участник может через /crew посмотреть, кто работает с ним в ближайшие вечера, а через /name или /email изменить своё имя или email. Новый email меняется только после того, как человек откроет отправленную на него ссылку."
+
+msgid "For a night: /freeentry close or /freeentry open closes or reopens free entry. /stop announcement stops the next announcement, /stop email the post-event email. /newboard posts a new board in the group. /sendtickets sends the ticket emails now, /sendtickets cancel stops a waiting send."
+msgstr "Для вечера: /freeentry close или /freeentry open закрывает или снова открывает бесплатный вход. /stop announcement останавливает следующую рассылку, /stop email — письмо после события. /newboard публикует новую доску в группе. /sendtickets отправляет письма с билетами сейчас, /sendtickets cancel останавливает ожидающую отправку."
+
+msgid "For a person: /mark name ; arrived, late, noshow or done sets the roster mark. /standing name shows standing, credits and log. /newcomer shows a newcomer waiting for your OK. /ticket name spends a credit on free entry, /unticket name gives it back. /unban name lifts a block."
+msgstr "Для человека: /mark имя ; arrived, late, noshow или done ставит отметку в составе. /standing имя показывает статус, баллы и журнал. /newcomer показывает новичка, который ждёт твоего OK. /ticket имя тратит балл на бесплатный вход, /unticket имя возвращает его. /unban имя снимает блокировку."
+
+#. translators: 1: a person's name, 2: a short day label, 3: credits they have now.
+msgid "Free entry for %1$s on %2$s? It uses 1 of their %3$d credit."
+msgid_plural "Free entry for %1$s on %2$s? It uses 1 of their %3$d credits."
+msgstr[0] "Бесплатный вход для %1$s на %2$s? Тратится 1 из %3$d балла."
+msgstr[1] "Бесплатный вход для %1$s на %2$s? Тратится 1 из %3$d баллов."
+msgstr[2] "Бесплатный вход для %1$s на %2$s? Тратится 1 из %3$d баллов."
+
+msgid "Free entry for a credit: /ticket name\nExample: /ticket Milla\nA date first picks another night: /ticket 21.11. Milla"
+msgstr "Бесплатный вход за балл: /ticket имя\nПример: /ticket Milla\nДата в начале выбирает другой вечер: /ticket 21.11. Milla"
+
+msgid "Free entry is closed by the event itself (sold out, hidden or off). Change it in the event."
+msgstr "Бесплатный вход закрыт самим событием (распродано, скрыто или выключено). Измени это в событии."
+
+msgid "Free entry is open for this date."
+msgstr "Бесплатный вход на эту дату открыт."
+
+msgid "Give ticket"
+msgstr "Дать билет"
+
+msgid "In a private chat with the bot you can do several crew page tasks by command. Write the name as you remember it: the bot finds the person, asks with buttons when several fit, and shows every change with ✅ and ✖️ first. A date first, like /mark 14.11. Milla ; done, picks another night."
+msgstr "В личном чате с ботом можно командами делать некоторые действия со страницы команды. Пиши имя так, как помнишь: бот найдёт человека, спросит кнопками, если подходят несколько, и сначала покажет каждое изменение с ✅ и ✖️. Дата в начале, например /mark 14.11. Milla ; done, выбирает другой вечер."
+
+msgid "Lift a block: /unban name\nExample: /unban Milla"
+msgstr "Снять блокировку: /unban имя\nПример: /unban Milla"
+
+msgid "Lift block"
+msgstr "Разблокировать"
+
+msgid "Lift the block on %s? They can sign in and sign up again."
+msgstr "Разблокировать %s? Человек снова сможет входить и записываться."
+
+msgid "Mark"
+msgstr "Отметить"
+
+msgid "Mark a task: /mark name ; arrived, late, noshow or done\nExample: /mark Milla ; late\nA date first picks another night: /mark 14.11. Milla ; done"
+msgstr "Отметить задачу: /mark имя ; arrived, late, noshow или done\nПример: /mark Milla ; late\nДата в начале выбирает другой вечер: /mark 14.11. Milla ; done"
+
+msgid "Mark as “%s”?"
+msgstr "Отметить как «%s»?"
+
+msgid "Message everyone on a task: /tell task ; message\nExample: /tell Bar ; Please come 15 minutes early.\nA date first picks another event: /tell 21.11. Bar ; …"
+msgstr "Сообщение всем на задаче: /tell задача ; сообщение\nПример: /tell Bar ; Пожалуйста, приходите на 15 минут раньше.\nДата в начале выбирает другое событие: /tell 21.11. Bar ; …"
+
+msgid "Message from %1$s: %2$s"
+msgstr "Сообщение от %1$s: %2$s"
+
+msgid "No announcement is planned."
+msgstr "Рассылка не запланирована."
+
+msgid "No blocked member called “%s” was found."
+msgstr "Заблокированный участник с именем «%s» не найден."
+
+msgid "No newcomer called “%s” is waiting."
+msgstr "Среди ожидающих нет новичка с именем «%s»."
+
+msgid "No newcomer is waiting for an OK."
+msgstr "Ни один новичок не ждёт OK."
+
+msgid "No post-event email is planned."
+msgstr "Письмо после события не запланировано."
+
+msgid "No task called “%s” was found."
+msgstr "Задача «%s» не найдена."
+
+msgid "Nobody else is on %s."
+msgstr "Больше никого нет на %s."
+
+msgid "Now: %s"
+msgstr "Сейчас: %s"
+
+msgid "Only organizers can use %s."
+msgstr "%s могут использовать только организаторы."
+
+msgid "Post"
+msgstr "Опубликовать"
+
+msgid "Post a new board in the group? The old one is removed."
+msgstr "Опубликовать новую доску в группе? Старая будет удалена."
+
+msgid "Recent tasks:"
+msgstr "Недавние задачи:"
+
+msgid "Reopen"
+msgstr "Открыть снова"
+
+msgid "Reopen free entry for %s?"
+msgstr "Снова открыть бесплатный вход на %s?"
+
+msgid "Send"
+msgstr "Отправить"
+
+msgid "Send link"
+msgstr "Отправить ссылку"
+
+msgid "Send the night’s ticket emails now: /sendtickets (or /sendtickets 21.11.)\nCancel the waiting send: /sendtickets cancel"
+msgstr "Отправить письма с билетами на вечер сейчас: /sendtickets (или /sendtickets 21.11.)\nОтменить ожидающую отправку: /sendtickets cancel"
+
+#. translators: %s: a short day label, like "Sat 14 Nov".
+msgid "Send the ticket emails for %s that have not gone out? They go out in about 10 minutes; until then you can cancel them."
+msgstr "Отправить письма с билетами на %s, которые ещё не ушли? Они уйдут примерно через 10 минут; до этого их можно отменить."
+
+#. translators: 1: number of people, 2: a task with its day and time.
+msgid "Send this to %1$d person on %2$s?"
+msgid_plural "Send this to %1$d people on %2$s?"
+msgstr[0] "Отправить это %1$d человеку на %2$s?"
+msgstr[1] "Отправить это %1$d людям на %2$s?"
+msgstr[2] "Отправить это %1$d людям на %2$s?"
+
+#. translators: 1: people the message went to, 2: of them on Telegram, 3: of them by email.
+msgid "Sent to %1$d person (Telegram %2$d, email %3$d)."
+msgid_plural "Sent to %1$d people (Telegram %2$d, email %3$d)."
+msgstr[0] "Отправлено %1$d человеку (Telegram %2$d, email %3$d)."
+msgstr[1] "Отправлено %1$d людям (Telegram %2$d, email %3$d)."
+msgstr[2] "Отправлено %1$d людям (Telegram %2$d, email %3$d)."
+
+msgid "Someone’s standing, credits and log: /standing name\nExample: /standing Milla"
+msgstr "Статус, баллы и журнал человека: /standing имя\nПример: /standing Milla"
+
+msgid "Stop"
+msgstr "Остановить"
+
+msgid "Stop the announcement planned for %s? It will not be sent."
+msgstr "Остановить рассылку, запланированную на %s? Она не будет отправлена."
+
+msgid "Stop the next announcement: /stop announcement\nStop the post-event email: /stop email (or /stop email 14.11.)"
+msgstr "Остановить следующую рассылку: /stop announcement\nОстановить письмо после события: /stop email (или /stop email 14.11.)"
+
+msgid "Stop the post-event email for %s? It will not be sent."
+msgstr "Остановить письмо после события на %s? Оно не будет отправлено."
+
+msgid "That is already your email."
+msgstr "Это уже твой email."
+
+msgid "That is already your name."
+msgstr "Это уже твоё имя."
+
+msgid "That is not a valid email address."
+msgstr "Это неправильный адрес email."
+
+msgid "That message is too long. At most %d characters."
+msgstr "Сообщение слишком длинное. Максимум символов: %d."
+
+msgid "Waiting for an OK."
+msgstr "Ждёт OK."
+
+msgid "Which newcomer?"
+msgstr "Какой новичок?"
+
+msgid "You asked for a link a few times already. Try again in an hour."
+msgstr "Ссылку уже запрашивали несколько раз. Попробуй снова через час."
+
+#. translators: %d: how many messages an organizer may send in an hour.
+msgid "You can send %d messages an hour. Try again later."
+msgstr "В час можно отправить сообщений: %d. Попробуй позже."
+
+msgid "You have no coming tasks. See the open ones with /board."
+msgstr "У тебя нет предстоящих задач. Открытые задачи — в /board."
+
+msgid "Your email: %s\nChange it: /email new@example.com"
+msgstr "Твой email: %s\nИзменить: /email new@example.com"
+
+msgid "Your name is now %s."
+msgstr "Теперь тебя зовут %s."
+
+msgid "Your name: %s\nChange it: /name New Name"
+msgstr "Твоё имя: %s\nИзменить: /name Новое Имя"
+
+#. translators: %s: a short day label, like "Sat 14 Nov".
+msgid "free entry %s"
+msgstr "бесплатный вход %s"
+
+#. translators: 1: the person's name, 2: their email
+#: src/Support/MessageTemplates.php:2322
+msgid "%1$s (%2$s) signed in for the first time and wants to join the crew. Press OK or No in the Admin tab of the Crew app."
+msgstr "%1$s (%2$s) вошёл(вошла) впервые и хочет присоединиться к команде. Нажми OK или «Нет» на вкладке «Админ» в приложении Crew."
+
+#. translators: 1: cancellation kind, 2: role, 3: event, 4: standing note
+#: src/Support/MessageTemplates.php:1582
+msgid "%1$s: %2$s at %3$s, %4$s. Your ticket is now disabled. %5$s"
+msgstr "%1$s: %2$s на %3$s, %4$s. Твой билет теперь недействителен. %5$s"
+
+#. translators: %d: number of names skipped
+#: src/Support/MessageTemplates.php:2118
+msgid "%d name was skipped because it was already on the guest list."
+msgid_plural "%d names were skipped because they were already on the guest list."
+msgstr[0] "Пропущено имён, которые уже были в списке гостей: %d."
+msgstr[1] "Пропущено имён, которые уже были в списке гостей: %d."
+msgstr[2] "Пропущено имён, которые уже были в списке гостей: %d."
+
+#. translators: %d: number of tickets skipped
+#: src/Support/MessageTemplates.php:2092
+msgid "%d ticket was skipped because it was already on the list."
+msgid_plural "%d tickets were skipped because they were already on the list."
+msgstr[0] "Пропущено билетов, которые уже были в списке: %d."
+msgstr[1] "Пропущено билетов, которые уже были в списке: %d."
+msgstr[2] "Пропущено билетов, которые уже были в списке: %d."
+
+#: src/Support/MessageTemplates.php:1251
+msgid "Can’t make it? Tap Cancel below. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
+msgstr "Не получается прийти? Нажми «Отмена» ниже. Или найди того, кто возьмёт задачу: он отправляет боту /me и нажимает 🔁 Взять задачу, а ты соглашаешься."
+
+#. translators: %s: link to the crew page
+#: src/Support/MessageTemplates.php:1254
+msgid "Can’t make it? Tap Cancel on your task in the Board tab of the crew page (%s)."
+msgstr "Не получается прийти? Нажми «Отмена» у своей задачи на вкладке «Доска» страницы команды (%s)."
+
+#: templates/admin/settings.php:1479
+msgid "Not added to the bot’s direct reply to something the person just did, such as a sign-up or cancellation confirmation: they are mid-conversation."
+msgstr "Не добавляется к прямому ответу бота на то, что человек только что сделал, например к подтверждению записи или отмены: он в этот момент посреди разговора."
+
+#. translators: 1: name, 2: role, 3: event, 4: date/time, 5: how to cancel
+#: src/Support/MessageTemplates.php:1281
+msgid "Hi %1$s,\n\nJust a reminder that you’re on %2$s at %3$s, %4$s.\n\n%5$s"
+msgstr "Привет, %1$s!\n\nНапоминаем: ты на задаче %2$s в %3$s, %4$s.\n\n%5$s"
+
+#. translators: 1: name, 2: role, 3: event, 4: standing note, 5: standing line
+#: src/Support/MessageTemplates.php:1562
+msgid "Hi %1$s,\n\nYou’ve cancelled %2$s at %3$s, %4$s, and your ticket is now disabled.\n\n%5$s\n\n%6$s"
+msgstr "Привет, %1$s!\n\nТы отменил(а) %2$s на %3$s, %4$s, и твой билет теперь недействителен.\n\n%5$s\n\n%6$s"
+
+#: templates/admin/settings.php:1476
+msgid "How your crew signs off. It closes every notification email, and every Telegram message the person did not just ask for: reminders, calls, and news about their tasks, standing or access. Leave it blank for no sign-off."
+msgstr "Как ваша команда подписывается. Подпись завершает каждое письмо-уведомление и каждое сообщение в Telegram, о котором человек сам только что не просил: напоминания, призывы и новости о его задачах, надёжности или правах. Оставьте пустым, чтобы не подписываться."
+
+#: src/Support/MessageTemplates.php:1901
+msgid "The team said OK. You can now take tasks in the Crew app."
+msgstr "Команда сказала OK. Теперь ты можешь брать задачи в приложении Crew."
+
+#. translators: %d: total number of plus-ones the added guests bring
+#: src/Support/MessageTemplates.php:2108
+msgid "They bring %d plus-one in total."
+msgid_plural "They bring %d plus-ones in total."
+msgstr[0] "Всего они приводят сопровождающих: %d."
+msgstr[1] "Всего они приводят сопровождающих: %d."
+msgstr[2] "Всего они приводят сопровождающих: %d."
+
+#. translators: %s: the organization's name
+#: src/Support/MessageTemplates.php:1920
+msgid "You are now an organizer of %s"
+msgstr "Теперь ты организатор %s"
+
+#: src/Support/MessageTemplates.php:1923
+msgid "You are now an organizer."
+msgstr "Теперь ты организатор."
+
+#. translators: %s: role name, such as DJ
+#: src/Support/MessageTemplates.php:1859
+msgid "You now have the role %s. Its tasks are open to you in the Crew app, and you can sign up for them."
+msgstr "Теперь у тебя роль %s. Её задачи открыты тебе в приложении Crew, и ты можешь на них записываться."
+
+#. translators: 1: standing level and score, 2: number of free-entry credits
+#: src/Support/ClaimNotifier.php:282 src/Support/MessagePreview.php:160
+#: src/Support/StandingNotice.php:131
+msgid "Your standing: %1$s · %2$d free-entry credit."
+msgid_plural "Your standing: %1$s · %2$d free-entry credits."
+msgstr[0] "Твой статус: %1$s · баллов за бесплатный вход: %2$d."
+msgstr[1] "Твой статус: %1$s · баллов за бесплатный вход: %2$d."
+msgstr[2] "Твой статус: %1$s · баллов за бесплатный вход: %2$d."
+
+#: src/Support/MessageTemplates.php:1441
+msgid "tap 🎟 Free-entry ticket below."
+msgstr "нажми ниже 🎟 Билет на бесплатный вход."
+
+#. translators: 1: role, 2: event, 3: date/time
+#: src/Support/MessageTemplates.php:1539
+msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door – it is the first button below."
+msgstr "✅ Ты записан(а): %1$s в %2$s, %3$s.\n\nПокажи билет на входе — это первая кнопка ниже."
+
+#: src/Support/MessageTemplates.php:1892
+msgid "🎟 You have a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up."
+msgstr "🎟 У тебя есть одноразовый пропуск, чтобы записаться на следующую задачу, даже пока твой статус низкий. Он расходуется при следующей записи."
+
+#: src/Support/MessageTemplates.php
+msgid "Can’t make it? Tap Cancel below: there you can also hand the task over to someone else."
+msgstr "Не получается прийти? Нажми «Отмена» ниже: там можно и передать задачу кому-то другому."
+
+#: src/Support/MessageTemplates.php:565
+msgid "The AI’s short text about the event from the group board (at most two sentences), in the reader’s language; never the event’s own description. On a line of its own; the line goes when there is no such text in that language."
+msgstr "Короткий текст ИИ о мероприятии с доски группы (не более двух предложений), на языке читателя; никогда не собственное описание мероприятия. На отдельной строке; строка исчезает, если такого текста на этом языке нет."
+
+#: templates/admin/settings.php
+msgid "messages per organizer in a private chat"
+msgstr "сообщений на организатора в личном чате"
+
+msgid "You’re in. Welcome, %s!"
+msgstr "Вход отмечен. Добро пожаловать, %s!"
 
 msgid "What helps next time: cancelling as soon as you know, or someone found in the bot to take the task over. For a person with no Telegram chat: cancelling early on the crew page, with its link."
 msgstr "Что поможет в следующий раз: отменить, как только станет известно, или найти в боте того, кто возьмёт задачу. Для человека без чата в Telegram: отменить заранее на странице команды, со ссылкой на неё."
@@ -11327,98 +11704,6 @@ msgstr "Надеемся скоро увидеться снова."
 msgid "See you next time!"
 msgstr "До следующего раза!"
 
-#: src/Support/OrganizerGuide.php:245
-msgid "As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
-msgstr "Как организатор ты можешь добавить кого угодно на любую задачу вечера, кроме «Организация», даже на задачу роли, которой у человека нет (тогда он получит роль): в личном чате через /assign задача ; имя (/unassign снимает) или через ➕ Добавить кого-то в /board, на вкладке «Админ» в приложении Crew или на кассе."
-
-#. translators: %d: hours of notice, e.g. 48
-#: src/Support/OrganizerGuide.php:139
-msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /tasks to the bot, taps 🔁 Take over a task, and the member accepts."
-msgstr "Отмена менее чем за %d ч до задачи считается поздней. Участник, который не может прийти, может найти замену: замена отправляет боту /tasks, нажимает 🔁 Взять задачу, и участник соглашается."
-
-#: src/Telegram/LanguageService.php:135
-msgid "I will write to you in English. To change it: /settings, 🌐 Change language."
-msgstr "Я буду писать тебе по-английски. Чтобы изменить: /settings, 🌐 Сменить язык."
-
-#. translators: %d: completed tasks needed for one credit
-#: src/Support/OrganizerGuide.php:217
-msgid "Members earn 1 free-entry credit per %d completed tasks and spend it with /me, 🎟 Tickets, 🎟 Get a free-entry ticket (or /tickets), or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
-msgstr "Участники получают 1 балл за бесплатный вход за каждые %d выполненных задач и тратят его через /me, 🎟 Билеты, 🎟 Получить бесплатный билет (или /tickets), или на странице сайта. Баллы выдаются через /people, на странице «Люди» или на кассе. Каждый подарок записывается в журнал баллов на странице «Люди», и участнику об этом сообщают."
-
-#. translators: 1: opening time, e.g. 09:00, 2: closing time, e.g. 21:00
-#: src/Support/OrganizerGuide.php:271
-msgid "The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with /settings, 🔔 Choose notifications; confirmations and reminders always go."
-msgstr "Запланированные уходят только между %1$s и %2$s. Каждое приходит в Telegram и по email. Участники выбирают, какие получать, через /settings, 🔔 Выбрать уведомления; подтверждения и напоминания приходят всегда."
-
-msgid "%1$s does not have the %2$s role. As an organizer you can still add them; they get the role."
-msgstr "У %1$s нет роли %2$s. Как организатор ты всё равно можешь добавить этого человека; он получит роль."
-
-msgid "%s is blocked from sign-ups. An organizer can lift it on the People page."
-msgstr "%s заблокирован(а) для записи. Организатор может снять блокировку на странице «Люди»."
-
-msgid "/assign task ; name – put a member on a task (/unassign takes them off); you confirm first"
-msgstr "/assign задача ; имя – поставить участника на задачу (/unassign снимает); сначала подтверждаешь"
-
-msgid "Add %1$s to %2$s?"
-msgstr "Добавить %1$s на %2$s?"
-
-msgid "Add, counts"
-msgstr "Добавить, засчитать"
-
-msgid "Add, no credit"
-msgstr "Добавить, без балла"
-
-msgid "Cancelled. Nothing was changed."
-msgstr "Отменено. Ничего не изменено."
-
-msgid "Many members match “%s”. Write more of the name."
-msgstr "Под «%s» подходит много участников. Напиши имя подробнее."
-
-msgid "No member called “%s” was found."
-msgstr "Участник с именем «%s» не найден."
-
-msgid "No member called “%s” was found. Someone who is not a member yet: ➕ Add someone under /board."
-msgstr "Участник с именем «%s» не найден. Если человек ещё не участник: ➕ Добавить кого-то в /board."
-
-msgid "No task called “%1$s”. Tasks on %2$s: %3$s"
-msgstr "Нет задачи «%1$s». Задачи на %2$s: %3$s"
-
-msgid "Organize tasks are for organizers only. Make someone an organizer with /people."
-msgstr "Задачи «Организация» только для организаторов. Сделай кого-то организатором через /people."
-
-msgid "Put a member on a task: /assign task ; name\nExample: /assign Host ; Milla\nA date first picks another event: /assign 21.11. Host ; Milla"
-msgstr "Поставить участника на задачу: /assign задача ; имя\nПример: /assign Host ; Milla\nДата в начале выбирает другой вечер: /assign 21.11. Host ; Milla"
-
-msgid "Take %1$s off %2$s?"
-msgstr "Снять %1$s с %2$s?"
-
-msgid "Take a member off a task: /unassign task ; name\nExample: /unassign Host ; Milla\nA date first picks another event: /unassign 21.11. Host ; Milla"
-msgstr "Снять участника с задачи: /unassign задача ; имя\nПример: /unassign Host ; Milla\nДата в начале выбирает другой вечер: /unassign 21.11. Host ; Milla"
-
-msgid "Taken off the task. If their ticket was emailed, they get an updated one; nothing else is sent."
-msgstr "Снят(а) с задачи. Если билет был отправлен по email, придёт обновлённый; больше ничего не отправляется."
-
-msgid "That person is not on this task."
-msgstr "Этого человека нет в этой задаче."
-
-msgid "That task is full (%1$d of %2$d places taken). Nothing was added."
-msgstr "Эта задача заполнена (занято %1$d из %2$d мест). Ничего не добавлено."
-
-msgid "There are no tasks on %s."
-msgstr "На %s задач нет."
-
-msgid "There are no upcoming tasks."
-msgstr "Ближайших задач нет."
-
-msgid "This request has expired. Please send it again."
-msgstr "Этот запрос устарел. Отправь его ещё раз."
-
-msgid "Use %s in a private chat with me."
-msgstr "Используй %s в личном чате со мной."
-
-msgid "Which member?"
-msgstr "Какой участник?"
-
 #: src/Support/FollowupMail.php
 msgid "Get an email when new events come out. You can leave any time."
 msgstr "Получай письмо, когда выходят новые события. Отписаться можно в любой момент."
@@ -11519,10 +11804,6 @@ msgstr "Роли «%1$s» нет. Роли: %2$s"
 #: src/Telegram/TaskCommand.php:779
 msgid "Only organizers can change tasks."
 msgstr "Менять задачи могут только организаторы."
-
-#: src/Telegram/TaskCommand.php:480
-msgid "Send"
-msgstr "Отправить"
 
 #: src/Telegram/TaskCommand.php:499
 msgid "Send the open-task email now, for the next night with open places? People who already have it are skipped."

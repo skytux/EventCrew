@@ -88,11 +88,6 @@ msgstr[0] "%1$s（现有 %2$d 积分）"
 msgid "%1$s (%2$d credits)"
 msgstr "%1$s（%2$d 积分）"
 
-#. translators: 1: the person's name, 2: their email
-#: src/Support/MessageTemplates.php:2322
-msgid "%1$s (%2$s) signed in for the first time and wants to join the crew. Press OK or No in the Admin tab of the Crew app."
-msgstr "%1$s（%2$s）首次登录，想加入团队。请在团队应用的“管理”标签中点“确定”或“否”。"
-
 #. translators: 1: the person's name, 2: their email address
 #: src/Support/MessageTemplates.php:2285
 msgid "%1$s (%2$s) wrote to the bot in a private chat. Here is that chat, oldest first."
@@ -192,11 +187,6 @@ msgstr "%1$s：%2$d 人订阅"
 msgid "%1$s: %2$d unsubscribed"
 msgstr "%1$s：%2$d 人退订"
 
-#. translators: 1: cancellation kind, 2: role, 3: event, 4: standing note
-#: src/Support/MessageTemplates.php:1582
-msgid "%1$s: %2$s at %3$s, %4$s. Your ticket is now disabled. %5$s"
-msgstr "%1$s：%3$s 的 %2$s，%4$s。你的票现已停用。%5$s"
-
 #: templates/public/door.php:92
 msgid "%1$s: already used · %2$s"
 msgstr "%1$s：已使用 · %2$s"
@@ -244,12 +234,6 @@ msgid "%d mark was not saved because it changed after you opened the page; reloa
 msgid_plural "%d marks were not saved because they changed after you opened the page; reload to see them."
 msgstr[0] "%d 个标记未保存，因为它们在你打开页面后已被更改；请重新加载页面查看。"
 
-#. translators: %d: number of names skipped
-#: src/Support/MessageTemplates.php:2118
-msgid "%d name was skipped because it was already on the guest list."
-msgid_plural "%d names were skipped because they were already on the guest list."
-msgstr[0] "%d 个名字已在嘉宾名单上，因此被跳过。"
-
 #. translators: %d: number of people
 #: src/Support/TicketMail.php:1435 src/Telegram/DoorListService.php:167
 #: templates/public/signup.php:808
@@ -296,12 +280,6 @@ msgstr[0] "已创建 %d 个任务。"
 msgid "%d ticket buyer deleted."
 msgid_plural "%d ticket buyers deleted."
 msgstr[0] "已删除 %d 位购票者。"
-
-#. translators: %d: number of tickets skipped
-#: src/Support/MessageTemplates.php:2092
-msgid "%d ticket was skipped because it was already on the list."
-msgid_plural "%d tickets were skipped because they were already on the list."
-msgstr[0] "%d 张票已在名单上，因此被跳过。"
 
 #: templates/public/door.php:97
 msgid "%d tickets with this code. Mark them arrived one at a time."
@@ -1112,6 +1090,10 @@ msgstr "迟到"
 msgid "Arrived late, did the task"
 msgstr "迟到，完成了任务"
 
+#: src/Support/OrganizerGuide.php:245
+msgid "As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
+msgstr "作为组织者，你可以把任何人加到一晚除“组织”外的任何任务上，也可以加到对方没有的角色的任务上（对方会获得该角色）：在私聊中用 /assign 任务 ; 名字（/unassign 移除）或 /board 下的 ➕ 添加某人、在团队应用的“管理”标签中，或在售票台。"
+
 #: templates/admin/translations.php:213
 msgid "As written"
 msgstr "原文"
@@ -1357,15 +1339,6 @@ msgstr "按钮"
 msgid "Buy a ticket"
 msgstr "买票"
 
-#: src/Support/MessageTemplates.php:1251
-msgid "Can’t make it? Tap Cancel below. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
-msgstr "来不了？点下方的“取消”。或者找人接手：对方给机器人发送 /me 并点 🔁 接手任务，然后由你接受。"
-
-#. translators: %s: link to the crew page
-#: src/Support/MessageTemplates.php:1254
-msgid "Can’t make it? Tap Cancel on your task in the Board tab of the crew page (%s)."
-msgstr "来不了？在团队页面（%s）的“任务板”标签中，点你任务上的“取消”。"
-
 #: src/Telegram/AssistantService.php:525 src/Telegram/BuyerListReset.php:155
 #: src/Telegram/EventsCommand.php:98 src/Telegram/MenuButtons.php:220
 #: src/Telegram/SayCommand.php:95 templates/admin/people.php:120
@@ -1436,6 +1409,11 @@ msgstr "已取消：%2$s 的 %1$s"
 #: src/Support/WelcomeSender.php:554
 msgid "Cancelling %1$d hours or more before has no effect. Recent tasks count more than old ones. You get a rating after %2$d finished tasks. %3$d%% or higher is good standing."
 msgstr "提前 %1$d 小时或更早取消没有影响。近期的任务比旧任务权重更高。完成 %2$d 个任务后你会得到评分。%3$d%% 或以上为信誉良好。"
+
+#. translators: %d: hours of notice, e.g. 48
+#: src/Support/OrganizerGuide.php:139
+msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /tasks to the bot, taps 🔁 Take over a task, and the member accepts."
+msgstr "在任务开始前不到 %d 小时取消，算作临时取消。来不了的成员可以找人替代：替代者给机器人发送 /tasks，点 🔁 接手任务，然后由该成员接受。"
 
 #: templates/admin/settings.php:490
 msgid "Cancelling this many hours or less before a task starts is recorded as a late cancellation, which counts against reputation; earlier than that carries no penalty. Default 48."
@@ -1966,10 +1944,6 @@ msgstr "已删除 %2$s 的 %1$d 位购票人。"
 #: src/Telegram/ManageController.php:208 src/Telegram/ManageController.php:221
 msgid "Deleting erases your account and history for good. This cannot be undone."
 msgstr "删除会永久清除你的账户和记录。此操作无法撤销。"
-
-#: templates/admin/settings.php:1479
-msgid "Not added to the bot’s direct reply to something the person just did, such as a sign-up or cancellation confirmation: they are mid-conversation."
-msgstr "不会加在机器人对对方刚刚所做操作的直接回复中，例如报名或取消的确认：对方此时正在对话中。"
 
 #: src/Admin/BotProfileSettings.php:367 templates/admin/settings.php:384
 #: templates/admin/settings.php:1974 templates/public/signup.php:1888
@@ -2850,11 +2824,6 @@ msgstr ""
 "\n"
 "这是你 %2$s 的免费入场券。请在门口出示。"
 
-#. translators: 1: name, 2: role, 3: event, 4: date/time, 5: how to cancel
-#: src/Support/MessageTemplates.php:1281
-msgid "Hi %1$s,\n\nJust a reminder that you’re on %2$s at %3$s, %4$s.\n\n%5$s"
-msgstr "%1$s 你好，\n\n提醒一下，你在 %4$s 于 %3$s 担任 %2$s。\n\n%5$s"
-
 #. translators: 1: name, 2: open-task list grouped by date, 3: personal recap
 #: src/Support/MessageTemplates.php:1605
 msgid ""
@@ -2877,11 +2846,6 @@ msgstr ""
 "%1$s 你好，\n"
 "\n"
 "组织者取消了任务：%3$s 的 %2$s，%4$s。你不再报名该任务，它的票在门口也不再有效。这不会影响你的信誉。"
-
-#. translators: 1: name, 2: role, 3: event, 4: standing note, 5: standing line
-#: src/Support/MessageTemplates.php:1562
-msgid "Hi %1$s,\n\nYou’ve cancelled %2$s at %3$s, %4$s, and your ticket is now disabled.\n\n%5$s\n\n%6$s"
-msgstr "%1$s 你好，\n\n你已取消 %3$s 的 %2$s（%4$s），你的票现已停用。\n\n%5$s\n\n%6$s"
 
 #: src/Support/NewsletterLayout.php:192
 msgid "Hi %s!"
@@ -3043,10 +3007,6 @@ msgstr "如何获取新的售票台链接：在机器人中；没有 Telegram �
 msgid "How to get the free ticket: in the bot or the Crew app, or, for a person with no Telegram chat, on the crew page, with its link."
 msgstr "如何领取免费票：在机器人或团队应用中；没有 Telegram 聊天的人则在团队页面中，附带其链接。"
 
-#: templates/admin/settings.php:1476
-msgid "How your crew signs off. It closes every notification email, and every Telegram message the person did not just ask for: reminders, calls, and news about their tasks, standing or access. Leave it blank for no sign-off."
-msgstr "你的团队如何署名。它附在每封通知邮件的末尾，以及每条并非对方刚刚主动请求的 Telegram 消息末尾：提醒、召集，以及关于其任务、信誉或权限的消息。留空则不署名。"
-
 #: templates/public/signup.php:379
 msgid "How your score works"
 msgstr "你的分数如何计算"
@@ -3103,6 +3063,10 @@ msgstr "我已把这段聊天转给组织者。"
 #: src/Telegram/HelpService.php:222
 msgid "I remember our private chat for 24 hours, so you can refer back to it."
 msgstr "我会把我们的私聊记住 24 小时，所以你可以回头提起它。"
+
+#: src/Telegram/LanguageService.php:135
+msgid "I will write to you in English. To change it: /settings, 🌐 Change language."
+msgstr "我会用英文给你写信。要更改：/settings，🌐 更改语言。"
 
 #: templates/admin/settings.php:2405
 msgid "IMAP"
@@ -3645,6 +3609,11 @@ msgstr "伪造管理请求后成员被封禁（邮件）"
 #: templates/public/door.php:288
 msgid "Member name or email"
 msgstr "成员名字或邮箱"
+
+#. translators: %d: completed tasks needed for one credit
+#: src/Support/OrganizerGuide.php:217
+msgid "Members earn 1 free-entry credit per %d completed tasks and spend it with /me, 🎟 Tickets, 🎟 Get a free-entry ticket (or /tickets), or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
+msgstr "成员每完成 %d 个任务获得 1 个免费入场积分，可通过 /me、🎟 票、🎟 领取免费入场券（或 /tickets）或在网页上使用。你可以用 /people、在“人员”页面或在售票台赠送积分。每次赠送都会记在“人员”页面的积分记录中，并通知该成员。"
 
 #: src/Support/NewsletterConfirmMail.php:86 templates/admin/diagnostics.php:125
 #: templates/admin/settings.php:1580
@@ -7661,6 +7630,11 @@ msgstr "同样的请求，但密钥放在请求头而不是地址中。返回 20
 msgid "The same ticket email goes to a guest you add with an email address (wp-admin Roster, the Admin tab, or /door add Name name@example.com) and to a Holvi buyer added at the sales desk with an email address, with the next batch. Crew get a separate ticket email when they take a task or spend a credit. When a guest is removed, or a task or credit is cancelled, after the ticket was emailed, the person gets a short \"Your ticket is cancelled\" email."
 msgstr "同样的票邮件会发给你用邮箱地址添加的嘉宾（wp-admin 的“名册”、“管理”标签，或 /door add 姓名 name@example.com），以及在售票台用邮箱地址添加的 Holvi 购票者，随下一批发送。团队成员在接下任务或使用积分时会收到单独的票邮件。在票已通过邮件发出后，如果嘉宾被移除，或任务或积分被取消，此人会收到一封简短的“你的票已取消”邮件。"
 
+#. translators: 1: opening time, e.g. 09:00, 2: closing time, e.g. 21:00
+#: src/Support/OrganizerGuide.php:271
+msgid "The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with /settings, 🔔 Choose notifications; confirmations and reminders always go."
+msgstr "定时消息只在 %1$s 到 %2$s 之间发出。每条都通过 Telegram 和邮件发送。成员可以用 /settings，🔔 选择通知 选择接收哪些；确认和提醒总是会发送。"
+
 #: src/Support/DoorNewMember.php:116 src/Support/MessageTemplates.php:1097
 msgid "The second button opens the crew’s Telegram group, where tasks are posted."
 msgstr "第二个按钮会打开团队的 Telegram 群，任务会发布在那里。"
@@ -7782,10 +7756,6 @@ msgstr "团队已确认新成员（Telegram）"
 #: src/Support/MessageTemplates.php:1897
 msgid "The team said OK to a newcomer (email)"
 msgstr "团队已确认新成员（邮件）"
-
-#: src/Support/MessageTemplates.php:1901
-msgid "The team said OK. You can now take tasks in the Crew app."
-msgstr "团队已确认。你现在可以在团队应用中领取任务。"
 
 #: src/Admin/RosterPage.php:725 src/Admin/RosterPage.php:747
 msgid "The test email could not be sent. Check the site’s email setup."
@@ -7979,12 +7949,6 @@ msgstr "他们在这一天已经有免费入场了。"
 #: src/Support/DoorDesk.php:1153
 msgid "They already have free entry tonight."
 msgstr "他们今晚已经有免费入场了。"
-
-#. translators: %d: total number of plus-ones the added guests bring
-#: src/Support/MessageTemplates.php:2108
-msgid "They bring %d plus-one in total."
-msgid_plural "They bring %d plus-ones in total."
-msgstr[0] "他们总共带 %d 位同伴。"
 
 #: src/Support/DoorDesk.php:1128
 msgid "They could not be signed up for that task."
@@ -9252,15 +9216,6 @@ msgstr "你无权执行此操作。你的账户已被封禁。请联系组织者
 msgid "You are not signed in in this browser. Go back to the browser where you pressed Telegram, or press Telegram again here."
 msgstr "你在这个浏览器中没有登录。请回到你点击 Telegram 的那个浏览器，或在这里再点击一次 Telegram。"
 
-#. translators: %s: the organization's name
-#: src/Support/MessageTemplates.php:1920
-msgid "You are now an organizer of %s"
-msgstr "你现在是 %s 的组织者"
-
-#: src/Support/MessageTemplates.php:1923
-msgid "You are now an organizer."
-msgstr "你现在是组织者。"
-
 #: src/Web/NewsletterController.php:624 src/Web/NewsletterController.php:1070
 msgid "You are now subscribed to the next events announcement. Thank you!"
 msgstr "你已订阅下一次活动公告。谢谢！"
@@ -9396,11 +9351,6 @@ msgstr[0] "你现在有 %d 个免费入场积分。"
 #: src/Support/MessageTemplates.php:1872
 msgid "You now have the role %s, so you can sign up for its tasks."
 msgstr "你现在拥有角色 %s，因此可以报名其任务。"
-
-#. translators: %s: role name, such as DJ
-#: src/Support/MessageTemplates.php:1859
-msgid "You now have the role %s. Its tasks are open to you in the Crew app, and you can sign up for them."
-msgstr "你现在拥有角色 %s。团队应用中已向你开放其任务，你可以报名。"
 
 #: src/Support/MessageTemplates.php:2537
 msgid ""
@@ -9593,13 +9543,6 @@ msgstr "你网站的时间（%s）。默认 09:00。"
 #: src/Support/WelcomeSender.php:550
 msgid "Your standing comes from how your past tasks went:"
 msgstr "你的信誉来自你过去任务的情况："
-
-#. translators: 1: standing level and score, 2: number of free-entry credits
-#: src/Support/ClaimNotifier.php:282 src/Support/MessagePreview.php:160
-#: src/Support/StandingNotice.php:131
-msgid "Your standing: %1$s · %2$d free-entry credit."
-msgid_plural "Your standing: %1$s · %2$d free-entry credits."
-msgstr[0] "你的信誉：%1$s · %2$d 个免费入场积分。"
 
 #. translators: %s: cover's name
 #: src/Support/MessageTemplates.php:2750
@@ -9959,10 +9902,6 @@ msgstr "已报名 %s"
 msgid "someone"
 msgstr "某人"
 
-#: src/Support/MessageTemplates.php:1441
-msgid "tap 🎟 Free-entry ticket below."
-msgstr "点下方的“🎟 免费入场券”。"
-
 #: src/Support/PrivacyPolicy.php:310
 msgid "the English original"
 msgstr "英文原文"
@@ -10114,11 +10053,6 @@ msgstr "✅ 完成：%1$s 现在接手了你的任务：%3$s 的 %2$s，%4$s。"
 msgid "✅ Let them take it"
 msgstr "✅ 让他们接手"
 
-#. translators: 1: role, 2: event, 3: date/time
-#: src/Support/MessageTemplates.php:1539
-msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door – it is the first button below."
-msgstr "✅ 已报名：%3$s 在 %2$s 的 %1$s。\n\n请在门口出示你的票——就是下方第一个按钮。"
-
 #: src/Support/MessageTemplates.php:1910
 msgid "✅ The team said OK. You can now take tasks."
 msgstr "✅ 团队已确认。你现在可以领取任务。"
@@ -10181,10 +10115,6 @@ msgstr "🎟 出示你的票"
 #: src/Support/MessageTemplates.php:1479
 msgid "🎟 Your free-entry ticket for %s — show it at the door."
 msgstr "🎟 你 %s 的免费入场券 — 在门口出示。"
-
-#: src/Support/MessageTemplates.php:1892
-msgid "🎟 You have a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up."
-msgstr "🎟 你有一张一次性通行证，即使信誉较低也可以报名下一个任务。下次报名时使用。"
 
 #: src/Telegram/RosterService.php:645
 msgid "👋 %s"
@@ -11056,21 +10986,6 @@ msgid "an administrator"
 msgstr "一位管理员"
 
 #: src/Support/MessageTemplates.php
-msgid "Can’t make it? Tap Cancel below: there you can also hand the task over to someone else."
-msgstr "来不了？点下方的“取消”：在那里也可以把任务交给别人。"
-
-#: src/Support/MessageTemplates.php:565
-msgid "The AI’s short text about the event from the group board (at most two sentences), in the reader’s language; never the event’s own description. On a line of its own; the line goes when there is no such text in that language."
-msgstr "群组看板上由 AI 撰写的活动简短文字（最多两句），以读者的语言显示；绝不使用活动自身的描述。单独成行；没有该语言的这类文字时该行不显示。"
-
-#: templates/admin/settings.php
-msgid "messages per organizer in a private chat"
-msgstr "条消息（每位组织者私聊）"
-
-msgid "You’re in. Welcome, %s!"
-msgstr "已入场。欢迎你，%s！"
-
-#: src/Support/MessageTemplates.php
 msgid "Thank you for being part of the crew and helping make these nights happen."
 msgstr "感谢你成为团队的一员，帮助这些夜晚顺利举办。"
 
@@ -11085,6 +11000,460 @@ msgstr "感谢你接下任务，帮助这一晚顺利举办。也请作为我们
 #: src/Support/TicketReasons.php
 msgid "Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!"
 msgstr "感谢你成为团队的一员，帮助这些夜晚顺利举办。这一晚我们请客：作为我们的嘉宾来跳舞，尽情享受吧！"
+
+msgid "%1$s does not have the %2$s role. As an organizer you can still add them; they get the role."
+msgstr "%1$s 没有 %2$s 角色。作为组织者你仍可以添加；对方会获得该角色。"
+
+msgid "%s is blocked from sign-ups. An organizer can lift it on the People page."
+msgstr "%s 已被禁止报名。组织者可以在“人员”页面解除。"
+
+msgid "/assign task ; name – put a member on a task (/unassign takes them off); you confirm first"
+msgstr "/assign 任务 ; 名字 – 把成员加到任务上（/unassign 移除）；你先确认"
+
+msgid "Add %1$s to %2$s?"
+msgstr "把 %1$s 加到 %2$s？"
+
+msgid "Add, counts"
+msgstr "添加，计入"
+
+msgid "Add, no credit"
+msgstr "添加，不计积分"
+
+msgid "Cancelled. Nothing was changed."
+msgstr "已取消。没有做任何更改。"
+
+msgid "Many members match “%s”. Write more of the name."
+msgstr "有很多成员匹配“%s”。请把名字写得更完整。"
+
+msgid "No member called “%s” was found."
+msgstr "没有找到叫“%s”的成员。"
+
+msgid "No member called “%s” was found. Someone who is not a member yet: ➕ Add someone under /board."
+msgstr "没有找到叫“%s”的成员。还不是成员的人：/board 下的 ➕ 添加某人。"
+
+msgid "No task called “%1$s”. Tasks on %2$s: %3$s"
+msgstr "没有叫“%1$s”的任务。%2$s 的任务：%3$s"
+
+msgid "Organize tasks are for organizers only. Make someone an organizer with /people."
+msgstr "“组织”任务仅限组织者。用 /people 把某人设为组织者。"
+
+msgid "Put a member on a task: /assign task ; name\nExample: /assign Host ; Milla\nA date first picks another event: /assign 21.11. Host ; Milla"
+msgstr "把成员加到任务上：/assign 任务 ; 名字\n例如：/assign Host ; Milla\n前面加日期可选另一晚：/assign 21.11. Host ; Milla"
+
+msgid "Take %1$s off %2$s?"
+msgstr "把 %1$s 从 %2$s 移除？"
+
+msgid "Take a member off a task: /unassign task ; name\nExample: /unassign Host ; Milla\nA date first picks another event: /unassign 21.11. Host ; Milla"
+msgstr "把成员从任务上移除：/unassign 任务 ; 名字\n例如：/unassign Host ; Milla\n前面加日期可选另一晚：/unassign 21.11. Host ; Milla"
+
+msgid "Taken off the task. If their ticket was emailed, they get an updated one; nothing else is sent."
+msgstr "已从任务移除。如果票是通过邮件发送的，对方会收到更新后的票；不会发送其他内容。"
+
+msgid "That person is not on this task."
+msgstr "此人不在这个任务上。"
+
+msgid "That task is full (%1$d of %2$d places taken). Nothing was added."
+msgstr "这个任务已满（%2$d 个名额已占 %1$d 个）。没有添加任何人。"
+
+msgid "There are no tasks on %s."
+msgstr "%s 没有任务。"
+
+msgid "There are no upcoming tasks."
+msgstr "没有即将到来的任务。"
+
+msgid "This request has expired. Please send it again."
+msgstr "此请求已过期。请重新发送。"
+
+msgid "Use %s in a private chat with me."
+msgstr "请在与我的私聊中使用 %s。"
+
+msgid "Which member?"
+msgstr "哪位成员？"
+
+msgid "%1$s has no free-entry ticket for %2$s."
+msgstr "%1$s 在 %2$s 没有免费入场券。"
+
+msgid "%1$s has no task in the last %2$d days. Put the date first: /mark 14.11. name"
+msgstr "%1$s 最近 %2$d 天没有任务。请把日期放在前面：/mark 14.11. 名字"
+
+msgid "%1$s has no task on %2$s."
+msgstr "%1$s 在 %2$s 没有任务。"
+
+msgid "%1$s wrote to the crew of %2$s:"
+msgstr "%1$s 给 %2$s 的团队写道："
+
+msgid "%d task done"
+msgid_plural "%d tasks done"
+msgstr[0] "已完成 %d 个任务"
+
+msgid "%s is not blocked."
+msgstr "%s 没有被封禁。"
+
+msgid "/crew – who works with you on your next nights"
+msgstr "/crew – 接下来几晚和你一起工作的人"
+
+msgid "/freeentry close – close free entry for a night (or open)"
+msgstr "/freeentry close – 关闭某晚的免费入场（或 open）"
+
+msgid "/mark name ; late – arrived, late, noshow or done"
+msgstr "/mark 名字 ; late – arrived、late、noshow 或 done"
+
+msgid "/name, /email – change your name or email"
+msgstr "/name、/email – 修改你的名字或邮箱"
+
+msgid "/newboard – post a new board in the group"
+msgstr "/newboard – 在群里发布新的任务板"
+
+msgid "/newcomer – a newcomer waiting for your OK"
+msgstr "/newcomer – 等待你确认的新成员"
+
+msgid "/sendtickets – send the ticket emails now (or cancel)"
+msgstr "/sendtickets – 立即发送票邮件（或 cancel）"
+
+msgid "/standing name – standing, credits and log"
+msgstr "/standing 名字 – 信誉、积分和记录"
+
+msgid "/stop announcement or /stop email – stop the next send"
+msgstr "/stop announcement 或 /stop email – 停止下一次发送"
+
+msgid "/tell task ; message sends your message to everyone on that task: by Telegram in their own language, under a one-line header, or by email when they have no Telegram. You see it first. You can send 5 an hour."
+msgstr "/tell 任务 ; 消息 会把你的消息发给该任务上的所有人：通过 Telegram 用各自的语言发送，上方有一行标题；没有 Telegram 的人则通过邮件收到。你会先看到它。每小时最多发送 5 条。"
+
+msgid "/tell task ; text – message everyone on a task"
+msgstr "/tell 任务 ; 文本 – 给任务上的所有人发消息"
+
+msgid "/ticket name – free entry for a credit (/unticket undoes it)"
+msgstr "/ticket 名字 – 用积分换免费入场（/unticket 撤销）"
+
+msgid "/unban name – lift a block"
+msgstr "/unban 名字 – 解除封禁"
+
+msgid "A link is on its way to %s. Your email changes when you open it."
+msgstr "链接正在发往 %s。打开后你的邮箱就会更改。"
+
+msgid "A task can be marked on its day or later."
+msgstr "任务可以在当天或之后标记。"
+
+msgid "Blocked from sign-ups."
+msgstr "已被禁止报名。"
+
+msgid "Cancel a free-entry ticket: /unticket name\nExample: /unticket Milla\nA date first picks another night: /unticket 21.11. Milla"
+msgstr "取消免费入场券：/unticket 名字\n例如：/unticket Milla\n前面加日期可选另一晚：/unticket 21.11. Milla"
+
+msgid "Cancel send"
+msgstr "取消发送"
+
+msgid "Cancel the free-entry ticket of %1$s for %2$s? The credit goes back."
+msgstr "取消 %1$s 在 %2$s 的免费入场券？积分会退回。"
+
+msgid "Cancel this send?"
+msgstr "取消这次发送？"
+
+msgid "Cancel ticket"
+msgstr "取消票"
+
+msgid "Change"
+msgstr "更改"
+
+msgid "Change your email to %s? A link goes there first; the email changes when you open it."
+msgstr "把你的邮箱改为 %s？会先往那里发一个链接，打开后邮箱才会更改。"
+
+msgid "Change your name from %1$s to %2$s?"
+msgstr "把你的名字从 %1$s 改为 %2$s？"
+
+msgid "Close free entry for %s? Nobody can use a credit for that night."
+msgstr "关闭 %s 的免费入场？那晚没人能使用积分。"
+
+msgid "Close or reopen free entry: /freeentry close or /freeentry open\nA date first picks another night: /freeentry 21.11. close"
+msgstr "关闭或重新开放免费入场：/freeentry close 或 /freeentry open\n前面加日期可选另一晚：/freeentry 21.11. close"
+
+msgid "Commands in a private chat"
+msgstr "私聊中的命令"
+
+msgid "Credits:"
+msgstr "积分："
+
+msgid "Every member can use /crew to see who works with them on their next nights, and /name or /email to change their own name or email. A new email changes only after they open the link sent to it."
+msgstr "每位成员都可以用 /crew 查看接下来几晚和自己一起工作的人，用 /name 或 /email 修改自己的名字或邮箱。新邮箱要等对方打开发到该邮箱的链接后才会更改。"
+
+msgid "For a night: /freeentry close or /freeentry open closes or reopens free entry. /stop announcement stops the next announcement, /stop email the post-event email. /newboard posts a new board in the group. /sendtickets sends the ticket emails now, /sendtickets cancel stops a waiting send."
+msgstr "针对某晚：/freeentry close 或 /freeentry open 关闭或重新开放免费入场。/stop announcement 停止下一次公告，/stop email 停止活动后邮件。/newboard 在群里发布新的任务板。/sendtickets 立即发送票邮件，/sendtickets cancel 停止等待中的发送。"
+
+msgid "For a person: /mark name ; arrived, late, noshow or done sets the roster mark. /standing name shows standing, credits and log. /newcomer shows a newcomer waiting for your OK. /ticket name spends a credit on free entry, /unticket name gives it back. /unban name lifts a block."
+msgstr "针对某人：/mark 名字 ; arrived、late、noshow 或 done 设置名单标记。/standing 名字 显示信誉、积分和记录。/newcomer 显示等待你确认的新成员。/ticket 名字 用一个积分换免费入场，/unticket 名字 退回积分。/unban 名字 解除封禁。"
+
+#. translators: 1: a person's name, 2: a short day label, 3: credits they have now.
+msgid "Free entry for %1$s on %2$s? It uses 1 of their %3$d credit."
+msgid_plural "Free entry for %1$s on %2$s? It uses 1 of their %3$d credits."
+msgstr[0] "让 %1$s 在 %2$s 免费入场？将使用其 %3$d 个积分中的 1 个。"
+
+msgid "Free entry for a credit: /ticket name\nExample: /ticket Milla\nA date first picks another night: /ticket 21.11. Milla"
+msgstr "用积分换免费入场：/ticket 名字\n例如：/ticket Milla\n前面加日期可选另一晚：/ticket 21.11. Milla"
+
+msgid "Free entry is closed by the event itself (sold out, hidden or off). Change it in the event."
+msgstr "免费入场已被活动本身关闭（售罄、隐藏或关闭）。请在活动中更改。"
+
+msgid "Free entry is open for this date."
+msgstr "此日期的免费入场已开放。"
+
+msgid "Give ticket"
+msgstr "给票"
+
+msgid "In a private chat with the bot you can do several crew page tasks by command. Write the name as you remember it: the bot finds the person, asks with buttons when several fit, and shows every change with ✅ and ✖️ first. A date first, like /mark 14.11. Milla ; done, picks another night."
+msgstr "在与机器人的私聊中，你可以用命令完成团队页面上的几项操作。名字按你记得的写：机器人会找到这个人，有多个匹配时用按钮询问，并先用 ✅ 和 ✖️ 显示每项更改。在前面加日期，例如 /mark 14.11. Milla ; done，可选另一晚。"
+
+msgid "Lift a block: /unban name\nExample: /unban Milla"
+msgstr "解除封禁：/unban 名字\n例如：/unban Milla"
+
+msgid "Lift block"
+msgstr "解除封禁"
+
+msgid "Lift the block on %s? They can sign in and sign up again."
+msgstr "解除对 %s 的封禁？对方将可以再次登录和报名。"
+
+msgid "Mark"
+msgstr "标记"
+
+msgid "Mark a task: /mark name ; arrived, late, noshow or done\nExample: /mark Milla ; late\nA date first picks another night: /mark 14.11. Milla ; done"
+msgstr "标记任务：/mark 名字 ; arrived、late、noshow 或 done\n例如：/mark Milla ; late\n前面加日期可选另一晚：/mark 14.11. Milla ; done"
+
+msgid "Mark as “%s”?"
+msgstr "标记为“%s”？"
+
+msgid "Message everyone on a task: /tell task ; message\nExample: /tell Bar ; Please come 15 minutes early.\nA date first picks another event: /tell 21.11. Bar ; …"
+msgstr "给任务上的所有人发消息：/tell 任务 ; 消息\n例如：/tell Bar ; 请提前 15 分钟到。\n前面加日期可选另一场活动：/tell 21.11. Bar ; …"
+
+msgid "Message from %1$s: %2$s"
+msgstr "来自 %1$s 的消息：%2$s"
+
+msgid "No announcement is planned."
+msgstr "没有计划中的公告。"
+
+msgid "No blocked member called “%s” was found."
+msgstr "没有找到叫“%s”的已封禁成员。"
+
+msgid "No newcomer called “%s” is waiting."
+msgstr "没有叫“%s”的新成员在等待。"
+
+msgid "No newcomer is waiting for an OK."
+msgstr "没有新成员在等待确认。"
+
+msgid "No post-event email is planned."
+msgstr "没有计划中的活动后邮件。"
+
+msgid "No task called “%s” was found."
+msgstr "没有找到叫“%s”的任务。"
+
+msgid "Nobody else is on %s."
+msgstr "%s 上没有其他人。"
+
+msgid "Now: %s"
+msgstr "当前：%s"
+
+msgid "Only organizers can use %s."
+msgstr "只有组织者可以使用 %s。"
+
+msgid "Post"
+msgstr "发布"
+
+msgid "Post a new board in the group? The old one is removed."
+msgstr "在群里发布新的任务板？旧的会被删除。"
+
+msgid "Recent tasks:"
+msgstr "最近的任务："
+
+msgid "Reopen"
+msgstr "重新开放"
+
+msgid "Reopen free entry for %s?"
+msgstr "重新开放 %s 的免费入场？"
+
+msgid "Send"
+msgstr "发送"
+
+msgid "Send link"
+msgstr "发送链接"
+
+msgid "Send the night’s ticket emails now: /sendtickets (or /sendtickets 21.11.)\nCancel the waiting send: /sendtickets cancel"
+msgstr "立即发送当晚的票邮件：/sendtickets（或 /sendtickets 21.11.）\n取消等待中的发送：/sendtickets cancel"
+
+#. translators: %s: a short day label, like "Sat 14 Nov".
+msgid "Send the ticket emails for %s that have not gone out? They go out in about 10 minutes; until then you can cancel them."
+msgstr "发送 %s 尚未发出的票邮件？约 10 分钟后发出；在此之前你可以取消。"
+
+#. translators: 1: number of people, 2: a task with its day and time.
+msgid "Send this to %1$d person on %2$s?"
+msgid_plural "Send this to %1$d people on %2$s?"
+msgstr[0] "把这条发给 %2$s 上的 %1$d 个人？"
+
+#. translators: 1: people the message went to, 2: of them on Telegram, 3: of them by email.
+msgid "Sent to %1$d person (Telegram %2$d, email %3$d)."
+msgid_plural "Sent to %1$d people (Telegram %2$d, email %3$d)."
+msgstr[0] "已发给 %1$d 人（Telegram %2$d，邮件 %3$d）。"
+
+msgid "Someone’s standing, credits and log: /standing name\nExample: /standing Milla"
+msgstr "某人的信誉、积分和记录：/standing 名字\n例如：/standing Milla"
+
+msgid "Stop"
+msgstr "停止"
+
+msgid "Stop the announcement planned for %s? It will not be sent."
+msgstr "停止计划在 %s 发送的公告？它将不会被发送。"
+
+msgid "Stop the next announcement: /stop announcement\nStop the post-event email: /stop email (or /stop email 14.11.)"
+msgstr "停止下一次公告：/stop announcement\n停止活动后邮件：/stop email（或 /stop email 14.11.）"
+
+msgid "Stop the post-event email for %s? It will not be sent."
+msgstr "停止 %s 的活动后邮件？它将不会被发送。"
+
+msgid "That is already your email."
+msgstr "这已经是你的邮箱了。"
+
+msgid "That is already your name."
+msgstr "这已经是你的名字了。"
+
+msgid "That is not a valid email address."
+msgstr "这不是有效的邮箱地址。"
+
+msgid "That message is too long. At most %d characters."
+msgstr "消息太长。最多 %d 个字符。"
+
+msgid "Waiting for an OK."
+msgstr "等待确认。"
+
+msgid "Which newcomer?"
+msgstr "哪位新成员？"
+
+msgid "You asked for a link a few times already. Try again in an hour."
+msgstr "你已经请求过几次链接了。请一小时后再试。"
+
+#. translators: %d: how many messages an organizer may send in an hour.
+msgid "You can send %d messages an hour. Try again later."
+msgstr "你每小时可以发送 %d 条消息。请稍后再试。"
+
+msgid "You have no coming tasks. See the open ones with /board."
+msgstr "你没有即将到来的任务。用 /board 查看空缺任务。"
+
+msgid "Your email: %s\nChange it: /email new@example.com"
+msgstr "你的邮箱：%s\n修改：/email new@example.com"
+
+msgid "Your name is now %s."
+msgstr "你的名字现在是 %s。"
+
+msgid "Your name: %s\nChange it: /name New Name"
+msgstr "你的名字：%s\n修改：/name 新名字"
+
+#. translators: %s: a short day label, like "Sat 14 Nov".
+msgid "free entry %s"
+msgstr "免费入场 %s"
+
+#. translators: 1: the person's name, 2: their email
+#: src/Support/MessageTemplates.php:2322
+msgid "%1$s (%2$s) signed in for the first time and wants to join the crew. Press OK or No in the Admin tab of the Crew app."
+msgstr "%1$s（%2$s）首次登录，想加入团队。请在团队应用的“管理”标签中点“确定”或“否”。"
+
+#. translators: 1: cancellation kind, 2: role, 3: event, 4: standing note
+#: src/Support/MessageTemplates.php:1582
+msgid "%1$s: %2$s at %3$s, %4$s. Your ticket is now disabled. %5$s"
+msgstr "%1$s：%3$s 的 %2$s，%4$s。你的票现已停用。%5$s"
+
+#. translators: %d: number of names skipped
+#: src/Support/MessageTemplates.php:2118
+msgid "%d name was skipped because it was already on the guest list."
+msgid_plural "%d names were skipped because they were already on the guest list."
+msgstr[0] "%d 个名字已在嘉宾名单上，因此被跳过。"
+
+#. translators: %d: number of tickets skipped
+#: src/Support/MessageTemplates.php:2092
+msgid "%d ticket was skipped because it was already on the list."
+msgid_plural "%d tickets were skipped because they were already on the list."
+msgstr[0] "%d 张票已在名单上，因此被跳过。"
+
+#: src/Support/MessageTemplates.php:1251
+msgid "Can’t make it? Tap Cancel below. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
+msgstr "来不了？点下方的“取消”。或者找人接手：对方给机器人发送 /me 并点 🔁 接手任务，然后由你接受。"
+
+#. translators: %s: link to the crew page
+#: src/Support/MessageTemplates.php:1254
+msgid "Can’t make it? Tap Cancel on your task in the Board tab of the crew page (%s)."
+msgstr "来不了？在团队页面（%s）的“任务板”标签中，点你任务上的“取消”。"
+
+#: templates/admin/settings.php:1479
+msgid "Not added to the bot’s direct reply to something the person just did, such as a sign-up or cancellation confirmation: they are mid-conversation."
+msgstr "不会加在机器人对对方刚刚所做操作的直接回复中，例如报名或取消的确认：对方此时正在对话中。"
+
+#. translators: 1: name, 2: role, 3: event, 4: date/time, 5: how to cancel
+#: src/Support/MessageTemplates.php:1281
+msgid "Hi %1$s,\n\nJust a reminder that you’re on %2$s at %3$s, %4$s.\n\n%5$s"
+msgstr "%1$s 你好，\n\n提醒一下，你在 %4$s 于 %3$s 担任 %2$s。\n\n%5$s"
+
+#. translators: 1: name, 2: role, 3: event, 4: standing note, 5: standing line
+#: src/Support/MessageTemplates.php:1562
+msgid "Hi %1$s,\n\nYou’ve cancelled %2$s at %3$s, %4$s, and your ticket is now disabled.\n\n%5$s\n\n%6$s"
+msgstr "%1$s 你好，\n\n你已取消 %3$s 的 %2$s（%4$s），你的票现已停用。\n\n%5$s\n\n%6$s"
+
+#: templates/admin/settings.php:1476
+msgid "How your crew signs off. It closes every notification email, and every Telegram message the person did not just ask for: reminders, calls, and news about their tasks, standing or access. Leave it blank for no sign-off."
+msgstr "你的团队如何署名。它附在每封通知邮件的末尾，以及每条并非对方刚刚主动请求的 Telegram 消息末尾：提醒、召集，以及关于其任务、信誉或权限的消息。留空则不署名。"
+
+#: src/Support/MessageTemplates.php:1901
+msgid "The team said OK. You can now take tasks in the Crew app."
+msgstr "团队已确认。你现在可以在团队应用中领取任务。"
+
+#. translators: %d: total number of plus-ones the added guests bring
+#: src/Support/MessageTemplates.php:2108
+msgid "They bring %d plus-one in total."
+msgid_plural "They bring %d plus-ones in total."
+msgstr[0] "他们总共带 %d 位同伴。"
+
+#. translators: %s: the organization's name
+#: src/Support/MessageTemplates.php:1920
+msgid "You are now an organizer of %s"
+msgstr "你现在是 %s 的组织者"
+
+#: src/Support/MessageTemplates.php:1923
+msgid "You are now an organizer."
+msgstr "你现在是组织者。"
+
+#. translators: %s: role name, such as DJ
+#: src/Support/MessageTemplates.php:1859
+msgid "You now have the role %s. Its tasks are open to you in the Crew app, and you can sign up for them."
+msgstr "你现在拥有角色 %s。团队应用中已向你开放其任务，你可以报名。"
+
+#. translators: 1: standing level and score, 2: number of free-entry credits
+#: src/Support/ClaimNotifier.php:282 src/Support/MessagePreview.php:160
+#: src/Support/StandingNotice.php:131
+msgid "Your standing: %1$s · %2$d free-entry credit."
+msgid_plural "Your standing: %1$s · %2$d free-entry credits."
+msgstr[0] "你的信誉：%1$s · %2$d 个免费入场积分。"
+
+#: src/Support/MessageTemplates.php:1441
+msgid "tap 🎟 Free-entry ticket below."
+msgstr "点下方的“🎟 免费入场券”。"
+
+#. translators: 1: role, 2: event, 3: date/time
+#: src/Support/MessageTemplates.php:1539
+msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door – it is the first button below."
+msgstr "✅ 已报名：%3$s 在 %2$s 的 %1$s。\n\n请在门口出示你的票——就是下方第一个按钮。"
+
+#: src/Support/MessageTemplates.php:1892
+msgid "🎟 You have a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up."
+msgstr "🎟 你有一张一次性通行证，即使信誉较低也可以报名下一个任务。下次报名时使用。"
+
+#: src/Support/MessageTemplates.php
+msgid "Can’t make it? Tap Cancel below: there you can also hand the task over to someone else."
+msgstr "来不了？点下方的“取消”：在那里也可以把任务交给别人。"
+
+#: src/Support/MessageTemplates.php:565
+msgid "The AI’s short text about the event from the group board (at most two sentences), in the reader’s language; never the event’s own description. On a line of its own; the line goes when there is no such text in that language."
+msgstr "群组看板上由 AI 撰写的活动简短文字（最多两句），以读者的语言显示；绝不使用活动自身的描述。单独成行；没有该语言的这类文字时该行不显示。"
+
+#: templates/admin/settings.php
+msgid "messages per organizer in a private chat"
+msgstr "条消息（每位组织者私聊）"
+
+msgid "You’re in. Welcome, %s!"
+msgstr "已入场。欢迎你，%s！"
 
 msgid "What helps next time: cancelling as soon as you know, or someone found in the bot to take the task over. For a person with no Telegram chat: cancelling early on the crew page, with its link."
 msgstr "下次有用的做法：一知道就取消，或在机器人里找人接手任务。对于没有 Telegram 聊天的人：在团队页面尽早取消，附上页面链接。"
@@ -11223,98 +11592,6 @@ msgstr "希望很快再见到你。"
 msgid "See you next time!"
 msgstr "下次见！"
 
-#: src/Support/OrganizerGuide.php:245
-msgid "As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
-msgstr "作为组织者，你可以把任何人加到一晚除“组织”外的任何任务上，也可以加到对方没有的角色的任务上（对方会获得该角色）：在私聊中用 /assign 任务 ; 名字（/unassign 移除）或 /board 下的 ➕ 添加某人、在团队应用的“管理”标签中，或在售票台。"
-
-#. translators: %d: hours of notice, e.g. 48
-#: src/Support/OrganizerGuide.php:139
-msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /tasks to the bot, taps 🔁 Take over a task, and the member accepts."
-msgstr "在任务开始前不到 %d 小时取消，算作临时取消。来不了的成员可以找人替代：替代者给机器人发送 /tasks，点 🔁 接手任务，然后由该成员接受。"
-
-#: src/Telegram/LanguageService.php:135
-msgid "I will write to you in English. To change it: /settings, 🌐 Change language."
-msgstr "我会用英文给你写信。要更改：/settings，🌐 更改语言。"
-
-#. translators: %d: completed tasks needed for one credit
-#: src/Support/OrganizerGuide.php:217
-msgid "Members earn 1 free-entry credit per %d completed tasks and spend it with /me, 🎟 Tickets, 🎟 Get a free-entry ticket (or /tickets), or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
-msgstr "成员每完成 %d 个任务获得 1 个免费入场积分，可通过 /me、🎟 票、🎟 领取免费入场券（或 /tickets）或在网页上使用。你可以用 /people、在“人员”页面或在售票台赠送积分。每次赠送都会记在“人员”页面的积分记录中，并通知该成员。"
-
-#. translators: 1: opening time, e.g. 09:00, 2: closing time, e.g. 21:00
-#: src/Support/OrganizerGuide.php:271
-msgid "The scheduled ones go out only between %1$s and %2$s. Each goes by Telegram and by email. Members choose which ones they get with /settings, 🔔 Choose notifications; confirmations and reminders always go."
-msgstr "定时消息只在 %1$s 到 %2$s 之间发出。每条都通过 Telegram 和邮件发送。成员可以用 /settings，🔔 选择通知 选择接收哪些；确认和提醒总是会发送。"
-
-msgid "%1$s does not have the %2$s role. As an organizer you can still add them; they get the role."
-msgstr "%1$s 没有 %2$s 角色。作为组织者你仍可以添加；对方会获得该角色。"
-
-msgid "%s is blocked from sign-ups. An organizer can lift it on the People page."
-msgstr "%s 已被禁止报名。组织者可以在“人员”页面解除。"
-
-msgid "/assign task ; name – put a member on a task (/unassign takes them off); you confirm first"
-msgstr "/assign 任务 ; 名字 – 把成员加到任务上（/unassign 移除）；你先确认"
-
-msgid "Add %1$s to %2$s?"
-msgstr "把 %1$s 加到 %2$s？"
-
-msgid "Add, counts"
-msgstr "添加，计入"
-
-msgid "Add, no credit"
-msgstr "添加，不计积分"
-
-msgid "Cancelled. Nothing was changed."
-msgstr "已取消。没有做任何更改。"
-
-msgid "Many members match “%s”. Write more of the name."
-msgstr "有很多成员匹配“%s”。请把名字写得更完整。"
-
-msgid "No member called “%s” was found."
-msgstr "没有找到叫“%s”的成员。"
-
-msgid "No member called “%s” was found. Someone who is not a member yet: ➕ Add someone under /board."
-msgstr "没有找到叫“%s”的成员。还不是成员的人：/board 下的 ➕ 添加某人。"
-
-msgid "No task called “%1$s”. Tasks on %2$s: %3$s"
-msgstr "没有叫“%1$s”的任务。%2$s 的任务：%3$s"
-
-msgid "Organize tasks are for organizers only. Make someone an organizer with /people."
-msgstr "“组织”任务仅限组织者。用 /people 把某人设为组织者。"
-
-msgid "Put a member on a task: /assign task ; name\nExample: /assign Host ; Milla\nA date first picks another event: /assign 21.11. Host ; Milla"
-msgstr "把成员加到任务上：/assign 任务 ; 名字\n例如：/assign Host ; Milla\n前面加日期可选另一晚：/assign 21.11. Host ; Milla"
-
-msgid "Take %1$s off %2$s?"
-msgstr "把 %1$s 从 %2$s 移除？"
-
-msgid "Take a member off a task: /unassign task ; name\nExample: /unassign Host ; Milla\nA date first picks another event: /unassign 21.11. Host ; Milla"
-msgstr "把成员从任务上移除：/unassign 任务 ; 名字\n例如：/unassign Host ; Milla\n前面加日期可选另一晚：/unassign 21.11. Host ; Milla"
-
-msgid "Taken off the task. If their ticket was emailed, they get an updated one; nothing else is sent."
-msgstr "已从任务移除。如果票是通过邮件发送的，对方会收到更新后的票；不会发送其他内容。"
-
-msgid "That person is not on this task."
-msgstr "此人不在这个任务上。"
-
-msgid "That task is full (%1$d of %2$d places taken). Nothing was added."
-msgstr "这个任务已满（%2$d 个名额已占 %1$d 个）。没有添加任何人。"
-
-msgid "There are no tasks on %s."
-msgstr "%s 没有任务。"
-
-msgid "There are no upcoming tasks."
-msgstr "没有即将到来的任务。"
-
-msgid "This request has expired. Please send it again."
-msgstr "此请求已过期。请重新发送。"
-
-msgid "Use %s in a private chat with me."
-msgstr "请在与我的私聊中使用 %s。"
-
-msgid "Which member?"
-msgstr "哪位成员？"
-
 #: src/Support/FollowupMail.php
 msgid "Get an email when new events come out. You can leave any time."
 msgstr "有新活动时收到邮件。可随时退订。"
@@ -11411,10 +11688,6 @@ msgstr "没有名为“%1$s”的角色。角色：%2$s"
 #: src/Telegram/TaskCommand.php:779
 msgid "Only organizers can change tasks."
 msgstr "只有组织者可以修改任务。"
-
-#: src/Telegram/TaskCommand.php:480
-msgid "Send"
-msgstr "发送"
 
 #: src/Telegram/TaskCommand.php:499
 msgid "Send the open-task email now, for the next night with open places? People who already have it are skipped."

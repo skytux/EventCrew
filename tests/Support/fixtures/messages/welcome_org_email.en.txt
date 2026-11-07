@@ -14,6 +14,7 @@ You are an organizer of Test Crew. This guide explains how EventCrew works, firs
 - 🌙 On the night: roster and sales desk
 - 🎟️ Tickets, credits and standing
 - 🔑 Roles and permissions
+- 💬 Commands in a private chat
 - 🔔 Automatic messages
 - 🤖 AI in EventCrew
 - ⚙️ The wp-admin pages
@@ -81,6 +82,18 @@ A role can have conditions in EventCrew > Settings: how many tasks of which role
 As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk.
 
 /people, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab in the Crew app can do the same.
+
+💬 Commands in a private chat
+
+In a private chat with the bot you can do several crew page tasks by command. Write the name as you remember it: the bot finds the person, asks with buttons when several fit, and shows every change with ✅ and ✖️ first. A date first, like /mark 14.11. Milla ; done, picks another night.
+
+For a person: /mark name ; arrived, late, noshow or done sets the roster mark. /standing name shows standing, credits and log. /newcomer shows a newcomer waiting for your OK. /ticket name spends a credit on free entry, /unticket name gives it back. /unban name lifts a block.
+
+For a night: /freeentry close or /freeentry open closes or reopens free entry. /stop announcement stops the next announcement, /stop email the post-event email. /newboard posts a new board in the group. /sendtickets sends the ticket emails now, /sendtickets cancel stops a waiting send.
+
+/tell task ; message sends your message to everyone on that task: by Telegram in their own language, under a one-line header, or by email when they have no Telegram. You see it first. You can send 5 an hour.
+
+Every member can use /crew to see who works with them on their next nights, and /name or /email to change their own name or email. A new email changes only after they open the link sent to it.
 
 🔔 Automatic messages
 

@@ -230,6 +230,92 @@ final class AssistantActions
             );
         }
 
+        // Private-chat commands for organizers and members (ag-people).
+        $list = array_merge($list, self::chatCommandEntries($audience));
+
+        return $list;
+    }
+
+    /**
+     * The private-chat commands of ChatCommands: organizer ones first, then
+     * the member ones everyone has.
+     *
+     * @param array{organizer: bool, welcomeCrew: bool, verified: bool} $audience
+     * @return array<int, array{usage: string, what: string, confirm: bool}>
+     */
+    private static function chatCommandEntries(array $audience): array
+    {
+        $list = [];
+
+        if ($audience['organizer']) {
+            $list[] = self::entry(
+                '/mark [date] <person> ; <arrived|late|noshow|done>',
+                "set a member's mark for their task of the night (default: their latest task in the last days),"
+                    . ' as the roster buttons do; without the word the bot shows the four marks as buttons; the'
+                    . ' bot finds the person even from a partial name and confirms first'
+            );
+            $list[] = self::entry('/standing <person>', "a member's standing, credits and recent log");
+            $list[] = self::entry(
+                '/newcomer [person]',
+                'a newcomer waiting for an OK, with the OK and No buttons; without a name the first one waiting'
+            );
+            $list[] = self::entry(
+                '/ticket [date] <person>',
+                "spend one of a member's credits on a free-entry ticket for the next night (or [date]); the bot"
+                    . ' confirms first'
+            );
+            $list[] = self::entry(
+                '/unticket [date] <person>',
+                'cancel a free-entry ticket and give the credit back; the bot confirms first'
+            );
+            $list[] = self::entry('/unban <person>', 'lift a block on a member; the bot confirms first');
+            $list[] = self::entry(
+                '/freeentry [date] <close|open>',
+                'close free entry for the next night (or [date]) so nobody can use a credit for it, or reopen it;'
+                    . ' the bot confirms first'
+            );
+            $list[] = self::entry(
+                '/stop announcement',
+                'stop the next planned announcement (newsletter); the bot confirms first'
+            );
+            $list[] = self::entry(
+                '/stop email [date]',
+                'stop the post-event email of the next night that has one planned (or [date]); the bot confirms first'
+            );
+            $list[] = self::entry('/newboard', 'post a new board in the crew group; the bot confirms first');
+            $list[] = self::entry(
+                '/sendtickets [date]',
+                'send the ticket emails of the next night (or [date]) that have not gone out yet; the bot'
+                    . ' confirms first'
+            );
+            $list[] = self::entry(
+                '/sendtickets cancel',
+                'cancel the waiting ticket-email send; the bot confirms first'
+            );
+            $list[] = self::entry(
+                '/tell [date] <task> ; <message>',
+                'send a message to everyone on one task of the next event (or [date]): each gets a direct message'
+                    . ' in their own language with a one-line header and the message, or an email when they have no'
+                    . ' Telegram; <message> is the text itself, word for word as the organizer wrote it (line breaks'
+                    . ' allowed), never reworded or translated unless the organizer asks; the bot shows it first'
+                    . ' and confirms'
+            );
+        }
+
+        $list[] = self::entry(
+            '/crew',
+            "the person's next nights with who works each task (names and roles only)"
+        );
+        $list[] = self::entry(
+            '/name [new name]',
+            "show or change the person's own name; the bot confirms first"
+        );
+        $list[] = self::entry(
+            '/email [new address]',
+            "show or change the person's own email address: a link goes to the new address and the address"
+                . ' changes only when they open it; the bot confirms first'
+        );
+
         return $list;
     }
 
@@ -267,6 +353,11 @@ final class AssistantActions
         // The same for a message for the group: kept exactly as written.
         if (1 === preg_match('#^\s*/say(?=\s|$)(.*)$#isu', $action, $m)) {
             return self::validateSay($m[1], $audience);
+        }
+
+        // A message for one task's crew: kept exactly as written (ag-people).
+        if (1 === preg_match('#^\s*/tell(?=\s|$)(.*)$#isu', $action, $m)) {
+            return self::validateTell($m[1], $audience);
         }
 
         $action = trim((string) preg_replace('/\s+/u', ' ', $action));
@@ -347,6 +438,23 @@ final class AssistantActions
             case '/unassign':
                 return self::validateAssign($head, $rest, $audience, $today);
 
+            // Private-chat commands for organizers and members (ag-people).
+            case '/mark':
+            case '/standing':
+            case '/newcomer':
+            case '/ticket':
+            case '/unticket':
+            case '/unban':
+            case '/freeentry':
+            case '/stop':
+            case '/newboard':
+            case '/sendtickets':
+            case '/crew':
+            case '/name':
+            case '/email':
+                return self::validateChatCommand($head, $rest, $audience);
+
+            // Task commands (ag-tasks).
             case '/addtask':
             case '/edittask':
             case '/deletetask':
@@ -391,6 +499,38 @@ final class AssistantActions
     }
 
     /**
+     * The private-chat commands of ChatCommands, other than /tell. Not
+     * confirmed here: each command finds the person or night itself, asks
+     * when unsure and confirms every change with ✅ / ✖️.
+     *
+     * @param array{organizer: bool, welcomeCrew: bool, verified: bool} $audience
+     * @return array{ok: bool, error: string, action: string, confirm: bool, run: string, payload: string}
+     */
+    private static function validateChatCommand(string $head, string $rest, array $audience): array
+    {
+        $member = ['/crew', '/name', '/email'];
+
+        if (! in_array($head, $member, true) && ! $audience['organizer']) {
+            return self::refuse(self::ERROR_NOT_PERMITTED);
+        }
+
+        $needsText = ['/mark', '/standing', '/ticket', '/unticket', '/unban', '/stop'];
+        $noText = ['/newboard', '/crew'];
+
+        if ((in_array($head, $needsText, true) && '' === $rest) || (in_array($head, $noText, true) && '' !== $rest)) {
+            return self::refuse(self::ERROR_INVALID);
+        }
+
+        if ('/email' === $head && str_contains($rest, ' ')) {
+            return self::refuse(self::ERROR_INVALID);
+        }
+
+        $line = trim($head . ' ' . $rest);
+
+        return self::accept($line, false, self::RUN_MESSAGE, $line);
+    }
+
+    /**
      * The task commands (/addtask, /edittask, /deletetask, /maketasks,
      * /mailtasks): organizers only. Only the shape is checked here; the
      * command itself finds the task, role or event, asks when unclear, and
@@ -425,6 +565,35 @@ final class AssistantActions
         }
 
         $line = trim($head . ' ' . $rest);
+
+        return self::accept($line, false, self::RUN_MESSAGE, $line);
+    }
+
+    /**
+     * "/tell [date] <task> ; <message>": organizers only, the message kept
+     * with its line breaks. TellCommand shows it and confirms before sending.
+     *
+     * @param array{organizer: bool, welcomeCrew: bool, verified: bool} $audience
+     * @return array{ok: bool, error: string, action: string, confirm: bool, run: string, payload: string}
+     */
+    private static function validateTell(string $rest, array $audience): array
+    {
+        if (! $audience['organizer']) {
+            return self::refuse(self::ERROR_NOT_PERMITTED);
+        }
+
+        $text = trim(str_replace("\r\n", "\n", $rest));
+        $sides = explode(';', $text, 2);
+
+        $message = trim($sides[1] ?? '');
+
+        $tooLong = mb_strlen($message) > TellCommand::MAX_LENGTH;
+
+        if (2 !== count($sides) || '' === trim($sides[0]) || '' === $message || $tooLong) {
+            return self::refuse(self::ERROR_INVALID);
+        }
+
+        $line = '/tell ' . $text;
 
         return self::accept($line, false, self::RUN_MESSAGE, $line);
     }

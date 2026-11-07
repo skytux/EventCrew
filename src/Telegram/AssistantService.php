@@ -632,6 +632,20 @@ final class AssistantService
                 . ' before anything changes. Never say you cannot change, add or delete a task.';
         }
 
+        // Private-chat commands for organizers and members (ag-people).
+        if ($audience['organizer']) {
+            $lines[] = '- For an organizer, these commands do the work themselves; give the matching one instead'
+                . ' of sending them to the web page: /mark (arrived, late, no-show or done), /standing,'
+                . ' /newcomer, /ticket and /unticket, /unban, /freeentry close|open, /stop announcement or'
+                . ' /stop email, /newboard, /sendtickets (or /sendtickets cancel) and /tell task ; message.'
+                . ' Use names as the organizer wrote them: the bot finds the person, asks with buttons when'
+                . ' unsure and confirms every change. For /tell keep the message word for word.';
+        }
+
+        $lines[] = '- Anyone can see the crew of their own coming nights with /crew, and change their own name'
+            . ' with /name new name or their email with /email new address (a link goes to the new address'
+            . ' first). Give these when they ask who else works with them or want their name or email changed.';
+
         if ($isPrivate) {
             $lines[] = '- This is a private chat with one person: "aimed" is true.';
             $lines[] = '- You remember this private chat for 24 hours: CONVERSATION below has what was said,'

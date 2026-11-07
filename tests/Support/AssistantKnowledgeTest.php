@@ -182,4 +182,15 @@ final class AssistantKnowledgeTest extends TestCase
         self::assertStringContainsString('2026-08-01 (Saturday), Party: VJ, 0 signed up', $facts);
         self::assertStringContainsString('/assign <task> ; <person>', $facts);
     }
+
+    public function testOnlyAnOrganizerHearsOfTheOrganizerChatCommands(): void
+    {
+        $member = AssistantKnowledge::chatCommandsText(false);
+        $organizer = AssistantKnowledge::chatCommandsText(true);
+
+        self::assertStringContainsString('/crew', $member);
+        self::assertStringNotContainsString('/tell', $member);
+        self::assertStringContainsString('/tell task ; message', $organizer);
+        self::assertStringContainsString('/crew', $organizer);
+    }
 }

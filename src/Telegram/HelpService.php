@@ -232,6 +232,9 @@ final class HelpService
             __('/tasks – cancel, take over a task, past tasks', 'eventcrew'),
             __('/tickets – your tickets, free-entry ticket', 'eventcrew'),
             __('/settings – notifications, language, web sign-in', 'eventcrew'),
+            // Private-chat commands for members (ag-people).
+            __('/crew – who works with you on your next nights', 'eventcrew'),
+            __('/name, /email – change your name or email', 'eventcrew'),
             __('/help – this list', 'eventcrew'),
         ]);
     }
@@ -259,6 +262,17 @@ final class HelpService
             __('/maketasks – a night\'s tasks from the roles; /mailtasks – the open-task email now', 'eventcrew'),
             __('/say text – post a message in the group; you see it first', 'eventcrew'),
             __('/events – post the coming events in the group as picture cards; you see them first', 'eventcrew'),
+            // Private-chat commands for organizers (ag-people).
+            __('/mark name ; late – arrived, late, noshow or done', 'eventcrew'),
+            __('/standing name – standing, credits and log', 'eventcrew'),
+            __('/newcomer – a newcomer waiting for your OK', 'eventcrew'),
+            __('/ticket name – free entry for a credit (/unticket undoes it)', 'eventcrew'),
+            __('/unban name – lift a block', 'eventcrew'),
+            __('/freeentry close – close free entry for a night (or open)', 'eventcrew'),
+            __('/stop announcement or /stop email – stop the next send', 'eventcrew'),
+            __('/newboard – post a new board in the group', 'eventcrew'),
+            __('/sendtickets – send the ticket emails now (or cancel)', 'eventcrew'),
+            __('/tell task ; text – message everyone on a task', 'eventcrew'),
         ]);
     }
 }

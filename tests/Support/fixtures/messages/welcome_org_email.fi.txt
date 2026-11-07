@@ -14,6 +14,7 @@ Olet Test Crew:n järjestäjä. Tämä opas kertoo, miten EventCrew toimii, ensi
 - 🌙 Illan aikana: läsnäolo ja myyntipiste
 - 🎟️ Liput, vapaaliput ja luotettavuus
 - 🔑 Roolit ja oikeudet
+- 💬 Komennot yksityiskeskustelussa
 - 🔔 Automaattiset viestit
 - 🤖 EventCrew ja tekoäly
 - ⚙️ Wp-adminin sivut
@@ -81,6 +82,18 @@ Roolilla voi olla ehtoja kohdassa EventCrew > Settings: kuinka monta minkäkin r
 Järjestäjänä voit lisätä kenet tahansa mihin tahansa illan tehtävään paitsi Järjestelyihin, myös roolin tehtävään, jota hänellä ei ole (hän saa roolin): yksityiskeskustelussa komennolla /assign tehtävä ; nimi (/unassign poistaa) tai napilla ➕ Lisää joku komennon /board alla, Crew-sovelluksen Ylläpito-välilehdellä tai myyntipisteessä.
 
 /people antaa yksityiskeskustelussa botin kanssa myös kertaluvan ilmoittautumisrajan ohi, tekee jostakusta järjestäjän (tai lopettaa sen) ja antaa tai poistaa rooleja, kuten DJ tai VJ. Samaan pystyvät wp-adminin People-sivu ja Crew-sovelluksen Ylläpito-välilehti.
+
+💬 Komennot yksityiskeskustelussa
+
+Yksityiskeskustelussa botin kanssa voit hoitaa komennoilla monta crew-sivun tehtävää. Kirjoita nimi niin kuin sen muistat: botti löytää henkilön, kysyy napeilla, jos useampi sopii, ja näyttää jokaisen muutoksen ensin napeilla ✅ ja ✖️. Päivä ensin, kuten /mark 14.11. Milla ; done, valitsee toisen illan.
+
+Henkilölle: /mark nimi ; arrived, late, noshow tai done asettaa roster-merkinnän. /standing nimi näyttää luotettavuuden, vapaaliput ja lokin. /newcomer näyttää uuden, joka odottaa hyväksyntääsi. /ticket nimi käyttää vapaalipun ilmaiseen sisäänpääsyyn, /unticket nimi palauttaa sen. /unban nimi poistaa eston.
+
+Illalle: /freeentry close tai /freeentry open sulkee tai avaa ilmaiset sisäänpääsyt. /stop announcement pysäyttää seuraavan tiedotteen, /stop email tapahtuman jälkeisen viestin. /newboard julkaisee uuden taulun ryhmään. /sendtickets lähettää lippuviestit nyt, /sendtickets cancel pysäyttää odottavan lähetyksen.
+
+/tell tehtävä ; viesti lähettää viestisi kaikille tehtävän tekijöille: Telegramissa heidän omalla kielellään yhden rivin otsikon alla, tai sähköpostilla, jos heillä ei ole Telegramia. Näet viestin ensin. Voit lähettää 5 tunnissa.
+
+Jokainen jäsen voi katsoa komennolla /crew, ketkä ovat hänen kanssaan seuraavina iltoina, ja vaihtaa oman nimensä tai sähköpostinsa komennoilla /name ja /email. Uusi sähköposti vaihtuu vasta, kun hän avaa sinne lähetetyn linkin.
 
 🔔 Automaattiset viestit
 

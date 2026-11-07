@@ -70,7 +70,8 @@ final class UpdateRouter
         private readonly ?NewcomerApproval $newcomers = null,
         private readonly ?PrivateChatGate $gate = null,
         private readonly ?AssignCommand $assign = null,
-        private readonly ?TaskCommand $taskCommand = null
+        private readonly ?TaskCommand $taskCommand = null,
+        private readonly ?ChatCommands $chatCommands = null
     ) {
     }
 
@@ -220,6 +221,8 @@ final class UpdateRouter
                 $this->assign->onCallback($callbackQuery);
             } elseif (null !== $this->taskCommand && str_starts_with($data, TaskCommand::PREFIX)) {
                 $this->taskCommand->onCallback($callbackQuery);
+            } elseif (null !== $this->chatCommands && ChatCommands::handlesCallback($data)) {
+                $this->chatCommands->onCallback($callbackQuery);
             } elseif (null !== $this->say && str_starts_with($data, SayCommand::PREFIX)) {
                 $this->say->onConfirm($callbackQuery);
             } elseif (null !== $this->events && str_starts_with($data, EventsCommand::PREFIX)) {
@@ -485,6 +488,13 @@ final class UpdateRouter
 
                 return;
             }
+        }
+
+        // /mark, /standing, /newcomer, /ticket, /unticket, /unban, /freeentry,
+        // /stop, /newboard, /sendtickets, /tell (organizers) and /crew, /name,
+        // /email (members), all in a private chat, writes confirmed first.
+        if (null !== $this->chatCommands && $this->chatCommands->onCommand($chatId, $fromId, $text, $isPrivate)) {
+            return;
         }
 
         // /say (organizers, private chat): a message for the group, shown

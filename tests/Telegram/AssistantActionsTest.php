@@ -47,7 +47,7 @@ final class AssistantActionsTest extends TestCase
 
     public function testAnUnknownCommandIsRefused(): void
     {
-        foreach (['/delete_everything', '/stop', '/gift 5', 'rm -rf', 'menu:unknown', '/ticket'] as $action) {
+        foreach (['/delete_everything', '/purge', '/gift 5', 'rm -rf', 'menu:unknown', '/ban'] as $action) {
             $result = self::check($action, self::organizer());
 
             self::assertFalse($result['ok'], $action);
@@ -450,5 +450,48 @@ final class AssistantActionsTest extends TestCase
 
         self::assertTrue(self::check('/followup came ' . str_repeat('a', 2000), self::organizer())['ok']);
         self::assertSame(AssistantActions::ERROR_UNKNOWN, self::check('/followups', self::organizer())['error']);
+    }
+
+    public function testTheOrganizerChatCommandsRunAsTyped(): void
+    {
+        foreach (['/mark Milla ; late', '/standing Milla', '/newcomer', '/ticket 21.11. Milla', '/unticket Milla', '/unban Milla', '/freeentry close', '/stop email', '/newboard', '/sendtickets cancel'] as $action) {
+            $result = self::check($action, self::organizer());
+
+            self::assertTrue($result['ok'], $action);
+            self::assertFalse($result['confirm'], $action);
+            self::assertSame(AssistantActions::RUN_MESSAGE, $result['run'], $action);
+            self::assertSame($action, $result['payload'], $action);
+            self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check($action, self::member())['error'], $action);
+        }
+
+        foreach (['/mark', '/standing', '/stop', '/newboard now'] as $action) {
+            self::assertSame(AssistantActions::ERROR_INVALID, self::check($action, self::organizer())['error'], $action);
+        }
+    }
+
+    public function testTellKeepsTheMessageAsWritten(): void
+    {
+        $tell = self::check("/tell Bar ; Come early.\nThanks!", self::organizer());
+
+        self::assertTrue($tell['ok']);
+        self::assertFalse($tell['confirm']);
+        self::assertSame("/tell Bar ; Come early.\nThanks!", $tell['payload']);
+        self::assertSame(AssistantActions::ERROR_INVALID, self::check('/tell Bar', self::organizer())['error']);
+        self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check('/tell Bar ; Hi', self::member())['error']);
+    }
+
+    public function testEveryoneHasTheMemberChatCommands(): void
+    {
+        foreach (['/crew', '/name Milla V', '/name', '/email milla@example.com'] as $action) {
+            self::assertSame($action, self::check($action, self::member())['payload'], $action);
+        }
+
+        self::assertSame(AssistantActions::ERROR_INVALID, self::check('/email a b', self::member())['error']);
+        self::assertSame(AssistantActions::ERROR_INVALID, self::check('/crew 21.11.', self::member())['error']);
+
+        $usages = array_column(AssistantActions::catalogue(self::member()), 'usage');
+        self::assertContains('/crew', $usages);
+        self::assertNotContains('/standing <person>', $usages);
+        self::assertContains('/standing <person>', array_column(AssistantActions::catalogue(self::organizer()), 'usage'));
     }
 }

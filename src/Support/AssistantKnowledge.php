@@ -115,7 +115,41 @@ final class AssistantKnowledge
             $parts[] = '## Site pages' . "\n" . $pages;
         }
 
+        // Private-chat commands for organizers and members (ag-people).
+        $parts[] = '## Private-chat commands' . "\n" . self::chatCommandsText($organizer);
+
         return ['facts' => implode("\n\n", $parts), 'tasks' => $taskIds];
+    }
+
+    /**
+     * What the private-chat commands of ChatCommands do, for the helper. The
+     * organizer ones only for an organizer in a private chat.
+     */
+    public static function chatCommandsText(bool $organizer): string
+    {
+        $lines = [
+            '- /crew: the person\'s next nights and who works each task with them (names and roles only).',
+            '- /name new name and /email new address: change their own name or email. A new email changes'
+                . ' only after they open the link sent to it.',
+            '- These work only in a private chat with the bot.',
+        ];
+
+        if ($organizer) {
+            $lines = [
+                ...$lines,
+                '- Organizers, for one person: /mark name ; arrived|late|noshow|done, /standing name,'
+                    . ' /newcomer [name], /ticket name and /unticket name (a free-entry ticket for a credit),'
+                    . ' /unban name.',
+                '- Organizers, for a night: /freeentry close|open, /stop announcement, /stop email,'
+                    . ' /newboard, /sendtickets (or /sendtickets cancel).',
+                '- Organizers: /tell task ; message sends the message to everyone on that task, by Telegram'
+                    . ' in their own language, or by email without Telegram; at most 5 an hour.',
+                '- A date first (/mark 14.11. Milla ; late) picks another night. Every change is confirmed'
+                    . ' with a button first.',
+            ];
+        }
+
+        return implode("\n", $lines);
     }
 
     /**

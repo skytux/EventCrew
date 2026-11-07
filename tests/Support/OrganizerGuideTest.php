@@ -35,7 +35,7 @@ final class OrganizerGuideTest extends TelegramTestCase
         preg_match_all('/^## (.+)$/m', OrganizerGuide::short() . "\n\n" . OrganizerGuide::details(), $headings);
         $anchors = array_map([\EventCrew\Support\EmailBody::class, 'anchor'], $headings[1]);
 
-        self::assertCount(9, $links[1]);
+        self::assertCount(10, $links[1]);
         self::assertSame($anchors, $links[1]);
         self::assertStringStartsWith('## 📑 Contents', OrganizerGuide::full());
     }

@@ -108,6 +108,11 @@ use EventCrew\Support\TranslationJob;
 use EventCrew\Support\TranslationRegistry;
 use EventCrew\Support\Turnstile;
 use EventCrew\Telegram\AssignCommand;
+use EventCrew\Telegram\ChatCommands;
+use EventCrew\Telegram\MemberCommands;
+use EventCrew\Telegram\NightCommands;
+use EventCrew\Telegram\PersonCommands;
+use EventCrew\Telegram\TellCommand;
 use EventCrew\Telegram\AssistantService;
 use EventCrew\Telegram\BoardDjText;
 use EventCrew\Telegram\BoardRefreshListener;
@@ -1409,7 +1414,8 @@ final class Kernel
                 $container->get(NewcomerApproval::class),
                 $container->get(PrivateChatGate::class),
                 $container->get(AssignCommand::class),
-                $container->get(TaskCommand::class)
+                $container->get(TaskCommand::class),
+                $container->get(ChatCommands::class)
             )
         );
 
@@ -1430,6 +1436,70 @@ final class Kernel
                 $container->get(TaskRepository::class),
                 $container->get(RoleTaskService::class),
                 $container->get(TelegramClient::class)
+            )
+        );
+
+        // Private-chat commands for organizers and members (ag-people).
+        $this->container->singleton(
+            PersonCommands::class,
+            fn (Container $container) => new PersonCommands(
+                $container->get(PersonRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(StandingCalculator::class),
+                $container->get(CreditGrantRepository::class),
+                $container->get(RedemptionRepository::class),
+                $container->get(CrewAdminRoster::class),
+                $container->get(CrewAdminPeople::class),
+                $container->get(NewcomerApproval::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
+            NightCommands::class,
+            fn (Container $container) => new NightCommands(
+                $container->get(PersonRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(FreeEntryGate::class),
+                $container->get(Newsletter::class),
+                $container->get(FollowupMail::class),
+                $container->get(BoardService::class),
+                $container->get(CrewAdminRoster::class),
+                $container->get(TicketMail::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
+            TellCommand::class,
+            fn (Container $container) => new TellCommand(
+                $container->get(PersonRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(Mailer::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
+            MemberCommands::class,
+            fn (Container $container) => new MemberCommands(
+                $container->get(PersonRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(SignupController::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
+            ChatCommands::class,
+            fn (Container $container) => new ChatCommands(
+                $container->get(PersonCommands::class),
+                $container->get(NightCommands::class),
+                $container->get(TellCommand::class),
+                $container->get(MemberCommands::class)
             )
         );
 
