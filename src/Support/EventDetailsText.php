@@ -24,11 +24,15 @@ final class EventDetailsText
     /** The finished steps: step name => 1. */
     public const OPTION = 'eventcrew_migr_desc_1106';
 
-    /** The kinds that show the event's description. */
+    /**
+     * The kinds that show the event's description. Not the sign-up email
+     * (signup_confirmed): it shows the task's description instead (Owner,
+     * 2026-11-07), and the step "signup_email_no_description" takes the
+     * event's out of a stored copy.
+     */
     public const DESCRIPTION_KINDS = [
         'reminder',
         'reminder_dm',
-        'signup_confirmed',
         'signup_confirmed_dm',
         'slot_freed',
         'slot_freed_dm',
@@ -66,6 +70,10 @@ final class EventDetailsText
         return [
             'description' => array_fill_keys(self::DESCRIPTION_KINDS, self::withEventDescription(...)),
             'venue' => array_fill_keys(self::VENUE_KINDS, self::withVenue(...)),
+            // The sign-up email is a thank-you about the task: the event's
+            // description, which the "description" step gave a stored copy,
+            // goes again.
+            'signup_email_no_description' => ['signup_confirmed' => self::withoutEventDescription(...)],
         ];
     }
 
@@ -119,6 +127,23 @@ final class EventDetailsText
         }
 
         return $text;
+    }
+
+    /**
+     * $text without {event_description}: its line, and the line breaks
+     * before it, go (at the very start, the ones after it), as
+     * MessageTemplate::fill() takes out an empty own-line placeholder. A
+     * text without it comes back as it is.
+     */
+    public static function withoutEventDescription(string $text): string
+    {
+        if (! str_contains($text, '{event_description}')) {
+            return $text;
+        }
+
+        $text = (string) preg_replace('/(?:\r?\n)*[ \t]*\{event_description\}[ \t]*/', '', $text);
+
+        return ltrim($text, "\r\n");
     }
 
     /**

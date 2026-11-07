@@ -134,7 +134,9 @@ final class ClaimNotifier
             // The ticket first: it is the thing this email exists to hand over.
             // Then the calendar hold, cancel and the crew guide: the same
             // actions as the DM (MessageTemplates::actions()).
-            MessageActions::email(MessageActions::of('signup_confirmed', $context, $this->mailer))
+            MessageActions::email(MessageActions::of('signup_confirmed', $context, $this->mailer)),
+            // The "Thank you" hero at the top of the HTML email.
+            EmailHero::for('signup_confirmed', $context)
         );
 
         // The "Your ticket" email, the same one ticket buyers get, after the

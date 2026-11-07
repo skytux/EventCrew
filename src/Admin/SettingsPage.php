@@ -50,6 +50,7 @@ use EventCrew\Support\TicketFormats;
 use EventCrew\Support\TranslatedText;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WelcomeSender;
+use EventCrew\Telegram\BoardBanner;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\CommandMenu;
 use EventCrew\Telegram\GroupChat;
@@ -392,6 +393,7 @@ final class SettingsPage
             'group_lock' => (bool) get_option(BoardService::LOCK_OPTION, true),
             'group_gate' => PrivateChatGate::isOn(),
             'board_cards' => BoardService::cardsOn(),
+            'board_banner_page' => BoardBanner::pageId(),
             'profile' => [
                 'about' => BotProfileSettings::value('about'),
                 'description' => BotProfileSettings::value('description'),
@@ -594,6 +596,10 @@ final class SettingsPage
         update_option(TelegramClient::DNS_BYPASS_OPTION, isset($_POST['telegram_dns_bypass']));
         // The group board's card format; the board changes at its next refresh.
         update_option(BoardService::CARDS_OPTION, isset($_POST['telegram_board_cards']));
+        update_option(
+            BoardBanner::PAGE_OPTION,
+            isset($_POST['telegram_board_banner_page']) ? max(0, (int) $_POST['telegram_board_banner_page']) : 0
+        );
         update_option(TelegramLogin::ENABLED_OPTION, isset($_POST['telegram_web_login']));
 
         // Both of these change the URL Telegram must post to, so the webhook has

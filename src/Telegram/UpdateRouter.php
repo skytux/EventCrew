@@ -411,7 +411,7 @@ final class UpdateRouter
         if ($isPrivate && $this->isCommand($text, 'board')) {
             // Asked in a private chat: the board comes back in that chat. The
             // group's board stays where it is.
-            $this->privateBoard($fromId, $chatId);
+            $this->privateBoard($chatId);
 
             return;
         }
@@ -563,17 +563,14 @@ final class UpdateRouter
     }
 
     /**
-     * The board in a private chat, then the tasks of the roles this person
-     * holds, which are never on the board (and for organizers, ➕ to put
-     * someone on a task).
+     * The board in a private chat. One text message (after the event's
+     * card): the tasks of the roles this person holds, never on the group's
+     * board, are in it (and for organizers, ➕ to put someone on a task;
+     * BoardRenderer::crewBoard()), not in a message of their own.
      */
-    private function privateBoard(int $fromId, int $chatId): void
+    private function privateBoard(int $chatId): void
     {
         $this->board->sendPrivate($chatId);
-
-        if (null !== $this->roleTasks && 0 !== $fromId) {
-            $this->roleTasks->sendIfAny($fromId);
-        }
     }
 
     /**
@@ -608,7 +605,7 @@ final class UpdateRouter
             MenuButtons::ELIGIBLE => $this->permissions->onEligible($fromId, $chatId, $isPrivate),
             MenuButtons::CANCEL => $this->cancelQuestions($fromId, $chatId, $isPrivate),
             MenuButtons::ME => $this->profile->onMe($fromId, $chatId, $isPrivate),
-            MenuButtons::BOARD => $this->privateBoard($fromId, $chatId),
+            MenuButtons::BOARD => $this->privateBoard($chatId),
             MenuButtons::PEOPLE => $this->help?->onPeople($fromId, $chatId, $isPrivate),
             MenuButtons::TELL => $this->askWhatIsWrong($fromId, $chatId, $isPrivate),
             MenuButtons::TASK_INFO => $this->board->sendTaskInfo($fromId),

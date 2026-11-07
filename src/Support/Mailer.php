@@ -62,11 +62,20 @@ final class Mailer
      * Sends a mail to a person, appending the manage-account footer so every
      * message carries a one-click way out.
      *
+     * $hero (EmailHero::for()) opens the HTML email above the text; only the
+     * sign-up email has one. The plain-text part leaves it out.
+     *
      * @param array<int, array{label: string, url: string}> $actions Buttons,
      *        most important first; the first is drawn as the primary one.
      */
-    public function toPerson(int $personId, string $to, string $subject, string $body, array $actions = []): bool
-    {
+    public function toPerson(
+        int $personId,
+        string $to,
+        string $subject,
+        string $body,
+        array $actions = [],
+        ?EmailHero $hero = null
+    ): bool {
         // A person added without an email (or erased) has a ".invalid"
         // placeholder address, which can never receive mail. Nothing is sent.
         if (! $this->preview && Person::isPlaceholderEmail($to)) {
@@ -77,7 +86,7 @@ final class Mailer
         $text = EmailBody::toText($body, $actions) . $this->signatureText() . "\n\n" . $this->footerText($manageUrl);
 
         $sent = EmailTemplate::enabled()
-            ? $this->sendHtml($to, $subject, $body, $actions, $manageUrl, $text)
+            ? $this->sendHtml($to, $subject, $body, $actions, $manageUrl, $text, $hero)
             : $this->mail($to, $subject, $text, [], $text);
 
         if (! $sent) {
@@ -465,11 +474,13 @@ final class Mailer
         string $body,
         array $actions,
         string $manageUrl,
-        string $text
+        string $text,
+        ?EmailHero $hero = null
     ): bool {
+        $accent = EmailTemplate::accent();
         $html = $this->template->render(
             $subject,
-            EmailBody::toHtml($body, $actions, EmailTemplate::accent()),
+            (null === $hero ? '' : $hero->html($accent)) . EmailBody::toHtml($body, $actions, $accent),
             EmailBody::footerHtml($this->footerLabel(), $manageUrl)
         );
 

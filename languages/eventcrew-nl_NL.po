@@ -2977,25 +2977,6 @@ msgstr ""
 "\n"
 "De organisatoren hebben de taak %2$s bij %3$s, %4$s geannuleerd. Je bent er niet meer voor ingeschreven, en het ticket ervan werkt niet meer bij de deur. Dit telt niet mee tegen je status."
 
-#. translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line, 6: how to cancel
-#: src/Support/MessageTemplates.php:1516
-msgid ""
-"Hi %1$s,\n"
-"\n"
-"You're signed up for %2$s at %3$s, %4$s. Show your ticket at the door.\n"
-"\n"
-"%5$s\n"
-"\n"
-"%6$s"
-msgstr ""
-"Hoi %1$s,\n"
-"\n"
-"Je bent ingeschreven voor %2$s bij %3$s, %4$s. Laat je ticket zien bij de deur.\n"
-"\n"
-"%5$s\n"
-"\n"
-"%6$s"
-
 #. translators: 1: name, 2: role, 3: event, 4: standing note, 5: standing line
 #: src/Support/MessageTemplates.php:1562
 msgid ""
@@ -4440,8 +4421,8 @@ msgid "Off by default. When it is on, the coming events go by email to everyone 
 msgstr "Standaard uit. Als het aan staat, gaan de komende evenementen per e-mail naar iedereen die zich heeft aangemeld voor de aankondiging van de volgende evenementen en het adres heeft bevestigd. Mensen melden zich aan met de shortcode [eventcrew_newsletter]. Voor het versturen krijgt elke organisator een voorbeeldmail met een Stop-knop; het tabblad Beheer van de crew-app heeft dezelfde knop."
 
 #: templates/admin/settings.php:1963
-msgid "Off by default. When on, the board is two messages. First a photo message for the next event, when it is an EventMesh event with a picture: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Below it the text board: the next event, who is signed up for which task, the task buttons and the date buttons."
-msgstr "Standaard uit. Als het aan staat, bestaat het takenbord uit twee berichten. Eerst een fotobericht voor het volgende evenement, als dat een EventMesh-evenement met een afbeelding is: de afbeelding, naam, datum, prijs, twee zinnen over de DJ of host geschreven door het taalmodel, en de links. Daaronder het tekstbord: het volgende evenement, wie voor welke taak is ingeschreven, de taakknoppen en de datumknoppen."
+msgid "Off by default. When on, the text board shows the next event, who is signed up for which task, the task buttons and the date buttons. The next event's picture is posted to the group on its own, once when it becomes the next event and again on its morning, never with /board: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Only for an EventMesh event with a picture."
+msgstr "Standaard uit. Aan toont het tekstbord het volgende evenement, wie zich voor welke taak heeft aangemeld, de taakknoppen en de datumknoppen. De afbeelding van het volgende evenement wordt los in de groep geplaatst, één keer wanneer het het volgende evenement wordt en opnieuw op de ochtend van het evenement, nooit met /board: afbeelding, naam, datum, prijs, twee zinnen over de DJ of host geschreven door het taalmodel, en de links. Alleen voor een EventMesh-evenement met een afbeelding."
 
 #: templates/admin/settings.php:1317
 msgid "Officer’s contact"
@@ -10022,11 +10003,6 @@ msgstr "Je bent uitgelogd."
 msgid "You’re signed up — thanks!"
 msgstr "Je bent ingeschreven — bedankt!"
 
-#. translators: 1: role, 2: event
-#: src/Support/MessageTemplates.php:1509
-msgid "You’re signed up: %1$s for %2$s"
-msgstr "Je bent ingeschreven: %1$s voor %2$s"
-
 #: src/Support/MessageTemplates.php:1425
 msgid "You’ve been given free entry"
 msgstr "Je hebt gratis toegang gekregen"
@@ -10683,6 +10659,28 @@ msgstr "🛠️ Het tabblad Beheer openen"
 msgid "🧭 Organizer guide ↓"
 msgstr "🧭 Gids voor organisatoren ↓"
 
+#. translators: 1: name, 2: event
+#: src/Support/MessageTemplates.php
+#, php-format
+msgid "Thank you, %1$s! ✨ You’re on the crew for %2$s"
+msgstr "Dank je, %1$s! ✨ Je zit in de crew voor %2$s"
+
+#. translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line, 6: how to cancel
+#: src/Support/MessageTemplates.php
+#, php-format
+msgid "Hi %1$s,\n\nThank you for joining the crew! You’re on %2$s at %3$s, %4$s.\n\nShow your ticket at the door. We can’t wait to see you there ✨\n\n%5$s\n\n%6$s"
+msgstr "Hoi %1$s,\n\nDank je dat je bij de crew komt! Je bent ingeschreven voor %2$s bij %3$s, %4$s.\n\nLaat je ticket zien bij de deur. We kijken ernaar uit je daar te zien ✨\n\n%5$s\n\n%6$s"
+
+#. translators: %s: the person's first name
+#: src/Support/EmailHero.php
+#, php-format
+msgid "Thank you, %s!"
+msgstr "Dank je, %s!"
+
+#: src/Support/EmailHero.php
+msgid "Thank you!"
+msgstr "Dank je!"
+
 #~ msgid "   buttons: 🎟 free-entry ticket, 🔁 take over a task, 🔑 web sign-in, 🔔 notifications, 🌐 language"
 #~ msgstr "   knoppen: 🎟 gratis ticket, 🔁 een taak overnemen, 🔑 inloggen op het web, 🔔 meldingen, 🌐 taal"
 
@@ -11063,3 +11061,9 @@ msgstr "🧭 Gids voor organisatoren ↓"
 #, php-format
 #~ msgid "%1$s at %2$s (%3$d/%4$d)"
 #~ msgstr "%1$s bij %2$s (%3$d/%4$d)"
+
+msgid "Board banner"
+msgstr "Banner van het bord"
+
+msgid "A wide strip of this page's picture is shown above the board text in Telegram: its first cover block, around the cover's focal point, or else its featured image. Change the picture on the page and the banner follows."
+msgstr "Een brede strook van de afbeelding van deze pagina staat in Telegram boven de tekst van het bord: het eerste omslagblok, rond het focuspunt van de omslag, of anders de uitgelichte afbeelding. Verander de afbeelding op de pagina en de banner volgt."

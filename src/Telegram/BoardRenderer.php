@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Models\Person;
 use EventCrew\Models\Task;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\BoardVisibility;
 use EventCrew\Support\Dates;
 use EventCrew\Support\EventName;
+use EventCrew\Support\RoleTaskService;
 
 /**
  * Turns the open tasks into the board's text and inline keyboard - the pure
@@ -63,64 +65,99 @@ final class BoardRenderer
     public const TEXT_LIMIT = 4096;
 
     public function __construct(
-        private readonly TaskRepository $tasks
+        private readonly TaskRepository $tasks,
+        private readonly ?RoleTaskService $roleTasks = null
     ) {
     }
 
     /**
-     * @param string $date The day to show (Y-m-d); '' or a day with no open
-     *                     tasks shows the next one.
+     * The board in the plain format (BoardService::CARDS_OPTION off): per
+     * task its time and count, no names.
+     *
+     * @param string      $date   The day to show (Y-m-d); '' or a day with no
+     *                            open tasks shows the next one.
+     * @param bool        $group  Whether this is the group's message, not a private copy.
+     * @param Person|null $viewer The person a private copy is for: the tasks
+     *                            of their roles are added (roleRows()). Not
+     *                            used on the group's message.
      * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
      */
-    public function render(string $date = '', bool $group = true): array
+    public function render(string $date = '', bool $group = true, ?Person $viewer = null): array
     {
-        $tasks = $this->boardTasks();
-
-        if ([] === $tasks) {
-            return $this->emptyBoard();
-        }
-
-        $dates = $this->dates($tasks);
-        $shown = in_array($date, $dates, true) ? $date : $dates[0];
-
-        return $this->day($tasks, $dates, $shown, $group);
+        return $this->compose($date, $group, $group ? null : $viewer, false);
     }
 
     /**
      * The board with the card format on (BoardService::CARDS_OPTION): the
      * text board that goes under the next event's card. It shows one day:
      * the next event, or $date when it has open tasks. The text lists, per
-     * task, who is signed up, by first name; the keyboard has the day's
-     * task buttons (taskRows()), the row of day buttons (DayPicker), and
-     * the links at the foot. The group's message always shows the next event
-     * (Owner, 2026-11-06: the board was too long with three); another day is
-     * shown only in a private copy. The group's message has no day buttons
-     * (Owner 2026-11-07): its More tasks link opens the next day in the private
-     * chat instead.
+     * task, who is signed up, by first name, on the line under the task; the
+     * keyboard has the day's task buttons (taskRows()), the row of day
+     * buttons (DayPicker), and the links at the foot. The group's message
+     * always shows the next event (Owner, 2026-11-06: the board was too long
+     * with three); another day is shown only in a private copy. The group's
+     * message has no day buttons (Owner 2026-11-07): its More tasks link opens
+     * the next day in the private chat instead.
      *
-     * @param string $date  The day to show (Y-m-d); '' or a day with no open
-     *                      tasks shows the next one.
-     * @param bool   $group Whether this is the group's message, not a private copy.
+     * A private copy for a known person ($viewer) also lists the tasks of
+     * their roles, which the group's message never shows, under the same
+     * event headings, with the ✋ / ❌ / ➕ buttons of RoleTaskBot under the
+     * board's own task buttons (roleRows()). Its day buttons include the days
+     * that have only such tasks.
+     *
+     * @param string      $date   The day to show (Y-m-d); '' or a day with no open
+     *                            tasks shows the next one.
+     * @param bool        $group  Whether this is the group's message, not a private copy.
+     * @param Person|null $viewer The person a private copy is for. Not used on
+     *                            the group's message.
      * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
      */
-    public function crewBoard(string $date = '', bool $group = true): array
+    public function crewBoard(string $date = '', bool $group = true, ?Person $viewer = null): array
     {
-        $tasks = $this->boardTasks();
+        return $this->compose($date, $group, $group ? null : $viewer, true);
+    }
 
-        if ([] === $tasks) {
+    /**
+     * One day of the board, in either format: the text and the keyboard.
+     *
+     * @param bool $withNames The card format: who is signed up, under each
+     *                        task. Otherwise the count line (countLine()).
+     * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
+     */
+    private function compose(string $date, bool $group, ?Person $viewer, bool $withNames): array
+    {
+        [$tasks, $days, $extra, $addable] = $this->viewTasks($viewer);
+
+        if ([] === $days) {
             return $this->emptyBoard();
         }
 
-        $dates = $this->dates($tasks);
+        $dates = $this->dates($days);
         $shown = in_array($date, $dates, true) ? $date : $dates[0];
         $daySuffix = $shown === $dates[0] ? '' : ':' . $shown;
         $tasks = array_values(array_filter($tasks, static fn (Task $t): bool => $t->taskDate === $shown));
-        $occupants = $this->tasks->occupantsFor(array_map(static fn (Task $t): int => $t->id, $tasks));
+        $ids = array_map(static fn (Task $t): int => $t->id, $tasks);
+        $occupants = [];
+
+        if ($withNames) {
+            $occupants = $this->tasks->occupantsFor($ids);
+            $taken = array_map('count', $occupants);
+        } else {
+            $taken = $this->tasks->occupancyFor($ids);
+        }
+
+        $guest = array_values(array_filter($tasks, static fn (Task $t): bool => BoardVisibility::onGuestBoard($t)));
+        $own = array_values(array_filter($tasks, static fn (Task $t): bool => isset($extra[$t->id])));
+        $role = null === $viewer ? ['rows' => [], 'legend' => ''] : $this->roleRows($own, $addable, $taken, $viewer);
 
         $lines = $this->introLines();
-        $keyboard = [];
-        $taken = [];
 
+        if ('' !== $role['legend']) {
+            $lines[] = $role['legend'];
+        }
+
+        // The event's heading and each task's time and count go in the text;
+        // the keyboard has only the task buttons (taskRows()).
         foreach ($this->groupByEvent($tasks) as $heading) {
             $lines[] = '';
             // Date, then title, then an empty line before the tasks (Owner 2026-11-07).
@@ -133,13 +170,15 @@ final class BoardRenderer
             $lines[] = '';
 
             foreach ($heading['tasks'] as $task) {
-                $names = $occupants[$task->id] ?? [];
-                $taken[$task->id] = count($names);
-                $lines[] = $this->taskLine($task, $names);
+                $lines[] = $withNames
+                    ? $this->taskLine($task, $occupants[$task->id] ?? [])
+                    : $this->countLine($task, $taken[$task->id] ?? 0);
             }
         }
 
-        foreach ($this->taskRows($tasks, $taken, $daySuffix) as $row) {
+        $keyboard = $this->taskRows($guest, $taken, $daySuffix);
+
+        foreach ($role['rows'] as $row) {
             $keyboard[] = $row;
         }
 
@@ -154,6 +193,115 @@ final class BoardRenderer
         }
 
         return ['text' => self::fit($lines), 'keyboard' => $keyboard];
+    }
+
+    /**
+     * What one board reads, from one upcoming() call, in that order:
+     * - every task, the lines of the text: the guest board's tasks and the
+     *   special ones it leaves out (restricted roles, roles hidden from the
+     *   guest board), which are lines without a button (Owner 2026-11-07, Q362);
+     * - the tasks whose days the board shows: the guest board's, and on a
+     *   private copy also the ones $viewer can act on;
+     * - the ids of the special tasks $viewer can act on (a restricted task of
+     *   their role, or for an organizer any they can add someone to), which
+     *   get RoleTaskBot's buttons (roleRows());
+     * - the ids $viewer, an organizer, can add someone to.
+     * Without a viewer (or without RoleTaskService) the last two are empty.
+     *
+     * @return array{0: array<int, Task>, 1: array<int, Task>, 2: array<int, true>, 3: array<int, true>}
+     */
+    private function viewTasks(?Person $viewer): array
+    {
+        $upcoming = $this->tasks->upcoming();
+        $extra = [];
+        $addable = [];
+
+        if (null !== $viewer && null !== $this->roleTasks) {
+            // The same tasks RoleTaskBot's list had: the person's restricted
+            // roles, and for an organizer every task they can add someone to.
+            foreach (RoleTaskService::ownOf($viewer, $upcoming) as $task) {
+                $extra[$task->id] = true;
+            }
+
+            if ($viewer->isOrganizer) {
+                foreach (RoleTaskService::addableOf($upcoming) as $task) {
+                    $addable[$task->id] = true;
+                    $extra[$task->id] = true;
+                }
+            }
+        }
+
+        $days = [];
+
+        foreach ($upcoming as $task) {
+            if (BoardVisibility::onGuestBoard($task)) {
+                // Already on the board with its own button: no ➕ for it.
+                unset($extra[$task->id], $addable[$task->id]);
+                $days[] = $task;
+            } elseif (isset($extra[$task->id])) {
+                $days[] = $task;
+            }
+        }
+
+        return [$upcoming, $days, $extra, $addable];
+    }
+
+    /**
+     * The buttons for the tasks of the viewer's roles on the shown day, the
+     * callbacks RoleTaskBot answers: ✋ sign up (a restricted task of a role
+     * they hold, with a free place), ❌ cancel (one they are on), ➕ add
+     * someone (an organizer, on a task with a free place). By role, as the
+     * board's own buttons, three to a row; and the one-line legend for them,
+     * '' when there are none.
+     *
+     * @param array<int, Task> $tasks
+     * @param array<int, true> $addable
+     * @param array<int, int>  $taken
+     * @return array{rows: array<int, array<int, array<string, string>>>, legend: string}
+     */
+    private function roleRows(array $tasks, array $addable, array $taken, Person $viewer): array
+    {
+        $roles = array_count_values(array_map(static fn (Task $t): string => $t->roleDisplay(), $tasks));
+        $buttons = [];
+        $own = false;
+        $add = false;
+
+        foreach ($tasks as $task) {
+            $label = $task->roleDisplay();
+
+            if ($roles[$label] > 1 && '' !== $task->timeRange()) {
+                $label .= ' · ' . $task->timeRange();
+            }
+
+            $free = ($taken[$task->id] ?? 0) < $task->capacity;
+
+            if ($task->isRestricted() && $viewer->hasRole($task->roleSlug)) {
+                if (null !== $this->roleTasks && $this->roleTasks->isOn($task->id, $viewer->id)) {
+                    $buttons[] = ['text' => '❌ ' . $label, 'callback_data' => RoleTaskBot::PREFIX . 'c:' . $task->id];
+                    $own = true;
+                } elseif ($free) {
+                    $buttons[] = ['text' => '✋ ' . $label, 'callback_data' => RoleTaskBot::PREFIX . 's:' . $task->id];
+                    $own = true;
+                }
+            }
+
+            if (isset($addable[$task->id]) && $free) {
+                $buttons[] = ['text' => '➕ ' . $label, 'callback_data' => RoleTaskBot::PREFIX . 'a:' . $task->id];
+                $add = true;
+            }
+        }
+
+        $legend = [];
+
+        if ($own) {
+            $legend[] = __('✋ sign up · ❌ cancel', 'eventcrew');
+        }
+
+        if ($add) {
+            $legend[] = __('➕ add someone', 'eventcrew');
+        }
+
+        return ['rows' => self::rowsOfThree($buttons), 'legend' => implode(' · ', $legend)];
     }
 
     /**
@@ -198,6 +346,16 @@ final class BoardRenderer
     /** The post id of the event nextCard() shows, or null. */
     public function nextCardEvent(): ?int
     {
+        return $this->nextCardTarget()['event'] ?? null;
+    }
+
+    /**
+     * The event nextCard() shows and its day (Y-m-d), or null.
+     *
+     * @return array{event: int, date: string}|null
+     */
+    public function nextCardTarget(): ?array
+    {
         $tasks = $this->boardTasks();
 
         if ([] === $tasks) {
@@ -216,7 +374,7 @@ final class BoardRenderer
             $card = EventCard::forEvent($task->eventPostId, '');
 
             if (null !== $card && '' !== $card['photo']) {
-                return $task->eventPostId;
+                return ['event' => $task->eventPostId, 'date' => $date];
             }
         }
 
@@ -224,8 +382,10 @@ final class BoardRenderer
     }
 
     /**
-     * "🎨 Decorate · 17:00–18:30 · 2/3: Anna, Ben", or "…: –" when nobody is signed
-     * up. Each person by the first word of their name, never their email.
+     * "🎨 Decorate · 17:00–18:30 · 2/3", and on the next line who is signed
+     * up, "Anna, Ben", or "–" when nobody is (Owner 2026-11-07). Each person by
+     * the first word of their name, never their email. One string with the
+     * line break inside, so fit() drops a task and its names together.
      *
      * @param list<string> $names Display names, '' for someone who gave none.
      */
@@ -250,12 +410,12 @@ final class BoardRenderer
         // The count moved here from the button, which has only the role.
         $parts[] = sprintf('%d/%d', count($names), $task->capacity);
 
-        return implode(' · ', $parts) . ': ' . ([] === $first ? '–' : implode(', ', $first));
+        return implode(' · ', $parts) . "\n" . ([] === $first ? '–' : implode(', ', $first));
     }
 
     /**
-     * $lines as one text within Telegram's TEXT_LIMIT, whole lines dropped
-     * from the end when it is longer.
+     * $lines as one text within Telegram's TEXT_LIMIT, whole entries dropped
+     * from the end when it is longer (a task and its names line are one).
      *
      * @param array<int, string> $lines
      */
@@ -272,17 +432,18 @@ final class BoardRenderer
     }
 
     /**
-     * The tasks the group board may show.
+     * The guest board's tasks: the ones with a button on the group's message.
      *
      * @return array<int, Task>
      */
     private function boardTasks(): array
     {
-        // The board is one message the whole group reads, so a restricted task
-        // (Organize, DJ, ...) cannot be on it at all; the people holding its
-        // role take it on the crew page or in a private chat with the bot.
-        // A role switched off "Show on the guest board" is left off too. The
-        // web page shows the same tasks when signed out (BoardVisibility).
+        // The tasks with a button on the group's message, and the days it
+        // shows. A restricted task (Organize, DJ, ...) or one of a role
+        // switched off "Show on the guest board" is only a line in its text
+        // (compose(), Owner 2026-11-07): the people holding its role take it on
+        // the crew page or in their private copy of the board. The web page
+        // shows the same tasks when signed out (BoardVisibility).
         return array_values(array_filter(
             $this->tasks->upcoming(),
             static fn (Task $task): bool => BoardVisibility::onGuestBoard($task)
@@ -323,61 +484,6 @@ final class BoardRenderer
         return [
             __('Open tasks — tap one to sign up. To cancel, tap 👤 My info.', 'eventcrew'),
         ];
-    }
-
-    /**
-     * One day of the board: the text and the keyboard.
-     *
-     * @param array<int, Task>   $tasks       Every task the board may show.
-     * @param array<int, string> $dates       Every day of $tasks, ascending.
-     * @param string             $shown       The day to show, Y-m-d.
-     * @param bool               $group       The group's message: no day buttons.
-     * @return array{text: string, keyboard: array<int, array<int, array<string, mixed>>>}
-     */
-    private function day(array $tasks, array $dates, string $shown, bool $group): array
-    {
-        $tasks = array_values(array_filter($tasks, static fn (Task $t): bool => $t->taskDate === $shown));
-        $daySuffix = $shown === $dates[0] ? '' : ':' . $shown;
-
-        $occupancy = $this->tasks->occupancyFor(array_map(static fn (Task $t): int => $t->id, $tasks));
-        $groups = $this->groupByEvent($tasks);
-
-        $lines = $this->introLines();
-        $keyboard = [];
-
-        // The event's heading and each task's time and count go in the text;
-        // the keyboard has only the task buttons (taskRows()).
-        foreach ($groups as $heading) {
-            $lines[] = '';
-            // Date, then title, then an empty line before the tasks (Owner 2026-11-07).
-            $lines[] = '📅 ' . $heading['date'];
-
-            if ('' !== $heading['title']) {
-                $lines[] = $heading['title'];
-            }
-
-            $lines[] = '';
-
-            foreach ($heading['tasks'] as $task) {
-                $lines[] = $this->countLine($task, $occupancy[$task->id] ?? 0);
-            }
-        }
-
-        foreach ($this->taskRows($tasks, $occupancy, $daySuffix) as $row) {
-            $keyboard[] = $row;
-        }
-
-        if (! $group) {
-            foreach (DayPicker::rows($dates, $shown, BoardService::PICK_PREFIX) as $row) {
-                $keyboard[] = $row;
-            }
-        }
-
-        foreach ($this->footRows($group ? $this->nextDay($dates, $shown) : '', $group) as $row) {
-            $keyboard[] = $row;
-        }
-
-        return ['text' => implode("\n", $lines), 'keyboard' => $keyboard];
     }
 
     /**
@@ -473,6 +579,18 @@ final class BoardRenderer
             $buttons[] = ['text' => $label, 'callback_data' => 't:' . $task->id . $daySuffix];
         }
 
+        return self::rowsOfThree($buttons);
+    }
+
+    /**
+     * $buttons three to a row, the last row filled with blank buttons so
+     * every button is the same width.
+     *
+     * @param array<int, array<string, string>> $buttons
+     * @return array<int, array<int, array<string, string>>>
+     */
+    private static function rowsOfThree(array $buttons): array
+    {
         $rows = array_chunk($buttons, 3);
         $last = count($rows) - 1;
 

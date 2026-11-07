@@ -211,7 +211,11 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertNotContains('t:2', $callbacks);
     }
 
-    public function testTheGroupBoardLeavesOutEveryRestrictedRoleTask(): void
+    /**
+     * A restricted task is a line in the group board's text, with no button
+     * (Owner 2026-11-07, Q362).
+     */
+    public function testTheGroupBoardListsARestrictedRoleTaskWithoutAButton(): void
     {
         $this->options[Roles::OPTION_NAME] = [
             ['slug' => 'decorate', 'label' => 'Decorate'],
@@ -228,10 +232,11 @@ final class BoardServiceTest extends TelegramTestCase
         $callbacks = array_column(array_map(static fn (array $row): array => $row[0], $rendered['keyboard']), 'callback_data');
         self::assertContains('t:1', $callbacks);
         self::assertNotContains('t:2', $callbacks);
-        self::assertStringNotContainsString('DJ', $rendered['text']);
+        self::assertStringContainsString("Decorate · 0/2\n🎧 DJ · 0/1", $rendered['text']);
+        self::assertStringNotContainsString('DJ', implode(' ', array_column(array_merge(...$rendered['keyboard']), 'text')));
     }
 
-    public function testTheGroupBoardLeavesOutARoleSwitchedOffTheBoard(): void
+    public function testTheGroupBoardListsARoleSwitchedOffTheBoardWithoutAButton(): void
     {
         $this->options[Roles::OPTION_NAME] = [
             ['slug' => 'decorate', 'label' => 'Decorate'],
@@ -248,7 +253,8 @@ final class BoardServiceTest extends TelegramTestCase
         $callbacks = array_column(array_map(static fn (array $row): array => $row[0], $rendered['keyboard']), 'callback_data');
         self::assertContains('t:1', $callbacks);
         self::assertNotContains('t:2', $callbacks);
-        self::assertStringNotContainsString('Random', $rendered['text']);
+        self::assertStringContainsString('🎲 Random · 0/2', $rendered['text']);
+        self::assertStringNotContainsString('Random', implode(' ', array_column(array_merge(...$rendered['keyboard']), 'text')));
         self::assertTrue(Roles::onBoard('decorate'));
         self::assertFalse(Roles::onBoard('random'));
     }
@@ -902,7 +908,7 @@ final class BoardServiceTest extends TelegramTestCase
 
         $edited = array_map(
             static fn (array $call): array => [$call['body']['chat_id'], $call['body']['message_id']],
-            array_values(array_filter($this->telegramCalls,static fn (array $c): bool => 'editMessageText' === $c['method']))
+            array_values(array_filter($this->telegramCalls, static fn (array $c): bool => 'editMessageText' === $c['method']))
         );
         self::assertSame([[100, 5], [555, 42]], $edited);
     }

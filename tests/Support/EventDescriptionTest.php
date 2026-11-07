@@ -180,11 +180,104 @@ final class EventDescriptionTest extends TestCase
             "Hi {first_name},\n\nThanks for {event}.\n{event_times}\n\n{event_description}\n\nSee you.",
             $this->options[$key . 'followup_came'][MessageTemplates::BODY]
         );
-        self::assertSame(['venue' => 1, 'description' => 1], $this->options[EventDetailsText::OPTION]);
+        self::assertSame(
+            ['venue' => 1, 'description' => 1, 'signup_email_no_description' => 1],
+            $this->options[EventDetailsText::OPTION]
+        );
 
         // Once: a text the organizer changes afterwards is left alone.
         $this->options[$key . 'reminder_dm'] = [MessageTemplates::BODY => 'Just {event}.'];
         EventDetailsText::run();
         self::assertSame('Just {event}.', $this->options[$key . 'reminder_dm'][MessageTemplates::BODY]);
+    }
+
+    /**
+     * The sign-up email is a thank-you about the task (Owner, 2026-11-07): the
+     * task's description, never the event's; the DM keeps the event's.
+     */
+    public function testTheSignupEmailShowsTheTasksDescriptionNotTheEvents(): void
+    {
+        $this->content = 'Free dance in the hall. Bring water.';
+        $email = MessageTemplates::find('signup_confirmed');
+
+        self::assertNotContains('signup_confirmed', EventDetailsText::DESCRIPTION_KINDS);
+        self::assertStringNotContainsString('{event_description}', $email->defaultBody());
+        self::assertStringContainsString('{description}', $email->defaultBody());
+
+        $body = MessageTemplates::body('signup_confirmed', $this->context() + ['description' => 'Bring a ladder.']);
+        self::assertStringContainsString("\n\nBring a ladder.\n\nShow your ticket at the door.", $body);
+        self::assertStringNotContainsString('Free dance', $body);
+
+        $dm = MessageTemplates::body('signup_confirmed_dm', $this->context() + ['description' => 'Bring a ladder.']);
+        self::assertStringContainsString('Free dance in the hall.', $dm);
+    }
+
+    /** No task description: no line, no label, no gap. */
+    public function testASignupEmailWithoutATaskDescriptionLeavesNoGap(): void
+    {
+        $this->content = 'Free dance in the hall.';
+        $body = MessageTemplates::body(
+            'signup_confirmed',
+            $this->context() + ['description' => '', 'standing' => 'Your standing: Beginner.']
+        );
+
+        self::assertStringStartsWith("Hi Anna,\n\nThank you for joining the crew! You’re on Decorate at Ecstatic Dance,", $body);
+        self::assertMatchesRegularExpression('/[^\n]\n\nShow your ticket at the door\. We can’t wait to see you there ✨\n\n/u', $body);
+        self::assertStringNotContainsString("\n\n\n", $body);
+        self::assertStringNotContainsString('Free dance', $body);
+    }
+
+    /**
+     * A stored sign-up email that the "description" step gave the event's
+     * description loses it again, in the source and every language text;
+     * the stored DM keeps it. Once.
+     */
+    public function testAStoredSignupEmailLosesTheEventDescriptionOnce(): void
+    {
+        $key = MessageTemplates::OPTION_PREFIX;
+        $this->options[EventDetailsText::OPTION] = ['venue' => 1, 'description' => 1];
+        $this->options[$key . 'signup_confirmed'] = [
+            MessageTemplates::SUBJECT => ['source' => 'In: {role}', 'texts' => []],
+            MessageTemplates::BODY => [
+                'source' => "Hi {name},\n\nOn {role} at {event}, {when}.\n{venue}\n\n{description}\n\n{event_description}\n\n{cancel_help}{free_cancel}",
+                'texts' => [
+                    'fi' => "Hei {name},\n\n{role}, {event}, {when}.\n\n{event_description}{free_cancel}",
+                    'en' => '',
+                ],
+            ],
+        ];
+        $this->options[$key . 'signup_confirmed_dm'] = [MessageTemplates::BODY => "Signed up.\n\n{event_description}\n\n{event}"];
+
+        EventDetailsText::run();
+
+        self::assertSame(
+            [
+                'source' => "Hi {name},\n\nOn {role} at {event}, {when}.\n{venue}\n\n{description}\n\n{cancel_help}{free_cancel}",
+                'texts' => ['fi' => "Hei {name},\n\n{role}, {event}, {when}.{free_cancel}", 'en' => ''],
+            ],
+            $this->options[$key . 'signup_confirmed'][MessageTemplates::BODY]
+        );
+        self::assertSame(['source' => 'In: {role}', 'texts' => []], $this->options[$key . 'signup_confirmed'][MessageTemplates::SUBJECT]);
+        self::assertSame("Signed up.\n\n{event_description}\n\n{event}", $this->options[$key . 'signup_confirmed_dm'][MessageTemplates::BODY]);
+        self::assertSame(1, $this->options[EventDetailsText::OPTION]['signup_email_no_description']);
+
+        // Once: an organizer who puts it back keeps it.
+        $this->options[$key . 'signup_confirmed'] = [MessageTemplates::BODY => "On {event}.\n\n{event_description}"];
+        EventDetailsText::run();
+        self::assertSame("On {event}.\n\n{event_description}", $this->options[$key . 'signup_confirmed'][MessageTemplates::BODY]);
+
+        self::assertSame('Text.', EventDetailsText::withoutEventDescription("{event_description}\n\nText."));
+        self::assertSame('Just text.', EventDetailsText::withoutEventDescription('Just text.'));
+    }
+
+    /** A site that never ran the "description" step: the stored sign-up email does not get it. */
+    public function testAFreshSiteDoesNotGiveTheSignupEmailTheEventDescription(): void
+    {
+        $key = MessageTemplates::OPTION_PREFIX;
+        $this->options[$key . 'signup_confirmed'] = [MessageTemplates::BODY => "On {role} at {event}, {when}.\n\n{description}"];
+
+        EventDetailsText::run();
+
+        self::assertStringNotContainsString('{event_description}', $this->options[$key . 'signup_confirmed'][MessageTemplates::BODY]);
     }
 }

@@ -2977,25 +2977,6 @@ msgstr ""
 "\n"
 "Los organizadores han cancelado la tarea %2$s en %3$s, %4$s. Ya no estás apuntado y su entrada ya no funciona en la puerta. Esto no cuenta en contra de tu fiabilidad."
 
-#. translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line, 6: how to cancel
-#: src/Support/MessageTemplates.php:1516
-msgid ""
-"Hi %1$s,\n"
-"\n"
-"You're signed up for %2$s at %3$s, %4$s. Show your ticket at the door.\n"
-"\n"
-"%5$s\n"
-"\n"
-"%6$s"
-msgstr ""
-"Hola, %1$s:\n"
-"\n"
-"Estás apuntado a %2$s en %3$s, %4$s. Enseña tu entrada en la puerta.\n"
-"\n"
-"%5$s\n"
-"\n"
-"%6$s"
-
 #. translators: 1: name, 2: role, 3: event, 4: standing note, 5: standing line
 #: src/Support/MessageTemplates.php:1562
 msgid ""
@@ -4440,8 +4421,8 @@ msgid "Off by default. When it is on, the coming events go by email to everyone 
 msgstr "Desactivado por defecto. Si está activado, los próximos eventos se envían por email a todas las personas que se unieron al anuncio de los próximos eventos y confirmaron su dirección. La gente se une con el shortcode [eventcrew_newsletter]. Antes de enviar, cada organizador recibe un email de vista previa con un botón Detener; la pestaña Admin de la app Crew tiene el mismo botón."
 
 #: templates/admin/settings.php:1963
-msgid "Off by default. When on, the board is two messages. First a photo message for the next event, when it is an EventMesh event with a picture: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Below it the text board: the next event, who is signed up for which task, the task buttons and the date buttons."
-msgstr "Desactivado por defecto. Cuando está activado, el tablón son dos mensajes. Primero un mensaje con foto del próximo evento, cuando es un evento de EventMesh con imagen: su imagen, nombre, fecha, precio, dos frases sobre el DJ o anfitrión escritas por el modelo de lenguaje, y sus enlaces. Debajo, el tablón de texto: el próximo evento, quién está apuntado a qué tarea, los botones de tareas y los botones de fechas."
+msgid "Off by default. When on, the text board shows the next event, who is signed up for which task, the task buttons and the date buttons. The next event's picture is posted to the group on its own, once when it becomes the next event and again on its morning, never with /board: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Only for an EventMesh event with a picture."
+msgstr "Desactivado por defecto. Si está activado, el tablero de texto muestra el próximo evento, quién se ha apuntado a cada tarea, los botones de tareas y los botones de fecha. La imagen del próximo evento se publica en el grupo por separado, una vez cuando pasa a ser el próximo evento y otra la mañana del evento, nunca con /board: su imagen, nombre, fecha, precio, dos frases sobre el DJ o anfitrión escritas por el modelo de lenguaje y sus enlaces. Solo para un evento de EventMesh con imagen."
 
 #: templates/admin/settings.php:1317
 msgid "Officer’s contact"
@@ -10022,11 +10003,6 @@ msgstr "Has cerrado sesión."
 msgid "You’re signed up — thanks!"
 msgstr "Estás apuntado. ¡Gracias!"
 
-#. translators: 1: role, 2: event
-#: src/Support/MessageTemplates.php:1509
-msgid "You’re signed up: %1$s for %2$s"
-msgstr "Estás apuntado: %1$s para %2$s"
-
 #: src/Support/MessageTemplates.php:1425
 msgid "You’ve been given free entry"
 msgstr "Te han dado entrada gratuita"
@@ -10683,6 +10659,28 @@ msgstr "🛠️ Abrir la pestaña Admin"
 msgid "🧭 Organizer guide ↓"
 msgstr "🧭 Guía del organizador ↓"
 
+#. translators: 1: name, 2: event
+#: src/Support/MessageTemplates.php
+#, php-format
+msgid "Thank you, %1$s! ✨ You’re on the crew for %2$s"
+msgstr "¡Gracias, %1$s! ✨ Estás en el equipo de %2$s"
+
+#. translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line, 6: how to cancel
+#: src/Support/MessageTemplates.php
+#, php-format
+msgid "Hi %1$s,\n\nThank you for joining the crew! You’re on %2$s at %3$s, %4$s.\n\nShow your ticket at the door. We can’t wait to see you there ✨\n\n%5$s\n\n%6$s"
+msgstr "Hola, %1$s:\n\n¡Gracias por unirte al equipo! Estás apuntado a %2$s en %3$s, %4$s.\n\nEnseña tu entrada en la puerta. ¡Tenemos muchas ganas de verte allí! ✨\n\n%5$s\n\n%6$s"
+
+#. translators: %s: the person's first name
+#: src/Support/EmailHero.php
+#, php-format
+msgid "Thank you, %s!"
+msgstr "¡Gracias, %s!"
+
+#: src/Support/EmailHero.php
+msgid "Thank you!"
+msgstr "¡Gracias!"
+
 #~ msgid "   buttons: 🎟 free-entry ticket, 🔁 take over a task, 🔑 web sign-in, 🔔 notifications, 🌐 language"
 #~ msgstr "   botones: 🎟 entrada gratuita, 🔁 quedarte con una tarea, 🔑 acceso web, 🔔 avisos, 🌐 idioma"
 
@@ -11063,3 +11061,9 @@ msgstr "🧭 Guía del organizador ↓"
 #, php-format
 #~ msgid "%1$s at %2$s (%3$d/%4$d)"
 #~ msgstr "%1$s en %2$s (%3$d/%4$d)"
+
+msgid "Board banner"
+msgstr "Banner del tablero"
+
+msgid "A wide strip of this page's picture is shown above the board text in Telegram: its first cover block, around the cover's focal point, or else its featured image. Change the picture on the page and the banner follows."
+msgstr "Una franja ancha de la imagen de esta página se muestra sobre el texto del tablero en Telegram: su primer bloque de portada, alrededor del punto focal de la portada, o si no su imagen destacada. Cambia la imagen en la página y el banner la sigue."

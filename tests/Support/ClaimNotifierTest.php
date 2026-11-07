@@ -332,7 +332,7 @@ final class ClaimNotifierTest extends TestCase
         self::assertStringContainsString('✅ Ilmoittauduttu:', (string) $sends->items[0]['text']);
         self::assertStringNotContainsString('Signed up', (string) $sends->items[0]['text']);
         self::assertCount(1, $this->mails);
-        self::assertStringContainsString('olet ilmoittautunut tehtävään', $this->mails[0]['body']);
+        self::assertStringContainsString('kiitos, että liityit crew’hun!', $this->mails[0]['body']);
         // The language was the person's for this message only.
         self::assertNull(Language::current());
     }
@@ -347,8 +347,8 @@ final class ClaimNotifierTest extends TestCase
         $this->notifier()->confirmSignup($this->personInLanguage(null), 5);
 
         self::assertStringContainsString('✅ Signed up:', (string) $sends->items[0]['text']);
-        self::assertStringContainsString('signed up for', $this->mails[0]['body']);
-        self::assertStringNotContainsString('ilmoittautunut', $this->mails[0]['body']);
+        self::assertStringContainsString('Thank you for joining the crew!', $this->mails[0]['body']);
+        self::assertStringNotContainsString('liityit', $this->mails[0]['body']);
     }
 
     private function personInLanguage(?string $language): Person
@@ -452,10 +452,11 @@ final class ClaimNotifierTest extends TestCase
                 . "\n\nYour standing: Beginner · 0 free-entry credits.",
             (string) $sends->items[0]['text']
         );
-        self::assertSame('You’re signed up: Decorate for Party', $this->mails[0]['subject']);
+        self::assertSame('Thank you, Sam! ✨ You’re on the crew for Party', $this->mails[0]['subject']);
         self::assertSame(
-            "Hi Sam,\n\nYou're signed up for Decorate at Party, Sat 1 Aug 18:00–20:00. Show your ticket at the door."
+            "Hi Sam,\n\nThank you for joining the crew! You’re on Decorate at Party, Sat 1 Aug 18:00–20:00."
                 . "\n\n" . $about
+                . "\n\nShow your ticket at the door. We can’t wait to see you there ✨"
                 . "\n\nYour standing: Beginner · 0 free-entry credits.\n\nCan't make it? Tap Cancel below."
                 . ' Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task,'
                 . ' and you accept. You can cancel without it affecting your standing up to 48 hours before the task.'
@@ -468,6 +469,28 @@ final class ClaimNotifierTest extends TestCase
                 . self::MANAGE,
             $this->mails[0]['body']
         );
+    }
+
+    /**
+     * The HTML sign-up email opens with the "Thank you" hero (EmailHero);
+     * the cancel email, sent through the same Mailer, has none.
+     */
+    public function testOnlyTheHtmlSignupEmailOpensWithTheThankYouHero(): void
+    {
+        $this->captureWithOptions([EmailTemplate::HTML_OPTION => '1']);
+
+        $this->signUp($this->personInLanguage(null));
+
+        self::assertStringContainsString('class="ec-shimmer-light"', $this->mails[0]['body']);
+        self::assertStringContainsString('>Thank you, Sam!</h1>', $this->mails[0]['body']);
+        self::assertStringContainsString('Decorate · Sat 1 Aug 18:00–20:00', $this->mails[0]['body']);
+
+        $this->mails = [];
+        $this->wpdb->nextRows[] = $this->timedTaskRow();
+        $this->notifier()->confirmCancellation($this->personInLanguage(null), 5, 'cancelled');
+
+        self::assertStringNotContainsString('Thank you, Sam!', $this->mails[0]['body']);
+        self::assertStringNotContainsString('linear-gradient(135deg,#2b1d57', $this->mails[0]['body']);
     }
 
     /** The same in Finnish, read from the shipped .mo, with no notice hours and no guide. */
@@ -486,10 +509,11 @@ final class ClaimNotifierTest extends TestCase
             (string) $sends->items[0]['text'],
             'a notice of 0 hours leaves out the free-cancel sentence'
         );
-        self::assertSame('Olet ilmoittautunut: Somistus, Party', $this->mails[0]['subject']);
+        self::assertSame('Kiitos, Sam! ✨ Olet mukana crew’ssä: Party', $this->mails[0]['subject']);
         self::assertStringStartsWith(
-            "Hei Sam,\n\nolet ilmoittautunut tehtävään Somistus, Party, la 1.8. 18:00–20:00. Näytä lippusi ovella."
+            "Hei Sam,\n\nkiitos, että liityit crew’hun! Olet tehtävässä Somistus, Party, la 1.8. 18:00–20:00."
                 . "\n\n" . $about
+                . "\n\nNäytä lippusi ovella. Odotamme jo innolla näkemistäsi ✨"
                 . "\n\nLuotettavuutesi: Aloittelija · 0 vapaalippua.\n\nEtkö pääsekään? Napauta alta Peru."
                 . ' Tai etsi joku ottamaan se: hän lähettää botille /me ja napauttaa'
                 . ' 🔁 Ota tehtävä, ja sinä hyväksyt.' . "\n\nNäytä lippusi: ",

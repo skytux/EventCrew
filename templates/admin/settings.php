@@ -78,7 +78,7 @@
  * @var array<int, array{id: string, name: string, columns: array<string, string|array<int, string>>, decoder_js: string}> $ticket_formats The ticket file formats.
  * @var array{protocol: string, server: string, port: int, security: string, username: string, password: string, folder: string, imported_folder: string, rejected_folder: string, authserv_id: string} $mail_fetch How the site reads the import mailbox itself.
  * @var array{time: int, ok: bool, message: string} $mail_fetch_status The last mailbox check.
- * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, group_gate: bool, board_cards: bool, profile: array{about: array{source: string, texts: array<string, string>, manual: array<string, bool>}, description: array{source: string, texts: array<string, string>, manual: array<string, bool>}}, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
+ * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, group_gate: bool, board_cards: bool, board_banner_page: int, profile: array{about: array{source: string, texts: array<string, string>, manual: array<string, bool>}, description: array{source: string, texts: array<string, string>, manual: array<string, bool>}}, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  * @var array{enabled: bool, forward: bool, url: string, model: string, key_status: string, private_limit: int, group_limit: int, pages: array<int, int>, page_choices: array<int, string>, default_pages: array<int, string>, test_url: string, remove_key_url: string} $assistant The language-model helper for plain bot messages.
  * @var array{controller: string, address: string, contact: string, dpo_name: string, dpo_contact: string, retention_years: int, retention_min: int, retention_max: int, purge: bool, page_id: int, configured: bool, notice_url: string, buyer_page_id: int, buyer_notice_url: string, create_buyer_url: string, core_policy_url: string, create_nonce_action: string} $privacy Who is answerable for the crew's data, and how long it is kept.
  */
@@ -1989,7 +1989,32 @@ if (! defined('ABSPATH')) {
                     <p class="description">
                         <?php
                         // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                        esc_html_e('Off by default. When on, the board is two messages. First a photo message for the next event, when it is an EventMesh event with a picture: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Below it the text board: the next event, who is signed up for which task, the task buttons and the date buttons.', 'eventcrew');
+                        esc_html_e('Off by default. When on, the text board shows the next event, who is signed up for which task, the task buttons and the date buttons. The next event\'s picture is posted to the group on its own, once when it becomes the next event and again on its morning, never with /board: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Only for an EventMesh event with a picture.', 'eventcrew');
+                        ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-board-banner-page"><?php esc_html_e('Board banner', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <?php
+                    // wp_dropdown_pages() escapes its own output.
+                    // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
+                    wp_dropdown_pages([
+                        'name' => 'telegram_board_banner_page',
+                        'id' => 'eventcrew-board-banner-page',
+                        'selected' => $telegram['board_banner_page'],
+                        'show_option_none' => __('— None —', 'eventcrew'),
+                        'option_none_value' => '0',
+                    ]);
+                    // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
+                    ?>
+                    <p class="description">
+                        <?php
+                        // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                        esc_html_e('A wide strip of this page\'s picture is shown above the board text in Telegram: its first cover block, around the cover\'s focal point, or else its featured image. Change the picture on the page and the banner follows.', 'eventcrew');
                         ?>
                     </p>
                 </td>

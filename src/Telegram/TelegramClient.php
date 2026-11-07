@@ -301,12 +301,16 @@ final class TelegramClient
     }
 
     /**
+     * $extra: more sendMessage fields, like link_preview_options (the
+     * board's banner); they go to the in-place edit too.
+     *
      * @param array<string, mixed>|null $replyMarkup
+     * @param array<string, mixed> $extra
      * @return array<string, mixed>|null
      */
-    public function sendMessage(int|string $chatId, string $text, ?array $replyMarkup = null): ?array
+    public function sendMessage(int|string $chatId, string $text, ?array $replyMarkup = null, array $extra = []): ?array
     {
-        $params = ['chat_id' => $chatId, 'text' => $text];
+        $params = ['chat_id' => $chatId, 'text' => $text] + $extra;
 
         if (null !== $replyMarkup) {
             $params['reply_markup'] = $replyMarkup;
@@ -351,20 +355,24 @@ final class TelegramClient
     }
 
     /**
+     * $extra: more fields, like link_preview_options (the board's banner).
+     *
      * @param array<string, mixed>|null $replyMarkup
+     * @param array<string, mixed> $extra
      * @return array<string, mixed>|null
      */
     public function editMessageText(
         int|string $chatId,
         int $messageId,
         string $text,
-        ?array $replyMarkup = null
+        ?array $replyMarkup = null,
+        array $extra = []
     ): ?array {
         $params = [
             'chat_id' => $chatId,
             'message_id' => $messageId,
             'text' => $text,
-        ];
+        ] + $extra;
 
         if (null !== $replyMarkup) {
             $params['reply_markup'] = $replyMarkup;

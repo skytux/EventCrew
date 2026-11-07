@@ -1518,18 +1518,22 @@ final class MessageTemplates
                 __('Signed up for a task (email)', 'eventcrew'),
                 $email,
                 __('Sent when a person signs up for a task, in the bot or on the web page. The ticket, calendar and crew guide buttons are added below the text.', 'eventcrew'),
+                // A thank-you (Owner, 2026-11-07); the HTML email opens with a
+                // "Thank you" hero above the text (EmailHero).
                 static fn (): string => self::tag(
-                    /* translators: 1: role, 2: event */
-                    __('You’re signed up: %1$s for %2$s', 'eventcrew'),
-                    ['%1$s' => '{role}', '%2$s' => '{event}']
+                    /* translators: 1: name, 2: event */
+                    __('Thank you, %1$s! ✨ You’re on the crew for %2$s', 'eventcrew'),
+                    ['%1$s' => '{name}', '%2$s' => '{event}']
                 ),
-                // The when line, the event's times and the task's description
-                // first ({description} takes the place of {about}).
-                static fn (): string => EventDetailsText::withVenue(EventDetailsText::withEventDescription(FrictionB1Migration::withEventTimes(self::withDescription(self::tag(
+                // The when line, the event's times and venue, then the task's
+                // description ({description} takes the place of {about}). No
+                // event description: the email is about the task (Owner,
+                // 2026-11-07); the DM keeps it.
+                static fn (): string => EventDetailsText::withVenue(FrictionB1Migration::withEventTimes(self::withDescription(self::tag(
                     /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line, 6: how to cancel */
-                    __("Hi %1\$s,\n\nYou're signed up for %2\$s at %3\$s, %4\$s. Show your ticket at the door.\n\n%5\$s\n\n%6\$s", 'eventcrew'),
+                    __("Hi %1\$s,\n\nThank you for joining the crew! You’re on %2\$s at %3\$s, %4\$s.\n\nShow your ticket at the door. We can’t wait to see you there ✨\n\n%5\$s\n\n%6\$s", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}', '%5$s' => '{standing}', '%6$s' => '{cancel_help}']
-                ) . '{free_cancel}')))),
+                ) . '{free_cancel}'))),
                 [
                     'name' => $name,
                     'role' => $role,

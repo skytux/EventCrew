@@ -7,6 +7,7 @@ namespace EventCrew\Tests\Telegram;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssistantSettings;
+use EventCrew\Telegram\BoardBanner;
 use EventCrew\Telegram\BoardDjText;
 use EventCrew\Telegram\BoardRenderer;
 use EventCrew\Telegram\BoardService;
@@ -16,10 +17,11 @@ use EventCrew\Telegram\EventCard;
 use EventCrew\Tests\Support\FakeEventNames;
 
 /**
- * The group board in card format (BoardService::CARDS_OPTION): two messages,
- * first a photo message for the next event (its picture, name, date, price,
- * the short DJ or host text, and its links), then the text board with the
- * next event, who is signed up, the task buttons and the row of day buttons.
+ * The group board in card format (BoardService::CARDS_OPTION): the text board
+ * (the next event, who is signed up, the task buttons), and the next event's
+ * picture (its photo, name, date, price, the short DJ or host text and its
+ * links) posted to the group on its own schedule by announceNextCard(): once
+ * when the event becomes the next one, and again on its morning (Q360).
  */
 final class BoardCardsTest extends TelegramTestCase
 {
@@ -27,9 +29,7 @@ final class BoardCardsTest extends TelegramTestCase
     use FakeEventNames;
 
     private const IMAGE = 'https://holvi-cdn.example.test/image/abc.jpg';
-    private const IMAGE_NEW = 'https://holvi-cdn.example.test/image/new.jpg';
     private const SHOP = 'https://holvi.example.test/shop/x/product/1/';
-    private const SHOP_NEW = 'https://holvi.example.test/shop/x/product/2/';
     private const CHAT = -100;
     private const INTRO = 'Open tasks — tap one to sign up. To cancel, tap 👤 My info.';
 
@@ -96,14 +96,13 @@ final class BoardCardsTest extends TelegramTestCase
 
     /**
      * Queues what one refresh() with the card format reads: the tasks for the
-     * card, the tasks for the text board, and who is signed up.
+     * text board, and who is signed up.
      *
      * @param list<array<string, mixed>> $tasks
      * @param list<array{task_id: int, display_name: string|null}> $occupants
      */
     private function queueRefresh(array $tasks, array $occupants = []): void
     {
-        $this->wpdb->nextResults[] = $tasks;
         $this->wpdb->nextResults[] = $tasks;
         $this->wpdb->nextResults[] = $occupants;
     }
@@ -175,18 +174,117 @@ final class BoardCardsTest extends TelegramTestCase
         ];
     }
 
-    // --- The two messages ----------------------------------------------------
+    /** Pins the site clock (current_time) to $hour o'clock on $day. */
+    private function at(string $day, int $hour): void
+    {
+        $at = (int) strtotime(sprintf('%s %02d:00:00', $day, $hour));
 
-    public function testTheBoardIsThePhotoOfTheNextEventThenTheTextBoard(): void
+        Functions\when('current_time')->alias(
+            static fn (string $format): string|int => match ($format) {
+                'timestamp' => $at,
+                'mysql' => gmdate('Y-m-d H:i:s', $at),
+                default => gmdate($format, $at),
+            }
+        );
+    }
+
+    /**
+     * Queues what one announceNextCard() that posts reads: the tasks for the
+     * next event, then the tasks for the card.
+     *
+     * @param list<array<string, mixed>> $tasks
+     */
+    private function queueAnnounce(array $tasks): void
+    {
+        $this->wpdb->nextResults[] = $tasks;
+        $this->wpdb->nextResults[] = $tasks;
+    }
+
+    private function announce(): bool
+    {
+        return $this->board()->announceNextCard();
+    }
+
+    /** The board as posted: text message 62, with the party as the next event. */
+    private function postBoard(): void
+    {
+        $this->partyEvent();
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => self::CHAT, 'message_id' => 62];
+    }
+
+    /** The board as stored before Q360: photo message 61 above text message 62. */
+    private function postLegacyBoard(): void
+    {
+        $this->postBoard();
+        $this->options[BoardService::BOARD_OPTION]['card'] = [
+            'message_id' => 61,
+            'event' => 100,
+            'photo' => self::IMAGE,
+            'text' => 'x',
+            'keyboard' => 'y',
+        ];
+    }
+
+    // --- The board is the text message only ---------------------------------
+
+    public function testTheBoardIsTheTextMessageOnly(): void
     {
         $this->partyEvent();
         $this->queueRefresh($this->twoDays());
 
         self::assertTrue($this->board()->refresh());
 
-        self::assertSame(['sendPhoto', 'sendMessage'], $this->calledMethods());
+        self::assertSame(['sendMessage'], $this->calledMethods());
 
+        $text = $this->lastCallTo('sendMessage');
+        // Owner 2026-11-06: only the next event. Owner 2026-11-07: three task
+        // buttons to a row, and no day buttons on the group's message.
+        self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug\nParty\n\n🎈 Decorate · 0/2\n–", $text['text']);
+        self::assertSame(['t:1'], self::taskTargets($text));
+        self::assertSame(['🎈 Decorate', DayPicker::BLANK, DayPicker::BLANK], self::labels($text));
+
+        self::assertSame(
+            ['chat_id' => self::CHAT, 'message_id' => 62],
+            $this->options[BoardService::BOARD_OPTION]
+        );
+        self::assertArrayNotHasKey(BoardService::NEXT_CARD_OPTION, $this->options);
+    }
+
+    public function testRefreshRepostAndAPrivateBoardNeverSendAPhoto(): void
+    {
+        $this->partyEvent();
+        $this->storeDjText(100, 'DJ Anna plays swing.');
+
+        $this->queueRefresh($this->twoDays());
+        $this->board()->refresh();
+        $this->queueRefresh($this->twoDays());
+        $this->board()->refresh();
+        $this->queueRefresh($this->twoDays());
+        $this->board()->repost();
+        $this->queueRefresh($this->twoDays());
+        $this->board()->sendPrivate(555);
+
+        self::assertSame(
+            ['sendMessage', 'editMessageText', 'sendMessage', 'deleteMessage', 'sendMessage'],
+            $this->calledMethods()
+        );
+        self::assertArrayNotHasKey('card', $this->options[BoardService::BOARD_OPTION]);
+        self::assertArrayNotHasKey(BoardService::NEXT_CARD_OPTION, $this->options);
+    }
+
+    // --- The next event's picture, on its own schedule ----------------------
+
+    public function testTheNextEventsPictureIsItsPhotoNameDatePriceAndShopLink(): void
+    {
+        $this->partyEvent();
+        $this->at('2026-08-01', 10);
+        $this->queueAnnounce($this->twoDays());
+
+        self::assertTrue($this->announce());
+
+        self::assertSame(['sendPhoto'], $this->calledMethods());
         $photo = $this->lastCallTo('sendPhoto');
+        self::assertSame(self::CHAT, $photo['chat_id']);
         self::assertSame(self::IMAGE, $photo['photo']);
         self::assertSame('HTML', $photo['parse_mode']);
         // No DJ text written yet: the name, date and price lines only, and
@@ -194,31 +292,20 @@ final class BoardCardsTest extends TelegramTestCase
         self::assertSame("<b>Party</b>\n📅 1.8.2026 · 21:00\n🎟 10 €", $photo['caption']);
         // The card's own links only: no task buttons on the photo.
         self::assertSame([self::SHOP], self::targets($photo));
-
-        $text = $this->lastCallTo('sendMessage');
-        // Owner 2026-11-06: only the next event. Owner 2026-11-07: three task
-        // buttons to a row, and no day buttons on the group's message.
-        self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug\nParty\n\n🎈 Decorate · 0/2: –", $text['text']);
-        self::assertSame(['t:1'], self::taskTargets($text));
-        self::assertSame(['🎈 Decorate', DayPicker::BLANK, DayPicker::BLANK], self::labels($text));
-
-        $board = $this->options[BoardService::BOARD_OPTION];
-        self::assertSame(62, $board['message_id']);
-        self::assertSame(61, $board['card']['message_id']);
-        self::assertSame(100, $board['card']['event']);
-        self::assertSame(self::IMAGE, $board['card']['photo']);
-        self::assertArrayNotHasKey('days', $board);
+        // The board itself is left alone.
+        self::assertSame(['chat_id' => self::CHAT, 'message_id' => 0], $this->options[BoardService::BOARD_OPTION]);
     }
 
     /** Owner 2026-11-07: no 📱 Crew app button on the board's card. */
-    public function testTheBoardCardHasNoCrewAppButton(): void
+    public function testTheNextEventsPictureHasNoCrewAppButton(): void
     {
         $this->options['eventcrew_signup_page_id'] = 7;
         Functions\when('get_permalink')->justReturn('https://site.test/crew/');
         $this->partyEvent();
-        $this->queueRefresh($this->twoDays());
+        $this->at('2026-08-01', 10);
+        $this->queueAnnounce($this->twoDays());
 
-        $this->board()->refresh();
+        $this->announce();
 
         self::assertSame([self::SHOP], self::targets($this->lastCallTo('sendPhoto')));
     }
@@ -227,9 +314,9 @@ final class BoardCardsTest extends TelegramTestCase
     {
         $this->partyEvent();
         $this->storeDjText(100, 'DJ Anna plays swing & blues. She has played <everywhere>.');
-        $this->queueRefresh($this->twoDays());
+        $this->queueAnnounce($this->twoDays());
 
-        $this->board()->refresh();
+        self::assertTrue($this->announce());
 
         self::assertSame(
             "<b>Party</b>\n📅 1.8.2026 · 21:00\n🎟 10 €\n\n"
@@ -239,45 +326,349 @@ final class BoardCardsTest extends TelegramTestCase
         self::assertSame([], $this->scheduled);
     }
 
-    public function testAMissingDjTextAsksForOneBackgroundRunAndNoModelRequest(): void
+    public function testANewNextEventsPictureIsPostedOnceToTheGroup(): void
+    {
+        $this->partyEvent();
+        $this->storeDjText(100, 'DJ Anna plays swing.');
+        $this->queueAnnounce($this->twoDays());
+
+        self::assertTrue($this->announce());
+
+        self::assertSame(['sendPhoto'], $this->calledMethods());
+        self::assertSame(
+            ['event' => 100, 'day' => '', 'waited' => 0],
+            $this->options[BoardService::NEXT_CARD_OPTION]
+        );
+
+        // The next runs, that day and the days after, post nothing.
+        $this->telegramCalls = [];
+
+        foreach ([['2026-07-20', 13], ['2026-07-21', 9], ['2026-07-31', 20]] as [$day, $hour]) {
+            $this->at($day, $hour);
+            $this->wpdb->nextResults[] = $this->twoDays();
+            self::assertFalse($this->announce());
+        }
+
+        self::assertSame([], $this->telegramCalls);
+    }
+
+    public function testThePictureIsPostedAgainOnTheEventsMorningAndOnlyOnce(): void
+    {
+        $this->partyEvent();
+        $this->storeDjText(100, 'DJ Anna plays swing.');
+        $this->options[BoardService::NEXT_CARD_OPTION] = ['event' => 100, 'day' => '', 'waited' => 0];
+        $this->at('2026-08-01', 9);
+        $this->queueAnnounce($this->twoDays());
+
+        self::assertTrue($this->announce());
+
+        self::assertSame(['sendPhoto'], $this->calledMethods());
+        self::assertSame(
+            ['event' => 100, 'day' => '2026-08-01', 'waited' => 0],
+            $this->options[BoardService::NEXT_CARD_OPTION]
+        );
+
+        $this->telegramCalls = [];
+        $this->at('2026-08-01', 10);
+        $this->wpdb->nextResults[] = $this->twoDays();
+
+        self::assertFalse($this->announce());
+        self::assertSame([], $this->telegramCalls);
+    }
+
+    public function testAnotherEventBecomingTheNextOneIsPostedToo(): void
+    {
+        $this->partyEvent();
+        $this->storeDjText(100, 'DJ Anna plays swing.');
+        $this->options[BoardService::NEXT_CARD_OPTION] = ['event' => 99, 'day' => '2026-07-19', 'waited' => 0];
+        $this->queueAnnounce($this->twoDays());
+
+        self::assertTrue($this->announce());
+
+        self::assertSame(100, $this->options[BoardService::NEXT_CARD_OPTION]['event']);
+    }
+
+    public function testNothingIsPostedBeforeNineOrFromNineInTheEvening(): void
+    {
+        $this->partyEvent();
+        $this->storeDjText(100, 'DJ Anna plays swing.');
+
+        foreach ([0, 8, 21, 23] as $hour) {
+            $this->at('2026-07-20', $hour);
+            self::assertFalse($this->announce());
+        }
+
+        self::assertSame([], $this->telegramCalls);
+        self::assertArrayNotHasKey(BoardService::NEXT_CARD_OPTION, $this->options);
+
+        // The last hour of the day's window still posts.
+        $this->at('2026-07-20', 20);
+        $this->queueAnnounce($this->twoDays());
+
+        self::assertTrue($this->announce());
+    }
+
+    public function testNothingIsPostedWithTheCardFormatOffOrWithoutABoardChat(): void
+    {
+        $this->partyEvent();
+        $this->storeDjText(100, 'DJ Anna plays swing.');
+        $this->queueAnnounce($this->twoDays());
+
+        $this->options[BoardService::CARDS_OPTION] = false;
+        self::assertFalse($this->announce());
+
+        $this->options[BoardService::CARDS_OPTION] = true;
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 0, 'message_id' => 0];
+        self::assertFalse($this->announce());
+
+        unset($this->options[BoardService::BOARD_OPTION]);
+        self::assertFalse($this->announce());
+
+        self::assertSame([], $this->telegramCalls);
+        self::assertArrayNotHasKey(BoardService::NEXT_CARD_OPTION, $this->options);
+    }
+
+    public function testAMissingDjTextWaitsOneRunThenThePictureIsPostedAnyway(): void
     {
         $this->options[AssistantSettings::URL_OPTION] = 'https://llm.example.test/v1';
         $this->options[AssistantSettings::MODEL_OPTION] = 'test-model';
         $this->partyEvent();
         // Written for an older description: not shown, and written again.
         $this->storeDjText(100, 'An old text.', md5('older source'));
-        $this->queueRefresh($this->twoDays());
+        $this->wpdb->nextResults[] = $this->twoDays();
 
-        $this->board()->refresh();
+        self::assertFalse($this->announce());
 
-        self::assertStringNotContainsString('An old text.', $this->lastCallTo('sendPhoto')['caption']);
+        // One background run asked for, no model request and nothing posted.
         self::assertSame([BoardDjText::HOOK], array_column($this->scheduled, 1));
-        self::assertSame(['sendPhoto', 'sendMessage'], $this->calledMethods());
+        self::assertSame([], $this->telegramCalls);
+        self::assertSame(100, $this->options[BoardService::NEXT_CARD_OPTION]['waited']);
+
+        $this->queueAnnounce($this->twoDays());
+
+        self::assertTrue($this->announce());
+
+        self::assertSame(['sendPhoto'], $this->calledMethods());
+        self::assertSame("<b>Party</b>\n📅 1.8.2026 · 21:00\n🎟 10 €", $this->lastCallTo('sendPhoto')['caption']);
+        self::assertSame(
+            ['event' => 100, 'day' => '', 'waited' => 0],
+            $this->options[BoardService::NEXT_CARD_OPTION]
+        );
+    }
+
+    public function testOnTheEventsDayAMissingDjTextDoesNotWait(): void
+    {
+        $this->partyEvent();
+        $this->at('2026-08-01', 9);
+        $this->queueAnnounce($this->twoDays());
+
+        self::assertTrue($this->announce());
+
+        self::assertSame(['sendPhoto'], $this->calledMethods());
+        self::assertSame(
+            ['event' => 100, 'day' => '2026-08-01', 'waited' => 0],
+            $this->options[BoardService::NEXT_CARD_OPTION]
+        );
+    }
+
+    public function testAFailedPostIsTriedAgainOnTheNextRun(): void
+    {
+        $this->partyEvent();
+        $this->storeDjText(100, 'DJ Anna plays swing.');
+        $this->telegramErrors['sendPhoto'] = 'Bad Request: wrong file identifier/HTTP URL specified';
+        $this->queueAnnounce($this->twoDays());
+
+        self::assertFalse($this->announce());
+        self::assertArrayNotHasKey(BoardService::NEXT_CARD_OPTION, $this->options);
+
+        unset($this->telegramErrors['sendPhoto']);
+        $this->queueAnnounce($this->twoDays());
+
+        self::assertTrue($this->announce());
+        self::assertSame(['sendPhoto', 'sendPhoto'], $this->calledMethods());
     }
 
     public function testNoPictureMeansNoPhotoMessage(): void
     {
         $this->partyEvent(['_eventmesh_image_url' => '']);
+        $this->storeDjText(100, 'DJ Anna plays swing.');
+        $this->queueRefresh($this->twoDays());
+
+        self::assertTrue($this->board()->refresh());
+        $this->wpdb->nextResults[] = $this->twoDays();
+        self::assertFalse($this->announce());
+
+        self::assertSame(['sendMessage'], $this->calledMethods());
+        self::assertArrayNotHasKey(BoardService::NEXT_CARD_OPTION, $this->options);
+    }
+
+    public function testThePictureIsOnlyForAnEventOnTheFirstDay(): void
+    {
+        // The event with a picture is on the second day: no photo message.
+        $this->event(100, '2026-08-02', 'Party', ['_eventmesh_image_url' => self::IMAGE]);
+        $this->storeDjText(100, 'DJ Anna plays swing.');
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(2, null, 'Cleanup', '2026-08-01'),
+            $this->taskRow(1, 100, 'Party', '2026-08-02'),
+        ];
+
+        self::assertFalse($this->announce());
+
+        self::assertSame([], $this->telegramCalls);
+    }
+
+    public function testTheCaptionFitsTelegramsLimitWithoutCuttingAnEntity(): void
+    {
+        $title = str_repeat('Big & Loud ', 30);
+        $this->event(100, '2026-08-01', $title, [
+            '_eventmesh_image_url' => self::IMAGE,
+            '_eventmesh_price' => '10.00 EUR',
+            '_eventmesh_original_lang' => 'en',
+            '_eventmesh_tr_fi_title' => 'Suomeksi & ' . $title,
+        ], 'Rock & roll.');
+        $this->fakeEventNames([], [100 => array_fill(0, 20, 'DJ & Friend')]);
+        $this->storeDjText(100, str_repeat('Swing & <blues>. ', 23));
+        $this->queueAnnounce([$this->taskRow(1, 100, 'Party')]);
+
+        self::assertTrue($this->announce());
+
+        $caption = $this->lastCallTo('sendPhoto')['caption'];
+        self::assertLessThanOrEqual(EventCard::CAPTION_LIMIT, self::visibleLength($caption));
+        self::assertStringContainsString('Swing &amp; &lt;blues&gt;.', $caption);
+        // Every & starts a whole entity.
+        self::assertSame(0, preg_match('/&(?!amp;|lt;|gt;)/', $caption));
+    }
+
+    // --- A picture stored with the board before Q360 ------------------------
+
+    public function testALegacyPictureIsForgottenNotDeletedAndItsEventIsNotPostedAgain(): void
+    {
+        $this->postLegacyBoard();
+        $this->storeDjText(100, 'DJ Anna plays swing.');
         $this->queueRefresh($this->twoDays());
 
         self::assertTrue($this->board()->refresh());
 
-        self::assertSame(['sendMessage'], $this->calledMethods());
+        self::assertSame(['editMessageText'], $this->calledMethods());
+        self::assertSame([], $this->deleted());
+        self::assertSame(
+            ['chat_id' => self::CHAT, 'message_id' => 62],
+            $this->options[BoardService::BOARD_OPTION]
+        );
+        self::assertSame(
+            ['event' => 100, 'day' => '', 'waited' => 0],
+            $this->options[BoardService::NEXT_CARD_OPTION]
+        );
+
+        // It counts as that event's "became next" post.
+        $this->telegramCalls = [];
+        $this->wpdb->nextResults[] = $this->twoDays();
+
+        self::assertFalse($this->announce());
+        self::assertSame([], $this->telegramCalls);
+    }
+
+    public function testWithTheCardFormatOffALegacyPictureIsDeleted(): void
+    {
+        $this->postLegacyBoard();
+        $this->options[BoardService::CARDS_OPTION] = false;
+        $this->wpdb->nextResults[] = $this->twoDays();
+        $this->wpdb->nextResults[] = [];
+
+        self::assertTrue($this->board()->refresh());
+
+        self::assertSame(['deleteMessage', 'editMessageText'], $this->calledMethods());
+        self::assertSame([61], $this->deleted());
+        self::assertSame(62, $this->lastCallTo('editMessageText')['message_id']);
+        self::assertNotContains('bd:2026-08-02', self::targets($this->lastCallTo('editMessageText')));
+        self::assertSame(
+            ['chat_id' => self::CHAT, 'message_id' => 62],
+            $this->options[BoardService::BOARD_OPTION]
+        );
+        self::assertArrayNotHasKey(BoardService::NEXT_CARD_OPTION, $this->options);
+    }
+
+    /** Stores the hash of the board as it renders now, so the text is "unchanged". */
+    private function storeUnchangedHash(): void
+    {
+        $this->wpdb->nextResults[] = $this->twoDays();
+        $this->wpdb->nextResults[] = [];
+        $rendered = $this->board()->render();
+        $this->options[BoardService::BOARD_HASH_OPTION] = md5(
+            $rendered['text'] . '|' . (string) wp_json_encode($rendered['keyboard']) . '|[]'
+        );
+    }
+
+    public function testTheHourlyCheckForgetsALegacyPictureEvenWithAnUnchangedText(): void
+    {
+        $this->postLegacyBoard();
+        $this->storeUnchangedHash();
+        for ($i = 0; $i < 2; $i++) { // the hash, then the refresh
+            $this->wpdb->nextResults[] = $this->twoDays();
+            $this->wpdb->nextResults[] = [];
+        }
+
+        $this->board()->refreshIfChanged();
+
+        self::assertSame(['editMessageText'], $this->calledMethods());
         self::assertArrayNotHasKey('card', $this->options[BoardService::BOARD_OPTION]);
     }
 
-    public function testTheCardIsOnlyForAnEventOnTheFirstDay(): void
+    public function testTheHourlyCheckDeletesALegacyPictureAfterSwitchingOffEvenWithAnUnchangedText(): void
     {
-        // The event with a picture is on the second day: no photo message.
-        $this->event(100, '2026-08-02', 'Party', ['_eventmesh_image_url' => self::IMAGE]);
-        $this->queueRefresh([
-            $this->taskRow(2, null, 'Cleanup', '2026-08-01'),
-            $this->taskRow(1, 100, 'Party', '2026-08-02'),
-        ]);
+        $this->postLegacyBoard();
+        $this->options[BoardService::CARDS_OPTION] = false;
+        $this->storeUnchangedHash();
+        for ($i = 0; $i < 2; $i++) { // the hash, then the refresh
+            $this->wpdb->nextResults[] = $this->twoDays();
+            $this->wpdb->nextResults[] = [];
+        }
 
-        $this->board()->refresh();
+        $this->board()->refreshIfChanged();
+
+        self::assertSame(['deleteMessage', 'editMessageText'], $this->calledMethods());
+    }
+
+    public function testRepostPostsTheTextBoardThenDeletesTheOldMessages(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = [
+            'chat_id' => self::CHAT,
+            'message_id' => 5,
+            'card' => ['message_id' => 4, 'event' => 100, 'photo' => self::IMAGE, 'text' => 'x', 'keyboard' => 'y'],
+            'days' => ['2026-08-01' => ['message_id' => 3, 'kind' => 'text']],
+        ];
+        $this->partyEvent();
+        $this->queueRefresh($this->twoDays());
+
+        $this->board()->repost();
+
+        self::assertSame(
+            ['sendMessage', 'deleteMessage', 'deleteMessage', 'deleteMessage'],
+            $this->calledMethods()
+        );
+        self::assertSame([5, 4, 3], $this->deleted());
+        self::assertSame(
+            ['chat_id' => self::CHAT, 'message_id' => 62],
+            $this->options[BoardService::BOARD_OPTION]
+        );
+    }
+
+    public function testAFailedRepostKeepsTheOldBoard(): void
+    {
+        $old = [
+            'chat_id' => self::CHAT,
+            'message_id' => 5,
+            'card' => ['message_id' => 4, 'event' => 100, 'photo' => self::IMAGE, 'text' => 'x', 'keyboard' => 'y'],
+        ];
+        $this->options[BoardService::BOARD_OPTION] = $old;
+        $this->telegramErrors['sendMessage'] = 'Forbidden: bot was kicked from the supergroup chat';
+        $this->partyEvent();
+        $this->queueRefresh($this->twoDays());
+
+        self::assertFalse($this->board()->repost());
 
         self::assertSame(['sendMessage'], $this->calledMethods());
+        self::assertSame($old, $this->options[BoardService::BOARD_OPTION]);
     }
 
     // --- Who is signed up, the next event, the day buttons -------------------
@@ -294,7 +685,7 @@ final class BoardCardsTest extends TelegramTestCase
         $this->board()->refresh();
 
         $text = $this->lastCallTo('sendMessage');
-        self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug\nParty\n\n🎈 Decorate · 2/2: Anna, someone", $text['text']);
+        self::assertSame(self::INTRO . "\n\n📅 Sat 1 Aug\nParty\n\n🎈 Decorate · 2/2\nAnna, someone", $text['text']);
         // A full task has no button.
         self::assertSame([], self::taskTargets($text));
 
@@ -340,7 +731,7 @@ final class BoardCardsTest extends TelegramTestCase
 
         $board = (new BoardRenderer(new TaskRepository()))->crewBoard('2026-08-02', false);
 
-        self::assertSame(self::INTRO . "\n\n📅 Sun 2 Aug\nCleanup\n\n🎈 Decorate · 1/2: Ben", $board['text']);
+        self::assertSame(self::INTRO . "\n\n📅 Sun 2 Aug\nCleanup\n\n🎈 Decorate · 1/2\nBen", $board['text']);
         $data = array_column(array_merge(...$board['keyboard']), 'callback_data', 'text');
         self::assertSame('t:2:2026-08-02', $data['🎈 Decorate'] ?? null);
         self::assertSame('bd:2026-08-01', $data['◀ Sat 1 Aug'] ?? null);
@@ -379,11 +770,17 @@ final class BoardCardsTest extends TelegramTestCase
         $text = $this->lastCallTo('sendMessage')['text'];
         self::assertLessThanOrEqual(BoardRenderer::TEXT_LIMIT, EntityHtml::units($text));
         self::assertGreaterThan(BoardRenderer::TEXT_LIMIT - 700, EntityHtml::units($text));
-        $names = ': ' . implode(', ', array_fill(0, 10, $name));
+        $names = implode(', ', array_fill(0, 10, $name));
+        $lines = array_slice(explode("\n", $text), 2);
 
-        foreach (array_slice(explode("\n", $text), 2) as $line) {
-            $full = str_starts_with($line, '🎈 Decorate · ') && str_ends_with($line, $names);
-            self::assertTrue('' === $line || str_starts_with($line, '📅 ') || 'Night' === $line || $full, $line);
+        foreach ($lines as $i => $line) {
+            $task = '🎈 Decorate · 10/2' === $line;
+            self::assertTrue('' === $line || str_starts_with($line, '📅 ') || 'Night' === $line || $task || $names === $line, $line);
+
+            // A task line is never left without its names under it.
+            if ($task) {
+                self::assertSame($names, $lines[$i + 1] ?? null);
+            }
         }
     }
 
@@ -391,40 +788,19 @@ final class BoardCardsTest extends TelegramTestCase
     {
         $this->partyEvent();
 
-        // On: the private text board has them; the group's message and the
-        // photo messages do not (Owner 2026-11-07).
-        $this->queueRefresh($this->twoDays());
-        $this->board()->refresh();
-        $this->wpdb->nextResults[] = $this->twoDays(); // the card
-        $this->wpdb->nextResults[] = $this->twoDays(); // the text board
-        $this->wpdb->nextResults[] = [];
-        $this->board()->sendPrivate(555);
+        foreach ([true, false] as $cards) {
+            $this->options[BoardService::CARDS_OPTION] = $cards;
+            $this->options[BoardService::BOARD_OPTION] = ['chat_id' => self::CHAT, 'message_id' => 0];
+            $this->telegramCalls = [];
+            $this->queueRefresh($this->twoDays());
+            $this->board()->refresh();
+            $this->queueRefresh($this->twoDays());
+            $this->board()->sendPrivate(555);
 
-        self::assertSame(['sendPhoto', 'sendMessage', 'sendPhoto', 'sendMessage'], $this->calledMethods());
-        foreach ($this->telegramCalls as $call) {
-            if ('sendPhoto' === $call['method']) {
-                self::assertSame([self::SHOP], self::targets($call['body']));
-            } elseif (555 === $call['body']['chat_id']) {
-                self::assertContains('bd:2026-08-02', self::targets($call['body']));
-            } else {
-                self::assertNotContains('bd:2026-08-02', self::targets($call['body']));
-            }
+            self::assertSame(['sendMessage', 'sendMessage'], $this->calledMethods());
+            self::assertNotContains('bd:2026-08-02', self::targets($this->telegramCalls[0]['body']));
+            self::assertContains('bd:2026-08-02', self::targets($this->telegramCalls[1]['body']));
         }
-
-        // Off: only the private copy has them.
-        $this->options[BoardService::CARDS_OPTION] = false;
-        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => self::CHAT, 'message_id' => 0];
-        $this->telegramCalls = [];
-        $this->wpdb->nextResults[] = $this->twoDays();
-        $this->wpdb->nextResults[] = [];
-        $this->board()->refresh();
-        $this->wpdb->nextResults[] = $this->twoDays();
-        $this->wpdb->nextResults[] = [];
-        $this->board()->sendPrivate(555);
-
-        self::assertSame(['sendMessage', 'sendMessage'], $this->calledMethods());
-        self::assertNotContains('bd:2026-08-02', self::targets($this->telegramCalls[0]['body']));
-        self::assertContains('bd:2026-08-02', self::targets($this->telegramCalls[1]['body']));
     }
 
     public function testWithTheSettingOffTheBoardIsUnchanged(): void
@@ -452,18 +828,9 @@ final class BoardCardsTest extends TelegramTestCase
         );
     }
 
-    // --- Refresh: the smallest edit -----------------------------------------
+    // --- Refresh -------------------------------------------------------------
 
-    /** One refresh, then the calls cleared. */
-    private function postBoard(): void
-    {
-        $this->partyEvent();
-        $this->queueRefresh($this->twoDays());
-        $this->board()->refresh();
-        $this->telegramCalls = [];
-    }
-
-    public function testAnUnchangedCardSendsNothing(): void
+    public function testAnUnchangedBoardIsEditedInPlace(): void
     {
         $this->postBoard();
         $this->queueRefresh($this->twoDays());
@@ -484,98 +851,7 @@ final class BoardCardsTest extends TelegramTestCase
 
         self::assertSame(['editMessageText'], $this->calledMethods());
         $edit = $this->lastCallTo('editMessageText');
-        self::assertStringContainsString('🎈 Decorate · 1/2: Anna', $edit['text']);
-    }
-
-    public function testANewPriceEditsTheCaption(): void
-    {
-        $this->postBoard();
-        $this->partyEvent(['_eventmesh_price' => '12.00 EUR']);
-        $this->queueRefresh($this->twoDays());
-
-        self::assertTrue($this->board()->refresh());
-
-        self::assertSame(['editMessageCaption', 'editMessageText'], $this->calledMethods());
-        $edit = $this->lastCallTo('editMessageCaption');
-        self::assertSame(61, $edit['message_id']);
-        self::assertSame('HTML', $edit['parse_mode']);
-        self::assertStringContainsString('🎟 12 €', $edit['caption']);
-        self::assertSame([self::SHOP], self::targets($edit));
-    }
-
-    public function testANewPictureEditsTheMedia(): void
-    {
-        $this->postBoard();
-        $this->partyEvent(['_eventmesh_image_url' => self::IMAGE_NEW]);
-        $this->queueRefresh($this->twoDays());
-
-        self::assertTrue($this->board()->refresh());
-
-        self::assertSame(['editMessageMedia', 'editMessageText'], $this->calledMethods());
-        $edit = $this->lastCallTo('editMessageMedia');
-        self::assertSame(61, $edit['message_id']);
-        self::assertSame(self::IMAGE_NEW, $edit['media']['media']);
-        self::assertStringStartsWith('<b>Party</b>', $edit['media']['caption']);
-        self::assertSame(self::IMAGE_NEW, $this->options[BoardService::BOARD_OPTION]['card']['photo']);
-    }
-
-    public function testNewLinksEditOnlyTheButtons(): void
-    {
-        $this->postBoard();
-        $this->partyEvent(['_eventmesh_url' => self::SHOP_NEW]);
-        $this->queueRefresh($this->twoDays());
-
-        self::assertTrue($this->board()->refresh());
-
-        self::assertSame(['editMessageReplyMarkup', 'editMessageText'], $this->calledMethods());
-        $edit = $this->lastCallTo('editMessageReplyMarkup');
-        self::assertSame(61, $edit['message_id']);
-        self::assertSame([self::SHOP_NEW], self::targets($edit));
-    }
-
-    public function testTheCardIsDeletedWhenTheNextEventHasNoPicture(): void
-    {
-        $this->postBoard();
-        $this->partyEvent(['_eventmesh_image_url' => '']);
-        $this->queueRefresh($this->twoDays());
-
-        self::assertTrue($this->board()->refresh());
-
-        self::assertSame(['deleteMessage', 'editMessageText'], $this->calledMethods());
-        self::assertSame([61], $this->deleted());
-        self::assertSame(
-            ['chat_id' => self::CHAT, 'message_id' => 62],
-            $this->options[BoardService::BOARD_OPTION]
-        );
-    }
-
-    public function testAMissingCardIsPostedAboveANewTextBoard(): void
-    {
-        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => self::CHAT, 'message_id' => 5];
-        $this->partyEvent();
-        $this->queueRefresh($this->twoDays());
-        $this->wpdb->nextResults[] = $this->twoDays(); // the text board posted again
-        $this->wpdb->nextResults[] = [];
-
-        self::assertTrue($this->board()->refresh());
-
-        self::assertSame(['sendPhoto', 'sendMessage', 'deleteMessage'], $this->calledMethods());
-        self::assertSame([5], $this->deleted());
-        $board = $this->options[BoardService::BOARD_OPTION];
-        self::assertSame([62, 61], [$board['message_id'], $board['card']['message_id']]);
-    }
-
-    public function testAFailedCardPostStillShowsTheTextBoardAndTriesAgainNextTime(): void
-    {
-        $this->partyEvent();
-        $this->telegramErrors['sendPhoto'] = 'Bad Request: wrong file identifier/HTTP URL specified';
-        $this->queueRefresh($this->twoDays());
-
-        self::assertFalse($this->board()->refresh());
-
-        self::assertSame(['sendPhoto', 'sendMessage'], $this->calledMethods());
-        self::assertArrayNotHasKey('card', $this->options[BoardService::BOARD_OPTION]);
-        self::assertSame(62, $this->options[BoardService::BOARD_OPTION]['message_id']);
+        self::assertStringContainsString("🎈 Decorate · 1/2\nAnna", $edit['text']);
     }
 
     public function testMessagesLeftFromOneMessagePerDayAreDeleted(): void
@@ -589,137 +865,26 @@ final class BoardCardsTest extends TelegramTestCase
 
         $this->board()->refresh();
 
-        self::assertSame(['deleteMessage', 'deleteMessage', 'sendPhoto', 'sendMessage'], $this->calledMethods());
+        self::assertSame(['deleteMessage', 'deleteMessage', 'sendMessage'], $this->calledMethods());
         self::assertSame([33, 34], $this->deleted());
         self::assertArrayNotHasKey('days', $this->options[BoardService::BOARD_OPTION]);
-    }
-
-    public function testSwitchingOffDeletesTheCardAndKeepsTheTextBoard(): void
-    {
-        $this->postBoard();
-        $this->options[BoardService::CARDS_OPTION] = false;
-        $this->wpdb->nextResults[] = $this->twoDays();
-        $this->wpdb->nextResults[] = [];
-
-        self::assertTrue($this->board()->refresh());
-
-        self::assertSame(['deleteMessage', 'editMessageText'], $this->calledMethods());
-        self::assertSame([61], $this->deleted());
-        self::assertSame(62, $this->lastCallTo('editMessageText')['message_id']);
-        self::assertNotContains('bd:2026-08-02', self::targets($this->lastCallTo('editMessageText')));
-        self::assertSame(
-            ['chat_id' => self::CHAT, 'message_id' => 62],
-            $this->options[BoardService::BOARD_OPTION]
-        );
-    }
-
-    public function testTheHourlyCheckDeletesTheCardAfterSwitchingOffEvenWithAnUnchangedText(): void
-    {
-        $this->postBoard();
-        $this->options[BoardService::CARDS_OPTION] = false;
-        $this->wpdb->nextResults[] = $this->twoDays();
-        $this->wpdb->nextResults[] = [];
-        $rendered = $this->board()->render();
-        $this->options[BoardService::BOARD_HASH_OPTION] = md5(
-            $rendered['text'] . '|' . (string) wp_json_encode($rendered['keyboard']) . '|null'
-        );
-        for ($i = 0; $i < 2; $i++) { // the hash, then the refresh
-            $this->wpdb->nextResults[] = $this->twoDays();
-            $this->wpdb->nextResults[] = [];
-        }
-
-        $this->board()->refreshIfChanged();
-
-        self::assertSame(['deleteMessage', 'editMessageText'], $this->calledMethods());
     }
 
     public function testTheHourlyCheckSendsNothingWhenNothingChanged(): void
     {
         $this->postBoard();
 
-        for ($i = 0; $i < 2; $i++) {
-            $this->wpdb->nextResults[] = $this->twoDays(); // the text board
-            $this->wpdb->nextResults[] = [];
-            $this->wpdb->nextResults[] = $this->twoDays(); // the card
-            $this->wpdb->nextResults[] = $this->twoDays(); // refresh: the card
-            $this->wpdb->nextResults[] = $this->twoDays(); // refresh: the text board
+        for ($i = 0; $i < 3; $i++) { // the hash and the refresh, then the hash
+            $this->wpdb->nextResults[] = $this->twoDays();
             $this->wpdb->nextResults[] = [];
         }
 
         $this->board()->refreshIfChanged();
+        self::assertSame(['editMessageText'], $this->calledMethods());
         $this->telegramCalls = [];
         $this->board()->refreshIfChanged();
 
         self::assertSame([], $this->telegramCalls);
-    }
-
-    public function testRepostPostsTheCardThenTheTextBoardThenDeletesTheOldMessages(): void
-    {
-        $this->options[BoardService::BOARD_OPTION] = [
-            'chat_id' => self::CHAT,
-            'message_id' => 5,
-            'card' => ['message_id' => 4, 'event' => 100, 'photo' => self::IMAGE, 'text' => 'x', 'keyboard' => 'y'],
-            'days' => ['2026-08-01' => ['message_id' => 3, 'kind' => 'text']],
-        ];
-        $this->partyEvent();
-        $this->wpdb->nextResults[] = $this->twoDays();
-        $this->wpdb->nextResults[] = $this->twoDays();
-        $this->wpdb->nextResults[] = [];
-
-        $this->board()->repost();
-
-        self::assertSame(
-            ['sendPhoto', 'sendMessage', 'deleteMessage', 'deleteMessage', 'deleteMessage'],
-            $this->calledMethods()
-        );
-        self::assertSame([5, 4, 3], $this->deleted());
-        $board = $this->options[BoardService::BOARD_OPTION];
-        self::assertSame([62, 61], [$board['message_id'], $board['card']['message_id']]);
-        self::assertArrayNotHasKey('days', $board);
-    }
-
-    public function testAFailedRepostTakesTheNewCardDownAndKeepsTheOldBoard(): void
-    {
-        $old = [
-            'chat_id' => self::CHAT,
-            'message_id' => 5,
-            'card' => ['message_id' => 4, 'event' => 100, 'photo' => self::IMAGE, 'text' => 'x', 'keyboard' => 'y'],
-        ];
-        $this->options[BoardService::BOARD_OPTION] = $old;
-        $this->telegramErrors['sendMessage'] = 'Forbidden: bot was kicked from the supergroup chat';
-        $this->partyEvent();
-        $this->wpdb->nextResults[] = $this->twoDays();
-        $this->wpdb->nextResults[] = $this->twoDays();
-        $this->wpdb->nextResults[] = [];
-
-        self::assertFalse($this->board()->repost());
-
-        // Only the card that was just posted comes down; the old ones stay.
-        self::assertSame(['sendPhoto', 'sendMessage', 'deleteMessage'], $this->calledMethods());
-        self::assertSame([61], $this->deleted());
-        self::assertSame($old, $this->options[BoardService::BOARD_OPTION]);
-    }
-
-    public function testTheCaptionFitsTelegramsLimitWithoutCuttingAnEntity(): void
-    {
-        $title = str_repeat('Big & Loud ', 30);
-        $this->event(100, '2026-08-01', $title, [
-            '_eventmesh_image_url' => self::IMAGE,
-            '_eventmesh_price' => '10.00 EUR',
-            '_eventmesh_original_lang' => 'en',
-            '_eventmesh_tr_fi_title' => 'Suomeksi & ' . $title,
-        ], 'Rock & roll.');
-        $this->fakeEventNames([], [100 => array_fill(0, 20, 'DJ & Friend')]);
-        $this->storeDjText(100, str_repeat('Swing & <blues>. ', 23));
-        $this->queueRefresh([$this->taskRow(1, 100, 'Party')]);
-
-        $this->board()->refresh();
-
-        $caption = $this->lastCallTo('sendPhoto')['caption'];
-        self::assertLessThanOrEqual(EventCard::CAPTION_LIMIT, self::visibleLength($caption));
-        self::assertStringContainsString('Swing &amp; &lt;blues&gt;.', $caption);
-        // Every & starts a whole entity.
-        self::assertSame(0, preg_match('/&(?!amp;|lt;|gt;)/', $caption));
     }
 
     public function testAnEmptyBoardIsOneTextMessage(): void
@@ -733,9 +898,131 @@ final class BoardCardsTest extends TelegramTestCase
         self::assertSame('No open tasks right now. Check back soon!', $this->lastCallTo('sendMessage')['text']);
     }
 
+    // --- The banner (Q361) ---------------------------------------------------
+
+    /**
+     * Chooses page 822 for the banner, with featured image 823 on file; the
+     * strip is "made" by a stub image editor. Returns the banner's URL.
+     */
+    private function chooseBannerPage(): string
+    {
+        $file = (string) tempnam(sys_get_temp_dir(), 'ecb');
+        $this->options[BoardBanner::PAGE_OPTION] = 822;
+
+        Functions\when('get_post')->alias(function (int $id): ?object {
+            if (822 !== $id) {
+                return $this->events[$id]['post'] ?? null;
+            }
+
+            $post = new \WP_Post();
+            $post->ID = 822;
+            $post->post_status = 'publish';
+
+            return $post;
+        });
+        Functions\when('parse_blocks')->justReturn([]);
+        Functions\when('get_post_thumbnail_id')->justReturn(823);
+        Functions\when('get_attached_file')->justReturn($file);
+        Functions\when('wp_upload_dir')->justReturn([
+            'basedir' => sys_get_temp_dir() . '/ec-banner-' . getmypid(),
+            'baseurl' => 'https://site.test/uploads',
+            'error' => false,
+        ]);
+        Functions\when('trailingslashit')->alias(static fn (string $path): string => rtrim($path, '/') . '/');
+        Functions\when('wp_mkdir_p')->justReturn(true);
+        Functions\when('wp_delete_file')->justReturn(null);
+        Functions\when('wp_get_image_editor')->justReturn(new class () {
+            /** @return array{width: int, height: int} */
+            public function get_size(): array // phpcs:ignore PSR1.Methods.CamelCapsMethodName
+            {
+                return ['width' => 1200, 'height' => 800];
+            }
+
+            public function crop(): bool
+            {
+                return true;
+            }
+
+            public function set_quality(): bool // phpcs:ignore PSR1.Methods.CamelCapsMethodName
+            {
+                return true;
+            }
+
+            public function save(): bool
+            {
+                return true;
+            }
+        });
+
+        return BoardBanner::url();
+    }
+
+    public function testEveryBoardMessageAndEditCarriesTheBannerAsALargePreviewAboveTheText(): void
+    {
+        $url = $this->chooseBannerPage();
+        self::assertStringStartsWith('https://site.test/uploads/eventcrew/board-banner-823-', $url);
+        $this->partyEvent();
+
+        $this->queueRefresh($this->twoDays());
+        $this->board()->refresh();
+        $this->queueRefresh($this->twoDays());
+        $this->board()->refresh();
+        $this->queueRefresh($this->twoDays());
+        $this->board()->sendPrivate(555);
+        $this->queueRefresh($this->twoDays());
+        $this->board()->repost();
+
+        self::assertSame(
+            ['sendMessage', 'editMessageText', 'sendMessage', 'sendMessage', 'deleteMessage'],
+            $this->calledMethods()
+        );
+
+        foreach ($this->telegramCalls as $call) {
+            if ('deleteMessage' === $call['method']) {
+                continue;
+            }
+
+            self::assertSame(
+                ['url' => $url, 'prefer_large_media' => true, 'show_above_text' => true],
+                $call['body']['link_preview_options'] ?? null,
+                $call['method']
+            );
+        }
+    }
+
+    public function testWithoutABannerPageTheBoardHasNoLinkPreviewOptions(): void
+    {
+        $this->partyEvent();
+
+        $this->queueRefresh($this->twoDays());
+        $this->board()->refresh();
+        $this->queueRefresh($this->twoDays());
+        $this->board()->refresh();
+        $this->queueRefresh($this->twoDays());
+        $this->board()->sendPrivate(555);
+
+        self::assertSame(['sendMessage', 'editMessageText', 'sendMessage'], $this->calledMethods());
+
+        foreach ($this->telegramCalls as $call) {
+            self::assertArrayNotHasKey('link_preview_options', $call['body']);
+        }
+    }
+
+    public function testThePictureNeverCarriesTheBanner(): void
+    {
+        $this->chooseBannerPage();
+        $this->partyEvent();
+        $this->at('2026-08-01', 10);
+        $this->queueAnnounce($this->twoDays());
+
+        self::assertTrue($this->announce());
+
+        self::assertArrayNotHasKey('link_preview_options', $this->lastCallTo('sendPhoto'));
+    }
+
     // --- /board in a private chat -------------------------------------------
 
-    public function testAPrivateBoardIsTheCardThenTheTextBoardAndLeavesTheGroupBoard(): void
+    public function testAPrivateBoardIsTheTextBoardOnlyAndLeavesTheGroupBoard(): void
     {
         $group = [
             'chat_id' => self::CHAT,
@@ -748,11 +1035,8 @@ final class BoardCardsTest extends TelegramTestCase
 
         $this->board()->sendPrivate(555);
 
-        self::assertSame(['sendPhoto', 'sendMessage'], $this->calledMethods());
-        foreach ($this->telegramCalls as $call) {
-            self::assertSame(555, $call['body']['chat_id']);
-        }
-        self::assertSame([self::SHOP], self::targets($this->lastCallTo('sendPhoto')));
+        self::assertSame(['sendMessage'], $this->calledMethods());
+        self::assertSame(555, $this->lastCallTo('sendMessage')['chat_id']);
         self::assertSame(['t:1'], self::taskTargets($this->lastCallTo('sendMessage')));
         self::assertSame($group, $this->options[BoardService::BOARD_OPTION]);
     }
@@ -772,7 +1056,7 @@ final class BoardCardsTest extends TelegramTestCase
         $edit = $private[0]['body'];
         self::assertSame(43, $edit['message_id']);
         // The copy stays on the day it showed.
-        self::assertStringContainsString("📅 Sun 2 Aug\nCleanup\n\n🎈 Decorate · 1/2: Sam", $edit['text']);
+        self::assertStringContainsString("📅 Sun 2 Aug\nCleanup\n\n🎈 Decorate · 1/2\nSam", $edit['text']);
         self::assertStringNotContainsString('Party', $edit['text']);
         self::assertSame(['t:2:2026-08-02'], self::taskTargets($edit));
         self::assertContains('bd:2026-08-01', self::targets($edit));

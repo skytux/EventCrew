@@ -174,25 +174,6 @@ final class RoleTaskBotTest extends TelegramTestCase
         self::assertStringContainsString('no upcoming tasks for your roles', $this->lastCallTo('sendMessage')['text']);
     }
 
-    public function testAfterThePrivateBoardTheListComesOnlyWhenItHasATask(): void
-    {
-        $this->wpdb->nextRows[] = $this->personRow(7, 'dj');
-        $this->wpdb->nextResults[] = [$this->djTask()];
-        $this->wpdb->nextRows[] = null;   // isOn: not signed up yet
-
-        $this->roleTaskBot()->sendIfAny(555);
-
-        self::assertSame(['rt:s:9'], $this->buttonData());
-
-        $this->telegramCalls = [];
-        $this->wpdb->nextRows[] = $this->personRow(7);
-        $this->wpdb->nextResults[] = [$this->djTask()];
-
-        $this->roleTaskBot()->sendIfAny(555);
-
-        self::assertSame([], $this->telegramCalls);
-    }
-
     public function testSomeoneWithoutTheRoleCannotSignUp(): void
     {
         $this->wpdb->nextRows[] = $this->personRow(7);

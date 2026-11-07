@@ -16,19 +16,23 @@ use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\SignupService;
 
 /**
- * The restricted-role tasks (Organize, DJ, VJ, ...) in the bot, sent under
- * the board when /board is asked in a private chat.
+ * The restricted-role tasks (Organize, DJ, VJ, ...) in the bot.
  *
  * These tasks are never on the group board. A person who holds the role gets
- * them here, in the DM: one button per task to sign up or cancel. Signing up
+ * them in the DM, in their private copy of the board (BoardRenderer::
+ * crewBoard() with a viewer, Owner 2026-11-07; before that a separate message
+ * under it, still built by start()): one button per task to sign up or
+ * cancel. Signing up
  * asks "Count toward free-entry credit?" first. An organizer also gets "Add
  * someone" on every upcoming task (Organize excepted): they send a name and an
  * optional email, answer the same credit question on a restricted task, and
  * the person - a member, or someone who is not a crew member yet - is put on
  * the task, and given the role when the task is restricted.
  *
- * After a sign-up or a cancel the list message is edited to show the new
- * state, so its ✋ / ❌ buttons never go stale.
+ * After a sign-up the message the ✋ was on is edited to show the new state,
+ * so its ✋ / ❌ buttons never go stale: redrawn as the private board
+ * (BoardService::redrawPrivate()) when the board is wired in, as the old list
+ * otherwise.
  *
  * Callback data, all "rt:<kind>:<task_id>": s = sign up (asks the question),
  * y / n = the answer, c = cancel, a = add someone, ay / an = the answer for
@@ -72,25 +76,6 @@ final class RoleTaskBot
         [$text, $markup] = $this->buildList($person);
         $this->telegram->sendMessage($telegramUserId, $text, $markup);
         $this->sentDmNote($chatId, $isPrivate);
-    }
-
-    /**
-     * After /board in a private chat: the list, but only when it has a task
-     * in it, so people with no roles get just the board.
-     */
-    public function sendIfAny(int $telegramUserId): void
-    {
-        $person = $this->people->findByTelegramUserId($telegramUserId);
-
-        if (null === $person || ! $person->isEmailVerified()) {
-            return;
-        }
-
-        [$text, $markup] = $this->buildList($person);
-
-        if (null !== $markup) {
-            $this->telegram->sendMessage($telegramUserId, $text, $markup);
-        }
     }
 
     public function isAwaitingPerson(int $telegramUserId): bool
@@ -223,8 +208,10 @@ final class RoleTaskBot
     }
 
     /**
-     * Edits the list message in place so it shows the person's tasks as they
-     * are now. Nothing happens when the message id is unknown.
+     * Edits the message the ✋ was on in place so it shows the person's tasks
+     * as they are now: the private board, on the day of the tapped task, or
+     * the old list without a BoardService. Nothing happens when the message
+     * id is unknown.
      */
     private function refreshList(Person $person, int $chatId, int $messageId, int $taskId = 0): void
     {
@@ -234,7 +221,15 @@ final class RoleTaskBot
 
         // Stay on the day of the task that was tapped.
         $task = $taskId > 0 ? $this->tasks->find($taskId) : null;
-        [$text, $markup] = $this->buildList($person, null !== $task ? $task->taskDate : '');
+        $date = null !== $task ? $task->taskDate : '';
+
+        if (null !== $this->board) {
+            $this->board->redrawPrivate($chatId, $messageId, $date);
+
+            return;
+        }
+
+        [$text, $markup] = $this->buildList($person, $date);
         $this->telegram->editMessageText($chatId, $messageId, $text, $markup);
     }
 

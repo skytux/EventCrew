@@ -146,6 +146,10 @@ final class Scheduler
         // notification, and a board left stale until morning is just wrong.
         $this->board->refreshIfChanged();
 
+        // The next event's picture in the group: once when it becomes the
+        // next event, and again on its morning. Only in the day hours.
+        $this->board->announceNextCard();
+
         // Discover a link to the group, so the emails and DMs can offer a way
         // in without anyone pasting one into Settings. Throttled to once a week
         // inside, and a no-op when the organizer has set their own.

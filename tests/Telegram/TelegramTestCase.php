@@ -410,6 +410,13 @@ abstract class TelegramTestCase extends TestCase
         );
     }
 
+    /**
+     * Whether boardService() lists the tasks of the person's roles in a
+     * private copy (RoleTaskService wired in, as in the plugin). Off by
+     * default, so tests that queue the plain board's reads stay as they are.
+     */
+    protected bool $boardWithRoles = false;
+
     protected function boardService(): BoardService
     {
         return new BoardService(
@@ -425,7 +432,8 @@ abstract class TelegramTestCase extends TestCase
                 $this->client(),
                 $this->standing()
             ),
-            $this->signup()
+            $this->signup(),
+            $this->boardWithRoles ? $this->roleTaskService() : null
         );
     }
 

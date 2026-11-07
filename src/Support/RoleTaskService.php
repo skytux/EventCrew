@@ -58,8 +58,20 @@ final class RoleTaskService
      */
     public function tasksFor(Person $person): array
     {
+        return self::ownOf($person, $this->tasks->upcoming());
+    }
+
+    /**
+     * The restricted tasks of $tasks this person holds the role for, in the
+     * order given (tasksFor() over a list already read).
+     *
+     * @param array<int, Task> $tasks
+     * @return list<Task>
+     */
+    public static function ownOf(Person $person, array $tasks): array
+    {
         return array_values(array_filter(
-            $this->tasks->upcoming(),
+            $tasks,
             static fn (Task $task): bool => $task->isRestricted() && $person->hasRole($task->roleSlug)
         ));
     }
@@ -73,8 +85,20 @@ final class RoleTaskService
      */
     public function addableTasks(): array
     {
+        return self::addableOf($this->tasks->upcoming());
+    }
+
+    /**
+     * The tasks of $tasks an organizer can add someone to (addableTasks()
+     * over a list already read).
+     *
+     * @param array<int, Task> $tasks
+     * @return list<Task>
+     */
+    public static function addableOf(array $tasks): array
+    {
         return array_values(array_filter(
-            $this->tasks->upcoming(),
+            $tasks,
             static fn (Task $task): bool => Roles::ORGANIZE_SLUG !== $task->roleSlug
         ));
     }

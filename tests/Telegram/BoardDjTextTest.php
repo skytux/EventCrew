@@ -245,17 +245,24 @@ final class BoardDjTextTest extends TelegramTestCase
         self::assertSame([BoardDjText::HOOK], $this->scheduled);
     }
 
-    public function testTheCronRunWritesTheTextAndRefreshesTheBoardWithIt(): void
+    public function testTheCronRunWritesTheTextAndTheNextPictureShowsIt(): void
     {
         $this->party();
         $this->answers[] = self::answer('DJ Anna plays swing and blues. She is based in Helsinki.');
         $this->queueTasks(1); // the run: which event is next
-        $this->queueTasks(2); // the refresh: the card and the text board
+        $this->queueTasks(1); // the refresh: the text board
+        $this->wpdb->nextResults[] = []; // and who is signed up
 
         $this->writer()->run();
 
         self::assertCount(1, $this->requests);
-        self::assertSame(['sendPhoto', 'sendMessage'], $this->calledMethods());
+        // The text board has no picture (Q360): only it is posted.
+        self::assertSame(['sendMessage'], $this->calledMethods());
+
+        $this->queueTasks(2); // the announcement: the next event, then its card
+        self::assertTrue($this->boardService()->announceNextCard());
+
+        self::assertSame(['sendMessage', 'sendPhoto'], $this->calledMethods());
         self::assertStringEndsWith(
             "\n\nDJ Anna plays swing and blues. She is based in Helsinki.",
             $this->lastCallTo('sendPhoto')['caption']
@@ -278,15 +285,20 @@ final class BoardDjTextTest extends TelegramTestCase
         self::assertSame([], $this->telegramCalls);
     }
 
-    public function testTheBoardNeverAsksTheModel(): void
+    public function testTheBoardAndThePictureNeverAskTheModel(): void
     {
         $this->party();
-        $this->queueTasks(2);
+        $this->queueTasks(1); // the refresh: the text board
+        $this->wpdb->nextResults[] = [];
+        $this->queueTasks(1); // the announcement: the next event
 
         $this->boardService()->refresh();
+        // The text is missing: a background run is asked for, and the
+        // picture waits for it.
+        self::assertFalse($this->boardService()->announceNextCard());
 
         self::assertSame([], $this->requests);
         self::assertSame([BoardDjText::HOOK], $this->scheduled);
-        self::assertSame(['sendPhoto', 'sendMessage'], $this->calledMethods());
+        self::assertSame(['sendMessage'], $this->calledMethods());
     }
 }

@@ -1157,7 +1157,8 @@ final class Kernel
                 $container->get(TelegramClient::class),
                 $container->get(Logger::class),
                 $container->get(ClaimNotifier::class),
-                $container->get(SignupService::class)
+                $container->get(SignupService::class),
+                $container->get(RoleTaskService::class)
             )
         );
 

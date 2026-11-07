@@ -382,7 +382,7 @@ final class MessagePreview
             return;
         }
 
-        $mailer->toPerson($person->id, $to, $subject, $body, $actions);
+        $mailer->toPerson($person->id, $to, $subject, $body, $actions, EmailHero::for($template->id, $context));
     }
 
     /**
