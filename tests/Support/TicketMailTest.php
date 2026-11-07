@@ -17,6 +17,7 @@ use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\ShortCode;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
@@ -268,6 +269,27 @@ final class TicketMailTest extends TestCase
         self::assertNotFalse($fi);
         self::assertNotFalse($en);
         self::assertLessThan($en, $fi);
+    }
+
+    /**
+     * The short code is under the QR code in the email, as on the ticket page
+     * and the door row, and on a line of its own in the plain text.
+     */
+    public function testTheEmailWritesTheShortCodeUnderTheQr(): void
+    {
+        $mail = $this->ticketMail()->compose(TicketBuyer::fromRow($this->buyerRow(1)));
+        $short = ShortCode::forBuyer(1);
+
+        self::assertStringContainsString('>' . $short . '<', $mail['corner']);
+        self::assertStringContainsString(': ' . $short . "\n", $mail['text']);
+        self::assertSame($short, TicketMail::shortCodeOf(TicketBuyer::fromRow($this->buyerRow(1))));
+    }
+
+    public function testACreditEmailHasThePersonsShortCodeForThatNight(): void
+    {
+        self::assertTrue($this->ticketMail()->sendCreditTicket($this->person(), 12, '2026-11-14'));
+
+        self::assertStringContainsString(ShortCode::forPerson(8, '2026-11-14'), $this->mails[0]['body']);
     }
 
     /**

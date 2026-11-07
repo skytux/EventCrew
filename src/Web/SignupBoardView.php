@@ -21,6 +21,7 @@ use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketList;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
+use EventCrew\Telegram\BoardRenderer;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\CalendarController;
 use EventCrew\Telegram\TicketRedemptionService;
@@ -223,7 +224,7 @@ final class SignupBoardView
      * @param array<int, Task> $tasks
      * @param array<int, int> $occupancy
      * @param array<int, bool> $mine
-     * @return array<int, array{title: string, dj: string, image: string, tasks: array<int, array{task: Task, taken: int, mine: bool, blocked: string, role_only: bool}>}>
+     * @return array<int, array{title: string, dj: string, image: string, tasks: array<int, array{task: Task, taken: int, mine: bool, blocked: string, role_only: bool, crew_only: bool, names: list<string>}>}>
      */
     private function groupByEvent(array $tasks, array $occupancy, array $mine, ?Person $person): array
     {
@@ -231,6 +232,17 @@ final class SignupBoardView
 
         // Asked once for the whole board: it is the same answer for every row.
         $personRefusal = null === $person ? '' : $this->signup->personRefusal($person->id);
+
+        // Who is signed up, by first name, for someone signed in whom the
+        // team has let in (Owner 2026-11-07); per row only where the role does
+        // not hide names from them (Anonymous display). One read for all.
+        $named = null !== $person && ! $person->isBanned() && '' === SignupService::approvalRefusal($person);
+        $occupants = [];
+
+        if ($named) {
+            $visible = array_filter($tasks, static fn (Task $t): bool => BoardVisibility::visibleTo($t, $person));
+            $occupants = $this->tasks->occupantsFor(array_map(static fn (Task $t): int => $t->id, $visible));
+        }
 
         foreach ($tasks as $task) {
             // Signed out, the board shows what the Telegram group board shows.
@@ -265,6 +277,12 @@ final class SignupBoardView
                 // An organizer sees a restricted task of a role they do not
                 // hold, with a disabled "DJ only" button.
                 'role_only' => BoardVisibility::roleOnly($task, $person),
+                // A guest on a role with Guest sign up off sees the task and
+                // its places, with no Sign up (Owner 2026-11-07).
+                'crew_only' => BoardVisibility::blocksGuestSignup($task, $person),
+                'names' => $named && BoardVisibility::showsNames($task, $person)
+                    ? BoardRenderer::firstNames($occupants[$task->id] ?? [])
+                    : [],
             ];
         }
 

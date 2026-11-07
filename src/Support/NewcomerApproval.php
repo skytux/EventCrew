@@ -22,7 +22,12 @@ use EventCrew\Telegram\TelegramClient;
  *   tab. Each organizer's NotificationPreferences::NEWCOMER row switches
  *   either route off; both are on by default.
  * - The request DM shows the person's @username and a link to their
- *   Telegram profile when they use the bot.
+ *   Telegram profile when they use the bot; the email links the
+ *   @username to t.me when they have one (with only the numeric id known
+ *   the email has no link: mail apps do not open tg:// links).
+ * - Both carry what the person said when joining ({join_answers},
+ *   JoinAnswers): worked on the crew here before, about how many times,
+ *   and how many free-entry tickets they think they should have.
  * - The first organizer to press OK or No decides
  *   (PersonRepository::decideNewcomer()); a later press is told who did.
  *   No first asks "Turn down <name>?" with a reason: Unknown to us (the
@@ -387,6 +392,12 @@ final class NewcomerApproval
         return $person->roleNotices[self::DECIDED_KEY] ?? '';
     }
 
+    /** Whether the organizers were asked about $person already (their first confirmed email). */
+    public static function wasAsked(Person $person): bool
+    {
+        return $person->hasRoleNotice(self::ASKED_KEY);
+    }
+
     /** The REASON_* of a turned-down request, '' when not recorded. */
     public static function reason(Person $person): string
     {
@@ -574,6 +585,13 @@ final class NewcomerApproval
             ];
         }
 
+        // The person's @username, linked to their t.me page (Owner 2026-11-07).
+        $handleLink = $this->handleAction($person);
+
+        if (null !== $handleLink) {
+            $actions[] = $handleLink;
+        }
+
         $this->mailer->toPerson(
             $organizer->id,
             $organizer->email,
@@ -721,6 +739,31 @@ final class NewcomerApproval
         }
 
         return [$html, $plain];
+    }
+
+    /**
+     * The organizer email's link to the person in Telegram: "@handle" to
+     * https://t.me/<handle>, a small link under the buttons. Null when the
+     * person has no Telegram or no username: a tg://user?id= link is left
+     * out, as mail apps drop or block that scheme.
+     *
+     * @return array{label: string, url: string, style: string}|null
+     */
+    private function handleAction(Person $person): ?array
+    {
+        if (null === $person->telegramUserId || $person->telegramUserId <= 0) {
+            return null;
+        }
+
+        $handle = $this->handle($person);
+
+        // Telegram usernames are 5 to 32 letters, digits and underscores; a
+        // value that is not one makes no link.
+        if (1 !== preg_match('/^[A-Za-z0-9_]{5,32}$/', $handle)) {
+            return null;
+        }
+
+        return ['label' => '@' . $handle, 'url' => 'https://t.me/' . $handle, 'style' => EmailBody::STYLE_LINK];
     }
 
     /** The person's Telegram username, asked from Telegram once per request; '' when they have none. */

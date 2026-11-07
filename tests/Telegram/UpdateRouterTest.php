@@ -668,8 +668,36 @@ final class UpdateRouterTest extends TelegramTestCase
             ],
         ]);
 
-        // Person + token inserted: the email was captured.
-        self::assertCount(2, $this->wpdb->inserts);
+        // The person inserted: the email was captured. A newcomer is asked
+        // the organizers' questions before the link goes out.
+        self::assertCount(1, $this->wpdb->inserts);
+        self::assertArrayHasKey('eventcrew_tg_await_join_555', $this->transients);
+    }
+
+    /** The newcomer's question buttons and a typed number reach the onboarding. */
+    public function testTheNewcomersAnswersAreRouted(): void
+    {
+        $this->transients['eventcrew_tg_await_join_555'] = [
+            'step' => 'times', 'person_id' => 1, 'email' => 'sam@example.com', 'name' => 'Sam', 'chat_id' => 555,
+        ];
+
+        $this->router()->dispatch([
+            'message' => ['text' => 'lots', 'chat' => ['id' => 555, 'type' => 'private'], 'from' => ['id' => 555]],
+        ]);
+        self::assertSame('Send a number from 1 to 50, or tap Skip.', $this->lastCallTo('sendMessage')['text']);
+
+        $this->router()->dispatch([
+            'callback_query' => [
+                'id' => 'cb1',
+                'from' => ['id' => 555],
+                'message' => ['message_id' => 40, 'chat' => ['id' => 555, 'type' => 'private']],
+                'data' => 'nwq:s',
+            ],
+        ]);
+
+        // Skip: the questions are done and the link is on its way.
+        self::assertArrayNotHasKey('eventcrew_tg_await_join_555', $this->transients);
+        self::assertCount(1, $this->wpdb->inserts, 'the confirmation token');
     }
 
     public function testPrivateChatterWhenNotAwaitingIsIgnored(): void

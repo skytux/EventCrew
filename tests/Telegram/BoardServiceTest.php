@@ -1028,17 +1028,18 @@ final class BoardServiceTest extends TelegramTestCase
     }
 
     /**
-     * The text lists the next three dates, but only the next one has task
-     * buttons, under its full-width date button (Owner 2026-11-07, Q365).
+     * The text and the task buttons are for the next date only, the buttons
+     * under its full-width date button (Owner 2026-11-07).
      */
-    public function testByDefaultTheTextListsThreeDatesAndOnlyTheNextEventHasButtons(): void
+    public function testByDefaultTheTextAndButtonsAreForTheNextEventOnly(): void
     {
         $this->queueThreeDays();
 
         $rendered = $this->board()->render();
         $data = array_column($this->buttons($rendered['keyboard']), 'callback_data');
 
-        $this->assertDaysInOrder(['Party A', 'Party B', 'Party C'], $rendered['text']);
+        $this->assertDaysInOrder(['Party A'], $rendered['text']);
+        self::assertStringNotContainsString('Party B', $rendered['text']);
         self::assertSame('📅 Sat 1 Aug', $rendered['keyboard'][0][0]['text']);
         // On the next event the task buttons keep the plain form.
         self::assertContains('t:1', $data);
@@ -1047,9 +1048,9 @@ final class BoardServiceTest extends TelegramTestCase
     }
 
     /**
-     * A fourth date stays out of the text, so it stays short.
+     * Later dates stay out of the text (Owner 2026-11-07: the selected day only).
      */
-    public function testTheTextStopsAfterThreeDates(): void
+    public function testLaterDatesStayOutOfTheText(): void
     {
         $this->wpdb->nextResults[] = [
             $this->taskRow(1, 100, 'Party A', '2026-08-01'),
@@ -1061,7 +1062,8 @@ final class BoardServiceTest extends TelegramTestCase
 
         $text = $this->board()->render()['text'];
 
-        $this->assertDaysInOrder(['Party A', 'Party B', 'Party C'], $text);
+        $this->assertDaysInOrder(['Party A'], $text);
+        self::assertStringNotContainsString('Party C', $text);
         self::assertStringNotContainsString('Party D', $text);
     }
 
@@ -1146,7 +1148,8 @@ final class BoardServiceTest extends TelegramTestCase
         $rendered = $this->privateRender('2026-08-08');
         $data = array_column($this->buttons($rendered['keyboard']), 'callback_data', 'text');
 
-        $this->assertDaysInOrder(['Party B', 'Party C'], $rendered['text']);
+        $this->assertDaysInOrder(['Party B'], $rendered['text']);
+        self::assertStringNotContainsString('Party C', $rendered['text']);
         self::assertStringNotContainsString('Party A', $rendered['text']);
         self::assertSame('📅 Sat 8 Aug', $rendered['keyboard'][0][0]['text']);
         self::assertNotContains('t:3:2026-08-15', $data);
@@ -1290,7 +1293,8 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertSame('You’re in! See you there.', $this->lastCallTo('answerCallbackQuery')['text']);
         self::assertSame(['answerCallbackQuery', 'editMessageText'], $this->calledMethods());
         $text = (string) $this->lastCallTo('editMessageText')['text'];
-        $this->assertDaysInOrder(['Party A', 'Party B'], $text);
+        $this->assertDaysInOrder(['Party A'], $text);
+        self::assertStringNotContainsString('Party B', $text);
     }
 
     public function testJoiningOnAPickedDayInADmKeepsTheGroupBoardOnTheNextEvent(): void
@@ -1342,7 +1346,8 @@ final class BoardServiceTest extends TelegramTestCase
         $this->board()->refresh();
 
         $text = (string) $this->lastCallTo('editMessageText')['text'];
-        $this->assertDaysInOrder(['Party A', 'Party B'], $text);
+        $this->assertDaysInOrder(['Party A'], $text);
+        self::assertStringNotContainsString('Party B', $text);
     }
 
     public function testIgnoresMalformedCallbackData(): void

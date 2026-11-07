@@ -274,4 +274,19 @@ final class DoorPageTest extends TestCase
         self::assertStringContainsString("'ticketDecoders' => DoorDesk::ticketDecoders(),", $source);
         self::assertStringContainsString("'ticketCode' => self::TICKET_CODE_ACTION,", $source);
     }
+
+    /**
+     * Each row shows its ticket's short code, the search finds a row by it
+     * (spaces and dashes left out), and the scan card shows it (Owner 2026-11-07).
+     */
+    public function testTheShortCodeIsOnTheRowFoundBySearchAndOnTheScanCard(): void
+    {
+        $html = $this->page();
+
+        self::assertStringContainsString('.ec-short{', $html);
+        self::assertStringContainsString("if (row.short) { who.firstChild.appendChild(node('span', 'ec-short', row.short)); }", $html);
+        self::assertStringContainsString("var code = query.replace(/[\\s-]+/g, '');", $html);
+        self::assertStringContainsString("-1 !== row.short.toLowerCase().indexOf(code)", $html);
+        self::assertStringContainsString("[scanRow.short, scanRow.detail].filter(Boolean).join(' · ')", $html);
+    }
 }

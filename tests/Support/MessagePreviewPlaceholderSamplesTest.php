@@ -91,7 +91,7 @@ final class MessagePreviewPlaceholderSamplesTest extends TestCase
 
         $samples = $this->byTag($this->preview()->placeholderSamples()['reminder']);
 
-        self::assertSame('Sample Person', $samples['{name}']['sample']);
+        self::assertSame('Sample', $samples['{name}']['sample']);
         self::assertNotSame('', $samples['{event}']['sample']);
         self::assertStringNotContainsString('{', $samples['{when}']['sample']);
         self::assertNotSame('', $samples['{role}']['sample']);

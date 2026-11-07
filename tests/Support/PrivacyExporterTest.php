@@ -64,6 +64,32 @@ final class PrivacyExporterTest extends TestCase
         self::assertSame('Sam', $values['Name']);
     }
 
+    public function testTheJoinAnswersAreExported(): void
+    {
+        $row = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'role_notices' => '{"newcomer:before":"yes","newcomer:times":"2"}',
+        ];
+        $this->wpdb->nextRows[] = $row;
+        $this->wpdb->nextRows[] = $row;
+
+        $values = array_column($this->exporter()->export('sam@example.com')['data'][0]['data'], 'value', 'name');
+
+        self::assertSame('Worked on the crew here before: yes, about 2 times.', $values['Said when joining']);
+    }
+
+    public function testNoJoinAnswersNoField(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+
+        $values = array_column($this->exporter()->export('sam@example.com')['data'][0]['data'], 'value', 'name');
+
+        self::assertArrayNotHasKey('Said when joining', $values);
+    }
+
     public function testItRegistersItselfWithWordPresssExportTool(): void
     {
         $exporters = $this->exporter()->register([]);

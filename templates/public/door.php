@@ -123,6 +123,7 @@ li.is-in .ec-name{color:var(--in)}
 .ec-who{flex:1;min-width:0}
 .ec-name{font-weight:600;overflow-wrap:anywhere}
 .ec-detail{font-size:13px;color:var(--muted)}
+.ec-short{display:inline-block;margin-left:6px;padding:0 6px;border:1px solid var(--line);border-radius:6px;font:600 13px/1.5 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.12em;color:var(--fg);vertical-align:1px}
 button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;min-height:44px;min-width:44px;padding:0 12px;cursor:pointer}
 button:disabled{opacity:.5}
 .ec-plus{display:flex;align-items:center;gap:4px}
@@ -529,6 +530,8 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 
     function draw() {
         var query = el('ec-filter').value.trim().toLowerCase();
+        // A short code typed with a space or a dash still finds its row.
+        var code = query.replace(/[\s-]+/g, '');
         var holder = el('ec-sections');
 
         // The date, then who this device is logged in as.
@@ -543,7 +546,8 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 
         state.sections.forEach(function (section) {
             var rows = section.rows.filter(function (row) {
-                return '' === query || -1 !== (row.name + ' ' + row.detail).toLowerCase().indexOf(query);
+                return '' === query || -1 !== (row.name + ' ' + row.detail).toLowerCase().indexOf(query)
+                    || ('' !== code && !!row.short && -1 !== row.short.toLowerCase().indexOf(code));
             });
             var inCount = section.rows.filter(function (row) { return row.in; }).length;
             var list = node('ul');
@@ -575,6 +579,9 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         toggle.setAttribute('aria-label', text.out);
 
         who.appendChild(node('div', 'ec-name', row.name));
+        // The short code under the ticket's QR code, to compare with the
+        // screen when a row is ticked by hand.
+        if (row.short) { who.firstChild.appendChild(node('span', 'ec-short', row.short)); }
         if (row.detail) { who.appendChild(node('div', 'ec-detail', row.detail)); }
 
         // A row whose max is 0 has no guest count at all: free-entry credit
@@ -1349,7 +1356,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         el('ec-scan-result').hidden = false;
         el('ec-scan-name').textContent = scanRow.name;
         fitScanName();
-        el('ec-scan-detail').textContent = scanRow.detail || '';
+        el('ec-scan-detail').textContent = [scanRow.short, scanRow.detail].filter(Boolean).join(' · ');
         el('ec-scan-tickets').hidden = true;
         el('ec-scan-plus').hidden = scanRow.max <= 0;
         el('ec-scan-mark').disabled = false;
@@ -1405,7 +1412,7 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         scanRow = next || rows[0];
         list.textContent = '';
         rows.forEach(function (row) {
-            list.appendChild(node('li', row.in ? 'is-in' : '', row.name + ' · ' + (row.in ? text.ticketIn : text.ticketOut)));
+            list.appendChild(node('li', row.in ? 'is-in' : '', [row.name, row.short, row.in ? text.ticketIn : text.ticketOut].filter(Boolean).join(' · ')));
         });
         list.hidden = rows.length < 2;
 

@@ -67,6 +67,34 @@ final class EventTimes
         return false === $time ? '' : $time->modify('+' . self::doorsMinutes() . ' minutes')->format('H:i');
     }
 
+    /**
+     * When the doors close on the night of $date, as a local "Y-m-d H:i:s",
+     * or '' when doorsClose() gives no time. A doors time earlier than the
+     * start (start 23:30, doors 00:15) is on the next day.
+     */
+    public static function doorsCloseAt(?int $postId, string $date): string
+    {
+        $doors = self::doorsClose($postId);
+
+        if ('' === $doors || 1 !== preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            return '';
+        }
+
+        $at = \DateTimeImmutable::createFromFormat('!Y-m-d H:i', $date . ' ' . $doors);
+
+        if (false === $at) {
+            return '';
+        }
+
+        $start = self::start($postId);
+
+        if ('' !== $start && $doors < $start) {
+            $at = $at->modify('+1 day');
+        }
+
+        return $at->format('Y-m-d H:i:s');
+    }
+
     /** The event's own doors time (HH:MM), or '' when it follows the setting or EventMesh is off. */
     public static function ownDoorsClose(int $postId): string
     {

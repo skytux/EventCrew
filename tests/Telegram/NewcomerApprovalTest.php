@@ -193,6 +193,108 @@ final class NewcomerApprovalTest extends TelegramTestCase
         self::assertNull($this->lastCallTo('getChat'));
     }
 
+    // ---- What the newcomer said when joining (Owner 2026-11-07) ------------
+
+    /**
+     * Asks the organizers (Kim) about Sam with $extra on Sam's row.
+     *
+     * @param array<string, mixed> $extra
+     */
+    private function askAbout(array $extra = []): void
+    {
+        $this->wpdb->nextRows[] = self::sam($extra);
+        $this->wpdb->nextRows[] = self::sam($extra);
+        $this->wpdb->nextRows[] = self::sam($extra);
+        $this->wpdb->nextResults[] = [self::kim()];
+
+        $this->approval()->onEmailVerified(8);
+    }
+
+    public function testTheRequestCarriesTheAnswersYesWithNumbers(): void
+    {
+        $this->askAbout([
+            'role_notices' => '{"newcomer:before":"yes","newcomer:times":"5","newcomer:tickets":"3"}',
+        ]);
+
+        $line = 'Worked on the crew here before: yes, about 5 times. Thinks they should have 3 free-entry tickets.';
+        self::assertStringContainsString("\n" . $line, $this->lastCallTo('sendMessage')['text']);
+        self::assertStringContainsString("\n\n" . $line, $this->mails[0]['body']);
+    }
+
+    public function testTheRequestCarriesTheAnswersOneTimeAndOneTicket(): void
+    {
+        $this->askAbout([
+            'role_notices' => '{"newcomer:before":"yes","newcomer:times":"1","newcomer:tickets":"1"}',
+        ]);
+
+        self::assertStringContainsString(
+            'Worked on the crew here before: yes, about 1 time. Thinks they should have 1 free-entry ticket.',
+            $this->mails[0]['body']
+        );
+    }
+
+    public function testTheRequestCarriesTheAnswerNo(): void
+    {
+        $this->askAbout(['role_notices' => '{"newcomer:before":"no"}']);
+
+        self::assertStringContainsString('First time on the crew.', $this->lastCallTo('sendMessage')['text']);
+        self::assertStringContainsString('First time on the crew.', $this->mails[0]['body']);
+    }
+
+    public function testTheRequestSaysWhenTheQuestionWasNotAnswered(): void
+    {
+        $this->askAbout();
+
+        $line = 'Did not say whether they have worked on the crew here before.';
+        self::assertStringContainsString($line, $this->lastCallTo('sendMessage')['text']);
+        self::assertStringContainsString($line, $this->mails[0]['body']);
+    }
+
+    public function testTheEmailLinksTheTelegramHandle(): void
+    {
+        $this->telegramResults['getChat'] = ['id' => 4242, 'username' => 'samlee'];
+        $this->askAbout(['telegram_user_id' => 4242, 'telegram_chat_id' => 4242]);
+
+        // Plain text: "label: url".
+        self::assertStringContainsString('@samlee: https://t.me/samlee', $this->mails[0]['body']);
+    }
+
+    public function testTheHtmlEmailLinksTheTelegramHandle(): void
+    {
+        $this->options[EmailTemplate::HTML_OPTION] = true;
+        $this->telegramResults['getChat'] = ['id' => 4242, 'username' => 'samlee'];
+        $this->askAbout(['telegram_user_id' => 4242, 'telegram_chat_id' => 4242]);
+
+        self::assertMatchesRegularExpression('#<a [^>]*href="https://t\.me/samlee"[^>]*>@samlee</a>#', $this->mails[0]['body']);
+    }
+
+    public function testTheEmailHasNoHandleLinkWithoutAUsername(): void
+    {
+        // Telegram known, but no public @username: no t.me link (and no tg://
+        // link either, which mail apps do not open).
+        $this->telegramResults['getChat'] = ['id' => 4242];
+        $this->askAbout(['telegram_user_id' => 4242, 'telegram_chat_id' => 4242]);
+
+        self::assertStringNotContainsString('t.me/samlee', $this->mails[0]['body']);
+        self::assertStringNotContainsString('tg://', $this->mails[0]['body']);
+    }
+
+    public function testTheEmailHasNoHandleLinkForAnOddUsername(): void
+    {
+        $this->telegramResults['getChat'] = ['id' => 4242, 'username' => 'sam"><script>'];
+        $this->askAbout(['telegram_user_id' => 4242, 'telegram_chat_id' => 4242]);
+
+        self::assertStringNotContainsString('https://t.me/', $this->mails[0]['body']);
+        self::assertStringNotContainsString('<script>', $this->mails[0]['body']);
+    }
+
+    public function testTheEmailHasNoHandleLinkWithoutTelegram(): void
+    {
+        $this->askAbout();
+
+        self::assertStringNotContainsString('https://t.me/', $this->mails[0]['body']);
+    }
+
     public function testTheOrganizersAreAskedOnlyOnce(): void
     {
         $this->wpdb->nextRows[] = self::sam(['role_notices' => '{"newcomer:asked":"2026-11-06 10:00:00"}']);
@@ -348,7 +450,7 @@ final class NewcomerApprovalTest extends TelegramTestCase
         $edit = $this->lastCallTo('editMessageText');
         self::assertNotNull($edit);
         self::assertSame(
-            "📣 Test Site\n\nHi Kim,\n\n🆕 New: Sam Lee (sam@example.com) wants to join.\n\n✅ OK, by Kim, 20 Jul 12:00.",
+            "📣 Test Site\n\nHi Kim,\n\n🆕 New: Sam Lee (sam@example.com) wants to join.\nDid not say whether they have worked on the crew here before.\n\n✅ OK, by Kim, 20 Jul 12:00.",
             $edit['text']
         );
         self::assertSame([], $edit['reply_markup']['inline_keyboard']);
@@ -405,7 +507,7 @@ final class NewcomerApprovalTest extends TelegramTestCase
         self::assertTrue($answer['show_alert']);
         self::assertNull($this->lastCallTo('sendMessage'));
         self::assertSame(
-            "📣 Test Site\n\nHi Kim,\n\n🆕 New: Sam Lee (sam@example.com) wants to join.\n\n❌ No, by Alex.",
+            "📣 Test Site\n\nHi Kim,\n\n🆕 New: Sam Lee (sam@example.com) wants to join.\nDid not say whether they have worked on the crew here before.\n\n❌ No, by Alex.",
             $this->lastCallTo('editMessageText')['text']
         );
     }
@@ -472,7 +574,7 @@ final class NewcomerApprovalTest extends TelegramTestCase
         self::assertSame([], $this->updatesOfApproval());
         $edit = $this->lastCallTo('editMessageText');
         self::assertSame(71, $edit['message_id']);
-        self::assertStringContainsString("wants to join.\n\nTurn down Sam Lee?\n", $edit['text']);
+        self::assertStringContainsString("wants to join.\nDid not say whether they have worked on the crew here before.\n\nTurn down Sam Lee?\n", $edit['text']);
         self::assertStringContainsString('With “No reason” they are not told.', $edit['text']);
         self::assertSame(
             [['nco:nu:8'], ['nco:nn:8'], ['nco:bk:8']],
@@ -494,7 +596,10 @@ final class NewcomerApprovalTest extends TelegramTestCase
         $this->approval()->onTap(self::tap('nco:bk:8'));
 
         $edit = $this->lastCallTo('editMessageText');
-        self::assertStringEndsWith('wants to join.', $edit['text']);
+        self::assertStringEndsWith(
+            "wants to join.\nDid not say whether they have worked on the crew here before.",
+            $edit['text']
+        );
         self::assertSame(['nco:ok:8', 'nco:no:8'], array_column($edit['reply_markup']['inline_keyboard'][0], 'callback_data'));
         self::assertSame([], $this->updatesOfApproval());
     }

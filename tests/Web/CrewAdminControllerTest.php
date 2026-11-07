@@ -862,6 +862,31 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         );
     }
 
+    /**
+     * The Admin tab's "Waiting for an OK" list shows what each newcomer said
+     * when joining, the same line as the organizers' email and DM, whether
+     * they joined on the web or in the bot.
+     */
+    public function testTheWaitingListShowsWhatEachNewcomerSaidWhenJoining(): void
+    {
+        $this->wpdb->nextResults[] = [
+            [
+                'approval' => Person::APPROVAL_WAITING,
+                'email_verified_at' => '2026-07-01 00:00:00',
+                'role_notices' => '{"newcomer:before":"yes","newcomer:times":"5","newcomer:tickets":"3"}',
+            ] + $this->personRow(8),
+            ['approval' => Person::APPROVAL_WAITING, 'email_verified_at' => '2026-07-01 00:00:00'] + $this->personRow(9),
+        ];
+
+        $rows = (new \ReflectionMethod(CrewAdminController::class, 'newcomerRows'))->invoke($this->admin());
+
+        self::assertSame(
+            'Worked on the crew here before: yes, about 5 times. Thinks they should have 3 free-entry tickets.',
+            $rows[0]['answers']
+        );
+        self::assertSame('Did not say whether they have worked on the crew here before.', $rows[1]['answers']);
+    }
+
     public function testALaterAnswerForANewcomerSaysSomeoneAlreadyAnswered(): void
     {
         $this->signIn($this->organizerRow(1));
@@ -2959,6 +2984,8 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             'role_capacity' => '5',
             'role_restricted' => '1',
             'role_sales_desk' => '1',
+            'role_on_board' => '1',
+            'role_anonymous' => '1',
             'role_title_contains' => 'party',
             'role_plus_ones' => '1',
             'role_count' => ['decorate' => '2'],
@@ -2982,6 +3009,10 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertTrue($role['restricted']);
         self::assertFalse($role['every_night']);
         self::assertTrue($role['sales_desk']);
+        // The three guest ticks: shown, no guest sign-up, names hidden.
+        self::assertTrue($role['on_board']);
+        self::assertFalse($role['guest_signup']);
+        self::assertTrue($role['anonymous']);
         self::assertFalse($role['archived']);
         self::assertSame('party', $role['title_contains']);
         self::assertSame(1, $role['plus_ones']);

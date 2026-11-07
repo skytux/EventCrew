@@ -2125,6 +2125,12 @@ final class SettingsPage
         $onBoard = isset($_POST['role_on_board']) && is_array($_POST['role_on_board'])
             ? array_map('intval', array_keys(wp_unslash($_POST['role_on_board'])))
             : [];
+        $guestSignup = isset($_POST['role_guest_signup']) && is_array($_POST['role_guest_signup'])
+            ? array_map('intval', array_keys(wp_unslash($_POST['role_guest_signup'])))
+            : [];
+        $anonymous = isset($_POST['role_anonymous']) && is_array($_POST['role_anonymous'])
+            ? array_map('intval', array_keys(wp_unslash($_POST['role_anonymous'])))
+            : [];
 
         // Conditions: role_count[index][slug], role_min_roles[index] and
         // role_times_each[index]. Roles::normalize() drops blanks and zeros.
@@ -2145,6 +2151,8 @@ final class SettingsPage
         $everyNightIndexes = array_flip($everyNight);
         $salesDeskIndexes = array_flip($salesDesk);
         $onBoardIndexes = array_flip($onBoard);
+        $guestSignupIndexes = array_flip($guestSignup);
+        $anonymousIndexes = array_flip($anonymous);
 
         $types = [];
         $translator = $this->translator();
@@ -2199,6 +2207,8 @@ final class SettingsPage
                 'every_night' => isset($everyNightIndexes[$index]),
                 'sales_desk' => isset($salesDeskIndexes[$index]),
                 'on_board' => isset($onBoardIndexes[$index]),
+                'guest_signup' => isset($guestSignupIndexes[$index]),
+                'anonymous' => isset($anonymousIndexes[$index]),
                 'title_contains' => $titleContains[$index] ?? '',
                 'plus_ones' => $plusOnes[$index] ?? 0,
                 'conditions' => [

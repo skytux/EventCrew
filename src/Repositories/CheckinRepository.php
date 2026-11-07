@@ -21,10 +21,10 @@ final class CheckinRepository
     public const KIND_BUYER = 'buyer';
 
     /** The kinds a task's ticket is marked in as, for inAt(), in order. */
-    public const TASK_TICKET_KINDS = [self::KIND_CREW, self::KIND_CREDIT];
+    public const TASK_TICKET_KINDS = [self::KIND_CREW];
 
     /** The kinds a free-entry ticket is marked in as, for inAt(), in order. */
-    public const CREDIT_TICKET_KINDS = [self::KIND_CREDIT, self::KIND_CREW];
+    public const CREDIT_TICKET_KINDS = [self::KIND_CREDIT];
 
     /** Most plus-ones one row may carry - the same typo guard the guest list uses. */
     public const MAX_PLUS_ONES = GuestRepository::MAX_PLUS_ONES;
@@ -123,9 +123,9 @@ final class CheckinRepository
 
     /**
      * When this entry was marked in on $date (site time), or null when it is
-     * not in. $kinds are tried in order and the first that has a row answers:
-     * the door marks a person who works and also holds a credit as crew, one
-     * who only holds a credit as credit.
+     * not in. $kinds are tried in order and the first that has a row answers.
+     * A task's ticket is the crew row and a free-entry ticket the credit row,
+     * each checked in on its own.
      *
      * @param array<int, string> $kinds
      */
@@ -140,6 +140,39 @@ final class CheckinRepository
         }
 
         return null;
+    }
+
+    /**
+     * When this entry was marked in on $date under any of $kinds (site time),
+     * or null when it is not in. One query on the one_per_entry key, cheap
+     * enough for the ticket page's live wait to ask once a second.
+     *
+     * @param array<int, string> $kinds
+     */
+    public function anyInAt(string $date, array $kinds, int $refId): ?string
+    {
+        global $wpdb;
+
+        $kinds = array_values(array_intersect(self::kinds(), $kinds));
+
+        if ([] === $kinds || $refId <= 0) {
+            return null;
+        }
+
+        $in = implode(', ', array_fill(0, count($kinds), '%s'));
+
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- placeholders only; the table name comes from Schema.
+        $at = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT checked_in_at FROM {$this->table()}
+                WHERE event_date = %s AND kind IN ({$in}) AND ref_id = %d
+                ORDER BY checked_in_at ASC LIMIT 1",
+                ...array_merge([$date], $kinds, [$refId])
+            )
+        );
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+        return null === $at ? null : (string) $at;
     }
 
     /**

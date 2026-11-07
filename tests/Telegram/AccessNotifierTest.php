@@ -100,7 +100,7 @@ final class AccessNotifierTest extends TelegramTestCase
         $this->notifier()->roleGiven(8, 'dj');
 
         self::assertSame(
-            "📣 Test Site\n\nHi Sam Lee,\n\nYou now have the role DJ, so you can sign up for its tasks.",
+            "📣 Test Site\n\nHi Sam,\n\nYou now have the role DJ, so you can sign up for its tasks.",
             $this->dm()
         );
         self::assertSame(
@@ -140,7 +140,7 @@ final class AccessNotifierTest extends TelegramTestCase
         $this->notifier()->roleGiven(8, 'dj');
 
         self::assertSame(
-            "📣 Test Site\n\nHi Sam Lee,\n\nYou now have the role DJ, so you can sign up for its tasks.\n\nOpen now:"
+            "📣 Test Site\n\nHi Sam,\n\nYou now have the role DJ, so you can sign up for its tasks.\n\nOpen now:"
                 . "\n📅 Sat 14 Nov\n- 22:00–23:00: DJ at Dance Night",
             $this->dm()
         );
@@ -164,7 +164,7 @@ final class AccessNotifierTest extends TelegramTestCase
         $this->notifier()->passGiven(8);
 
         self::assertSame(
-            "📣 Test Site\n\nHi Sam Lee,\n\n🎟 You’ve a one-time pass to sign up for your next task, even while your"
+            "📣 Test Site\n\nHi Sam,\n\n🎟 You’ve a one-time pass to sign up for your next task, even while your"
                 . ' standing is low. It is used up the next time you sign up.',
             $this->dm()
         );
@@ -183,7 +183,7 @@ final class AccessNotifierTest extends TelegramTestCase
         $this->notifier()->organizerGiven(8);
 
         self::assertSame(
-            "📣 Test Site\n\nHi Sam Lee,\n\n⭐ You’re now an organizer of Test Site. The Crew app has an Admin tab"
+            "📣 Test Site\n\nHi Sam,\n\n⭐ You’re now an organizer of Test Site. The Crew app has an Admin tab"
                 . ' for you, where you manage tasks and people.',
             $this->dm()
         );

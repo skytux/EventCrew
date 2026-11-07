@@ -20,6 +20,7 @@ use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\SiteLanguages;
+use EventCrew\Telegram\BoardService;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -1190,6 +1191,99 @@ final class FollowupMailTest extends TestCase
             self::assertStringNotContainsString('See the coming events', $mail['html'] . $mail['text']);
             self::assertStringNotContainsString('Katso tulevat tapahtumat', $mail['html'] . $mail['text']);
         }
+    }
+
+    // ---- The crew part of the thank-you (Owner, 2026-11-07) -----------------
+
+    /**
+     * The target of each counted link in $html, in order.
+     *
+     * @return list<string>
+     */
+    private static function linkTargets(string $html): array
+    {
+        preg_match_all('/eventcrew_go=([A-Za-z0-9_.\-]+)/', $html, $tokens);
+
+        return array_map(
+            static fn (string $token): string => explode("\n", (string) SignedLink::verifyPayload(FollowupMail::PURPOSE_GO, $token), 3)[2] ?? '',
+            $tokens[1]
+        );
+    }
+
+    /**
+     * The thank-you ends with a word for the crew and an invitation to join
+     * it, in both languages, with Join on the web (the crew page) and Join on
+     * Telegram (the bot's sign-up), after the announcement invite and before
+     * the opt-out link. Both buttons are counted links of the row.
+     */
+    public function testTheThankYouCreditsTheCrewAndInvitesToJoinIt(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->options['eventcrew_signup_page_id'] = 897;
+        $this->options[BoardService::USERNAME_OPTION] = 'crewbot';
+
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
+        $html = html_entity_decode($mail['html'], ENT_QUOTES);
+
+        $en = 'The evening was made by our crew: the people who worked behind the scenes so everyone else could'
+            . ' dance. Thank you, crew! Would you like to join them? It is a lovely way to get to know people,'
+            . ' feel useful and save on tickets.';
+        self::assertStringContainsString($en, $html);
+        self::assertStringContainsString($en, $mail['text']);
+        self::assertStringContainsString('Kiitos, crew!', $html, 'in Finnish too');
+        self::assertStringContainsString("Liity verkossa\nJoin on the web: ", $mail['text']);
+        self::assertStringContainsString("Liity Telegramissa\nJoin on Telegram: ", $mail['text']);
+
+        $join = strpos($html, 'Join the announcement');
+        $crew = strpos($html, 'Thank you, crew!');
+        $optOut = strpos($html, "Don't send me these");
+        self::assertNotFalse($join);
+        self::assertGreaterThan($join, $crew, 'after the announcement invite');
+        self::assertGreaterThan($crew, $optOut, 'before the opt-out link');
+
+        $targets = self::linkTargets(substr($mail['html'], (int) strpos($mail['html'], 'Kiitos, crew!')));
+        self::assertCount(2, $targets);
+        self::assertStringStartsWith('https://site.test/event-897/?', $targets[0]);
+        self::assertStringContainsString('utm_campaign=' . FollowupMail::campaign(self::NIGHT, true), $targets[0]);
+        self::assertSame('https://t.me/crewbot?start=onboard', $targets[1], 'a start link takes no utm_ arguments');
+
+        // Counted for the row.
+        preg_match_all('/eventcrew_go=([A-Za-z0-9_.\-]+)/', substr($mail['html'], (int) strpos($mail['html'], 'Kiitos, crew!')), $tokens);
+        self::assertStringStartsWith("b\n7\n", (string) SignedLink::verifyPayload(FollowupMail::PURPOSE_GO, $tokens[1][1]));
+
+    }
+
+    /** A button whose target is not set is left out; with neither, the whole crew part is. */
+    public function testTheCrewButtonsShowOnlyWhereTheyLead(): void
+    {
+        $this->options['eventcrew_signup_page_id'] = 897;
+        $webOnly = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
+        self::assertStringContainsString('Join on the web', $webOnly['html']);
+        self::assertStringNotContainsString('Join on Telegram', $webOnly['html'] . $webOnly['text']);
+
+        unset($this->options['eventcrew_signup_page_id']);
+        $this->options[BoardService::USERNAME_OPTION] = 'crewbot';
+        $botOnly = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
+        self::assertStringContainsString('Join on Telegram', $botOnly['html']);
+        self::assertStringNotContainsString('Join on the web', $botOnly['html'] . $botOnly['text']);
+        self::assertStringContainsString('Thank you, crew!', $botOnly['text']);
+
+        unset($this->options[BoardService::USERNAME_OPTION]);
+        $neither = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
+        self::assertStringNotContainsString('Thank you, crew!', $neither['html'] . $neither['text']);
+        self::assertStringNotContainsString('Join on', $neither['html'] . $neither['text']);
+    }
+
+    /** The sorry-we-missed-you has no crew part: it is for the thank-you. */
+    public function testTheMissedEmailHasNoCrewPart(): void
+    {
+        $this->options['eventcrew_signup_page_id'] = 897;
+        $this->options[BoardService::USERNAME_OPTION] = 'crewbot';
+
+        $mail = $this->followup()->compose(self::NIGHT, false, 'Anna', 'b', 7);
+
+        self::assertStringNotContainsString('Thank you, crew!', $mail['html'] . $mail['text']);
+        self::assertStringNotContainsString('Join on', $mail['html'] . $mail['text']);
     }
 
     public function testATestToABadAddressFails(): void

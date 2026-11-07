@@ -30,7 +30,8 @@ use EventCrew\Telegram\TelegramClient;
  *   send window, at most a batch per run.
  *
  * Organizers also get the organizer guide (OrganizerGuide): the whole guide
- * by email, and its "In short" part by DM. Someone made an organizer later
+ * by email, and its "In short" part and its AI section in short by DM
+ * (OrganizerGuide::dm()). Someone made an organizer later
  * gets it from the next heartbeat.
  *
  * Off until an organizer switches it on in Settings, so the text can be
@@ -228,8 +229,7 @@ final class WelcomeSender
 
     /**
      * Same channel (Owner 2026-11-07): web buttons, then the bot's board as an
-     * "Open in Telegram" link. At most three buttons (an organizer also gets
-     * wp-admin) and three links, and no link repeats a button.
+     * "Open in Telegram" link. At most three buttons and three links, and no link repeats a button.
      */
     private function sendEmail(Person $person): bool
     {
@@ -240,11 +240,8 @@ final class WelcomeSender
             self::helpAction(HelpPage::PANEL_ANCHOR),
         ]));
 
-        // Only an organizer can use wp-admin: their one extra button.
-        if ($person->isOrganizer) {
-            $buttons[] = self::wpAdminAction();
-        }
-
+        // No wp-admin here: organizers get it in their own welcome email
+        // (Owner 2026-11-07).
         $links = [];
         $bot = $this->botBoardUrl();
 
@@ -283,6 +280,8 @@ final class WelcomeSender
         $board = '📋 ' . __('See open tasks', 'eventcrew');
         $day = [] === $this->openTasks() ? '' : $this->botBoardUrl();
         $keyboard = [
+            // My info on top; no task-descriptions button (Owner 2026-11-07).
+            [['text' => __('👤 My info', 'eventcrew'), 'callback_data' => MenuButtons::ME]],
             // board-<Ymd> opens the next date with open tasks as a new
             // message; with no such date, the bot's own board button.
             [
@@ -290,7 +289,6 @@ final class WelcomeSender
                     ? ['text' => $board, 'url' => $day]
                     : ['text' => $board, 'callback_data' => MenuButtons::BOARD],
             ],
-            [['text' => RoleGuide::descriptionsLabel(), 'callback_data' => MenuButtons::TASK_INFO]],
         ];
         $group = BoardService::groupLink();
 
@@ -313,7 +311,7 @@ final class WelcomeSender
 
         $context = [
             'person' => $person,
-            'open_tasks' => $this->openTasksText(),
+            'open_tasks' => $this->openTasksText(true, true),
         ];
         $text = DmBody::frame($person, EmailBody::forDm(self::tidy(MessageTemplates::body(self::KIND_DM, $context))), true);
 
@@ -476,21 +474,26 @@ final class WelcomeSender
     }
 
     /**
-     * The short organizer guide by DM (Owner 2026-11-07, Q368): Help, the Admin
-     * tab and the bot's People as buttons, plus wp-admin; the bot's Sales
-     * desk as a link.
+     * The short organizer guide by DM (Owner 2026-11-07, Q368): the bot's
+     * Admin menu on top, the Admin tab, wp-admin, and Help at the bottom (no
+     * People button, Owner 2026-11-07); the bot's Sales desk as a link.
      */
     private function sendOrganizerDm(Person $person): bool
     {
-        $keyboard = [];
+        $keyboard = [[['text' => '🛠 ' . __('Admin', 'eventcrew'), 'callback_data' => MenuButtons::ADMIN]]];
+        $admin = self::adminTabAction();
 
-        foreach (array_filter([self::helpAction(HelpPage::ORGANIZER_ANCHOR), self::adminTabAction()]) as $action) {
-            $keyboard[] = [['text' => $action['label'], 'url' => $action['url']]];
+        if (null !== $admin) {
+            $keyboard[] = [['text' => $admin['label'], 'url' => $admin['url']]];
         }
 
-        $keyboard[] = [['text' => self::organizerBotLinks()['people'], 'callback_data' => MenuButtons::PEOPLE]];
         $wpAdmin = self::wpAdminAction();
         $keyboard[] = [['text' => $wpAdmin['label'], 'url' => $wpAdmin['url']]];
+        $help = self::helpAction(HelpPage::ORGANIZER_ANCHOR);
+
+        if (null !== $help) {
+            $keyboard[] = [['text' => $help['label'], 'url' => $help['url']]];
+        }
 
         $links = [];
         $sales = MessageActions::startUrl('sales');
@@ -501,7 +504,7 @@ final class WelcomeSender
 
         $context = [
             'person' => $person,
-            'guide' => OrganizerGuide::short(false),
+            'guide' => OrganizerGuide::dm(),
         ];
 
         return $this->sendHtmlDm(
@@ -535,10 +538,19 @@ final class WelcomeSender
     public static function bodyTemplate(): string
     {
         return implode("\n\n", [
+            // A spacious, starry opening, one thought per line (Owner 2026-11-07).
+            '✨ ' . MessageTemplates::tag(
+                /* translators: %s: the crew's name (the site name) */
+                __('Welcome to the %s crew!', 'eventcrew'),
+                ['%s' => '{crew}']
+            ) . ' ✨',
+            __('Our nights happen because people like you lend a hand.', 'eventcrew'),
+            '🌟 ' . __('Every task you take keeps the door open, the room ready and the music going.', 'eventcrew'),
+            '🎟️ ' . __('And every task earns you free entry.', 'eventcrew'),
             MessageTemplates::tag(
-                /* translators: 1: the crew's name (the site name), 2: where to see your own numbers */
-                __('Welcome to the %1$s crew! Our nights happen because people like you lend a hand: every task you take keeps the door open, the room ready and the music going, and earns you free entry. This message explains how it works. %2$s', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-                ['%1$s' => '{crew}', '%2$s' => '{me_help}']
+                /* translators: %s: where to see your own numbers */
+                __('This message explains how it all works. %s', 'eventcrew'),
+                ['%s' => '{me_help}']
             ),
             ...self::sectionsTemplate(),
             '## 📋 ' . __('Open tasks', 'eventcrew'),
@@ -794,9 +806,11 @@ final class WelcomeSender
      * The open tasks grouped by date (Owner 2026-11-07): the day, then a line
      * per task. Signing up is the one See open tasks button, not a button
      * per task. Without that button (no crew page and no bot), the line
-     * pointing at it is left out.
+     * pointing at it is left out. $dm: the lines without their "- ", so
+     * EmailBody::forDm() puts no empty line between the tasks of one date
+     * (Owner 2026-11-07).
      */
-    private function openTasksText(bool $button = true): string
+    private function openTasksText(bool $button = true, bool $dm = false): string
     {
         $byDate = [];
 
@@ -823,7 +837,8 @@ final class WelcomeSender
                     $task->capacity
                 );
                 // The role's emoji is the bullet; a role without one gets 🔹.
-                $lines[] = EmailBody::isEmojiLine($line) ? $line : '- 🔹 ' . substr($line, 2);
+                $line = EmailBody::isEmojiLine($line) ? $line : '- 🔹 ' . substr($line, 2);
+                $lines[] = $dm ? substr($line, 2) : $line;
             }
 
             $blocks[] = '📅 ' . Dates::dayLabel((string) $date) . "\n\n" . implode("\n", $lines);

@@ -124,6 +124,55 @@ final class RetentionPurgeTest extends TestCase
     }
 
     /**
+     * What the person said when joining (JoinAnswers) is personal data:
+     * anonymising removes it and keeps the rest of the newcomer record.
+     */
+    public function testAnonymisingRemovesTheJoinAnswers(): void
+    {
+        $this->withOptions([
+            PrivacyPolicy::PURGE_OPTION => '1',
+            PrivacyPolicy::RETENTION_OPTION => 3,
+        ]);
+
+        $this->wpdb->nextCols[] = [4];
+        $this->wpdb->nextRows[] = [
+            'id' => 4,
+            'email' => 'sam@example.com',
+            'role_notices' => '{"newcomer:asked":"2026-01-01 10:00:00","newcomer:before":"yes",'
+                . '"newcomer:times":"5","newcomer:tickets":"3"}',
+        ];
+
+        $this->purge()->run();
+
+        $notices = array_values(array_filter(
+            $this->wpdb->updates,
+            static fn (array $u): bool => array_key_exists('role_notices', $u['data'])
+        ));
+        self::assertCount(1, $notices);
+        self::assertSame(['newcomer:asked' => '2026-01-01 10:00:00'], json_decode($notices[0]['data']['role_notices'], true));
+    }
+
+    public function testAnonymisingWithOnlyTheAnswersClearsTheRecord(): void
+    {
+        $this->withOptions([
+            PrivacyPolicy::PURGE_OPTION => '1',
+            PrivacyPolicy::RETENTION_OPTION => 3,
+        ]);
+
+        $this->wpdb->nextCols[] = [4];
+        $this->wpdb->nextRows[] = ['id' => 4, 'role_notices' => '{"newcomer:before":"no"}'];
+
+        $this->purge()->run();
+
+        $notices = array_values(array_filter(
+            $this->wpdb->updates,
+            static fn (array $u): bool => array_key_exists('role_notices', $u['data'])
+        ));
+        self::assertCount(1, $notices);
+        self::assertNull($notices[0]['data']['role_notices']);
+    }
+
+    /**
      * The candidate query has to hold back staff and anything already stripped,
      * or the job would anonymise the organizer holding the door list and then
      * rewrite the same rows on every tick for ever.

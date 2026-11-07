@@ -62,9 +62,11 @@ final class TicketListTest extends TestCase
         $this->wpdb->nextResults[] = [ // redemptions->forPerson
             ['id' => 10, 'person_id' => 9, 'redeemed_for' => '2026-08-05', 'redeemed_at' => '2026-07-10 10:00:00'],
         ];
-        // checkins->personTimes: in on 18 July, marked as credit (works and holds a credit).
+        // checkins->personTimes: in on 18 July as crew; a credit check-in
+        // that night is the free-entry ticket's own row (Owner 2026-11-07).
         $this->wpdb->nextResults[] = [
-            ['event_date' => '2026-07-18', 'kind' => 'credit', 'checked_in_at' => '2026-07-18 21:05:00'],
+            ['event_date' => '2026-07-18', 'kind' => 'crew', 'checked_in_at' => '2026-07-18 21:05:00'],
+            ['event_date' => '2026-08-05', 'kind' => 'crew', 'checked_in_at' => '2026-08-05 21:00:00'],
         ];
 
         $out = $this->list()->forPerson(9);

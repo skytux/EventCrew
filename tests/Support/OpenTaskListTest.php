@@ -70,6 +70,19 @@ final class OpenTaskListTest extends TelegramTestCase
         $this->wpdb->nextResults[] = $occupancy;
     }
 
+    public function testLeavesOutATaskWhoseRoleHasGuestSignUpOffUnlessTheRoleIsHeld(): void
+    {
+        $this->options[Roles::OPTION_NAME][1]['guest_signup'] = false; // Bar
+
+        $this->queue([$this->taskRow(1, 'door'), $this->taskRow(2, 'bar')]);
+        $rows = (new OpenTaskList())->forPerson($this->person());
+        self::assertSame([1], array_map(static fn (array $row): int => $row['task']->id, $rows));
+
+        $this->queue([$this->taskRow(1, 'door'), $this->taskRow(2, 'bar')]);
+        $rows = (new OpenTaskList())->forPerson($this->person(['bar']));
+        self::assertSame([1, 2], array_map(static fn (array $row): int => $row['task']->id, $rows));
+    }
+
     public function testListsOnlyTasksThePersonMayTake(): void
     {
         $this->queue(

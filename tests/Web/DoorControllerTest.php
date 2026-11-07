@@ -23,6 +23,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\ShortCode;
 use EventCrew\Support\TicketMail;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Tests\Support\SalesDeskTestCase;
@@ -364,7 +365,7 @@ final class DoorControllerTest extends SalesDeskTestCase
         self::assertSame(200, $status);
         self::assertTrue($answer['ok']);
         self::assertSame(
-            [['key' => 'buyer:12', 'kind' => 'buyer', 'ref' => 12, 'name' => 'Ada', 'first' => 'Ada', 'in' => false, 'at' => '']],
+            [['key' => 'buyer:12', 'kind' => 'buyer', 'ref' => 12, 'name' => 'Ada', 'first' => 'Ada', 'short' => ShortCode::forBuyer(12), 'in' => false, 'at' => '']],
             $answer['tickets']
         );
         self::assertSame('', $answer['message']);

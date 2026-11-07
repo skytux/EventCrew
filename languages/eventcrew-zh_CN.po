@@ -5960,10 +5960,6 @@ msgstr "发到导入邮箱的票务文件无法导入时，发给使用机器人
 msgid "Sent to the organizers with a confirmed email address when a member who is not an organizer sends an admin request from the Crew app and is blocked."
 msgstr "不是组织者的成员从团队应用发送管理请求并被封禁时，发给邮箱已确认的组织者。"
 
-#: src/Support/MessageTemplates.php:2314
-msgid "Sent to the organizers without Telegram when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text."
-msgstr "新成员首次确认邮箱时，发给没有 Telegram 的组织者。在组织者确认之前，对方能看到任务板但不能领取任务。文本下方会加一个指向团队页面“管理”标签的按钮，“确定”和“否”按钮就在那里。"
-
 #: src/Support/MessageTemplates.php:2223
 msgid "Sent to the organizers, and to the sender, after a list of guests mailed to the import mailbox is added to the guest list. A line left empty by a placeholder is removed."
 msgstr "发到导入邮箱的嘉宾名单加入嘉宾名单后，发给组织者和发件人。因占位符为空而空出的行会被删除。"
@@ -6116,10 +6112,6 @@ msgstr "短时通知（开始前小时数）"
 #: templates/public/signup.php:1795
 msgid "Show"
 msgstr "显示"
-
-#: templates/admin/settings.php:324 templates/public/signup.php:1854
-msgid "Show on the guest board (Telegram group and the web page when signed out)"
-msgstr "在访客任务板上显示（Telegram 群和未登录时的网页）"
 
 #: templates/admin/settings.php:1958
 msgid "Show the group board as event cards"
@@ -11004,3 +10996,153 @@ msgstr "联系不上机器人时联系谁，例如一个邮箱地址和一个 Te
 
 msgid "You can see your own numbers any time in the Me tab of the Crew app."
 msgstr "你随时可以在团队应用的“我”标签中查看自己的数据。"
+
+#: src/Telegram/OnboardingService.php:333
+msgid "A few questions for the organizers, then I’ll email you the link. Have you worked on the crew here before?"
+msgstr "组织者有几个问题，答完后我会把链接发到你的邮箱。你以前在这里的团队工作过吗？"
+
+#: templates/public/signup.php:240
+msgid "About how many times?"
+msgstr "大约几次？"
+
+#: src/Telegram/OnboardingService.php:350
+msgid "About how many times? Tap a number or type one."
+msgstr "大约几次？点一个数字或直接输入。"
+
+#: src/Support/JoinAnswers.php:145
+msgid "Did not say whether they have worked on the crew here before."
+msgstr "没有说明以前是否在这里的团队工作过。"
+
+#: src/Support/JoinAnswers.php:141
+msgid "First time on the crew."
+msgstr "第一次加入团队。"
+
+#: templates/public/signup.php:232
+msgid "Have you worked on the crew here before?"
+msgstr "你以前在这里的团队工作过吗？"
+
+#: templates/public/signup.php:244
+msgid "How many free-entry tickets do you think you should have?"
+msgstr "你认为自己应该有几张免费入场券？"
+
+#: src/Telegram/OnboardingService.php:365
+msgid "How many free-entry tickets do you think you should have? Tap a number or type one."
+msgstr "你认为自己应该有几张免费入场券？点一个数字或直接输入。"
+
+#: templates/public/signup.php:233
+msgid "Only for a new account, and optional."
+msgstr "仅限新账户，可以不填。"
+
+#: src/Support/PrivacyExporter.php:148
+msgid "Said when joining"
+msgstr "加入时的回答"
+
+#: src/Telegram/OnboardingService.php:231
+#. translators: 1: the smallest number, 2: the largest number
+msgid "Send a number from %1$d to %2$d, or tap Skip."
+msgstr "请发送 %1$d 到 %2$d 之间的数字，或点“跳过”。"
+
+#: src/Support/MessageTemplates.php:2414
+msgid "Sent to the organizers when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text, and a link to the person's @username in Telegram when they have one."
+msgstr "新成员首次确认邮箱时，发给组织者。在组织者确认之前，对方能看到任务板但不能领取任务。文本下方会加一个指向团队页面“管理”标签的按钮（“确定”和“否”按钮就在那里），如果对方有 Telegram @用户名，还会加上指向它的链接。"
+
+#: src/Telegram/OnboardingService.php:281
+msgid "Thanks, the organizers will see your answers."
+msgstr "谢谢，组织者会看到你的回答。"
+
+#: src/Support/JoinAnswers.php:164
+#. translators: %d: how many free-entry tickets the person thinks they should have
+msgid "Thinks they should have %d free-entry ticket."
+msgid_plural "Thinks they should have %d free-entry tickets."
+msgstr[0] "认为自己应该有 %d 张免费入场券。"
+
+#: src/Telegram/OnboardingService.php:193
+msgid "This question has run out. Send /start to begin again."
+msgstr "这个问题已过期。请发送 /start 重新开始。"
+
+#: src/Support/MessageTemplates.php:2056
+msgid "What the person said when joining: whether they have worked on the crew here before, about how many times, and how many free-entry tickets they think they should have."
+msgstr "此人加入时的回答：以前是否在这里的团队工作过、大约几次，以及认为自己应该有几张免费入场券。"
+
+#: src/Support/JoinAnswers.php:152
+#. translators: %d: about how many times the person has worked on the crew
+msgid "Worked on the crew here before: yes, about %d time."
+msgid_plural "Worked on the crew here before: yes, about %d times."
+msgstr[0] "以前在这里的团队工作过：是，大约 %d 次。"
+
+#: src/Support/JoinAnswers.php:149
+msgid "Worked on the crew here before: yes."
+msgstr "以前在这里的团队工作过：是。"
+
+msgid "Sorry, this ticket has expired"
+msgstr "抱歉，此票已过期"
+
+msgid "You’re in, welcome!"
+msgstr "已入场，欢迎！"
+
+msgid "Checked in at %s"
+msgstr "入场时间 %s"
+
+msgid "Short code"
+msgstr "短代码"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest display: people without this role see its tasks"
+msgstr "访客显示：没有此角色的人可以看到它的任务"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest sign up: people without this role can sign up (needs Guest display)"
+msgstr "访客报名：没有此角色的人可以报名（需要访客显示）"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Anonymous display: hide the names from people without this role"
+msgstr "匿名显示：对没有此角色的人隐藏姓名"
+
+#: src/Support/SignupService.php
+msgid "Only people with this role can sign up for this task."
+msgstr "只有拥有此角色的人才能报名此任务。"
+
+#: src/Telegram/BoardRenderer.php
+msgid "crew only"
+msgstr "仅限团队"
+
+#: templates/public/signup-board.php
+msgid "Crew only"
+msgstr "仅限团队"
+
+#: templates/public/signup-board.php
+msgid "Awaiting approval"
+msgstr "等待批准"
+
+msgid "AI in EventCrew"
+msgstr "EventCrew 中的 AI"
+
+msgid "EventCrew uses an AI language model only when its API URL and model are set in Settings > Telegram bot, under \"Plain messages (language model)\". Only the texts below go to that AI service, and without the URL or the model none of this happens. The ticket file import by email does not use AI."
+msgstr "只有在“设置 > Telegram 机器人”的“普通消息（语言模型）”中填写了 LLM API URL 和模型时，EventCrew 才会使用 AI 语言模型。只有下面列出的文本会发送给该 AI 服务；没有 URL 或模型，这些都不会发生。通过邮件导入票务文件不使用 AI。"
+
+msgid "No AI service is set up at the moment, so nothing is sent to one."
+msgstr "目前没有设置 AI 服务，因此不会发送任何内容。"
+
+msgid "Plain messages to the bot: the message, the last 24 hours of that chat, and the open tasks, events and chosen site pages, to answer and to see what the person wants. Every change (a sign-up, a cancellation, the guest list, your own email text) is shown first with Confirm and Cancel. Off: untick \"Answer plain messages with the language model\"."
+msgstr "发给机器人的普通消息：消息本身、该聊天最近 24 小时的内容，以及空缺任务、活动和选定的网站页面，用于回答并理解对方想要什么。每项更改（报名、取消、嘉宾名单、你自己的邮件文本）都会先附上“确认”和“取消”显示。关闭：取消勾选“用语言模型回答普通消息”。"
+
+msgid "Next events announcement and post-event email: the description of each event and of its DJs, to write short event texts and the opening text, and to pick out the venue, address and door times. All of it is in the preview email first: stop it there, or add your own text with /newsletter, /followup or the Admin tab. Off: untick \"Texts by the language model\" in Settings > Email."
+msgstr "下一次活动公告和活动后邮件：每个活动及其 DJ 的介绍，用于撰写简短的活动文本和开头文本，并提取场地、地址和开门、关门时间。所有内容都会先出现在预览邮件中：可以在那里停止，或用 /newsletter、/followup 或“管理”标签加入你自己的文本。关闭：在“设置 > 邮箱”中取消勾选“语言模型撰写的文本”。"
+
+msgid "AI texts for each event: the event and your prompt, for each message with \"Write a new text with the AI for each event\" ticked on the Messages page, and for your own placeholders. They are written the day before the event; read or change them before they go out in EventCrew > Messages > Coming events, or under AI texts in the Crew app Admin tab. Untick to stop."
+msgstr "每个活动的 AI 文本：活动和你的提示词，用于在“消息”页面勾选了“为每个活动用 AI 撰写新文本”的消息，以及你自己的占位符。它们在活动前一天撰写；发出前可在“EventCrew > 消息 > 即将举行的活动”或团队应用“管理”标签的“AI 文本”中阅读或修改。取消勾选即可停止。"
+
+msgid "The group board: the DJs and description of the next event, for two sentences under its picture. This text has no preview and no switch of its own."
+msgstr "群组的任务板：下一个活动的 DJ 和介绍，用于其图片下方的两句话。这段文本没有预览，也没有单独的开关。"
+
+msgid "Translation: the texts you write (message texts, your own email texts, the Translations page) are translated into every site language when saved. You can change any language by hand, and a text changed by hand is not overwritten. Off: untick \"Translate texts automatically with the language model\" in EventCrew > Translations."
+msgstr "翻译：你写的文本（消息文本、你自己的邮件文本、“翻译”页面）在保存时会被翻译成每种网站语言。任何语言都可以手动修改，手动修改过的文本不会被覆盖。关闭：在“EventCrew > 翻译”中取消勾选“用语言模型自动翻译文本”。"
+
+msgid "What the AI is asked to do is set in EventCrew > Messages, AI tab, where you can change it."
+msgstr "给 AI 的指示在“EventCrew > 消息”的 AI 标签中设置，你可以在那里修改。"
+
+msgid "With an AI service set in Settings > Telegram bot, EventCrew sends it plain messages to the bot, event and DJ descriptions (for the announcement, the post-event email and the board), your prompts for the AI texts of each event, and texts to translate."
+msgstr "在“设置 > Telegram 机器人”中设置了 AI 服务后，EventCrew 会向它发送：发给机器人的普通消息、活动和 DJ 的介绍（用于公告、活动后邮件和任务板）、你为每个活动的 AI 文本写的提示词，以及需要翻译的文本。"
+
+msgid "Previews: changes asked in the bot come with Confirm and Cancel, the announcement and the post-event email come to you first as a preview you can stop, and the AI texts of each event can be changed in EventCrew > Messages > Coming events or in the Admin tab. The full guide says how to switch each use off."
+msgstr "预览：在机器人中请求的更改会附上“确认”和“取消”；公告和活动后邮件会先作为可停止的预览发给你；每个活动的 AI 文本可在“EventCrew > 消息 > 即将举行的活动”或“管理”标签中修改。完整指南说明了如何关闭每一项用途。"

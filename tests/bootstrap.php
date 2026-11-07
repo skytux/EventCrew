@@ -117,6 +117,20 @@ if (! class_exists('WP_REST_Response')) {
         {
             return $this->status;
         }
+
+        /** @var array<string, string> */
+        public array $headers = [];
+
+        public function header(string $key, string $value, bool $replace = true): void
+        {
+            $this->headers[$key] = $value;
+        }
+
+        /** @return array<string, string> */
+        public function get_headers(): array
+        {
+            return $this->headers;
+        }
     }
 }
 

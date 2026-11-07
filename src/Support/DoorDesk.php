@@ -204,7 +204,7 @@ final class DoorDesk
      *     date: string, day: string, in: int, expected: int, anonymous: int, max: int, over_allowed: bool,
      *     version: string,
      *     sections: array<int, array{key: string, title: string, rows: array<int, array{
-     *         key: string, kind: string, ref: int, name: string, first: string, detail: string,
+     *         key: string, kind: string, ref: int, name: string, first: string, detail: string, short: string,
      *         plus: int, max: int, in: bool, at: string
      *     }>}>
      * }
@@ -558,7 +558,7 @@ final class DoorDesk
      * through mark().
      *
      * @param array<int, string> $codes
-     * @return array<int, array{key: string, kind: string, ref: int, name: string, first: string, in: bool, at: string}>
+     * @return array<int, array{key: string, kind: string, ref: int, name: string, first: string, short: string, in: bool, at: string}>
      */
     public function ticketsByCode(string $date, array $codes): array
     {
@@ -580,6 +580,7 @@ final class DoorDesk
                     'ref' => $buyer->id,
                     'name' => '' === $buyer->name ? __('No name', 'eventcrew') : $buyer->name,
                     'first' => self::firstName($buyer->name),
+                    'short' => ShortCode::forBuyer($buyer->id),
                     'in' => array_key_exists($key, $checkins),
                     'at' => self::inTime($checkins[$key]['at'] ?? ''),
                 ];
@@ -675,7 +676,7 @@ final class DoorDesk
             return self::scanAnswer(self::SCAN_DISABLED, '', $name, $date);
         }
 
-        return $this->scanPerson($date, $assignment->personId, $name);
+        return $this->scanPerson($date, $assignment->personId, $name, CheckinRepository::KIND_CREW);
     }
 
     /**
@@ -699,19 +700,19 @@ final class DoorDesk
             return self::scanAnswer(self::SCAN_OTHER_NIGHT, '', $name, (string) $redemption->redeemedFor);
         }
 
-        return $this->scanPerson($date, $redemption->personId, $name);
+        return $this->scanPerson($date, $redemption->personId, $name, CheckinRepository::KIND_CREDIT);
     }
 
     /**
-     * The person's row on tonight's list: crew when they work tonight,
-     * otherwise their free-entry credit, the same one-row rule as the list.
+     * The person's $kind row on tonight's list: a task's ticket checks in the
+     * crew row, a free-entry ticket the credit row.
      *
      * @return array{code: string, key: string, name: string, date: string, at: string}
      */
-    private function scanPerson(string $date, int $personId, string $name): array
+    private function scanPerson(string $date, int $personId, string $name, string $kind): array
     {
         foreach (array_merge(...$this->entrants($date)) as $row) {
-            if ($row['ref'] === $personId) {
+            if ($row['ref'] === $personId && $row['kind'] === $kind) {
                 return $this->inScanWindow($date)
                     ?? self::scanAnswer(self::SCAN_OK, $row['kind'] . ':' . $row['ref'], $row['name'], $date);
             }
@@ -894,7 +895,7 @@ final class DoorDesk
         }
 
         foreach ($credit as $row) {
-            $onList[$row['ref']] = [CheckinRepository::KIND_CREDIT, __('Free-entry credit', 'eventcrew')];
+            $onList[$row['ref']] ??= [CheckinRepository::KIND_CREDIT, __('Free-entry credit', 'eventcrew')];
         }
 
         $matches = [];
@@ -1162,8 +1163,8 @@ final class DoorDesk
      * entrant's standing, which the door page does not show and which would
      * be a dozen queries per person on every 4-second poll.
      *
-     * @return array{0: array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}>,
-     *     1: array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}>}
+     * @return array{0: array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int, short: string}>,
+     *     1: array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int, short: string}>}
      */
     private function entrants(string $date): array
     {
@@ -1197,22 +1198,23 @@ final class DoorDesk
                 $personId,
                 $this->nameOf($personId),
                 $detail,
-                $allowed
+                $allowed,
+                ShortCode::forPerson($personId, $date)
             );
         }
 
         $credit = [];
 
+        // Someone who works tonight and also holds a free-entry ticket has
+        // two rows: they may give the ticket to someone else (Owner 2026-11-07).
         foreach ($this->redemptions->forDate($date) as $redemption) {
-            if (isset($roles[$redemption->personId])) {
-                continue;
-            }
-
             $credit[] = $this->row(
                 CheckinRepository::KIND_CREDIT,
                 $redemption->personId,
                 $this->nameOf($redemption->personId),
-                __('Credit', 'eventcrew')
+                __('Credit', 'eventcrew'),
+                null,
+                ShortCode::forCredit($redemption->personId, $date)
             );
         }
 
@@ -1220,7 +1222,7 @@ final class DoorDesk
     }
 
     /**
-     * @return array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}>
+     * @return array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int, short: string}>
      */
     private function guestRows(string $date): array
     {
@@ -1237,7 +1239,9 @@ final class DoorDesk
                 $guest->id,
                 $guest->name,
                 '' === $guest->note ? $allowed : $guest->note . ' · ' . $allowed,
-                $guest->plusOnes
+                $guest->plusOnes,
+                // Only a guest with an email address has a ticket.
+                '' === $guest->email ? '' : ShortCode::forGuest($guest->id)
             );
         }
 
@@ -1247,8 +1251,8 @@ final class DoorDesk
     /**
      * Tonight's Holvi buyers and door sales, as two lists.
      *
-     * @return array{0: array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}>,
-     *     1: array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}>}
+     * @return array{0: array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int, short: string}>,
+     *     1: array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int, short: string}>}
      */
     private function ticketRows(string $date): array
     {
@@ -1270,7 +1274,9 @@ final class DoorDesk
             // (RetentionPurge::purgeBuyers) still shows on an old night's list.
             $name = '' === $buyer->name ? __('No name', 'eventcrew') : $buyer->name;
             // A Holvi ticket admits one person: the desk shows no +1 for it.
-            $holvi[] = $this->row(CheckinRepository::KIND_BUYER, $buyer->id, $name, $detail, 0);
+            // Only a row with a ticket code has a ticket with a QR code.
+            $short = '' === $buyer->ticketCode ? '' : ShortCode::forBuyer($buyer->id);
+            $holvi[] = $this->row(CheckinRepository::KIND_BUYER, $buyer->id, $name, $detail, 0, $short);
         }
 
         return [$holvi, $door];
@@ -1280,16 +1286,31 @@ final class DoorDesk
      * A list row. $max is how many extra people the entry may bring: a
      * guest's allowance, the sum of a crew person's tasks' "+1 allowed",
      * none for a free-entry credit (the credit covers one person) or a Holvi
-     * ticket, the general cap for a ticket sold at the door.
+     * ticket, the general cap for a ticket sold at the door. $short is the
+     * ticket's short code (ShortCode), '' for a row with no ticket.
      *
-     * @return array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}
+     * @return array{kind: string, ref: int, name: string, detail: string, plus: int, max: int, short: string}
      */
-    private function row(string $kind, int $ref, string $name, string $detail, ?int $max = null): array
-    {
+    private function row(
+        string $kind,
+        int $ref,
+        string $name,
+        string $detail,
+        ?int $max = null,
+        string $short = ''
+    ): array {
         $alone = [CheckinRepository::KIND_CREW, CheckinRepository::KIND_CREDIT];
         $max ??= in_array($kind, $alone, true) ? 0 : CheckinRepository::MAX_PLUS_ONES;
 
-        return ['kind' => $kind, 'ref' => $ref, 'name' => $name, 'detail' => $detail, 'plus' => 0, 'max' => $max];
+        return [
+            'kind' => $kind,
+            'ref' => $ref,
+            'name' => $name,
+            'detail' => $detail,
+            'plus' => 0,
+            'max' => $max,
+            'short' => $short,
+        ];
     }
 
     /**
@@ -1297,10 +1318,10 @@ final class DoorDesk
      * written at the door, which may differ from the list's default, and
      * the time it was marked in.
      *
-     * @param array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}> $rows
+     * @param array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int, short: string}> $rows
      * @param array<string, array{plus: int, at: string}> $checkins
      * @return array{key: string, title: string, rows: array<int, array{
-     *     key: string, kind: string, ref: int, name: string, first: string, detail: string,
+     *     key: string, kind: string, ref: int, name: string, first: string, detail: string, short: string,
      *     plus: int, max: int, in: bool, at: string
      * }>}
      */
@@ -1319,6 +1340,9 @@ final class DoorDesk
                 'name' => $row['name'],
                 'first' => self::firstName($row['name']),
                 'detail' => $row['detail'],
+                // The short code under the ticket's QR code, for the door
+                // crew to compare when they tick a row by hand.
+                'short' => $row['short'],
                 'plus' => $in ? $checkins[$rowKey]['plus'] : $row['plus'],
                 'max' => $row['max'],
                 'in' => $in,
@@ -1342,7 +1366,7 @@ final class DoorDesk
     /**
      * The entry's row on tonight's list, or null when it is not on it.
      *
-     * @return array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}|null
+     * @return array{kind: string, ref: int, name: string, detail: string, plus: int, max: int, short: string}|null
      */
     private function findRow(string $date, string $kind, int $refId): ?array
     {
@@ -1411,8 +1435,8 @@ final class DoorDesk
     }
 
     /**
-     * @param array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}> $rows
-     * @return array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int}>
+     * @param array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int, short: string}> $rows
+     * @return array<int, array{kind: string, ref: int, name: string, detail: string, plus: int, max: int, short: string}>
      */
     private function sorted(array $rows): array
     {

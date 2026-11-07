@@ -325,6 +325,32 @@ final class PersonRepository
     }
 
     /**
+     * Drops the $remove keys from the person's role_notices record and adds
+     * $entries, read fresh and written once: the newcomer's answers
+     * (JoinAnswers) are replaced as a whole, and erased with no $entries.
+     * Nothing is written when the person is not found or nothing changes.
+     *
+     * @param list<string> $remove
+     * @param array<string, string> $entries
+     */
+    public function replaceRoleNotices(int $id, array $remove, array $entries = []): void
+    {
+        $person = $this->find($id);
+
+        if (null === $person) {
+            return;
+        }
+
+        $notices = array_merge(array_diff_key($person->roleNotices, array_flip($remove)), $entries);
+
+        if ($notices === $person->roleNotices) {
+            return;
+        }
+
+        $this->update($id, ['role_notices' => [] === $notices ? null : (string) wp_json_encode($notices)]);
+    }
+
+    /**
      * Adds key => value entries to the person's role_notices record, read
      * fresh and written once. The newcomer request keeps its Telegram copies,
      * emails and outcome there (NewcomerApproval). Nothing is written when

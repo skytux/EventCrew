@@ -18,7 +18,8 @@ use EventCrew\Repositories\TaskRepository;
  *
  * A task is listed when it has not started, the person can see it on the
  * board (BoardVisibility), its role does not shut them out
- * (SignupService::blocksRestrictedSlot()), they are not on it yet, and it
+ * (SignupService::blocksRestrictedSlot(), or Guest sign up off:
+ * BoardVisibility::blocksGuestSignup()), they are not on it yet, and it
  * has a free place (a task with no limit always has). The rest of the rules
  * (standing, the team's OK) stay with SignupService: the Sign up tap runs
  * them and answers with the normal result.
@@ -87,6 +88,7 @@ final class OpenTaskList
                 || $task->hasStarted()
                 || ! BoardVisibility::visibleTo($task, $person)
                 || SignupService::blocksRestrictedSlot($task, $person)
+                || BoardVisibility::blocksGuestSignup($task, $person)
             ) {
                 continue;
             }

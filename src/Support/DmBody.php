@@ -38,7 +38,7 @@ final class DmBody
         $parts[] = sprintf(
             /* translators: %s: the person's first name */
             __('Hi %s,', 'eventcrew'),
-            $person->name()
+            DoorDesk::firstName($person->name())
         );
 
         $parts[] = trim($body);

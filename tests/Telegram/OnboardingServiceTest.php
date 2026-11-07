@@ -101,6 +101,8 @@ final class OnboardingServiceTest extends TelegramTestCase
 
         // findByTelegramUserId -> null, findByEmail -> null (both get_row, unqueued).
         $this->service()->captureEmail(555, 555, 'sam@example.com');
+        // A newcomer is asked the organizers' questions first; Skip sends the link.
+        $this->tapJoin('nwq:s');
 
         // One person insert, one auth-token insert.
         self::assertCount(2, $this->wpdb->inserts);
@@ -196,6 +198,7 @@ final class OnboardingServiceTest extends TelegramTestCase
 
         // findByTelegramUserId -> null, findByEmail -> null: a new person, id 1.
         $this->service()->captureEmail(555, 555, 'sam@example.com');
+        $this->tapJoin('nwq:s');
 
         self::assertNull($this->wpdb->inserts[0]['data']['telegram_user_id']);
         self::assertSame([], $this->telegramLinkUpdates());
@@ -445,6 +448,7 @@ final class OnboardingServiceTest extends TelegramTestCase
         $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];
 
         $this->service()->captureEmail(555, 555, 'sam@example.com');
+        $this->tapJoin('nwq:s');
 
         // Sent through the Mailer as HTML, so the link sits behind a named
         // button; the plain-text alternative alone carries the address.
@@ -466,6 +470,7 @@ final class OnboardingServiceTest extends TelegramTestCase
         $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => $name];
 
         $this->service()->captureEmail(555, 555, 'sam@example.com');
+        $this->tapJoin('nwq:s');
 
         $mail = $this->mails[0];
         $mail['body'] = (string) preg_replace('/\?token=[^\s]+/', '?token=TOKEN', $mail['body']);
@@ -511,5 +516,202 @@ final class OnboardingServiceTest extends TelegramTestCase
             . 'https://example.test/wp-json/eventcrew/v1/verify?token=TOKEN',
             $mail['body']
         );
+    }
+
+    // ---- The newcomer's questions (Owner 2026-11-07) ------------------------
+
+    /** A tap on one of the question buttons, by Telegram user 555 on message 40. */
+    private function tapJoin(string $data): void
+    {
+        $this->service()->onJoinTap([
+            'id' => 'cb1',
+            'from' => ['id' => 555],
+            'message' => ['message_id' => 40, 'chat' => ['id' => 555]],
+            'data' => $data,
+        ]);
+    }
+
+    /**
+     * Queues the two reads of person 1 one stored answer makes (the check,
+     * then the fresh read before the write): a newcomer waiting for the OK.
+     *
+     * @param array<string, string> $notices
+     */
+    private function queueNewcomer(array $notices = []): void
+    {
+        $row = [
+            'id' => 1,
+            'email' => 'sam@example.com',
+            'email_verified_at' => null,
+            'approval' => 'waiting',
+            'role_notices' => [] === $notices ? null : json_encode($notices),
+        ];
+        $this->wpdb->nextRows[] = $row;
+        $this->wpdb->nextRows[] = $row;
+    }
+
+    /** @return list<array<string, string>> Every role_notices write, decoded. */
+    private function noticeWrites(): array
+    {
+        $writes = [];
+
+        foreach ($this->wpdb->updates as $update) {
+            if (array_key_exists('role_notices', $update['data'])) {
+                $writes[] = json_decode((string) $update['data']['role_notices'], true);
+            }
+        }
+
+        return $writes;
+    }
+
+    public function testANewEmailIsAskedTheQuestionsBeforeTheLinkGoesOut(): void
+    {
+        $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];
+
+        $this->service()->captureEmail(555, 555, 'sam@example.com');
+
+        self::assertSame([], $this->mails, 'the link waits for the answers');
+        self::assertCount(1, $this->wpdb->inserts, 'the person only, no token yet');
+        self::assertArrayNotHasKey('eventcrew_tg_await_email_555', $this->transients);
+        self::assertSame('before', $this->transients['eventcrew_tg_await_join_555']['step']);
+        self::assertSame(1, $this->transients['eventcrew_tg_await_join_555']['person_id']);
+
+        $question = $this->lastCallTo('sendMessage');
+        self::assertStringContainsString('Have you worked on the crew here before?', $question['text']);
+        self::assertSame(
+            ['nwq:y', 'nwq:n', 'nwq:s'],
+            array_column(array_merge(...$question['reply_markup']['inline_keyboard']), 'callback_data')
+        );
+    }
+
+    public function testYesTimesAndATypedTicketCountAreStoredAndThenTheLinkIsSent(): void
+    {
+        $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];
+        $this->service()->captureEmail(555, 555, 'sam@example.com');
+
+        $this->queueNewcomer();
+        $this->tapJoin('nwq:y');
+        $times = $this->lastCallTo('editMessageText');
+        self::assertSame('About how many times? Tap a number or type one.', $times['text']);
+        self::assertSame('nwq:t:10', $times['reply_markup']['inline_keyboard'][1][4]['callback_data']);
+        self::assertTrue($this->service()->isAwaitingJoinNumber(555));
+
+        $this->queueNewcomer(['newcomer:before' => 'yes']);
+        $this->tapJoin('nwq:t:5');
+        self::assertStringStartsWith('How many free-entry tickets', $this->lastCallTo('editMessageText')['text']);
+        self::assertSame([], $this->mails);
+
+        $this->queueNewcomer(['newcomer:before' => 'yes', 'newcomer:times' => '5']);
+        $this->service()->captureJoinNumber(555, 555, ' 3 ');
+
+        self::assertSame(
+            [
+                ['newcomer:before' => 'yes'],
+                ['newcomer:before' => 'yes', 'newcomer:times' => '5'],
+                ['newcomer:before' => 'yes', 'newcomer:times' => '5', 'newcomer:tickets' => '3'],
+            ],
+            $this->noticeWrites()
+        );
+        self::assertArrayNotHasKey('eventcrew_tg_await_join_555', $this->transients);
+        self::assertCount(1, $this->mails);
+        self::assertStringContainsString('verify?token=', $this->mails[0]['body']);
+        self::assertSame(
+            'Check your email and tap the link to confirm it. Then pick a task on the board.',
+            $this->lastCallTo('sendMessage')['text']
+        );
+    }
+
+    public function testNoEndsTheQuestionsAndSendsTheLink(): void
+    {
+        $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];
+        $this->service()->captureEmail(555, 555, 'sam@example.com');
+
+        $this->queueNewcomer();
+        $this->tapJoin('nwq:n');
+
+        self::assertSame([['newcomer:before' => 'no']], $this->noticeWrites());
+        self::assertStringContainsString('Thanks', $this->lastCallTo('editMessageText')['text']);
+        self::assertSame(['inline_keyboard' => []], $this->lastCallTo('editMessageText')['reply_markup']);
+        self::assertCount(1, $this->mails);
+        self::assertFalse($this->service()->isAwaitingJoin(555));
+    }
+
+    public function testSkipStoresNothingAndSendsTheLink(): void
+    {
+        $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];
+        $this->service()->captureEmail(555, 555, 'sam@example.com');
+
+        $this->tapJoin('nwq:s');
+
+        self::assertSame([], $this->noticeWrites());
+        self::assertCount(1, $this->mails);
+        self::assertCount(1, $this->pendingLinks());
+    }
+
+    public function testATypedNumberOutOfRangeIsRefusedAndTheQuestionStays(): void
+    {
+        $this->transients['eventcrew_tg_await_join_555'] = [
+            'step' => 'times', 'person_id' => 1, 'email' => 'sam@example.com', 'name' => 'Sam', 'chat_id' => 555,
+        ];
+
+        foreach (['lots', '0', '51', '-2', '2.5'] as $typed) {
+            $this->service()->captureJoinNumber(555, 555, $typed);
+            self::assertSame('Send a number from 1 to 50, or tap Skip.', $this->lastCallTo('sendMessage')['text'], $typed);
+        }
+
+        self::assertSame([], $this->noticeWrites());
+        self::assertSame([], $this->mails);
+        self::assertSame('times', $this->transients['eventcrew_tg_await_join_555']['step']);
+    }
+
+    public function testATapOnAnExpiredQuestionSaysToStartAgain(): void
+    {
+        $this->tapJoin('nwq:y');
+
+        $answer = $this->lastCallTo('answerCallbackQuery');
+        self::assertSame('This question has run out. Send /start to begin again.', $answer['text']);
+        self::assertTrue($answer['show_alert']);
+        self::assertContains('editMessageReplyMarkup', $this->calledMethods());
+        self::assertSame([], $this->mails);
+    }
+
+    public function testAnAnswerIsNotStoredOnceTheEmailIsConfirmed(): void
+    {
+        $this->transients['eventcrew_tg_await_join_555'] = [
+            'step' => 'before', 'person_id' => 1, 'email' => 'sam@example.com', 'name' => 'Sam', 'chat_id' => 555,
+        ];
+        $this->wpdb->nextRows[] = [
+            'id' => 1, 'email' => 'sam@example.com', 'email_verified_at' => '2026-11-01 00:00:00', 'approval' => 'waiting',
+        ];
+
+        $this->tapJoin('nwq:n');
+
+        self::assertSame([], $this->noticeWrites());
+    }
+
+    public function testAnExistingConfirmedPersonIsNotAskedTheQuestions(): void
+    {
+        $this->transients['eventcrew_tg_await_email_555'] = ['chat_id' => 555, 'name' => 'Sam'];
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextRows[] = [
+            'id' => 9, 'email' => 'sam@example.com', 'email_verified_at' => '2026-01-01 00:00:00', 'approval' => 'ok',
+        ];
+
+        $this->service()->captureEmail(555, 555, 'sam@example.com');
+
+        self::assertArrayNotHasKey('eventcrew_tg_await_join_555', $this->transients);
+        self::assertCount(1, $this->mails);
+    }
+
+    public function testStartAndCancelClearTheQuestions(): void
+    {
+        $this->transients['eventcrew_tg_await_join_555'] = ['step' => 'before', 'person_id' => 1];
+
+        self::assertTrue($this->service()->cancelPending(555));
+        self::assertFalse($this->service()->isAwaitingJoin(555));
+
+        $this->transients['eventcrew_tg_await_join_555'] = ['step' => 'before', 'person_id' => 1];
+        $this->service()->start(555, 555, 'Sam');
+        self::assertFalse($this->service()->isAwaitingJoin(555));
     }
 }

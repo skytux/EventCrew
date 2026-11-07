@@ -49,6 +49,14 @@ use EventCrew\Web\NewsletterController;
  * greet them with (joinClick()). The press comes from the mailbox the email
  * went to, so no confirmation email follows. A preview's or a test's button
  * subscribes nobody.
+ * Then, in the thank-you only (Owner, 2026-11-07), a word for the crew who
+ * made the night happen and an invitation to join it (to get to know people,
+ * feel useful and save on tickets), with up to two buttons: Join on the web
+ * (the crew page, CrewPageHelp::pageUrl()) and Join on Telegram (the bot's
+ * sign-up, t.me/<bot>?start=onboard, MessageActions::payloadUrl()). A button
+ * whose target is not set is left out, and with neither the part is left out.
+ * The Telegram link is counted but carries no utm_ arguments: a t.me start
+ * link takes only its start payload.
  * At the end, a "Don't send me these" link (?eventcrew_optout=<token>)
  * carries a signed link to the same row: pressing it puts the row's address
  * on the do-not-send list (FollowupOptOut, optOutClick()), with no sign-in.
@@ -108,6 +116,9 @@ final class FollowupMail
 
     /** The REST route of the Stop page (Web\FollowupController). */
     public const ROUTE = 'eventcrew/v1/followup';
+
+    /** The start payload of the thank-you's Join on Telegram button: the bot's sign-up. */
+    public const CREW_START = 'onboard';
 
     /** The query argument of the subscribe button. */
     public const JOIN_ARG = 'eventcrew_join';
@@ -870,6 +881,13 @@ final class FollowupMail
                 . "\n\n" . EmailBody::toText('', $join);
         }
 
+        // The thank-you only: the crew, and how to join it.
+        if ($came) {
+            $crew = self::crewInvite($parts, $pair, $accent, $campaign, $kind, $rowId);
+            $html .= $crew['html'];
+            $text .= $crew['text'];
+        }
+
         // Last, small: the link that puts this address on the do-not-send list.
         $optOut = self::optOutUrl($kind, $rowId);
         $html .= sprintf(
@@ -886,6 +904,60 @@ final class FollowupMail
             'html' => $html,
             'text' => $text,
             'headers' => self::unsubscribeHeaders($optOut),
+        ];
+    }
+
+    /**
+     * The thank-you's crew part: the credit and the invitation in each
+     * language, then Join on the web (the crew page) and Join on Telegram
+     * (the bot's sign-up). A button whose target is not set is left out;
+     * with neither, the part is empty.
+     *
+     * @param array<string, array<string, string>> $parts Each language's words().
+     * @param callable(string): string $pair One language per row of a label.
+     * @return array{html: string, text: string}
+     */
+    private static function crewInvite(
+        array $parts,
+        callable $pair,
+        string $accent,
+        string $campaign,
+        string $kind,
+        int $rowId
+    ): array {
+        $web = CrewPageHelp::pageUrl();
+        $telegram = MessageActions::payloadUrl(self::CREW_START);
+        $buttons = [];
+
+        if ('' !== $web) {
+            $buttons[] = [
+                'label' => $pair('crew_web'),
+                'url' => self::trackedUrl(self::withUtm($web, $campaign), $kind, $rowId),
+            ];
+        }
+
+        if ('' !== $telegram) {
+            $buttons[] = ['label' => $pair('crew_telegram'), 'url' => self::trackedUrl($telegram, $kind, $rowId)];
+        }
+
+        if ([] === $buttons) {
+            return ['html' => '', 'text' => ''];
+        }
+
+        $invites = HybridPolicy::field($parts, 'crew');
+        $html = '<hr style="border:0;border-top:1px solid #e3e3e8;margin:8px 0 20px">'
+            . (HybridPolicy::differ($invites)
+                ? implode('', array_map(
+                    static fn (string $invite, string $tag): string => EmailBody::toHtml($invite, [], $accent, $tag),
+                    $invites,
+                    HybridPolicy::tags($invites)
+                ))
+                : EmailBody::toHtml(implode("\n\n", $invites)))
+            . EmailBody::centred(EmailBody::toHtml('', $buttons, $accent));
+
+        return [
+            'html' => $html,
+            'text' => "\n\n————————\n\n" . implode("\n\n", $invites) . "\n\n" . EmailBody::toText('', $buttons),
         ];
     }
 
@@ -1284,7 +1356,16 @@ final class FollowupMail
      * page subject. $eventId is the night's event ({event_description}).
      *
      * @param array{text: string, next: bool, template: bool} $text
-     * @return array{body: string, subject: string, join: string, invite: string, optout: string}
+     * @return array{
+     *     body: string,
+     *     subject: string,
+     *     join: string,
+     *     invite: string,
+     *     optout: string,
+     *     crew: string,
+     *     crew_web: string,
+     *     crew_telegram: string
+     * }
      */
     private static function words(
         string $variant,
@@ -1328,6 +1409,10 @@ final class FollowupMail
             'join' => __('Join the announcement', 'eventcrew'),
             'optout' => __("Don't send me these", 'eventcrew'),
             'invite' => __('Would you like to hear about new events first? Join the next events announcement: we email you when new events come out. One press of the button is enough, and you can leave at any time.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            // The thank-you's crew part (crewInvite()).
+            'crew' => __('The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Thank you, crew! Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            'crew_web' => __('Join on the web', 'eventcrew'),
+            'crew_telegram' => __('Join on Telegram', 'eventcrew'),
         ];
     }
 

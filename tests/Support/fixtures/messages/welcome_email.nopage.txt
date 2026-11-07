@@ -1,8 +1,16 @@
 EMAIL Welcome to the crew: how tasks, tickets and credits work
 
-Hi Person 3,
+Hi Person,
 
-Welcome to the Test Crew crew! Our nights happen because people like you lend a hand: every task you take keeps the door open, the room ready and the music going, and earns you free entry. This message explains how it works. To see your numbers, tickets or credits, just ask the bot in a private chat.
+✨ Welcome to the Test Crew crew! ✨
+
+Our nights happen because people like you lend a hand.
+
+🌟 Every task you take keeps the door open, the room ready and the music going.
+
+🎟️ And every task earns you free entry.
+
+This message explains how it all works. To see your numbers, tickets or credits, just ask the bot in a private chat.
 
 🧩 The tasks
 
@@ -43,8 +51,6 @@ In a private chat with the bot, it is usually enough to write what you want in y
 Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers.
 
 If you cannot reach the bot, contact the maintainer, maintainer@example.org or @maintainer, or just try again a bit later.
-
-🧰 Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew
 
 —
 Manage your account or stop these emails: https://site.test/wp-json/eventcrew/v1/manage?token=Mw.TOKEN

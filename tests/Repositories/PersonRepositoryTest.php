@@ -113,6 +113,32 @@ final class PersonRepositoryTest extends TestCase
         self::assertFalse($repo->decideNewcomer(8, false, 'Alex'));
     }
 
+    public function testReplacingRoleNoticesKeepsTheOtherEntries(): void
+    {
+        $repo = new PersonRepository();
+        $this->wpdb->nextRows[] = ['id' => 8, 'role_notices' => '{"newcomer:asked":"x","newcomer:times":"9"}'];
+
+        $repo->replaceRoleNotices(8, ['newcomer:before', 'newcomer:times'], ['newcomer:before' => 'no']);
+
+        self::assertSame(
+            ['newcomer:asked' => 'x', 'newcomer:before' => 'no'],
+            json_decode($this->wpdb->updates[0]['data']['role_notices'], true)
+        );
+        self::assertSame(['id' => 8], $this->wpdb->updates[0]['where']);
+    }
+
+    public function testReplacingRoleNoticesWritesNothingWhenNothingChanges(): void
+    {
+        $repo = new PersonRepository();
+        $this->wpdb->nextRows[] = ['id' => 8, 'role_notices' => '{"newcomer:asked":"x"}'];
+        $this->wpdb->nextRows[] = null;
+
+        $repo->replaceRoleNotices(8, ['newcomer:before']);
+        $repo->replaceRoleNotices(9, ['newcomer:before'], ['newcomer:before' => 'yes']);
+
+        self::assertSame([], $this->wpdb->updates);
+    }
+
     public function testTheWaitingListHasOnlyConfirmedNewcomers(): void
     {
         $this->wpdb->nextResults[] = [['id' => 8, 'email' => 'sam@example.test', 'approval' => 'waiting']];

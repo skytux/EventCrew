@@ -142,6 +142,15 @@ endif; ?>
                     <?php if ('' !== $eventcrew_when) : ?>
                         <span class="eventcrew-task-when"><?php echo esc_html($eventcrew_when); ?></span>
                     <?php endif; ?>
+                    <?php
+                    // Who is signed up, by first name: only for someone signed
+                    // in and let in, and not on a role that hides names from
+                    // them (SignupBoardView).
+                    $eventcrew_names = (array) ($eventcrew_row['names'] ?? []);
+                    if ([] !== $eventcrew_names) :
+                        ?>
+                        <span class="eventcrew-task-names"><?php echo esc_html(implode(', ', $eventcrew_names)); ?></span>
+                    <?php endif; ?>
                     <?php if ('' !== $eventcrew_about) : ?>
                         <span class="eventcrew-about" id="<?php echo esc_attr($eventcrew_about_id); ?>" popover>
                             <strong><?php echo esc_html($eventcrew_task->roleDisplay()); ?></strong>
@@ -177,16 +186,34 @@ endif; ?>
                 <?php
                 $eventcrew_blocked = (string) ($eventcrew_row['blocked'] ?? '');
                 ?>
-                <?php if (null === $eventcrew_person) :
-                    // Nothing to press until signed in; the note above the
-                    // board says so once.
+                <?php if (! $eventcrew_row['mine'] && ! empty($eventcrew_row['crew_only'])) :
+                    /*
+                     * Guest sign up is off for this role and the reader is a
+                     * guest for it (BoardVisibility::blocksGuestSignup()):
+                     * the places are shown, Sign up is not, signed out or in.
+                     */
                     ?>
+                    <span class="eventcrew-blocked"><?php esc_html_e('Crew only', 'eventcrew'); ?></span>
+                    <?php
+                elseif (null === $eventcrew_person && $eventcrew_full) :
+                    ?>
+                    <button type="button" class="wp-element-button eventcrew-btn-full" disabled><?php esc_html_e('Full', 'eventcrew'); ?></button>
+                    <?php
+                elseif (null === $eventcrew_person) :
+                    /*
+                     * Signed out, Sign up leads to the sign-in card, which
+                     * also makes an account (Owner 2026-11-07). The script by
+                     * the card sends the sign-in back to this task's row.
+                     */
+                    ?>
+                    <a class="wp-element-button eventcrew-btn-go" href="#eventcrew-signin" data-eventcrew-signin-task="<?php echo esc_attr((string) $eventcrew_task->id); ?>"><?php esc_html_e('Sign up', 'eventcrew'); ?></a>
                     <?php
                 elseif (! $eventcrew_row['mine'] && 'waiting_ok' === $eventcrew_blocked) :
                     // SignupService::WAITING: a newcomer before the team's OK.
                     ?>
+                    <?php // Short, so the row keeps its layout (Owner 2026-11-07). ?>
                     <button type="button" class="wp-element-button eventcrew-btn-full" disabled>
-                        <?php esc_html_e('Waiting for the team’s OK', 'eventcrew'); ?>
+                        <?php esc_html_e('Awaiting approval', 'eventcrew'); ?>
                     </button>
                     <?php
                 elseif (! $eventcrew_row['mine'] && 'not_ok' === $eventcrew_blocked) :

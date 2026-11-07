@@ -243,6 +243,17 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
         $this->assertFixture('welcome_org_dm.nopage', $sent[3]);
     }
 
+    public function testBothOrganizerWelcomeTextsHaveTheAiSection(): void
+    {
+        $this->welcomeTest('en');
+
+        $sent = $this->sent();
+        self::assertStringContainsString('🤖 AI in EventCrew', $sent[1]);
+        self::assertStringContainsString('Off: untick "Translate texts automatically with the language model"', $sent[1]);
+        self::assertStringContainsString('🤖 AI in EventCrew', $sent[3]);
+        self::assertStringContainsString('Previews: changes asked in the bot come with Confirm and Cancel', $sent[3]);
+    }
+
     public function testTheHelpTabTextIsUnchanged(): void
     {
         $this->options[SignupService::GATE_OPTION] = '1';
@@ -349,9 +360,9 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
         $sent = $this->sent();
         self::assertCount(4, $sent);
         self::assertStringStartsWith("EMAIL Hello from Test Crew\n\n", $sent[0]);
-        self::assertStringContainsString('Dear Person 3, 2 tasks.', $sent[0]);
+        self::assertStringContainsString('Dear Person, 2 tasks.', $sent[0]);
         self::assertStringStartsWith("EMAIL Org guide\n\n", $sent[1]);
-        self::assertStringContainsString('Organizer Person 3 of Test Crew.', $sent[1]);
+        self::assertStringContainsString('Organizer Person of Test Crew.', $sent[1]);
         self::assertStringContainsString('Stored DM for Test Crew.', $sent[2]);
         self::assertStringContainsString('Short org note.', $sent[3]);
     }
@@ -437,7 +448,7 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
         self::assertCount(2, $sent);
         $body = explode("\n\n—\n", $sent[0])[0];
         self::assertStringContainsString(
-            'This message explains how it works. You can see your own numbers any time in the Me tab of the Crew app.',
+            'This message explains how it all works. You can see your own numbers any time in the Me tab of the Crew app.',
             $body
         );
         self::assertStringContainsString(

@@ -13,6 +13,8 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\BoardVisibility;
+use EventCrew\Support\Roles;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Tests\TestCase;
@@ -146,6 +148,78 @@ final class SignupServiceTest extends TestCase
         // The gate off means no person-level refusal, and no standing read.
         $this->options[SignupService::GATE_OPTION] = '0';
         self::assertSame('', $this->service()->personRefusal(9));
+    }
+
+    /**
+     * Settings > Roles: Decorate on the guest board with Guest sign up off
+     * (Owner 2026-11-07), or off the guest board too.
+     */
+    private function withDecorateGuestSignupOff(bool $onBoard = true): void
+    {
+        $this->options['eventcrew_roles'] = [
+            ['slug' => 'decorate', 'label' => 'Decorate', 'on_board' => $onBoard, 'guest_signup' => false],
+        ];
+        $this->options[SignupService::GATE_OPTION] = '0';
+    }
+
+    public function testGuestSignUpOffRefusesAGuest(): void
+    {
+        $this->withDecorateGuestSignupOff();
+        $this->wpdb->nextRows[] = $this->taskRow('decorate');      // tasks->find
+        $this->wpdb->nextRows[] = ['id' => 9, 'role_slugs' => '']; // people->find
+
+        self::assertSame(SignupService::CREW_ONLY, $this->service()->claim(9, 5));
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame('Only people with this role can sign up for this task.', SignupService::crewOnlyText());
+    }
+
+    public function testGuestSignUpOffLetsTheRoleAndOrganizersIn(): void
+    {
+        $this->withDecorateGuestSignupOff();
+        $this->wpdb->nextRows[] = $this->taskRow('decorate');
+        $this->wpdb->nextRows[] = ['id' => 9, 'role_slugs' => '["decorate"]'];
+        self::assertSame('', $this->service()->refusalFor(9, 5));
+
+        $this->wpdb->nextRows[] = $this->taskRow('decorate');
+        $this->wpdb->nextRows[] = ['id' => 9, 'role_slugs' => '', 'is_organizer' => 1];
+        self::assertSame('', $this->service()->refusalFor(9, 5));
+    }
+
+    /**
+     * Off the guest board, the Guest sign up tick has no say: the open-task
+     * emails still invite people to those tasks.
+     */
+    public function testGuestSignUpOffIsIgnoredWhenTheRoleIsOffTheGuestBoard(): void
+    {
+        $this->withDecorateGuestSignupOff(false);
+        $this->wpdb->nextRows[] = $this->taskRow('decorate');
+        $this->wpdb->nextRows[] = ['id' => 9, 'role_slugs' => ''];
+
+        self::assertSame('', $this->service()->refusalFor(9, 5));
+    }
+
+    public function testTheGuestTicksDefaultToSignUpOnAndNamesShown(): void
+    {
+        $this->options['eventcrew_roles'] = [['slug' => 'decorate', 'label' => 'Decorate']];
+        $task = Task::fromRow($this->taskRow('decorate'));
+        $guest = Person::fromRow(['id' => 9, 'email' => 'sam@example.com']);
+
+        self::assertTrue(Roles::guestSignup('decorate'));
+        self::assertFalse(Roles::anonymous('decorate'));
+        self::assertFalse(BoardVisibility::blocksGuestSignup($task, $guest));
+        self::assertTrue(BoardVisibility::showsNames($task, $guest));
+        self::assertTrue(BoardVisibility::showsNames($task, null));
+    }
+
+    public function testAnonymousDisplayHidesTheNamesFromGuestsOnly(): void
+    {
+        $this->options['eventcrew_roles'] = [['slug' => 'decorate', 'label' => 'Decorate', 'anonymous' => true]];
+        $task = Task::fromRow($this->taskRow('decorate'));
+
+        self::assertFalse(BoardVisibility::showsNames($task, null));
+        self::assertFalse(BoardVisibility::showsNames($task, Person::fromRow(['id' => 9, 'email' => 'a@example.com'])));
+        self::assertTrue(BoardVisibility::showsNames($task, Person::fromRow(['id' => 9, 'email' => 'a@example.com', 'role_slugs' => '["decorate"]'])));
+        self::assertTrue(BoardVisibility::showsNames($task, Person::fromRow(['id' => 9, 'email' => 'a@example.com', 'is_organizer' => 1])));
     }
 
     public function testACrewLeaderTaskRefusesSomeoneWithoutTheRole(): void

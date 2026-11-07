@@ -1,6 +1,6 @@
 DM 📣 Test Crew
 
-Hi Person 3,
+Hi Person,
 
 You are an organizer of Test Crew. This guide explains how EventCrew works, first in short and then in detail.
 
@@ -23,5 +23,11 @@ You are an organizer of Test Crew. This guide explains how EventCrew works, firs
 🔔 Messages: reminders and calls go out by themselves, only between 09:00 and 21:00.
 
 ⚙️ wp-admin, EventCrew &gt; Settings changes how things work. EventCrew &gt; Diagnostics shows whether everything is running.
+
+🤖 AI in EventCrew
+
+With an AI service set in Settings &gt; Telegram bot, EventCrew sends it plain messages to the bot, event and DJ descriptions (for the announcement, the post-event email and the board), your prompts for the AI texts of each event, and texts to translate.
+
+Previews: changes asked in the bot come with Confirm and Cancel, the announcement and the post-event email come to you first as a preview you can stop, and the AI texts of each event can be changed in EventCrew &gt; Messages &gt; Coming events or in the Admin tab. The full guide says how to switch each use off.
 
 The full guide, with the details, is in your email.

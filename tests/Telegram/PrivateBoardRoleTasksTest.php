@@ -159,11 +159,13 @@ final class PrivateBoardRoleTasksTest extends TelegramTestCase
 
         self::assertSame(['sendMessage'], $this->calledMethods());
         $sent = $this->lastCallTo('sendMessage');
-        self::assertStringContainsString("🎧 DJ\n–", $sent['text']);
+        // Nobody is on it yet: out of the text, its button stays (Owner 2026-11-07).
+        self::assertStringNotContainsString('🎧 DJ', $sent['text']);
+        self::assertContains('✋ 🎧 DJ', array_keys(self::buttons($sent)));
         // Not a role this member holds: not shown (Owner 2026-11-07).
         self::assertStringNotContainsString('VJ', $sent['text']);
         // The legend is under the tasks, the last line (Owner 2026-11-07).
-        self::assertStringEndsWith("🎧 DJ\n–\n\n✋ sign up · ❌ cancel", $sent['text']);
+        self::assertStringEndsWith("Party\n\n✋ sign up · ❌ cancel", $sent['text']);
         // The day's button, then one run of buttons: the blank ones only on
         // the last row.
         $rows = $sent['reply_markup']['inline_keyboard'] ?? $sent['keyboard'] ?? [];
@@ -240,7 +242,7 @@ final class PrivateBoardRoleTasksTest extends TelegramTestCase
         ]);
 
         $edit = $this->lastCallTo('editMessageText');
-        self::assertStringContainsString("🎧 DJ\n–", $edit['text']);
+        self::assertStringNotContainsString('🎧 DJ', $edit['text']);
         self::assertSame('rt:s:2', self::buttons($edit)['✋ 🎧 DJ'] ?? null);
     }
 

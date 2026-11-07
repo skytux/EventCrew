@@ -19,6 +19,9 @@ namespace EventCrew\Models;
  * English when they have not chosen one (HybridPolicy::personLanguage()).
  * The email is in that language alone when the ticket email's Hybrid tick is
  * off. Null means not known, and then the main language is used.
+ *
+ * $personId is the ticket holder, for the short code under the QR code
+ * (ShortCode::forPerson()); 0 when not known, and then there is none.
  */
 final class CrewTicket
 {
@@ -35,7 +38,8 @@ final class CrewTicket
         public readonly string $name,
         public readonly string $email,
         public readonly array $tasks = [],
-        public readonly ?string $language = null
+        public readonly ?string $language = null,
+        public readonly int $personId = 0
     ) {
     }
 

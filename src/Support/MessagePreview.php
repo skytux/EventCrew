@@ -298,7 +298,16 @@ final class MessagePreview
         switch ($send) {
             case MessageTemplate::PREVIEW_TICKET:
                 $ticket = $this->composer($this->tickets)->compose(
-                    new CrewTicket(CrewTicket::KIND_CREW, 0, $task->taskDate, $person->name(), $to, [$task], $lang)
+                    new CrewTicket(
+                        CrewTicket::KIND_CREW,
+                        0,
+                        $task->taskDate,
+                        $person->name(),
+                        $to,
+                        [$task],
+                        $lang,
+                        $person->id
+                    )
                 );
                 $mailer->toTicketHolder(
                     $to,

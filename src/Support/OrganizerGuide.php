@@ -116,6 +116,7 @@ final class OrganizerGuide
             ...self::credits(),
             ...self::permissions(),
             ...self::messages(),
+            ...self::ai(),
             ...self::admin($links),
         ]);
     }
@@ -287,6 +288,59 @@ final class OrganizerGuide
                 EventCard::MAX_EVENTS
             ),
         ];
+    }
+
+    /** The heading of the AI section, in the email, the Help tab and the DM. */
+    private static function aiHeading(): string
+    {
+        return '## 🤖 ' . __('AI in EventCrew', 'eventcrew');
+    }
+
+    /**
+     * The AI section (Owner 2026-11-07): every use of the language model
+     * (LlmClient), what each one reads, what for, the previews before
+     * anything goes out, and how to change or switch each one off. The
+     * ticket file import by email reads no AI.
+     *
+     * @return array<int, string>
+     */
+    private static function ai(): array
+    {
+        $lines = [
+            self::aiHeading(),
+            __('EventCrew uses an AI language model only when its API URL and model are set in Settings > Telegram bot, under "Plain messages (language model)". Only the texts below go to that AI service, and without the URL or the model none of this happens. The ticket file import by email does not use AI.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        ];
+
+        if (! AssistantSettings::isConfigured()) {
+            $lines[] = __('No AI service is set up at the moment, so nothing is sent to one.', 'eventcrew');
+        }
+
+        $lines[] = implode("\n", [
+            '- 💬 ' . __('Plain messages to the bot: the message, the last 24 hours of that chat, and the open tasks, events and chosen site pages, to answer and to see what the person wants. Every change (a sign-up, a cancellation, the guest list, your own email text) is shown first with Confirm and Cancel. Off: untick "Answer plain messages with the language model".', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            '- 📰 ' . __('Next events announcement and post-event email: the description of each event and of its DJs, to write short event texts and the opening text, and to pick out the venue, address and door times. All of it is in the preview email first: stop it there, or add your own text with /newsletter, /followup or the Admin tab. Off: untick "Texts by the language model" in Settings > Email.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            '- ✍️ ' . __('AI texts for each event: the event and your prompt, for each message with "Write a new text with the AI for each event" ticked on the Messages page, and for your own placeholders. They are written the day before the event; read or change them before they go out in EventCrew > Messages > Coming events, or under AI texts in the Crew app Admin tab. Untick to stop.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            '- 🎧 ' . __('The group board: the DJs and description of the next event, for two sentences under its picture. This text has no preview and no switch of its own.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            '- 🌍 ' . __('Translation: the texts you write (message texts, your own email texts, the Translations page) are translated into every site language when saved. You can change any language by hand, and a text changed by hand is not overwritten. Off: untick "Translate texts automatically with the language model" in EventCrew > Translations.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            '- 📝 ' . __('What the AI is asked to do is set in EventCrew > Messages, AI tab, where you can change it.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        ]);
+
+        return $lines;
+    }
+
+    /** The AI section in short, for the organizer DM. */
+    public static function aiShort(): string
+    {
+        return implode("\n\n", [
+            self::aiHeading(),
+            __('With an AI service set in Settings > Telegram bot, EventCrew sends it plain messages to the bot, event and DJ descriptions (for the announcement, the post-event email and the board), your prompts for the AI texts of each event, and texts to translate.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('Previews: changes asked in the bot come with Confirm and Cancel, the announcement and the post-event email come to you first as a preview you can stop, and the AI texts of each event can be changed in EventCrew > Messages > Coming events or in the Admin tab. The full guide says how to switch each use off.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        ]);
+    }
+
+    /** The organizer DM's guide: the "In short" part, then the AI section in short. */
+    public static function dm(): string
+    {
+        return self::short(false) . "\n\n" . self::aiShort();
     }
 
     /** @return array<int, string> */

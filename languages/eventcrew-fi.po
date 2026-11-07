@@ -2706,10 +2706,6 @@ msgstr "Lähetetään kaikille, joilla on vahvistettu ja päällä oleva tili, p
 msgid "Settings saved."
 msgstr "Asetukset tallennettu."
 
-#: templates/admin/settings.php:288 templates/public/signup.php:1672
-msgid "Show on the guest board (Telegram group and the web page when signed out)"
-msgstr "Näytä vierastaululla (Telegram-ryhmä ja verkkosivu kirjautumattomana)"
-
 #: templates/admin/settings.php:171 templates/public/signup.php:1634
 msgid "Slug"
 msgstr "Tunniste"
@@ -5507,6 +5503,15 @@ msgstr "Jokaisessa sen linkissä on utm_source=eventcrew, utm_medium=email ja ut
 msgid "If you are on a guest list with your email address, you get the same message after the event."
 msgstr "Jos olet vieraslistalla sähköpostiosoitteesi kanssa, saat saman viestin tapahtuman jälkeen."
 
+msgid "The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Thank you, crew! Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
+msgstr "Illan teki mahdolliseksi crew: ihmiset, jotka tekivät töitä kulisseissa, jotta kaikki muut saivat tanssia. Kiitos, crew! Haluaisitko mukaan? Se on mukava tapa tutustua ihmisiin, tuntea itsensä hyödylliseksi ja säästää lipuissa."
+
+msgid "Join on the web"
+msgstr "Liity verkossa"
+
+msgid "Join on Telegram"
+msgstr "Liity Telegramissa"
+
 msgid "Join the announcement"
 msgstr "Tilaa tiedote"
 
@@ -8059,9 +8064,6 @@ msgstr "Tiimi hyväksyi sinut. Voit nyt ottaa tehtäviä crew-sivulla."
 msgid "✅ The team said OK. You can now take tasks."
 msgstr "✅ Tiimi hyväksyi sinut. Voit nyt ottaa tehtäviä."
 
-msgid "Sent to the organizers without Telegram when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text."
-msgstr "Lähetetään järjestäjille, joilla ei ole Telegramia, kun uusi henkilö vahvistaa sähköpostinsa ensimmäistä kertaa. Kunnes järjestäjä hyväksyy, hän näkee taulun mutta ei voi ottaa tehtäviä. Tekstin alle lisätään painike crew-sivun Ylläpito-välilehdelle, jossa OK- ja Ei-painikkeet ovat."
-
 msgid "Sent to the organizers who use the bot when a new person confirms their email for the first time. The OK and No buttons are added under the text; the first organizer to press decides."
 msgstr "Lähetetään bottia käyttäville järjestäjille, kun uusi henkilö vahvistaa sähköpostinsa ensimmäistä kertaa. OK- ja Ei-painikkeet lisätään tekstin alle; ensimmäinen painaja päättää."
 
@@ -8851,9 +8853,6 @@ msgstr "Käytä vapaalippu pyytämällä sitä botilta tai verkkosivulla."
 msgid "To spend a credit, pick a night under Tickets in the Me tab of the Crew app."
 msgstr "Käytä vapaalippu valitsemalla ilta kohdasta Liput Crew-sovelluksen Minä-välilehdellä."
 
-msgid "Welcome to the %1$s crew! Our nights happen because people like you lend a hand: every task you take keeps the door open, the room ready and the music going, and earns you free entry. This message explains how it works. %2$s"
-msgstr "Tervetuloa %1$s-crew’hun! Illat toteutuvat, koska kaltaisesi ihmiset auttavat: jokainen tehtävä pitää oven auki, salin valmiina ja musiikin soimassa, ja ansaitsee sinulle vapaan sisäänpääsyn. Tämä viesti kertoo, miten kaikki toimii. %2$s"
-
 msgid "Where all your tickets are: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app."
 msgstr "Missä kaikki lippusi ovat: tyhjä, jos henkilöllä on Telegram-keskustelu; muuten Crew-sovelluksen Minä-välilehti."
 
@@ -8868,3 +8867,172 @@ msgstr "Kenelle ottaa yhteyttä, kun botti ei vastaa, esimerkiksi sähköposti j
 
 msgid "You can see your own numbers any time in the Me tab of the Crew app."
 msgstr "Omat lukusi näet milloin vain Crew-sovelluksen Minä-välilehdellä."
+
+#: src/Telegram/OnboardingService.php:333
+msgid "A few questions for the organizers, then I’ll email you the link. Have you worked on the crew here before?"
+msgstr "Pari kysymystä järjestäjille, sitten lähetän linkin sähköpostiisi. Oletko ollut täällä crew’ssä aiemmin?"
+
+#: templates/public/signup.php:240
+msgid "About how many times?"
+msgstr "Noin kuinka monta kertaa?"
+
+#: src/Telegram/OnboardingService.php:350
+msgid "About how many times? Tap a number or type one."
+msgstr "Noin kuinka monta kertaa? Napauta numeroa tai kirjoita se."
+
+#: src/Support/JoinAnswers.php:145
+msgid "Did not say whether they have worked on the crew here before."
+msgstr "Ei kertonut, onko ollut täällä crew’ssä aiemmin."
+
+#: src/Support/JoinAnswers.php:141
+msgid "First time on the crew."
+msgstr "Ensimmäistä kertaa crew’ssä."
+
+#: templates/public/signup.php:232
+msgid "Have you worked on the crew here before?"
+msgstr "Oletko ollut täällä crew’ssä aiemmin?"
+
+#: templates/public/signup.php:244
+msgid "How many free-entry tickets do you think you should have?"
+msgstr "Montako vapaalippua sinulla mielestäsi pitäisi olla?"
+
+#: src/Telegram/OnboardingService.php:365
+msgid "How many free-entry tickets do you think you should have? Tap a number or type one."
+msgstr "Montako vapaalippua sinulla mielestäsi pitäisi olla? Napauta numeroa tai kirjoita se."
+
+#: templates/public/signup.php:233
+msgid "Only for a new account, and optional."
+msgstr "Vain uudelle tilille. Voit jättää vastaamatta."
+
+#: src/Support/PrivacyExporter.php:148
+msgid "Said when joining"
+msgstr "Kertoi liittyessään"
+
+#: src/Telegram/OnboardingService.php:231
+#. translators: 1: the smallest number, 2: the largest number
+msgid "Send a number from %1$d to %2$d, or tap Skip."
+msgstr "Lähetä numero väliltä %1$d–%2$d tai napauta Ohita."
+
+#: src/Support/MessageTemplates.php:2414
+msgid "Sent to the organizers when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text, and a link to the person's @username in Telegram when they have one."
+msgstr "Lähetetään järjestäjille, kun uusi henkilö vahvistaa sähköpostinsa ensimmäistä kertaa. Kunnes järjestäjä hyväksyy, hän näkee taulun mutta ei voi ottaa tehtäviä. Tekstin alle lisätään painike crew-sivun Ylläpito-välilehdelle, jossa OK- ja Ei-painikkeet ovat, sekä linkki henkilön Telegram-käyttäjänimeen (@nimi), jos hänellä on sellainen."
+
+#: src/Telegram/OnboardingService.php:281
+msgid "Thanks, the organizers will see your answers."
+msgstr "Kiitos, järjestäjät näkevät vastauksesi."
+
+#: src/Support/JoinAnswers.php:164
+#. translators: %d: how many free-entry tickets the person thinks they should have
+msgid "Thinks they should have %d free-entry ticket."
+msgid_plural "Thinks they should have %d free-entry tickets."
+msgstr[0] "Arvioi, että hänellä pitäisi olla %d vapaalippu."
+msgstr[1] "Arvioi, että hänellä pitäisi olla %d vapaalippua."
+
+#: src/Telegram/OnboardingService.php:193
+msgid "This question has run out. Send /start to begin again."
+msgstr "Tämä kysymys on vanhentunut. Aloita alusta lähettämällä /start."
+
+#: src/Support/MessageTemplates.php:2056
+msgid "What the person said when joining: whether they have worked on the crew here before, about how many times, and how many free-entry tickets they think they should have."
+msgstr "Mitä henkilö kertoi liittyessään: onko hän ollut täällä crew’ssä aiemmin, noin kuinka monta kertaa ja montako vapaalippua hänellä hänen mielestään pitäisi olla."
+
+#: src/Support/JoinAnswers.php:152
+#. translators: %d: about how many times the person has worked on the crew
+msgid "Worked on the crew here before: yes, about %d time."
+msgid_plural "Worked on the crew here before: yes, about %d times."
+msgstr[0] "Ollut täällä crew’ssä aiemmin: kyllä, noin %d kerran."
+msgstr[1] "Ollut täällä crew’ssä aiemmin: kyllä, noin %d kertaa."
+
+#: src/Support/JoinAnswers.php:149
+msgid "Worked on the crew here before: yes."
+msgstr "Ollut täällä crew’ssä aiemmin: kyllä."
+
+#, php-format
+msgid "Welcome to the %s crew!"
+msgstr "Tervetuloa %s-crew’hun!"
+
+msgid "Our nights happen because people like you lend a hand."
+msgstr "Illat toteutuvat, koska kaltaisesi ihmiset auttavat."
+
+msgid "Every task you take keeps the door open, the room ready and the music going."
+msgstr "Jokainen tehtävä pitää oven auki, salin valmiina ja musiikin soimassa."
+
+msgid "And every task earns you free entry."
+msgstr "Ja jokainen tehtävä ansaitsee sinulle vapaan sisäänpääsyn."
+
+#, php-format
+msgid "This message explains how it all works. %s"
+msgstr "Tämä viesti kertoo, miten kaikki toimii. %s"
+
+msgid "Sorry, this ticket has expired"
+msgstr "Pahoittelut, lippu on vanhentunut"
+
+msgid "You’re in, welcome!"
+msgstr "Olet sisällä, tervetuloa!"
+
+msgid "Checked in at %s"
+msgstr "Kirjattu sisään klo %s"
+
+msgid "Short code"
+msgstr "Lyhyt koodi"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest display: people without this role see its tasks"
+msgstr "Vierasnäkymä: ne, joilla ei ole tätä roolia, näkevät sen tehtävät"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest sign up: people without this role can sign up (needs Guest display)"
+msgstr "Vieraiden ilmoittautuminen: ne, joilla ei ole tätä roolia, voivat ilmoittautua (vaatii vierasnäkymän)"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Anonymous display: hide the names from people without this role"
+msgstr "Nimetön näkymä: piilota nimet niiltä, joilla ei ole tätä roolia"
+
+#: src/Support/SignupService.php
+msgid "Only people with this role can sign up for this task."
+msgstr "Vain tämän roolin henkilöt voivat ilmoittautua tähän tehtävään."
+
+#: src/Telegram/BoardRenderer.php
+msgid "crew only"
+msgstr "vain tiimille"
+
+#: templates/public/signup-board.php
+msgid "Crew only"
+msgstr "Vain tiimille"
+
+#: templates/public/signup-board.php
+msgid "Awaiting approval"
+msgstr "Odottaa hyväksyntää"
+
+msgid "AI in EventCrew"
+msgstr "EventCrew ja tekoäly"
+
+msgid "EventCrew uses an AI language model only when its API URL and model are set in Settings > Telegram bot, under \"Plain messages (language model)\". Only the texts below go to that AI service, and without the URL or the model none of this happens. The ticket file import by email does not use AI."
+msgstr "EventCrew käyttää tekoälyn kielimallia vain, kun sen LLM-API:n osoite ja malli on annettu kohdassa Asetukset > Telegram-botti, otsikon \"Tavalliset viestit (kielimalli)\" alla. Tekoälypalveluun menevät vain alla luetellut tekstit, eikä ilman osoitetta tai mallia mitään tästä tapahdu. Lipputiedoston tuonti sähköpostilla ei käytä tekoälyä."
+
+msgid "No AI service is set up at the moment, so nothing is sent to one."
+msgstr "Tekoälypalvelua ei ole nyt asetettu, joten sille ei lähetetä mitään."
+
+msgid "Plain messages to the bot: the message, the last 24 hours of that chat, and the open tasks, events and chosen site pages, to answer and to see what the person wants. Every change (a sign-up, a cancellation, the guest list, your own email text) is shown first with Confirm and Cancel. Off: untick \"Answer plain messages with the language model\"."
+msgstr "Tavalliset viestit botille: viesti, keskustelun viimeiset 24 tuntia sekä avoimet tehtävät, tapahtumat ja valitut sivuston sivut, jotta botti voi vastata ja nähdä, mitä henkilö haluaa. Jokainen muutos (ilmoittautuminen, peruminen, vieraslista, oma sähköpostiteksti) näytetään ensin Vahvista- ja Peru-painikkeilla. Pois: poista rasti kohdasta \"Vastaa tavallisiin viesteihin kielimallin avulla\"."
+
+msgid "Next events announcement and post-event email: the description of each event and of its DJs, to write short event texts and the opening text, and to pick out the venue, address and door times. All of it is in the preview email first: stop it there, or add your own text with /newsletter, /followup or the Admin tab. Off: untick \"Texts by the language model\" in Settings > Email."
+msgstr "Tulevien tapahtumien tiedote ja tapahtuman jälkeinen viesti: kunkin tapahtuman ja sen DJ:iden kuvaukset, joista kirjoitetaan lyhyet tapahtumatekstit ja avausteksti ja poimitaan paikka, osoite ja ovien ajat. Kaikki näkyy ensin esikatselusähköpostissa: pysäytä se siellä tai lisää oma teksti komennolla /newsletter, /followup tai Ylläpito-välilehdellä. Pois: poista rasti kohdasta \"Kielimallin tekstit\" kohdassa Asetukset > Sähköposti."
+
+msgid "AI texts for each event: the event and your prompt, for each message with \"Write a new text with the AI for each event\" ticked on the Messages page, and for your own placeholders. They are written the day before the event; read or change them before they go out in EventCrew > Messages > Coming events, or under AI texts in the Crew app Admin tab. Untick to stop."
+msgstr "Tekoälytekstit jokaiseen tapahtumaan: tapahtuma ja kehotteesi niihin viesteihin, joissa on rasti kohdassa \"Kirjoita tekoälyllä uusi teksti jokaiseen tapahtumaan\" Viestit-sivulla, sekä omiin paikkamerkkeihisi. Ne kirjoitetaan tapahtumaa edeltävänä päivänä; lue tai muuta niitä ennen lähtöä kohdassa EventCrew > Viestit > Tulevat tapahtumat tai Crew-sovelluksen Ylläpito-välilehden kohdassa Tekoälytekstit. Poista rasti, niin ne loppuvat."
+
+msgid "The group board: the DJs and description of the next event, for two sentences under its picture. This text has no preview and no switch of its own."
+msgstr "Ryhmän taulu: seuraavan tapahtuman DJ:t ja kuvaus, joista kirjoitetaan kaksi lausetta sen kuvan alle. Tällä tekstillä ei ole esikatselua eikä omaa kytkintä."
+
+msgid "Translation: the texts you write (message texts, your own email texts, the Translations page) are translated into every site language when saved. You can change any language by hand, and a text changed by hand is not overwritten. Off: untick \"Translate texts automatically with the language model\" in EventCrew > Translations."
+msgstr "Käännös: kirjoittamasi tekstit (viestien tekstit, omat sähköpostitekstisi, Käännökset-sivu) käännetään tallennettaessa jokaiselle sivuston kielelle. Voit muuttaa mitä tahansa kieltä käsin, eikä käsin muutettua tekstiä kirjoiteta yli. Pois: poista rasti kohdasta \"Käännä tekstit automaattisesti kielimallilla\" kohdassa EventCrew > Käännökset."
+
+msgid "What the AI is asked to do is set in EventCrew > Messages, AI tab, where you can change it."
+msgstr "Tekoälyn ohjeet ovat kohdassa EventCrew > Viestit, Tekoäly-välilehti, jossa voit muuttaa niitä."
+
+msgid "With an AI service set in Settings > Telegram bot, EventCrew sends it plain messages to the bot, event and DJ descriptions (for the announcement, the post-event email and the board), your prompts for the AI texts of each event, and texts to translate."
+msgstr "Kun tekoälypalvelu on asetettu kohdassa Asetukset > Telegram-botti, EventCrew lähettää sille tavalliset viestit botille, tapahtumien ja DJ:iden kuvaukset (tiedotetta, tapahtuman jälkeistä viestiä ja taulua varten), kehotteesi tapahtumien tekoälyteksteihin sekä käännettävät tekstit."
+
+msgid "Previews: changes asked in the bot come with Confirm and Cancel, the announcement and the post-event email come to you first as a preview you can stop, and the AI texts of each event can be changed in EventCrew > Messages > Coming events or in the Admin tab. The full guide says how to switch each use off."
+msgstr "Esikatselut: botissa pyydetyt muutokset tulevat Vahvista- ja Peru-painikkeilla, tiedote ja tapahtuman jälkeinen viesti tulevat sinulle ensin esikatseluna, jonka voit pysäyttää, ja tapahtumien tekoälytekstejä voi muuttaa kohdassa EventCrew > Viestit > Tulevat tapahtumat tai Ylläpito-välilehdellä. Koko opas kertoo, miten kunkin käytön saa pois päältä."

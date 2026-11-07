@@ -513,6 +513,19 @@ final class WebLoginBotTest extends TelegramTestCase
         self::assertSame(TelegramLogin::STATE_PENDING, $this->login()->poll($code, $secret)['state']);
     }
 
+    /** A newcomer taps Skip on the organizers' first question (OnboardingService). */
+    private function skipJoinQuestions(): void
+    {
+        $this->router()->dispatch([
+            'callback_query' => [
+                'id' => 'cbj',
+                'from' => ['id' => 4242, 'first_name' => 'Sam'],
+                'message' => ['message_id' => 90, 'chat' => ['id' => 4242, 'type' => 'private']],
+                'data' => 'nwq:s',
+            ],
+        ]);
+    }
+
     public function testAPersonWithoutAnAccountSignsUpAndThePageSignsInWhenTheLinkIsClicked(): void
     {
         ['code' => $code, 'secret' => $secret] = $this->pageCode();
@@ -533,7 +546,8 @@ final class WebLoginBotTest extends TelegramTestCase
         self::assertStringContainsString("What's your email address?", $this->lastText());
         self::assertSame(TelegramLogin::STATE_PENDING, $this->login()->poll($code, $secret)['state']);
 
-        // They answer with their email; the bot mails the confirmation link.
+        // They answer with their email and skip the organizers' questions;
+        // the bot mails the confirmation link.
         $this->router()->dispatch([
             'message' => [
                 'text' => 'sam@example.com',
@@ -541,6 +555,7 @@ final class WebLoginBotTest extends TelegramTestCase
                 'from' => ['id' => 4242, 'first_name' => 'Sam'],
             ],
         ]);
+        $this->skipJoinQuestions();
         self::assertCount(1, $this->mails);
         self::assertSame(1, preg_match('/verify\?token=([0-9a-f]{64})/', $this->mails[0], $match));
 
@@ -575,6 +590,7 @@ final class WebLoginBotTest extends TelegramTestCase
                 'from' => ['id' => 4242, 'first_name' => 'Sam'],
             ],
         ]);
+        $this->skipJoinQuestions();
         self::assertSame(1, preg_match('/verify\?token=([0-9a-f]{64})/', $this->mails[0] ?? '', $match));
 
         foreach ($this->transients as $key => $value) {

@@ -381,6 +381,8 @@
 }
 .eventcrew-signup .eventcrew-admin-roles strong { flex: 1 1 8em; }
 .eventcrew-signup .eventcrew-admin-roles label { display: inline-flex; gap: .3em; margin: 0; white-space: nowrap; }
+/* Guest sign up means nothing while Guest display is off: greyed out then. */
+.eventcrew-signup .eventcrew-admin-roles:has(input[name="role_on_board"]:not(:checked)) .eventcrew-needs-display { opacity: .5; }
 /* The task list for "Add a person to a task" is long: a scroll box, one task per line. */
 .eventcrew-signup .eventcrew-admin-tasks {
     margin: 0 0 .7em; padding: .3em .7em .5em; max-height: 16em; overflow-y: auto;
@@ -459,6 +461,7 @@
 }
 .eventcrew-signup .eventcrew-task-role { font-weight: 600; }
 .eventcrew-signup .eventcrew-task-when { font-size: .85em; opacity: .8; font-variant-numeric: tabular-nums; }
+.eventcrew-signup .eventcrew-task-names { display: block; font-size: .85em; opacity: .8; overflow-wrap: anywhere; }
 .eventcrew-signup .eventcrew-task-desc { font-size: .85em; }
 
 /*
@@ -843,6 +846,26 @@
     border-radius: var(--eventcrew-radius);
     border: 1px solid var(--eventcrew-ink);
 }
+
+/*
+ * The newcomer's questions above the email field (JoinAnswers): Yes and No
+ * on one line, and the two numbers only once Yes is ticked. Centred with the
+ * column when the captcha stacks the row.
+ */
+.eventcrew-signup .eventcrew-join { border: 0; margin: 0 0 .9em; padding: 0; min-width: 0; }
+.eventcrew-signup .eventcrew-join.has-captcha { max-width: 22em; margin-inline: auto; }
+.eventcrew-signup .eventcrew-join legend { padding: 0; font-weight: 600; }
+.eventcrew-signup .eventcrew-join .eventcrew-hint { margin: .1em 0 .3em; }
+.eventcrew-signup .eventcrew-join-choice { display: flex; flex-wrap: wrap; gap: .4em 1.4em; }
+.eventcrew-signup .eventcrew-join-choice label { display: inline-flex; align-items: center; gap: .35em; cursor: pointer; }
+/* The numbers show once Yes is ticked; a browser without :has() shows them always (the bot asks them too). */
+.eventcrew-signup .eventcrew-join-more { display: flex; flex-wrap: wrap; gap: .6em 1.2em; margin-top: .6em; }
+@supports selector(:has(*)) {
+    .eventcrew-signup .eventcrew-join-more { display: none; }
+    .eventcrew-signup .eventcrew-join:has(input[value="yes"]:checked) .eventcrew-join-more { display: flex; }
+}
+.eventcrew-signup .eventcrew-join-more label { display: flex; flex-direction: column; gap: .3em; font-size: .9em; max-width: 100%; }
+.eventcrew-signup .eventcrew-join-more input { box-sizing: border-box; width: 6em; height: 2.4em; padding-inline: .6em; }
 
 /*
  * The sign-in choice: the Email button and the Telegram button side by side,

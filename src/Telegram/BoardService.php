@@ -859,7 +859,8 @@ final class BoardService
         $lines = RoleGuide::lines();
         $text = [] === $lines
             ? __('There are no task descriptions yet.', 'eventcrew')
-            : implode("\n", array_merge([RoleGuide::descriptionsLabel(), ''], $lines));
+            // An empty line between tasks (Owner 2026-11-07).
+            : RoleGuide::descriptionsLabel() . "\n\n" . implode("\n\n", $lines);
 
         $this->telegram->sendMessage($chatId, $text);
     }
@@ -1224,6 +1225,7 @@ final class BoardService
             SignupService::GATED => __('Your recent attendance means sign-ups are paused for now — please message an organizer.', 'eventcrew'),
             SignupService::WAITING => SignupService::waitingText(),
             SignupService::TURNED_DOWN => SignupService::turnedDownText(),
+            SignupService::CREW_ONLY => SignupService::crewOnlyText(),
             AssignmentRepository::JOIN_OK,
             AssignmentRepository::JOIN_REJOINED => __('You’re in! See you there.', 'eventcrew'),
             AssignmentRepository::JOIN_DUPLICATE => __('You’re already signed up for that.', 'eventcrew'),

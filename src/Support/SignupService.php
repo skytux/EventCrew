@@ -48,6 +48,14 @@ final class SignupService
     public const ORGANIZERS_ONLY = 'organizers_only';
 
     /**
+     * Refused: the task's role has Guest sign up off and this person is a
+     * guest for it (not an organizer, and without the role). They may see
+     * the task on the board, so the channels say why rather than "no longer
+     * available" (BoardVisibility::blocksGuestSignup()).
+     */
+    public const CREW_ONLY = 'crew_only';
+
+    /**
      * Refused: a restricted task, and nobody said whether it counts toward
      * free-entry credit. Every channel asks "Count toward free-entry credit?"
      * before it claims such a task, so this only shows up from a stale or
@@ -71,7 +79,8 @@ final class SignupService
 
     /**
      * Claims a slot, or says why not. Returns one of self::GATED,
-     * self::WAITING, self::TURNED_DOWN, self::ORGANIZERS_ONLY, self::CREDIT_QUESTION, or an
+     * self::WAITING, self::TURNED_DOWN, self::ORGANIZERS_ONLY, self::CREW_ONLY,
+     * self::CREDIT_QUESTION, or an
      * AssignmentRepository::JOIN_* outcome.
      *
      * $countsCredit is the answer to "Count toward free-entry credit?". It is
@@ -139,7 +148,7 @@ final class SignupService
      * through; a refusal shown to them would simply be wrong.
      *
      * Returns self::GATED, self::WAITING, self::TURNED_DOWN,
-     * self::ORGANIZERS_ONLY or ''.
+     * self::ORGANIZERS_ONLY, self::CREW_ONLY or ''.
      */
     public function refusalFor(int $personId, int $taskId): string
     {
@@ -176,6 +185,10 @@ final class SignupService
 
         if (self::blocksRestrictedSlot($task, $person)) {
             return ['refusal' => self::ORGANIZERS_ONLY, 'pass' => false, 'task' => $task];
+        }
+
+        if (BoardVisibility::blocksGuestSignup($task, $person)) {
+            return ['refusal' => self::CREW_ONLY, 'pass' => false, 'task' => $task];
         }
 
         $gate = $this->gateRefusal($personId, $person);
@@ -336,6 +349,12 @@ final class SignupService
     public static function turnedDownText(): string
     {
         return __('To take tasks, talk to the team at an event.', 'eventcrew');
+    }
+
+    /** The answer every channel gives a guest on a task whose role has Guest sign up off. */
+    public static function crewOnlyText(): string
+    {
+        return __('Only people with this role can sign up for this task.', 'eventcrew');
     }
 
     /** The answer every channel gives when the sign-out lock refuses a sign-out. */

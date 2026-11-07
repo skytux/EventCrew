@@ -3,7 +3,7 @@
 /**
  * Settings admin view.
  *
- * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null, description: string, restricted: bool, every_night: bool, sales_desk: bool, on_board: bool, title_contains: string, plus_ones: int, conditions: array{counts: array<string, int>, min_roles: int, times_each: int}}> $roles
+ * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null, description: string, restricted: bool, every_night: bool, sales_desk: bool, on_board: bool, guest_signup: bool, anonymous: bool, title_contains: string, plus_ones: int, conditions: array{counts: array<string, int>, min_roles: int, times_each: int}}> $roles
  * @var int $organize_plus_ones The "+1 allowed" number new Organize tasks copy.
  * @var string $guide_url Link to the crew's full guide, shared by every role.
  * @var string $nonce_action Nonce action for the save form.
@@ -129,6 +129,8 @@ if (! defined('ABSPATH')) {
             'every_night' => true,
             'sales_desk' => false,
             'on_board' => true,
+            'guest_signup' => true,
+            'anonymous' => false,
             'title_contains' => '',
             'plus_ones' => 0,
             'conditions' => \EventCrew\Support\Roles::noConditions(),
@@ -316,13 +318,37 @@ if (! defined('ABSPATH')) {
                                     <?php checked($eventcrew_role['sales_desk']); ?>>
                                 <?php esc_html_e('Opens the sales desk', 'eventcrew'); ?>
                             </label><br>
+                            <?php
+                            /*
+                             * What people without this role get on the boards
+                             * (BoardVisibility). Guest sign up greys out while
+                             * Guest display is off, which it then means nothing
+                             * without (eventcrew-admin.css).
+                             */
+                            ?>
                             <label>
                                 <input
                                     type="checkbox"
                                     name="role_on_board[<?php echo esc_attr($eventcrew_i); ?>]"
                                     value="1"
                                     <?php checked($eventcrew_role['on_board']); ?>>
-                                <?php esc_html_e('Show on the guest board (Telegram group and the web page when signed out)', 'eventcrew'); ?>
+                                <?php esc_html_e('Guest display: people without this role see its tasks', 'eventcrew'); ?>
+                            </label><br>
+                            <label class="eventcrew-needs-display">
+                                <input
+                                    type="checkbox"
+                                    name="role_guest_signup[<?php echo esc_attr($eventcrew_i); ?>]"
+                                    value="1"
+                                    <?php checked($eventcrew_role['guest_signup'] ?? true); ?>>
+                                <?php esc_html_e('Guest sign up: people without this role can sign up (needs Guest display)', 'eventcrew'); ?>
+                            </label><br>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="role_anonymous[<?php echo esc_attr($eventcrew_i); ?>]"
+                                    value="1"
+                                    <?php checked($eventcrew_role['anonymous'] ?? false); ?>>
+                                <?php esc_html_e('Anonymous display: hide the names from people without this role', 'eventcrew'); ?>
                             </label>
                         </td>
                     </tr>

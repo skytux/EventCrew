@@ -42,7 +42,7 @@ $eventcrew_manage_token = (string) ($view['manage_token'] ?? '');
  * the tab and its panel are then not in the page at all. Hiding them is only
  * tidiness - every admin action checks the organizer flag again on the server.
  */
-/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, members: array<int, string>, roster_label: string, roster: array<int, array{task_id: int, title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool, standing: string, at_risk: bool}>}>, roster_date: string, roster_upcoming: array<string, string>, roster_past: array<string, string>, roster_action: string, door_action: string, guest_action: string, buyers_action: string, mail_action: string, statuses: array<string, string>, max_plus_ones: int, night: array{entrants: list<array{name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int}>, candidates: list<array{person_id: int, name: string, credit_balance: int}>, closed_by_hand: bool, event_reason: string, guests: list<array{id: int, name: string, plus_ones: int, note: string}>, buyers: list<string>, ticket_mail_buyers: string, ticket_mail_guests: string, ticket_mail_pending: string, followup_mail: string, followup_can_stop: bool, mailbox: string, mail_last: string}, roles_action: string, add_action: string, roles: array<string, string>, add_tasks: array<int, string>, person_action: string, pass_action: string, unban_action: string, newcomer_action?: string, newcomers?: list<array{id: int, name: string, email: string, since: string}>, people: array{search: string, page: int, pages: int, total: int, list: list<array{id: int, name: string, email: string, verified: bool, organizer: bool, banned: bool, anonymized: bool}>, editing: ?array{person: \EventCrew\Models\Person, standing: string, at_risk: bool, credits: int, given: list<array{credits: int, note: string, granted_by: string, granted_at: string}>, spent: list<array{day: string, event: string, redeemed_at: string}>}}}|null $eventcrew_admin */
+/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, members: array<int, string>, roster_label: string, roster: array<int, array{task_id: int, title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool, standing: string, at_risk: bool}>}>, roster_date: string, roster_upcoming: array<string, string>, roster_past: array<string, string>, roster_action: string, door_action: string, guest_action: string, buyers_action: string, mail_action: string, statuses: array<string, string>, max_plus_ones: int, night: array{entrants: list<array{name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int}>, candidates: list<array{person_id: int, name: string, credit_balance: int}>, closed_by_hand: bool, event_reason: string, guests: list<array{id: int, name: string, plus_ones: int, note: string}>, buyers: list<string>, ticket_mail_buyers: string, ticket_mail_guests: string, ticket_mail_pending: string, followup_mail: string, followup_can_stop: bool, mailbox: string, mail_last: string}, roles_action: string, add_action: string, roles: array<string, string>, add_tasks: array<int, string>, person_action: string, pass_action: string, unban_action: string, newcomer_action?: string, newcomers?: list<array{id: int, name: string, email: string, since: string, answers?: string}>, people: array{search: string, page: int, pages: int, total: int, list: list<array{id: int, name: string, email: string, verified: bool, organizer: bool, banned: bool, anonymized: bool}>, editing: ?array{person: \EventCrew\Models\Person, standing: string, at_risk: bool, credits: int, given: list<array{credits: int, note: string, granted_by: string, granted_at: string}>, spent: list<array{day: string, event: string, redeemed_at: string}>}}}|null $eventcrew_admin */
 $eventcrew_admin = is_array($view['admin'] ?? null) ? $view['admin'] : null;
 $eventcrew_ajax = admin_url('admin-ajax.php');
 // The URL to return to after each action: this very page. get_permalink() gives
@@ -123,7 +123,7 @@ if ($eventcrew_link_expired) {
         // Signed out there are only two things - sign in, and look at the board
         // - so there is nothing to tab between and no tab strip is drawn.
         ?>
-        <section class="eventcrew-event eventcrew-me-card eventcrew-signin-card">
+        <section class="eventcrew-event eventcrew-me-card eventcrew-signin-card" id="eventcrew-signin">
             <header class="eventcrew-event-head">
                 <h2 class="eventcrew-event-title"><?php esc_html_e('Sign in or sign up', 'eventcrew'); ?></h2>
             </header>
@@ -219,6 +219,34 @@ if ($eventcrew_link_expired) {
                  * order reads the way the form is filled in.
                  */
                 ?>
+                <?php
+                /*
+                 * The newcomer's questions (JoinAnswers, Owner 2026-11-07), for
+                 * the organizers who say OK to a new account. All optional and
+                 * kept only when the address has no account yet. The numbers
+                 * show once Yes is ticked (:has(); a browser without it shows
+                 * them all the time, so every question the bot asks can still
+                 * be answered, and a No drops them).
+                 */
+                ?>
+                <fieldset class="eventcrew-join<?php echo '' !== $eventcrew_turnstile_site_key ? ' has-captcha' : ''; ?>">
+                    <legend><?php esc_html_e('Have you worked on the crew here before?', 'eventcrew'); ?></legend>
+                    <p class="eventcrew-muted eventcrew-hint"><?php esc_html_e('Only for a new account, and optional.', 'eventcrew'); ?></p>
+                    <div class="eventcrew-join-choice">
+                        <label><input type="radio" name="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::FIELD_BEFORE); ?>" value="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::YES); ?>"> <?php esc_html_e('Yes', 'eventcrew'); ?></label>
+                        <label><input type="radio" name="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::FIELD_BEFORE); ?>" value="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::NO); ?>"> <?php esc_html_e('No', 'eventcrew'); ?></label>
+                    </div>
+                    <div class="eventcrew-join-more">
+                        <label>
+                            <?php esc_html_e('About how many times?', 'eventcrew'); ?>
+                            <input type="number" class="wp-element-input" inputmode="numeric" name="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::FIELD_TIMES); ?>" min="<?php echo (int) \EventCrew\Support\JoinAnswers::MIN_TIMES; ?>" max="<?php echo (int) \EventCrew\Support\JoinAnswers::MAX_TIMES; ?>" step="1">
+                        </label>
+                        <label>
+                            <?php esc_html_e('How many free-entry tickets do you think you should have?', 'eventcrew'); ?>
+                            <input type="number" class="wp-element-input" inputmode="numeric" name="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::FIELD_TICKETS); ?>" min="<?php echo (int) \EventCrew\Support\JoinAnswers::MIN_TICKETS; ?>" max="<?php echo (int) \EventCrew\Support\JoinAnswers::MAX_TICKETS; ?>" step="1">
+                        </label>
+                    </div>
+                </fieldset>
                 <div class="eventcrew-signin-row<?php echo '' !== $eventcrew_turnstile_site_key ? ' has-captcha' : ''; ?>">
                     <label for="eventcrew-email" class="screen-reader-text"><?php esc_html_e('Email', 'eventcrew'); ?></label>
                     <input
@@ -283,6 +311,21 @@ if ($eventcrew_link_expired) {
                 <?php endif; ?>
             </form>
             <p id="eventcrew-signin-sent" class="eventcrew-muted eventcrew-hint" hidden><?php esc_html_e('Check your inbox for the sign-in link — and your spam folder if it’s not there. Press the button again to resend.', 'eventcrew'); ?></p>
+            <script>
+            // A board row's Sign up, signed out, jumps here (#eventcrew-signin).
+            // The sign-in, by email link or Telegram, then comes back to
+            // that task's row instead of the top of the page.
+            document.addEventListener('click', function (event) {
+                var link = event.target.closest ? event.target.closest('[data-eventcrew-signin-task]') : null;
+                if (!link) { return; }
+                var back = new URL(<?php echo wp_json_encode($eventcrew_signin_return); ?>, window.location.href);
+                back.hash = <?php echo wp_json_encode(\EventCrew\Support\SlotFreedNotice::ANCHOR_PREFIX); ?> + link.getAttribute('data-eventcrew-signin-task');
+                var field = document.querySelector('form[data-eventcrew-signin] input[name="redirect_to"]');
+                var choice = document.querySelector('[data-eventcrew-tg-login]');
+                if (field) { field.value = back.toString(); }
+                if (choice) { choice.setAttribute('data-here', back.toString()); }
+            });
+            </script>
             <?php if (null !== $eventcrew_tg_login) : ?>
                 <script>
                 // Show the choice before the first paint, so the email form and
@@ -784,6 +827,10 @@ if ($eventcrew_link_expired) {
                                         · <?php echo esc_html($eventcrew_newcomer['since']); ?>
                                     <?php endif; ?>
                                 </span>
+                                <?php // What they said when joining, as in the "wants to join" email and DM (JoinAnswers). ?>
+                                <?php if ('' !== (string) ($eventcrew_newcomer['answers'] ?? '')) : ?>
+                                    <span class="eventcrew-muted eventcrew-admin-hint eventcrew-join-answers"><?php echo esc_html((string) $eventcrew_newcomer['answers']); ?></span>
+                                <?php endif; ?>
                                 <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" class="eventcrew-admin-actions">
                                     <input type="hidden" name="action" value="<?php echo esc_attr((string) ($eventcrew_admin['newcomer_action'] ?? '')); ?>">
                                     <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
@@ -1851,7 +1898,10 @@ if ($eventcrew_link_expired) {
                             <label><input type="checkbox" name="role_restricted" value="1"<?php echo $eventcrew_role_editing['restricted'] ? ' checked' : ''; ?>> <?php esc_html_e('Only people with this role', 'eventcrew'); ?></label>
                             <label><input type="checkbox" name="role_every_night" value="1"<?php echo $eventcrew_role_editing['every_night'] ? ' checked' : ''; ?>> <?php esc_html_e('Add to every night', 'eventcrew'); ?></label>
                             <label><input type="checkbox" name="role_sales_desk" value="1"<?php echo $eventcrew_role_editing['sales_desk'] ? ' checked' : ''; ?>> <?php esc_html_e('Opens the sales desk', 'eventcrew'); ?></label>
-                            <label><input type="checkbox" name="role_on_board" value="1"<?php echo ($eventcrew_role_editing['on_board'] ?? true) ? ' checked' : ''; ?>> <?php esc_html_e('Show on the guest board (Telegram group and the web page when signed out)', 'eventcrew'); ?></label>
+                            <?php // Guest sign up greys out while Guest display is off (eventcrew.css). ?>
+                            <label><input type="checkbox" name="role_on_board" value="1"<?php echo ($eventcrew_role_editing['on_board'] ?? true) ? ' checked' : ''; ?>> <?php esc_html_e('Guest display: people without this role see its tasks', 'eventcrew'); ?></label>
+                            <label class="eventcrew-needs-display"><input type="checkbox" name="role_guest_signup" value="1"<?php echo ($eventcrew_role_editing['guest_signup'] ?? true) ? ' checked' : ''; ?>> <?php esc_html_e('Guest sign up: people without this role can sign up (needs Guest display)', 'eventcrew'); ?></label>
+                            <label><input type="checkbox" name="role_anonymous" value="1"<?php echo ($eventcrew_role_editing['anonymous'] ?? false) ? ' checked' : ''; ?>> <?php esc_html_e('Anonymous display: hide the names from people without this role', 'eventcrew'); ?></label>
                         </fieldset>
                         <p>
                             <label for="eventcrew-admin-role-title"><?php esc_html_e('Only on events', 'eventcrew'); ?></label>

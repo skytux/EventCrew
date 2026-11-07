@@ -35,7 +35,7 @@ final class OrganizerGuideTest extends TelegramTestCase
         preg_match_all('/^## (.+)$/m', OrganizerGuide::short() . "\n\n" . OrganizerGuide::details(), $headings);
         $anchors = array_map([\EventCrew\Support\EmailBody::class, 'anchor'], $headings[1]);
 
-        self::assertCount(8, $links[1]);
+        self::assertCount(9, $links[1]);
         self::assertSame($anchors, $links[1]);
         self::assertStringStartsWith('## 📑 Contents', OrganizerGuide::full());
     }
@@ -98,5 +98,29 @@ final class OrganizerGuideTest extends TelegramTestCase
 
         $this->options[SignupService::GATE_OPTION] = '1';
         self::assertStringContainsString('The sign-up gate is on', OrganizerGuide::details());
+    }
+
+    public function testTheGuideAndTheDmHaveTheAiSection(): void
+    {
+        $full = OrganizerGuide::full();
+
+        self::assertStringContainsString('## 🤖 AI in EventCrew', $full);
+        self::assertStringContainsString('Off: untick "Answer plain messages with the language model"', $full);
+        self::assertStringContainsString('Off: untick "Texts by the language model" in Settings > Email', $full);
+        self::assertStringContainsString('EventCrew > Messages > Coming events', $full);
+        self::assertStringContainsString('The ticket file import by email does not use AI.', $full);
+        self::assertStringContainsString('## 🤖 AI in EventCrew', OrganizerGuide::dm());
+        self::assertStringContainsString('as a preview you can stop', OrganizerGuide::dm());
+        self::assertStringStartsWith(OrganizerGuide::short(false), OrganizerGuide::dm());
+    }
+
+    public function testTheNotSetUpLineOnlyWithoutAnAiService(): void
+    {
+        self::assertStringContainsString('No AI service is set up at the moment', OrganizerGuide::details());
+
+        $this->options[\EventCrew\Support\AssistantSettings::URL_OPTION] = 'https://llm.test/v1';
+        $this->options[\EventCrew\Support\AssistantSettings::MODEL_OPTION] = 'test-model';
+
+        self::assertStringNotContainsString('No AI service is set up at the moment', OrganizerGuide::details());
     }
 }

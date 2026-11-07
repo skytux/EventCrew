@@ -98,22 +98,27 @@ final class DoorListTest extends TestCase
         self::assertSame(2, $byName['Person 9']['redemption_id']);   // redeemer
     }
 
-    public function testDeduplicatesSomeoneWhoWorksAndAlsoRedeemed(): void
+    public function testSomeoneWhoWorksAndAlsoRedeemedHasTwoRows(): void
     {
         $this->wpdb->nextResults[] = [$this->taskRow(5)];                          // tasks->forDate
         $this->wpdb->nextResults[] = [['id' => 1, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up']]; // forTask
         $this->wpdb->nextResults[] = [];                                           // standing(7) history
         $this->wpdb->nextResults[] = [['id' => 2, 'person_id' => 7, 'redeemed_for' => '2026-08-01']]; // redemption for the same person
+        $this->wpdb->nextResults[] = [];                                           // standing(7) history again
         $this->wpdb->nextResults[] = [$this->personRow(7)];                        // people->all
 
         $this->wpdb->nextRows[] = $this->personRow(7);                             // worker find(7)
         $this->wpdb->nextVars[] = 0;                                               // countFor(7)
+        $this->wpdb->nextRows[] = $this->personRow(7);                             // redemption find(7)
+        $this->wpdb->nextVars[] = 0;                                               // countFor(7)
 
         $door = $this->doorList()->forDate('2026-08-01');
 
-        // The worker row wins; the redemption does not add a second entrant.
-        self::assertCount(1, $door['entrants']);
-        self::assertNull($door['entrants'][0]['redemption_id']);
+        // The free-entry ticket may be given to someone else, so it is a
+        // second row (Owner 2026-11-07).
+        self::assertCount(2, $door['entrants']);
+        self::assertSame([7, 7], array_column($door['entrants'], 'person_id'));
+        self::assertSame([null, 2], array_column($door['entrants'], 'redemption_id'));
     }
 
     public function testEntrantsForSkipsTheCandidateScan(): void

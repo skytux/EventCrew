@@ -15,6 +15,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\DmBody;
 use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\EmailBody;
+use EventCrew\Support\JoinAnswers;
 use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
@@ -530,8 +531,14 @@ final class SignupController
      * 'login_busy' when $clientIp or this address asked for too many links in
      * the last hour (LOGIN_LIMIT_PER_IP, LOGIN_LIMIT_PER_EMAIL); then nothing
      * is looked up, made or mailed.
+     *
+     * $answers are the newcomer's answers from the form (JoinAnswers::fromPost()):
+     * kept for a new person, or one still waiting who has not confirmed the
+     * address yet (they may ask for a second link); ignored for everyone else.
+     *
+     * @param array<string, string> $answers
      */
-    public function loginByEmail(string $email, string $clientIp = ''): string
+    public function loginByEmail(string $email, string $clientIp = '', array $answers = []): string
     {
         $email = sanitize_email($email);
 
@@ -570,6 +577,12 @@ final class SignupController
 
         if ($isNew && null !== $language && Language::ENGLISH !== $language) {
             $this->people->setLanguage($personId, $language);
+        }
+
+        // What they said about working here before, for the organizers'
+        // "wants to join" notice. A blank form changes nothing.
+        if ([] !== $answers && ($isNew || JoinAnswers::canAnswer($person))) {
+            $this->people->replaceRoleNotices($personId, JoinAnswers::KEYS, $answers);
         }
 
         // No account yet: nobody has ever confirmed this address, by a link or
@@ -788,6 +801,7 @@ final class SignupController
             SignupService::WAITING => 'waiting_ok',
             SignupService::TURNED_DOWN => 'not_ok',
             SignupService::CREDIT_QUESTION => 'credit_question',
+            SignupService::CREW_ONLY => 'crew_only',
             AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED => 'claimed',
             AssignmentRepository::JOIN_DUPLICATE => 'already',
             AssignmentRepository::JOIN_FULL => 'full',
@@ -1083,7 +1097,19 @@ final class SignupController
             }
 
             $email = isset($_POST['email']) ? sanitize_text_field(wp_unslash($_POST['email'])) : '';
-            $this->finish($redirect, $this->loginByEmail($email, $this->clientIp()), $isAjax);
+            // The newcomer's optional answers (JoinAnswers), kept only for a
+            // new account.
+            $answers = JoinAnswers::fromPost(array_map(
+                static fn (string $field): string => isset($_POST[$field]) && is_string($_POST[$field])
+                    ? sanitize_text_field(wp_unslash($_POST[$field]))
+                    : '',
+                [
+                    JoinAnswers::FIELD_BEFORE => JoinAnswers::FIELD_BEFORE,
+                    JoinAnswers::FIELD_TIMES => JoinAnswers::FIELD_TIMES,
+                    JoinAnswers::FIELD_TICKETS => JoinAnswers::FIELD_TICKETS,
+                ]
+            ));
+            $this->finish($redirect, $this->loginByEmail($email, $this->clientIp(), $answers), $isAjax);
         }
 
         // Everything past here needs an authenticated, CSRF-checked person -
@@ -1235,6 +1261,7 @@ final class SignupController
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             'sessions_revoked' => __('Signed out everywhere. Any other browser or phone that was signed in as you will need a fresh link.', 'eventcrew'),
             'unavailable' => __('That task is no longer available.', 'eventcrew'),
+            'crew_only' => SignupService::crewOnlyText(),
             'credit_question' => __('Choose whether this task counts toward free-entry credit.', 'eventcrew'),
             'not_on' => __('You weren’t signed up for that one.', 'eventcrew'),
             'signout_locked' => SignupService::signoutLockedText(),

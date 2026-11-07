@@ -52,6 +52,8 @@ use EventCrew\Models\Task;
  *     every_night: bool,
  *     sales_desk: bool,
  *     on_board: bool,
+ *     guest_signup: bool,
+ *     anonymous: bool,
  *     title_contains: string,
  *     plus_ones: int,
  *     conditions: array{counts: array<string, int>, min_roles: int, times_each: int}
@@ -601,6 +603,25 @@ final class Roles
     }
 
     /**
+     * Guest sign up: whether people without this role may sign up for its
+     * tasks. Only means something while Guest display (onBoard()) is on; a
+     * task of an unknown role is open as before.
+     */
+    public static function guestSignup(string $slug): bool
+    {
+        return self::find($slug)['guest_signup'] ?? true;
+    }
+
+    /**
+     * Anonymous display: whether the boards hide who is signed up for this
+     * role's tasks from people without the role. Off unless switched on.
+     */
+    public static function anonymous(string $slug): bool
+    {
+        return self::find($slug)['anonymous'] ?? false;
+    }
+
+    /**
      * The conditions set on a role; all zero when none are set or the role
      * does not exist.
      *
@@ -680,6 +701,11 @@ final class Roles
             // On unless switched off: every role stored before this key
             // existed was on the board.
             'on_board' => ! array_key_exists('on_board', $role) || ! empty($role['on_board']),
+            // On unless switched off: before this key existed, anyone could
+            // sign up for a task shown on the guest board.
+            'guest_signup' => ! array_key_exists('guest_signup', $role) || ! empty($role['guest_signup']),
+            // Off unless switched on: the boards showed names before.
+            'anonymous' => ! empty($role['anonymous']),
             // Empty means every event, which is what a role stored before
             // this key existed was added to.
             'title_contains' => trim((string) ($role['title_contains'] ?? '')),

@@ -7,8 +7,9 @@ namespace EventCrew\Support;
 /**
  * One-time changes to the stored texts (the Messages page) of the messages
  * that tell a person what they were given: a role, a pass, the team's OK,
- * organizer rights. A built-in text has the change already; a stored one
- * gets it once.
+ * organizer rights; and of the organizers' "wants to join" notice, which
+ * gets the newcomer's answers ({join_answers}). A built-in text has the
+ * change already; a stored one gets it once.
  *
  * Each step runs once and is remembered by name in OPTION, so a later
  * release can add a step without running the earlier ones again. Runs on
@@ -27,6 +28,12 @@ final class AccessTextsMigration
         'access_pass_dm',
         'newcomer_ok',
         'newcomer_ok_dm',
+    ];
+
+    /** The "wants to join" notices, whose stored texts get {join_answers}: kind => what goes before it. */
+    public const JOIN_ANSWERS_KINDS = [
+        'newcomer_waiting' => "\n\n",
+        'newcomer_waiting_dm' => "\n",
     ];
 
     /** The organizer DM, which gets the line on what the Admin tab is for. */
@@ -52,6 +59,16 @@ final class AccessTextsMigration
                         ? $text
                         : self::append($text, ' ' . $line);
                 });
+            },
+            'join_answers' => static function (): void {
+                foreach (self::JOIN_ANSWERS_KINDS as $id => $gap) {
+                    self::appendToStored(
+                        $id,
+                        static fn (string $text): string => str_contains($text, '{join_answers}')
+                            ? $text
+                            : self::append($text, $gap . '{join_answers}')
+                    );
+                }
             },
         ];
         $changed = false;

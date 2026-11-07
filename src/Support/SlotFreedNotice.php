@@ -192,8 +192,14 @@ final class SlotFreedNotice
 
                 $entry['told'][] = $person->id;
 
-                // Skip the people who cancelled this slot, and anyone blocked.
-                if (in_array($person->id, $entry['cancellers'], true) || $person->isBanned()) {
+                // Skip the people who cancelled this slot, anyone blocked,
+                // and the guests a role with Guest sign up off would refuse:
+                // the notice's Sign up would not work for them.
+                if (
+                    in_array($person->id, $entry['cancellers'], true)
+                    || $person->isBanned()
+                    || BoardVisibility::blocksGuestSignup($task, $person)
+                ) {
                     continue;
                 }
 

@@ -184,17 +184,17 @@ final class WelcomeSenderTest extends SalesDeskTestCase
             'The full guide, with the details, is in your email.',
             $this->lastCallTo('sendMessage')['text']
         );
-        // Help, the Admin tab, the bot's 👥 People, then wp-admin: at most
-        // three buttons plus wp-admin (Owner 2026-11-07).
+        // The bot's Admin menu on top, the Admin tab, wp-admin, Help at the
+        // bottom; no People (Owner 2026-11-07).
         self::assertSame(
-            ['📖 Help', '🛠️ Open the Admin tab', '👥 People', '🧰 Open EventCrew in wp-admin'],
+            ['🛠 Admin', '🛠️ Open the Admin tab', '🧰 Open EventCrew in wp-admin', '📖 Help'],
             array_map(
                 static fn (array $row): string => $row[0]['text'],
                 $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
             )
         );
         self::assertSame(
-            ['mn:people'],
+            ['mn:admin'],
             array_values(array_filter(array_map(
                 static fn (array $row): ?string => $row[0]['callback_data'] ?? null,
                 $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
@@ -248,18 +248,37 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         $dm = $this->lastCallTo('sendMessage');
         $rows = $dm['reply_markup']['inline_keyboard'];
 
-        self::assertSame(['📋 See open tasks', '📝 What each task involves'], array_map(
+        // My info on top, no task-info button (Owner 2026-11-07).
+        self::assertSame(['👤 My info', '📋 See open tasks'], array_map(
             static fn (array $row): string => $row[0]['text'],
             $rows
         ));
         // No bot username in the test: the bot's own menu buttons.
-        self::assertSame(['mn:board', 'mn:tasks'], array_map(
+        self::assertSame(['mn:me', 'mn:board'], array_map(
             static fn (array $row): string => $row[0]['callback_data'] ?? '',
             $rows
         ));
         self::assertStringContainsString('2 of 3 places free', $dm['text']);
         self::assertStringNotContainsString('0 of 3 places free', $dm['text']);
         self::assertStringContainsString('To sign up, tap 📋 See open tasks below.', $dm['text']);
+    }
+
+    /** Open tasks on the same date sit on consecutive lines in the DM (Owner 2026-11-07). */
+    public function testTheDmListsTasksOfOneDateWithoutEmptyLines(): void
+    {
+        $this->options[WelcomeSender::ENABLED_OPTION] = '1';
+        $this->queueRun([$this->memberRow(1)]);
+        $this->wpdb->nextResults[count($this->wpdb->nextResults) - 1] = [
+            ['task_id' => 5, 'taken' => 1],
+            ['task_id' => 6, 'taken' => 1],
+        ];
+
+        $this->welcomeSender()->sendDue(25);
+
+        self::assertMatchesRegularExpression(
+            "/2 of 3 places free\n[^\n]+2 of 3 places free/u",
+            $this->lastCallTo('sendMessage')['text']
+        );
     }
 
     /** With the bot set up, See open tasks opens the next date's board in the bot (board-<Ymd>). */
@@ -275,7 +294,7 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         $rows = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
 
         self::assertCount(3, $rows);
-        self::assertStringStartsWith('https://t.me/crewbot?start=board-20260720', $rows[0][0]['url']);
+        self::assertStringStartsWith('https://t.me/crewbot?start=board-20260720', $rows[1][0]['url']);
         self::assertSame('💬 Open the group', $rows[2][0]['text']);
         self::assertSame('https://t.me/+crew', $rows[2][0]['url']);
     }
@@ -391,13 +410,15 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         );
     }
 
-    public function testOnlyAnOrganizersWelcomeEmailLinksToWpAdmin(): void
+    /** wp-admin is only in the organizer email, not the member one (Owner 2026-11-07). */
+    public function testOnlyTheOrganizerWelcomeEmailLinksToWpAdmin(): void
     {
         $this->queueOpenTasks();
         $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(1, true)));
+        self::assertStringNotContainsString('wp-admin', $this->mails[0]['body']);
         self::assertStringContainsString(
             'Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew',
-            $this->mails[0]['body']
+            $this->mails[1]['body']
         );
 
         $this->mails = [];
@@ -510,8 +531,8 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         self::assertSame([], array_intersect($links, $buttons));
     }
 
-    /** An organizer's welcome email has wp-admin as the one extra button. */
-    public function testAnOrganizersWelcomeEmailAddsWpAdminAsAFourthButton(): void
+    /** An organizer's member welcome email has the same three buttons; wp-admin is in the organizer email. */
+    public function testAnOrganizersMemberWelcomeEmailHasNoWpAdminButton(): void
     {
         $this->options['eventcrew_email_html'] = '1';
         $this->options[\EventCrew\Telegram\BoardService::GROUP_LINK_OPTION] = 'https://t.me/+crew';
@@ -519,10 +540,10 @@ final class WelcomeSenderTest extends SalesDeskTestCase
 
         $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(1, true)));
 
-        self::assertCount(4, self::buttonUrls($this->mails[0]['body']));
-        self::assertSame(
+        self::assertCount(3, self::buttonUrls($this->mails[0]['body']));
+        self::assertNotContains(
             'https://site.test/wp-admin/admin.php?page=eventcrew',
-            self::buttonUrls($this->mails[0]['body'])[3]
+            self::buttonUrls($this->mails[0]['body'])
         );
         // The organizer guide: the Admin tab, Help, the group, then wp-admin.
         self::assertSame(

@@ -143,6 +143,11 @@ final class PrivacyExporter
             ],
         ];
 
+        // What they said when joining, while the record keeps it (JoinAnswers).
+        if (null !== $person && null !== JoinAnswers::of($person)['before']) {
+            $fields[] = ['name' => __('Said when joining', 'eventcrew'), 'value' => JoinAnswers::line($person)];
+        }
+
         if (null !== $standing) {
             $fields[] = ['name' => __('Standing', 'eventcrew'), 'value' => $standing->ratedSummary()];
             $fields[] = [

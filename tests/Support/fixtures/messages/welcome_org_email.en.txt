@@ -1,6 +1,6 @@
 EMAIL Organizer guide: how EventCrew works
 
-Hi Person 3,
+Hi Person,
 
 You are an organizer of Test Crew. This guide explains how EventCrew works, first in short and then in detail.
 
@@ -13,6 +13,7 @@ You are an organizer of Test Crew. This guide explains how EventCrew works, firs
 - 🎟️ Tickets, credits and standing
 - 🔑 Roles and permissions
 - 🔔 Automatic messages
+- 🤖 AI in EventCrew
 - ⚙️ The wp-admin pages
 
 ⚡ In short
@@ -95,6 +96,19 @@ The scheduled ones go out only between 09:00 and 21:00. Each goes by Telegram an
 ✏️ The thank-you text and the sorry text of the post-event email are set in wp-admin under EventCrew > Messages. To use another text for the next post-event email only, send /followup came or /followup missed followed by the text in a private chat with the bot, or tell the bot there in your own words (it shows the text with a Confirm button first), or use the Crew app Admin tab. Write it in any language: it is translated into every site language. After that email is sent, or when that night is stopped, the text on the Messages page is used again. Send /followup alone to see both texts.
 
 📸 /events, in a private chat with the bot, shows you the next 5 coming events as cards: the picture, the date, the price, a short description, and buttons to buy a ticket and to listen to the DJ. Tap Confirm and the bot posts the same cards in the group; tap Cancel and nothing is sent. You can also ask the bot in your own words which events come next.
+
+🤖 AI in EventCrew
+
+EventCrew uses an AI language model only when its API URL and model are set in Settings > Telegram bot, under "Plain messages (language model)". Only the texts below go to that AI service, and without the URL or the model none of this happens. The ticket file import by email does not use AI.
+
+No AI service is set up at the moment, so nothing is sent to one.
+
+- 💬 Plain messages to the bot: the message, the last 24 hours of that chat, and the open tasks, events and chosen site pages, to answer and to see what the person wants. Every change (a sign-up, a cancellation, the guest list, your own email text) is shown first with Confirm and Cancel. Off: untick "Answer plain messages with the language model".
+- 📰 Next events announcement and post-event email: the description of each event and of its DJs, to write short event texts and the opening text, and to pick out the venue, address and door times. All of it is in the preview email first: stop it there, or add your own text with /newsletter, /followup or the Admin tab. Off: untick "Texts by the language model" in Settings > Email.
+- ✍️ AI texts for each event: the event and your prompt, for each message with "Write a new text with the AI for each event" ticked on the Messages page, and for your own placeholders. They are written the day before the event; read or change them before they go out in EventCrew > Messages > Coming events, or under AI texts in the Crew app Admin tab. Untick to stop.
+- 🎧 The group board: the DJs and description of the next event, for two sentences under its picture. This text has no preview and no switch of its own.
+- 🌍 Translation: the texts you write (message texts, your own email texts, the Translations page) are translated into every site language when saved. You can change any language by hand, and a text changed by hand is not overwritten. Off: untick "Translate texts automatically with the language model" in EventCrew > Translations.
+- 📝 What the AI is asked to do is set in EventCrew > Messages, AI tab, where you can change it.
 
 ⚙️ The wp-admin pages
 

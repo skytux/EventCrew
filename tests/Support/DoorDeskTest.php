@@ -23,6 +23,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\Roles;
+use EventCrew\Support\ShortCode;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\TicketMail;
 use EventCrew\Telegram\TicketRedemptionService;
@@ -527,6 +528,33 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(['Ada', 'Ada'], array_column($rows, 'name'));
         self::assertSame(['buyer:11', 'buyer:12'], array_column($rows, 'key'));
         self::assertSame([true, false], array_column($rows, 'in'));
+    }
+
+    /**
+     * Each door row carries the short code its ticket shows under the QR:
+     * two tickets of one buyer two codes, a row with no ticket code none, and
+     * a ticket sold at the door none (Owner 2026-11-07).
+     */
+    public function testEachTicketRowCarriesItsShortCode(): void
+    {
+        $this->wpdb->nextResults[] = []; // check-ins
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $ticket = ['event_date' => self::NIGHT, 'name' => 'Ada', 'email' => 'ada@example.com', 'source' => 'file'];
+        $this->wpdb->nextResults[] = [
+            ['id' => 11, 'ticket_code' => 'T-1'] + $ticket,
+            ['id' => 12, 'ticket_code' => 'T-2'] + $ticket,
+            ['id' => 13, 'event_date' => self::NIGHT, 'name' => 'Bea', 'source' => 'paste'],
+            ['id' => 14, 'event_date' => self::NIGHT, 'name' => 'Cy', 'source' => 'door'],
+        ];
+
+        $sections = $this->desk()->state(self::NIGHT)['sections'];
+        $shorts = array_column($sections[3]['rows'], 'short');
+
+        self::assertSame([ShortCode::forBuyer(11), ShortCode::forBuyer(12), ''], $shorts);
+        self::assertNotSame($shorts[0], $shorts[1]);
+        self::assertSame([''], array_column($sections[4]['rows'], 'short'));
     }
 
     public function testTheCountWithoutANameIsChangedInsideTheDatabaseInOneStatement(): void
@@ -1354,6 +1382,25 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame('credit:9', $scan['key']);
     }
 
+    public function testAWorkerWithAFreeEntryTicketHasACrewRowAndACreditRow(): void
+    {
+        // Owner 2026-11-07: the free-entry ticket may be given to someone else,
+        // so it is its own row, scanned in apart from the task's ticket.
+        $credit = ['id' => 44, 'person_id' => 8, 'redeemed_for' => self::NIGHT];
+        $this->wpdb->nextRows[] = $credit;                // redemptions->find
+        $this->wpdb->nextRows[] = $this->personRow(8);    // the name
+        $this->wpdb->nextResults[] = [$this->taskRow(5, 'decorate')];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(30, 5, 8, 'signed_up')];
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextResults[] = [$credit];           // tonight's redemptions
+        $this->wpdb->nextRows[] = $this->personRow(8);
+
+        $scan = $this->desk()->scan(self::NIGHT, SignedLink::sign('credit_ticket', 44));
+
+        self::assertSame(DoorDesk::SCAN_OK, $scan['code']);
+        self::assertSame('credit:8', $scan['key']);
+    }
+
     public function testSomeOtherQrCodeIsNotOneOfOurs(): void
     {
         $desk = $this->desk();
@@ -1493,7 +1540,7 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(
             [[
                 'key' => 'buyer:12', 'kind' => 'buyer', 'ref' => 12,
-                'name' => 'Ada Lovelace', 'first' => 'Ada', 'in' => false, 'at' => '',
+                'name' => 'Ada Lovelace', 'first' => 'Ada', 'short' => ShortCode::forBuyer(12), 'in' => false, 'at' => '',
             ]],
             $tickets
         );

@@ -3551,6 +3551,15 @@ msgstr "Gå med"
 msgid "Join the Telegram group"
 msgstr "Gå med i Telegram-gruppen"
 
+msgid "The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Thank you, crew! Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
+msgstr "Kvällen blev av tack vare vårt crew: de som jobbade bakom kulisserna så att alla andra kunde dansa. Tack, crew! Vill du vara med? Det är ett fint sätt att lära känna folk, känna dig behövd och spara på biljetter."
+
+msgid "Join on the web"
+msgstr "Gå med på webben"
+
+msgid "Join on Telegram"
+msgstr "Gå med i Telegram"
+
 #: src/Support/FollowupMail.php:1322
 msgid "Join the announcement"
 msgstr "Gå med i utskicket"
@@ -6309,12 +6318,6 @@ msgid ""
 msgstr ""
 "Skickas till arrangörerna med bekräftad e-postadress när en medlem som inte är arrangör skickar en adminbegäran från Crew-appen och blockeras."
 
-#: src/Support/MessageTemplates.php:1995
-msgid ""
-"Sent to the organizers without Telegram when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text."
-msgstr ""
-"Skickas till arrangörerna utan Telegram när en ny person bekräftar sin e-post för första gången. Tills en arrangör säger OK ser hen tavlan men kan inte ta uppgifter. En knapp till fliken Admin på crew-sidan, där knapparna OK och Nej finns, läggs till under texten."
-
 #: src/Support/MessageTemplates.php:1904
 msgid ""
 "Sent to the organizers, and to the sender, after a list of guests mailed to the import mailbox is added to the guest list. A line left empty by a placeholder is removed."
@@ -6507,12 +6510,6 @@ msgstr "Kort varsel (timmar före start)"
 #: templates/public/signup.php:1794
 msgid "Show"
 msgstr "Visa"
-
-#: templates/admin/settings.php:322 templates/public/signup.php:1853
-msgid ""
-"Show on the guest board (Telegram group and the web page when signed out)"
-msgstr ""
-"Visa på gästtavlan (Telegram-gruppen och webbsidan när man är utloggad)"
 
 #: templates/admin/settings.php:1937
 msgid "Show the group board as event cards"
@@ -11901,9 +11898,6 @@ msgstr "För att använda en fribiljett, be boten om en biljett med fritt inträ
 msgid "To spend a credit, pick a night under Tickets in the Me tab of the Crew app."
 msgstr "För att använda en fribiljett, välj en kväll under Biljetter i fliken Jag i Crew-appen."
 
-msgid "Welcome to the %1$s crew! Our nights happen because people like you lend a hand: every task you take keeps the door open, the room ready and the music going, and earns you free entry. This message explains how it works. %2$s"
-msgstr "Välkommen till %1$s crew! Våra kvällar blir av för att folk som du hjälper till: varje uppgift du tar håller dörren öppen, lokalen redo och musiken igång, och ger dig fritt inträde. Det här meddelandet förklarar hur det fungerar. %2$s"
-
 msgid "Where all your tickets are: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app."
 msgstr "Var alla dina biljetter finns: tomt för en person med Telegram-chatt; för en person utan, fliken Jag i Crew-appen."
 
@@ -11918,3 +11912,172 @@ msgstr "Vem man kontaktar när boten inte går att nå, till exempel en e-postad
 
 msgid "You can see your own numbers any time in the Me tab of the Crew app."
 msgstr "Du kan se dina egna siffror när som helst i fliken Jag i Crew-appen."
+
+#: src/Telegram/OnboardingService.php:333
+msgid "A few questions for the organizers, then I’ll email you the link. Have you worked on the crew here before?"
+msgstr "Några frågor till arrangörerna, sedan mejlar jag länken. Har du jobbat i crewet här förut?"
+
+#: templates/public/signup.php:240
+msgid "About how many times?"
+msgstr "Ungefär hur många gånger?"
+
+#: src/Telegram/OnboardingService.php:350
+msgid "About how many times? Tap a number or type one."
+msgstr "Ungefär hur många gånger? Tryck på en siffra eller skriv en."
+
+#: src/Support/JoinAnswers.php:145
+msgid "Did not say whether they have worked on the crew here before."
+msgstr "Sa inte om hen har jobbat i crewet här förut."
+
+#: src/Support/JoinAnswers.php:141
+msgid "First time on the crew."
+msgstr "Första gången i crewet."
+
+#: templates/public/signup.php:232
+msgid "Have you worked on the crew here before?"
+msgstr "Har du jobbat i crewet här förut?"
+
+#: templates/public/signup.php:244
+msgid "How many free-entry tickets do you think you should have?"
+msgstr "Hur många fribiljetter tycker du att du borde ha?"
+
+#: src/Telegram/OnboardingService.php:365
+msgid "How many free-entry tickets do you think you should have? Tap a number or type one."
+msgstr "Hur många fribiljetter tycker du att du borde ha? Tryck på en siffra eller skriv en."
+
+#: templates/public/signup.php:233
+msgid "Only for a new account, and optional."
+msgstr "Bara för ett nytt konto, och du kan hoppa över det."
+
+#: src/Support/PrivacyExporter.php:148
+msgid "Said when joining"
+msgstr "Sagt vid anmälan"
+
+#: src/Telegram/OnboardingService.php:231
+#. translators: 1: the smallest number, 2: the largest number
+msgid "Send a number from %1$d to %2$d, or tap Skip."
+msgstr "Skicka en siffra från %1$d till %2$d, eller tryck på Hoppa över."
+
+#: src/Support/MessageTemplates.php:2414
+msgid "Sent to the organizers when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text, and a link to the person's @username in Telegram when they have one."
+msgstr "Skickas till arrangörerna när en ny person bekräftar sin e-post för första gången. Tills en arrangör säger OK ser hen tavlan men kan inte ta uppgifter. En knapp till fliken Admin på crew-sidan, där knapparna OK och Nej finns, läggs till under texten, och en länk till personens @användarnamn i Telegram när hen har ett."
+
+#: src/Telegram/OnboardingService.php:281
+msgid "Thanks, the organizers will see your answers."
+msgstr "Tack, arrangörerna ser dina svar."
+
+#: src/Support/JoinAnswers.php:164
+#. translators: %d: how many free-entry tickets the person thinks they should have
+msgid "Thinks they should have %d free-entry ticket."
+msgid_plural "Thinks they should have %d free-entry tickets."
+msgstr[0] "Tycker att hen borde ha %d fribiljett."
+msgstr[1] "Tycker att hen borde ha %d fribiljetter."
+
+#: src/Telegram/OnboardingService.php:193
+msgid "This question has run out. Send /start to begin again."
+msgstr "Den här frågan har gått ut. Skicka /start för att börja om."
+
+#: src/Support/MessageTemplates.php:2056
+msgid "What the person said when joining: whether they have worked on the crew here before, about how many times, and how many free-entry tickets they think they should have."
+msgstr "Vad personen sa vid anmälan: om hen har jobbat i crewet här förut, ungefär hur många gånger och hur många fribiljetter hen tycker att hen borde ha."
+
+#: src/Support/JoinAnswers.php:152
+#. translators: %d: about how many times the person has worked on the crew
+msgid "Worked on the crew here before: yes, about %d time."
+msgid_plural "Worked on the crew here before: yes, about %d times."
+msgstr[0] "Har jobbat i crewet här förut: ja, ungefär %d gång."
+msgstr[1] "Har jobbat i crewet här förut: ja, ungefär %d gånger."
+
+#: src/Support/JoinAnswers.php:149
+msgid "Worked on the crew here before: yes."
+msgstr "Har jobbat i crewet här förut: ja."
+
+#, php-format
+msgid "Welcome to the %s crew!"
+msgstr "Välkommen till %s crew!"
+
+msgid "Our nights happen because people like you lend a hand."
+msgstr "Våra kvällar blir av för att folk som du hjälper till."
+
+msgid "Every task you take keeps the door open, the room ready and the music going."
+msgstr "Varje uppgift du tar håller dörren öppen, lokalen redo och musiken igång."
+
+msgid "And every task earns you free entry."
+msgstr "Och varje uppgift ger dig fritt inträde."
+
+#, php-format
+msgid "This message explains how it all works. %s"
+msgstr "Det här meddelandet förklarar hur allt fungerar. %s"
+
+msgid "Sorry, this ticket has expired"
+msgstr "Tyvärr, biljetten har gått ut"
+
+msgid "You’re in, welcome!"
+msgstr "Du är inne, välkommen!"
+
+msgid "Checked in at %s"
+msgstr "Incheckad kl. %s"
+
+msgid "Short code"
+msgstr "Kort kod"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest display: people without this role see its tasks"
+msgstr "Gästvisning: personer utan den här rollen ser dess uppgifter"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest sign up: people without this role can sign up (needs Guest display)"
+msgstr "Gästanmälan: personer utan den här rollen kan anmäla sig (kräver Gästvisning)"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Anonymous display: hide the names from people without this role"
+msgstr "Anonym visning: dölj namnen för personer utan den här rollen"
+
+#: src/Support/SignupService.php
+msgid "Only people with this role can sign up for this task."
+msgstr "Endast personer med den här rollen kan anmäla sig till den här uppgiften."
+
+#: src/Telegram/BoardRenderer.php
+msgid "crew only"
+msgstr "endast teamet"
+
+#: templates/public/signup-board.php
+msgid "Crew only"
+msgstr "Endast teamet"
+
+#: templates/public/signup-board.php
+msgid "Awaiting approval"
+msgstr "Väntar på godkännande"
+
+msgid "AI in EventCrew"
+msgstr "AI i EventCrew"
+
+msgid "EventCrew uses an AI language model only when its API URL and model are set in Settings > Telegram bot, under \"Plain messages (language model)\". Only the texts below go to that AI service, and without the URL or the model none of this happens. The ticket file import by email does not use AI."
+msgstr "EventCrew använder en AI-språkmodell bara när dess LLM API-URL och modell är angivna under Inställningar > Telegram-bot, i avsnittet \"Vanliga meddelanden (språkmodell)\". Bara texterna nedan går till den AI-tjänsten, och utan URL eller modell händer inget av detta. Import av biljettfilen via mejl använder ingen AI."
+
+msgid "No AI service is set up at the moment, so nothing is sent to one."
+msgstr "Ingen AI-tjänst är inställd just nu, så inget skickas till någon."
+
+msgid "Plain messages to the bot: the message, the last 24 hours of that chat, and the open tasks, events and chosen site pages, to answer and to see what the person wants. Every change (a sign-up, a cancellation, the guest list, your own email text) is shown first with Confirm and Cancel. Off: untick \"Answer plain messages with the language model\"."
+msgstr "Vanliga meddelanden till boten: meddelandet, de senaste 24 timmarna av chatten samt de öppna uppgifterna, evenemangen och valda sidor på webbplatsen, för att svara och förstå vad personen vill. Varje ändring (en anmälan, en avbokning, gästlistan, din egen mejltext) visas först med Bekräfta och Avbryt. Av: kryssa ur \"Svara på vanliga meddelanden med språkmodellen\"."
+
+msgid "Next events announcement and post-event email: the description of each event and of its DJs, to write short event texts and the opening text, and to pick out the venue, address and door times. All of it is in the preview email first: stop it there, or add your own text with /newsletter, /followup or the Admin tab. Off: untick \"Texts by the language model\" in Settings > Email."
+msgstr "Utskicket om kommande evenemang och mejlet efter evenemanget: beskrivningen av varje evenemang och dess DJ:s, för att skriva korta evenemangstexter och inledningen och plocka ut plats, adress och dörrtider. Allt syns först i förhandsmejlet: stoppa det där, eller lägg till en egen text med /newsletter, /followup eller Admin-fliken. Av: kryssa ur \"Texter från språkmodellen\" under Inställningar > E-post."
+
+msgid "AI texts for each event: the event and your prompt, for each message with \"Write a new text with the AI for each event\" ticked on the Messages page, and for your own placeholders. They are written the day before the event; read or change them before they go out in EventCrew > Messages > Coming events, or under AI texts in the Crew app Admin tab. Untick to stop."
+msgstr "AI-texter för varje evenemang: evenemanget och din prompt, för varje meddelande med \"Skriv en ny text med AI för varje evenemang\" ikryssat på sidan Meddelanden, och för dina egna platshållare. De skrivs dagen före evenemanget; läs eller ändra dem innan de går ut under EventCrew > Meddelanden > Kommande evenemang, eller under AI-texter i crew-appens Admin-flik. Kryssa ur för att stoppa."
+
+msgid "The group board: the DJs and description of the next event, for two sentences under its picture. This text has no preview and no switch of its own."
+msgstr "Gruppens tavla: DJ:s och beskrivning för nästa evenemang, för två meningar under bilden. Den här texten har ingen förhandsvisning och ingen egen brytare."
+
+msgid "Translation: the texts you write (message texts, your own email texts, the Translations page) are translated into every site language when saved. You can change any language by hand, and a text changed by hand is not overwritten. Off: untick \"Translate texts automatically with the language model\" in EventCrew > Translations."
+msgstr "Översättning: texterna du skriver (meddelandetexter, dina egna mejltexter, sidan Översättningar) översätts till alla webbplatsens språk när de sparas. Du kan ändra vilket språk som helst för hand, och en text ändrad för hand skrivs inte över. Av: kryssa ur \"Översätt texter automatiskt med språkmodellen\" under EventCrew > Översättningar."
+
+msgid "What the AI is asked to do is set in EventCrew > Messages, AI tab, where you can change it."
+msgstr "Vad AI:n ombeds göra står under EventCrew > Meddelanden, fliken AI, där du kan ändra det."
+
+msgid "With an AI service set in Settings > Telegram bot, EventCrew sends it plain messages to the bot, event and DJ descriptions (for the announcement, the post-event email and the board), your prompts for the AI texts of each event, and texts to translate."
+msgstr "Med en AI-tjänst inställd under Inställningar > Telegram-bot skickar EventCrew den vanliga meddelanden till boten, beskrivningar av evenemang och DJ:s (för utskicket, mejlet efter evenemanget och tavlan), dina prompter för AI-texterna för varje evenemang samt texter att översätta."
+
+msgid "Previews: changes asked in the bot come with Confirm and Cancel, the announcement and the post-event email come to you first as a preview you can stop, and the AI texts of each event can be changed in EventCrew > Messages > Coming events or in the Admin tab. The full guide says how to switch each use off."
+msgstr "Förhandsvisningar: ändringar du ber om i boten kommer med Bekräfta och Avbryt, utskicket och mejlet efter evenemanget kommer först till dig som förhandsmejl som du kan stoppa, och AI-texterna för varje evenemang kan ändras under EventCrew > Meddelanden > Kommande evenemang eller i Admin-fliken. Hela guiden visar hur du stänger av varje användning."

@@ -95,6 +95,9 @@ final class PersonEraser
         // pending one would go on sending messages about a person with no
         // name. They are not attendance numbers, so they go.
         $this->takeovers->deleteForPerson($personId);
+        // What they said when joining (worked here before, how often, the
+        // tickets they think they should have) is about them, so it goes.
+        $this->people->replaceRoleNotices($personId, JoinAnswers::KEYS);
 
         $this->people->update($personId, [
             'email' => 'anonymised-' . $personId . '@removed.invalid',

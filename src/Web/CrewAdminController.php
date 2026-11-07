@@ -15,6 +15,7 @@ use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Dates;
 use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\EventName;
+use EventCrew\Support\JoinAnswers;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
@@ -438,9 +439,11 @@ final class CrewAdminController
     }
 
     /**
-     * The newcomers waiting for an OK, for the Admin tab.
+     * The newcomers waiting for an OK, for the Admin tab, each with what
+     * they said when joining (JoinAnswers::line()), the same line the
+     * organizers' "wants to join" email and DM carry.
      *
-     * @return list<array{id: int, name: string, email: string, since: string}>
+     * @return list<array{id: int, name: string, email: string, since: string, answers: string}>
      */
     private function newcomerRows(): array
     {
@@ -450,6 +453,7 @@ final class CrewAdminController
                 'name' => $person->name(),
                 'email' => $person->email,
                 'since' => '' === $person->createdAt ? '' : Dates::dayLabel(substr($person->createdAt, 0, 10)),
+                'answers' => JoinAnswers::line($person),
             ],
             $this->people->waitingNewcomers()
         );

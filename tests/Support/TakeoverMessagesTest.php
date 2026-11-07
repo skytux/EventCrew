@@ -113,17 +113,17 @@ final class TakeoverMessagesTest extends TelegramTestCase
         $about = 'About your takeover request';
 
         return [
-            'takeover_ask' => ['takeover_ask', 'Person 7 asks to take over your task', "Hi Person 9,\n\n" . $ask],
+            'takeover_ask' => ['takeover_ask', 'Person 7 asks to take over your task', "Hi Person,\n\n" . $ask],
             'takeover_ask_dm' => ['takeover_ask_dm', '', $ask],
-            'takeover_done' => ['takeover_done', 'Your task moved to Person 7', "Hi Person 9,\n\n" . $done],
+            'takeover_done' => ['takeover_done', 'Your task moved to Person 7', "Hi Person,\n\n" . $done],
             'takeover_done_dm' => ['takeover_done_dm', '', $done],
-            'takeover_refused' => ['takeover_refused', $about, "Hi Person 7,\n\n" . $refused],
+            'takeover_refused' => ['takeover_refused', $about, "Hi Person,\n\n" . $refused],
             'takeover_refused_dm' => ['takeover_refused_dm', '', $refused],
-            'takeover_expired' => ['takeover_expired', $about, "Hi Person 7,\n\n" . $expired],
+            'takeover_expired' => ['takeover_expired', $about, "Hi Person,\n\n" . $expired],
             'takeover_expired_dm' => ['takeover_expired_dm', '', $expired],
-            'takeover_failed' => ['takeover_failed', $about, "Hi Person 7,\n\n" . $failed],
+            'takeover_failed' => ['takeover_failed', $about, "Hi Person,\n\n" . $failed],
             'takeover_failed_dm' => ['takeover_failed_dm', '', $failed],
-            'takeover_closed' => ['takeover_closed', $about, "Hi Person 7,\n\n" . $closed],
+            'takeover_closed' => ['takeover_closed', $about, "Hi Person,\n\n" . $closed],
             'takeover_closed_dm' => ['takeover_closed_dm', '', $closed],
         ];
     }
@@ -213,7 +213,7 @@ final class TakeoverMessagesTest extends TelegramTestCase
         self::assertCount(1, $this->mails);
         self::assertSame('Person 7 wants your Decorate', $this->mails[0]['subject']);
         self::assertStringContainsString(
-            'Dear Person 9, Person 7 asks for Decorate at Ecstatic Dance, Sat 1 Aug 20:00. Answer by Thu 23 Jul 12:00.',
+            'Dear Person, Person 7 asks for Decorate at Ecstatic Dance, Sat 1 Aug 20:00. Answer by Thu 23 Jul 12:00.',
             $this->mails[0]['body']
         );
         self::assertStringContainsString(
@@ -288,6 +288,6 @@ final class TakeoverMessagesTest extends TelegramTestCase
         self::assertSame(555, $dm['chat_id']);
         self::assertSame('Person 9 said no to Decorate on Sat 1 Aug 20:00.', $dm['text']);
         self::assertSame('No from Person 9', $this->mails[0]['subject']);
-        self::assertStringContainsString('Sorry Person 7, Person 9 keeps Decorate.', $this->mails[0]['body']);
+        self::assertStringContainsString('Sorry Person, Person 9 keeps Decorate.', $this->mails[0]['body']);
     }
 }

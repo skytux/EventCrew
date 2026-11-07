@@ -250,6 +250,8 @@ final class CrewAdminTasks
             'every_night' => isset($post['role_every_night']),
             'sales_desk' => isset($post['role_sales_desk']),
             'on_board' => isset($post['role_on_board']),
+            'guest_signup' => isset($post['role_guest_signup']),
+            'anonymous' => isset($post['role_anonymous']),
             'title_contains' => sanitize_text_field((string) ($post['role_title_contains'] ?? '')),
             'plus_ones' => (int) ($post['role_plus_ones'] ?? 0),
             'conditions' => [

@@ -64,15 +64,11 @@ final class DoorList
         $entrants = $this->workers($date);
 
         foreach ($this->redemptions->forDate($date) as $redemption) {
-            // A worker who also holds a redemption is already free; keep the
-            // worker row and drop the duplicate.
-            if (isset($entrants[$redemption->personId])) {
-                continue;
-            }
-
+            // A worker who also holds a free-entry ticket gets a second row:
+            // they may give that ticket to someone else (Owner 2026-11-07).
             $person = $this->people->find($redemption->personId);
 
-            $entrants[$redemption->personId] = [
+            $entrants['credit:' . $redemption->id] = [
                 'person_id' => $redemption->personId,
                 'name' => null === $person ? __('(deleted person)', 'eventcrew') : $person->name(),
                 'detail' => __('Free-entry credit', 'eventcrew'),

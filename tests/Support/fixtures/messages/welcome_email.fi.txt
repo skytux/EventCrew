@@ -1,8 +1,16 @@
 EMAIL Tervetuloa crew’hun: näin tehtävät, liput ja vapaaliput toimivat
 
-Hei Person 3,
+Hei Person,
 
-Tervetuloa Test Crew-crew’hun! Illat toteutuvat, koska kaltaisesi ihmiset auttavat: jokainen tehtävä pitää oven auki, salin valmiina ja musiikin soimassa, ja ansaitsee sinulle vapaan sisäänpääsyn. Tämä viesti kertoo, miten kaikki toimii. Kysy botilta yksityisviestillä, niin näet lukusi, lippusi tai vapaalippusi.
+✨ Tervetuloa Test Crew-crew’hun! ✨
+
+Illat toteutuvat, koska kaltaisesi ihmiset auttavat.
+
+🌟 Jokainen tehtävä pitää oven auki, salin valmiina ja musiikin soimassa.
+
+🎟️ Ja jokainen tehtävä ansaitsee sinulle vapaan sisäänpääsyn.
+
+Tämä viesti kertoo, miten kaikki toimii. Kysy botilta yksityisviestillä, niin näet lukusi, lippusi tai vapaalippusi.
 
 🧩 Tehtävät
 
@@ -48,7 +56,6 @@ Jos botti ei vastaa, ota yhteyttä ylläpitäjään, maintainer@example.org tai 
 
 📋 Avoimet tehtävät: https://site.test/crew/#eventcrew-panel-board
 📖 Ohje: https://site.test/crew/#eventcrew-panel-help
-🧰 Avaa EventCrew wp-adminissa: https://site.test/wp-admin/admin.php?page=eventcrew
 
 —
 Hallitse tiliäsi tai lopeta nämä sähköpostit: https://site.test/crew/?eventcrew_login=TOKEN

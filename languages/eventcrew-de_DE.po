@@ -6006,10 +6006,6 @@ msgstr "Wird an die Organisatoren gesendet, die den Bot nutzen, wenn eine an das
 msgid "Sent to the organizers with a confirmed email address when a member who is not an organizer sends an admin request from the Crew app and is blocked."
 msgstr "Wird an die Organisatoren mit bestätigter E-Mail-Adresse gesendet, wenn ein Mitglied, das kein Organisator ist, eine Admin-Anfrage aus der Crew-App sendet und gesperrt wird."
 
-#: src/Support/MessageTemplates.php:2314
-msgid "Sent to the organizers without Telegram when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text."
-msgstr "Wird an die Organisatoren ohne Telegram gesendet, wenn eine neue Person zum ersten Mal ihre E-Mail bestätigt. Bis ein Organisator OK sagt, sieht sie das Board, kann aber keine Aufgaben übernehmen. Ein Button zum Admin-Tab der Crew-Seite, wo die Buttons OK und Nein sind, wird unter dem Text eingefügt."
-
 #: src/Support/MessageTemplates.php:2223
 msgid "Sent to the organizers, and to the sender, after a list of guests mailed to the import mailbox is added to the guest list. A line left empty by a placeholder is removed."
 msgstr "Wird an die Organisatoren und an den Absender gesendet, nachdem eine an das Import-Postfach gemailte Gästeliste zur Gästeliste hinzugefügt wurde. Eine Zeile, die durch einen Platzhalter leer bleibt, wird entfernt."
@@ -6162,10 +6158,6 @@ msgstr "Kurzfristig (Stunden vor Beginn)"
 #: templates/public/signup.php:1795
 msgid "Show"
 msgstr "Anzeigen"
-
-#: templates/admin/settings.php:324 templates/public/signup.php:1854
-msgid "Show on the guest board (Telegram group and the web page when signed out)"
-msgstr "Auf dem Gäste-Board anzeigen (Telegram-Gruppe und Webseite, wenn ausgeloggt)"
 
 #: templates/admin/settings.php:1958
 msgid "Show the group board as event cards"
@@ -11099,3 +11091,155 @@ msgstr "Wen man kontaktiert, wenn der Bot nicht erreichbar ist, zum Beispiel ein
 
 msgid "You can see your own numbers any time in the Me tab of the Crew app."
 msgstr "Du kannst deine eigenen Zahlen jederzeit im Ich-Tab der Crew-App sehen."
+
+#: src/Telegram/OnboardingService.php:333
+msgid "A few questions for the organizers, then I’ll email you the link. Have you worked on the crew here before?"
+msgstr "Ein paar Fragen für die Organisatoren, dann schicke ich dir den Link per E-Mail. Hast du hier schon in der Crew mitgearbeitet?"
+
+#: templates/public/signup.php:240
+msgid "About how many times?"
+msgstr "Ungefähr wie oft?"
+
+#: src/Telegram/OnboardingService.php:350
+msgid "About how many times? Tap a number or type one."
+msgstr "Ungefähr wie oft? Tippe auf eine Zahl oder schreib sie."
+
+#: src/Support/JoinAnswers.php:145
+msgid "Did not say whether they have worked on the crew here before."
+msgstr "Hat nicht gesagt, ob die Person hier schon in der Crew mitgearbeitet hat."
+
+#: src/Support/JoinAnswers.php:141
+msgid "First time on the crew."
+msgstr "Zum ersten Mal in der Crew."
+
+#: templates/public/signup.php:232
+msgid "Have you worked on the crew here before?"
+msgstr "Hast du hier schon in der Crew mitgearbeitet?"
+
+#: templates/public/signup.php:244
+msgid "How many free-entry tickets do you think you should have?"
+msgstr "Wie viele Freikarten solltest du deiner Meinung nach haben?"
+
+#: src/Telegram/OnboardingService.php:365
+msgid "How many free-entry tickets do you think you should have? Tap a number or type one."
+msgstr "Wie viele Freikarten solltest du deiner Meinung nach haben? Tippe auf eine Zahl oder schreib sie."
+
+#: templates/public/signup.php:233
+msgid "Only for a new account, and optional."
+msgstr "Nur für ein neues Konto, und du musst nicht antworten."
+
+#: src/Support/PrivacyExporter.php:148
+msgid "Said when joining"
+msgstr "Beim Beitritt angegeben"
+
+#: src/Telegram/OnboardingService.php:231
+#. translators: 1: the smallest number, 2: the largest number
+msgid "Send a number from %1$d to %2$d, or tap Skip."
+msgstr "Schick eine Zahl von %1$d bis %2$d oder tippe auf Überspringen."
+
+#: src/Support/MessageTemplates.php:2414
+msgid "Sent to the organizers when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text, and a link to the person's @username in Telegram when they have one."
+msgstr "Wird an die Organisatoren gesendet, wenn eine neue Person zum ersten Mal ihre E-Mail bestätigt. Bis ein Organisator OK sagt, sieht sie das Board, kann aber keine Aufgaben übernehmen. Unter dem Text werden ein Button zum Admin-Tab der Crew-Seite, wo die Buttons OK und Nein sind, und ein Link zum @Benutzernamen der Person in Telegram eingefügt, wenn sie einen hat."
+
+#: src/Telegram/OnboardingService.php:281
+msgid "Thanks, the organizers will see your answers."
+msgstr "Danke, die Organisatoren sehen deine Antworten."
+
+#: src/Support/JoinAnswers.php:164
+#. translators: %d: how many free-entry tickets the person thinks they should have
+msgid "Thinks they should have %d free-entry ticket."
+msgid_plural "Thinks they should have %d free-entry tickets."
+msgstr[0] "Meint, %d Freikarte haben zu sollen."
+msgstr[1] "Meint, %d Freikarten haben zu sollen."
+
+#: src/Telegram/OnboardingService.php:193
+msgid "This question has run out. Send /start to begin again."
+msgstr "Diese Frage ist abgelaufen. Schick /start, um neu zu beginnen."
+
+#: src/Support/MessageTemplates.php:2056
+msgid "What the person said when joining: whether they have worked on the crew here before, about how many times, and how many free-entry tickets they think they should have."
+msgstr "Was die Person beim Beitritt gesagt hat: ob sie hier schon in der Crew mitgearbeitet hat, ungefähr wie oft und wie viele Freikarten sie ihrer Meinung nach haben sollte."
+
+#: src/Support/JoinAnswers.php:152
+#. translators: %d: about how many times the person has worked on the crew
+msgid "Worked on the crew here before: yes, about %d time."
+msgid_plural "Worked on the crew here before: yes, about %d times."
+msgstr[0] "Hier schon in der Crew mitgearbeitet: ja, ungefähr %d Mal."
+msgstr[1] "Hier schon in der Crew mitgearbeitet: ja, ungefähr %d Mal."
+
+#: src/Support/JoinAnswers.php:149
+msgid "Worked on the crew here before: yes."
+msgstr "Hier schon in der Crew mitgearbeitet: ja."
+
+msgid "Sorry, this ticket has expired"
+msgstr "Leider ist dieses Ticket abgelaufen"
+
+msgid "You’re in, welcome!"
+msgstr "Du bist drin, willkommen!"
+
+msgid "Checked in at %s"
+msgstr "Eingecheckt um %s"
+
+msgid "Short code"
+msgstr "Kurzcode"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest display: people without this role see its tasks"
+msgstr "Gastansicht: Personen ohne diese Rolle sehen ihre Aufgaben"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest sign up: people without this role can sign up (needs Guest display)"
+msgstr "Gastanmeldung: Personen ohne diese Rolle können sich anmelden (braucht Gastansicht)"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Anonymous display: hide the names from people without this role"
+msgstr "Anonyme Ansicht: Namen vor Personen ohne diese Rolle verbergen"
+
+#: src/Support/SignupService.php
+msgid "Only people with this role can sign up for this task."
+msgstr "Nur Personen mit dieser Rolle können sich für diese Aufgabe anmelden."
+
+#: src/Telegram/BoardRenderer.php
+msgid "crew only"
+msgstr "nur Team"
+
+#: templates/public/signup-board.php
+msgid "Crew only"
+msgstr "Nur Team"
+
+#: templates/public/signup-board.php
+msgid "Awaiting approval"
+msgstr "Wartet auf Freigabe"
+
+msgid "AI in EventCrew"
+msgstr "KI in EventCrew"
+
+msgid "EventCrew uses an AI language model only when its API URL and model are set in Settings > Telegram bot, under \"Plain messages (language model)\". Only the texts below go to that AI service, and without the URL or the model none of this happens. The ticket file import by email does not use AI."
+msgstr "EventCrew nutzt ein KI-Sprachmodell nur, wenn seine LLM-API-URL und sein Modell unter Einstellungen > Telegram-Bot im Abschnitt \"Normale Nachrichten (Sprachmodell)\" eingetragen sind. Nur die Texte unten gehen an diesen KI-Dienst, und ohne URL oder Modell passiert nichts davon. Der Import der Ticketdatei per E-Mail nutzt keine KI."
+
+msgid "No AI service is set up at the moment, so nothing is sent to one."
+msgstr "Zurzeit ist kein KI-Dienst eingerichtet, also wird nichts an einen gesendet."
+
+msgid "Plain messages to the bot: the message, the last 24 hours of that chat, and the open tasks, events and chosen site pages, to answer and to see what the person wants. Every change (a sign-up, a cancellation, the guest list, your own email text) is shown first with Confirm and Cancel. Off: untick \"Answer plain messages with the language model\"."
+msgstr "Normale Nachrichten an den Bot: die Nachricht, die letzten 24 Stunden dieses Chats sowie die offenen Aufgaben, Events und gewählten Seiten der Website, um zu antworten und zu verstehen, was die Person will. Jede Änderung (eine Anmeldung, eine Absage, die Gästeliste, dein eigener E-Mail-Text) wird zuerst mit Bestätigen und Abbrechen gezeigt. Aus: Haken bei \"Normale Nachrichten mit dem Sprachmodell beantworten\" entfernen."
+
+msgid "Next events announcement and post-event email: the description of each event and of its DJs, to write short event texts and the opening text, and to pick out the venue, address and door times. All of it is in the preview email first: stop it there, or add your own text with /newsletter, /followup or the Admin tab. Off: untick \"Texts by the language model\" in Settings > Email."
+msgstr "Event-Ankündigung und E-Mail nach dem Event: die Beschreibung jedes Events und seiner DJs, um kurze Eventtexte und den Einleitungstext zu schreiben und Ort, Adresse und Türzeiten herauszulesen. Alles steht zuerst in der Vorschau-E-Mail: dort stoppen oder mit /newsletter, /followup oder dem Admin-Tab einen eigenen Text hinzufügen. Aus: Haken bei \"Texte vom Sprachmodell\" unter Einstellungen > E-Mail entfernen."
+
+msgid "AI texts for each event: the event and your prompt, for each message with \"Write a new text with the AI for each event\" ticked on the Messages page, and for your own placeholders. They are written the day before the event; read or change them before they go out in EventCrew > Messages > Coming events, or under AI texts in the Crew app Admin tab. Untick to stop."
+msgstr "KI-Texte für jedes Event: das Event und dein Prompt, für jede Nachricht mit Haken bei \"Für jedes Event einen neuen Text mit der KI schreiben\" auf der Seite Nachrichten, und für deine eigenen Platzhalter. Sie werden am Tag vor dem Event geschrieben; lies oder ändere sie vor dem Versand unter EventCrew > Nachrichten > Kommende Events oder unter KI-Texte im Admin-Tab der Crew-App. Haken entfernen, um sie zu stoppen."
+
+msgid "The group board: the DJs and description of the next event, for two sentences under its picture. This text has no preview and no switch of its own."
+msgstr "Das Board der Gruppe: die DJs und die Beschreibung des nächsten Events, für zwei Sätze unter seinem Bild. Dieser Text hat keine Vorschau und keinen eigenen Schalter."
+
+msgid "Translation: the texts you write (message texts, your own email texts, the Translations page) are translated into every site language when saved. You can change any language by hand, and a text changed by hand is not overwritten. Off: untick \"Translate texts automatically with the language model\" in EventCrew > Translations."
+msgstr "Übersetzung: die Texte, die du schreibst (Nachrichtentexte, deine eigenen E-Mail-Texte, die Seite Übersetzungen), werden beim Speichern in jede Sprache der Website übersetzt. Du kannst jede Sprache von Hand ändern, und ein von Hand geänderter Text wird nicht überschrieben. Aus: Haken bei \"Texte automatisch mit dem Sprachmodell übersetzen\" unter EventCrew > Übersetzungen entfernen."
+
+msgid "What the AI is asked to do is set in EventCrew > Messages, AI tab, where you can change it."
+msgstr "Was die KI tun soll, steht unter EventCrew > Nachrichten, Tab KI, wo du es ändern kannst."
+
+msgid "With an AI service set in Settings > Telegram bot, EventCrew sends it plain messages to the bot, event and DJ descriptions (for the announcement, the post-event email and the board), your prompts for the AI texts of each event, and texts to translate."
+msgstr "Mit einem KI-Dienst unter Einstellungen > Telegram-Bot sendet EventCrew ihm normale Nachrichten an den Bot, Beschreibungen von Events und DJs (für die Ankündigung, die E-Mail nach dem Event und das Board), deine Prompts für die KI-Texte jedes Events und Texte zum Übersetzen."
+
+msgid "Previews: changes asked in the bot come with Confirm and Cancel, the announcement and the post-event email come to you first as a preview you can stop, and the AI texts of each event can be changed in EventCrew > Messages > Coming events or in the Admin tab. The full guide says how to switch each use off."
+msgstr "Vorschauen: im Bot gewünschte Änderungen kommen mit Bestätigen und Abbrechen, die Ankündigung und die E-Mail nach dem Event kommen zuerst als Vorschau zu dir, die du stoppen kannst, und die KI-Texte jedes Events lassen sich unter EventCrew > Nachrichten > Kommende Events oder im Admin-Tab ändern. Die ganze Anleitung sagt, wie du jede Nutzung ausschaltest."

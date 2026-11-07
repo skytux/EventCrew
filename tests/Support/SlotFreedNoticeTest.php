@@ -147,6 +147,20 @@ final class SlotFreedNoticeTest extends TestCase
         self::assertSame(['free@example.com'], array_column($this->mails, 'to'));
     }
 
+    public function testAGuestIsNotToldOfARoleWithGuestSignUpOff(): void
+    {
+        $this->options['eventcrew_roles'] = [['slug' => 'clean', 'label' => 'Clean', 'guest_signup' => false]];
+        $this->queueAndPrepare($this->taskRow(), 2, [
+            $this->person(8, 'guest@example.com'),
+            $this->person(9, 'cleaner@example.com', ['role_slugs' => '["clean"]']),
+            $this->person(10, 'organizer@example.com', ['is_organizer' => 1]),
+        ]);
+
+        $this->notice()->sendDue(25);
+
+        self::assertSame(['cleaner@example.com', 'organizer@example.com'], array_column($this->mails, 'to'));
+    }
+
     public function testATaskFullAgainDropsTheNotice(): void
     {
         $this->queueAndPrepare($this->taskRow(), 3, [$this->person(9, 'free@example.com')]);

@@ -213,6 +213,8 @@ final class UpdateRouter
                 $this->buyerListReset->onTap($callbackQuery);
             } elseif (null !== $this->newcomers && str_starts_with($data, NewcomerApproval::PREFIX)) {
                 $this->newcomers->onTap($callbackQuery);
+            } elseif (str_starts_with($data, OnboardingService::JOIN_PREFIX)) {
+                $this->onboarding->onJoinTap($callbackQuery);
             } elseif (null !== $this->assistant && str_starts_with($data, AssistantService::PREFIX)) {
                 $this->assistant->onConfirm($callbackQuery, $this->runner($chosen));
             } else {
@@ -455,7 +457,7 @@ final class UpdateRouter
 
         // A plain private message is only meaningful as the answer to a question
         // the bot just asked - who the cover is standing in for, who to gift a
-        // credit, or the onboarding email.
+        // credit, the onboarding email, or a newcomer's number.
         if ($isPrivate && 0 !== $fromId) {
             $entities = is_array($message['entities'] ?? null) ? $message['entities'] : [];
 
@@ -469,6 +471,8 @@ final class UpdateRouter
                 $this->roleTasks->capturePerson($fromId, $chatId, $text);
             } elseif ($this->onboarding->isAwaitingEmail($fromId)) {
                 $this->onboarding->captureEmail($fromId, $chatId, $text);
+            } elseif ($this->onboarding->isAwaitingJoinNumber($fromId)) {
+                $this->onboarding->captureJoinNumber($fromId, $chatId, $text);
             } else {
                 $this->assistant?->onMessage($message, $chosen, $this->runner($chosen));
             }

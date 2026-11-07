@@ -182,6 +182,10 @@ final class RolesTest extends TestCase
         self::assertSame(Roles::ANCHOR_START, $role['anchor']);
         self::assertNull($role['start_offset']);
         self::assertNull($role['end_offset']);
+        // The guest ticks (Owner 2026-11-07): shown, open to guests, with names.
+        self::assertTrue($role['on_board']);
+        self::assertTrue($role['guest_signup']);
+        self::assertFalse($role['anonymous']);
     }
 
     /**

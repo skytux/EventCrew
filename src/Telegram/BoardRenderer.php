@@ -27,8 +27,8 @@ use EventCrew\Support\RoleTaskService;
  *
  * The buttons are for one day at a time: the next one, unless another day was
  * picked from the row of day buttons under it (DayPicker, BoardService::PICK_PREFIX),
- * under a full-width button naming that day. The text shows that day and the
- * next two (TEXT_DAYS, Owner 2026-11-07). On a picked day the task buttons
+ * under a full-width button naming that day. The text shows that day only
+ * (TEXT_DAYS, Owner 2026-11-07). On a picked day the task buttons
  * carry that day (t:<id>:<Y-m-d>), so the redraw after a join or leave stays
  * on it; on the next day they stay plain t:<id>.
  *
@@ -67,10 +67,10 @@ final class BoardRenderer
     public const TEXT_LIMIT = 4096;
 
     /**
-     * How many days the text shows: the shown day and the next ones after
-     * it (Owner 2026-11-07, Q365). The buttons are for the shown day only.
+     * How many days the text shows. It was the shown day and the next two
+     * (Q365); Owner 2026-11-07 later: the selected day only.
      */
-    public const TEXT_DAYS = 3;
+    public const TEXT_DAYS = 1;
 
     public function __construct(
         private readonly TaskRepository $tasks,
@@ -144,8 +144,7 @@ final class BoardRenderer
         $dates = $this->dates($days);
         $shown = in_array($date, $dates, true) ? $date : $dates[0];
         $daySuffix = $shown === $dates[0] ? '' : ':' . $shown;
-        // The text shows the shown day and the next two after it; the
-        // buttons are only for the shown day (Owner 2026-11-07, Q365).
+        // The text and the buttons are for the shown day (TEXT_DAYS).
         $textDates = array_slice($dates, (int) array_search($shown, $dates, true), self::TEXT_DAYS);
         $listed = array_values(array_filter($tasks, static fn (Task $t): bool => in_array($t->taskDate, $textDates, true)));
         $tasks = array_values(array_filter($listed, static fn (Task $t): bool => $t->taskDate === $shown));
@@ -159,7 +158,14 @@ final class BoardRenderer
             $taken = $this->tasks->occupancyFor($ids);
         }
 
-        $guest = array_values(array_filter($tasks, static fn (Task $t): bool => BoardVisibility::onGuestBoard($t)));
+        // A task whose role has Guest sign up off has no button for a guest
+        // (BoardVisibility::blocksGuestSignup()): on the group's message for
+        // nobody, on a private copy unless the reader holds the role or is an
+        // organizer.
+        $guest = array_values(array_filter(
+            $tasks,
+            static fn (Task $t): bool => BoardVisibility::onGuestBoard($t) && ! BoardVisibility::blocksGuestSignup($t, $viewer)
+        ));
         $own = array_values(array_filter($tasks, static fn (Task $t): bool => isset($extra[$t->id])));
         $role = null === $viewer || $group ? ['buttons' => [], 'legend' => ''] : $this->roleButtons($own, $addable, $taken, $viewer);
 
@@ -185,9 +191,15 @@ final class BoardRenderer
             // An empty line after each task (Owner 2026-11-07). fit() drops
             // whole entries, so the task and its empty line are one entry.
             foreach ($heading['tasks'] as $task) {
+                // A task nobody has signed up for is left out of the text;
+                // its button stays (Owner 2026-11-07).
+                if ($withNames && [] === ($occupants[$task->id] ?? [])) {
+                    continue;
+                }
+
                 $lines[] = ($withNames
-                    ? $this->taskLine($task, $occupants[$task->id] ?? [])
-                    : $this->countLine($task, $taken[$task->id] ?? 0)) . "\n";
+                    ? $this->taskLine($task, $occupants[$task->id] ?? [], $viewer)
+                    : $this->countLine($task, $taken[$task->id] ?? 0, $viewer)) . "\n";
             }
         }
 
@@ -428,9 +440,13 @@ final class BoardRenderer
      * the first word of their name, never their email. One string with the
      * line break inside, so fit() drops a task and its names together.
      *
+     * A role with Anonymous display on shows a guest "2 signed up" in place
+     * of the names; one with Guest sign up off adds "crew only" to the first
+     * line for a guest (BoardVisibility). $viewer null: the group's message.
+     *
      * @param list<string> $names Display names, '' for someone who gave none.
      */
-    private function taskLine(Task $task, array $names): string
+    private function taskLine(Task $task, array $names, ?Person $viewer = null): string
     {
         $parts = [$task->roleDisplay()];
         $time = $task->timeRange();
@@ -439,14 +455,7 @@ final class BoardRenderer
             $parts[] = $time;
         }
 
-        $first = array_map(
-            static function (string $name): string {
-                $word = (string) strtok(trim($name), " \t");
-
-                return '' === $word ? __('someone', 'eventcrew') : $word;
-            },
-            $names
-        );
+        $first = self::firstNames($names);
 
         // The count moved here from the button, which has only the role. No
         // count for a task with no limit on people (Owner 2026-11-07).
@@ -454,7 +463,49 @@ final class BoardRenderer
             $parts[] = sprintf('%d/%d', count($names), $task->capacity);
         }
 
-        return implode(' · ', $parts) . "\n" . ([] === $first ? '–' : implode(', ', $first));
+        if (BoardVisibility::blocksGuestSignup($task, $viewer)) {
+            $parts[] = self::crewOnly();
+        }
+
+        if ([] === $first) {
+            $who = '–';
+        } elseif (! BoardVisibility::showsNames($task, $viewer)) {
+            /* translators: %d: people signed up so far, for a task with no limit on people */
+            $who = sprintf(__('%d signed up', 'eventcrew'), count($first));
+        } else {
+            $who = implode(', ', $first);
+        }
+
+        return implode(' · ', $parts) . "\n" . $who;
+    }
+
+    /**
+     * Each name by its first word, "someone" for a person who gave none:
+     * how the boards name who is signed up, never by email. The web board
+     * uses it too.
+     *
+     * @param list<string> $names Display names.
+     * @return list<string>
+     */
+    public static function firstNames(array $names): array
+    {
+        return array_map(
+            static function (string $name): string {
+                $word = (string) strtok(trim($name), " \t");
+
+                return '' === $word ? __('someone', 'eventcrew') : $word;
+            },
+            array_values($names)
+        );
+    }
+
+    /**
+     * The mark on a task line that a guest cannot sign up for it: the
+     * board does not invite them to.
+     */
+    private static function crewOnly(): string
+    {
+        return __('crew only', 'eventcrew');
     }
 
     /**
@@ -652,8 +703,11 @@ final class BoardRenderer
         return $rows;
     }
 
-    /** "🎨 Decorate · 17:00–18:30 · 1/3", and "· full" when it is. */
-    private function countLine(Task $task, int $taken): string
+    /**
+     * "🎨 Decorate · 17:00–18:30 · 1/3", and "· full" when it is, or
+     * "· crew only" for a guest on a role with Guest sign up off.
+     */
+    private function countLine(Task $task, int $taken, ?Person $viewer = null): string
     {
         $parts = [$task->roleDisplay()];
         $time = $task->timeRange();
@@ -662,14 +716,16 @@ final class BoardRenderer
             $parts[] = $time;
         }
 
-        if ($task->hasNoLimit()) {
-            return implode(' · ', $parts);
+        if (! $task->hasNoLimit()) {
+            $parts[] = sprintf('%d/%d', $taken, $task->capacity);
+
+            if ($taken >= $task->capacity) {
+                $parts[] = __('full', 'eventcrew');
+            }
         }
 
-        $parts[] = sprintf('%d/%d', $taken, $task->capacity);
-
-        if ($taken >= $task->capacity) {
-            $parts[] = __('full', 'eventcrew');
+        if (BoardVisibility::blocksGuestSignup($task, $viewer)) {
+            $parts[] = self::crewOnly();
         }
 
         return implode(' · ', $parts);

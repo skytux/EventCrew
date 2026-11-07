@@ -746,6 +746,20 @@ final class TicketMail
         return self::idFromShortCode('B', 'buyer_ticket', $text);
     }
 
+    /**
+     * The short code under the ticket's QR code (ShortCode): the same as on
+     * the ticket page and on the ticket's row in the door app. '' for a crew
+     * ticket whose holder is not known (a preview).
+     */
+    public static function shortCodeOf(TicketBuyer|Guest|CrewTicket $row): string
+    {
+        if ($row instanceof CrewTicket) {
+            return $row->personId > 0 ? ShortCode::forPerson($row->personId, $row->eventDate) : '';
+        }
+
+        return $row instanceof Guest ? ShortCode::forGuest($row->id) : ShortCode::forBuyer($row->id);
+    }
+
     private static function shortCode(string $letter, string $purpose, int $id): string
     {
         return 'EC-' . $letter . $id . '-' . SignedLink::shortSignature($purpose, $id);
@@ -797,7 +811,8 @@ final class TicketMail
             $person->name(),
             $person->email,
             $this->tasksOn($person->id, $date),
-            HybridPolicy::personLanguage($person)
+            HybridPolicy::personLanguage($person),
+            $person->id
         ));
 
         if ($sent && null !== $this->assignments) {
@@ -851,7 +866,8 @@ final class TicketMail
             $person->name(),
             $person->email,
             $tasks,
-            HybridPolicy::personLanguage($person)
+            HybridPolicy::personLanguage($person),
+            $person->id
         ), $deleted);
     }
 
@@ -936,7 +952,8 @@ final class TicketMail
                 $date,
                 $person->name(),
                 $person->email,
-                language: HybridPolicy::personLanguage($person)
+                language: HybridPolicy::personLanguage($person),
+                personId: $person->id
             )
         );
 
@@ -1267,6 +1284,7 @@ final class TicketMail
         // Only a ticket buyer's code is written out: it is the code the buyer
         // knows from Holvi. A guest's or a crew member's code is in the QR only.
         $code = $row instanceof TicketBuyer ? $row->ticketCode : '';
+        $short = self::shortCodeOf($row);
         $holder = '' === trim($row->name) ? '' : $row->name;
 
         if ($row instanceof Guest && $row->plusOnes > 0) {
@@ -1328,13 +1346,14 @@ final class TicketMail
             . ('' === $note ? '' : $note . "\n\n")
             . $both('open') . ': ' . $url . "\n\n"
             . ('' === $holder ? '' : $holder . "\n")
+            . ('' === $short ? '' : $both('short') . ': ' . $short . "\n")
             . ('' === $code ? '' : $both('code') . ': ' . $code . "\n")
             . "\n" . $both('closing', "\n");
 
         return [
             'subject' => $both('subject') . ' – ' . $date,
             'html' => $html,
-            'corner' => $this->ticketCorner(self::qrData($row), $holder, $code, $offline),
+            'corner' => $this->ticketCorner(self::qrData($row), $holder, $code, $offline, $short),
             'text' => $text,
         ];
     }
@@ -1396,7 +1415,7 @@ final class TicketMail
      * is none) and the rest; the same as plain text; and the short words.
      *
      * @return array{greeting: string, body: string, text: string, subject: string, open: string,
-     *               code: string, closing: string, offline: string}
+     *               code: string, short: string, closing: string, offline: string}
      */
     private function words(
         TicketBuyer|Guest|CrewTicket $row,
@@ -1465,6 +1484,7 @@ final class TicketMail
             'subject' => __('Your ticket', 'eventcrew'),
             'open' => __('Open my ticket', 'eventcrew'),
             'code' => __('Ticket code', 'eventcrew'),
+            'short' => __('Short code', 'eventcrew'),
             'closing' => __('See you on the dancefloor', 'eventcrew'),
             'offline' => __('No internet? Show this QR code at the door.', 'eventcrew'),
         ];
@@ -1527,10 +1547,17 @@ final class TicketMail
     /**
      * The corner under the email's sign-off: on the left the holder's name,
      * a buyer's code and the "No internet?" line ($offline, already escaped
-     * HTML); on the right the small QR code in a white box, no logo.
+     * HTML); on the right the small QR code in a white box, no logo, with
+     * the short code ($short, ShortCode) right under it, as on the ticket
+     * page and the door app's row.
      */
-    private function ticketCorner(string $data, string $holder, string $code, string $offline): string
-    {
+    private function ticketCorner(
+        string $data,
+        string $holder,
+        string $code,
+        string $offline,
+        string $short = ''
+    ): string {
         $qr = $this->qr->table($data, $this->qr->fitCell($data, self::QR_WIDTH, '', 4));
 
         return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"'
@@ -1560,7 +1587,15 @@ final class TicketMail
             . 'vertical-align:bottom">'
             . '<table role="presentation" align="right" cellpadding="0" cellspacing="0" border="0"><tr>'
             . '<td bgcolor="#ffffff" style="padding:4px;background-color:#ffffff;border-radius:10px;'
-            . 'box-shadow:0 0 0 1px ' . self::RULE_COLOR . '">' . $qr . '</td></tr></table>'
+            . 'box-shadow:0 0 0 1px ' . self::RULE_COLOR . '">' . $qr . '</td></tr>'
+            . ('' === $short ? '' : sprintf(
+                '<tr><td align="center" style="padding:6px 0 0;font-family:Menlo,Consolas,\'Courier New\',monospace;'
+                    . 'font-size:17px;font-weight:700;line-height:1.3;letter-spacing:.2em;color:%1$s;'
+                    . 'text-align:center">%2$s</td></tr>',
+                self::TEXT_COLOR,
+                esc_html($short)
+            ))
+            . '</table>'
             . '</td></tr></table>';
     }
 

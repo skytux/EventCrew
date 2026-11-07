@@ -1,6 +1,6 @@
 EMAIL Järjestäjän opas: näin EventCrew toimii
 
-Hei Person 3,
+Hei Person,
 
 Olet Test Crew:n järjestäjä. Tämä opas kertoo, miten EventCrew toimii, ensin lyhyesti ja sitten tarkemmin.
 
@@ -13,6 +13,7 @@ Olet Test Crew:n järjestäjä. Tämä opas kertoo, miten EventCrew toimii, ensi
 - 🎟️ Liput, vapaaliput ja luotettavuus
 - 🔑 Roolit ja oikeudet
 - 🔔 Automaattiset viestit
+- 🤖 EventCrew ja tekoäly
 - ⚙️ Wp-adminin sivut
 
 ⚡ Lyhyesti
@@ -95,6 +96,19 @@ Ajastetut lähtevät vain klo 09:00–21:00. Jokainen lähtee Telegramilla ja s�
 ✏️ Tapahtuman jälkeisen viestin kiitosteksti ja harmiteksti asetetaan wp-adminissa kohdassa EventCrew > Viestit. Käytä toista tekstiä vain seuraavassa tapahtuman jälkeisessä viestissä lähettämällä /followup came tai /followup missed ja sen perään teksti yksityiskeskustelussa botin kanssa, kertomalla se botille siellä omin sanoin (se näyttää tekstin ensin Vahvista-painikkeen kanssa) tai käyttämällä Crew-sovelluksen Ylläpito-välilehteä. Kirjoita se millä kielellä tahansa: se käännetään jokaiselle sivuston kielelle. Kun se viesti on lähetetty tai sen illan viesti pysäytetty, käytetään taas Viestit-sivun tekstiä. Lähetä pelkkä /followup nähdäksesi molemmat tekstit.
 
 📸 /events näyttää sinulle yksityiskeskustelussa botin kanssa seuraavat 5 tulevaa tapahtumaa kortteina: kuva, päivämäärä, hinta, lyhyt kuvaus sekä painikkeet lipun ostamiseen ja DJ:n kuunteluun. Napauta Vahvista, niin botti julkaisee samat kortit ryhmässä; napauta Peru, niin mitään ei lähetetä. Voit myös kysyä botilta omin sanoin, mitkä tapahtumat ovat seuraavina.
+
+🤖 EventCrew ja tekoäly
+
+EventCrew käyttää tekoälyn kielimallia vain, kun sen LLM-API:n osoite ja malli on annettu kohdassa Asetukset > Telegram-botti, otsikon "Tavalliset viestit (kielimalli)" alla. Tekoälypalveluun menevät vain alla luetellut tekstit, eikä ilman osoitetta tai mallia mitään tästä tapahdu. Lipputiedoston tuonti sähköpostilla ei käytä tekoälyä.
+
+Tekoälypalvelua ei ole nyt asetettu, joten sille ei lähetetä mitään.
+
+- 💬 Tavalliset viestit botille: viesti, keskustelun viimeiset 24 tuntia sekä avoimet tehtävät, tapahtumat ja valitut sivuston sivut, jotta botti voi vastata ja nähdä, mitä henkilö haluaa. Jokainen muutos (ilmoittautuminen, peruminen, vieraslista, oma sähköpostiteksti) näytetään ensin Vahvista- ja Peru-painikkeilla. Pois: poista rasti kohdasta "Vastaa tavallisiin viesteihin kielimallin avulla".
+- 📰 Tulevien tapahtumien tiedote ja tapahtuman jälkeinen viesti: kunkin tapahtuman ja sen DJ:iden kuvaukset, joista kirjoitetaan lyhyet tapahtumatekstit ja avausteksti ja poimitaan paikka, osoite ja ovien ajat. Kaikki näkyy ensin esikatselusähköpostissa: pysäytä se siellä tai lisää oma teksti komennolla /newsletter, /followup tai Ylläpito-välilehdellä. Pois: poista rasti kohdasta "Kielimallin tekstit" kohdassa Asetukset > Sähköposti.
+- ✍️ Tekoälytekstit jokaiseen tapahtumaan: tapahtuma ja kehotteesi niihin viesteihin, joissa on rasti kohdassa "Kirjoita tekoälyllä uusi teksti jokaiseen tapahtumaan" Viestit-sivulla, sekä omiin paikkamerkkeihisi. Ne kirjoitetaan tapahtumaa edeltävänä päivänä; lue tai muuta niitä ennen lähtöä kohdassa EventCrew > Viestit > Tulevat tapahtumat tai Crew-sovelluksen Ylläpito-välilehden kohdassa Tekoälytekstit. Poista rasti, niin ne loppuvat.
+- 🎧 Ryhmän taulu: seuraavan tapahtuman DJ:t ja kuvaus, joista kirjoitetaan kaksi lausetta sen kuvan alle. Tällä tekstillä ei ole esikatselua eikä omaa kytkintä.
+- 🌍 Käännös: kirjoittamasi tekstit (viestien tekstit, omat sähköpostitekstisi, Käännökset-sivu) käännetään tallennettaessa jokaiselle sivuston kielelle. Voit muuttaa mitä tahansa kieltä käsin, eikä käsin muutettua tekstiä kirjoiteta yli. Pois: poista rasti kohdasta "Käännä tekstit automaattisesti kielimallilla" kohdassa EventCrew > Käännökset.
+- 📝 Tekoälyn ohjeet ovat kohdassa EventCrew > Viestit, Tekoäly-välilehti, jossa voit muuttaa niitä.
 
 ⚙️ Wp-adminin sivut
 

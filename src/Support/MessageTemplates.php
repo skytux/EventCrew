@@ -1013,6 +1013,20 @@ final class MessageTemplates
             'record' => RoleNotifier::record(__('Sample Newcomer', 'eventcrew'), new Standing(Standing::GOOD, 0.82, 5, 0)),
         ]];
 
+        // A newcomer who has worked here 5 times and thinks 3 tickets are owed.
+        $sampleJoin = ['context' => static fn (): array => [
+            'join_answers' => JoinAnswers::line(new Person(
+                id: 0,
+                email: '',
+                displayName: '',
+                roleNotices: [
+                    JoinAnswers::KEY_BEFORE => JoinAnswers::YES,
+                    JoinAnswers::KEY_TIMES => '5',
+                    JoinAnswers::KEY_TICKETS => '3',
+                ]
+            )),
+        ]];
+
         // Free entry given: the credits now and two nights to come.
         $sampleNights = ['context' => static fn (): array => ['balance' => 2, 'nights' => [
             gmdate('Y-m-d', time() + 7 * DAY_IN_SECONDS) => Dates::dayLabel(gmdate('Y-m-d', time() + 7 * DAY_IN_SECONDS)),
@@ -1066,8 +1080,8 @@ final class MessageTemplates
             'access_organizer' => $greet,
             'role_met' => $sampleMet,
             'role_met_dm' => $sampleMet,
-            'newcomer_waiting' => ['buttons' => [...$admin, __('Answer the request', 'eventcrew')]],
-            'newcomer_waiting_dm' => ['buttons' => ['✅ ' . __('OK', 'eventcrew'), '❌ ' . __('No', 'eventcrew')]],
+            'newcomer_waiting' => $sampleJoin + ['buttons' => [...$admin, __('Answer the request', 'eventcrew')]],
+            'newcomer_waiting_dm' => $sampleJoin + ['buttons' => ['✅ ' . __('OK', 'eventcrew'), '❌ ' . __('No', 'eventcrew')]],
             'forged_request_dm' => $none,
             'import_tickets' => ['buttons' => [__('Open the Roster page', 'eventcrew'), __('Door list', 'eventcrew')]],
             'import_guests' => ['buttons' => [__('Open the Roster page', 'eventcrew')]],
@@ -1114,7 +1128,7 @@ final class MessageTemplates
                     '🧰 ' . __('Open EventCrew in wp-admin', 'eventcrew'),
                     '💳 ' . __('Sales desk', 'eventcrew'),
                 ],
-                'context' => static fn (): array => ['guide' => OrganizerGuide::short(false)],
+                'context' => static fn (): array => ['guide' => OrganizerGuide::dm()],
             ],
             'door_new_member' => $greet + [
                 'buttons' => static fn (): array => [
@@ -1159,7 +1173,10 @@ final class MessageTemplates
 
         $name = self::placeholder(
             __('The first name of the person the message is for.', 'eventcrew'),
-            static fn (array $c): string => ($c['person'] ?? null) instanceof Person ? $c['person']->name() : ''
+            // The greetings say "Hi Sam," without the last name (Owner 2026-11-07).
+            static fn (array $c): string => ($c['person'] ?? null) instanceof Person
+                ? DoorDesk::firstName($c['person']->name())
+                : ''
         );
         $personFirstName = self::placeholder(
             __('The first name of the person the message is for, without the last name.', 'eventcrew'),
@@ -2036,6 +2053,16 @@ final class MessageTemplates
             __('The email address of the person the notice is about.', 'eventcrew'),
             static fn (array $c): string => ($c['member'] ?? null) instanceof Person ? $c['member']->email : ''
         );
+        // What the newcomer said when joining (JoinAnswers); the preview
+        // passes a sample line as 'join_answers'.
+        $joinAnswers = self::placeholder(
+            __('What the person said when joining: whether they have worked on the crew here before, about how many times, and how many free-entry tickets they think they should have.', 'eventcrew'),
+            static fn (array $c): string => is_string($c['join_answers'] ?? null)
+                ? $c['join_answers']
+                : (($c['member'] ?? null) instanceof Person ? JoinAnswers::line($c['member']) : ''),
+            false,
+            true
+        );
         $roleName = self::placeholder(
             __('The name of the role, like Crew leader.', 'eventcrew'),
             static fn (array $c): string => '' === (string) ($c['role'] ?? '') ? '' : Roles::display((string) $c['role'])
@@ -2387,7 +2414,7 @@ final class MessageTemplates
                 'newcomer_waiting',
                 __('A newcomer waits for an OK (email)', 'eventcrew'),
                 $email,
-                __('Sent to the organizers without Telegram when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text.', 'eventcrew'),
+                __('Sent to the organizers when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text, and a link to the person\'s @username in Telegram when they have one.', 'eventcrew'),
                 static fn (): string => self::tag(
                     /* translators: %s: the person's name */
                     __('New: %s wants to join', 'eventcrew'),
@@ -2397,8 +2424,8 @@ final class MessageTemplates
                     /* translators: 1: the person's name, 2: their email */
                     __('%1$s (%2$s) signed in for the first time and wants to join the crew. Press OK or No in the Admin tab of the crew page.', 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{email}']
-                ),
-                ['name' => $member, 'email' => $memberEmail]
+                ) . "\n\n{join_answers}",
+                ['name' => $member, 'email' => $memberEmail, 'join_answers' => $joinAnswers]
             ),
             new MessageTemplate(
                 'newcomer_waiting_dm',
@@ -2410,8 +2437,8 @@ final class MessageTemplates
                     /* translators: 1: the person's name, 2: their email */
                     __('🆕 New: %1$s (%2$s) wants to join.', 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{email}']
-                ),
-                ['name' => $member, 'email' => $memberEmail]
+                ) . "\n{join_answers}",
+                ['name' => $member, 'email' => $memberEmail, 'join_answers' => $joinAnswers]
             ),
             new MessageTemplate(
                 'newcomer_decided',

@@ -18,12 +18,13 @@ use EventCrew\Support\EventTimes;
 use EventCrew\Support\Organization;
 use EventCrew\Support\TicketNote;
 use EventCrew\Support\Language;
+use EventCrew\Support\ShortCode;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\SiteTexts;
-use EventCrew\Support\TicketList;
 use EventCrew\Support\TicketMail;
 use EventCrew\Web\SignupBoardView;
 use WP_REST_Request;
+use WP_REST_Response;
 
 /**
  * The door ticket: a public page a person shows at the event.
@@ -48,6 +49,25 @@ final class TicketController
     /** Free text shown on every ticket (door code, address, ...); '' shows nothing. */
     public const NOTE_OPTION = 'eventcrew_ticket_note';
 
+    /** The route the open ticket page waits on for its check-in (state()). */
+    public const STATE_ROUTE = '/ticket/state';
+
+    /**
+     * The longest state() holds one request, in seconds. Each waiting page
+     * holds a PHP worker that long, so it stays well under the host's
+     * max_execution_time and proxy timeouts.
+     */
+    public const WAIT_SECONDS = 20;
+
+    /** Seconds a page waits before asking again when the night is still to come. */
+    public const BEFORE_NIGHT_RETRY = 900;
+
+    /** Hour of the next day (site time) until which a night's tickets are waited on. */
+    private const NIGHT_ENDS_HOUR = 6;
+
+    /** @var \Closure(int): void */
+    private readonly \Closure $sleep;
+
     public function __construct(
         private readonly AssignmentRepository $assignments,
         private readonly TaskRepository $tasks,
@@ -55,8 +75,12 @@ final class TicketController
         private readonly RedemptionRepository $redemptions,
         private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository(),
         private readonly GuestRepository $guests = new GuestRepository(),
-        private readonly CheckinRepository $checkins = new CheckinRepository()
+        private readonly CheckinRepository $checkins = new CheckinRepository(),
+        ?\Closure $sleep = null
     ) {
+        $this->sleep = $sleep ?? static function (int $seconds): void {
+            sleep($seconds);
+        };
     }
 
     public function boot(): void
@@ -75,11 +99,157 @@ final class TicketController
                 'permission_callback' => '__return_true',
             ]
         );
+
+        // The open ticket page's live wait for the door's check-in. The token
+        // is the page's own signed link, so it shows only that ticket's state.
+        register_rest_route(
+            'eventcrew/v1',
+            self::STATE_ROUTE,
+            [
+                'methods' => 'GET',
+                'callback' => [$this, 'state'],
+                'permission_callback' => '__return_true',
+            ]
+        );
+    }
+
+    /** The URL the ticket page of $token waits on (state()). */
+    public static function stateUrl(string $token): string
+    {
+        return add_query_arg(['token' => $token], rest_url('eventcrew/v1' . self::STATE_ROUTE));
+    }
+
+    /**
+     * The closest a shared host without websockets gets to a push: a long
+     * poll. While the ticket is not checked in and its night is on, the
+     * request is held up to WAIT_SECONDS, asking the check-ins table once a
+     * second (one indexed query, CheckinRepository::anyInAt()), and answers
+     * the moment the door marks the ticket in. The page asks again at once
+     * after each answer.
+     *
+     * Answers {in, at, next}: 'at' is the check-in time ("21:05", '' when not
+     * in); 'next' is how many seconds the page waits before asking again, 0
+     * while the night is on, null once the night is over or the ticket is in
+     * (stop asking). A bad link answers 404 and nothing else.
+     */
+    public function state(WP_REST_Request $request): WP_REST_Response
+    {
+        $entry = $this->doorEntry((string) $request->get_param('token'));
+
+        if (null === $entry) {
+            return self::noStore(new WP_REST_Response(['code' => 'not_found'], 404));
+        }
+
+        $now = (string) current_time('mysql');
+        $nightStarts = $entry['date'] . ' 00:00:00';
+        $nightEnds = gmdate(
+            'Y-m-d H:i:s',
+            (int) strtotime($entry['date'] . ' UTC') + DAY_IN_SECONDS + self::NIGHT_ENDS_HOUR * HOUR_IN_SECONDS
+        );
+        $on = $now >= $nightStarts && $now < $nightEnds;
+        $limit = (int) ini_get('max_execution_time');
+        $wait = $on ? self::WAIT_SECONDS : 0;
+
+        if ($limit > 0) {
+            $wait = max(0, min($wait, $limit - 10));
+        }
+
+        $at = $this->checkins->anyInAt($entry['date'], $entry['kinds'], $entry['ref']);
+
+        for ($waited = 0; null === $at && $waited < $wait; $waited++) {
+            ($this->sleep)(1);
+            $at = $this->checkins->anyInAt($entry['date'], $entry['kinds'], $entry['ref']);
+        }
+
+        if (null !== $at) {
+            $next = null;
+        } elseif ($on) {
+            $next = 0;
+        } else {
+            $next = $now < $nightStarts ? self::BEFORE_NIGHT_RETRY : null;
+        }
+
+        return self::noStore(new WP_REST_Response([
+            'in' => null !== $at,
+            'at' => null === $at ? '' : Dates::wallClock($at, 'H:i'),
+            'next' => $next,
+        ], 200));
+    }
+
+    private static function noStore(WP_REST_Response $response): WP_REST_Response
+    {
+        $response->header('Cache-Control', 'no-store, max-age=0');
+        $response->header('X-Robots-Tag', 'noindex, nofollow');
+
+        return $response;
+    }
+
+    /**
+     * The door row a ticket link stands for: the night, the check-in kinds
+     * it is marked in as and the row's ref, or null when the link is bad or
+     * its record is gone. The same checks as ticketFor(), without reading
+     * anything the page shows.
+     *
+     * @return array{date: string, kinds: array<int, string>, ref: int}|null
+     */
+    public function doorEntry(string $token): ?array
+    {
+        $assignmentId = SignedLink::verify('ticket', $token);
+
+        if (null !== $assignmentId) {
+            $assignment = $this->assignments->find($assignmentId);
+            $task = null === $assignment ? null : $this->tasks->find($assignment->taskId);
+
+            return null === $task
+                ? null
+                : ['date' => $task->taskDate, 'kinds' => CheckinRepository::TASK_TICKET_KINDS, 'ref' => $assignment->personId];
+        }
+
+        $redemptionId = SignedLink::verify('credit_ticket', $token);
+
+        if (null !== $redemptionId) {
+            $redemption = $this->redemptions->find($redemptionId);
+
+            return null === $redemption || null === $redemption->redeemedFor
+                ? null
+                : [
+                    'date' => $redemption->redeemedFor,
+                    'kinds' => CheckinRepository::CREDIT_TICKET_KINDS,
+                    'ref' => $redemption->personId,
+                ];
+        }
+
+        $parts = TicketMail::guestTokenParts($token);
+
+        if (null !== $parts) {
+            $guest = $this->guests->find($parts['id']);
+
+            return null === $guest || '' === $guest->email || $parts['rev'] !== $guest->ticketRev
+                ? null
+                : ['date' => $guest->eventDate, 'kinds' => [CheckinRepository::KIND_GUEST], 'ref' => $guest->id];
+        }
+
+        $id = SignedLink::idOf($token);
+        $buyer = null === $id ? null : $this->buyers->find($id);
+
+        if (
+            null === $buyer || '' === $buyer->ticketCode || '' === $buyer->email
+            || $id !== SignedLink::verify('buyer_ticket|' . $buyer->ticketCode, $token)
+        ) {
+            return null;
+        }
+
+        return ['date' => $buyer->eventDate, 'kinds' => [CheckinRepository::KIND_BUYER], 'ref' => $buyer->id];
     }
 
     public function handle(WP_REST_Request $request): void
     {
-        $ticket = $this->ticketFor((string) $request->get_param('token'));
+        $token = (string) $request->get_param('token');
+        $ticket = $this->ticketFor($token);
+
+        if (null !== $ticket) {
+            $ticket['poll'] = self::stateUrl($token);
+        }
 
         status_header(null === $ticket ? 404 : 200);
         header('Content-Type: text/html; charset=utf-8');
@@ -150,6 +320,7 @@ final class TicketController
         return $this->emailedTicket($buyer->eventDate, $buyer->name, $role) + [
             'qr' => $buyer->ticketCode,
             'code' => $buyer->ticketCode,
+            'short' => ShortCode::forBuyer($buyer->id),
             'used' => $this->checkins->inAt($buyer->eventDate, [CheckinRepository::KIND_BUYER], $buyer->id),
         ];
     }
@@ -184,6 +355,7 @@ final class TicketController
             : __('Guest list', 'eventcrew');
 
         return $this->emailedTicket($guest->eventDate, $guest->name, $role) + [
+            'short' => ShortCode::forGuest($guest->id),
             'used' => $this->checkins->inAt($guest->eventDate, [CheckinRepository::KIND_GUEST], $guest->id),
         ];
     }
@@ -262,6 +434,7 @@ final class TicketController
             'language' => $person->language,
             'image' => SignupBoardView::eventImage($task->eventPostId),
             'used' => $this->checkins->inAt($task->taskDate, CheckinRepository::TASK_TICKET_KINDS, $person->id),
+            'short' => ShortCode::forPerson($person->id, $task->taskDate),
         ];
     }
 
@@ -308,6 +481,7 @@ final class TicketController
                 CheckinRepository::CREDIT_TICKET_KINDS,
                 $person->id
             ),
+            'short' => ShortCode::forCredit($person->id, $redemption->redeemedFor),
         ];
     }
 
@@ -346,9 +520,23 @@ final class TicketController
         /* translators: %s: the organization's name, like Ecstatic Dance Helsinki */
         $title = sprintf(__('Your %s ticket', 'eventcrew'), Organization::name());
 
-        $band = $ticket['valid']
-            ? $this->validBand($ticket['used'] ?? null)
-            : '<p class="t-band is-disabled">' . esc_html__('DISABLED', 'eventcrew') . '</p>';
+        $eventId = null === ($ticket['event_id'] ?? null) ? null : (int) $ticket['event_id'];
+        $used = $ticket['used'] ?? null;
+        $closeAt = EventTimes::doorsCloseAt($eventId, $ticket['date']);
+        // Seconds until the doors close, by the site's clock; null when the
+        // event has no doors time. Counted from the site's own "now", so the
+        // site's time zone never needs converting.
+        $closesIn = '' === $closeAt
+            ? null
+            : (int) strtotime($closeAt . ' UTC') - (int) strtotime((string) current_time('mysql') . ' UTC');
+
+        if (! $ticket['valid']) {
+            $band = '<p class="t-band is-disabled">' . esc_html__('DISABLED', 'eventcrew') . '</p>';
+        } elseif (null !== $used) {
+            $band = $this->inBand(Dates::wallClock($used, 'H:i'));
+        } else {
+            $band = $this->openBand(null !== $closesIn && $closesIn <= 0);
+        }
 
         $body = sprintf(
             '<p class="t-name">%s</p><p class="t-task">%s</p>',
@@ -359,7 +547,6 @@ final class TicketController
 
         $watermark = ltrim($this->watermarkStyle(), ';');
         // The event's clean name in the page's language (EventName).
-        $eventId = null === ($ticket['event_id'] ?? null) ? null : (int) $ticket['event_id'];
         $event = null === $eventId ? $ticket['event'] : EventName::name($eventId, EventName::lang(), $ticket['event']);
 
         return $this->document(
@@ -372,23 +559,75 @@ final class TicketController
                 (string) ($ticket['image'] ?? '')
             )
             . '<div class="t-body"' . ('' === $watermark ? '' : ' style="' . $watermark . '"') . '>'
-            . $body . $band . $this->qrBlock($ticket['qr'] ?? '') . $this->codeBlock($ticket['code'] ?? '')
+            . $body . $band . $this->qrBlock($ticket['qr'] ?? '')
+            . $this->shortBlock((string) ($ticket['short'] ?? '')) . $this->codeBlock($ticket['code'] ?? '')
             . $this->noteBlock($eventId) . $this->antiFraudBlock($ticket['issued'])
+            . ($ticket['valid'] && null === $used
+                ? $this->liveScript((string) ($ticket['poll'] ?? ''), $closesIn)
+                : '')
             . '</div>'
         );
     }
 
     /**
-     * The band of a ticket that is not cancelled: green VALID, or orange with
-     * the time once the door has marked it in.
+     * The band of a ticket that is valid and not in yet: green VALID, or,
+     * once the doors have closed, black "Sorry, this ticket has expired".
+     * An expired ticket can still be scanned and counted in: the band only
+     * says it is late. liveScript() turns VALID into expired on an open page
+     * when the doors close, and either into inBand() when the door marks it in.
      */
-    private function validBand(?string $used): string
+    private function openBand(bool $expired): string
     {
-        if (null === $used) {
-            return '<p class="t-band is-valid">' . esc_html__('VALID', 'eventcrew') . '</p>';
-        }
+        return $expired
+            ? '<p class="t-band is-expired" id="ec-band" aria-live="polite">'
+                . esc_html__('Sorry, this ticket has expired', 'eventcrew') . '</p>'
+            : '<p class="t-band is-valid" id="ec-band" aria-live="polite">' . esc_html__('VALID', 'eventcrew') . '</p>';
+    }
 
-        return '<p class="t-band is-used">' . esc_html(TicketList::usedText($used)) . '</p>';
+    /**
+     * The band of a ticket the door has marked in: gold with twinkling stars,
+     * "You're in, welcome!" and the time ($at, like 21:05). On an open page
+     * liveScript() draws the same band with a burst ("is-new").
+     */
+    private function inBand(string $at): string
+    {
+        return '<p class="t-band is-in" id="ec-band" aria-live="polite">' . $this->inBandInner($at) . '</p>';
+    }
+
+    private function inBandInner(string $at): string
+    {
+        return '<span class="t-stars" aria-hidden="true">' . str_repeat('<i>★</i>', 8) . '</span>'
+            . '<span class="t-in-text">' . esc_html__('You’re in, welcome!', 'eventcrew') . '</span>'
+            . '<span class="t-at">' . esc_html(sprintf(
+                /* translators: %s: the time the door checked the ticket in, like 21:05 */
+                __('Checked in at %s', 'eventcrew'),
+                $at
+            )) . '</span>';
+    }
+
+    /**
+     * The open page's live part, on a valid ticket not in yet. The clock
+     * check turns the band black when the doors close ($closesIn seconds from
+     * now by the site's clock, null for no doors time), measured from the
+     * phone's own clock at load, so a wrong phone clock does not matter. The
+     * wait loop asks state() ($poll) and turns the band gold the moment the
+     * door marks the ticket in. It asks again after each answer, stops while
+     * the tab is hidden and starts again when it is shown, and stops for good
+     * once the ticket is in or the night is over. Errors back off up to a
+     * minute.
+     */
+    private function liveScript(string $poll, ?int $closesIn): string
+    {
+        $config = [
+            'poll' => $poll,
+            'closesIn' => $closesIn,
+            'expired' => __('Sorry, this ticket has expired', 'eventcrew'),
+            'inHtml' => $this->inBandInner('%s'),
+        ];
+        $json = (string) wp_json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+
+        // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained script; wrapping adds stray whitespace.
+        return '<script>(function(){var c=' . $json . ';var b=document.getElementById("ec-band");if(!b){return;}var done=false,busy=false,timer=null,fails=0;var closeAt=null===c.closesIn?null:Date.now()+c.closesIn*1000;function expire(){if(done||null===closeAt||Date.now()<closeAt||"t-band is-expired"===b.className){return;}b.className="t-band is-expired";b.textContent=c.expired;}function welcome(at){done=true;if(timer){clearTimeout(timer);}b.className="t-band is-in is-new";b.innerHTML=c.inHtml;var t=b.querySelector(".t-at");if(t){t.textContent=t.textContent.replace("%s",at);}}function later(ms){if(timer){clearTimeout(timer);}timer=setTimeout(ask,ms);}function ask(){timer=null;if(done||busy||!c.poll||document.hidden){return;}busy=true;fetch(c.poll+(-1===c.poll.indexOf("?")?"?":"&")+"_="+Date.now(),{cache:"no-store",credentials:"same-origin"}).then(function(r){if(404===r.status){c.poll="";}if(!r.ok){throw new Error(String(r.status));}return r.json();}).then(function(d){busy=false;fails=0;if(d&&d.in){welcome(d.at||"");return;}if(!d||null===d.next){c.poll="";return;}later(1000*d.next);},function(){busy=false;fails++;later(Math.min(60000,2000*fails));});}document.addEventListener("visibilitychange",function(){if(!document.hidden){expire();if(!busy){later(0);}}});setInterval(expire,1000);expire();ask();})();</script>';
     }
 
     /**
@@ -447,7 +686,17 @@ final class TicketController
             . '<script>(function(){var h=document.getElementById("ec-qr");if(!h){return;}if("function"!==typeof window.qrcode){h.parentNode.removeChild(h);return;}var q=window.qrcode(0,"H");q.addData(' . $content . ');q.make();h.insertAdjacentHTML("afterbegin",q.createSvgTag({cellSize:4,margin:8,scalable:true}));})();</script>';
     }
 
-    /** The ticket code written out under the QR code, or '' when there is none. */
+    /**
+     * The short code (ShortCode) written large right under the QR code, the
+     * same as on the ticket's row in the door app, so the door crew can check
+     * a row they tick by hand. '' when there is none.
+     */
+    private function shortBlock(string $short): string
+    {
+        return '' === $short ? '' : '<p class="t-short">' . esc_html($short) . '</p>';
+    }
+
+    /** The ticket code written out under the short code, or '' when there is none. */
     private function codeBlock(string $code): string
     {
         return '' === $code ? '' : '<p class="t-code">' . esc_html($code) . '</p>';
@@ -536,16 +785,45 @@ final class TicketController
             . '.t-task{margin:0 0 1em;opacity:.8}'
             . '.t-band{margin:0 -1.2em 1em;padding:.45em;color:#fff;font-weight:700;letter-spacing:.15em}'
             . '.t-band.is-valid{background:#1a7f37}.t-band.is-disabled{background:#b32d2e}'
-            // Bright orange with dark text: 7:1 contrast, where white text on
-            // an orange this light would not be readable.
-            . '.t-band.is-used{background:#ff8c1a;color:#1d1d1f}'
+            . '.t-band.is-expired{background:#000;letter-spacing:.04em}'
+            // Gold with dark brown text (over 9:1), a slow shine across it
+            // and eight twinkling stars; a band drawn live also pops in with
+            // a burst of stars (is-new). No motion at all for a reader who
+            // asks for less.
+            . '.t-band.is-in{position:relative;overflow:hidden;padding:.7em .45em;color:#3b2500;letter-spacing:.04em;'
+            . 'background:linear-gradient(110deg,#c8960c,#ffd34d 30%,#fff4c2 50%,#ffd34d 70%,#c8960c);'
+            . 'background-size:250% 100%;animation:t-shine 3.5s linear infinite}'
+            . '.t-in-text,.t-at{display:block;position:relative}.t-in-text{font-size:1.25em}'
+            . '.t-at{font-size:.8em;font-weight:600;letter-spacing:normal;margin-top:.15em}'
+            . '.t-stars i{position:absolute;font-style:normal;color:#fff;line-height:1;'
+            . 'text-shadow:0 0 4px #a86b00,0 0 10px #fff;animation:t-twinkle 1.8s ease-in-out infinite}'
+            . '.t-stars i:nth-child(1){left:5%;top:12%;font-size:.9em}'
+            . '.t-stars i:nth-child(2){left:16%;top:58%;font-size:.6em;animation-delay:.4s}'
+            . '.t-stars i:nth-child(3){left:28%;top:8%;font-size:.7em;animation-delay:.9s}'
+            . '.t-stars i:nth-child(4){left:40%;top:70%;font-size:.5em;animation-delay:1.3s}'
+            . '.t-stars i:nth-child(5){left:60%;top:6%;font-size:.6em;animation-delay:.2s}'
+            . '.t-stars i:nth-child(6){left:72%;top:62%;font-size:.8em;animation-delay:1.1s}'
+            . '.t-stars i:nth-child(7){left:84%;top:14%;font-size:.6em;animation-delay:.6s}'
+            . '.t-stars i:nth-child(8){left:93%;top:55%;font-size:.9em;animation-delay:1.5s}'
+            . '.t-band.is-new{animation:t-shine 3.5s linear infinite,t-pop .7s cubic-bezier(.2,1.6,.4,1)}'
+            . '.t-band.is-new .t-stars i{animation:t-burst 1.1s ease-out both,t-twinkle 1.8s ease-in-out 1.1s infinite}'
+            . '@keyframes t-shine{to{background-position:-250% 0}}'
+            . '@keyframes t-twinkle{0%,100%{opacity:.2;transform:scale(.5)}50%{opacity:1;transform:scale(1.2) rotate(25deg)}}'
+            . '@keyframes t-pop{0%{transform:scale(.6);opacity:0}100%{transform:none;opacity:1}}'
+            . '@keyframes t-burst{0%{opacity:0;transform:translateY(1.2em) scale(.2)}'
+            . '60%{opacity:1;transform:translateY(-.3em) scale(1.6) rotate(90deg)}100%{opacity:.6;transform:none}}'
+            . '@media (prefers-reduced-motion:reduce){.t-band.is-in,.t-band.is-new,.t-stars i,'
+            . '.t-band.is-new .t-stars i{animation:none}.t-stars i{opacity:.8}}'
             . '.t-qr{position:relative;width:15em;max-width:100%;margin:0 auto 1em}'
             . '.t-qr svg{display:block;width:100%;height:auto}'
             . '.t-qr-logo{display:none;position:absolute;left:50%;top:50%;width:20%;height:20%;'
             . 'transform:translate(-50%,-50%);object-fit:contain;background:#fff;padding:3%;border-radius:8px}'
             . '.t-qr svg+.t-qr-logo{display:block}'
-            . '.t-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.4em;font-weight:700;'
-            . 'letter-spacing:.08em;margin:-.4em 0 1em}'
+            . '.t-short{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.8em;font-weight:700;'
+            . 'letter-spacing:.25em;margin:-.4em 0 .6em;padding-left:.25em}'
+            . '.t-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1em;font-weight:600;'
+            . 'letter-spacing:.06em;opacity:.75;margin:-.4em 0 1em}'
+            . '.t-short+.t-code{margin-top:0}'
             . '.t-clock{font-size:2em;font-variant-numeric:tabular-nums;margin:.3em 0}'
             . '.t-small{opacity:.7;font-size:.82em}';
 

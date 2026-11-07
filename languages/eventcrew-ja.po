@@ -5960,10 +5960,6 @@ msgstr "インポート用メールボックスに送られたチケットファ
 msgid "Sent to the organizers with a confirmed email address when a member who is not an organizer sends an admin request from the Crew app and is blocked."
 msgstr "主催者でないメンバーがクルーアプリから管理リクエストを送ってブロックされたとき、確認済みのメールアドレスを持つ主催者に送られます。"
 
-#: src/Support/MessageTemplates.php:2314
-msgid "Sent to the organizers without Telegram when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text."
-msgstr "新しい人が初めてメールアドレスを確認したとき、Telegram のない主催者に送られます。主催者が OK するまで、その人はボードを見られますがタスクは受けられません。OK と いいえ のボタンがあるクルーページの管理タブへのボタンが本文の下に付きます。"
-
 #: src/Support/MessageTemplates.php:2223
 msgid "Sent to the organizers, and to the sender, after a list of guests mailed to the import mailbox is added to the guest list. A line left empty by a placeholder is removed."
 msgstr "インポート用メールボックスに送られたゲストの一覧がゲストリストに追加された後、主催者と送信者に送られます。プレースホルダーで空になった行は削除されます。"
@@ -6116,10 +6112,6 @@ msgstr "直前の通知（開始の何時間前）"
 #: templates/public/signup.php:1795
 msgid "Show"
 msgstr "表示"
-
-#: templates/admin/settings.php:324 templates/public/signup.php:1854
-msgid "Show on the guest board (Telegram group and the web page when signed out)"
-msgstr "ゲスト用ボードに表示（Telegram グループと、サインアウト時のウェブページ）"
 
 #: templates/admin/settings.php:1958
 msgid "Show the group board as event cards"
@@ -11004,3 +10996,153 @@ msgstr "ボットにつながらないときの連絡先。例: メールアド�
 
 msgid "You can see your own numbers any time in the Me tab of the Crew app."
 msgstr "自分の数字は、Crew アプリの「自分」タブでいつでも見られます。"
+
+#: src/Telegram/OnboardingService.php:333
+msgid "A few questions for the organizers, then I’ll email you the link. Have you worked on the crew here before?"
+msgstr "主催者からいくつか質問があります。その後、リンクをメールで送ります。ここのクルーで以前働いたことはありますか？"
+
+#: templates/public/signup.php:240
+msgid "About how many times?"
+msgstr "だいたい何回ですか？"
+
+#: src/Telegram/OnboardingService.php:350
+msgid "About how many times? Tap a number or type one."
+msgstr "だいたい何回ですか？ 数字をタップするか、入力してください。"
+
+#: src/Support/JoinAnswers.php:145
+msgid "Did not say whether they have worked on the crew here before."
+msgstr "ここのクルーで以前働いたことがあるかは答えていません。"
+
+#: src/Support/JoinAnswers.php:141
+msgid "First time on the crew."
+msgstr "クルーは初めてです。"
+
+#: templates/public/signup.php:232
+msgid "Have you worked on the crew here before?"
+msgstr "ここのクルーで以前働いたことはありますか？"
+
+#: templates/public/signup.php:244
+msgid "How many free-entry tickets do you think you should have?"
+msgstr "無料入場チケットは何枚あるべきだと思いますか？"
+
+#: src/Telegram/OnboardingService.php:365
+msgid "How many free-entry tickets do you think you should have? Tap a number or type one."
+msgstr "無料入場チケットは何枚あるべきだと思いますか？ 数字をタップするか、入力してください。"
+
+#: templates/public/signup.php:233
+msgid "Only for a new account, and optional."
+msgstr "新しいアカウントのときだけで、答えなくてもかまいません。"
+
+#: src/Support/PrivacyExporter.php:148
+msgid "Said when joining"
+msgstr "参加時の回答"
+
+#: src/Telegram/OnboardingService.php:231
+#. translators: 1: the smallest number, 2: the largest number
+msgid "Send a number from %1$d to %2$d, or tap Skip."
+msgstr "%1$d から %2$d までの数字を送るか、スキップ をタップしてください。"
+
+#: src/Support/MessageTemplates.php:2414
+msgid "Sent to the organizers when a new person confirms their email for the first time. Until an organizer says OK they see the board but cannot take tasks. A button to the Admin tab of the crew page, where the OK and No buttons are, is added under the text, and a link to the person's @username in Telegram when they have one."
+msgstr "新しい人が初めてメールアドレスを確認したとき、主催者に送られます。主催者が OK するまで、その人はボードを見られますがタスクは受けられません。OK と いいえ のボタンがあるクルーページの管理タブへのボタンと、その人に Telegram の @ユーザー名 があればそのリンクが本文の下に付きます。"
+
+#: src/Telegram/OnboardingService.php:281
+msgid "Thanks, the organizers will see your answers."
+msgstr "ありがとうございます。回答は主催者に表示されます。"
+
+#: src/Support/JoinAnswers.php:164
+#. translators: %d: how many free-entry tickets the person thinks they should have
+msgid "Thinks they should have %d free-entry ticket."
+msgid_plural "Thinks they should have %d free-entry tickets."
+msgstr[0] "無料入場チケットは %d 枚あるべきだと考えています。"
+
+#: src/Telegram/OnboardingService.php:193
+msgid "This question has run out. Send /start to begin again."
+msgstr "この質問は期限切れです。/start を送ってやり直してください。"
+
+#: src/Support/MessageTemplates.php:2056
+msgid "What the person said when joining: whether they have worked on the crew here before, about how many times, and how many free-entry tickets they think they should have."
+msgstr "参加時にその人が答えた内容：ここのクルーで以前働いたことがあるか、だいたい何回か、無料入場チケットは何枚あるべきだと思うか。"
+
+#: src/Support/JoinAnswers.php:152
+#. translators: %d: about how many times the person has worked on the crew
+msgid "Worked on the crew here before: yes, about %d time."
+msgid_plural "Worked on the crew here before: yes, about %d times."
+msgstr[0] "ここのクルーで以前働いたことがある：はい、約 %d 回。"
+
+#: src/Support/JoinAnswers.php:149
+msgid "Worked on the crew here before: yes."
+msgstr "ここのクルーで以前働いたことがある：はい。"
+
+msgid "Sorry, this ticket has expired"
+msgstr "申し訳ありません。このチケットは期限切れです"
+
+msgid "You’re in, welcome!"
+msgstr "入場完了、ようこそ！"
+
+msgid "Checked in at %s"
+msgstr "%s に入場"
+
+msgid "Short code"
+msgstr "短縮コード"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest display: people without this role see its tasks"
+msgstr "ゲスト表示：この役割のない人にもタスクを表示"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest sign up: people without this role can sign up (needs Guest display)"
+msgstr "ゲスト登録：この役割のない人も登録できる（ゲスト表示が必要）"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Anonymous display: hide the names from people without this role"
+msgstr "匿名表示：この役割のない人には名前を隠す"
+
+#: src/Support/SignupService.php
+msgid "Only people with this role can sign up for this task."
+msgstr "この役割のある人だけがこのタスクに登録できます。"
+
+#: src/Telegram/BoardRenderer.php
+msgid "crew only"
+msgstr "チームのみ"
+
+#: templates/public/signup-board.php
+msgid "Crew only"
+msgstr "チームのみ"
+
+#: templates/public/signup-board.php
+msgid "Awaiting approval"
+msgstr "承認待ち"
+
+msgid "AI in EventCrew"
+msgstr "EventCrew の AI"
+
+msgid "EventCrew uses an AI language model only when its API URL and model are set in Settings > Telegram bot, under \"Plain messages (language model)\". Only the texts below go to that AI service, and without the URL or the model none of this happens. The ticket file import by email does not use AI."
+msgstr "EventCrew が AI の言語モデルを使うのは、設定 > Telegram ボットの「通常のメッセージ（言語モデル）」で LLM API の URL とモデルが入力されているときだけです。その AI サービスに送られるのは下のテキストだけで、URL かモデルがなければどれも行われません。メールによるチケットファイルの取り込みには AI を使いません。"
+
+msgid "No AI service is set up at the moment, so nothing is sent to one."
+msgstr "現在 AI サービスは設定されていないため、何も送られません。"
+
+msgid "Plain messages to the bot: the message, the last 24 hours of that chat, and the open tasks, events and chosen site pages, to answer and to see what the person wants. Every change (a sign-up, a cancellation, the guest list, your own email text) is shown first with Confirm and Cancel. Off: untick \"Answer plain messages with the language model\"."
+msgstr "ボットへの通常のメッセージ: メッセージ、そのチャットの直近 24 時間、空きタスク、イベント、選んだサイトのページ。返答し、相手の望みを理解するために使います。変更（申し込み、キャンセル、ゲストリスト、自分のメール文面）はすべて、まず「確認」と「キャンセル」付きで表示されます。オフ:「通常のメッセージに言語モデルで返答する」のチェックを外します。"
+
+msgid "Next events announcement and post-event email: the description of each event and of its DJs, to write short event texts and the opening text, and to pick out the venue, address and door times. All of it is in the preview email first: stop it there, or add your own text with /newsletter, /followup or the Admin tab. Off: untick \"Texts by the language model\" in Settings > Email."
+msgstr "次回イベントのお知らせとイベント後のメール: 各イベントとその DJ の説明。短いイベント紹介文と冒頭の文を書き、会場、住所、開場と閉場の時刻を拾い出すために使います。すべてまずプレビューメールに表示されます。そこで停止するか、/newsletter、/followup または管理タブで独自のテキストを加えてください。オフ: 設定 > メールの「言語モデルによる文面」のチェックを外します。"
+
+msgid "AI texts for each event: the event and your prompt, for each message with \"Write a new text with the AI for each event\" ticked on the Messages page, and for your own placeholders. They are written the day before the event; read or change them before they go out in EventCrew > Messages > Coming events, or under AI texts in the Crew app Admin tab. Untick to stop."
+msgstr "イベントごとの AI テキスト: イベントとあなたのプロンプト。メッセージページで「イベントごとにAIで新しいテキストを書く」にチェックしたメッセージと、独自のプレースホルダーに使います。イベントの前日に書かれます。送信前に EventCrew > メッセージ > 今後のイベント、またはクルーアプリの管理タブの「AIテキスト」で読んだり変えたりできます。止めるにはチェックを外します。"
+
+msgid "The group board: the DJs and description of the next event, for two sentences under its picture. This text has no preview and no switch of its own."
+msgstr "グループのボード: 次のイベントの DJ と説明から、画像の下の 2 文を書きます。この文にはプレビューも専用のスイッチもありません。"
+
+msgid "Translation: the texts you write (message texts, your own email texts, the Translations page) are translated into every site language when saved. You can change any language by hand, and a text changed by hand is not overwritten. Off: untick \"Translate texts automatically with the language model\" in EventCrew > Translations."
+msgstr "翻訳: あなたが書くテキスト（メッセージの文面、独自のメール文面、翻訳ページ）は、保存時にすべてのサイト言語に翻訳されます。どの言語も手で変更でき、手で変更したテキストは上書きされません。オフ: EventCrew > 翻訳の「言語モデルで文面を自動翻訳する」のチェックを外します。"
+
+msgid "What the AI is asked to do is set in EventCrew > Messages, AI tab, where you can change it."
+msgstr "AI への指示は EventCrew > メッセージの AI タブにあり、そこで変更できます。"
+
+msgid "With an AI service set in Settings > Telegram bot, EventCrew sends it plain messages to the bot, event and DJ descriptions (for the announcement, the post-event email and the board), your prompts for the AI texts of each event, and texts to translate."
+msgstr "設定 > Telegram ボットで AI サービスを設定すると、EventCrew はボットへの通常のメッセージ、イベントと DJ の説明（お知らせ、イベント後のメール、ボード用）、イベントごとの AI テキストのプロンプト、翻訳するテキストをそこへ送ります。"
+
+msgid "Previews: changes asked in the bot come with Confirm and Cancel, the announcement and the post-event email come to you first as a preview you can stop, and the AI texts of each event can be changed in EventCrew > Messages > Coming events or in the Admin tab. The full guide says how to switch each use off."
+msgstr "プレビュー: ボットで頼んだ変更は「確認」と「キャンセル」付きで届き、お知らせとイベント後のメールは停止できるプレビューとしてまずあなたに届きます。イベントごとの AI テキストは EventCrew > メッセージ > 今後のイベント、または管理タブで変更できます。それぞれの使い方をオフにする方法は完全版ガイドにあります。"

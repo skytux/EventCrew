@@ -7,6 +7,7 @@ namespace EventCrew\Telegram;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\JoinAnswers;
 use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
@@ -28,6 +29,14 @@ use EventCrew\Support\PrivacyPolicy;
  * because the click is the only proof the typist owns the address. Linking on
  * the typed address alone let anyone take over another person's account -
  * their tasks, credits and free-entry tickets - by typing their email.
+ *
+ * A newcomer (a new address, or one still waiting that was never confirmed)
+ * is asked three questions for the organizers before the link goes out
+ * (JoinAnswers): have you worked on the crew here before, about how many
+ * times, and how many free-entry tickets do you think you should have. Each
+ * has a Skip button, and a number can be tapped or typed. The link is
+ * emailed after the last answer or a Skip, so the organizers' "wants to
+ * join" notice, sent when the link is opened, has the answers.
  */
 final class OnboardingService
 {
@@ -36,7 +45,17 @@ final class OnboardingService
     /** The auth-token purpose for a bot email confirmation. */
     public const VERIFY_PURPOSE = 'email_verify';
 
+    /** Callback data prefix of the newcomer's question buttons: "nwq:<answer>". */
+    public const JOIN_PREFIX = 'nwq:';
+
     private const AWAIT_EMAIL_PREFIX = 'eventcrew_tg_await_email_';
+
+    /** The newcomer's questions waiting for an answer, per Telegram user. */
+    private const AWAIT_JOIN_PREFIX = 'eventcrew_tg_await_join_';
+
+    private const STEP_BEFORE = 'before';
+    private const STEP_TIMES = 'times';
+    private const STEP_TICKETS = 'tickets';
     private const PENDING_LINK_PREFIX = 'eventcrew_tg_pending_link_';
     private const TOKEN_TTL = DAY_IN_SECONDS;
 
@@ -79,6 +98,8 @@ final class OnboardingService
             return;
         }
 
+        // A /start sent again begins again.
+        delete_transient(self::AWAIT_JOIN_PREFIX . $telegramUserId);
         set_transient(
             self::AWAIT_EMAIL_PREFIX . $telegramUserId,
             ['chat_id' => $chatId, 'name' => $displayName],
@@ -130,10 +151,247 @@ final class OnboardingService
      */
     public function cancelPending(int $telegramUserId): bool
     {
-        $waiting = $this->isAwaitingEmail($telegramUserId);
+        $waiting = $this->isAwaitingEmail($telegramUserId) || $this->isAwaitingJoin($telegramUserId);
         delete_transient(self::AWAIT_EMAIL_PREFIX . $telegramUserId);
+        delete_transient(self::AWAIT_JOIN_PREFIX . $telegramUserId);
 
         return $waiting;
+    }
+
+    /** Whether the newcomer's questions wait for this user's answer. */
+    public function isAwaitingJoin(int $telegramUserId): bool
+    {
+        return is_array(get_transient(self::AWAIT_JOIN_PREFIX . $telegramUserId));
+    }
+
+    /** Whether a typed message from this user answers a number question (how many times, how many tickets). */
+    public function isAwaitingJoinNumber(int $telegramUserId): bool
+    {
+        $pending = get_transient(self::AWAIT_JOIN_PREFIX . $telegramUserId);
+
+        return is_array($pending) && in_array($pending['step'] ?? '', [self::STEP_TIMES, self::STEP_TICKETS], true);
+    }
+
+    /**
+     * A tap on a question button: "nwq:y" (yes), "nwq:n" (no), "nwq:s"
+     * (skip), "nwq:t:<n>" (times), "nwq:k:<n>" (tickets).
+     *
+     * @param array<string, mixed> $callbackQuery
+     */
+    public function onJoinTap(array $callbackQuery): void
+    {
+        $callbackId = (string) ($callbackQuery['id'] ?? '');
+        $fromId = (int) ($callbackQuery['from']['id'] ?? 0);
+        $chatId = (int) ($callbackQuery['message']['chat']['id'] ?? 0);
+        $messageId = (int) ($callbackQuery['message']['message_id'] ?? 0);
+        $data = (string) ($callbackQuery['data'] ?? '');
+        $pending = 0 === $fromId ? false : get_transient(self::AWAIT_JOIN_PREFIX . $fromId);
+
+        if (! is_array($pending) || 1 !== preg_match('/^nwq:(y|n|s|[tk]:\d{1,4})$/', $data, $m)) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('This question has run out. Send /start to begin again.', 'eventcrew'),
+                true
+            );
+
+            if (0 !== $chatId && 0 !== $messageId) {
+                $this->telegram->editMessageReplyMarkup($chatId, $messageId, ['inline_keyboard' => []]);
+            }
+
+            return;
+        }
+
+        $this->telegram->answerCallbackQuery($callbackId);
+        $this->answerJoin($fromId, 0 !== $chatId ? $chatId : (int) ($pending['chat_id'] ?? 0), $pending, $m[1], $messageId);
+    }
+
+    /**
+     * A typed answer to a number question. Not a whole number in range: the
+     * person is told the range and the question stays.
+     */
+    public function captureJoinNumber(int $telegramUserId, int $chatId, string $text): void
+    {
+        $pending = get_transient(self::AWAIT_JOIN_PREFIX . $telegramUserId);
+
+        if (! is_array($pending)) {
+            return;
+        }
+
+        $times = self::STEP_TIMES === ($pending['step'] ?? '');
+        [$min, $max] = $times
+            ? [JoinAnswers::MIN_TIMES, JoinAnswers::MAX_TIMES]
+            : [JoinAnswers::MIN_TICKETS, JoinAnswers::MAX_TICKETS];
+        $number = JoinAnswers::number($text);
+
+        if (null === $number || $number < $min || $number > $max) {
+            $this->telegram->sendMessage(
+                $chatId,
+                sprintf(
+                    /* translators: 1: the smallest number, 2: the largest number */
+                    __('Send a number from %1$d to %2$d, or tap Skip.', 'eventcrew'),
+                    $min,
+                    $max
+                ),
+                $times ? self::timesMarkup() : self::ticketsMarkup()
+            );
+
+            return;
+        }
+
+        $this->answerJoin($telegramUserId, $chatId, $pending, ($times ? 't:' : 'k:') . $number, 0);
+    }
+
+    /**
+     * One answer: stores it and asks the next question, or ends the
+     * questions and emails the link. $messageId is the question tapped, which
+     * is rewritten in place (0 for a typed answer: the next question is a new
+     * message).
+     *
+     * @param array<string, mixed> $pending
+     */
+    private function answerJoin(int $telegramUserId, int $chatId, array $pending, string $answer, int $messageId): void
+    {
+        $personId = (int) ($pending['person_id'] ?? 0);
+        $key = self::AWAIT_JOIN_PREFIX . $telegramUserId;
+
+        if ('y' === $answer) {
+            $this->storeAnswers($personId, JoinAnswers::entries(JoinAnswers::YES));
+            set_transient($key, ['step' => self::STEP_TIMES] + $pending, self::TOKEN_TTL);
+            $this->showQuestion($chatId, $messageId, self::timesText(), self::timesMarkup());
+
+            return;
+        }
+
+        if ('n' === $answer) {
+            $this->storeAnswers($personId, JoinAnswers::entries(JoinAnswers::NO));
+        } elseif (str_starts_with($answer, 't:')) {
+            $times = (int) substr($answer, 2);
+            $this->storeAnswers($personId, JoinAnswers::entries(JoinAnswers::YES, $times));
+            set_transient($key, ['step' => self::STEP_TICKETS, 'times' => $times] + $pending, self::TOKEN_TTL);
+            $this->showQuestion($chatId, $messageId, self::ticketsText(), self::ticketsMarkup());
+
+            return;
+        } elseif (str_starts_with($answer, 'k:')) {
+            $times = isset($pending['times']) ? (int) $pending['times'] : null;
+            $this->storeAnswers($personId, JoinAnswers::entries(JoinAnswers::YES, $times, (int) substr($answer, 2)));
+        }
+
+        // No, the tickets, or Skip: the questions are done.
+        delete_transient($key);
+        $this->showQuestion($chatId, $messageId, '✅ ' . __('Thanks, the organizers will see your answers.', 'eventcrew'), null);
+        $this->sendLink(
+            $telegramUserId,
+            $chatId,
+            $personId,
+            (string) ($pending['email'] ?? ''),
+            (string) ($pending['name'] ?? '')
+        );
+    }
+
+    /**
+     * Keeps the answers on the person while the organizers have not been
+     * asked yet (JoinAnswers::canAnswer()): a later answer replaces an
+     * earlier one.
+     *
+     * @param array<string, string> $entries
+     */
+    private function storeAnswers(int $personId, array $entries): void
+    {
+        $person = $personId > 0 ? $this->people->find($personId) : null;
+
+        if (null !== $person && JoinAnswers::canAnswer($person)) {
+            $this->people->replaceRoleNotices($personId, JoinAnswers::KEYS, $entries);
+        }
+    }
+
+    /**
+     * Shows a question: the tapped message rewritten, or a new message.
+     * $markup null: no buttons.
+     *
+     * @param array<string, mixed>|null $markup
+     */
+    private function showQuestion(int $chatId, int $messageId, string $text, ?array $markup): void
+    {
+        if (0 === $chatId) {
+            return;
+        }
+
+        if ($messageId > 0) {
+            $this->telegram->editMessageText($chatId, $messageId, $text, $markup ?? ['inline_keyboard' => []]);
+
+            return;
+        }
+
+        if (null !== $markup) {
+            $this->telegram->sendMessage($chatId, $text, $markup);
+        }
+    }
+
+    /** The first question, with Yes, No and Skip. */
+    private static function beforeText(): string
+    {
+        return __('A few questions for the organizers, then I’ll email you the link. Have you worked on the crew here before?', 'eventcrew');
+    }
+
+    /** @return array<string, mixed> */
+    private static function beforeMarkup(): array
+    {
+        return ['inline_keyboard' => [
+            [
+                ['text' => __('Yes', 'eventcrew'), 'callback_data' => self::JOIN_PREFIX . 'y'],
+                ['text' => __('No', 'eventcrew'), 'callback_data' => self::JOIN_PREFIX . 'n'],
+            ],
+            [self::skipButton()],
+        ]];
+    }
+
+    private static function timesText(): string
+    {
+        return __('About how many times? Tap a number or type one.', 'eventcrew');
+    }
+
+    /** @return array<string, mixed> */
+    private static function timesMarkup(): array
+    {
+        return ['inline_keyboard' => [
+            self::numberRow('t', 1, 5),
+            self::numberRow('t', 6, 10),
+            [self::skipButton()],
+        ]];
+    }
+
+    private static function ticketsText(): string
+    {
+        return __('How many free-entry tickets do you think you should have? Tap a number or type one.', 'eventcrew');
+    }
+
+    /** @return array<string, mixed> */
+    private static function ticketsMarkup(): array
+    {
+        return ['inline_keyboard' => [
+            self::numberRow('k', 0, 4),
+            self::numberRow('k', 5, 9),
+            [self::skipButton()],
+        ]];
+    }
+
+    /**
+     * Buttons $from to $to, each answering "nwq:<$verb>:<n>".
+     *
+     * @return list<array{text: string, callback_data: string}>
+     */
+    private static function numberRow(string $verb, int $from, int $to): array
+    {
+        return array_map(
+            static fn (int $n): array => ['text' => (string) $n, 'callback_data' => self::JOIN_PREFIX . $verb . ':' . $n],
+            range($from, $to)
+        );
+    }
+
+    /** @return array{text: string, callback_data: string} */
+    private static function skipButton(): array
+    {
+        return ['text' => __('Skip', 'eventcrew'), 'callback_data' => self::JOIN_PREFIX . 's'];
     }
 
     /**
@@ -206,7 +464,40 @@ final class OnboardingService
         }
 
         $displayName = is_array($pending) ? (string) ($pending['name'] ?? '') : '';
-        $personId = $this->findOrCreate($email, $displayName);
+        [$personId, $askable] = $this->findOrCreate($email, $displayName);
+        delete_transient(self::AWAIT_EMAIL_PREFIX . $telegramUserId);
+
+        // A newcomer answers the organizers' questions first; the link goes
+        // out after the last answer or a Skip (answerJoin()).
+        if ($askable) {
+            set_transient(
+                self::AWAIT_JOIN_PREFIX . $telegramUserId,
+                [
+                    'step' => self::STEP_BEFORE,
+                    'person_id' => $personId,
+                    'email' => $email,
+                    'name' => $displayName,
+                    'chat_id' => $chatId,
+                ],
+                self::TOKEN_TTL
+            );
+            $this->telegram->sendMessage($chatId, self::beforeText(), self::beforeMarkup());
+
+            return;
+        }
+
+        $this->sendLink($telegramUserId, $chatId, $personId, $email, $displayName);
+    }
+
+    /**
+     * Issues the confirmation token, keeps the Telegram account beside it,
+     * emails the link and tells the chat to look for it.
+     */
+    private function sendLink(int $telegramUserId, int $chatId, int $personId, string $email, string $displayName): void
+    {
+        if ($personId <= 0 || '' === $email) {
+            return;
+        }
 
         $rawToken = $this->tokens->issue($personId, self::VERIFY_PURPOSE, self::TOKEN_TTL);
         set_transient(
@@ -214,7 +505,6 @@ final class OnboardingService
             ['telegram_user_id' => $telegramUserId, 'telegram_chat_id' => $chatId],
             self::TOKEN_TTL
         );
-        delete_transient(self::AWAIT_EMAIL_PREFIX . $telegramUserId);
 
         $this->sendVerificationEmail($personId, $email, $displayName, $rawToken);
 
@@ -226,22 +516,26 @@ final class OnboardingService
 
     /**
      * A new email gets its person row straight away, but without Telegram ids:
-     * those are linked when the emailed link is clicked.
+     * those are linked when the emailed link is clicked. Answers the person's
+     * id and whether they are a newcomer to ask the questions
+     * (JoinAnswers::canAnswer()).
+     *
+     * @return array{0: int, 1: bool}
      */
-    private function findOrCreate(string $email, string $displayName): int
+    private function findOrCreate(string $email, string $displayName): array
     {
         $person = $this->people->findByEmail($email);
 
         if (null === $person) {
-            return $this->people->create([
+            return [$this->people->create([
                 'email' => $email,
                 'display_name' => $displayName,
                 // Waits for the team's OK before taking a task (NewcomerApproval).
                 'approval' => Person::APPROVAL_WAITING,
-            ]);
+            ]), true];
         }
 
-        return $person->id;
+        return [$person->id, JoinAnswers::canAnswer($person)];
     }
 
     /**

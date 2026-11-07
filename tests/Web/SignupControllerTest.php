@@ -23,6 +23,7 @@ use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\FreeEntryGate;
+use EventCrew\Support\JoinAnswers;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
 use EventCrew\Telegram\BoardService;
@@ -661,6 +662,133 @@ final class SignupControllerTest extends TestCase
             self::assertArrayNotHasKey('language', $update['data']);
         }
         self::assertStringContainsString('Use the button below to sign in', $this->mails[0]);
+    }
+
+    /** @return list<array<string, string>|null> Every role_notices write, decoded. */
+    private function noticeWrites(): array
+    {
+        $writes = [];
+
+        foreach ($this->wpdb->updates as $update) {
+            if (array_key_exists('role_notices', $update['data'])) {
+                $writes[] = json_decode((string) $update['data']['role_notices'], true);
+            }
+        }
+
+        return $writes;
+    }
+
+    /** The join questions' answers are kept on a new person, for the organizers' notice. */
+    public function testANewPersonsJoinAnswersAreStored(): void
+    {
+        $this->wpdb->nextRows[] = null; // findByEmail -> not found -> create
+        $this->wpdb->nextRows[] = ['id' => 1, 'email' => 'new@example.com', 'approval' => 'waiting'];
+
+        $answers = ['newcomer:before' => 'yes', 'newcomer:times' => '4', 'newcomer:tickets' => '2'];
+        $this->controller()->loginByEmail('new@example.com', '', $answers);
+
+        self::assertSame([$answers], $this->noticeWrites());
+        self::assertCount(1, $this->mails);
+    }
+
+    /** A waiting newcomer whose link was not opened yet may change the answers. */
+    public function testAnUnconfirmedNewcomerMayChangeTheAnswers(): void
+    {
+        $row = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'approval' => 'waiting',
+            'role_notices' => '{"newcomer:before":"yes","newcomer:times":"4"}',
+        ];
+        $this->wpdb->nextRows[] = $row;
+        $this->wpdb->nextRows[] = $row;
+
+        $this->controller()->loginByEmail('sam@example.com', '', ['newcomer:before' => 'no']);
+
+        self::assertSame([['newcomer:before' => 'no']], $this->noticeWrites());
+    }
+
+    /** Someone confirmed already (the organizers were asked) keeps what they said. */
+    public function testAConfirmedPersonsAnswersAreNotChanged(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'approval' => 'waiting',
+        ];
+
+        $this->controller()->loginByEmail('sam@example.com', '', ['newcomer:before' => 'no']);
+
+        self::assertSame([], $this->noticeWrites());
+        self::assertCount(1, $this->mails);
+    }
+
+    public function testNoAnswersWriteNothing(): void
+    {
+        $this->wpdb->nextRows[] = null; // findByEmail -> not found -> create
+
+        $this->controller()->loginByEmail('new@example.com', '', []);
+
+        self::assertSame([], $this->noticeWrites());
+    }
+
+    /**
+     * The crew page's sign-up form asks every question the bot asks a
+     * newcomer, in the bot's words, with the same ranges, posted under the
+     * names JoinAnswers::fromPost() reads.
+     */
+    public function testTheSignUpFormAsksTheBotsJoinQuestions(): void
+    {
+        $this->stubPageRender();
+        $this->wpdb->nextResults[] = [];   // upcoming dates: an empty board is enough
+        $this->wpdb->nextResults[] = [];
+
+        $html = $this->controller()->renderShortcode();
+
+        // The bot: "... Have you worked on the crew here before?", "About how
+        // many times? Tap a number or type one.", "How many free-entry
+        // tickets do you think you should have? Tap a number or type one."
+        foreach (
+            [
+                'Have you worked on the crew here before?',
+                'About how many times?',
+                'How many free-entry tickets do you think you should have?',
+            ] as $question
+        ) {
+            self::assertStringContainsString($question, $html);
+        }
+        self::assertStringContainsString('name="' . JoinAnswers::FIELD_BEFORE . '" value="yes"', $html);
+        self::assertStringContainsString('name="' . JoinAnswers::FIELD_BEFORE . '" value="no"', $html);
+        self::assertStringContainsString(
+            'name="' . JoinAnswers::FIELD_TIMES . '" min="' . JoinAnswers::MIN_TIMES . '" max="' . JoinAnswers::MAX_TIMES . '"',
+            $html
+        );
+        self::assertStringContainsString(
+            'name="' . JoinAnswers::FIELD_TICKETS . '" min="' . JoinAnswers::MIN_TICKETS . '" max="'
+                . JoinAnswers::MAX_TICKETS . '"',
+            $html
+        );
+        // The yes/no and both numbers are in the sign-in form, before its email field.
+        $form = (int) strpos($html, 'data-eventcrew-signin method="post"');
+        self::assertGreaterThan(0, $form);
+        self::assertGreaterThan($form, strpos($html, 'name="' . JoinAnswers::FIELD_TICKETS . '"'));
+        self::assertLessThan(strpos($html, 'id="eventcrew-email"'), strpos($html, 'name="' . JoinAnswers::FIELD_TICKETS . '"'));
+    }
+
+    /**
+     * The numbers show once Yes is ticked; a browser without :has() shows them
+     * all the time, so it can still answer every question the bot asks.
+     */
+    public function testTheJoinNumbersStayReachableWithoutHas(): void
+    {
+        $css = (string) file_get_contents(dirname(__DIR__, 2) . '/assets/eventcrew.css');
+        $supports = (int) strpos($css, '@supports selector(:has(*))');
+
+        self::assertGreaterThan(0, $supports);
+        $outside = substr($css, 0, $supports);
+        self::assertMatchesRegularExpression('/\.eventcrew-join-more \{ display: flex;/', $outside);
+        self::assertStringNotContainsString('.eventcrew-join-more { display: none', $outside);
     }
 
     public function testAnExistingAccountGetsThePlainSignInEmail(): void
@@ -1510,6 +1638,133 @@ final class SignupControllerTest extends TestCase
         $view = $this->controller()->viewModel();
 
         self::assertSame([5], array_map(static fn (array $row): int => $row['task']->id, $view['groups'][0]['tasks']));
+    }
+
+    // --- the guest ticks and the web board (Owner 2026-11-07) -----------------
+
+    /**
+     * Settings > Roles with Decorate set as the test gives.
+     *
+     * @param array<string, mixed> $ticks
+     */
+    private function withDecorateTicks(array $ticks): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => Roles::OPTION_NAME === $name
+                ? [['slug' => 'decorate', 'label' => 'Decorate'] + $ticks]
+                : false
+        );
+    }
+
+    /**
+     * The board rows for person 7 (or signed out), with task 5 holding Anna
+     * Virtanen and Ben.
+     *
+     * @param array<string, mixed>|null $person
+     * @return array<int, array<string, mixed>>
+     */
+    private function guestTickRows(?array $person): array
+    {
+        if (null !== $person) {
+            $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+            $this->wpdb->nextRows[] = $person + [
+                'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+                'email_verified_at' => '2026-07-01 00:00:00', 'is_organizer' => 0,
+            ];
+        }
+
+        $this->wpdb->nextResults[] = [$this->taskRow()];               // upcoming
+        $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 2]]; // occupancyFor
+
+        if (null !== $person) {
+            $this->wpdb->nextResults[] = []; // forPerson
+            $this->wpdb->nextResults[] = []; // historyFor
+            $this->wpdb->nextVars[] = 0;
+            $this->wpdb->nextResults[] = [
+                ['task_id' => 5, 'display_name' => 'Anna Virtanen'],
+                ['task_id' => 5, 'display_name' => 'Ben'],
+            ];                               // occupantsFor
+        }
+
+        $view = $this->controller()->viewModel();
+
+        return array_combine(
+            array_map(static fn (array $row): int => $row['task']->id, $view['groups'][0]['tasks']),
+            $view['groups'][0]['tasks']
+        );
+    }
+
+    public function testASignedInApprovedPersonSeesTheNamesOnTheBoard(): void
+    {
+        $this->withDecorateTicks([]);
+
+        self::assertSame(['Anna', 'Ben'], $this->guestTickRows([])[5]['names']);
+    }
+
+    public function testSignedOutOrWaitingForTheOkTheBoardShowsNoNames(): void
+    {
+        $this->withDecorateTicks([]);
+
+        self::assertSame([], $this->guestTickRows(null)[5]['names']);
+        self::assertSame([], $this->guestTickRows(['approval' => 'waiting'])[5]['names']);
+    }
+
+    public function testAnonymousDisplayHidesTheNamesFromAGuestButNotFromTheRole(): void
+    {
+        $this->withDecorateTicks(['anonymous' => true]);
+
+        self::assertSame([], $this->guestTickRows([])[5]['names']);
+        self::assertSame(['Anna', 'Ben'], $this->guestTickRows(['role_slugs' => 'decorate'])[5]['names']);
+    }
+
+    public function testGuestSignUpOffMarksTheRowCrewOnlyForAGuest(): void
+    {
+        $this->withDecorateTicks(['guest_signup' => false]);
+
+        self::assertTrue($this->guestTickRows(null)[5]['crew_only']);
+        self::assertTrue($this->guestTickRows([])[5]['crew_only']);
+        self::assertFalse($this->guestTickRows(['role_slugs' => 'decorate'])[5]['crew_only']);
+    }
+
+    public function testClaimForMapsAGuestSignUpRefusalToCrewOnly(): void
+    {
+        $this->withDecorateTicks(['guest_signup' => false]);
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'is_organizer' => 0];
+
+        self::assertSame('crew_only', $this->controller()->claimFor(7, 5));
+        self::assertStringNotContainsString('INSERT', implode("\n", $this->wpdb->queries));
+    }
+
+    /**
+     * Signed out, Sign up stays on the row and leads to the sign-in card,
+     * which also makes an account; the script there sends the sign-in back
+     * to the task's row.
+     */
+    public function testSignedOutTheBoardHasASignUpLinkToTheSignInCard(): void
+    {
+        $this->stubPageRender();
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(),
+            array_merge($this->taskRow(), ['id' => 6]),
+        ];
+        $this->wpdb->nextResults[] = [['task_id' => 6, 'taken' => 2]];
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertStringContainsString('id="eventcrew-signin"', $html);
+        self::assertStringContainsString('href="#eventcrew-signin" data-eventcrew-signin-task="5">Sign up</a>', $html);
+        // Task 6 is full: no way in, signed out or not.
+        self::assertStringNotContainsString('data-eventcrew-signin-task="6"', $html);
+        self::assertStringContainsString('"eventcrew-task-" + link.getAttribute(\'data-eventcrew-signin-task\')', $html);
+    }
+
+    public function testThePendingButtonTextIsShort(): void
+    {
+        $template = (string) file_get_contents(dirname(__DIR__, 2) . '/templates/public/signup-board.php');
+
+        self::assertStringContainsString("esc_html_e('Awaiting approval', 'eventcrew')", $template);
+        self::assertStringNotContainsString('Waiting for the team’s OK', $template);
     }
 
     public function testClaimingARestrictedTaskNeedsTheRoleThenTheCreditAnswer(): void
