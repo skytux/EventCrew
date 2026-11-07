@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.174
+Stable tag: 1.140.175
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,12 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.175 =
+* The bot's follow-up confirmation shows each language's real translation once it is ready, says plainly when a text is not translated, and tries again before the email goes out.
+* When an organizer sets or resets the text for the next post-event email or announcement, the other organizers are told who did it and see the text.
+* Setting a text over an existing one first shows it, who set it and when, and asks before replacing it (bot, assistant, Admin tab).
+* Reset to default: a button, /followup reset, /newsletter reset, and the Admin tab.
 
 = 1.140.174 =
 * The gold you're-in band glows inside its own frame: no light spilling over the card, no growing past its edges, smooth loops and a softer entrance.
@@ -1823,6 +1829,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.175 =
+No settings change.
 
 = 1.140.174 =
 No settings change.
