@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.172
+Stable tag: 1.140.173
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,14 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.173 =
+* The welcome and the Messages page previews never list a task of an archived role or a role off the board.
+* Messages page previews: the welcome open tasks look as sent, the welcome DMs show their bold headings.
+* A Translations page save no longer stores a frozen copy of a built-in message text.
+* Every open task list puts each task's free places on a line of its own, the role's emoji as the bullet.
+* Ticket page: the QR code is behind a Show QR code button; the tap also lets the you're-in sound play.
+* Ticket page: the gold you're-in band glows and loops smoothly, with no jump; still for reduced motion.
 
 = 1.140.172 =
 * Welcome standing list: the percent first (100%: Completed the task), and the late cancellation reads Cancelled under 48 h before.
@@ -1811,6 +1819,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.173 =
+No settings change.
 
 = 1.140.172 =
 No settings change.
