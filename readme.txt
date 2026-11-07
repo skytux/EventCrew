@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.165
+Stable tag: 1.140.166
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.166 =
+* The sign-up email says "Thank you <first name>!" in the subject and the hero, without a comma
+* Board: no people count on a task with no limit; it shows only who is on it
+* Board: no blank buttons between the tasks, an empty line after each task, and the ✋/❌/➕ legend at the bottom
 
 = 1.140.165 =
 * The private board includes the special tasks of your roles, with ✋ sign up, ❌ cancel and organizer ➕ add buttons; no separate third message
@@ -1765,6 +1770,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.166 =
+No settings change.
 
 = 1.140.165 =
 No settings change.
