@@ -407,7 +407,7 @@ msgstr ""
 msgid "%s: this ticket is not for tonight."
 msgstr ""
 
-#: templates/admin/settings.php:2594
+#: templates/admin/settings.php:2610
 #. translators: %s: human-readable time since the last webhook error, e.g. "2 hours"
 msgid "(%s ago)"
 msgstr ""
@@ -527,7 +527,7 @@ msgstr ""
 msgid "A guest's email address is deleted %d days after the event too. The guest's name stays on that night's guest list."
 msgstr ""
 
-#: templates/admin/settings.php:2197
+#: templates/admin/settings.php:2213
 msgid "A key is stored (encrypted). Leave the field empty to keep it."
 msgstr ""
 
@@ -560,7 +560,7 @@ msgstr ""
 msgid "A new member sends /start to the bot in a private chat and confirms their email address. On the web sign-up page they sign in with a link sent to their email. Both follow the same rules."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1599
+#: src/Admin/SettingsPage.php:1605
 msgid "A new webhook secret was generated and installed. Any copy of the old one — in a server log, for instance — is now useless."
 msgstr ""
 
@@ -576,7 +576,7 @@ msgstr ""
 msgid "A one-off bonus, on top of the credits earned for completed tasks."
 msgstr ""
 
-#: templates/admin/settings.php:2439
+#: templates/admin/settings.php:2455
 msgid "A password is saved. Leave this empty to keep it."
 msgstr ""
 
@@ -608,11 +608,11 @@ msgstr ""
 msgid "A placeholder such as {dj_intro} in a message text is replaced by a text the AI writes for each event, the day before the event. Write what the AI should write in the prompt. The fallback text is used when the AI fails. To remove a placeholder, empty its name."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1227
+#: src/Admin/SettingsPage.php:1233
 msgid "A privacy page is already chosen."
 msgstr ""
 
-#: templates/admin/settings.php:2497
+#: templates/admin/settings.php:2513
 msgid "A privacy page is chosen. Save any changes above and they appear on it immediately — there is nothing to re-publish."
 msgstr ""
 
@@ -624,11 +624,11 @@ msgstr ""
 msgid "A reminder %d hours before each task."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:493
+#: src/Admin/SettingsPage.php:495
 msgid "A request made less than this many days before the task starts, but not at short notice, uses the medium-notice answer time. Default 7."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:477
+#: src/Admin/SettingsPage.php:479
 msgid "A request made less than this many hours before the task starts uses the short-notice answer time. Default 48."
 msgstr ""
 
@@ -691,7 +691,7 @@ msgstr ""
 msgid "A test ticket email was sent to your own address."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1267
+#: src/Admin/SettingsPage.php:1273
 msgid "A ticket buyer privacy page is already chosen."
 msgstr ""
 
@@ -735,11 +735,11 @@ msgstr ""
 msgid "AI translation was switched off."
 msgstr ""
 
-#: templates/admin/settings.php:2192
+#: templates/admin/settings.php:2208
 msgid "API key"
 msgstr ""
 
-#: src/Admin/BotProfileSettings.php:367 templates/admin/settings.php:1973
+#: src/Admin/BotProfileSettings.php:367 templates/admin/settings.php:1989
 msgid "About"
 msgstr ""
 
@@ -784,19 +784,19 @@ msgstr ""
 msgid "Add a Cloudflare Turnstile CAPTCHA to the public sign-in form so bots cannot use it to send sign-in emails. Create a free widget at %s and paste its two keys here. Leave both blank to turn it off."
 msgstr ""
 
-#: templates/admin/settings.php:2545
+#: templates/admin/settings.php:2561
 msgid "Add a bot token above and save before installing the webhook."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1923
+#: src/Admin/SettingsPage.php:1929
 msgid "Add a bot token and save before installing the webhook."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1474 src/Admin/SettingsPage.php:1518 src/Admin/SettingsPage.php:1584
+#: src/Admin/SettingsPage.php:1480 src/Admin/SettingsPage.php:1524 src/Admin/SettingsPage.php:1590
 msgid "Add a bot token first, then install the webhook."
 msgstr ""
 
-#: templates/admin/settings.php:2354
+#: templates/admin/settings.php:2370
 msgid "Add a format"
 msgstr ""
 
@@ -848,7 +848,7 @@ msgstr ""
 msgid "Add task"
 msgstr ""
 
-#: templates/admin/settings.php:2686
+#: templates/admin/settings.php:2702
 msgid "Add the bot to your group"
 msgstr ""
 
@@ -969,7 +969,7 @@ msgstr ""
 msgid "Also run due sends on ordinary page loads (enable if WP-Cron does not fire on this host)"
 msgstr ""
 
-#: templates/admin/settings.php:2054
+#: templates/admin/settings.php:2070
 msgid "Also send the webhook secret as a URL parameter"
 msgstr ""
 
@@ -1013,7 +1013,7 @@ msgstr ""
 msgid "An outcome this many days old counts half as much toward the score as a same-day one. Default 180."
 msgstr ""
 
-#: templates/admin/settings.php:2112
+#: templates/admin/settings.php:2128
 msgid "And this JSON body (Content-Type: application/json):"
 msgstr ""
 
@@ -1057,7 +1057,7 @@ msgstr ""
 msgid "Another person already uses that email address."
 msgstr ""
 
-#: templates/admin/settings.php:2161
+#: templates/admin/settings.php:2177
 msgid "Answer plain messages with the language model"
 msgstr ""
 
@@ -1066,15 +1066,15 @@ msgstr ""
 msgid "Answer the request"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:500
+#: src/Admin/SettingsPage.php:502
 msgid "Answer time at medium notice (hours)"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:484
+#: src/Admin/SettingsPage.php:486
 msgid "Answer time at short notice (hours)"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:508
+#: src/Admin/SettingsPage.php:510
 msgid "Answer time further ahead (hours)"
 msgstr ""
 
@@ -1140,7 +1140,7 @@ msgstr ""
 msgid "At least"
 msgstr ""
 
-#: templates/admin/settings.php:2015
+#: templates/admin/settings.php:2031
 #. translators: %d: the most characters Telegram allows in this text
 msgid "At most %d characters."
 msgstr ""
@@ -1215,7 +1215,7 @@ msgstr ""
 msgid "Becomes"
 msgstr ""
 
-#: templates/admin/settings.php:2128
+#: templates/admin/settings.php:2144
 msgid "Before turning off “Secret in the URL”, try this:"
 msgstr ""
 
@@ -1267,7 +1267,7 @@ msgstr ""
 msgid "Board"
 msgstr ""
 
-#: templates/admin/settings.php:2613
+#: templates/admin/settings.php:2629
 msgid "Board group"
 msgstr ""
 
@@ -1275,7 +1275,7 @@ msgstr ""
 msgid "Board reminders"
 msgstr ""
 
-#: src/Support/MessagePreview.php:207 src/Telegram/ChatForwarder.php:160 templates/admin/settings.php:2608
+#: src/Support/MessagePreview.php:207 src/Telegram/ChatForwarder.php:160 templates/admin/settings.php:2624
 msgid "Bot"
 msgstr ""
 
@@ -1487,15 +1487,15 @@ msgstr ""
 msgid "Check in"
 msgstr ""
 
-#: templates/admin/settings.php:2289
+#: templates/admin/settings.php:2305
 msgid "Check it"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:189 templates/admin/settings.php:2480 templates/public/signup.php:1471
+#: src/Web/CrewAdminController.php:189 templates/admin/settings.php:2496 templates/public/signup.php:1471
 msgid "Check the mailbox now"
 msgstr ""
 
-#: templates/admin/settings.php:2271
+#: templates/admin/settings.php:2287
 msgid "Check the welcome message"
 msgstr ""
 
@@ -1535,7 +1535,7 @@ msgstr ""
 msgid "Choose image"
 msgstr ""
 
-#: templates/admin/settings.php:2231
+#: templates/admin/settings.php:2247
 msgid "Choose pages"
 msgstr ""
 
@@ -1685,7 +1685,7 @@ msgstr ""
 msgid "Copy link"
 msgstr ""
 
-#: templates/admin/settings.php:2626
+#: templates/admin/settings.php:2642
 msgid "Could not read the webhook status from Telegram. Check the token."
 msgstr ""
 
@@ -1722,7 +1722,7 @@ msgstr ""
 msgid "Create tasks"
 msgstr ""
 
-#: templates/admin/settings.php:2493
+#: templates/admin/settings.php:2509
 msgid "Create the privacy page"
 msgstr ""
 
@@ -1738,7 +1738,7 @@ msgstr ""
 msgid "Create your first task"
 msgstr ""
 
-#: templates/admin/settings.php:2488
+#: templates/admin/settings.php:2504
 msgid "Creates a published page called “Crew privacy notice” holding the shortcode, and selects it above. Edit or rename it afterwards like any other page — the notice itself comes from the fields on this tab, not from the page’s text."
 msgstr ""
 
@@ -1816,7 +1816,7 @@ msgstr ""
 msgid "Crew member"
 msgstr ""
 
-#: templates/admin/settings.php:2519
+#: templates/admin/settings.php:2535
 #. translators: 1: link to the export tool, 2: link to the erase tool, both already wrapped in anchor tags
 msgid "Crew members are not WordPress users, so this plugin registers its own handlers for %1$s and %2$s: enter a crew member’s email address there and their record is exported or erased along with everything attached to it. Most people never need you to — their own Crew app has a Delete button, and every email links to it."
 msgstr ""
@@ -1825,7 +1825,7 @@ msgstr ""
 msgid "Crew members with a verified email address get the next events announcement and can unsubscribe at any time from the link in each email."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1233
+#: src/Admin/SettingsPage.php:1239
 msgid "Crew privacy notice"
 msgstr ""
 
@@ -1886,7 +1886,7 @@ msgctxt "month name after a day number"
 msgid "December"
 msgstr ""
 
-#: templates/admin/settings.php:2374
+#: templates/admin/settings.php:2390
 msgid "Decoder (JavaScript)"
 msgstr ""
 
@@ -1973,7 +1973,7 @@ msgstr ""
 msgid "Deliberately not added to messages that answer a command, where the person is mid-conversation, nor to the standing notices, where a warm sign-off would land badly."
 msgstr ""
 
-#: src/Admin/BotProfileSettings.php:367 templates/admin/settings.php:384 templates/admin/settings.php:1974 templates/public/signup.php:1888
+#: src/Admin/BotProfileSettings.php:367 templates/admin/settings.php:384 templates/admin/settings.php:1990 templates/public/signup.php:1888
 msgid "Description"
 msgstr ""
 
@@ -2081,7 +2081,7 @@ msgstr ""
 msgid "Doors open %s"
 msgstr ""
 
-#: templates/admin/settings.php:2169
+#: templates/admin/settings.php:2185
 msgid "Each organizer gets the last 24 hours of that chat by email, and a short Telegram message. At most once per person per hour, and only for people with a confirmed email."
 msgstr ""
 
@@ -2153,7 +2153,7 @@ msgstr ""
 msgid "Email address changed (email)"
 msgstr ""
 
-#: templates/admin/settings.php:2366
+#: templates/admin/settings.php:2382
 msgid "Email column header"
 msgstr ""
 
@@ -2217,7 +2217,7 @@ msgstr ""
 msgid "Empty for no max. Counts everyone the sales desk expects: crew, tickets, guests and the people they may bring, and the people counted without a name."
 msgstr ""
 
-#: templates/admin/settings.php:2040
+#: templates/admin/settings.php:2056
 msgid "Enable this if the webhook status shows “Wrong response from the webhook: 400/403”. Some hosts and security plugins block the /wp-json REST API for anonymous requests; this routes Telegram through admin-ajax.php, which is almost always left open. Saving re-installs the webhook for you. Leave off on a normal host."
 msgstr ""
 
@@ -2233,7 +2233,7 @@ msgstr ""
 msgid "English"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1046
+#: src/Admin/SettingsPage.php:1052
 msgid "Enter the LLM API URL and the model, and save, before testing."
 msgstr ""
 
@@ -2246,7 +2246,7 @@ msgstr ""
 msgid "Event"
 msgstr ""
 
-#: templates/admin/settings.php:1950
+#: templates/admin/settings.php:1966
 msgid "Event cards"
 msgstr ""
 
@@ -2350,11 +2350,11 @@ msgstr ""
 msgid "EventCrew: the site has %1$d languages. Hybrid messages work with %2$d languages or fewer, so they are switched off: every message goes out in the reader’s own language, or in the main language when it is not known."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1092
+#: src/Admin/SettingsPage.php:1098
 msgid "EventCrew: the stored LLM API key cannot be decrypted, so the bot sends no key. Enter the key again in Settings > Telegram bot."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1117
+#: src/Admin/SettingsPage.php:1123
 msgid "EventCrew: the stored mailbox password cannot be decrypted, so the site cannot read the mailbox. Enter the password again in Settings > Email."
 msgstr ""
 
@@ -2422,7 +2422,7 @@ msgstr ""
 msgid "Extra rule for Finnish texts"
 msgstr ""
 
-#: templates/admin/settings.php:2330
+#: templates/admin/settings.php:2346
 msgid "Extra sender addresses"
 msgstr ""
 
@@ -2430,7 +2430,7 @@ msgstr ""
 msgid "Failed"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1385
+#: src/Admin/SettingsPage.php:1391
 #. translators: %s: list of messages that failed
 msgid "Failed: %s. Diagnostics shows the logged reason."
 msgstr ""
@@ -2485,7 +2485,7 @@ msgstr ""
 msgid "First tap the “New here? Sign up” button below to confirm your email."
 msgstr ""
 
-#: templates/admin/settings.php:2445
+#: templates/admin/settings.php:2461
 msgid "Folders"
 msgstr ""
 
@@ -2607,7 +2607,7 @@ msgid_plural "Gave %1$s %2$d credits — they now have %3$d."
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/admin/settings.php:2639
+#: templates/admin/settings.php:2655
 msgid "Generate a new webhook secret and re-install? The bot is unreachable for the moment in between, and any old copy of the secret stops working."
 msgstr ""
 
@@ -2912,15 +2912,15 @@ msgstr ""
 msgid "How long records are kept"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:501
+#: src/Admin/SettingsPage.php:503
 msgid "How long the holder has to answer a medium-notice request. Default 48."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:509
+#: src/Admin/SettingsPage.php:511
 msgid "How long the holder has to answer a request made further ahead. Default 72."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:485
+#: src/Admin/SettingsPage.php:487
 msgid "How long the holder has to answer a short-notice request. Default 24."
 msgstr ""
 
@@ -3062,15 +3062,15 @@ msgstr ""
 msgid "I will write to you in English. To change it, tap 🌐 Language under /me."
 msgstr ""
 
-#: templates/admin/settings.php:2405
+#: templates/admin/settings.php:2421
 msgid "IMAP"
 msgstr ""
 
-#: templates/admin/settings.php:2417
+#: templates/admin/settings.php:2433
 msgid "IMAP port and security"
 msgstr ""
 
-#: templates/admin/settings.php:2413
+#: templates/admin/settings.php:2429
 msgid "IMAP: the host name, for example imap.example.org. JMAP: the host name, or the full session URL if it is not at /.well-known/jmap."
 msgstr ""
 
@@ -3132,11 +3132,11 @@ msgstr ""
 msgid "Import"
 msgstr ""
 
-#: templates/admin/settings.php:2323
+#: templates/admin/settings.php:2339
 msgid "Import mailbox"
 msgstr ""
 
-#: templates/admin/settings.php:2449
+#: templates/admin/settings.php:2465
 msgid "Imported folder"
 msgstr ""
 
@@ -3173,15 +3173,15 @@ msgstr ""
 msgid "Infrastructure"
 msgstr ""
 
-#: templates/admin/settings.php:2633
+#: templates/admin/settings.php:2649
 msgid "Install / refresh webhook"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1623
+#: src/Admin/SettingsPage.php:1629
 msgid "Install the webhook first, then test it."
 msgstr ""
 
-#: templates/admin/settings.php:2573
+#: templates/admin/settings.php:2589
 msgid "Installed"
 msgstr ""
 
@@ -3218,7 +3218,7 @@ msgstr ""
 msgid "It starts with the first event whose day begins after you switch it on. Events that are already over, or going on, at that moment get no email."
 msgstr ""
 
-#: templates/admin/settings.php:2404
+#: templates/admin/settings.php:2420
 msgid "JMAP (over HTTPS)"
 msgstr ""
 
@@ -3309,7 +3309,7 @@ msgid_plural "Kept: you have %d free-entry credits."
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/admin/settings.php:2174
+#: templates/admin/settings.php:2190
 msgid "LLM API URL"
 msgstr ""
 
@@ -3325,7 +3325,7 @@ msgstr ""
 msgid "Language codes"
 msgstr ""
 
-#: templates/admin/settings.php:2157
+#: templates/admin/settings.php:2173
 msgid "Language model"
 msgstr ""
 
@@ -3360,7 +3360,7 @@ msgstr ""
 msgid "Last announcement: %1$s, %2$d emails."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:516
+#: src/Admin/SettingsPage.php:518
 msgid "Last answer (hours before the start)"
 msgstr ""
 
@@ -3368,12 +3368,12 @@ msgstr ""
 msgid "Last call (hours before)"
 msgstr ""
 
-#: src/Web/CrewAdminRoster.php:718 templates/admin/settings.php:2470
+#: src/Web/CrewAdminRoster.php:718 templates/admin/settings.php:2486
 #. translators: 1: date and time of the last check, 2: what it found or the error
 msgid "Last check %1$s: %2$s"
 msgstr ""
 
-#: templates/admin/settings.php:2584
+#: templates/admin/settings.php:2600
 msgid "Last error"
 msgstr ""
 
@@ -3452,7 +3452,7 @@ msgstr ""
 msgid "Level"
 msgstr ""
 
-#: templates/admin/settings.php:2209
+#: templates/admin/settings.php:2225
 msgid "Limits per hour"
 msgstr ""
 
@@ -3593,7 +3593,7 @@ msgstr ""
 msgid "Measured from"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:492
+#: src/Admin/SettingsPage.php:494
 msgid "Medium notice (days before the start)"
 msgstr ""
 
@@ -3639,7 +3639,7 @@ msgstr ""
 msgid "Messages > Ticket (email)"
 msgstr ""
 
-#: templates/admin/settings.php:2220
+#: templates/admin/settings.php:2236
 msgid "Messages over the limit get no answer from the model. Commands always work."
 msgstr ""
 
@@ -3664,7 +3664,7 @@ msgstr ""
 msgid "Mobile app"
 msgstr ""
 
-#: templates/admin/settings.php:2183
+#: templates/admin/settings.php:2199
 msgid "Model"
 msgstr ""
 
@@ -3697,7 +3697,7 @@ msgstr ""
 
 #: src/Admin/PeopleListTable.php:47 src/Support/PrivacyExporter.php:136 src/Support/PrivacyExporter.php:219 src/Support/PrivacyExporter.php:245
 #: src/Support/PrivacyExporter.php:272 templates/admin/messages-tab-ai.php:65 templates/admin/messages-tab-ai.php:76 templates/admin/people.php:62
-#: templates/admin/roster.php:192 templates/admin/roster.php:203 templates/admin/roster.php:227 templates/admin/settings.php:2358
+#: templates/admin/roster.php:192 templates/admin/roster.php:203 templates/admin/roster.php:227 templates/admin/settings.php:2374
 #: templates/public/door.php:270 templates/public/door.php:292 templates/public/signup.php:552 templates/public/signup.php:884
 #: templates/public/signup.php:1294 templates/public/signup.php:1337
 msgid "Name"
@@ -3711,7 +3711,7 @@ msgstr ""
 msgid "Name (optional)"
 msgstr ""
 
-#: templates/admin/settings.php:2362
+#: templates/admin/settings.php:2378
 msgid "Name column header"
 msgstr ""
 
@@ -3897,7 +3897,7 @@ msgstr ""
 msgid "No internet? Show this QR code at the door."
 msgstr ""
 
-#: templates/admin/settings.php:2203
+#: templates/admin/settings.php:2219
 msgid "No key is stored. Leave it empty if your server does not ask for one."
 msgstr ""
 
@@ -3909,7 +3909,7 @@ msgstr ""
 msgid "No linkable events found. Type a name below instead."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1350
+#: src/Admin/SettingsPage.php:1356
 #. translators: %s: the administrator's email address
 msgid "No member has the email address %s. Sign up as a member with this address first."
 msgstr ""
@@ -3947,7 +3947,7 @@ msgstr ""
 msgid "No page chosen for web signup / the mobile app. Set one in Settings → Mobile app."
 msgstr ""
 
-#: templates/admin/settings.php:2438
+#: templates/admin/settings.php:2454
 msgid "No password is saved."
 msgstr ""
 
@@ -4059,7 +4059,7 @@ msgstr ""
 msgid "Nobody signed up."
 msgstr ""
 
-#: templates/admin/settings.php:2574
+#: templates/admin/settings.php:2590
 msgid "Not installed"
 msgstr ""
 
@@ -4081,7 +4081,7 @@ msgstr ""
 msgid "Not translated yet"
 msgstr ""
 
-#: templates/admin/settings.php:2424
+#: templates/admin/settings.php:2440
 msgid "Not used for JMAP."
 msgstr ""
 
@@ -4215,7 +4215,7 @@ msgctxt "month name after a day number"
 msgid "October"
 msgstr ""
 
-#: templates/admin/settings.php:2403
+#: templates/admin/settings.php:2419
 msgid "Off"
 msgstr ""
 
@@ -4227,7 +4227,7 @@ msgstr ""
 msgid "Off by default. When it is on, the coming events go by email to everyone who joined the next events announcement and confirmed their address. People join with the [eventcrew_newsletter] shortcode. Before sending, every organizer gets a preview email with a Stop button; the crew app’s Admin tab has the same button."
 msgstr ""
 
-#: templates/admin/settings.php:1963
+#: templates/admin/settings.php:1979
 msgid "Off by default. When on, the board is two messages. First a photo message for the next event, when it is an EventMesh event with a picture: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Below it the text board: the next event, who is signed up for which task, the task buttons and the date buttons."
 msgstr ""
 
@@ -4245,6 +4245,10 @@ msgstr ""
 
 #: templates/admin/settings.php:809 templates/admin/settings.php:1616 templates/admin/settings.php:1659 templates/admin/settings.php:1747
 msgid "On"
+msgstr ""
+
+#: templates/admin/settings.php:1961
+msgid "On by default. Someone who is not yet in the crew and not in the group gets no answer from the bot. If they open the bot from a link in an email or on the website, they get a button to the crew group. Members who are already set up are not affected. Turn this off if the bot cannot check who is in the group."
 msgstr ""
 
 #: templates/admin/settings.php:1760
@@ -4267,7 +4271,7 @@ msgstr ""
 msgid "On the night: roster and sales desk"
 msgstr ""
 
-#: templates/admin/settings.php:2333
+#: templates/admin/settings.php:2349
 msgid "One email address per line. Lists mailed from these addresses are imported too, besides lists from organizers. The import notice goes to every organizer and to the sender."
 msgstr ""
 
@@ -4401,6 +4405,10 @@ msgstr ""
 
 #: templates/admin/settings.php:717
 msgid "Only organizers signed up on the night’s Organize task get it: the sales desk link and a button to the Crew app’s Admin tab. Untick both to send nothing."
+msgstr ""
+
+#: templates/admin/settings.php:1958
+msgid "Only people in the crew group can start the bot"
 msgstr ""
 
 #: templates/admin/people.php:97 templates/public/signup.php:897
@@ -4602,7 +4610,7 @@ msgstr ""
 msgid "Organizers"
 msgstr ""
 
-#: templates/admin/settings.php:2316
+#: templates/admin/settings.php:2332
 msgid "Organizers can email the Holvi ticket file (.xlsx or .csv) to the import mailbox; its tickets go to the door list. Names typed in the mail itself, one per line, go to the guest list, and \"+2\" after a name adds two plus-ones. This site reads that mailbox itself; set it up below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import."
 msgstr ""
 
@@ -4658,7 +4666,7 @@ msgstr ""
 msgid "PHP version"
 msgstr ""
 
-#: templates/admin/settings.php:2132
+#: templates/admin/settings.php:2148
 msgid "POST to:"
 msgstr ""
 
@@ -4675,7 +4683,7 @@ msgstr ""
 msgid "Page %1$d of %2$d (%3$d rows)"
 msgstr ""
 
-#: templates/admin/settings.php:2225
+#: templates/admin/settings.php:2241
 msgid "Pages it may read"
 msgstr ""
 
@@ -4683,7 +4691,7 @@ msgstr ""
 msgid "Pass already granted — re-grant"
 msgstr ""
 
-#: templates/admin/settings.php:2432
+#: templates/admin/settings.php:2448
 msgid "Password"
 msgstr ""
 
@@ -4703,7 +4711,7 @@ msgstr ""
 msgid "Paste names, one per line"
 msgstr ""
 
-#: templates/admin/settings.php:2579
+#: templates/admin/settings.php:2595
 msgid "Pending updates"
 msgstr ""
 
@@ -4792,7 +4800,7 @@ msgstr ""
 msgid "Placeholders: %s. A line with an empty placeholder is left out."
 msgstr ""
 
-#: templates/admin/settings.php:2143
+#: templates/admin/settings.php:2159
 msgid "Plain messages (language model)"
 msgstr ""
 
@@ -4804,7 +4812,7 @@ msgstr ""
 msgid "Please sign in first."
 msgstr ""
 
-#: src/Telegram/UpdateRouter.php:603
+#: src/Telegram/UpdateRouter.php:612
 msgid "Please tell an organizer what is not right: they can correct it."
 msgstr ""
 
@@ -4821,7 +4829,7 @@ msgstr ""
 msgid "Post a new board in the Telegram group"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1527 templates/admin/settings.php:2703
+#: src/Admin/SettingsPage.php:1533 templates/admin/settings.php:2719
 msgid "Post the board in the group"
 msgstr ""
 
@@ -4917,12 +4925,16 @@ msgstr ""
 msgid "Privacy page"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1251
+#: src/Admin/SettingsPage.php:1257
 msgid "Privacy page created and selected."
 msgstr ""
 
-#: templates/admin/settings.php:2148
+#: templates/admin/settings.php:2164
 msgid "Privacy: the text of these messages, whether the sender is an organizer, and the open tasks, events and chosen pages are sent to that server. EventCrew does not store the message text."
+msgstr ""
+
+#: templates/admin/settings.php:1950
+msgid "Private chats"
 msgstr ""
 
 #: templates/admin/diagnostics.php:30
@@ -4941,7 +4953,7 @@ msgstr ""
 msgid "Public signup page"
 msgstr ""
 
-#: templates/admin/settings.php:2485
+#: templates/admin/settings.php:2501
 msgid "Publish it"
 msgstr ""
 
@@ -4961,7 +4973,7 @@ msgstr ""
 msgid "QR code of the login link"
 msgstr ""
 
-#: templates/admin/settings.php:2029
+#: templates/admin/settings.php:2045
 msgid "REST workaround"
 msgstr ""
 
@@ -4977,11 +4989,11 @@ msgstr ""
 msgid "Read again"
 msgstr ""
 
-#: templates/admin/settings.php:2400
+#: templates/admin/settings.php:2416
 msgid "Read the mailbox"
 msgstr ""
 
-#: templates/admin/settings.php:2391
+#: templates/admin/settings.php:2407
 msgid "Read the mailbox from this site"
 msgstr ""
 
@@ -5001,7 +5013,7 @@ msgstr ""
 msgid "Reason (optional)"
 msgstr ""
 
-#: templates/admin/settings.php:2037
+#: templates/admin/settings.php:2053
 msgid "Receive updates through admin-ajax.php instead of the REST API"
 msgstr ""
 
@@ -5041,15 +5053,15 @@ msgstr ""
 msgid "Redeemed"
 msgstr ""
 
-#: templates/admin/settings.php:2673
+#: templates/admin/settings.php:2689
 msgid "Refresh edits the board where it already sits, so nobody in the group is notified. Post the board in the group puts a fresh copy at the bottom of the group, like /board there, and removes the old one when Telegram allows it (within 48 hours). No command in the group is needed."
 msgstr ""
 
-#: templates/admin/settings.php:2698
+#: templates/admin/settings.php:2714
 msgid "Refresh the board"
 msgstr ""
 
-#: templates/admin/settings.php:2451
+#: templates/admin/settings.php:2467
 msgid "Rejected folder"
 msgstr ""
 
@@ -5079,7 +5091,7 @@ msgstr ""
 msgid "Remove image"
 msgstr ""
 
-#: templates/admin/settings.php:2198 templates/admin/settings.php:2201
+#: templates/admin/settings.php:2214 templates/admin/settings.php:2217
 msgid "Remove key"
 msgstr ""
 
@@ -5099,7 +5111,7 @@ msgstr ""
 msgid "Remove the text"
 msgstr ""
 
-#: templates/admin/settings.php:2379
+#: templates/admin/settings.php:2395
 msgid "Remove this format"
 msgstr ""
 
@@ -5111,7 +5123,7 @@ msgstr ""
 msgid "Reopen free entry"
 msgstr ""
 
-#: templates/admin/messages-tab-email.php:40 templates/admin/settings.php:2308
+#: templates/admin/messages-tab-email.php:40 templates/admin/settings.php:2324
 msgid "Replace the template with the built-in design? Your version stays in the template’s revisions."
 msgstr ""
 
@@ -5127,7 +5139,7 @@ msgstr ""
 msgid "Request sent."
 msgstr ""
 
-#: templates/admin/settings.php:2514
+#: templates/admin/settings.php:2530
 msgid "Requests from people"
 msgstr ""
 
@@ -5152,7 +5164,7 @@ msgstr ""
 msgid "Reset the list"
 msgstr ""
 
-#: templates/admin/messages-tab-email.php:44 templates/admin/settings.php:2311
+#: templates/admin/messages-tab-email.php:44 templates/admin/settings.php:2327
 msgid "Reset the template"
 msgstr ""
 
@@ -5243,7 +5255,7 @@ msgstr ""
 msgid "Roster: attendance and the door list for any date, and the Holvi ticket buyers."
 msgstr ""
 
-#: templates/admin/settings.php:2642
+#: templates/admin/settings.php:2658
 msgid "Rotate the webhook secret"
 msgstr ""
 
@@ -5251,11 +5263,11 @@ msgstr ""
 msgid "Rules for the newsletter texts"
 msgstr ""
 
-#: templates/admin/settings.php:2421
+#: templates/admin/settings.php:2437
 msgid "SSL/TLS (usually port 993)"
 msgstr ""
 
-#: templates/admin/settings.php:2422
+#: templates/admin/settings.php:2438
 msgid "STARTTLS (usually port 143)"
 msgstr ""
 
@@ -5354,7 +5366,7 @@ msgstr ""
 msgid "Save details"
 msgstr ""
 
-#: templates/admin/settings.php:2260
+#: templates/admin/settings.php:2276
 msgid "Save first. The test sends one tiny request with the saved settings."
 msgstr ""
 
@@ -5366,15 +5378,15 @@ msgstr ""
 msgid "Save preferences"
 msgstr ""
 
-#: templates/admin/settings.php:2267
+#: templates/admin/settings.php:2283
 msgid "Save settings"
 msgstr ""
 
-#: templates/admin/settings.php:2388
+#: templates/admin/settings.php:2404
 msgid "Save the import settings"
 msgstr ""
 
-#: templates/admin/settings.php:2463
+#: templates/admin/settings.php:2479
 msgid "Save the mailbox settings"
 msgstr ""
 
@@ -5496,7 +5508,7 @@ msgstr ""
 msgid "Second thoughts window (minutes)"
 msgstr ""
 
-#: templates/admin/settings.php:2046
+#: templates/admin/settings.php:2062
 msgid "Secret in the URL"
 msgstr ""
 
@@ -5504,7 +5516,7 @@ msgstr ""
 msgid "Secret key"
 msgstr ""
 
-#: templates/admin/settings.php:2420 templates/public/signup.php:608
+#: templates/admin/settings.php:2436 templates/public/signup.php:608
 msgid "Security"
 msgstr ""
 
@@ -5521,11 +5533,11 @@ msgstr ""
 msgid "Send /say followed by the message for the group. I show it to you first."
 msgstr ""
 
-#: templates/admin/settings.php:2166
+#: templates/admin/settings.php:2182
 msgid "Send a private chat to the organizers when the person gives feedback, is unhappy or very happy, or asks for a human"
 msgstr ""
 
-#: templates/admin/settings.php:2302
+#: templates/admin/settings.php:2318
 msgid "Send a test email"
 msgstr ""
 
@@ -5545,7 +5557,7 @@ msgstr ""
 msgid "Send me the sales desk link"
 msgstr ""
 
-#: templates/admin/settings.php:2284
+#: templates/admin/settings.php:2300
 msgid "Send me the welcome message"
 msgstr ""
 
@@ -5585,11 +5597,11 @@ msgstr ""
 msgid "Send the welcome message"
 msgstr ""
 
-#: templates/admin/settings.php:2096
+#: templates/admin/settings.php:2112
 msgid "Send this exact POST to check what your server returns to Telegram (200 = good). A 400/403/404 here reproduces what Telegram sees, without waiting on the bot."
 msgstr ""
 
-#: templates/admin/settings.php:2294
+#: templates/admin/settings.php:2310
 #. translators: %s: the current administrator's email address
 msgid "Send yourself one, at %s, to see the template with your logo and a button in it. Save any changes above first."
 msgstr ""
@@ -5598,7 +5610,7 @@ msgstr ""
 msgid "Sending cancelled. No ticket email was sent."
 msgstr ""
 
-#: templates/admin/settings.php:2276
+#: templates/admin/settings.php:2292
 #. translators: %s: the current administrator's email address
 msgid "Sends every welcome message to the member with your address, %s, by email and Telegram, with the live settings and open tasks. It works while the welcome message is off, and nobody else gets anything."
 msgstr ""
@@ -5676,7 +5688,7 @@ msgstr ""
 msgid "Sent to"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1377
+#: src/Admin/SettingsPage.php:1383
 #. translators: 1: list of messages sent, 2: the member's email address
 msgid "Sent to %2$s: %1$s."
 msgstr ""
@@ -5907,7 +5919,7 @@ msgctxt "month name after a day number"
 msgid "September"
 msgstr ""
 
-#: templates/admin/settings.php:2410
+#: templates/admin/settings.php:2426
 msgid "Server"
 msgstr ""
 
@@ -5937,15 +5949,15 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1027
+#: src/Admin/SettingsPage.php:1033
 msgid "Settings saved, except the LLM API URL: it must start with https:// (http:// only to localhost or 127.0.0.1)."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:888 src/Web/CrewAdminTasks.php:304
+#: src/Admin/SettingsPage.php:894 src/Web/CrewAdminTasks.php:304
 msgid "Settings saved."
 msgstr ""
 
-#: templates/admin/settings.php:2508
+#: templates/admin/settings.php:2524
 msgid "Settings → Privacy"
 msgstr ""
 
@@ -5953,7 +5965,7 @@ msgstr ""
 msgid "Settings: roles, reputation, notifications and their times, the Telegram bot, email, privacy, and the welcome message."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:476
+#: src/Admin/SettingsPage.php:478
 msgid "Short notice (hours before the start)"
 msgstr ""
 
@@ -5967,7 +5979,7 @@ msgstr ""
 msgid "Show on the guest board (Telegram group and the web page when signed out)"
 msgstr ""
 
-#: templates/admin/settings.php:1958
+#: templates/admin/settings.php:1974
 msgid "Show the group board as event cards"
 msgstr ""
 
@@ -6230,7 +6242,7 @@ msgid "Starts"
 msgstr ""
 
 #: src/Support/PrivacyExporter.php:271 templates/admin/diagnostics.php:85 templates/admin/people.php:127 templates/admin/roster.php:423
-#: templates/admin/settings.php:2569 templates/public/signup.php:915 templates/public/signup.php:1089
+#: templates/admin/settings.php:2585 templates/public/signup.php:915 templates/public/signup.php:1089
 msgid "Status"
 msgstr ""
 
@@ -6493,11 +6505,11 @@ msgstr ""
 msgid "Telegram account linked"
 msgstr ""
 
-#: templates/admin/settings.php:2057
+#: templates/admin/settings.php:2073
 msgid "Telegram always sends the secret as a header; this sends a second copy in the address as well. That is only needed on hosts or proxies that strip custom headers — and it means the secret is written into your server’s access log on every update the bot receives."
 msgstr ""
 
-#: templates/admin/settings.php:2689
+#: templates/admin/settings.php:2705
 msgid "Telegram asks which group. Reload this page afterwards to see the board’s group here."
 msgstr ""
 
@@ -6538,7 +6550,7 @@ msgstr ""
 msgid "Telegram did not accept this message. Please try again."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1666
+#: src/Admin/SettingsPage.php:1672
 msgid "Telegram gets the same answer, so the bot does not receive messages."
 msgstr ""
 
@@ -6550,11 +6562,11 @@ msgstr ""
 msgid "Telegram group message about a takeover"
 msgstr ""
 
-#: templates/admin/settings.php:2102
+#: templates/admin/settings.php:2118
 msgid "Telegram is posting to:"
 msgstr ""
 
-#: templates/admin/settings.php:2601
+#: templates/admin/settings.php:2617
 msgid "Telegram keeps only the most recent error and never clears it on a successful delivery. If Pending updates is 0 and this predates your last fix, it is stale — reinstall the webhook to clear it."
 msgstr ""
 
@@ -6566,7 +6578,7 @@ msgstr ""
 msgid "Telegram message"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1966
+#: src/Admin/SettingsPage.php:1972
 #. translators: %s: the error Telegram returned
 msgid "Telegram refused the webhook: %s"
 msgstr ""
@@ -6575,7 +6587,7 @@ msgstr ""
 msgid "Telegram sign-in did not work. Please try again, or sign in with email."
 msgstr ""
 
-#: templates/admin/settings.php:2552
+#: templates/admin/settings.php:2568
 #. translators: %s: the webhook URL Telegram will post updates to
 msgid "Telegram will post updates to %s. This needs HTTPS with a valid certificate - Telegram refuses plain HTTP and self-signed certificates."
 msgstr ""
@@ -6588,28 +6600,28 @@ msgstr ""
 msgid "Telegram, if you choose to link a Telegram account — messages the bot sends you pass through their service under their own privacy policy (https://telegram.org/privacy). Linking is entirely optional; the web page does everything the bot does."
 msgstr ""
 
-#: templates/admin/settings.php:2022
+#: templates/admin/settings.php:2038
 msgid "Telegram’s API has no setting that stops people adding the bot to other groups. To stop it, turn off Allow Groups in BotFather: /mybots → the bot → Bot Settings → Allow Groups?"
 msgstr ""
 
-#: templates/admin/settings.php:2256
+#: templates/admin/settings.php:2272
 msgid "Test"
 msgstr ""
 
-#: templates/admin/settings.php:2258
+#: templates/admin/settings.php:2274
 msgid "Test connection"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1319
+#: src/Admin/SettingsPage.php:1325
 #. translators: %s: the administrator's email address
 msgid "Test email sent to %s."
 msgstr ""
 
-#: templates/admin/settings.php:2094
+#: templates/admin/settings.php:2110
 msgid "Test the endpoint by hand"
 msgstr ""
 
-#: templates/admin/settings.php:2648
+#: templates/admin/settings.php:2664
 msgid "Test the webhook"
 msgstr ""
 
@@ -6902,7 +6914,7 @@ msgstr[1] ""
 msgid "The AI wrote the text for this event."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1072
+#: src/Admin/SettingsPage.php:1078
 msgid "The API key was removed."
 msgstr ""
 
@@ -6947,7 +6959,7 @@ msgstr ""
 msgid "The URL of an image, such as your site’s background picture, shown faintly behind the ticket. Leave it blank for a plain white ticket."
 msgstr ""
 
-#: templates/admin/settings.php:2326
+#: templates/admin/settings.php:2342
 msgid "The address organizers send their lists to. Leave it empty if this site has no import mailbox."
 msgstr ""
 
@@ -6975,7 +6987,7 @@ msgstr ""
 msgid "The announcement of the coming events, to the subscribers."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:517
+#: src/Admin/SettingsPage.php:519
 msgid "The answer deadline is never later than this many hours before the task starts. When that time has passed, nobody can ask any more. Default 1."
 msgstr ""
 
@@ -6987,11 +6999,11 @@ msgstr ""
 msgid "The attached file is not an .xlsx or .csv file. Save the list as a .csv file and send it again."
 msgstr ""
 
-#: templates/admin/settings.php:2178
+#: templates/admin/settings.php:2194
 msgid "The base address of the API, ending before /chat/completions."
 msgstr ""
 
-#: templates/admin/settings.php:2658
+#: templates/admin/settings.php:2674
 msgid "The board"
 msgstr ""
 
@@ -6999,15 +7011,15 @@ msgstr ""
 msgid "The board and sign-up"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1557
+#: src/Admin/SettingsPage.php:1563
 msgid "The board could not be posted in the group. Diagnostics has the logged reason."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1490
+#: src/Admin/SettingsPage.php:1496
 msgid "The board could not be redrawn — it may have been deleted from the group. Use Post the board in the group to post a fresh one. Diagnostics has the logged reason."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1484
+#: src/Admin/SettingsPage.php:1490
 msgid "The board has been redrawn."
 msgstr ""
 
@@ -7015,7 +7027,7 @@ msgstr ""
 msgid "The board in the Telegram group lists the open tasks under each event and date. Each task is a button that shows its role, time and places taken; a member taps it to sign up. It updates itself whenever something changes. /board in the group posts a new copy at the bottom. Settings > Telegram bot > Refresh the board redraws it in place."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1535
+#: src/Admin/SettingsPage.php:1541
 msgid "The board is being posted in the group. This page shows when it is done."
 msgstr ""
 
@@ -7076,7 +7088,7 @@ msgstr ""
 msgid "The commands you can use"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1060
+#: src/Admin/SettingsPage.php:1066
 msgid "The connection test failed: %s."
 msgstr ""
 
@@ -7157,7 +7169,7 @@ msgstr ""
 msgid "The email could not be sent. Try again later."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1418
+#: src/Admin/SettingsPage.php:1424
 msgid "The email template could not be reset."
 msgstr ""
 
@@ -7165,7 +7177,7 @@ msgstr ""
 msgid "The email template is the frame around every email: the logo, the colours, the signature and the footer. The words of each email are on the Messages tab."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1410
+#: src/Admin/SettingsPage.php:1416
 msgid "The email template was reset to the built-in design."
 msgstr ""
 
@@ -7197,11 +7209,11 @@ msgstr ""
 msgid "The first name of the ticket holder. Empty when it is not known."
 msgstr ""
 
-#: templates/admin/settings.php:2459
+#: templates/admin/settings.php:2475
 msgid "The first word of the Authentication-Results header your own mail server adds, for example mx.example.org. Only the top Authentication-Results header is trusted, and only when it names this server. Empty refuses every message."
 msgstr ""
 
-#: templates/admin/settings.php:2448
+#: templates/admin/settings.php:2464
 msgid "The folder to read. INBOX is the inbox."
 msgstr ""
 
@@ -7209,7 +7221,7 @@ msgstr ""
 msgid "The full guide, with the details, is in your email."
 msgstr ""
 
-#: templates/admin/settings.php:2670
+#: templates/admin/settings.php:2686
 msgid "The group’s board redraws itself whenever anything on it changes — someone joins or drops, you edit a task, or the hourly check notices a task has passed. This button does it now instead, which is what you want after upgrading (a new release may lay the board out differently) or to see a change land without waiting."
 msgstr ""
 
@@ -7242,15 +7254,15 @@ msgstr ""
 msgid "The image is linked, so the mail client fetches it from wherever it is hosted when the email is opened. If it does not appear, check that the file is reachable without being logged in — some hosts refuse to serve images to anything that is not a browser."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1709
+#: src/Admin/SettingsPage.php:1715
 msgid "The import mailbox is not an email address, so it was not changed. The other import settings were saved."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1719
+#: src/Admin/SettingsPage.php:1725
 msgid "The import settings were saved."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1701
+#: src/Admin/SettingsPage.php:1707
 msgid "The import settings were saved. There is no import mailbox."
 msgstr ""
 
@@ -7266,7 +7278,7 @@ msgstr ""
 msgid "The kinds of job a task can be. \"People needed\" is only the default for new tasks - each task keeps its own number."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1054
+#: src/Admin/SettingsPage.php:1060
 msgid "The language model answered. The connection is OK."
 msgstr ""
 
@@ -7313,11 +7325,11 @@ msgstr ""
 msgid "The mailbox check failed: %s"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1832
+#: src/Admin/SettingsPage.php:1838
 msgid "The mailbox settings were saved, except the server: a JMAP address must start with https:// (http:// only to localhost or 127.0.0.1)."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1833
+#: src/Admin/SettingsPage.php:1839
 msgid "The mailbox settings were saved."
 msgstr ""
 
@@ -7338,7 +7350,7 @@ msgstr ""
 msgid "The message uses its built-in text again."
 msgstr ""
 
-#: templates/admin/settings.php:2187
+#: templates/admin/settings.php:2203
 msgid "The model name exactly as the server lists it."
 msgstr ""
 
@@ -7523,7 +7535,7 @@ msgstr ""
 msgid "The privacy notice is not published yet. Until an organisation and a contact address are filled in below, the public page stays blank and nothing is added to your site’s privacy policy — a notice that cannot say who is answerable would be worse than none."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1242 src/Admin/SettingsPage.php:1282
+#: src/Admin/SettingsPage.php:1248 src/Admin/SettingsPage.php:1288
 msgid "The privacy page could not be created."
 msgstr ""
 
@@ -7564,12 +7576,12 @@ msgstr ""
 msgid "The sales desk link opens %d minutes before your task, once you are marked arrived."
 msgstr ""
 
-#: templates/admin/settings.php:2506
+#: templates/admin/settings.php:2522
 #. translators: %s: link to the WordPress privacy settings screen, already wrapped in an anchor tag
 msgid "The same notice is offered to WordPress as suggested policy text, so the site’s main policy can cover the crew data too. Review and paste it in under %s. WordPress will tell you there whenever a new version of this plugin rewords it."
 msgstr ""
 
-#: templates/admin/settings.php:2129
+#: templates/admin/settings.php:2145
 msgid "The same request with the secret in the header instead of the address. A 200 means your host keeps the header, so the URL copy can be switched off safely. Anything else means leave it on."
 msgstr ""
 
@@ -7586,7 +7598,7 @@ msgstr ""
 msgid "The second button opens the crew’s Telegram group, where tasks are posted."
 msgstr ""
 
-#: templates/admin/settings.php:2655
+#: templates/admin/settings.php:2671
 msgid "The secret is what proves an incoming update really came from Telegram — it is the bot’s only authentication. Rotate it if it may have been seen: in a server log, a screenshot, or a support ticket. The bot keeps working; only the old secret stops."
 msgstr ""
 
@@ -7640,19 +7652,19 @@ msgstr ""
 msgid "The sign-up gate is on: a member below %d%% cannot sign up for new tasks. /people can give them a one-time pass."
 msgstr ""
 
-#: templates/admin/settings.php:2393
+#: templates/admin/settings.php:2409
 msgid "The site can read the import mailbox itself every five minutes. Use JMAP if your host blocks the IMAP ports; many shared hosts do. A message is marked read and moved to the Imported or Rejected folder once it has been dealt with."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1665
+#: src/Admin/SettingsPage.php:1671
 msgid "The site did not accept the secret. If the secret is not in the address, your host may remove the secret header."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1502
+#: src/Admin/SettingsPage.php:1508
 msgid "The site does not know your Telegram group. To fix it, remove the bot from the group and add it again, or tap any button on a bot message there. Then reload this page."
 msgstr ""
 
-#: templates/admin/settings.php:2650
+#: templates/admin/settings.php:2666
 msgid "The site sends an empty update to its own webhook, with the real secret, and shows the HTTP status. The bot sends no message."
 msgstr ""
 
@@ -7664,11 +7676,11 @@ msgstr ""
 msgid "The start time is required. Leave the end blank if it is not decided. An end earlier than the start is read as the next morning."
 msgstr ""
 
-#: templates/admin/settings.php:2152
+#: templates/admin/settings.php:2168
 msgid "The stored API key cannot be decrypted (the site's security keys have changed). Enter the key again."
 msgstr ""
 
-#: templates/admin/settings.php:2200
+#: templates/admin/settings.php:2216
 msgid "The stored key cannot be read."
 msgstr ""
 
@@ -7712,11 +7724,11 @@ msgstr ""
 msgid "The test email could not be sent. Check the site’s email setup."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1328
+#: src/Admin/SettingsPage.php:1334
 msgid "The test email could not be sent. Check the site’s mail configuration, then look at Diagnostics for the logged reason."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1647
+#: src/Admin/SettingsPage.php:1653
 #. translators: %s: the reason, e.g. a connection timeout
 msgid "The test request could not be sent: %s"
 msgstr ""
@@ -7794,25 +7806,25 @@ msgstr ""
 msgid "The web shop where you bought your ticket holds your order under its own privacy policy. Our email is delivered by an email service, since every message we send leaves this site as an email."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1672
+#: src/Admin/SettingsPage.php:1678
 #. translators: 1: an HTTP status code, e.g. 403; 2: what it means
 msgid "The webhook answered HTTP %1$d. %2$s"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1659
+#: src/Admin/SettingsPage.php:1665
 msgid "The webhook answered HTTP 200. It works: messages from Telegram reach the bot."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1899
+#: src/Admin/SettingsPage.php:1905
 #. translators: %s: the reason the webhook could not be installed
 msgid "The webhook could not be re-installed: %s"
 msgstr ""
 
-#: templates/admin/settings.php:2099
+#: templates/admin/settings.php:2115
 msgid "The webhook secret below is shown only by its last 4 characters. Put the full secret in its place to send the request."
 msgstr ""
 
-#: templates/admin/settings.php:2084
+#: templates/admin/settings.php:2100
 msgid "The webhook secret is currently travelling in the URL, so it is in your server’s access logs. Anything that can read those logs can impersonate any member of your crew to the bot, organizers included."
 msgstr ""
 
@@ -7849,7 +7861,7 @@ msgstr ""
 msgid "There are no imported ticket buyers for %s."
 msgstr ""
 
-#: templates/admin/settings.php:2228
+#: templates/admin/settings.php:2244
 msgid "There are no published pages."
 msgstr ""
 
@@ -8163,11 +8175,11 @@ msgstr ""
 msgid "Ticket background"
 msgstr ""
 
-#: templates/admin/settings.php:2314
+#: templates/admin/settings.php:2330
 msgid "Ticket buyer import by email"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1273
+#: src/Admin/SettingsPage.php:1279
 msgid "Ticket buyer privacy notice"
 msgstr ""
 
@@ -8175,7 +8187,7 @@ msgstr ""
 msgid "Ticket buyer privacy page"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1291
+#: src/Admin/SettingsPage.php:1297
 msgid "Ticket buyer privacy page created and selected."
 msgstr ""
 
@@ -8196,7 +8208,7 @@ msgstr ""
 msgid "Ticket code"
 msgstr ""
 
-#: templates/admin/settings.php:2370
+#: templates/admin/settings.php:2386
 msgid "Ticket code column header"
 msgstr ""
 
@@ -8227,7 +8239,7 @@ msgstr ""
 msgid "Ticket exchanged against taking a task"
 msgstr ""
 
-#: templates/admin/settings.php:2337
+#: templates/admin/settings.php:2353
 msgid "Ticket file formats"
 msgstr ""
 
@@ -8331,6 +8343,10 @@ msgstr ""
 msgid "To hand it over, ask someone in the crew to send /me to the bot and tap 🔁 Take over a task. You get a message to say yes, and you stay on it until then."
 msgstr ""
 
+#: src/Telegram/PrivateChatGate.php:140
+msgid "To join the crew, open the crew group first:"
+msgstr ""
+
 #: src/Telegram/GuestListService.php:417
 msgid "To see the list send /door and tap 👥 Guest list, or /door 1.8. for another night."
 msgstr ""
@@ -8392,11 +8408,11 @@ msgstr ""
 msgid "Too many sign-in links were asked for. Wait an hour and try again."
 msgstr ""
 
-#: templates/admin/settings.php:2524
+#: templates/admin/settings.php:2540
 msgid "Tools → Erase Personal Data"
 msgstr ""
 
-#: templates/admin/settings.php:2521
+#: templates/admin/settings.php:2537
 msgid "Tools → Export Personal Data"
 msgstr ""
 
@@ -8441,7 +8457,7 @@ msgstr ""
 msgid "Translations"
 msgstr ""
 
-#: templates/admin/settings.php:2456
+#: templates/admin/settings.php:2472
 msgid "Trusted mail server"
 msgstr ""
 
@@ -8459,7 +8475,7 @@ msgctxt "weekday name"
 msgid "Tuesday"
 msgstr ""
 
-#: templates/admin/settings.php:2060
+#: templates/admin/settings.php:2076
 msgid "Turn it off if you can: expand “Test the endpoint by hand” below and send the header-only request first. A 200 means your host keeps the header and it is safe to untick this. Saving re-installs the webhook either way, and if the bot goes quiet, tick it again and save."
 msgstr ""
 
@@ -8495,7 +8511,7 @@ msgstr ""
 msgid "Unsubscribed"
 msgstr ""
 
-#: templates/admin/settings.php:2087
+#: templates/admin/settings.php:2103
 msgid "Untick the box above if the header-only test passes — and rotate the secret afterwards, since switching it off does not remove what is already in the logs."
 msgstr ""
 
@@ -8559,7 +8575,7 @@ msgstr ""
 msgid "Used when the organizers wrote no text for the announcement."
 msgstr ""
 
-#: templates/admin/settings.php:2428
+#: templates/admin/settings.php:2444
 msgid "User name"
 msgstr ""
 
@@ -8704,11 +8720,11 @@ msgstr ""
 msgid "Web sign-in"
 msgstr ""
 
-#: templates/admin/settings.php:2532
+#: templates/admin/settings.php:2548
 msgid "Webhook"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1446
+#: src/Admin/SettingsPage.php:1452
 msgid "Webhook installed. Add the bot to your group and the board will appear there on its own."
 msgstr ""
 
@@ -8819,7 +8835,7 @@ msgstr ""
 msgid "When"
 msgstr ""
 
-#: templates/admin/settings.php:2339
+#: templates/admin/settings.php:2355
 msgid "When a mailed list has an .xlsx or .csv file attached, the file is read instead of the mail text. Its first row must hold the column headers of one of these formats. In a header field, separate accepted header texts with \"|\", and join columns with \"+\", as in \"Etunimi + Sukunimi\". Upper and lower case do not matter."
 msgstr ""
 
@@ -8868,7 +8884,7 @@ msgstr ""
 msgid "When this is off, nothing is sent to the language model, and an empty language text gets the text as it was written."
 msgstr ""
 
-#: templates/admin/settings.php:2145
+#: templates/admin/settings.php:2161
 msgid "When this is on, the bot answers messages that are not commands with the help of a language model on a server you choose. Its API must accept OpenAI-style chat completions. In a private chat the bot answers every such message. In the group it answers only messages meant for the bot that it can answer, and stays silent otherwise. Changes (signing up for a task, leaving it, the guest list) always ask the person to confirm with a button first."
 msgstr ""
 
@@ -8907,7 +8923,7 @@ msgstr ""
 msgid "Where all your tickets are: in the bot, or, for a person with no Telegram chat, on the crew page, with its link."
 msgstr ""
 
-#: templates/admin/settings.php:2450
+#: templates/admin/settings.php:2466
 msgid "Where imported lists go. Created if missing."
 msgstr ""
 
@@ -8915,7 +8931,7 @@ msgstr ""
 msgid "Where people write about their data. Required, and it must be an address somebody actually reads — a request has to be answered within a month."
 msgstr ""
 
-#: templates/admin/settings.php:2452
+#: templates/admin/settings.php:2468
 msgid "Where refused messages go. Created if missing."
 msgstr ""
 
@@ -9016,19 +9032,19 @@ msgstr ""
 msgid "With an email, they get their ticket by email. An email that belongs to a member adds that member."
 msgstr ""
 
-#: templates/admin/settings.php:2107 templates/admin/settings.php:2136
+#: templates/admin/settings.php:2123 templates/admin/settings.php:2152
 msgid "With header:"
 msgstr ""
 
-#: templates/admin/settings.php:2384
+#: templates/admin/settings.php:2400
 msgid "With no format left, the Holvi format is used."
 msgstr ""
 
-#: templates/admin/settings.php:2241
+#: templates/admin/settings.php:2257
 msgid "With none chosen, it reads the pages in the site menu, or every published page if there is no menu. Pages with a password are never read."
 msgstr ""
 
-#: templates/admin/settings.php:2247
+#: templates/admin/settings.php:2263
 #. translators: %s: comma-separated page titles
 msgid "With none chosen, now: %s"
 msgstr ""
@@ -9046,7 +9062,7 @@ msgstr ""
 msgid "Without a name:"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1945
+#: src/Admin/SettingsPage.php:1951
 #. translators: %s: the non-HTTPS URL WordPress generated
 msgid "WordPress generated the webhook URL %s, which is not HTTPS, so Telegram will refuse it. Set the WordPress Address and Site Address (Settings → General) to their https:// forms - or fix the reverse proxy's forwarded-protocol header - and try again."
 msgstr ""
@@ -9084,7 +9100,7 @@ msgstr ""
 msgid "Write again"
 msgstr ""
 
-#: src/Telegram/UpdateRouter.php:609
+#: src/Telegram/UpdateRouter.php:618
 msgid "Write here in a few words what is not right. The organizers get it and can correct it."
 msgstr ""
 
@@ -9548,7 +9564,7 @@ msgstr ""
 msgid "Your rights"
 msgstr ""
 
-#: templates/admin/settings.php:2501
+#: templates/admin/settings.php:2517
 msgid "Your site’s own privacy policy"
 msgstr ""
 
@@ -9612,7 +9628,7 @@ msgstr ""
 msgid "Your tickets and free-entry ticket"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1309
+#: src/Admin/SettingsPage.php:1315
 msgid "Your user account has no email address to send to."
 msgstr ""
 
@@ -9830,19 +9846,19 @@ msgstr ""
 msgid "marked by %1$s at %2$s"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1360
+#: src/Admin/SettingsPage.php:1366
 msgid "member Telegram message"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1359
+#: src/Admin/SettingsPage.php:1365
 msgid "member email"
 msgstr ""
 
-#: templates/admin/settings.php:2217
+#: templates/admin/settings.php:2233
 msgid "messages per group"
 msgstr ""
 
-#: templates/admin/settings.php:2213
+#: templates/admin/settings.php:2229
 msgid "messages per person in a private chat"
 msgstr ""
 
@@ -9862,7 +9878,7 @@ msgstr ""
 msgid "not translated yet"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1378
+#: src/Admin/SettingsPage.php:1384
 msgid "nothing"
 msgstr ""
 
@@ -9884,11 +9900,11 @@ msgstr ""
 msgid "open the Me tab of the crew page (%s) and pick a night under Tickets to get your free ticket."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1362
+#: src/Admin/SettingsPage.php:1368
 msgid "organizer Telegram message"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:1361
+#: src/Admin/SettingsPage.php:1367
 msgid "organizer email"
 msgstr ""
 
@@ -10177,6 +10193,10 @@ msgstr ""
 
 #: src/Telegram/BoardRenderer.php:411 src/Telegram/MenuButtons.php:178
 msgid "👤 My info"
+msgstr ""
+
+#: src/Telegram/PrivateChatGate.php:146
+msgid "👥 Open the crew group"
 msgstr ""
 
 #: src/Telegram/HelpService.php:156

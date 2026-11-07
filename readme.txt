@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.160
+Stable tag: 1.140.161
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,13 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.161 =
+* Private chats: a person not linked to the bot must be in the crew group; anyone else gets no answer
+* Links in emails, on the web and on the group board carry a weekly code; a person with a valid code who is not in the group gets a button to open the group
+* A passed group check lasts 24 hours; linked members are never checked
+* Setting: Telegram › Private chats (on by default)
+* Russian: the Take over a task button label fixed
 
 = 1.140.160 =
 * Privacy page: the group board shows the next event; a crew member can open any coming day privately with the bot
@@ -1731,6 +1738,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.161 =
+No settings change.
 
 = 1.140.160 =
 No settings change.
