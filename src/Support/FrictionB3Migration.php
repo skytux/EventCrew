@@ -50,10 +50,85 @@ final class FrictionB3Migration
         ];
     }
 
+    /** The step that drops stored copies of the old free-ticket texts. */
+    public const WARM_STEP = 'free_ticket_warm';
+
+    /**
+     * Built-in English texts that are no longer built in: kind id (a
+     * message, or 'ticket_reason_<kind>') => the old texts, as stored after
+     * the steps above. A stored copy of one of them with nothing written by
+     * hand only froze the old text, so it is dropped and the new built-in
+     * text applies (the warm free-entry texts, Owner 2026-11-07).
+     *
+     * @return array<string, list<string>>
+     */
+    public static function oldBuiltIns(): array
+    {
+        return [
+            'free_ticket_dm' => [
+                "✨ Your free-entry ticket ✨\n\n{event}\n{date}\n{venue}\n{event_times}\n\n💫 Show it at the door.",
+                "{event}\n🎟 Your free-entry ticket for {date} — show it at the door.\n{venue}\n{event_times}",
+            ],
+            'ticket_reason_' . TicketReasons::TASK => ['Thank you for taking a task!'],
+            'ticket_reason_' . TicketReasons::CREDIT => ['You spent a free-entry credit on this night.'],
+        ];
+    }
+
     /** Runs every step not yet done. Does nothing once all have run. */
     public static function run(): void
     {
         FrictionB1Migration::runSteps(self::OPTION, self::steps());
+
+        $done = get_option(self::OPTION, []);
+        $done = is_array($done) ? $done : [];
+
+        if (! empty($done[self::WARM_STEP])) {
+            return;
+        }
+
+        foreach (self::oldBuiltIns() as $id => $old) {
+            if (str_starts_with($id, 'ticket_reason_')) {
+                $option = TicketReasons::option(substr($id, strlen('ticket_reason_')));
+
+                if (self::isOldCopy(get_option($option, null), $old)) {
+                    delete_option($option);
+                }
+
+                continue;
+            }
+
+            $option = MessageTemplates::OPTION_PREFIX . $id;
+            $raw = get_option($option, null);
+
+            if (! is_array($raw) || ! self::isOldCopy($raw[MessageTemplates::BODY] ?? null, $old)) {
+                continue;
+            }
+
+            unset($raw[MessageTemplates::BODY]);
+            $raw = array_filter($raw, static fn (mixed $value): bool => null !== $value && [] !== $value);
+
+            if ([] === $raw) {
+                delete_option($option);
+            } else {
+                update_option($option, $raw, false);
+            }
+        }
+
+        $done[self::WARM_STEP] = 1;
+        update_option(self::OPTION, $done, false);
+    }
+
+    /**
+     * Whether $value (a plain string or a TranslatedText value) is one of
+     * the $old English texts with no language text written by hand.
+     *
+     * @param list<string> $old
+     */
+    private static function isOldCopy(mixed $value, array $old): bool
+    {
+        $value = TranslatedText::normalize($value);
+
+        return [] === array_filter($value['manual']) && in_array(trim($value['source']), $old, true);
     }
 
     /**

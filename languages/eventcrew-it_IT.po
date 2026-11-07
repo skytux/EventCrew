@@ -665,8 +665,8 @@ msgid "A send is already waiting. It goes out at %s."
 msgstr "Un invio è già in attesa. Parte alle %s."
 
 #: src/Support/MessageTemplates.php:565
-msgid "A short description of the event (at most two sentences), in the reader’s language when there is a translation. On a line of its own; the line goes when the event has no description."
-msgstr "Una breve descrizione dell’evento (al massimo due frasi), nella lingua di chi legge quando c’è una traduzione. Su una riga a sé; la riga sparisce quando l’evento non ha descrizione."
+msgid "The AI’s short text about the event from the group board (at most two sentences), for English readers only; never the event’s own description. On a line of its own; the line goes when there is no such text."
+msgstr "Il breve testo dell’IA sull’evento dalla bacheca del gruppo (al massimo due frasi), solo per i lettori in inglese; mai la descrizione propria dell’evento. Su una riga a sé; la riga sparisce quando non c’è un testo simile."
 
 #: src/Support/MessageTemplates.php:1189
 msgid "A space and the sentence saying until how many hours before the task a cancellation does not affect the standing (Settings). Empty when that number is 0."
@@ -1433,7 +1433,6 @@ msgstr "Incarico annullato (email)"
 #: src/Support/Reputation.php:70
 msgid "Cancelled late"
 msgstr "Annullato in ritardo"
-
 
 #: src/Telegram/AssistantService.php:194 src/Telegram/AssistantService.php:195
 #: src/Telegram/BuyerListReset.php:105 src/Telegram/EventsCommand.php:145
@@ -6855,10 +6854,6 @@ msgstr "Grazie di essere venuto! Sei nella lista ospiti."
 msgid "Thank you for dancing with us"
 msgstr "Grazie di aver ballato con noi"
 
-#: src/Support/TicketReasons.php:59
-msgid "Thank you for taking a task!"
-msgstr "Grazie per aver preso un incarico!"
-
 #: src/Web/NewsletterController.php:620
 msgid "Thank you. Check your inbox: the next events announcement starts only after you press the link in the email we sent."
 msgstr "Grazie. Controlla la tua posta: l’annuncio dei prossimi eventi inizia solo dopo che premi il link nell’email che ti abbiamo inviato."
@@ -9551,10 +9546,6 @@ msgstr "Ora hai il ruolo %s, quindi puoi iscriverti ai suoi incarichi."
 msgid "You now have the role %s. Its tasks are open to you on the crew page, and you can sign up for them."
 msgstr "Ora hai il ruolo %s. I suoi incarichi sono aperti per te sulla pagina della crew e puoi iscriverti."
 
-#: src/Support/TicketReasons.php:60
-msgid "You spent a free-entry credit on this night."
-msgstr "Hai speso un credito d’ingresso gratuito per questa serata."
-
 #: src/Support/MessageTemplates.php:2537
 msgid ""
 "You were added to the crew at the door. Welcome!\n"
@@ -11264,3 +11255,19 @@ msgstr "Per un testo solo nella prossima email dopo l’evento, invia /followup 
 
 msgid "an administrator"
 msgstr "un amministratore"
+
+#: src/Support/MessageTemplates.php
+msgid "Thank you for being part of the crew and helping make these nights happen."
+msgstr "Grazie per far parte della crew e per aiutare a rendere possibili queste serate."
+
+#: src/Support/MessageTemplates.php
+msgid "Show it at the door, then come dance and enjoy the night as our guest."
+msgstr "Mostralo all’ingresso, poi vieni a ballare e goditi la serata come nostro ospite."
+
+#: src/Support/TicketReasons.php
+msgid "Thank you for taking a task and helping make this night happen. Enjoy the dance as our guest too!"
+msgstr "Grazie per aver preso un incarico e per aiutare a rendere possibile questa serata. Goditi anche il ballo come nostro ospite!"
+
+#: src/Support/TicketReasons.php
+msgid "Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!"
+msgstr "Grazie per far parte della crew e per aiutare a rendere possibili queste serate. Questa la offriamo noi: vieni a ballare e goditela come nostro ospite!"

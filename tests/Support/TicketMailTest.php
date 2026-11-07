@@ -712,8 +712,8 @@ final class TicketMailTest extends TestCase
         self::assertSame(['mia@example.test'], array_column($this->mails, 'to'));
         // A crew member's ticket is in their own language only (English: none chosen).
         self::assertSame('Your ticket – 14.11.2026', $this->mails[0]['subject']);
-        self::assertStringNotContainsString('Kiitos, että otit tehtävän!', $this->mails[0]['body']);
-        self::assertStringContainsString('Thank you for taking a task!', $this->mails[0]['body']);
+        self::assertStringNotContainsString('Kiitos, että otit tehtävän ja autat tekemään tästä illasta totta. Nauti tanssista myös vieraanamme!', $this->mails[0]['body']);
+        self::assertStringContainsString('Thank you for taking a task and helping make this night happen. Enjoy the dance as our guest too!', $this->mails[0]['body']);
         self::assertStringContainsString('>Open my ticket<', $this->mails[0]['body']);
         // The corner, with the small QR code, is in the sent email under the sign-off.
         self::assertStringContainsString('No internet? Show this QR code at the door.', $this->mails[0]['body']);
@@ -843,10 +843,10 @@ final class TicketMailTest extends TestCase
         $kinds = [
             'buyer' => [TicketBuyer::fromRow($this->buyerRow(1)), 'Thank you for buying a ticket!'],
             'guest' => [Guest::fromRow($this->guestRow(9)), 'Thank you for coming! You are on the guest list.'],
-            'crew' => [$crew, 'Thank you for taking a task!'],
+            'crew' => [$crew, 'Thank you for taking a task and helping make this night happen. Enjoy the dance as our guest too!'],
             'credit' => [
                 new CrewTicket(CrewTicket::KIND_CREDIT, 12, '2026-11-14', 'Mia Crew', 'mia@example.test'),
-                'You spent a free-entry credit on this night.',
+                'Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!',
             ],
         ];
         $qr = new TicketQr();
@@ -937,7 +937,7 @@ final class TicketMailTest extends TestCase
     {
         self::assertTrue($this->ticketMail()->sendCreditTicket($this->person(), 12, '2026-11-14'));
         self::assertStringNotContainsString('Käytit vapaalipun tähän iltaan.', $this->mails[0]['body']);
-        self::assertStringContainsString('You spent a free-entry credit on this night.', $this->mails[0]['body']);
+        self::assertStringContainsString('Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!', $this->mails[0]['body']);
 
         $update = $this->updates()[0];
         self::assertSame('wp_eventcrew_redemptions', $update['table']);

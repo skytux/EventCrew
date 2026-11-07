@@ -20,6 +20,7 @@ use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\SiteLanguages;
+use EventCrew\Telegram\BoardDjText;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Tests\TestCase;
 
@@ -1421,14 +1422,19 @@ final class FollowupMailTest extends TestCase
     }
 
     /**
-     * The event's short description ({event_description}) is in every text
-     * the email can use: the built-in text and the one-time text (as its own
-     * paragraph after the one with the event, else at the end) and the
-     * Messages page text (where it has the placeholder).
+     * The event's short text ({event_description}, the board's AI text) is in
+     * every text the email can use: the built-in text and the one-time text
+     * (as its own paragraph after the one with the event, else at the end)
+     * and the Messages page text (where it has the placeholder). English
+     * only, and never the event's own description (Owner, 2026-11-07).
      */
     public function testEachTextShowsTheEventsShortDescription(): void
     {
-        $this->describedNight('Free dance in the hall. Bring water. Doors at 19.');
+        $this->describedNight("ECSTATIC DANCE HELSINKI\n14.11.2026\nDoor code 7302\n18:30-19:00 Doors open");
+        $this->options[BoardDjText::OPTION] = [50 => [
+            'hash' => md5(BoardDjText::source(50)),
+            'text' => 'Free dance in the hall. Bring water. Doors at 19.',
+        ]];
         $short = 'Free dance in the hall. Bring water.';
 
         $builtIn = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
@@ -1436,7 +1442,9 @@ final class FollowupMailTest extends TestCase
             "went home with you.\n\n" . $short . "\n\nThe next evenings are already on their way.",
             $builtIn
         );
-        self::assertStringContainsString("\n\n" . $short . "\n\n", strstr($builtIn, 'Hei Anna') ?: '', 'Finnish too');
+        self::assertStringNotContainsString('Free dance', (string) strstr($builtIn, 'Hi Anna', true), 'not in Finnish');
+        self::assertStringNotContainsString('7302', $builtIn);
+        self::assertStringNotContainsString('ECSTATIC', $builtIn);
 
         $this->nextText(FollowupText::CAME, 'Only this time.', 'Vain tällä kertaa.', 2);
         $oneTime = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];

@@ -248,7 +248,7 @@ final class TaskCancelledNoticeTest extends TestCase
         self::assertStringContainsString('The organizers have cancelled the task', $mail['body']);
         self::assertStringContainsString('Your tasks on this night:', $mail['body']);
         self::assertStringContainsString('21:00', $mail['body']);
-        self::assertStringNotContainsString('Thank you for taking a task!', $mail['body']);
+        self::assertStringNotContainsString('Thank you for taking a task and helping make this night happen. Enjoy the dance as our guest too!', $mail['body']);
     }
 
     /**

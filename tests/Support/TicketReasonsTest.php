@@ -60,9 +60,9 @@ final class TicketReasonsTest extends TestCase
             'Thank you for coming! You are on the guest list.',
             TicketReasons::text(TicketReasons::GUEST, Language::ENGLISH)
         );
-        self::assertSame('Kiitos, että otit tehtävän!', TicketReasons::text(TicketReasons::TASK, Language::FINNISH));
+        self::assertSame('Kiitos, että otit tehtävän ja autat tekemään tästä illasta totta. Nauti tanssista myös vieraanamme!', TicketReasons::text(TicketReasons::TASK, Language::FINNISH));
         self::assertSame(
-            'You spent a free-entry credit on this night.',
+            'Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!',
             TicketReasons::text(TicketReasons::CREDIT, Language::ENGLISH)
         );
         self::assertSame(
@@ -94,7 +94,7 @@ final class TicketReasonsTest extends TestCase
         $stored = $this->options[TicketReasons::option(TicketReasons::TASK)];
         $stored['texts'][Language::FINNISH] = '';
         $this->options[TicketReasons::option(TicketReasons::TASK)] = $stored;
-        self::assertSame('Kiitos, että otit tehtävän!', TicketReasons::text(TicketReasons::TASK, Language::FINNISH));
+        self::assertSame('Kiitos, että otit tehtävän ja autat tekemään tästä illasta totta. Nauti tanssista myös vieraanamme!', TicketReasons::text(TicketReasons::TASK, Language::FINNISH));
     }
 
     public function testSavingTheBuiltInLineOrNothingStoresNothing(): void
@@ -116,7 +116,7 @@ final class TicketReasonsTest extends TestCase
         ]);
         self::assertArrayNotHasKey(TicketReasons::option(TicketReasons::CREDIT), $this->options);
         self::assertSame(
-            'You spent a free-entry credit on this night.',
+            'Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!',
             TicketReasons::text(TicketReasons::CREDIT, Language::ENGLISH)
         );
     }

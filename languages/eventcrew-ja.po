@@ -650,8 +650,8 @@ msgid "A send is already waiting. It goes out at %s."
 msgstr "送信がすでに待機中です。%s に送信されます。"
 
 #: src/Support/MessageTemplates.php:565
-msgid "A short description of the event (at most two sentences), in the reader’s language when there is a translation. On a line of its own; the line goes when the event has no description."
-msgstr "イベントの短い説明 (2文以内)。翻訳があれば読み手の言語で表示します。独立した行に表示し、イベントに説明がなければその行は消えます。"
+msgid "The AI’s short text about the event from the group board (at most two sentences), for English readers only; never the event’s own description. On a line of its own; the line goes when there is no such text."
+msgstr "グループボードにある、AIが書いたイベントの短い文 (2文以内)。英語の読み手にのみ表示し、イベント自体の説明は決して使いません。独立した行に表示し、その文がなければ行は消えます。"
 
 #: src/Support/MessageTemplates.php:1189
 msgid "A space and the sentence saying until how many hours before the task a cancellation does not affect the standing (Settings). Empty when that number is 0."
@@ -1418,7 +1418,6 @@ msgstr "タスクをキャンセルしました (メール)"
 #: src/Support/Reputation.php:70
 msgid "Cancelled late"
 msgstr "直前キャンセル"
-
 
 #: src/Telegram/AssistantService.php:194 src/Telegram/AssistantService.php:195
 #: src/Telegram/BuyerListReset.php:105 src/Telegram/EventsCommand.php:145
@@ -6809,10 +6808,6 @@ msgstr "お越しいただきありがとうございます！ゲストリスト
 msgid "Thank you for dancing with us"
 msgstr "一緒に踊ってくれてありがとうございました"
 
-#: src/Support/TicketReasons.php:59
-msgid "Thank you for taking a task!"
-msgstr "タスクを引き受けてくれてありがとうございます！"
-
 #: src/Web/NewsletterController.php:620
 msgid "Thank you. Check your inbox: the next events announcement starts only after you press the link in the email we sent."
 msgstr "ありがとうございます。受信トレイを確認してください: 次回イベントのお知らせは、お送りしたメールのリンクを押した後に始まります。"
@@ -9494,10 +9489,6 @@ msgstr "役割 %s が付与されたので、そのタスクに申し込めま�
 msgid "You now have the role %s. Its tasks are open to you on the crew page, and you can sign up for them."
 msgstr "役割 %s が付与されました。そのタスクがクルーページで開放され、申し込めます。"
 
-#: src/Support/TicketReasons.php:60
-msgid "You spent a free-entry credit on this night."
-msgstr "この夜に無料入場クレジットを使いました。"
-
 #: src/Support/MessageTemplates.php:2537
 msgid ""
 "You were added to the crew at the door. Welcome!\n"
@@ -11188,3 +11179,19 @@ msgstr "次のイベント後メールだけのテキストを設定するには
 
 msgid "an administrator"
 msgstr "管理者"
+
+#: src/Support/MessageTemplates.php
+msgid "Thank you for being part of the crew and helping make these nights happen."
+msgstr "クルーの一員として、これらの夜を支えてくれてありがとうございます。"
+
+#: src/Support/MessageTemplates.php
+msgid "Show it at the door, then come dance and enjoy the night as our guest."
+msgstr "入口でこのチケットを見せて、ゲストとして踊って夜を楽しんでください。"
+
+#: src/Support/TicketReasons.php
+msgid "Thank you for taking a task and helping make this night happen. Enjoy the dance as our guest too!"
+msgstr "タスクを引き受けて、この夜を支えてくれてありがとうございます。ゲストとしてダンスも楽しんでください！"
+
+#: src/Support/TicketReasons.php
+msgid "Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!"
+msgstr "クルーの一員として、これらの夜を支えてくれてありがとうございます。今夜は私たちからの招待です。ゲストとして踊って楽しんでください！"

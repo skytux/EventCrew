@@ -178,7 +178,8 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         self::assertStringContainsString('AI ticket for Sat 1 Aug.', $dms[0]);
         // The tick is on but nothing was written for the event: the template's text.
         self::assertStringContainsString('Your free-entry ticket', $dms[1]);
-        self::assertStringContainsString('Show it at the door.', $dms[1]);
+        self::assertStringContainsString('Thank you for being part of the crew', $dms[1]);
+        self::assertStringContainsString('enjoy the night as our guest.', $dms[1]);
     }
 
     private function serviceWithTicketMail(): TicketRedemptionService

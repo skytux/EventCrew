@@ -577,7 +577,7 @@ final class MessageTemplates
         return [
             'venue' => self::venuePlaceholder($eventId),
             'event_description' => self::placeholder(
-                __('A short description of the event (at most two sentences), in the reader’s language when there is a translation. On a line of its own; the line goes when the event has no description.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+                __('The AI’s short text about the event from the group board (at most two sentences), for English readers only; never the event’s own description. On a line of its own; the line goes when there is no such text.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
                 static fn (array $c): string => EventDescription::short($eventId($c)),
                 false,
                 true
@@ -1560,10 +1560,14 @@ final class MessageTemplates
                 null,
                 // A title, then the event (with its DJs), the day, the venue
                 // and the times, each on a line of its own (Owner, Q344
-                // 2026-11-07; stored texts: FrictionB3Migration).
+                // 2026-11-07; stored texts: FrictionB3Migration). Then a
+                // thank-you to the crew member and a welcome to the night
+                // (Owner 2026-11-07; stored copies: FrictionB3Migration).
                 static fn (): string => '✨ ' . __('Your free-entry ticket', 'eventcrew') . " ✨\n\n"
-                    . "{event}\n{date}\n{venue}\n{event_times}\n\n💫 "
-                    . __('Show it at the door.', 'eventcrew'),
+                    . "{event}\n{date}\n{venue}\n{event_times}\n\n💛 "
+                    . __('Thank you for being part of the crew and helping make these nights happen.', 'eventcrew')
+                    . "\n💫 "
+                    . __('Show it at the door, then come dance and enjoy the night as our guest.', 'eventcrew'),
                 [
                     'date' => self::placeholder(
                         __('The day of the event, like Fri 14 Nov.', 'eventcrew'),

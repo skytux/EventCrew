@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Telegram\BoardDjText;
+
 /**
- * The short description of an event for the person-facing messages about it
- * ({event_description}): the first sentences of the event's description, at
- * most MAX_SENTENCES of them and at most MAX_LENGTH characters.
+ * The short text about an event for the person-facing messages about it
+ * ({event_description}): only a curated text, never the event's own
+ * description. The raw description (the EventMesh post's content or
+ * excerpt, EventSource::card()) is often a block of details (the title in
+ * capitals, the date, venue, address, door code, schedule lines) and belongs
+ * in no message; it is only input for the language model (Owner, 2026-11-07).
  *
- * The description is EventMesh's (EventSource::description()): the event's
- * own text, as the organizers may have edited it on the event screen, or
- * EventMesh's AI translation of it in the reader's language when there is
- * one. '' when EventMesh is off or the event has no text, so the line is
- * left out.
+ * The curated text is the group board's short text about the event's DJ or
+ * host (BoardDjText::stored()): two sentences the language model wrote from
+ * the event's DJs and description, under a prompt that forbids door codes.
+ * The model writes it in English only, so a reader in another language gets
+ * ''. '' too when there is no current text, so the line is left out.
  */
 final class EventDescription
 {
@@ -22,8 +27,8 @@ final class EventDescription
     public const MAX_LENGTH = 300;
 
     /**
-     * The short description of event $postId in $lang (the language being
-     * composed in when null), or ''.
+     * The curated short text of event $postId for a reader in $lang (the
+     * language being composed in when null), or ''.
      */
     public static function short(?int $postId, ?string $lang = null): string
     {
@@ -33,7 +38,11 @@ final class EventDescription
 
         $lang ??= Language::current() ?? Language::ENGLISH;
 
-        return self::shorten(EventSource::description($postId, $lang));
+        if (Language::ENGLISH !== $lang) {
+            return '';
+        }
+
+        return self::shorten(BoardDjText::stored($postId));
     }
 
     /**

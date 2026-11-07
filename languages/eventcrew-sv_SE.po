@@ -1482,7 +1482,6 @@ msgstr "Avbokade en uppgift (e-post)"
 msgid "Cancelled late"
 msgstr "Sen avbokning"
 
-
 #: src/Telegram/AssistantService.php:194 src/Telegram/AssistantService.php:195 src/Telegram/BuyerListReset.php:105 src/Telegram/EventsCommand.php:145
 #: src/Telegram/SayCommand.php:145
 msgid "Cancelled."
@@ -7231,10 +7230,6 @@ msgstr "Tack för att du kommer! Du står på gästlistan."
 msgid "Thank you for dancing with us"
 msgstr "Tack för att du dansade med oss"
 
-#: src/Support/TicketReasons.php:59
-msgid "Thank you for taking a task!"
-msgstr "Tack för att du tog en uppgift!"
-
 #: src/Web/NewsletterController.php:619
 msgid ""
 "Thank you. Check your inbox: the next events announcement starts only after you press the link in the email we sent."
@@ -10286,10 +10281,6 @@ msgid ""
 msgstr ""
 "Du har nu rollen %s. Dess uppgifter är öppna för dig på crew-sidan, och du kan anmäla dig till dem."
 
-#: src/Support/TicketReasons.php:60
-msgid "You spent a free-entry credit on this night."
-msgstr "Du använde en fribiljett för den här kvällen."
-
 #: src/Support/MessageTemplates.php:2204
 msgid ""
 "You were added to the crew at the door. Welcome!\n"
@@ -11280,8 +11271,8 @@ msgstr "🛠️ Öppna Admin-fliken"
 msgid "🧭 Organizer guide ↓"
 msgstr "🧭 Arrangörsguide ↓"
 
-msgid "A short description of the event (at most two sentences), in the reader’s language when there is a translation. On a line of its own; the line goes when the event has no description."
-msgstr "En kort beskrivning av evenemanget (högst två meningar), på läsarens språk när det finns en översättning. På en egen rad; raden tas bort när evenemanget saknar beskrivning."
+msgid "The AI’s short text about the event from the group board (at most two sentences), for English readers only; never the event’s own description. On a line of its own; the line goes when there is no such text."
+msgstr "AI:ns korta text om evenemanget från gruppens tavla (högst två meningar), bara för engelskspråkiga läsare; aldrig evenemangets egen beskrivning. På en egen rad; raden försvinner när det inte finns någon sådan text."
 
 #, php-format
 msgid "Blank: %s."
@@ -11552,10 +11543,6 @@ msgstr "Fribiljetter: %d"
 #: src/Telegram/TicketRedemptionService.php
 msgid "Pick an event:"
 msgstr "Välj ett evenemang:"
-
-#: src/Support/MessageTemplates.php
-msgid "Show it at the door."
-msgstr "Visa den vid dörren."
 
 #: src/Support/MessageTemplates.php
 msgid "The name of the event and its DJs, like Ecstatic Dance · Esimerkki. On a line of its own; the line goes when it is not known."
@@ -12143,3 +12130,19 @@ msgstr "Sätt en text bara för nästa mejl efter evenemanget genom att skicka /
 
 msgid "an administrator"
 msgstr "en administratör"
+
+#: src/Support/MessageTemplates.php
+msgid "Thank you for being part of the crew and helping make these nights happen."
+msgstr "Tack för att du är en del av crewet och hjälper till att göra kvällarna möjliga."
+
+#: src/Support/MessageTemplates.php
+msgid "Show it at the door, then come dance and enjoy the night as our guest."
+msgstr "Visa den vid dörren och kom sedan och dansa och njut av kvällen som vår gäst."
+
+#: src/Support/TicketReasons.php
+msgid "Thank you for taking a task and helping make this night happen. Enjoy the dance as our guest too!"
+msgstr "Tack för att du tog en uppgift och hjälper till att göra kvällen möjlig. Njut av dansen som vår gäst också!"
+
+#: src/Support/TicketReasons.php
+msgid "Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!"
+msgstr "Tack för att du är en del av crewet och hjälper till att göra kvällarna möjliga. Den här kvällen bjuder vi på: kom och dansa och njut av den som vår gäst!"

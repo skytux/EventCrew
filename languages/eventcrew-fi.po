@@ -178,7 +178,6 @@ msgstr "Peruttu"
 msgid "Cancelled late"
 msgstr "Peruttu myöhään"
 
-
 #. translators: 1: role, 2: event
 #: src/Support/ClaimNotifier.php:176
 #, php-format
@@ -5592,12 +5591,6 @@ msgstr "Tapahtuman jälkeinen viesti: ei lähetetä tästä tapahtumasta (kytket
 msgid "Already used · %s"
 msgstr "Jo käytetty · %s"
 
-msgid "Thank you for taking a task!"
-msgstr "Kiitos, että otit tehtävän!"
-
-msgid "You spent a free-entry credit on this night."
-msgstr "Käytit vapaalipun tähän iltaan."
-
 msgid "Your ticket is cancelled"
 msgstr "Lippusi on peruttu"
 
@@ -8072,8 +8065,8 @@ msgstr "organisaation nimi (Verkkosivu-välilehti, muuten sivuston nimi)."
 msgid "the event’s start time, like 19:00. Empty when the event has none."
 msgstr "tapahtuman alkamisaika, esim. 19:00. Tyhjä, jos tapahtumalla ei ole sitä."
 
-msgid "A short description of the event (at most two sentences), in the reader’s language when there is a translation. On a line of its own; the line goes when the event has no description."
-msgstr "Tapahtuman lyhyt kuvaus (enintään kaksi virkettä), lukijan kielellä, jos käännös on. Omalla rivillään; rivi jää pois, jos tapahtumalla ei ole kuvausta."
+msgid "The AI’s short text about the event from the group board (at most two sentences), for English readers only; never the event’s own description. On a line of its own; the line goes when there is no such text."
+msgstr "Ryhmän taulun tekoälyn kirjoittama lyhyt teksti tapahtumasta (enintään kaksi virkettä), vain englanninkielisille lukijoille; ei koskaan tapahtuman omaa kuvausta. Omalla rivillään; rivi jää pois, jos tekstiä ei ole."
 
 msgid "The event’s start time, like 19:00. Empty when the event has none."
 msgstr "Tapahtuman alkamisaika, esim. 19:00. Tyhjä, jos tapahtumalla ei ole sitä."
@@ -8517,10 +8510,6 @@ msgstr "Vapaaliput: %d"
 #: src/Telegram/TicketRedemptionService.php
 msgid "Pick an event:"
 msgstr "Valitse tapahtuma:"
-
-#: src/Support/MessageTemplates.php
-msgid "Show it at the door."
-msgstr "Näytä se ovella."
 
 #: src/Support/MessageTemplates.php
 msgid "The name of the event and its DJs, like Ecstatic Dance · Esimerkki. On a line of its own; the line goes when it is not known."
@@ -9108,3 +9097,19 @@ msgstr "Aseta teksti vain seuraavaan tapahtuman jälkeiseen viestiin lähettäm�
 
 msgid "an administrator"
 msgstr "ylläpitäjä"
+
+#: src/Support/MessageTemplates.php
+msgid "Thank you for being part of the crew and helping make these nights happen."
+msgstr "Kiitos, että olet mukana crew'ssa ja teet näistä illoista totta."
+
+#: src/Support/MessageTemplates.php
+msgid "Show it at the door, then come dance and enjoy the night as our guest."
+msgstr "Näytä se ovella ja tule tanssimaan ja nauttimaan illasta vieraanamme."
+
+#: src/Support/TicketReasons.php
+msgid "Thank you for taking a task and helping make this night happen. Enjoy the dance as our guest too!"
+msgstr "Kiitos, että otit tehtävän ja autat tekemään tästä illasta totta. Nauti tanssista myös vieraanamme!"
+
+#: src/Support/TicketReasons.php
+msgid "Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!"
+msgstr "Kiitos, että olet mukana crew'ssa ja teet näistä illoista totta. Tämä ilta on meiltä: tule tanssimaan ja nauti illasta vieraanamme!"

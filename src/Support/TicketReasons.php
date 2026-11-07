@@ -56,8 +56,16 @@ final class TicketReasons
     {
         return match ($kind) {
             self::GUEST => __('Thank you for coming! You are on the guest list.', 'eventcrew'),
-            self::TASK => __('Thank you for taking a task!', 'eventcrew'),
-            self::CREDIT => __('You spent a free-entry credit on this night.', 'eventcrew'),
+            // A warm thank-you to the crew (Owner 2026-11-07; stored copies of
+            // the old lines: FrictionB3Migration).
+            self::TASK => __(
+                'Thank you for taking a task and helping make this night happen. Enjoy the dance as our guest too!',
+                'eventcrew'
+            ),
+            self::CREDIT => __(
+                'Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!', // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+                'eventcrew'
+            ),
             default => __('Thank you for buying a ticket!', 'eventcrew'),
         };
     }

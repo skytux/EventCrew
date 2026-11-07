@@ -7,6 +7,7 @@ namespace EventCrew\Tests\Support;
 use Brain\Monkey\Functions;
 use EventCrew\Support\FrictionB3Migration;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\TicketReasons;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -32,6 +33,12 @@ final class FrictionB3MigrationTest extends TestCase
         );
         Functions\when('update_option')->alias(function (string $name, mixed $value): bool {
             $this->options[$name] = $value;
+            $this->writes[] = $name;
+
+            return true;
+        });
+        Functions\when('delete_option')->alias(function (string $name): bool {
+            unset($this->options[$name]);
             $this->writes[] = $name;
 
             return true;
@@ -125,5 +132,43 @@ final class FrictionB3MigrationTest extends TestCase
         );
         self::assertSame("{event}\n{date}", FrictionB3Migration::eventFirst("{event}\n{date}"));
         self::assertSame('Ticket for {date}. {event}', FrictionB3Migration::eventFirst('Ticket for {date}. {event}'));
+    }
+
+    /**
+     * Stored copies of the old free-ticket texts with nothing written by hand
+     * are dropped, so the warm built-in texts apply (Owner 2026-11-07); a text
+     * edited by hand stays.
+     */
+    public function testTheWarmStepDropsStoredCopiesOfTheOldFreeTicketTexts(): void
+    {
+        $prefix = MessageTemplates::OPTION_PREFIX;
+        $this->options[$prefix . 'free_ticket_dm'] = [
+            MessageTemplates::BODY => [
+                'source' => "✨ Your free-entry ticket ✨\n\n{event}\n{date}\n{venue}\n{event_times}\n\n💫 Show it at the door.",
+                'texts' => ['fi' => 'Konekäännös'],
+                'manual' => ['fi' => false],
+            ],
+            'settings' => ['off' => true],
+        ];
+        $this->options[TicketReasons::option(TicketReasons::TASK)] = [
+            'source' => 'Thank you for taking a task!',
+            'texts' => ['fi' => 'Kiitos!'],
+            'manual' => ['fi' => true],
+        ];
+        $this->options[TicketReasons::option(TicketReasons::CREDIT)] = [
+            'source' => 'You spent a free-entry credit on this night.',
+            'texts' => ['fi' => 'Konekäännös'],
+        ];
+
+        FrictionB3Migration::run();
+
+        self::assertSame(['settings' => ['off' => true]], $this->options[$prefix . 'free_ticket_dm']);
+        self::assertArrayHasKey(TicketReasons::option(TicketReasons::TASK), $this->options, 'edited by hand: kept');
+        self::assertArrayNotHasKey(TicketReasons::option(TicketReasons::CREDIT), $this->options);
+        self::assertSame(1, $this->options[FrictionB3Migration::OPTION][FrictionB3Migration::WARM_STEP]);
+
+        $this->writes = [];
+        FrictionB3Migration::run();
+        self::assertSame([], $this->writes, 'a second run changes nothing');
     }
 }

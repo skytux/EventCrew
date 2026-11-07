@@ -10,6 +10,7 @@ use EventCrew\Models\Task;
 use EventCrew\Support\EventDescription;
 use EventCrew\Support\EventDetailsText;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Telegram\BoardDjText;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -19,6 +20,12 @@ use EventCrew\Tests\TestCase;
  */
 final class EventDescriptionTest extends TestCase
 {
+    /** An event's own text as EventMesh keeps it: a block of details, no prose. */
+    private const RAW = "<p>ECSTATIC DANCE HELSINKI<br>14.11.2026<br>Esimerkki<br>Example Hall Helsinki<br>"
+        . "Sörnäisten rantatie 33C, 00500 Helsinki<br>Door code 7302 (lower keypad)</p>"
+        . "<p>Event schedule:<br>18:30-19:00 Doors open<br>19:00 Opening circle &amp; warm-up<br>"
+        . "19:30 Ecstatic Dance<br>21:30 Closing circle</p><p>Note! Doors close at 19:00.</p>";
+
     /** @var array<string, mixed> */
     private array $options = [];
 
@@ -57,6 +64,12 @@ final class EventDescriptionTest extends TestCase
         Functions\when('get_the_title')->justReturn('Ecstatic Dance');
     }
 
+    /** The group board's current AI text about event 12 (BoardDjText). */
+    private function boardText(string $text): void
+    {
+        $this->options[BoardDjText::OPTION] = [12 => ['hash' => md5(BoardDjText::source(12)), 'text' => $text]];
+    }
+
     private function task(): Task
     {
         return new Task(5, '2026-07-21', 'decorate', 2, 12, 'Dance', '2026-07-21 08:00:00');
@@ -89,21 +102,52 @@ final class EventDescriptionTest extends TestCase
         self::assertLessThanOrEqual(EventDescription::MAX_LENGTH, mb_strlen($short));
     }
 
-    public function testTheReadersLanguageWinsWhenThereIsATranslation(): void
+    /**
+     * The event's own text never goes into a message (Owner, 2026-11-07): not
+     * a structured block, not prose, not a translation. Only the board's AI
+     * text does, and only for an English reader (the model writes it in
+     * English); a text whose source changed since is not used.
+     */
+    public function testOnlyTheCuratedTextIsUsedNeverTheEventsOwnText(): void
     {
-        $this->content = '<p>Vapaata tanssia. Tervetuloa!</p>';
-        $this->meta = [
-            '_eventmesh_original_lang' => 'fi',
-            '_eventmesh_tr_en_hash' => md5("Ecstatic Dance\0" . $this->content),
-            '_eventmesh_tr_en_content' => 'Free dance. Welcome! Bring water.',
-        ];
+        foreach ([self::RAW, '<p>Free dance in the hall. Bring water.</p>', "Details\n14.11.\n\nA night of free dance. Bring water."] as $own) {
+            $this->content = $own;
+            $this->meta = [
+                '_eventmesh_original_lang' => 'fi',
+                '_eventmesh_tr_en_hash' => md5("Ecstatic Dance\0" . $own),
+                '_eventmesh_tr_en_content' => 'Free dance. Welcome!',
+            ];
 
-        self::assertSame('Free dance. Welcome!', EventDescription::short(12, 'en'));
-        self::assertSame('Vapaata tanssia. Tervetuloa!', EventDescription::short(12, 'fi'));
+            self::assertSame('', EventDescription::short(12, 'en'));
+            self::assertSame('', EventDescription::short(12, 'fi'));
+        }
 
-        $this->meta['_eventmesh_tr_en_hash'] = 'stale';
-        self::assertSame('Vapaata tanssia. Tervetuloa!', EventDescription::short(12, 'en'), 'an old translation is not used');
+        $this->meta = [];
+        $this->content = self::RAW;
+        $this->boardText('DJ Aino opens the night with warm grooves. Expect a slow build into deep dancing. A third one.');
+
+        self::assertSame('DJ Aino opens the night with warm grooves. Expect a slow build into deep dancing.', EventDescription::short(12, 'en'));
+        self::assertSame('', EventDescription::short(12, 'fi'), 'the board text is English only');
         self::assertSame('', EventDescription::short(null, 'en'));
+
+        $this->content = '<p>Other text.</p>';
+        self::assertSame('', EventDescription::short(12, 'en'), 'an old text is not used');
+    }
+
+    /** A raw-only event: no raw text, door code or schedule in the reminder or "A spot opened". */
+    public function testARawOnlyEventPutsNothingIntoTheMessages(): void
+    {
+        $this->content = self::RAW;
+
+        foreach (['reminder', 'reminder_dm', 'slot_freed', 'slot_freed_dm'] as $id) {
+            $body = MessageTemplates::body($id, $this->context() + ['description' => '', 'name' => 'Anna']);
+
+            foreach (['ECSTATIC', '7302', 'Doors open', 'Note!', 'Sörnäisten', 'Esimerkki'] as $raw) {
+                self::assertStringNotContainsString($raw, $body, $id);
+            }
+
+            self::assertStringNotContainsString("\n\n\n", $body, $id);
+        }
     }
 
     public function testTheBuiltInTextsShowTheDescriptionUnderTheEventLine(): void
@@ -121,11 +165,12 @@ final class EventDescriptionTest extends TestCase
 
     public function testTheLineIsFilledOrGoesWithoutAGap(): void
     {
-        $this->content = 'Free dance in the hall. Bring water. Doors at 19.';
+        $this->content = self::RAW;
+        $this->boardText('Free dance in the hall. Bring water. Doors at 19.');
         $body = MessageTemplates::body('reminder_dm', $this->context() + ['description' => '']);
         self::assertStringEndsWith("See you there!\n\nFree dance in the hall. Bring water.", $body);
 
-        $this->content = '';
+        $this->options = [];
         $body = MessageTemplates::body('reminder_dm', $this->context() + ['description' => '']);
         self::assertStringEndsWith('See you there!', $body);
 
@@ -141,7 +186,8 @@ final class EventDescriptionTest extends TestCase
 
     public function testTheFollowupGetsTheNightsEvent(): void
     {
-        $this->content = 'Free dance in the hall.';
+        $this->content = self::RAW;
+        $this->boardText('Free dance in the hall.');
         $body = MessageTemplates::find('followup_came')->fill(
             "Thanks for {event}.\n\n{event_description}",
             ['first_name' => 'Anna', 'event' => 'Ecstatic Dance', 'date' => '21.7.', 'event_id' => 12]
@@ -197,7 +243,8 @@ final class EventDescriptionTest extends TestCase
      */
     public function testTheSignupEmailShowsTheTasksDescriptionNotTheEvents(): void
     {
-        $this->content = 'Free dance in the hall. Bring water.';
+        $this->content = self::RAW;
+        $this->boardText('Free dance in the hall. Bring water.');
         $email = MessageTemplates::find('signup_confirmed');
 
         self::assertNotContains('signup_confirmed', EventDetailsText::DESCRIPTION_KINDS);
@@ -215,7 +262,8 @@ final class EventDescriptionTest extends TestCase
     /** No task description: no line, no label, no gap. */
     public function testASignupEmailWithoutATaskDescriptionLeavesNoGap(): void
     {
-        $this->content = 'Free dance in the hall.';
+        $this->content = self::RAW;
+        $this->boardText('Free dance in the hall.');
         $body = MessageTemplates::body(
             'signup_confirmed',
             $this->context() + ['description' => '', 'standing' => 'Your standing: Beginner.']

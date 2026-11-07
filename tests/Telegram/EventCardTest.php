@@ -10,6 +10,7 @@ use EventCrew\Support\Language;
 use EventCrew\Support\SiteLanguages;
 use EventCrew\Tests\FinnishCatalog;
 use EventCrew\Tests\Support\FakeEventNames;
+use EventCrew\Telegram\BoardDjText;
 use EventCrew\Telegram\EntityHtml;
 use EventCrew\Telegram\EventCard;
 
@@ -58,7 +59,7 @@ final class EventCardTest extends TelegramTestCase
     {
         $this->event(7, '2026-07-25', 'Rock & <Roll>', ['_eventmesh_price' => '22.00 EUR'], '<p>a < b & c</p>');
 
-        $caption = EventCard::forEvent(7)['caption'];
+        $caption = EventCard::forEvent(7, 'a < b & c')['caption'];
 
         self::assertStringStartsWith("<b>Rock &amp; &lt;Roll&gt;</b>\n📅 25.7.2026 · 21:00\n🎟 22 €\n\n", $caption);
         self::assertStringEndsWith('a &lt; b &amp; c', $caption);
@@ -89,45 +90,58 @@ final class EventCardTest extends TelegramTestCase
         self::assertStringNotContainsString('ECSTATIC', $caption);
     }
 
-    public function testTheFinnishTextComesFirstThenTheEnglish(): void
+    /**
+     * The event's own description is raw (a block of details with the door
+     * code and the schedule) and never shows (Owner, 2026-11-07): the card has
+     * the board's short text when there is one, else nothing under the lines.
+     */
+    public function testTheRawDescriptionNeverShowsTheBoardTextDoes(): void
     {
-        $this->bilingualEvent(7, 'Summer Night', 'Dance all night.', 'Tanssia koko yön.');
+        $raw = "ECSTATIC DANCE HELSINKI\n14.11.2026\nExample Hall Helsinki\nDoor code 7302 (lower keypad)\n"
+            . "Event schedule:\n18:30-19:00 Doors open\nNote! Doors close at 19:00.";
+        $this->bilingualEvent(7, 'Summer Night', $raw, 'Tanssia koko yön. Ovikoodi 7302.');
 
         $caption = EventCard::forEvent(7)['caption'];
 
-        self::assertStringContainsString("<b>Summer Night</b>\n<i>Suomeksi: Summer Night</i>\n", $caption);
-        self::assertStringEndsWith("<b>FI:</b> Tanssia koko yön.\n\n<b>EN:</b> Dance all night.", $caption);
+        self::assertStringEndsWith("📅 25.7.2026 · 21:00", $caption);
+        self::assertStringNotContainsString('7302', $caption);
+        self::assertStringNotContainsString('Tanssia', $caption);
+
+        $this->options[BoardDjText::OPTION] = [7 => ['hash' => md5(BoardDjText::source(7)), 'text' => 'DJ Aino plays warm grooves.']];
+        self::assertStringEndsWith("21:00\n\nDJ Aino plays warm grooves.", EventCard::forEvent(7)['caption']);
+        self::assertStringEndsWith('21:00', EventCard::forEvent(7, '')['caption'], "'' shows no text");
     }
 
-    public function testALongDescriptionIsCutAtASentenceEndAndTheCaptionFitsTheLimit(): void
+    public function testALongTextIsCutAtASentenceEndAndTheCaptionFitsTheLimit(): void
     {
-        $en = str_repeat('This is one sentence about the night. ', 100);
-        $fi = str_repeat('Tämä on yksi lause illasta. ', 100);
-        $this->bilingualEvent(7, str_repeat('Long title ', 40), $en, $fi, ['_eventmesh_price' => '22.00 EUR']);
+        $about = str_repeat('This is one sentence about the night. ', 100);
+        $this->event(7, '2026-07-25', str_repeat('Long title ', 40), ['_eventmesh_price' => '22.00 EUR']);
 
-        $caption = EventCard::forEvent(7)['caption'];
+        $caption = EventCard::forEvent(7, $about)['caption'];
 
         self::assertLessThanOrEqual(EventCard::CAPTION_LIMIT, self::visibleLength($caption));
-        self::assertMatchesRegularExpression('/<b>FI:<\/b> (Tämä on yksi lause illasta\. ?)+\n\n/u', $caption);
-        self::assertMatchesRegularExpression('/<b>EN:<\/b> (This is one sentence about the night\. ?)+$/u', $caption);
+        self::assertMatchesRegularExpression('/\n\n(This is one sentence about the night\. ?)+$/u', $caption);
     }
 
     public function testWithoutASentenceEndTheTextIsCutAtAWordWithAnEllipsis(): void
     {
-        $this->event(7, '2026-07-25', 'Night', [], trim(str_repeat('alpha beta gamma ', 200)));
+        $this->event(7, '2026-07-25', 'Night');
 
-        $caption = EventCard::forEvent(7)['caption'];
+        $caption = EventCard::forEvent(7, trim(str_repeat('alpha beta gamma ', 200)))['caption'];
         $about = substr($caption, (int) strrpos($caption, "\n\n") + 2);
 
         self::assertMatchesRegularExpression('/^(alpha|beta|gamma)( (alpha|beta|gamma))*…$/u', $about);
-        self::assertLessThanOrEqual(300, EntityHtml::units($about));
+        self::assertLessThanOrEqual(EventCard::CAPTION_LIMIT, self::visibleLength($caption));
     }
 
     public function testEmojiCountTwiceTowardsTheLimitLikeTelegramCountsThem(): void
     {
-        $this->bilingualEvent(7, str_repeat('🎉', 300), str_repeat('🎶', 1000), str_repeat('🎵', 1000));
+        $this->event(7, '2026-07-25', str_repeat('🎉', 300));
 
-        self::assertLessThanOrEqual(EventCard::CAPTION_LIMIT, self::visibleLength(EventCard::forEvent(7)['caption']));
+        self::assertLessThanOrEqual(
+            EventCard::CAPTION_LIMIT,
+            self::visibleLength(EventCard::forEvent(7, str_repeat('🎶', 1000))['caption'])
+        );
     }
 
     public function testASoldOutEventIsMarkedAndHasNoTicketButton(): void

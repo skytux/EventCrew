@@ -650,8 +650,8 @@ msgid "A send is already waiting. It goes out at %s."
 msgstr "已有一次发送在等待中，将在 %s 发出。"
 
 #: src/Support/MessageTemplates.php:565
-msgid "A short description of the event (at most two sentences), in the reader’s language when there is a translation. On a line of its own; the line goes when the event has no description."
-msgstr "活动的简短描述（最多两句），有翻译时使用读者的语言。单独占一行；活动没有描述时该行省略。"
+msgid "The AI’s short text about the event from the group board (at most two sentences), for English readers only; never the event’s own description. On a line of its own; the line goes when there is no such text."
+msgstr "群组看板上由 AI 撰写的活动简短文字（最多两句），仅对英语读者显示；绝不使用活动自身的描述。单独成行；没有这样的文字时该行不显示。"
 
 #: src/Support/MessageTemplates.php:1189
 msgid "A space and the sentence saying until how many hours before the task a cancellation does not affect the standing (Settings). Empty when that number is 0."
@@ -1418,7 +1418,6 @@ msgstr "取消了任务（邮件）"
 #: src/Support/Reputation.php:70
 msgid "Cancelled late"
 msgstr "临时取消"
-
 
 #: src/Telegram/AssistantService.php:194 src/Telegram/AssistantService.php:195
 #: src/Telegram/BuyerListReset.php:105 src/Telegram/EventsCommand.php:145
@@ -6809,10 +6808,6 @@ msgstr "感谢你的到来！你在嘉宾名单上。"
 msgid "Thank you for dancing with us"
 msgstr "感谢你与我们共舞"
 
-#: src/Support/TicketReasons.php:59
-msgid "Thank you for taking a task!"
-msgstr "感谢你接下任务！"
-
 #: src/Web/NewsletterController.php:620
 msgid "Thank you. Check your inbox: the next events announcement starts only after you press the link in the email we sent."
 msgstr "谢谢。请查看收件箱：只有在你点击我们发送的邮件中的链接后，下一次活动公告才会开始。"
@@ -9494,10 +9489,6 @@ msgstr "你现在拥有角色 %s，因此可以报名其任务。"
 msgid "You now have the role %s. Its tasks are open to you on the crew page, and you can sign up for them."
 msgstr "你现在拥有角色 %s。团队页面中已向你开放其任务，你可以报名。"
 
-#: src/Support/TicketReasons.php:60
-msgid "You spent a free-entry credit on this night."
-msgstr "你为这一晚使用了一个免费入场积分。"
-
 #: src/Support/MessageTemplates.php:2537
 msgid ""
 "You were added to the crew at the door. Welcome!\n"
@@ -11188,3 +11179,19 @@ msgstr "要只为下一封活动后邮件设置文本，请发送 /followup came
 
 msgid "an administrator"
 msgstr "一位管理员"
+
+#: src/Support/MessageTemplates.php
+msgid "Thank you for being part of the crew and helping make these nights happen."
+msgstr "感谢你成为团队的一员，帮助这些夜晚顺利举办。"
+
+#: src/Support/MessageTemplates.php
+msgid "Show it at the door, then come dance and enjoy the night as our guest."
+msgstr "在门口出示它，然后作为我们的嘉宾来跳舞，尽情享受这一晚。"
+
+#: src/Support/TicketReasons.php
+msgid "Thank you for taking a task and helping make this night happen. Enjoy the dance as our guest too!"
+msgstr "感谢你接下任务，帮助这一晚顺利举办。也请作为我们的嘉宾尽情跳舞！"
+
+#: src/Support/TicketReasons.php
+msgid "Thank you for being part of the crew and helping make these nights happen. This one is on us: come dance and enjoy it as our guest!"
+msgstr "感谢你成为团队的一员，帮助这些夜晚顺利举办。这一晚我们请客：作为我们的嘉宾来跳舞，尽情享受吧！"

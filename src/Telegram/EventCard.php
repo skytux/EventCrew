@@ -23,10 +23,12 @@ use EventCrew\Support\TicketMail;
  * - caption: Telegram HTML. The title in bold (and the Finnish title in
  *   italics when it is different), the DJ line (EventName: the title is then
  *   EventMesh's clean name, without date and DJs), the date and time, the price or a sold-out
- *   mark, then a short description: the Finnish one, then the English one,
- *   like the email. The whole caption fits Telegram's 1024 characters: each
- *   description gets at most 300 characters or its half of the room left,
- *   and is cut at the end of a sentence, or at the end of a word with "…".
+ *   mark, then the group board's short text about the DJ or host
+ *   (BoardDjText::stored()) when there is one. Never the event's own
+ *   description: that raw text is a block of details (door code, schedule)
+ *   and belongs in no message (Owner, 2026-11-07). The whole caption fits
+ *   Telegram's 1024 characters: the text is cut at the end of a sentence, or
+ *   at the end of a word with "…".
  * - buttons: rows of link buttons. "🎟 Osta lippu · Buy a ticket · 22 €" to
  *   the ticket shop (not on a sold-out event), "▶ Kuuntele DJ:tä · Listen to
  *   the DJ" to the DJ's music page when there is one, and "📱 Crew app" to the
@@ -42,19 +44,16 @@ final class EventCard
     /** The most events /events shows. */
     public const MAX_EVENTS = 5;
 
-    /** The longest description in one language, in characters. */
-    private const SHORT = 300;
-
     /**
      * The longest title, in characters. With two titles of this length and
-     * the date and price, more than 500 characters are left for the two
-     * descriptions, so both languages always fit.
+     * the date and price, more than 500 characters are left for the text
+     * under them.
      */
     private const TITLE_MAX = 200;
 
     /**
      * The longest DJ line, in characters. With it the title lines still leave
-     * more than 400 characters for the two descriptions.
+     * more than 400 characters for the text under them.
      */
     private const DJ_MAX = 100;
 
@@ -104,9 +103,10 @@ final class EventCard
      * The card of one event, or null when the post is missing or is not an
      * event. Built whatever the event's state, so a probe can show any event.
      *
-     * $about, when given, is plain text shown in place of the descriptions
-     * (the group board's short text about the DJ or host); '' shows no text
-     * under the name, date and price lines at all.
+     * $about is plain text shown under the name, date and price lines; null
+     * is the group board's short text about the DJ or host
+     * (BoardDjText::stored()), and '' (or no such text) shows none. Never the
+     * event's own description.
      *
      * @return array{
      *     photo: string,
@@ -138,7 +138,7 @@ final class EventCard
 
         return [
             'photo' => self::isLink((string) $details['image']) ? (string) $details['image'] : '',
-            'caption' => self::caption($details, $about),
+            'caption' => self::caption($details, $about ?? BoardDjText::stored($postId)),
             'buttons' => self::buttons($details),
         ];
     }
@@ -184,8 +184,9 @@ final class EventCard
 
     /**
      * The caption, from the event's details: date, time, title, title_fi, dj,
-     * sold_out and EventSource::card()'s price and descriptions. $about, when
-     * not null, is plain text shown instead of the descriptions, cut to fit.
+     * sold_out and EventSource::card()'s price. $about is plain text shown
+     * under them, cut to fit; null or '' shows none. The event's own
+     * descriptions (excerpt_fi, excerpt_en, excerpt) are never shown.
      *
      * @param array<string, mixed> $event
      */
@@ -223,12 +224,8 @@ final class EventCard
         $caption = implode("\n", $head);
         $room = self::CAPTION_LIMIT - self::length($caption) - 2;
 
-        if (null === $about) {
-            $about = self::about($event, $room);
-        } else {
-            $about = self::compact(self::plain($about));
-            $about = '' === $about || $room < 1 ? '' : self::escape(self::cut($about, $room));
-        }
+        $about = self::compact(self::plain((string) $about));
+        $about = '' === $about || $room < 1 ? '' : self::escape(self::cut($about, $room));
 
         return '' === $about ? $caption : $caption . "\n\n" . $about;
     }
@@ -264,39 +261,6 @@ final class EventCard
         }
 
         return $rows;
-    }
-
-    /**
-     * The descriptions as Telegram HTML in at most $room characters: "FI: …"
-     * then "EN: …", or the one of unknown language without a label.
-     *
-     * @param array<string, mixed> $event
-     */
-    private static function about(array $event, int $room): string
-    {
-        $fi = self::compact((string) ($event['excerpt_fi'] ?? ''));
-        $en = self::compact((string) ($event['excerpt_en'] ?? ''));
-        $plain = self::compact((string) ($event['excerpt'] ?? ''));
-
-        if ('' === $fi && '' === $en) {
-            return '' === $plain || $room < 1 ? '' : self::escape(self::cut($plain, min(self::SHORT, $room)));
-        }
-
-        $parts = array_filter(['FI' => $fi, 'EN' => $en], static fn (string $text): bool => '' !== $text);
-        // Each part is "XX: " and its text; two parts have a blank line between.
-        $share = intdiv($room - 2 * (count($parts) - 1), count($parts)) - 4;
-
-        if ($share < 1) {
-            return '';
-        }
-
-        $lines = [];
-
-        foreach ($parts as $label => $text) {
-            $lines[] = '<b>' . $label . ':</b> ' . self::escape(self::cut($text, min(self::SHORT, $share)));
-        }
-
-        return implode("\n\n", $lines);
     }
 
     /**

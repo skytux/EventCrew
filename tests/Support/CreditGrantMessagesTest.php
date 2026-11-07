@@ -66,11 +66,11 @@ final class CreditGrantMessagesTest extends TelegramTestCase
     public function testTheTicketDmNamesTheEventFirst(): void
     {
         self::assertSame(
-            "✨ Your free-entry ticket ✨\n\nParty\nSat 1 Aug\n\n💫 Show it at the door.",
+            "✨ Your free-entry ticket ✨\n\nParty\nSat 1 Aug\n\n💛 Thank you for being part of the crew and helping make these nights happen.\n💫 Show it at the door, then come dance and enjoy the night as our guest.",
             MessageTemplates::body('free_ticket_dm', ['date' => 'Sat 1 Aug', 'event' => 'Party'])
         );
         self::assertSame(
-            "✨ Your free-entry ticket ✨\nSat 1 Aug\n\n💫 Show it at the door.",
+            "✨ Your free-entry ticket ✨\nSat 1 Aug\n\n💛 Thank you for being part of the crew and helping make these nights happen.\n💫 Show it at the door, then come dance and enjoy the night as our guest.",
             MessageTemplates::body('free_ticket_dm', ['date' => 'Sat 1 Aug'])
         );
     }
