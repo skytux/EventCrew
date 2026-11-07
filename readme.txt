@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.177
+Stable tag: 1.140.178
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.178 =
+* Organizers get their own hourly limit for bot answers in a private chat (default 60), set in Settings > Telegram bot.
+* {event_description} (the board's short text about the DJ or host) is translated into each site language when it is written, so Finnish and Swedish readers see it too; a missing translation shows nothing, never English.
 
 = 1.140.177 =
 * Messages no longer paste the event page's raw description (door code, schedule, address in one line). {event_description} now shows only the board's short text about the DJ or host, or nothing.
@@ -1838,6 +1842,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.178 =
+No settings change.
 
 = 1.140.177 =
 No settings change.
