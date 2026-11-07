@@ -121,13 +121,15 @@ final class MenuButtons
     }
 
     /**
-     * The buttons under the Tasks screen, below the cancel buttons.
+     * The buttons under the Tasks screen, below the cancel buttons: the
+     * board first (Lou 2026-11-07), then Take over a task and Past tasks.
      *
      * @return array<int, array<int, array{text: string, callback_data: string}>>
      */
     public static function tasksRows(): array
     {
         return [
+            [self::button('📅 ' . __('Open tasks', 'eventcrew'), self::BOARD)],
             [self::button('🔁 ' . __('Take over a task', 'eventcrew'), self::REPLACE)],
             [self::button('🕘 ' . __('Past tasks', 'eventcrew'), self::HISTORY)],
             self::backRow(),

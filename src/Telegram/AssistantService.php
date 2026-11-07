@@ -309,7 +309,7 @@ final class AssistantService
         }
 
         $audience = $this->help->audience($fromId);
-        $knowledge = $this->knowledge->build();
+        $knowledge = $this->knowledge->build($audience['roleSlugs'] ?? []);
         // Read before this message is added: the message itself goes as the
         // user turn. A group has its own record per person (0 = private).
         $logChat = $isPrivate ? 0 : $chatId;

@@ -89,7 +89,7 @@ final class ProfileServiceTest extends TelegramTestCase
 
     /**
      * Lou 2026-11-07: the Tasks screen has a cancel button for each coming
-     * task, above Take over a task. It sends the board's leave tap, which
+     * task, above the board, Take over a task and Past tasks. It sends the board's leave tap, which
      * asks before cancelling.
      */
     public function testTasksHasACancelButtonForEachComingTask(): void
@@ -123,7 +123,7 @@ final class ProfileServiceTest extends TelegramTestCase
         self::assertSame('l:1', $rows[0][0]['callback_data']);
         self::assertSame('✖️ Cancel Decorate, Mon 27 Jul', $rows[1][0]['text']);
         self::assertSame('l:2', $rows[1][0]['callback_data']);
-        self::assertSame(['mn:replace', 'mn:hist', 'mn:me'], array_column(array_merge(...array_slice($rows, 2)), 'callback_data'));
+        self::assertSame(['mn:board', 'mn:replace', 'mn:hist', 'mn:me'], array_column(array_merge(...array_slice($rows, 2)), 'callback_data'));
     }
 
     /**

@@ -252,7 +252,7 @@ final class HelpServiceTest extends TelegramTestCase
         $this->person();
         $this->send('/tasks');
         self::assertSame("📋 Tasks\nNo coming tasks.", $this->lastText());
-        self::assertSame(['mn:replace', 'mn:hist', 'mn:me'], $this->lastButtons());
+        self::assertSame(['mn:board', 'mn:replace', 'mn:hist', 'mn:me'], $this->lastButtons());
     }
 
     /** The Tasks screen's deep link is "mytasks": "tasks" is the board's Task info. */

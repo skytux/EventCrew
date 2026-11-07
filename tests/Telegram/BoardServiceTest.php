@@ -377,6 +377,22 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertContains('👤 My info', $labels);
     }
 
+    /**
+     * Lou 2026-11-07: the private board has no sign-up row: there a tap on a
+     * task asks a newcomer to set up first anyway.
+     */
+    public function testThePrivateBoardHasNoSignUpButton(): void
+    {
+        $this->options[BoardService::USERNAME_OPTION] = 'eventcrew_bot';
+        $this->wpdb->nextResults[] = [$this->taskRow(1, 100, 'Party')];
+        $this->wpdb->nextResults[] = [];
+
+        $labels = array_column($this->buttons($this->privateRender()['keyboard']), 'text');
+
+        self::assertNotContains('👋 New here? Sign up →', $labels);
+        self::assertContains('👤 My info', $labels);
+    }
+
     public function testRenderReportsAnEmptyBoard(): void
     {
         $this->wpdb->nextResults[] = []; // no upcoming tasks
