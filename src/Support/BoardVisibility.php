@@ -14,14 +14,15 @@ use EventCrew\Models\Task;
  * The guest board (the Telegram group, and the web page when signed out)
  * shows a task only when its role is not restricted and is ticked "Show on
  * the guest board". Signed in on the web, a person also sees the tasks of the
- * roles they hold; an organizer sees every task.
+ * roles they hold; an organizer sees every task. A task of an archived role
+ * is shown to nobody (Owner 2026-11-07).
  */
 final class BoardVisibility
 {
     /** Whether the guest board shows this task. */
     public static function onGuestBoard(Task $task): bool
     {
-        return ! $task->isRestricted() && Roles::onBoard($task->roleSlug);
+        return ! $task->isRestricted() && Roles::onBoard($task->roleSlug) && ! Roles::isArchived($task->roleSlug);
     }
 
     /** Whether the web board shows this task to this person (null: signed out). */
@@ -31,7 +32,7 @@ final class BoardVisibility
             return true;
         }
 
-        if (null === $person) {
+        if (null === $person || Roles::isArchived($task->roleSlug)) {
             return false;
         }
 

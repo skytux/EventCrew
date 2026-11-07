@@ -126,7 +126,8 @@ final class BoardRenderer
      */
     private function compose(string $date, bool $group, ?Person $viewer, bool $withNames): array
     {
-        [$tasks, $days, $extra, $addable] = $this->viewTasks($viewer);
+        // The group's board is the guest board, whoever asked for it.
+        [$tasks, $days, $extra, $addable] = $this->viewTasks($group ? null : $viewer);
 
         if ([] === $days) {
             return $this->emptyBoard();
@@ -148,7 +149,7 @@ final class BoardRenderer
 
         $guest = array_values(array_filter($tasks, static fn (Task $t): bool => BoardVisibility::onGuestBoard($t)));
         $own = array_values(array_filter($tasks, static fn (Task $t): bool => isset($extra[$t->id])));
-        $role = null === $viewer ? ['buttons' => [], 'legend' => ''] : $this->roleButtons($own, $addable, $taken, $viewer);
+        $role = null === $viewer || $group ? ['buttons' => [], 'legend' => ''] : $this->roleButtons($own, $addable, $taken, $viewer);
 
         $lines = $this->introLines();
 
@@ -204,9 +205,8 @@ final class BoardRenderer
 
     /**
      * What one board reads, from one upcoming() call, in that order:
-     * - every task, the lines of the text: the guest board's tasks and the
-     *   special ones it leaves out (restricted roles, roles hidden from the
-     *   guest board), which are lines without a button (Owner 2026-11-07, Q362);
+     * - every task $viewer may see (BoardVisibility::visibleTo()), the lines
+     *   of the text; without a viewer only the guest board's;
      * - the tasks whose days the board shows: the guest board's, and on a
      *   private copy also the ones $viewer can act on;
      * - the ids of the special tasks $viewer can act on (a restricted task of
@@ -219,7 +219,14 @@ final class BoardRenderer
      */
     private function viewTasks(?Person $viewer): array
     {
-        $upcoming = $this->tasks->upcoming();
+        // Only what this reader may see (BoardVisibility): the group board
+        // (no viewer) only the guest board's tasks, a member also the tasks of
+        // their roles, an organizer every task; an archived role's tasks
+        // never (Owner 2026-11-07, replaces the special-task lines of Q362).
+        $upcoming = array_values(array_filter(
+            $this->tasks->upcoming(),
+            static fn (Task $t): bool => BoardVisibility::visibleTo($t, $viewer)
+        ));
         $extra = [];
         $addable = [];
 
@@ -451,8 +458,8 @@ final class BoardRenderer
     {
         // The tasks with a button on the group's message, and the days it
         // shows. A restricted task (Organize, DJ, ...) or one of a role
-        // switched off "Show on the guest board" is only a line in its text
-        // (compose(), Owner 2026-11-07): the people holding its role take it on
+        // switched off "Show on the guest board" is not on it at all (Owner
+        // 2026-11-07): the people holding its role take it on
         // the crew page or in their private copy of the board. The web page
         // shows the same tasks when signed out (BoardVisibility).
         return array_values(array_filter(

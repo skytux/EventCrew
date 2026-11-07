@@ -215,7 +215,7 @@ final class BoardServiceTest extends TelegramTestCase
      * A restricted task is a line in the group board's text, with no button
      * (Owner 2026-11-07, Q362).
      */
-    public function testTheGroupBoardListsARestrictedRoleTaskWithoutAButton(): void
+    public function testTheGroupBoardLeavesOutARestrictedRoleTask(): void
     {
         $this->options[Roles::OPTION_NAME] = [
             ['slug' => 'decorate', 'label' => 'Decorate'],
@@ -232,11 +232,30 @@ final class BoardServiceTest extends TelegramTestCase
         $callbacks = array_column(array_map(static fn (array $row): array => $row[0], $rendered['keyboard']), 'callback_data');
         self::assertContains('t:1', $callbacks);
         self::assertNotContains('t:2', $callbacks);
-        self::assertStringContainsString("Decorate · 0/2\n\n🎧 DJ", $rendered['text']);
+        self::assertStringContainsString('Decorate · 0/2', $rendered['text']);
+        self::assertStringNotContainsString('DJ', $rendered['text'], 'not on the guest board: not shown (Owner 2026-11-07)');
         self::assertStringNotContainsString('DJ', implode(' ', array_column(array_merge(...$rendered['keyboard']), 'text')));
     }
 
-    public function testTheGroupBoardListsARoleSwitchedOffTheBoardWithoutAButton(): void
+    public function testNoBoardShowsATaskOfAnArchivedRole(): void
+    {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'decorate', 'label' => 'Decorate'],
+            ['slug' => 'old', 'label' => 'Old', 'emoji' => '🗄', 'archived' => true],
+        ];
+        $this->wpdb->nextResults[] = [
+            $this->taskRow(1, 100, 'Party'),
+            array_merge($this->taskRow(2, 100, 'Party'), ['role_slug' => 'old', 'capacity' => 2]),
+        ];
+        $this->wpdb->nextResults[] = [];
+
+        $rendered = $this->board()->render();
+
+        self::assertStringNotContainsString('Old', $rendered['text']);
+        self::assertStringNotContainsString('t:2', (string) json_encode($rendered['keyboard']));
+    }
+
+    public function testTheGroupBoardLeavesOutARoleSwitchedOffTheBoard(): void
     {
         $this->options[Roles::OPTION_NAME] = [
             ['slug' => 'decorate', 'label' => 'Decorate'],
@@ -253,7 +272,7 @@ final class BoardServiceTest extends TelegramTestCase
         $callbacks = array_column(array_map(static fn (array $row): array => $row[0], $rendered['keyboard']), 'callback_data');
         self::assertContains('t:1', $callbacks);
         self::assertNotContains('t:2', $callbacks);
-        self::assertStringContainsString('🎲 Random · 0/2', $rendered['text']);
+        self::assertStringNotContainsString('Random', $rendered['text']);
         self::assertStringNotContainsString('Random', implode(' ', array_column(array_merge(...$rendered['keyboard']), 'text')));
         self::assertTrue(Roles::onBoard('decorate'));
         self::assertFalse(Roles::onBoard('random'));

@@ -120,21 +120,20 @@ final class PrivateBoardRoleTasksTest extends TelegramTestCase
 
         $board = $this->renderer()->crewBoard();
 
-        self::assertStringContainsString("🎈 Decorate · 2/2\nAnna, Ben\n", $board['text']);
-        self::assertStringContainsString("🎧 DJ\n–", $board['text']);
+        self::assertStringContainsString("🎈 Decorate · 2/2\nAnna, Ben", $board['text']);
         self::assertStringNotContainsString(': ', $board['text']);
     }
 
     // --- the group's board ----------------------------------------------------
 
-    public function testTheGroupBoardListsTheSpecialTasksWithoutButtons(): void
+    public function testTheGroupBoardLeavesOutTheSpecialTasksEvenForAnOrganizer(): void
     {
         $person = Person::fromRow($this->personRow('dj', true));
 
         $board = $this->renderer()->crewBoard('', true, $person);
 
-        self::assertStringContainsString("🎧 DJ\n–", $board['text']);
-        self::assertStringContainsString("📽 VJ\n–", $board['text']);
+        self::assertStringNotContainsString('DJ', $board['text']);
+        self::assertStringNotContainsString('VJ', $board['text']);
         self::assertStringNotContainsString('✋', $board['text']);
         $data = self::buttons($board);
         self::assertSame(['t:1'], array_values(array_filter($data, static fn (string $d): bool => ! str_starts_with($d, 'bd:'))));
@@ -152,7 +151,7 @@ final class PrivateBoardRoleTasksTest extends TelegramTestCase
 
     // --- the private board ----------------------------------------------------
 
-    public function testThePrivateBoardListsMyRoleTasksWithSignUpAndOtherSpecialTasksAsLines(): void
+    public function testThePrivateBoardListsMyRoleTasksWithSignUpAndNotOtherSpecialTasks(): void
     {
         $this->db->person = $this->personRow('dj');
 
@@ -161,9 +160,10 @@ final class PrivateBoardRoleTasksTest extends TelegramTestCase
         self::assertSame(['sendMessage'], $this->calledMethods());
         $sent = $this->lastCallTo('sendMessage');
         self::assertStringContainsString("🎧 DJ\n–", $sent['text']);
-        self::assertStringContainsString("📽 VJ\n–", $sent['text']);
+        // Not a role this member holds: not shown (Owner 2026-11-07).
+        self::assertStringNotContainsString('VJ', $sent['text']);
         // The legend is under the tasks, the last line (Owner 2026-11-07).
-        self::assertStringEndsWith("📽 VJ\n–\n\n✋ sign up · ❌ cancel", $sent['text']);
+        self::assertStringEndsWith("🎧 DJ\n–\n\n✋ sign up · ❌ cancel", $sent['text']);
         // One run of buttons: the blank ones only on the last row.
         $rows = $sent['reply_markup']['inline_keyboard'] ?? $sent['keyboard'] ?? [];
         self::assertSame(['🎈 Decorate', '✋ 🎧 DJ', DayPicker::BLANK], array_column($rows[0], 'text'));
