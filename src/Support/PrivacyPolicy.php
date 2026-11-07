@@ -562,7 +562,7 @@ final class PrivacyPolicy
         if (self::telegramEnabled()) {
             $paragraphs[] = BoardService::cardsOn()
                 ? __(
-                    'Other crew members can see your name and the tasks you are on. Crew on the same night see them in the bot’s /roster, and the task board in the crew Telegram group shows the first name of each person on a task for the next three events. Your name also appears in the group when someone covers a task for you, or you cover one for someone else.',
+                    'Other crew members can see your name and the tasks you are on. Crew on the same night see them in the bot’s /roster, and the task board in the crew Telegram group shows the first name of each person on a task for the next event. A crew member can also open the board for any coming day in a private chat with the bot. Your name also appears in the group when someone covers a task for you, or you cover one for someone else.',
                     'eventcrew'
                 )
                 : __(

@@ -230,7 +230,7 @@ final class PrivacyPolicyTest extends TestCase
         $text = $this->flatten(PrivacyPolicy::sections());
         self::assertStringContainsString('Other crew members can see your name and the tasks you are on.', $text);
         self::assertStringContainsString(
-            'shows the first name of each person on a task for the next three events',
+            'shows the first name of each person on a task for the next event',
             $text
         );
         self::assertStringContainsString($covers, $text);
