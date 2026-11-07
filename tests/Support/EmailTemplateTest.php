@@ -318,11 +318,22 @@ final class EmailTemplateTest extends TestCase
         self::assertSame('- 🎟️ Tickets', EmailBody::toText('- 🎟️ [Tickets](#ec-tickets)'));
     }
 
-    public function testTheDmVersionPutsABlankLineBetweenEmojiLines(): void
+    /** List lines stay together in a DM: no empty line between items, ever (Owner 2026-11-07). */
+    public function testTheDmVersionNeverPutsAnEmptyLineBetweenListLines(): void
     {
         self::assertSame(
-            "Tickets\n\n🔹 One\n\n🔹 Two\n- plain\n- plain",
+            "Tickets\n\n🔹 One\n🔹 Two\n- plain\n- plain",
             EmailBody::forDm("## Tickets\n\n- 🔹 One\n- 🔹 Two\n- plain\n- plain")
+        );
+        self::assertStringNotContainsString("One\n\n", EmailBody::forDm("- 🔹 One\n- 🔹 Two", true));
+    }
+
+    /** Telegram shows a "## " heading bold, and escapes the rest for parse_mode HTML. */
+    public function testTheHtmlDmVersionMakesHeadingsBold(): void
+    {
+        self::assertSame(
+            "<b>🧩 The tasks</b>\n\n🔹 A &lt; B and <b>bold</b> and <i>it</i>",
+            EmailBody::forDm("## 🧩 The tasks\n\n- 🔹 A < B and **bold** and *it*", true)
         );
     }
 

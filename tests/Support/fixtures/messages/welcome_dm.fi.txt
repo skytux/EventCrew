@@ -12,39 +12,33 @@ Illat toteutuvat, koska kaltaisesi ihmiset auttavat.
 
 Tämä viesti kertoo, miten kaikki toimii. Kysy botilta yksityisviestillä, niin näet lukusi, lippusi tai vapaalippusi.
 
-🧩 Tehtävät
+<b>🧩 Tehtävät</b>
 
 🎈 Somistus: Valmistelu ennen tansseja: sulje verhot, tarkista vessat, aseta LED-kynttilät, somista DJ-pöytä, valmistele vesi ja hedelmät ja avaa siirtoseinät.
-
 🙋 Vastaanotto: Toivota ihmiset tervetulleiksi ovella, tarkista ja myy liput ja laske, montako ihmistä tulee sisään.
-
 🧹 Siivous: Purku tanssien jälkeen: kerää kynttilät ja koristeet, korjaa vesi ja naposteltavat, tyhjennä täydet roskikset, sulje siirtoseinät, avaa verhot ja tee lopputarkistus.
 
-🎟️ Liput
+<b>🎟️ Liput</b>
 
 Kun ilmoittaudut tehtävään, saat sille illalle ilmaisen lipun. Näytä se ovella.
 
-🎁 Vapaaliput
+<b>🎁 Vapaaliput</b>
 
 Saat 1 vapaalipun jokaisesta 2 tekemästäsi tehtävästä. Saat silloin lipun valitsemallesi illalle. Joinakin iltoina (loppuunmyydyt tai erikoistapahtumat) vapaalippuja ei voi käyttää.
 
-📈 Luotettavuus
+<b>📈 Luotettavuus</b>
 
 Luotettavuutesi perustuu siihen, miten menneet tehtäväsi sujuivat:
 
 🔹 Teki tehtävän: 100%
-
 🔹 Saapui myöhässä, teki tehtävän: 90%
-
 🔹 Löysi tuuraajan: 80%
-
 🔹 Peruttu alle 48 tuntia ennen: 40%
-
 🔹 Ei saapunut: 0%
 
 Jos perut vähintään 48 tuntia ennen, sillä ei ole vaikutusta. Tuoreet tehtävät painavat enemmän kuin vanhat. Saat arvion, kun olet tehnyt 3 tehtävää. 60 % tai enemmän on hyvä taso. Alle 60 %:n tasolla et voi ilmoittautua uusiin tehtäviin ennen kuin olet puhunut järjestäjän kanssa.
 
-📋 Avoimet tehtävät
+<b>📋 Avoimet tehtävät</b>
 
 📅 ma 20.7.
 
@@ -52,7 +46,7 @@ Jos perut vähintään 48 tuntia ennen, sillä ei ole vaikutusta. Tuoreet tehtä
 
 Ilmoittaudu napauttamalla alta 📋 Avoimet tehtävät.
 
-💬 Juttele botin kanssa
+<b>💬 Juttele botin kanssa</b>
 
 Yksityisviestissä botille riittää yleensä, että kirjoitat omin sanoin, mitä haluat. Komentoja tai avainsanoja ei tarvitse muistaa.
 

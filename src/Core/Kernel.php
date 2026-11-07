@@ -154,6 +154,7 @@ use EventCrew\Web\CrewAdminPeople;
 use EventCrew\Web\CrewAdminRoster;
 use EventCrew\Web\CrewAdminTasks;
 use EventCrew\Web\CrewAppPage;
+use EventCrew\Web\DemoController;
 use EventCrew\Web\DoorController;
 use EventCrew\Web\FollowupController;
 use EventCrew\Web\NewsletterController;
@@ -249,6 +250,8 @@ final class Kernel
         $this->container->get(WebhookController::class)->boot();
         $this->container->get(VerificationController::class)->boot();
         $this->container->get(TicketController::class)->boot();
+        // The demo ticket and its one-row desk (DemoTicket): no real data.
+        $this->container->get(DemoController::class)->boot();
         $this->container->get(CalendarController::class)->boot();
         $this->container->get(ManageController::class)->boot();
         $this->container->get(BoardRefreshListener::class)->boot();
@@ -1517,6 +1520,11 @@ final class Kernel
                 $container->get(TicketBuyerRepository::class),
                 $container->get(GuestRepository::class)
             )
+        );
+
+        $this->container->singleton(
+            DemoController::class,
+            fn (Container $container) => new DemoController($container->get(TicketController::class))
         );
 
         $this->container->singleton(

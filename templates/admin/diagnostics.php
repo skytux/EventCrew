@@ -10,6 +10,7 @@
  * @var string $plugin_version
  * @var string $php_version
  * @var string $wp_version
+ * @var array{ticket: string, desk: string} $demo_links
  */
 
 declare(strict_types=1);
@@ -152,6 +153,16 @@ $eventcrew_log_color = static function (string $level): string {
             </tbody>
         </table>
     <?php endif; ?>
+
+    <h2 style="margin-top:1.5em"><?php esc_html_e('Demo ticket and desk', 'eventcrew'); ?></h2>
+    <p>
+        <?php esc_html_e('Open the ticket on one device and the desk on another, then tick the row: the ticket turns gold by itself. No login needed; the links work for 24 hours. Nothing in the demo touches real data.', 'eventcrew'); ?>
+    </p>
+    <p>
+        <a href="<?php echo esc_url($demo_links['ticket']); ?>" target="_blank" rel="noopener"><?php esc_html_e('Demo ticket', 'eventcrew'); ?></a>
+        &middot;
+        <a href="<?php echo esc_url($demo_links['desk']); ?>" target="_blank" rel="noopener"><?php esc_html_e('Demo sales desk', 'eventcrew'); ?></a>
+    </p>
 
     <h2 style="margin-top:1.5em"><?php esc_html_e('Environment', 'eventcrew'); ?></h2>
     <table class="widefat striped" style="max-width:900px">

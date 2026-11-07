@@ -1101,8 +1101,8 @@ final class MessageTemplates
             'welcome_dm' => $signed + [
                 'dm_format' => true,
                 'buttons' => static fn (): array => [
+                    __('👤 My info', 'eventcrew'),
                     '📋 ' . __('See open tasks', 'eventcrew'),
-                    RoleGuide::descriptionsLabel(),
                     '💬 ' . __('Open the group', 'eventcrew'),
                     RoleGuide::label(),
                     '📖 ' . __('Help', 'eventcrew'),
@@ -1122,10 +1122,10 @@ final class MessageTemplates
             'welcome_org_dm' => [
                 'dm_format' => true,
                 'buttons' => static fn (): array => [
-                    '📖 ' . __('Help', 'eventcrew'),
+                    '🛠 ' . __('Admin', 'eventcrew'),
                     DoorLinkSender::adminButtonLabel(),
-                    '👥 ' . __('People', 'eventcrew'),
                     '🧰 ' . __('Open EventCrew in wp-admin', 'eventcrew'),
+                    '📖 ' . __('Help', 'eventcrew'),
                     '💳 ' . __('Sales desk', 'eventcrew'),
                 ],
                 'context' => static fn (): array => ['guide' => OrganizerGuide::dm()],

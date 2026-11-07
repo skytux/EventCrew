@@ -12081,3 +12081,27 @@ msgstr "Med en AI-tjänst inställd under Inställningar > Telegram-bot skickar 
 
 msgid "Previews: changes asked in the bot come with Confirm and Cancel, the announcement and the post-event email come to you first as a preview you can stop, and the AI texts of each event can be changed in EventCrew > Messages > Coming events or in the Admin tab. The full guide says how to switch each use off."
 msgstr "Förhandsvisningar: ändringar du ber om i boten kommer med Bekräfta och Avbryt, utskicket och mejlet efter evenemanget kommer först till dig som förhandsmejl som du kan stoppa, och AI-texterna för varje evenemang kan ändras under EventCrew > Meddelanden > Kommande evenemang eller i Admin-fliken. Hela guiden visar hur du stänger av varje användning."
+
+msgid "Demo event"
+msgstr "Demoevenemang"
+
+msgid "Demo ticket"
+msgstr "Demobiljett"
+
+msgid "Demo sales desk"
+msgstr "Demodisk"
+
+msgid "Demo ticket and desk"
+msgstr "Demobiljett och demodisk"
+
+msgid "This demo has ended."
+msgstr "Den här demon har tagit slut."
+
+msgid "Not in yet"
+msgstr "Inte inne än"
+
+msgid "Tick the row and the demo ticket turns gold by itself. Nothing here is in the real door list."
+msgstr "Bocka för raden så blir demobiljetten guld av sig själv. Inget här finns i den riktiga dörrlistan."
+
+msgid "Open the ticket on one device and the desk on another, then tick the row: the ticket turns gold by itself. No login needed; the links work for 24 hours. Nothing in the demo touches real data."
+msgstr "Öppna biljetten på en enhet och disken på en annan och bocka för raden: biljetten blir guld av sig själv. Ingen inloggning behövs; länkarna fungerar i 24 timmar. Demon rör inga riktiga uppgifter."

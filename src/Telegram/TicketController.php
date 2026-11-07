@@ -522,6 +522,9 @@ final class TicketController
 
         $eventId = null === ($ticket['event_id'] ?? null) ? null : (int) $ticket['event_id'];
         $used = $ticket['used'] ?? null;
+        // The demo ticket (DemoTicket) keeps waiting after it is in, since
+        // its desk can tick it out again.
+        $demo = ! empty($ticket['demo']);
         $closeAt = EventTimes::doorsCloseAt($eventId, $ticket['date']);
         // Seconds until the doors close, by the site's clock; null when the
         // event has no doors time. Counted from the site's own "now", so the
@@ -562,8 +565,8 @@ final class TicketController
             . $body . $band . $this->qrBlock($ticket['qr'] ?? '')
             . $this->shortBlock((string) ($ticket['short'] ?? '')) . $this->codeBlock($ticket['code'] ?? '')
             . $this->noteBlock($eventId) . $this->antiFraudBlock($ticket['issued'])
-            . ($ticket['valid'] && null === $used
-                ? $this->liveScript((string) ($ticket['poll'] ?? ''), $closesIn)
+            . ($ticket['valid'] && (null === $used || $demo)
+                ? $this->liveScript((string) ($ticket['poll'] ?? ''), $closesIn, $demo)
                 : '')
             . '</div>'
         );
@@ -615,19 +618,25 @@ final class TicketController
      * the tab is hidden and starts again when it is shown, and stops for good
      * once the ticket is in or the night is over. Errors back off up to a
      * minute.
+     *
+     * $again (the demo ticket) keeps asking after the ticket is in, sends
+     * what the band shows (in=0 or 1) so the wait answers on any change, and
+     * turns the band back to VALID when the desk ticks the ticket out.
      */
-    private function liveScript(string $poll, ?int $closesIn): string
+    private function liveScript(string $poll, ?int $closesIn, bool $again = false): string
     {
         $config = [
             'poll' => $poll,
             'closesIn' => $closesIn,
+            'again' => $again,
+            'valid' => __('VALID', 'eventcrew'),
             'expired' => __('Sorry, this ticket has expired', 'eventcrew'),
             'inHtml' => $this->inBandInner('%s'),
         ];
         $json = (string) wp_json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
 
         // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained script; wrapping adds stray whitespace.
-        return '<script>(function(){var c=' . $json . ';var b=document.getElementById("ec-band");if(!b){return;}var done=false,busy=false,timer=null,fails=0;var closeAt=null===c.closesIn?null:Date.now()+c.closesIn*1000;function expire(){if(done||null===closeAt||Date.now()<closeAt||"t-band is-expired"===b.className){return;}b.className="t-band is-expired";b.textContent=c.expired;}function welcome(at){done=true;if(timer){clearTimeout(timer);}b.className="t-band is-in is-new";b.innerHTML=c.inHtml;var t=b.querySelector(".t-at");if(t){t.textContent=t.textContent.replace("%s",at);}}function later(ms){if(timer){clearTimeout(timer);}timer=setTimeout(ask,ms);}function ask(){timer=null;if(done||busy||!c.poll||document.hidden){return;}busy=true;fetch(c.poll+(-1===c.poll.indexOf("?")?"?":"&")+"_="+Date.now(),{cache:"no-store",credentials:"same-origin"}).then(function(r){if(404===r.status){c.poll="";}if(!r.ok){throw new Error(String(r.status));}return r.json();}).then(function(d){busy=false;fails=0;if(d&&d.in){welcome(d.at||"");return;}if(!d||null===d.next){c.poll="";return;}later(1000*d.next);},function(){busy=false;fails++;later(Math.min(60000,2000*fails));});}document.addEventListener("visibilitychange",function(){if(!document.hidden){expire();if(!busy){later(0);}}});setInterval(expire,1000);expire();ask();})();</script>';
+        return '<script>(function(){var c=' . $json . ';var b=document.getElementById("ec-band");if(!b){return;}var done=false,busy=false,timer=null,fails=0,isIn=-1!==b.className.indexOf("is-in");var closeAt=null===c.closesIn?null:Date.now()+c.closesIn*1000;function expire(){if(done||isIn||null===closeAt||Date.now()<closeAt||"t-band is-expired"===b.className){return;}b.className="t-band is-expired";b.textContent=c.expired;}function welcome(at){isIn=true;if(!c.again){done=true;if(timer){clearTimeout(timer);}}b.className="t-band is-in is-new";b.innerHTML=c.inHtml;var t=b.querySelector(".t-at");if(t){t.textContent=t.textContent.replace("%s",at);}}function out(){isIn=false;b.className="t-band is-valid";b.textContent=c.valid;expire();}function later(ms){if(timer){clearTimeout(timer);}timer=setTimeout(ask,ms);}function ask(){timer=null;if(done||busy||!c.poll||document.hidden){return;}busy=true;fetch(c.poll+(-1===c.poll.indexOf("?")?"?":"&")+(c.again?"in="+(isIn?1:0)+"&":"")+"_="+Date.now(),{cache:"no-store",credentials:"same-origin"}).then(function(r){if(404===r.status){c.poll="";}if(!r.ok){throw new Error(String(r.status));}return r.json();}).then(function(d){busy=false;fails=0;if(d&&d.in){if(!isIn){welcome(d.at||"");}if(!c.again){return;}}else if(d&&isIn&&c.again){out();}if(!d||null===d.next){c.poll="";return;}later(1000*d.next);},function(){busy=false;fails++;later(Math.min(60000,2000*fails));});}document.addEventListener("visibilitychange",function(){if(!document.hidden){expire();if(!busy){later(0);}}});setInterval(expire,1000);expire();ask();})();</script>';
     }
 
     /**

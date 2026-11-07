@@ -10757,3 +10757,34 @@ msgstr ""
 msgid "🧭 Organizer guide ↓"
 msgstr ""
 
+#: src/Web/DemoController.php:85
+msgid "Demo event"
+msgstr ""
+
+#: src/Web/DemoController.php:173 templates/admin/diagnostics.php:164
+msgid "Demo sales desk"
+msgstr ""
+
+#: src/Web/DemoController.php:88 templates/admin/diagnostics.php:162
+msgid "Demo ticket"
+msgstr ""
+
+#: templates/admin/diagnostics.php:157
+msgid "Demo ticket and desk"
+msgstr ""
+
+#: src/Web/DemoController.php:185
+msgid "Not in yet"
+msgstr ""
+
+#: templates/admin/diagnostics.php:159
+msgid "Open the ticket on one device and the desk on another, then tick the row: the ticket turns gold by itself. No login needed; the links work for 24 hours. Nothing in the demo touches real data."
+msgstr ""
+
+#: src/Web/DemoController.php:176
+msgid "This demo has ended."
+msgstr ""
+
+#: src/Web/DemoController.php:195
+msgid "Tick the row and the demo ticket turns gold by itself. Nothing here is in the real door list."
+msgstr ""

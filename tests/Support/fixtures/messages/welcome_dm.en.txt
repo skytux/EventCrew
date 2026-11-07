@@ -12,39 +12,33 @@ Our nights happen because people like you lend a hand.
 
 This message explains how it all works. To see your numbers, tickets or credits, just ask the bot in a private chat.
 
-🧩 The tasks
+<b>🧩 The tasks</b>
 
 🎈 Decorate: Set up before the dance: close the curtains, check the bathrooms, place the LED candles, decorate the DJ table, prepare the water and fruit, and open the movable walls.
-
 🙋 Welcome: Welcome people at the door, check and sell tickets, and count how many people come in.
-
 🧹 Clean: Pack up after the dance: collect the candles and decorations, clear away the water and snacks, empty full bins, close the movable walls, open the curtains, and do the final check.
 
-🎟️ Tickets
+<b>🎟️ Tickets</b>
 
 When you sign up for a task, you get a free ticket for that night. Show it at the door.
 
-🎁 Credits
+<b>🎁 Credits</b>
 
 You earn 1 free-entry credit for every 2 tasks you complete. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits.
 
-📈 Standing
+<b>📈 Standing</b>
 
 Your standing comes from how your past tasks went:
 
 🔹 Completed the task: 100%
-
 🔹 Arrived late, did the task: 90%
-
 🔹 Found a replacement: 80%
-
 🔹 Cancelled less than 48 hours before: 40%
-
 🔹 No-show: 0%
 
 Cancelling 48 hours or more before has no effect. Recent tasks count more than old ones. You get a rating after 3 finished tasks. 60% or higher is good standing. Below 60%, you cannot sign up for new tasks until you talk to an organizer.
 
-📋 Open tasks
+<b>📋 Open tasks</b>
 
 📅 Mon 20 Jul
 
@@ -52,7 +46,7 @@ Cancelling 48 hours or more before has no effect. Recent tasks count more than o
 
 To sign up, tap 📋 See open tasks below.
 
-💬 Talking to the bot
+<b>💬 Talking to the bot</b>
 
 In a private chat with the bot, it is usually enough to write what you want in your own words. There are no commands or keywords to remember.
 

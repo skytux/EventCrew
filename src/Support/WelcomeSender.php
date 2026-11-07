@@ -313,21 +313,21 @@ final class WelcomeSender
             'person' => $person,
             'open_tasks' => $this->openTasksText(true, true),
         ];
-        $text = DmBody::frame($person, EmailBody::forDm(self::tidy(MessageTemplates::body(self::KIND_DM, $context))), true);
+        $text = EmailBody::forDm(DmBody::frame($person, self::tidy(MessageTemplates::body(self::KIND_DM, $context)), true), true);
 
         return $this->sendHtmlDm($person, $text, $keyboard, $links);
     }
 
     /**
      * A welcome DM as Telegram HTML, so its links show only their label:
-     * $text escaped, then $links on one line under it.
+     * $html (already Telegram HTML, EmailBody::forDm(..., true)), then $links
+     * on one line under it.
      *
      * @param list<list<array<string, string>>> $keyboard
      * @param list<array{label: string, url: string}> $links
      */
-    private function sendHtmlDm(Person $person, string $text, array $keyboard, array $links): bool
+    private function sendHtmlDm(Person $person, string $html, array $keyboard, array $links): bool
     {
-        $html = htmlspecialchars($text, ENT_NOQUOTES, 'UTF-8');
         $anchors = array_map(
             static fn (array $link): string => sprintf(
                 '<a href="%s">%s</a>',
@@ -509,7 +509,7 @@ final class WelcomeSender
 
         return $this->sendHtmlDm(
             $person,
-            DmBody::frame($person, EmailBody::forDm(MessageTemplates::body(self::KIND_ORG_DM, $context))),
+            EmailBody::forDm(DmBody::frame($person, MessageTemplates::body(self::KIND_ORG_DM, $context)), true),
             $keyboard,
             $links
         );

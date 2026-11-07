@@ -229,27 +229,42 @@ final class EmailBody
     }
 
     /**
-     * The text for a Telegram DM: headings and links as plainHeadings() makes
-     * them, and each emoji list line without its "- " and with a blank line
-     * after it, so the lines do not run together on a phone screen.
+     * The text for a Telegram DM. Each emoji list line loses its "- " and the
+     * list lines stay on consecutive lines: never an empty line between the
+     * items of one list (Owner 2026-11-07, said twice).
+     *
+     * Plain ($html false): headings, bold and links as plainHeadings() makes
+     * them. Telegram HTML ($html true, for a message sent with parse_mode
+     * HTML): the text escaped, "## " headings and **bold** as <b>, *italic*
+     * as <i>, so the headings show as headings in Telegram (Owner 2026-11-07).
      */
-    public static function forDm(string $text): string
+    public static function forDm(string $text, bool $html = false): string
     {
-        $lines = explode("\n", self::plainHeadings(str_replace(["\r\n", "\r"], "\n", $text)));
         $out = [];
 
-        foreach ($lines as $index => $line) {
-            if (! self::isEmojiLine($line)) {
-                $out[] = $line;
+        foreach (explode("\n", str_replace(["\r\n", "\r"], "\n", $text)) as $line) {
+            if (self::isEmojiLine($line)) {
+                $line = substr(trim($line), 2);
+            }
+
+            if (! $html) {
+                $out[] = self::plainHeadings($line);
 
                 continue;
             }
 
-            $out[] = substr(trim($line), 2);
+            $heading = str_starts_with($line, '## ');
+            $line = htmlspecialchars($heading ? substr($line, 3) : $line, ENT_NOQUOTES, 'UTF-8');
+            $line = (string) preg_replace(self::ANCHOR_LINK, '$1', $line);
 
-            if (self::isEmojiLine($lines[$index + 1] ?? '')) {
-                $out[] = '';
+            if ($heading) {
+                $out[] = '<b>' . (string) preg_replace(self::BOLD, '$1', $line) . '</b>';
+
+                continue;
             }
+
+            $line = (string) preg_replace(self::BOLD, '<b>$1</b>', $line);
+            $out[] = (string) preg_replace(self::ITALIC, '<i>$1</i>', $line);
         }
 
         return implode("\n", $out);

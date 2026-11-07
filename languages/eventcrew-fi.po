@@ -9036,3 +9036,27 @@ msgstr "Kun tekoälypalvelu on asetettu kohdassa Asetukset > Telegram-botti, Eve
 
 msgid "Previews: changes asked in the bot come with Confirm and Cancel, the announcement and the post-event email come to you first as a preview you can stop, and the AI texts of each event can be changed in EventCrew > Messages > Coming events or in the Admin tab. The full guide says how to switch each use off."
 msgstr "Esikatselut: botissa pyydetyt muutokset tulevat Vahvista- ja Peru-painikkeilla, tiedote ja tapahtuman jälkeinen viesti tulevat sinulle ensin esikatseluna, jonka voit pysäyttää, ja tapahtumien tekoälytekstejä voi muuttaa kohdassa EventCrew > Viestit > Tulevat tapahtumat tai Ylläpito-välilehdellä. Koko opas kertoo, miten kunkin käytön saa pois päältä."
+
+msgid "Demo event"
+msgstr "Demotapahtuma"
+
+msgid "Demo ticket"
+msgstr "Demolippu"
+
+msgid "Demo sales desk"
+msgstr "Demomyyntipiste"
+
+msgid "Demo ticket and desk"
+msgstr "Demolippu ja -myyntipiste"
+
+msgid "This demo has ended."
+msgstr "Tämä demo on päättynyt."
+
+msgid "Not in yet"
+msgstr "Ei vielä sisällä"
+
+msgid "Tick the row and the demo ticket turns gold by itself. Nothing here is in the real door list."
+msgstr "Rastita rivi, niin demolippu muuttuu itsestään kultaiseksi. Mikään täällä ei näy oikeassa ovilistassa."
+
+msgid "Open the ticket on one device and the desk on another, then tick the row: the ticket turns gold by itself. No login needed; the links work for 24 hours. Nothing in the demo touches real data."
+msgstr "Avaa lippu yhdellä laitteella ja myyntipiste toisella, ja rastita rivi: lippu muuttuu itsestään kultaiseksi. Kirjautumista ei tarvita; linkit toimivat 24 tuntia. Demo ei koske oikeisiin tietoihin."

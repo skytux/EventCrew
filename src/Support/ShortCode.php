@@ -56,6 +56,12 @@ final class ShortCode
         return self::make('short_code|credit|' . $date, $personId);
     }
 
+    /** The demo ticket's code (DemoTicket), never a real row's. */
+    public static function forDemo(int $demoId): string
+    {
+        return self::make('short_code|demo', $demoId);
+    }
+
     /** The code of the door row "kind:ref" on $date. */
     public static function forRow(string $kind, int $ref, string $date): string
     {

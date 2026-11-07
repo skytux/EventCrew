@@ -4,27 +4,19 @@ Hei Person,
 
 Olet Test Crew:n järjestäjä. Tämä opas kertoo, miten EventCrew toimii, ensin lyhyesti ja sitten tarkemmin.
 
-⚡ Lyhyesti
+<b>⚡ Lyhyesti</b>
 
 🗓️ Tehtävät: luot ne wp-adminissa kohdassa EventCrew &gt; Tehtävät. Yhdellä napsautuksella syntyvät illan kaikki tehtävät.
-
 ✋ Ilmoittautuminen: jäsenet napauttavat tehtävää Telegram-ryhmän taululla tai käyttävät verkon ilmoittautumissivua. /board julkaisee ryhmään uuden taulun.
-
 🌙 Illan aikana: /roster merkitsee, kuka saapui, kuka teki tehtävänsä ja kuka ei tullut. Myyntipisteen linkillä myydään lippuja ja kirjataan ihmiset sisään ovella; /door ja sitten 💳 Myyntipiste lähettää sinulle linkin.
-
 🎁 Vapaaliput: jäsenet saavat 1 vapaalipun jokaisesta 2 tehdystä tehtävästä. /people ja sitten 🎁 Anna vapaalippuja antaa vapaalippuja käsin.
-
 📈 Luotettavuus: 60% tai enemmän on hyvä luotettavuus. Se perustuu siihen, miten kunkin jäsenen aiemmat tehtävät menivät.
-
 🔑 Roolit: /people ja sitten 🏷 Roolit, järjestäjät ja passit tekee jostakusta järjestäjän, antaa kertaluvan ilmoittautumisrajan ohi ja antaa tai poistaa rooleja, kuten DJ.
-
 🎧 Roolitehtävät (DJ, VJ, Organize, ...) eivät ole ryhmän taululla. Ne, joilla rooli on, näkevät ne komennolla /board yksityiskeskustelussa ja Crew-sovelluksessa. Voit lisätä siellä jonkun, myös henkilön, joka ei ole tiimin jäsen.
-
 🔔 Viestit: muistutukset ja kutsut lähtevät itsestään, vain klo 09:00–21:00.
-
 ⚙️ Wp-adminin EventCrew &gt; Asetukset muuttaa toimintaa. EventCrew &gt; Diagnostiikka näyttää, toimiiko kaikki.
 
-🤖 EventCrew ja tekoäly
+<b>🤖 EventCrew ja tekoäly</b>
 
 Kun tekoälypalvelu on asetettu kohdassa Asetukset &gt; Telegram-botti, EventCrew lähettää sille tavalliset viestit botille, tapahtumien ja DJ:iden kuvaukset (tiedotetta, tapahtuman jälkeistä viestiä ja taulua varten), kehotteesi tapahtumien tekoälyteksteihin sekä käännettävät tekstit.
 
