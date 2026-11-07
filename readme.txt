@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.181
+Stable tag: 1.140.182
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.182 =
+* Organizers can, from a private chat with the bot, mark arrived, late, no-show or done (/mark), see a person's standing (/standing), list newcomers (/newcomer), give or take back a free-entry ticket (/ticket, /unticket), lift a block (/unban), open or close free entry (/freeentry), stop a post-event announcement or email (/stop), post a new task board (/newboard), send free-entry tickets (/sendtickets) and message the people on a task or night (/tell), each with a confirm button.
+* Members can see who is on their night (/crew), change their name (/name) and change their email through a confirmation link (/email).
 
 = 1.140.181 =
 * Signing up for a task sends one email: the sign-up details on top and the ticket at the bottom, instead of two emails.
@@ -1863,6 +1867,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.182 =
+No settings change.
 
 = 1.140.181 =
 No settings change.
