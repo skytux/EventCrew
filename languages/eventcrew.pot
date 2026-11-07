@@ -330,7 +330,7 @@ msgstr ""
 msgid "%s (archived)"
 msgstr ""
 
-#: templates/admin/diagnostics.php:142
+#: templates/admin/diagnostics.php:143
 #. translators: %s: human-readable time difference, e.g. "5 mins"
 msgid "%s ago"
 msgstr ""
@@ -640,7 +640,7 @@ msgstr ""
 msgid "A privacy page is chosen. Save any changes above and they appear on it immediately — there is nothing to re-publish."
 msgstr ""
 
-#: templates/admin/diagnostics.php:56
+#: templates/admin/diagnostics.php:57
 msgid "A read-only health check. Anything flagged is fixed on the Settings page — nothing here changes your site."
 msgstr ""
 
@@ -946,8 +946,8 @@ msgstr ""
 msgid "Adjust what each outcome is worth (advanced)"
 msgstr ""
 
-#: src/Support/WelcomeSender.php:483 src/Telegram/HelpService.php:176 src/Telegram/MenuButtons.php:104 templates/public/signup.php:102
-#: templates/public/signup.php:732
+#: src/Support/MessageTemplates.php:1125 src/Support/WelcomeSender.php:483 src/Telegram/HelpService.php:176 src/Telegram/MenuButtons.php:104
+#: templates/public/signup.php:102 templates/public/signup.php:732
 msgid "Admin"
 msgstr ""
 
@@ -992,7 +992,7 @@ msgstr ""
 msgid "All previews"
 msgstr ""
 
-#: templates/admin/diagnostics.php:75
+#: templates/admin/diagnostics.php:76
 msgid "All systems go."
 msgstr ""
 
@@ -1565,11 +1565,11 @@ msgstr ""
 msgid "Chat"
 msgstr ""
 
-#: templates/admin/diagnostics.php:29 templates/admin/diagnostics.php:86
+#: templates/admin/diagnostics.php:30 templates/admin/diagnostics.php:87
 msgid "Check"
 msgstr ""
 
-#: templates/public/door.php:54
+#: src/Web/DemoController.php:201 templates/public/door.php:54
 msgid "Check in"
 msgstr ""
 
@@ -1609,7 +1609,7 @@ msgstr ""
 msgid "Check your private chat with the bot: that day’s tasks are there."
 msgstr ""
 
-#: src/Telegram/TicketController.php:603
+#: src/Telegram/TicketController.php:606 src/Web/DemoController.php:184
 #. translators: %s: the time the door checked the ticket in, like 21:05
 msgid "Checked in at %s"
 msgstr ""
@@ -1946,7 +1946,7 @@ msgctxt "date format"
 msgid "D j M H:i"
 msgstr ""
 
-#: src/Telegram/TicketController.php:534
+#: src/Telegram/TicketController.php:537
 msgid "DISABLED"
 msgstr ""
 
@@ -2072,6 +2072,22 @@ msgstr ""
 msgid "Deliberately not added to messages that answer a command, where the person is mid-conversation, nor to the standing notices, where a warm sign-off would land badly."
 msgstr ""
 
+#: src/Web/DemoController.php:85
+msgid "Demo event"
+msgstr ""
+
+#: src/Web/DemoController.php:173 templates/admin/diagnostics.php:164
+msgid "Demo sales desk"
+msgstr ""
+
+#: src/Web/DemoController.php:88 templates/admin/diagnostics.php:162
+msgid "Demo ticket"
+msgstr ""
+
+#: templates/admin/diagnostics.php:157
+msgid "Demo ticket and desk"
+msgstr ""
+
 #: src/Admin/BotProfileSettings.php:367 templates/admin/settings.php:411 templates/admin/settings.php:2073 templates/public/signup.php:1938
 msgid "Description"
 msgstr ""
@@ -2088,7 +2104,7 @@ msgstr ""
 msgid "Design"
 msgstr ""
 
-#: templates/admin/diagnostics.php:87
+#: templates/admin/diagnostics.php:88
 msgid "Detail"
 msgstr ""
 
@@ -2336,7 +2352,7 @@ msgstr ""
 msgid "Enter the LLM API URL and the model, and save, before testing."
 msgstr ""
 
-#: templates/admin/diagnostics.php:156
+#: templates/admin/diagnostics.php:167
 msgid "Environment"
 msgstr ""
 
@@ -2383,7 +2399,7 @@ msgstr ""
 msgid "EventCrew"
 msgstr ""
 
-#: templates/admin/diagnostics.php:53
+#: templates/admin/diagnostics.php:54
 msgid "EventCrew Diagnostics"
 msgstr ""
 
@@ -2440,7 +2456,7 @@ msgstr ""
 msgid "EventCrew uses an AI language model only when its API URL and model are set in Settings > Telegram bot, under \"Plain messages (language model)\". Only the texts below go to that AI service, and without the URL or the model none of this happens. The ticket file import by email does not use AI."
 msgstr ""
 
-#: templates/admin/diagnostics.php:160
+#: templates/admin/diagnostics.php:171
 msgid "EventCrew version"
 msgstr ""
 
@@ -2900,7 +2916,7 @@ msgstr ""
 msgid "Guests added for %s"
 msgstr ""
 
-#: src/Telegram/TicketController.php:761
+#: src/Telegram/TicketController.php:770
 msgctxt "date format"
 msgid "H:i, D j M"
 msgstr ""
@@ -2917,7 +2933,7 @@ msgstr ""
 msgid "Heads-up (hours before)"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:1096 src/Support/MessageTemplates.php:1108 src/Support/MessageTemplates.php:1114 src/Support/MessageTemplates.php:1125
+#: src/Support/MessageTemplates.php:1096 src/Support/MessageTemplates.php:1108 src/Support/MessageTemplates.php:1114 src/Support/MessageTemplates.php:1128
 #: src/Support/WelcomeSender.php:389 src/Telegram/MenuButtons.php:100 templates/public/signup.php:100 templates/public/signup.php:695
 msgid "Help"
 msgstr ""
@@ -2987,7 +3003,7 @@ msgstr ""
 msgid "Hi %s!"
 msgstr ""
 
-#: src/Support/DmBody.php:40 src/Support/EmailBody.php:360 src/Support/FollowupMail.php:1394 src/Support/MessageTemplates.php:1723
+#: src/Support/DmBody.php:40 src/Support/EmailBody.php:375 src/Support/FollowupMail.php:1394 src/Support/MessageTemplates.php:1723
 #: src/Support/MessageTemplates.php:2487 src/Support/MessageTemplates.php:3123 src/Support/TicketMail.php:1167 src/Support/TicketText.php:92
 #. translators: %s: the person's first name
 msgid "Hi %s,"
@@ -3001,7 +3017,7 @@ msgstr ""
 msgid "Hi!"
 msgstr ""
 
-#: src/Support/EmailBody.php:358 src/Support/FollowupMail.php:1392 src/Support/TicketMail.php:1165
+#: src/Support/EmailBody.php:373 src/Support/FollowupMail.php:1392 src/Support/TicketMail.php:1165
 msgid "Hi,"
 msgstr ""
 
@@ -3323,7 +3339,7 @@ msgstr ""
 msgid "In your own words"
 msgstr ""
 
-#: templates/admin/diagnostics.php:31
+#: templates/admin/diagnostics.php:32
 msgid "Info"
 msgstr ""
 
@@ -3343,7 +3359,7 @@ msgstr ""
 msgid "Installed"
 msgstr ""
 
-#: src/Telegram/TicketController.php:738
+#: src/Telegram/TicketController.php:747
 #. translators: %s: the date and time the ticket was issued
 msgid "Issued %s"
 msgstr ""
@@ -3523,7 +3539,7 @@ msgstr ""
 msgid "Languages shown in multi-language texts and buttons"
 msgstr ""
 
-#: templates/admin/diagnostics.php:108
+#: templates/admin/diagnostics.php:109
 #. translators: %s: the highest Telegram update id processed
 msgid "Last Telegram update processed: #%s."
 msgstr ""
@@ -3621,7 +3637,7 @@ msgstr ""
 msgid "Let’s set you up in a private chat — tap below to open the bot."
 msgstr ""
 
-#: templates/admin/diagnostics.php:123
+#: templates/admin/diagnostics.php:124
 msgid "Level"
 msgstr ""
 
@@ -3795,7 +3811,7 @@ msgstr ""
 msgid "Members earn 1 free-entry credit per %d completed tasks and spend it with 🎟 Free-entry ticket under /me or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told."
 msgstr ""
 
-#: src/Support/NewsletterConfirmMail.php:86 templates/admin/diagnostics.php:125 templates/admin/settings.php:1638
+#: src/Support/NewsletterConfirmMail.php:86 templates/admin/diagnostics.php:126 templates/admin/settings.php:1638
 msgid "Message"
 msgstr ""
 
@@ -3896,7 +3912,7 @@ msgstr ""
 msgid "Name column header"
 msgstr ""
 
-#: templates/admin/diagnostics.php:74
+#: templates/admin/diagnostics.php:75
 msgid "Needs attention — some checks want a look."
 msgstr ""
 
@@ -4033,7 +4049,7 @@ msgstr ""
 msgid "No Telegram group is set up for the board yet."
 msgstr ""
 
-#: templates/admin/diagnostics.php:112
+#: templates/admin/diagnostics.php:113
 msgid "No Telegram update has reached the site yet."
 msgstr ""
 
@@ -4285,6 +4301,10 @@ msgstr ""
 msgid "Nobody was turned down."
 msgstr ""
 
+#: src/Web/DemoController.php:185
+msgid "Not in yet"
+msgstr ""
+
 #: templates/admin/settings.php:2673
 msgid "Not installed"
 msgstr ""
@@ -4324,7 +4344,7 @@ msgstr ""
 msgid "Notes"
 msgstr ""
 
-#: templates/admin/diagnostics.php:118
+#: templates/admin/diagnostics.php:119
 msgid "Nothing logged recently. Errors from the bot, mail and boot will appear here."
 msgstr ""
 
@@ -4419,7 +4439,7 @@ msgstr ""
 msgid "Now: %s."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:1084 src/Support/NewcomerApproval.php:128 templates/admin/diagnostics.php:28 templates/public/signup.php:839
+#: src/Support/MessageTemplates.php:1084 src/Support/NewcomerApproval.php:128 templates/admin/diagnostics.php:29 templates/public/signup.php:839
 msgid "OK"
 msgstr ""
 
@@ -4657,7 +4677,7 @@ msgstr ""
 msgid "Only people with this role can sign up for this task."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:1116 src/Support/MessageTemplates.php:1128 src/Support/WelcomeSender.php:460
+#: src/Support/MessageTemplates.php:1116 src/Support/MessageTemplates.php:1127 src/Support/WelcomeSender.php:460
 msgid "Open EventCrew in wp-admin"
 msgstr ""
 
@@ -4744,6 +4764,10 @@ msgstr ""
 
 #: src/Support/Mailer.php:461
 msgid "Open the signup page"
+msgstr ""
+
+#: templates/admin/diagnostics.php:159
+msgid "Open the ticket on one device and the desk on another, then tick the row: the ticket turns gold by itself. No login needed; the links work for 24 hours. Nothing in the demo touches real data."
 msgstr ""
 
 #: src/Support/NewcomerApproval.php:728
@@ -4908,7 +4932,7 @@ msgstr ""
 msgid "Over the max: %1$d people, max %2$d."
 msgstr ""
 
-#: templates/admin/diagnostics.php:168
+#: templates/admin/diagnostics.php:179
 msgid "PHP version"
 msgstr ""
 
@@ -4962,8 +4986,8 @@ msgid "Pending updates"
 msgstr ""
 
 #: src/Admin/Admin.php:453 src/Admin/Admin.php:454 src/Support/MessageTemplates.php:222 src/Support/MessageTemplates.php:1117
-#: src/Support/MessageTemplates.php:1127 src/Support/WelcomeSender.php:436 src/Telegram/MenuButtons.php:166 templates/admin/people.php:25
-#: templates/admin/people.php:28 templates/admin/settings.php:222 templates/public/signup.php:851 templates/public/signup.php:1867
+#: src/Support/WelcomeSender.php:436 src/Telegram/MenuButtons.php:166 templates/admin/people.php:25 templates/admin/people.php:28
+#: templates/admin/settings.php:222 templates/public/signup.php:851 templates/public/signup.php:1867
 msgid "People"
 msgstr ""
 
@@ -5195,11 +5219,11 @@ msgstr ""
 msgid "Private chats"
 msgstr ""
 
-#: templates/admin/diagnostics.php:30
+#: templates/admin/diagnostics.php:31
 msgid "Problem"
 msgstr ""
 
-#: templates/admin/diagnostics.php:73
+#: templates/admin/diagnostics.php:74
 msgid "Problems found — see the flagged rows below."
 msgstr ""
 
@@ -5279,7 +5303,7 @@ msgstr ""
 msgid "Recency half-life"
 msgstr ""
 
-#: templates/admin/diagnostics.php:101
+#: templates/admin/diagnostics.php:102
 msgid "Recent activity"
 msgstr ""
 
@@ -5780,7 +5804,7 @@ msgid "Security"
 msgstr ""
 
 #: src/Support/MessageTemplates.php:490 src/Support/MessageTemplates.php:491 src/Support/MessageTemplates.php:1094 src/Support/MessageTemplates.php:1097
-#: src/Support/MessageTemplates.php:1104 src/Support/WelcomeSender.php:249 src/Support/WelcomeSender.php:280 src/Support/WelcomeSender.php:357
+#: src/Support/MessageTemplates.php:1105 src/Support/WelcomeSender.php:249 src/Support/WelcomeSender.php:280 src/Support/WelcomeSender.php:357
 #: src/Telegram/BoardService.php:899 src/Telegram/MenuButtons.php:132
 msgid "See open tasks"
 msgstr ""
@@ -6491,7 +6515,7 @@ msgstr ""
 msgid "Sorry text (missed)"
 msgstr ""
 
-#: src/Telegram/TicketController.php:583 src/Telegram/TicketController.php:624
+#: src/Telegram/TicketController.php:586 src/Telegram/TicketController.php:633
 msgid "Sorry, this ticket has expired"
 msgstr ""
 
@@ -6538,7 +6562,7 @@ msgstr ""
 msgid "Starts"
 msgstr ""
 
-#: src/Support/PrivacyExporter.php:276 templates/admin/diagnostics.php:85 templates/admin/people.php:131 templates/admin/roster.php:423
+#: src/Support/PrivacyExporter.php:276 templates/admin/diagnostics.php:86 templates/admin/people.php:131 templates/admin/roster.php:423
 #: templates/admin/settings.php:2668 templates/public/signup.php:962 templates/public/signup.php:1136
 msgid "Status"
 msgstr ""
@@ -7390,7 +7414,7 @@ msgstr ""
 msgid "The chosen signup page is missing or not published."
 msgstr ""
 
-#: src/Telegram/TicketController.php:748
+#: src/Telegram/TicketController.php:757
 msgid "The clock above must match the time now. A frozen clock is a screenshot."
 msgstr ""
 
@@ -8340,6 +8364,10 @@ msgstr ""
 msgid "This close to the task it is a late cancellation: it counts against your standing."
 msgstr ""
 
+#: src/Web/DemoController.php:176
+msgid "This demo has ended."
+msgstr ""
+
 #: src/Support/DoorHandoff.php:73 src/Web/DoorController.php:145
 msgid "This device is not logged in to the sales desk. Ask an organizer for a new link (/door in Telegram, then 💳 Sales desk)."
 msgstr ""
@@ -8531,6 +8559,10 @@ msgstr ""
 
 #: src/Web/CrewAdminController.php:890
 msgid "Tick at least one task."
+msgstr ""
+
+#: src/Web/DemoController.php:195
+msgid "Tick the row and the demo ticket turns gold by itself. Nothing here is in the real door list."
 msgstr ""
 
 #: templates/admin/settings.php:823
@@ -8997,7 +9029,7 @@ msgstr ""
 msgid "Using the WordPress Site Icon for the installed app."
 msgstr ""
 
-#: src/Telegram/TicketController.php:584
+#: src/Telegram/TicketController.php:587 src/Telegram/TicketController.php:632
 msgid "VALID"
 msgstr ""
 
@@ -9245,7 +9277,7 @@ msgstr ""
 msgid "What you’ve done"
 msgstr ""
 
-#: templates/admin/diagnostics.php:124 templates/admin/people.php:298 templates/admin/people.php:329
+#: templates/admin/diagnostics.php:125 templates/admin/people.php:298 templates/admin/people.php:329
 msgid "When"
 msgstr ""
 
@@ -9497,7 +9529,7 @@ msgstr ""
 msgid "WordPress generated the webhook URL %s, which is not HTTPS, so Telegram will refuse it. Set the WordPress Address and Site Address (Settings → General) to their https:// forms - or fix the reverse proxy's forwarded-protocol header - and try again."
 msgstr ""
 
-#: templates/admin/diagnostics.php:164
+#: templates/admin/diagnostics.php:175
 msgid "WordPress version"
 msgstr ""
 
@@ -10086,7 +10118,7 @@ msgstr ""
 msgid "You’re in! See you there."
 msgstr ""
 
-#: src/Telegram/TicketController.php:600
+#: src/Telegram/TicketController.php:603
 msgid "You’re in, welcome!"
 msgstr ""
 
@@ -10647,7 +10679,7 @@ msgstr ""
 msgid "👋 arrived · ✓ done · ⏰ late · ✗ no-show"
 msgstr ""
 
-#: src/Support/WelcomeSender.php:284 src/Telegram/BoardRenderer.php:619
+#: src/Support/MessageTemplates.php:1104 src/Support/WelcomeSender.php:284 src/Telegram/BoardRenderer.php:619
 msgid "👤 My info"
 msgstr ""
 
@@ -10757,34 +10789,3 @@ msgstr ""
 msgid "🧭 Organizer guide ↓"
 msgstr ""
 
-#: src/Web/DemoController.php:85
-msgid "Demo event"
-msgstr ""
-
-#: src/Web/DemoController.php:173 templates/admin/diagnostics.php:164
-msgid "Demo sales desk"
-msgstr ""
-
-#: src/Web/DemoController.php:88 templates/admin/diagnostics.php:162
-msgid "Demo ticket"
-msgstr ""
-
-#: templates/admin/diagnostics.php:157
-msgid "Demo ticket and desk"
-msgstr ""
-
-#: src/Web/DemoController.php:185
-msgid "Not in yet"
-msgstr ""
-
-#: templates/admin/diagnostics.php:159
-msgid "Open the ticket on one device and the desk on another, then tick the row: the ticket turns gold by itself. No login needed; the links work for 24 hours. Nothing in the demo touches real data."
-msgstr ""
-
-#: src/Web/DemoController.php:176
-msgid "This demo has ended."
-msgstr ""
-
-#: src/Web/DemoController.php:195
-msgid "Tick the row and the demo ticket turns gold by itself. Nothing here is in the real door list."
-msgstr ""
