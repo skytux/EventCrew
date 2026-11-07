@@ -11440,3 +11440,15 @@ msgstr "名额为 0 时任务不会显示在看板上。"
 #. translators: %s: the task, like "Decorate · Sat 25 Jul 21:00–23:00".
 msgid "An organizer took you off %s."
 msgstr "组织者已将你从 %s 中移除。"
+
+msgid "Crew ticket"
+msgstr "团队门票"
+
+msgid "No internet? Show these QR codes at the door."
+msgstr "没有网络？在门口出示这些二维码。"
+
+msgid "Your other tickets for this night still work. They are below."
+msgstr "你今晚的其他票仍然有效，见下方。"
+
+msgid "Every ticket the person has for the night, each with its QR code, for the door. On a line of its own; when the text has no such line, the tickets go at the end."
+msgstr "此人当晚的所有门票，每张都带二维码，供门口查验。单独占一行；如果正文没有这一行，门票会放在末尾。"

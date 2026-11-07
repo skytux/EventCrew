@@ -250,9 +250,11 @@ final class TicketController
     {
         $token = (string) $request->get_param('token');
         $ticket = $this->ticketFor($token);
+        $more = [];
 
         if (null !== $ticket) {
             $ticket['poll'] = self::stateUrl($token);
+            $more = $this->moreTickets($token);
         }
 
         status_header(null === $ticket ? 404 : 200);
@@ -265,8 +267,47 @@ final class TicketController
         // The page is in the ticket holder's language; a bad link, which names
         // nobody, is English.
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo Language::run($ticket['language'] ?? null, fn (): string => $this->renderPage($ticket));
+        echo Language::run($ticket['language'] ?? null, fn (): string => $this->renderPage($ticket, $more));
         exit;
+    }
+
+    /**
+     * The person's other tickets for the same night, shown as more cards
+     * under a crew ticket (Owner, 2026-11-07): each free-entry ticket they hold
+     * that night that is not cancelled, with its own poll. Only for a crew
+     * ticket's link: a free-entry ticket's link shows that ticket alone,
+     * since it may be given to someone else.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function moreTickets(string $token): array
+    {
+        $assignmentId = SignedLink::verify('ticket', $token);
+        $assignment = null === $assignmentId ? null : $this->assignments->find($assignmentId);
+        $task = null === $assignment ? null : $this->tasks->find($assignment->taskId);
+
+        if (null === $assignment || null === $task) {
+            return [];
+        }
+
+        $more = [];
+        $redemptions = array_filter(
+            $this->redemptions->forPerson($assignment->personId),
+            static fn ($redemption): bool => $task->taskDate === (string) $redemption->redeemedFor
+                && ! $redemption->isCancelled()
+        );
+        usort($redemptions, static fn ($a, $b): int => $a->id <=> $b->id);
+
+        foreach ($redemptions as $redemption) {
+            $credit = SignedLink::sign('credit_ticket', $redemption->id);
+            $ticket = $this->creditTicket($credit);
+
+            if (null !== $ticket) {
+                $more[] = $ticket + ['poll' => self::stateUrl($credit)];
+            }
+        }
+
+        return $more;
     }
 
     /**
@@ -507,9 +548,15 @@ final class TicketController
     }
 
     /**
+     * The ticket page: one card for $ticket, then one card under it for each
+     * ticket in $more (the person's other tickets for the night,
+     * moreTickets()), stacked. Each card has its own band, QR code, clock
+     * and wait for the door, so each turns gold on its own.
+     *
      * @param array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string, language: ?string, image?: string, used?: string|null, event_id?: int|null}|null $ticket
+     * @param list<array<string, mixed>> $more
      */
-    public function renderPage(?array $ticket): string
+    public function renderPage(?array $ticket, array $more = []): string
     {
         if (null === $ticket) {
             $title = __('Ticket not found', 'eventcrew');
@@ -524,6 +571,28 @@ final class TicketController
         /* translators: %s: the organization's name, like Ecstatic Dance Helsinki */
         $title = sprintf(__('Your %s ticket', 'eventcrew'), Organization::name());
 
+        if ([] === $more) {
+            return $this->document($title, $this->card($title, $ticket));
+        }
+
+        $cards = [];
+
+        foreach (array_values(array_merge([$ticket], $more)) as $i => $one) {
+            $cards[] = '<section class="t">' . $this->card($title, $one, 0 === $i ? '' : '-' . ($i + 1)) . '</section>';
+        }
+
+        return $this->document($title, implode('', $cards), true);
+    }
+
+    /**
+     * The inside of one ticket card. $suffix ('' for the first card, "-2",
+     * "-3" for the next) goes on each element id, so every card's scripts
+     * find their own band, QR code and clock; the QR library loads once.
+     *
+     * @param array<string, mixed> $ticket
+     */
+    private function card(string $title, array $ticket, string $suffix = ''): string
+    {
         $eventId = null === ($ticket['event_id'] ?? null) ? null : (int) $ticket['event_id'];
         $used = $ticket['used'] ?? null;
         // The demo ticket (DemoTicket) keeps waiting after it is in, since
@@ -543,9 +612,9 @@ final class TicketController
         if (! $ticket['valid']) {
             $band = '<p class="t-band is-disabled">' . esc_html__('DISABLED', 'eventcrew') . '</p>';
         } elseif (null !== $used) {
-            $band = $this->inBand(Dates::wallClock($used, 'H:i'), $first);
+            $band = $this->inBand(Dates::wallClock($used, 'H:i'), $first, $suffix);
         } else {
-            $band = $this->openBand(null !== $closesIn && $closesIn <= 0, $first);
+            $band = $this->openBand(null !== $closesIn && $closesIn <= 0, $first, $suffix);
         }
 
         $body = sprintf(
@@ -559,24 +628,21 @@ final class TicketController
         // The event's clean name in the page's language (EventName).
         $event = null === $eventId ? $ticket['event'] : EventName::name($eventId, EventName::lang(), $ticket['event']);
 
-        return $this->document(
+        return $this->headBlock(
             $title,
-            $this->headBlock(
-                $title,
-                $event,
-                $ticket['date'],
-                EventTimes::start($eventId),
-                (string) ($ticket['image'] ?? '')
-            )
+            $event,
+            $ticket['date'],
+            EventTimes::start($eventId),
+            (string) ($ticket['image'] ?? '')
+        )
             . '<div class="t-body"' . ('' === $watermark ? '' : ' style="' . $watermark . '"') . '>'
-            . $body . $band . $this->qrBlock($ticket['qr'] ?? '')
-            . $this->shortBlock((string) ($ticket['short'] ?? '')) . $this->codeBlock($ticket['code'] ?? '')
-            . $this->noteBlock($eventId) . $this->antiFraudBlock($ticket['issued'])
+            . $body . $band . $this->qrBlock((string) ($ticket['qr'] ?? ''), $suffix)
+            . $this->shortBlock((string) ($ticket['short'] ?? '')) . $this->codeBlock((string) ($ticket['code'] ?? ''))
+            . $this->noteBlock($eventId) . $this->antiFraudBlock((string) $ticket['issued'], $suffix)
             . ($ticket['valid'] && (null === $used || $demo)
-                ? $this->liveScript((string) ($ticket['poll'] ?? ''), $closesIn, $demo, $first)
+                ? $this->liveScript((string) ($ticket['poll'] ?? ''), $closesIn, $demo, $first, $suffix)
                 : '')
-            . '</div>'
-        );
+            . '</div>';
     }
 
     /**
@@ -590,13 +656,13 @@ final class TicketController
      * already holds the gold band's words, hidden (openGhost()), in the same
      * grid cell as its own word, so it is as tall as the gold band will be.
      */
-    private function openBand(bool $expired, string $first = ''): string
+    private function openBand(bool $expired, string $first = '', string $suffix = ''): string
     {
         $state = $expired
             ? esc_html__('Sorry, this ticket has expired', 'eventcrew')
             : esc_html__('VALID', 'eventcrew');
 
-        return '<p class="t-band ' . ($expired ? 'is-expired' : 'is-valid') . '" id="ec-band" aria-live="polite">'
+        return '<p class="t-band ' . ($expired ? 'is-expired' : 'is-valid') . '" id="ec-band' . $suffix . '" aria-live="polite">'
             . '<span class="t-state">' . $state . '</span>' . $this->openGhost($first) . '</p>';
     }
 
@@ -615,9 +681,10 @@ final class TicketController
      * "You're in, welcome!") and the time ($at, like 21:05). On an open page
      * liveScript() draws the same band with a burst ("is-new").
      */
-    private function inBand(string $at, string $first = ''): string
+    private function inBand(string $at, string $first = '', string $suffix = ''): string
     {
-        return '<p class="t-band is-in" id="ec-band" aria-live="polite">' . $this->inBandInner($at, $first) . '</p>';
+        return '<p class="t-band is-in" id="ec-band' . $suffix . '" aria-live="polite">'
+            . $this->inBandInner($at, $first) . '</p>';
     }
 
     private function inBandInner(string $at, string $first = ''): string
@@ -664,9 +731,11 @@ final class TicketController
         string $poll,
         ?int $closesIn,
         bool $again = false,
-        string $first = ''
+        string $first = '',
+        string $suffix = ''
     ): string {
         $config = [
+            'band' => 'ec-band' . $suffix,
             'poll' => $poll,
             'closesIn' => $closesIn,
             'again' => $again,
@@ -679,7 +748,7 @@ final class TicketController
         $json = (string) wp_json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
 
         // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained script; wrapping adds stray whitespace.
-        return '<script>(function(){var c=' . $json . ';var b=document.getElementById("ec-band");if(!b){return;}var done=false,busy=false,timer=null,fails=0,isIn=-1!==b.className.indexOf("is-in");var snd=null;if(c.sound&&window.Audio){snd=new Audio(c.sound);snd.preload="auto";snd.volume=0.3;var unlock=function(){document.removeEventListener("pointerdown",unlock,true);snd.muted=true;var p=snd.play();if(p&&p.then){p.then(function(){snd.pause();snd.currentTime=0;snd.muted=false;},function(){snd.muted=false;});}else{snd.pause();snd.muted=false;}};document.addEventListener("pointerdown",unlock,true);}function ding(){if(!snd){return;}try{snd.muted=false;snd.currentTime=0;var p=snd.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}var closeAt=null===c.closesIn?null:Date.now()+c.closesIn*1000;function show(k,s){b.className=k;b.innerHTML=c.ghost;var e=document.createElement("span");e.className="t-state";e.textContent=s;b.insertBefore(e,b.firstChild);}function expire(){if(done||isIn||null===closeAt||Date.now()<closeAt||"t-band is-expired"===b.className){return;}show("t-band is-expired",c.expired);}function burst(){var k=b.closest?b.closest(".t"):null;if(!k){return;}var o=k.querySelector(".t-fx");if(o){o.parentNode.removeChild(o);}var f=document.createElement("span"),w=k.clientWidth,h=k.clientHeight,y=b.offsetTop+b.offsetHeight/2,g="✦★•✦★✦";f.className="t-fx";f.setAttribute("aria-hidden","true");for(var i=0;i<48;i++){var e=document.createElement("i"),a=Math.random()*6.2832,r=.3+Math.random()*.7;e.textContent=g.charAt(i%6);e.style.cssText="left:"+(6+Math.random()*88).toFixed(1)+"%;top:"+Math.round(y)+"px;font-size:"+(.7+Math.random()*1.1).toFixed(2)+"em;--dx:"+Math.round(Math.cos(a)*r*w*.5)+"px;--dy:"+Math.round(Math.sin(a)*r*h*.45)+"px;--r:"+Math.round(Math.random()*360-180)+"deg;--s:"+(.5+Math.random()*.5).toFixed(2)+";--d:"+(Math.random()*.8).toFixed(2)+"s;--t:"+(5.5+Math.random()*2.7).toFixed(2)+"s";f.appendChild(e);}k.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},9500);}function welcome(at){isIn=true;if(!c.again){done=true;if(timer){clearTimeout(timer);}}b.className="t-band is-in is-new";b.innerHTML=c.inHtml;ding();burst();var t=b.querySelector(".t-at");if(t){t.textContent=t.textContent.replace("%s",at);}}function out(){isIn=false;var x=document.querySelector(".t-fx");if(x){x.parentNode.removeChild(x);}show("t-band is-valid",c.valid);expire();}function later(ms){if(timer){clearTimeout(timer);}timer=setTimeout(ask,ms);}function ask(){timer=null;if(done||busy||!c.poll||document.hidden){return;}busy=true;fetch(c.poll+(-1===c.poll.indexOf("?")?"?":"&")+(c.again?"in="+(isIn?1:0)+"&":"")+"_="+Date.now(),{cache:"no-store",credentials:"same-origin"}).then(function(r){if(404===r.status){c.poll="";}if(!r.ok){throw new Error(String(r.status));}return r.json();}).then(function(d){busy=false;fails=0;if(d&&d.in){if(!isIn){welcome(d.at||"");}if(!c.again){return;}}else if(d&&isIn&&c.again){out();}if(!d||null===d.next){c.poll="";return;}later(1000*d.next);},function(){busy=false;fails++;later(Math.min(60000,2000*fails));});}document.addEventListener("visibilitychange",function(){if(!document.hidden){expire();if(!busy){later(0);}}});setInterval(expire,1000);expire();ask();})();</script>';
+        return '<script>(function(){var c=' . $json . ';var b=document.getElementById(c.band);if(!b){return;}var done=false,busy=false,timer=null,fails=0,isIn=-1!==b.className.indexOf("is-in");var snd=null;if(c.sound&&window.Audio){snd=new Audio(c.sound);snd.preload="auto";snd.volume=0.3;var unlock=function(){document.removeEventListener("pointerdown",unlock,true);snd.muted=true;var p=snd.play();if(p&&p.then){p.then(function(){snd.pause();snd.currentTime=0;snd.muted=false;},function(){snd.muted=false;});}else{snd.pause();snd.muted=false;}};document.addEventListener("pointerdown",unlock,true);}function ding(){if(!snd){return;}try{snd.muted=false;snd.currentTime=0;var p=snd.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}var closeAt=null===c.closesIn?null:Date.now()+c.closesIn*1000;function show(k,s){b.className=k;b.innerHTML=c.ghost;var e=document.createElement("span");e.className="t-state";e.textContent=s;b.insertBefore(e,b.firstChild);}function expire(){if(done||isIn||null===closeAt||Date.now()<closeAt||"t-band is-expired"===b.className){return;}show("t-band is-expired",c.expired);}function burst(){var k=b.closest?b.closest(".t"):null;if(!k){return;}var o=k.querySelector(".t-fx");if(o){o.parentNode.removeChild(o);}var f=document.createElement("span"),w=k.clientWidth,h=k.clientHeight,y=b.offsetTop+b.offsetHeight/2,g="✦★•✦★✦";f.className="t-fx";f.setAttribute("aria-hidden","true");for(var i=0;i<48;i++){var e=document.createElement("i"),a=Math.random()*6.2832,r=.3+Math.random()*.7;e.textContent=g.charAt(i%6);e.style.cssText="left:"+(6+Math.random()*88).toFixed(1)+"%;top:"+Math.round(y)+"px;font-size:"+(.7+Math.random()*1.1).toFixed(2)+"em;--dx:"+Math.round(Math.cos(a)*r*w*.5)+"px;--dy:"+Math.round(Math.sin(a)*r*h*.45)+"px;--r:"+Math.round(Math.random()*360-180)+"deg;--s:"+(.5+Math.random()*.5).toFixed(2)+";--d:"+(Math.random()*.8).toFixed(2)+"s;--t:"+(5.5+Math.random()*2.7).toFixed(2)+"s";f.appendChild(e);}k.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},9500);}function welcome(at){isIn=true;if(!c.again){done=true;if(timer){clearTimeout(timer);}}b.className="t-band is-in is-new";b.innerHTML=c.inHtml;ding();burst();var t=b.querySelector(".t-at");if(t){t.textContent=t.textContent.replace("%s",at);}}function out(){isIn=false;var k=b.closest?b.closest(".t"):null,x=k?k.querySelector(".t-fx"):null;if(x){x.parentNode.removeChild(x);}show("t-band is-valid",c.valid);expire();}function later(ms){if(timer){clearTimeout(timer);}timer=setTimeout(ask,ms);}function ask(){timer=null;if(done||busy||!c.poll||document.hidden){return;}busy=true;fetch(c.poll+(-1===c.poll.indexOf("?")?"?":"&")+(c.again?"in="+(isIn?1:0)+"&":"")+"_="+Date.now(),{cache:"no-store",credentials:"same-origin"}).then(function(r){if(404===r.status){c.poll="";}if(!r.ok){throw new Error(String(r.status));}return r.json();}).then(function(d){busy=false;fails=0;if(d&&d.in){if(!isIn){welcome(d.at||"");}if(!c.again){return;}}else if(d&&isIn&&c.again){out();}if(!d||null===d.next){c.poll="";return;}later(1000*d.next);},function(){busy=false;fails++;later(Math.min(60000,2000*fails));});}document.addEventListener("visibilitychange",function(){if(!document.hidden){expire();if(!busy){later(0);}}});setInterval(expire,1000);expire();ask();})();</script>';
     }
 
     /**
@@ -726,7 +795,7 @@ final class TicketController
      * $data, when given, is what the code holds instead of the page's link: a
      * ticket buyer's ticket code, which is what the desk looks up.
      */
-    private function qrBlock(string $data = ''): string
+    private function qrBlock(string $data = '', string $suffix = ''): string
     {
         if (! defined('EVENTCREW_PLUGIN_URL')) {
             return '';
@@ -741,13 +810,15 @@ final class TicketController
         // that shows it also lets the browser play the "you're in" sound.
         // The button covers the code's own square (t-qr-wrap), which is
         // always laid out, so showing the code moves nothing on the page.
-        return '<div class="t-qr-wrap" id="ec-qr-wrap">'
-            . '<button type="button" class="t-qr-show" id="ec-qr-show">' . self::QR_ICON
+        // The library loads once, with the first card; later cards' scripts
+        // run after it.
+        return '<div class="t-qr-wrap" id="ec-qr-wrap' . $suffix . '">'
+            . '<button type="button" class="t-qr-show" id="ec-qr-show' . $suffix . '">' . self::QR_ICON
             . esc_html__('Show QR code', 'eventcrew') . '</button>'
-            . '<div class="t-qr" id="ec-qr" hidden>' . $img . '</div></div>'
-            . '<script src="' . esc_url($lib) . '"></script>'
+            . '<div class="t-qr" id="ec-qr' . $suffix . '" hidden>' . $img . '</div></div>'
+            . ('' === $suffix ? '<script src="' . esc_url($lib) . '"></script>' : '')
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained script; wrapping adds stray whitespace.
-            . '<script>(function(){var h=document.getElementById("ec-qr"),s=document.getElementById("ec-qr-show"),w=document.getElementById("ec-qr-wrap");if(!h){return;}if("function"!==typeof window.qrcode){if(w){w.parentNode.removeChild(w);}return;}var q=window.qrcode(0,"H");q.addData(' . $content . ');q.make();h.insertAdjacentHTML("afterbegin",q.createSvgTag({cellSize:4,margin:8,scalable:true}));if(s){s.addEventListener("click",function(){h.hidden=false;s.parentNode.removeChild(s);});}else{h.hidden=false;}})();</script>';
+            . '<script>(function(){var h=document.getElementById("ec-qr' . $suffix . '"),s=document.getElementById("ec-qr-show' . $suffix . '"),w=document.getElementById("ec-qr-wrap' . $suffix . '");if(!h){return;}if("function"!==typeof window.qrcode){if(w){w.parentNode.removeChild(w);}return;}var q=window.qrcode(0,"H");q.addData(' . $content . ');q.make();h.insertAdjacentHTML("afterbegin",q.createSvgTag({cellSize:4,margin:8,scalable:true}));if(s){s.addEventListener("click",function(){h.hidden=false;s.parentNode.removeChild(s);});}else{h.hidden=false;}})();</script>';
     }
 
     /**
@@ -791,7 +862,7 @@ final class TicketController
      * screenshot cannot fake, so door staff can tell a real, freshly-loaded
      * ticket from a saved image or an old copy.
      */
-    private function antiFraudBlock(string $issued): string
+    private function antiFraudBlock(string $issued, string $suffix = ''): string
     {
         $issuedLine = '' === $issued
             ? ''
@@ -807,12 +878,12 @@ final class TicketController
         // The clock is written and ticked entirely client-side (no network), so
         // it moves every second on a live page and freezes in a screenshot.
         return $issuedLine
-            . '<p class="t-clock" id="ec-clock">—</p>'
+            . '<p class="t-clock" id="ec-clock' . $suffix . '">—</p>'
             . '<p class="t-small">'
             . esc_html__('The clock above must match the time now. A frozen clock is a screenshot.', 'eventcrew')
             . '</p>'
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained clock script; wrapping adds stray whitespace.
-            . '<script>(function(){var e=document.getElementById("ec-clock");function t(){var d=new Date();e.textContent=d.toLocaleTimeString();}t();setInterval(t,1000);})();</script>';
+            . '<script>(function(){var e=document.getElementById("ec-clock' . $suffix . '");function t(){var d=new Date();e.textContent=d.toLocaleTimeString();}t();setInterval(t,1000);})();</script>';
     }
 
     private function formatIssued(string $issued): string
@@ -829,9 +900,10 @@ final class TicketController
      * The page around the ticket: a grey page with one white card in the
      * middle, built like an event card on the crew board (picture header,
      * then the body). All styling is in this one style block; the page loads
-     * nothing from the theme.
+     * nothing from the theme. $stack: $inner is several cards (each a
+     * section.t), stacked with a gap, instead of one card's inside.
      */
-    private function document(string $title, string $inner): string
+    private function document(string $title, string $inner, bool $stack = false): string
     {
         $css = 'html{background:#e8e6e3}'
             . 'body{margin:0;padding:1.5em 1em;font-family:system-ui,sans-serif;color:#1d1d1f;text-align:center}'
@@ -856,7 +928,7 @@ final class TicketController
             // band's padding, and VALID or expired shares one grid cell with
             // the gold band's words, hidden (.t-ghost), so it is already as
             // tall as the gold band. The stars sit in that cell too.
-            . '#ec-band{display:grid;align-items:center;padding:.7em .45em}#ec-band>*{grid-area:1/1}'
+            . '[id^="ec-band"]{display:grid;align-items:center;padding:.7em .45em}[id^="ec-band"]>*{grid-area:1/1}'
             . '.t-in{display:block;letter-spacing:.04em}.t-ghost{visibility:hidden}'
             // Gold with dark brown text (over 6:1 on the darkest gold). It all
             // stays inside the card (Owner 2026-11-07: it went out of the
@@ -999,14 +1071,16 @@ final class TicketController
             . 'letter-spacing:.06em;opacity:.75;margin:-.4em 0 1em}'
             . '.t-short+.t-code{margin-top:0}'
             . '.t-clock{font-size:2em;font-variant-numeric:tabular-nums;margin:.3em 0}'
-            . '.t-small{opacity:.7;font-size:.82em}';
+            . '.t-small{opacity:.7;font-size:.82em}'
+            . '.t-stack{max-width:26em;margin:0 auto}.t-stack>.t+.t{margin-top:1.5em}';
 
         return sprintf(
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one literal HTML document; wrapping it just adds stray whitespace.
-            '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>%1$s</title><style>%3$s</style></head><body><main class="t">%2$s</main></body></html>',
+            '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>%1$s</title><style>%3$s</style></head><body><main class="%4$s">%2$s</main></body></html>',
             esc_html($title),
             $inner,
-            $css
+            $css,
+            $stack ? 't-stack' : 't'
         );
     }
 

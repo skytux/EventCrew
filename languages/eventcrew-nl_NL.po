@@ -11515,3 +11515,15 @@ msgstr "Met 0 plaatsen staat de taak niet op de borden."
 #. translators: %s: the task, like "Decorate · Sat 25 Jul 21:00–23:00".
 msgid "An organizer took you off %s."
 msgstr "Een organisator heeft je van %s gehaald."
+
+msgid "Crew ticket"
+msgstr "Crewticket"
+
+msgid "No internet? Show these QR codes at the door."
+msgstr "Geen internet? Laat deze QR-codes zien bij de deur."
+
+msgid "Your other tickets for this night still work. They are below."
+msgstr "Je andere tickets voor deze avond blijven geldig. Ze staan hieronder."
+
+msgid "Every ticket the person has for the night, each with its QR code, for the door. On a line of its own; when the text has no such line, the tickets go at the end."
+msgstr "Alle tickets van de persoon voor de avond, elk met zijn QR-code, voor de deur. Op een eigen regel; staat die regel niet in de tekst, dan komen de tickets aan het eind."

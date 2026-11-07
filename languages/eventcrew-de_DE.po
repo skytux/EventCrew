@@ -11536,3 +11536,15 @@ msgstr "Mit 0 Plätzen ist die Aufgabe nicht auf den Boards."
 #. translators: %s: the task, like "Decorate · Sat 25 Jul 21:00–23:00".
 msgid "An organizer took you off %s."
 msgstr "Ein Organisator hat dich von %s ausgetragen."
+
+msgid "Crew ticket"
+msgstr "Crew-Ticket"
+
+msgid "No internet? Show these QR codes at the door."
+msgstr "Kein Internet? Zeig diese QR-Codes am Eingang."
+
+msgid "Your other tickets for this night still work. They are below."
+msgstr "Deine anderen Tickets für diesen Abend gelten weiter. Sie sind unten."
+
+msgid "Every ticket the person has for the night, each with its QR code, for the door. On a line of its own; when the text has no such line, the tickets go at the end."
+msgstr "Alle Tickets der Person für den Abend, jedes mit seinem QR-Code, für den Eingang. In einer eigenen Zeile; fehlt die Zeile im Text, kommen die Tickets ans Ende."

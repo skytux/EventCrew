@@ -127,22 +127,31 @@ final class ClaimNotifier
             MessageActions::replyMarkup(MessageActions::of('signup_confirmed_dm', $context, $this->mailer))
         );
 
-        $this->mailer->toPerson(
+        // One email (Owner, 2026-11-07): the sign-up on top, then the ticket area
+        // with every ticket the person has that night and their QR codes, at
+        // the {tickets} line. No separate ticket email follows.
+        $tickets = $this->ticketMail?->signupTickets($person, $assignment->id, $task->taskDate);
+        $emailContext = $context + ['tickets' => null === $tickets || '' === $tickets['html'] ? '' : Mailer::TICKETS_MARK];
+
+        $sent = $this->mailer->toPerson(
             $person->id,
             $person->email,
-            MessageTemplates::subject('signup_confirmed', $context),
-            MessageTemplates::body('signup_confirmed', $context),
+            MessageTemplates::subject('signup_confirmed', $emailContext),
+            MessageTemplates::body('signup_confirmed', $emailContext),
             // The ticket first: it is the thing this email exists to hand over.
             // Then the calendar hold, cancel and the crew guide: the same
             // actions as the DM (MessageTemplates::actions()).
             MessageActions::email(MessageActions::of('signup_confirmed', $context, $this->mailer)),
             // The "Thank you" hero at the top of the HTML email.
-            EmailHero::for('signup_confirmed', $context)
+            EmailHero::for('signup_confirmed', $context),
+            $tickets
         );
 
-        // The "Your ticket" email, the same one ticket buyers get, after the
-        // task email. It carries the QR code the door desk scans.
-        $this->ticketMail?->sendCrewTicket($person, $assignment->id, $task->taskDate);
+        // The ticket went out in this email: later changes to the night's
+        // tickets send the ticket email again (TicketMail::crewTasksChanged()).
+        if ($sent && null !== $tickets && '' !== $tickets['html']) {
+            $this->assignments->markTicketMailed($assignment->id);
+        }
     }
 
     /**

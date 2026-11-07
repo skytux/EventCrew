@@ -289,7 +289,8 @@ final class TicketMailTest extends TestCase
     {
         self::assertTrue($this->ticketMail()->sendCreditTicket($this->person(), 12, '2026-11-14'));
 
-        self::assertStringContainsString(ShortCode::forPerson(8, '2026-11-14'), $this->mails[0]['body']);
+        // The free-entry ticket's own short code, as on its ticket page and door row.
+        self::assertStringContainsString(ShortCode::forCredit(8, '2026-11-14'), $this->mails[0]['body']);
     }
 
     /**
@@ -819,6 +820,87 @@ final class TicketMailTest extends TestCase
         $this->wpdb->nextRows[] = $this->crewTaskRow(6, 'decorate', '2026-11-14 18:00:00');
         self::assertFalse($mail->crewTasksChanged($this->person(), '2026-07-19'));
         self::assertCount(2, $this->mails);
+    }
+
+    /**
+     * Owner, 2026-11-07: a night with a crew ticket and a free-entry ticket. The
+     * credit's ticket email shows both tickets at the bottom, each with its
+     * label, its own QR code, short code and link.
+     */
+    public function testANightWithACrewAndACreditTicketShowsBoth(): void
+    {
+        $signup = ['id' => 31, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up',
+            'ticket_mailed_at' => '2026-07-19 10:00:00'];
+        $this->wpdb->nextResults[] = [$signup]; // tasksOn
+        $this->wpdb->nextRows[] = $this->crewTaskRow(5, 'bar', '2026-11-14 22:00:00');
+        $this->wpdb->nextResults[] = [$signup]; // emailedTicketId
+        $this->wpdb->nextResults[] = [['id' => 12, 'person_id' => 8, 'redeemed_for' => '2026-11-14']];
+
+        self::assertTrue($this->ticketMail()->sendCreditTicket($this->person(), 12, '2026-11-14'));
+
+        self::assertCount(1, $this->mails);
+        $body = $this->mails[0]['body'];
+        self::assertStringContainsString('Crew ticket', $body);
+        self::assertStringContainsString('Free-entry ticket', $body);
+        self::assertStringContainsString('token=' . SignedLink::sign('ticket', 31), $body);
+        self::assertStringContainsString('token=' . SignedLink::sign('credit_ticket', 12), $body);
+        self::assertStringContainsString(ShortCode::forPerson(8, '2026-11-14'), $body);
+        self::assertStringContainsString(ShortCode::forCredit(8, '2026-11-14'), $body);
+        $qr = new TicketQr();
+
+        foreach ([TicketMail::crewCode(31), TicketMail::creditCode(12)] as $data) {
+            self::assertSame(1, substr_count($body, $qr->table($data, $qr->fitCell($data, 150, '', 4))));
+        }
+
+        self::assertStringContainsString('No internet? Show these QR codes at the door.', $body);
+    }
+
+    /**
+     * Cancelling the free-entry ticket on a night the person also has a task:
+     * the cancel email says the other ticket still works and shows it.
+     */
+    public function testACancelEmailShowsTheTicketsLeft(): void
+    {
+        $signup = ['id' => 31, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up',
+            'ticket_mailed_at' => '2026-07-19 10:00:00'];
+        $this->wpdb->nextResults[] = [$signup]; // tasksOn
+        $this->wpdb->nextRows[] = $this->crewTaskRow(5, 'bar', '2026-11-14 22:00:00');
+        $this->wpdb->nextResults[] = [$signup]; // emailedTicketId
+
+        self::assertTrue($this->ticketMail()->crewCancelled($this->person(), '2026-07-01 10:00:00', '2026-11-14'));
+
+        $body = $this->mails[0]['body'];
+        self::assertStringContainsString('TICKET CANCELLED', $body);
+        self::assertStringContainsString('Your other tickets for this night still work.', $body);
+        self::assertStringContainsString('Crew ticket', $body);
+        self::assertStringContainsString(ShortCode::forPerson(8, '2026-11-14'), $body);
+    }
+
+    /**
+     * The sign-up email's ticket area: the crew ticket with its label, QR
+     * code and the night's task, and no per-ticket link when it is the only
+     * ticket (the email has its own ticket button).
+     */
+    public function testSignupTicketsGiveTheCrewTicketArea(): void
+    {
+        $signup = ['id' => 31, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up'];
+        $this->wpdb->nextResults[] = [$signup]; // tasksOn
+        $this->wpdb->nextRows[] = $this->crewTaskRow(5, 'bar', '2026-11-14 22:00:00');
+        $this->wpdb->nextResults[] = [$signup]; // emailedTicketId
+
+        $area = $this->ticketMail()->signupTickets($this->person(), 31, '2026-11-14');
+        $qr = new TicketQr();
+        $data = TicketMail::crewCode(31);
+
+        self::assertStringContainsString('Crew ticket', $area['html']);
+        self::assertStringContainsString('bar, 22:00', $area['html']);
+        self::assertSame(1, substr_count($area['html'], $qr->table($data, $qr->fitCell($data, 150, '', 4))));
+        self::assertStringNotContainsString('Open my ticket', $area['html']);
+        self::assertStringContainsString('token=' . SignedLink::sign('ticket', 31), $area['text']);
+        self::assertSame(
+            ['html' => '', 'text' => ''],
+            $this->ticketMail()->signupTickets($this->person('person-8@crew.invalid'), 31, '2026-11-14')
+        );
     }
 
     /**

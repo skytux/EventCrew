@@ -1776,7 +1776,7 @@ final class MessageTemplates
                     /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing line, 6: how to cancel */
                     __("Hi %1\$s,\n\nThank you for joining the crew! You’re on %2\$s at %3\$s, %4\$s.\n\nShow your ticket at the door. We can’t wait to see you there ✨\n\n%5\$s\n\n%6\$s", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}', '%5$s' => '{standing}', '%6$s' => '{cancel_help}']
-                ) . '{free_cancel}'))),
+                ) . '{free_cancel}'))) . "\n\n{tickets}",
                 [
                     'name' => $name,
                     'first_name' => $personFirstName,
@@ -1786,6 +1786,13 @@ final class MessageTemplates
                     'event_times' => $eventTimes,
                     'description' => $description,
                     'cancel_help' => $cancelHelp,
+                    // Owner, 2026-11-07: one email on sign-up, the ticket in it.
+                    'tickets' => self::placeholder(
+                        __('Every ticket the person has for the night, each with its QR code, for the door. On a line of its own; when the text has no such line, the tickets go at the end.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+                        static fn (array $c): string => (string) ($c['tickets'] ?? ''),
+                        false,
+                        true
+                    ),
                 ] + $claimPlaceholders
             ),
             new MessageTemplate(

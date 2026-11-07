@@ -754,7 +754,14 @@ final class TicketMail
     public static function shortCodeOf(TicketBuyer|Guest|CrewTicket $row): string
     {
         if ($row instanceof CrewTicket) {
-            return $row->personId > 0 ? ShortCode::forPerson($row->personId, $row->eventDate) : '';
+            if ($row->personId <= 0) {
+                return '';
+            }
+
+            // A free-entry ticket has its own door row and short code.
+            return $row->isCredit()
+                ? ShortCode::forCredit($row->personId, $row->eventDate)
+                : ShortCode::forPerson($row->personId, $row->eventDate);
         }
 
         return $row instanceof Guest ? ShortCode::forGuest($row->id) : ShortCode::forBuyer($row->id);
@@ -851,7 +858,8 @@ final class TicketMail
                 $person->email,
                 $date,
                 $deleted,
-                HybridPolicy::personLanguage($person)
+                HybridPolicy::personLanguage($person),
+                $this->creditTickets($person, $date)
             );
         }
 
@@ -859,7 +867,7 @@ final class TicketMail
             return false;
         }
 
-        return $this->sendPersonTicket(new CrewTicket(
+        $ticket = new CrewTicket(
             CrewTicket::KIND_CREW,
             $ticketId,
             $date,
@@ -868,7 +876,103 @@ final class TicketMail
             $tasks,
             HybridPolicy::personLanguage($person),
             $person->id
-        ), $deleted);
+        );
+
+        return $this->sendPersonTicket($ticket, $deleted, array_merge([$ticket], $this->creditTickets($person, $date)));
+    }
+
+    /**
+     * Every ticket the person holds for the night $date, the crew ticket
+     * first, then each free-entry ticket. The crew ticket is there while they
+     * hold a task that night, or always when $assignmentId (a sign-up just
+     * made) is given; its code is the one emailed first for the night, so
+     * the QR code they have keeps working, and it lists the night's tasks.
+     * Several tasks on one night share one crew ticket.
+     *
+     * @return list<CrewTicket>
+     */
+    public function nightTickets(Person $person, string $date, ?int $assignmentId = null): array
+    {
+        $tickets = [];
+        $tasks = $this->tasksOn($person->id, $date);
+        $crewId = $this->emailedTicketId($person->id, $date) ?? $assignmentId ?? $this->firstOccupyingId($person->id, $date);
+
+        if (null !== $crewId && ([] !== $tasks || null !== $assignmentId)) {
+            $tickets[] = new CrewTicket(
+                CrewTicket::KIND_CREW,
+                $crewId,
+                $date,
+                $person->name(),
+                $person->email,
+                $tasks,
+                HybridPolicy::personLanguage($person),
+                $person->id
+            );
+        }
+
+        return array_merge($tickets, $this->creditTickets($person, $date));
+    }
+
+    /**
+     * The ticket area of the sign-up email, in the current language: every
+     * ticket the person holds for the night (nightTickets()), each with its
+     * label, its QR code and short code. HTML for the email and the same as
+     * plain text. Empty when the person has no address that can get mail.
+     *
+     * @return array{html: string, text: string}
+     */
+    public function signupTickets(Person $person, int $assignmentId, string $date): array
+    {
+        if ('' === $person->email || Person::isPlaceholderEmail($person->email) || '' === $date) {
+            return ['html' => '', 'text' => ''];
+        }
+
+        $say = static fn (string $key): string => self::areaWords()[$key] ?? '';
+
+        return $this->area($this->nightTickets($person, $date, $assignmentId), $say, true);
+    }
+
+    /**
+     * The person's free-entry tickets for the night $date that are not
+     * cancelled, as tickets for the email.
+     *
+     * @return list<CrewTicket>
+     */
+    private function creditTickets(Person $person, string $date): array
+    {
+        $tickets = [];
+
+        foreach (null === $this->redemptions ? [] : $this->redemptions->forPerson($person->id) as $redemption) {
+            if ($date !== (string) $redemption->redeemedFor || $redemption->isCancelled()) {
+                continue;
+            }
+
+            $tickets[] = new CrewTicket(
+                CrewTicket::KIND_CREDIT,
+                $redemption->id,
+                $date,
+                $person->name(),
+                $person->email,
+                language: HybridPolicy::personLanguage($person),
+                personId: $person->id
+            );
+        }
+
+        usort($tickets, static fn (CrewTicket $a, CrewTicket $b): int => $a->id <=> $b->id);
+
+        return $tickets;
+    }
+
+    /** The person's first sign-up on the night that holds a task, or null. */
+    private function firstOccupyingId(int $personId, string $date): ?int
+    {
+        foreach (null === $this->assignments ? [] : $this->assignments->forPersonOn($personId, $date) as $assignment) {
+            if ($assignment->isOccupying()) {
+                return $assignment->id;
+            }
+        }
+
+        return null;
     }
 
     /** True when the person's ticket for the night $date was emailed. */
@@ -945,17 +1049,23 @@ final class TicketMail
             return false;
         }
 
-        $sent = $this->sendPersonTicket(
-            new CrewTicket(
-                CrewTicket::KIND_CREDIT,
-                $redemptionId,
-                $date,
-                $person->name(),
-                $person->email,
-                language: HybridPolicy::personLanguage($person),
-                personId: $person->id
-            )
+        $ticket = new CrewTicket(
+            CrewTicket::KIND_CREDIT,
+            $redemptionId,
+            $date,
+            $person->name(),
+            $person->email,
+            language: HybridPolicy::personLanguage($person),
+            personId: $person->id
         );
+        $night = $this->nightTickets($person, $date);
+
+        // The new ticket is in the list even before its row can be read back.
+        if ([] === array_filter($night, static fn (CrewTicket $t): bool => $t->isCredit() && $t->id === $redemptionId)) {
+            $night[] = $ticket;
+        }
+
+        $sent = $this->sendPersonTicket($ticket, null, $night);
 
         if ($sent && null !== $this->redemptions) {
             $this->redemptions->markTicketMailed($redemptionId);
@@ -964,13 +1074,16 @@ final class TicketMail
         return $sent;
     }
 
-    private function sendPersonTicket(CrewTicket $ticket, ?Task $deleted = null): bool
+    /**
+     * @param list<CrewTicket> $night every ticket the person holds that night, for the ticket area
+     */
+    private function sendPersonTicket(CrewTicket $ticket, ?Task $deleted = null, array $night = []): bool
     {
         if ('' === $ticket->email || Person::isPlaceholderEmail($ticket->email) || '' === $ticket->eventDate) {
             return false;
         }
 
-        return $this->deliver($ticket, $ticket->email, $deleted);
+        return $this->deliver($ticket, $ticket->email, $deleted, $night);
     }
 
     /**
@@ -1001,7 +1114,8 @@ final class TicketMail
             $person->email,
             $date,
             null,
-            HybridPolicy::personLanguage($person)
+            HybridPolicy::personLanguage($person),
+            $this->nightTickets($person, $date)
         );
     }
 
@@ -1029,18 +1143,23 @@ final class TicketMail
      * picks ($language is the holder's stored language, null when not known).
      * $deleted, when an organizer deleted the task, is named first. Not sent
      * to an empty or placeholder address, or for a night already past.
+     * $remaining, the holder's other tickets for that night that still work,
+     * are shown under the sign-off with their QR codes.
+     *
+     * @param list<CrewTicket> $remaining
      */
     public function sendCancelled(
         string $name,
         string $email,
         string $date,
         ?Task $deleted = null,
-        ?string $language = null
+        ?string $language = null,
+        array $remaining = []
     ): bool {
         return $this->sendNotice(
             $email,
             $date,
-            fn (): array => $this->composeCancelled($name, $date, $deleted, $language),
+            fn (): array => $this->composeCancelled($name, $date, $deleted, $language, $remaining),
             $language
         );
     }
@@ -1050,7 +1169,7 @@ final class TicketMail
      * Not sent to an empty or placeholder address, or for a night already
      * past.
      *
-     * @param callable(): array{subject: string, html: string, text: string} $compose
+     * @param callable(): array{subject: string, html: string, text: string, corner?: string} $compose
      */
     private function sendNotice(string $email, string $date, callable $compose, ?string $language = null): bool
     {
@@ -1071,7 +1190,7 @@ final class TicketMail
             $mail['text'],
             self::noticeFooter($language),
             true,
-            '',
+            (string) ($mail['corner'] ?? ''),
             [],
             HybridPolicy::languagesFor(HybridPolicy::TICKET_CANCELLED, $language)
         );
@@ -1096,26 +1215,45 @@ final class TicketMail
      * says the ticket is cancelled. There is no QR code, since the cancelled
      * code no longer gets anyone in.
      * $deleted, when an organizer deleted the task, is named first.
+     * $remaining, the holder's other tickets for the night that still work,
+     * are said in a sentence and drawn under the sign-off ('corner'), each
+     * with its QR code, as in the ticket email.
      *
-     * @return array{subject: string, html: string, text: string}
+     * @param list<CrewTicket> $remaining
+     * @return array{subject: string, html: string, text: string, corner: string}
      */
     public function composeCancelled(
         string $name,
         string $date,
         ?Task $deleted = null,
-        ?string $language = null
+        ?string $language = null,
+        array $remaining = []
     ): array {
-        return $this->composeNotice($name, $date, $language, static fn (string $event, string $short): array => [
+        $others = [] !== $remaining;
+        $mail = $this->composeNotice($name, $date, $language, static fn (string $event, string $short): array => [
             'sentence' => (null === $deleted ? '' : self::deletedSentence($deleted) . "\n\n") . sprintf(
                 /* translators: 1: the event's name, 2: its date, e.g. 14.11.2026 */
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 __('Your ticket to %1$s on %2$s is cancelled. The QR code in the ticket email no longer works at the door.', 'eventcrew'),
                 $event,
                 $short
-            ),
+            ) . ($others ? "\n\n" . __('Your other tickets for this night still work. They are below.', 'eventcrew') : ''),
             'subject' => __('Your ticket is cancelled', 'eventcrew'),
             'band' => __('TICKET CANCELLED', 'eventcrew'),
         ]);
+
+        $mail['corner'] = '';
+
+        if ($others) {
+            $languages = HybridPolicy::languagesFor(HybridPolicy::TICKET_CANCELLED, $language);
+            $words = HybridPolicy::inEach($languages, static fn (): array => self::areaWords());
+            $say = static fn (string $key): string => HybridPolicy::join(HybridPolicy::field($words, $key), "\n");
+            $area = $this->area($remaining, $say, true);
+            $mail['corner'] = $area['html'];
+            $mail['text'] .= "\n\n" . $area['text'];
+        }
+
+        return $mail;
     }
 
     /**
@@ -1242,11 +1380,15 @@ final class TicketMail
      * italics, the ticket note,
      * the "Open my ticket" button and the "See you on the dancefloor" line.
      * The corner (ticketCorner()): the holder's name, a buyer's code, the
-     * offline hint and the small QR code in the bottom-right corner.
+     * offline hint and the small QR code in the bottom-right corner. For a
+     * crew member with more than one ticket that night ($night, every ticket
+     * they hold then), the corner is the ticket area (area()): one block per
+     * ticket, each with its label, QR code, short code and link.
      *
+     * @param list<CrewTicket> $night
      * @return array{subject: string, html: string, corner: string, text: string}
      */
-    public function compose(TicketBuyer|Guest|CrewTicket $row, ?Task $deleted = null): array
+    public function compose(TicketBuyer|Guest|CrewTicket $row, ?Task $deleted = null, array $night = []): array
     {
         $date = self::shortDate($row->eventDate);
         [$event, , $eventId] = $this->event($row->eventDate);
@@ -1342,6 +1484,22 @@ final class TicketMail
 
         $offline = implode('<br>', array_map('esc_html', array_unique(array_values(HybridPolicy::field($parts, 'offline')))));
 
+        if ($row instanceof CrewTicket && count($night) > 1) {
+            $area = $this->area($night, static fn (string $key): string => $both($key, "\n"), true);
+            $text = implode("\n\n", HybridPolicy::field($parts, 'text')) . "\n\n"
+                . ('' === $note ? '' : $note . "\n\n")
+                . $both('open') . ': ' . $url . "\n\n"
+                . $area['text'] . "\n\n"
+                . $both('closing', "\n");
+
+            return [
+                'subject' => $both('subject') . ' – ' . $date,
+                'html' => $html,
+                'corner' => $area['html'],
+                'text' => $text,
+            ];
+        }
+
         $text = implode("\n\n", HybridPolicy::field($parts, 'text')) . "\n\n"
             . ('' === $note ? '' : $note . "\n\n")
             . $both('open') . ': ' . $url . "\n\n"
@@ -1387,13 +1545,16 @@ final class TicketMail
         return $sent;
     }
 
-    private function deliver(TicketBuyer|Guest|CrewTicket $row, string $to, ?Task $deleted = null): bool
+    /**
+     * @param list<CrewTicket> $night
+     */
+    private function deliver(TicketBuyer|Guest|CrewTicket $row, string $to, ?Task $deleted = null, array $night = []): bool
     {
         if ('' === $to) {
             return false;
         }
 
-        $mail = $this->compose($row, $deleted);
+        $mail = $this->compose($row, $deleted, $night);
 
         return $this->mailer->toTicketHolder(
             $to,
@@ -1414,8 +1575,8 @@ final class TicketMail
      * into the greeting (a first paragraph written in *stars*, '' when there
      * is none) and the rest; the same as plain text; and the short words.
      *
-     * @return array{greeting: string, body: string, text: string, subject: string, open: string,
-     *               code: string, short: string, closing: string, offline: string}
+     * @return array<string, string> greeting, body, text, subject, open, code,
+     *                               short, closing, offline and the area's words (areaWords())
      */
     private function words(
         TicketBuyer|Guest|CrewTicket $row,
@@ -1477,17 +1638,101 @@ final class TicketMail
             $body = $paragraphs[1] ?? '';
         }
 
-        return [
+        return array_merge(self::areaWords(), [
             'greeting' => $greeting,
             'body' => $body,
             'text' => trim($greeting . "\n\n" . $body),
             'subject' => __('Your ticket', 'eventcrew'),
-            'open' => __('Open my ticket', 'eventcrew'),
             'code' => __('Ticket code', 'eventcrew'),
-            'short' => __('Short code', 'eventcrew'),
             'closing' => __('See you on the dancefloor', 'eventcrew'),
+        ]);
+    }
+
+    /**
+     * The words of the ticket area (area()), in the current language.
+     *
+     * @return array{crew: string, credit: string, open: string, short: string, offline: string, offline_all: string}
+     */
+    private static function areaWords(): array
+    {
+        return [
+            'crew' => __('Crew ticket', 'eventcrew'),
+            'credit' => __('Free-entry ticket', 'eventcrew'),
+            'open' => __('Open my ticket', 'eventcrew'),
+            'short' => __('Short code', 'eventcrew'),
             'offline' => __('No internet? Show this QR code at the door.', 'eventcrew'),
+            'offline_all' => __('No internet? Show these QR codes at the door.', 'eventcrew'),
         ];
+    }
+
+    /**
+     * The ticket area: one block per ticket in $tickets, stacked, each the
+     * ticket corner (ticketCorner()) with the ticket's label ("Crew ticket",
+     * "Free-entry ticket") when $labels, the crew ticket's tasks for the night,
+     * its QR code and short code. With more than one ticket each block has its
+     * own "Open my ticket" link; the offline hint is said once, under the
+     * last. $say gives each word (areaWords()'s keys) in the email's
+     * languages. Also the same as plain text: label, link and short code per
+     * ticket.
+     *
+     * @param list<CrewTicket>         $tickets
+     * @param callable(string): string $say
+     * @return array{html: string, text: string}
+     */
+    private function area(array $tickets, callable $say, bool $labels): array
+    {
+        $html = '';
+        $text = [];
+        $count = count($tickets);
+        $last = $count - 1;
+
+        foreach (array_values($tickets) as $i => $ticket) {
+            $label = $labels ? $say($ticket->isCredit() ? 'credit' : 'crew') : '';
+            $url = self::crewUrl($ticket);
+            $short = self::shortCodeOf($ticket);
+            $tasks = array_map(
+                static function (Task $task): string {
+                    $time = $task->timeRange();
+
+                    return $task->roleDisplay() . ('' === $time ? '' : ', ' . $time);
+                },
+                $ticket->isCredit() ? [] : $ticket->tasks
+            );
+            $extra = implode('', array_map(
+                static fn (string $line): string => sprintf(
+                    '<p style="margin:0 0 4px;font-family:%1$s;font-size:14px;line-height:1.4;color:%2$s">%3$s</p>',
+                    EmailBody::FONT,
+                    self::TEXT_COLOR,
+                    esc_html($line)
+                ),
+                $tasks
+            ));
+
+            if ($count > 1) {
+                $extra .= sprintf(
+                    '<p style="margin:0 0 8px;font-family:%1$s;font-size:14px;line-height:1.4">'
+                        . '<a href="%2$s" style="color:%3$s;text-decoration:underline">%4$s</a></p>',
+                    EmailBody::FONT,
+                    esc_url($url),
+                    esc_attr(EmailTemplate::accent()),
+                    str_replace("\n", ' / ', esc_html($say('open')))
+                );
+            }
+
+            $offline = $i === $last
+                ? str_replace("\n", '<br>', esc_html($say($count > 1 ? 'offline_all' : 'offline')))
+                : '';
+            $html .= $this->ticketCorner(self::qrData($ticket), trim($ticket->name), '', $offline, $short, $label, $extra);
+
+            $text[] = implode("\n", array_filter([
+                str_replace("\n", ' / ', $label),
+                implode("\n", $tasks),
+                str_replace("\n", ' / ', $say('open')) . ': ' . $url,
+                '' === $short ? '' : str_replace("\n", ' / ', $say('short')) . ': ' . $short,
+            ], 'strlen'));
+        }
+
+        return ['html' => $html, 'text' => implode("\n\n", $text)];
     }
 
     /**
@@ -1549,20 +1794,31 @@ final class TicketMail
      * a buyer's code and the "No internet?" line ($offline, already escaped
      * HTML); on the right the small QR code in a white box, no logo, with
      * the short code ($short, ShortCode) right under it, as on the ticket
-     * page and the door app's row.
+     * page and the door app's row. $label, when given, is the ticket's kind
+     * ("Crew ticket") small and in capitals above the name; $extra is HTML
+     * under the name (the ticket area's task lines and link).
      */
     private function ticketCorner(
         string $data,
         string $holder,
         string $code,
         string $offline,
-        string $short = ''
+        string $short = '',
+        string $label = '',
+        string $extra = ''
     ): string {
         $qr = $this->qr->table($data, $this->qr->fitCell($data, self::QR_WIDTH, '', 4));
 
         return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"'
             . ' style="margin:0 0 16px;border-top:1px solid ' . self::RULE_COLOR . '"><tr>'
             . '<td valign="bottom" style="padding:16px 12px 0 0;vertical-align:bottom">'
+            . ('' === $label ? '' : sprintf(
+                '<p style="margin:0 0 4px;font-family:%1$s;font-size:12px;font-weight:700;line-height:1.4;'
+                    . 'letter-spacing:.12em;text-transform:uppercase;color:%2$s">%3$s</p>',
+                EmailBody::FONT,
+                self::GOLD_COLOR,
+                str_replace("\n", '<br>', esc_html($label))
+            ))
             . ('' === $holder ? '' : sprintf(
                 '<p style="margin:0 0 4px;font-family:%1$s;font-size:18px;font-weight:700;line-height:1.3;'
                     . 'color:%2$s">%3$s</p>',
@@ -1576,12 +1832,13 @@ final class TicketMail
                 self::TEXT_COLOR,
                 esc_html($code)
             ))
-            . sprintf(
+            . $extra
+            . ('' === $offline ? '' : sprintf(
                 '<p style="margin:0;font-family:%1$s;font-size:13px;line-height:1.5;color:%2$s">%3$s</p>',
                 EmailBody::FONT,
                 self::MUTED_COLOR,
                 $offline
-            )
+            ))
             . '</td>'
             . '<td width="156" align="right" valign="bottom" style="width:156px;padding:16px 0 0;'
             . 'vertical-align:bottom">'

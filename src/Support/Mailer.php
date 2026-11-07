@@ -28,6 +28,12 @@ final class Mailer
     public const PREVIEW_LINK = '#preview';
 
     /**
+     * Where the ticket area goes in a person email's body: what the
+     * {tickets} placeholder of the sign-up email becomes (toPerson()).
+     */
+    public const TICKETS_MARK = '[[eventcrew-tickets]]';
+
+    /**
      * What a preview Mailer would have sent, in order: to, subject, message,
      * headers and the plain-text part.
      *
@@ -65,8 +71,15 @@ final class Mailer
      * $hero (EmailHero::for()) opens the HTML email above the text; only the
      * sign-up email has one. The plain-text part leaves it out.
      *
+     * $tickets (TicketMail::signupTickets()), the sign-up email's ticket
+     * area with the QR codes, goes where the body has TICKETS_MARK (the
+     * {tickets} placeholder), or at the end when a saved text has no such
+     * line, so the ticket is never lost. Without $tickets the mark's line
+     * is dropped.
+     *
      * @param array<int, array{label: string, url: string}> $actions Buttons,
      *        most important first; the first is drawn as the primary one.
+     * @param array{html: string, text: string}|null $tickets
      */
     public function toPerson(
         int $personId,
@@ -74,7 +87,8 @@ final class Mailer
         string $subject,
         string $body,
         array $actions = [],
-        ?EmailHero $hero = null
+        ?EmailHero $hero = null,
+        ?array $tickets = null
     ): bool {
         // A person added without an email (or erased) has a ".invalid"
         // placeholder address, which can never receive mail. Nothing is sent.
@@ -83,10 +97,30 @@ final class Mailer
         }
 
         $manageUrl = $this->manageUrl($personId);
-        $text = EmailBody::toText($body, $actions) . $this->signatureText() . "\n\n" . $this->footerText($manageUrl);
+        $parts = explode(self::TICKETS_MARK, $body, 2);
+        $before = rtrim($parts[0]);
+        $after = ltrim(str_replace(self::TICKETS_MARK, '', $parts[1] ?? ''));
+
+        if (null === $tickets || '' === $tickets['html']) {
+            $body = rtrim($before . ('' === $after ? '' : "\n\n" . $after));
+            $text = EmailBody::toText($body, $actions);
+            $content = null;
+        } else {
+            $accent = EmailTemplate::accent();
+            // The buttons go after the text they belong to: under the ticket
+            // area when the text goes on after it, else above it.
+            $content = '' === $after
+                ? EmailBody::toHtml($before, $actions, $accent) . $tickets['html']
+                : EmailBody::toHtml($before, [], $accent) . $tickets['html'] . EmailBody::toHtml($after, $actions, $accent);
+            $text = '' === $after
+                ? EmailBody::toText($before, $actions) . "\n\n" . $tickets['text']
+                : EmailBody::toText($before) . "\n\n" . $tickets['text'] . "\n\n" . EmailBody::toText($after, $actions);
+        }
+
+        $text .= $this->signatureText() . "\n\n" . $this->footerText($manageUrl);
 
         $sent = EmailTemplate::enabled()
-            ? $this->sendHtml($to, $subject, $body, $actions, $manageUrl, $text, $hero)
+            ? $this->sendHtml($to, $subject, $body, $actions, $manageUrl, $text, $hero, $content)
             : $this->mail($to, $subject, $text, [], $text);
 
         if (! $sent) {
@@ -478,13 +512,18 @@ final class Mailer
         array $actions,
         string $manageUrl,
         string $text,
-        ?EmailHero $hero = null
+        ?EmailHero $hero = null,
+        ?string $content = null
     ): bool {
         $accent = EmailTemplate::accent();
+        // $content, the body already drawn with a ticket area, keeps the
+        // email light in dark mode too, as the ticket email does, so the QR
+        // codes stay dark on white.
         $html = $this->template->render(
             $subject,
-            (null === $hero ? '' : $hero->html($accent)) . EmailBody::toHtml($body, $actions, $accent),
-            EmailBody::footerHtml($this->footerLabel(), $manageUrl)
+            (null === $hero ? '' : $hero->html($accent)) . ($content ?? EmailBody::toHtml($body, $actions, $accent)),
+            EmailBody::footerHtml($this->footerLabel(), $manageUrl),
+            null !== $content
         );
 
         // The plain-text half of the multipart message. PHPMailer only offers

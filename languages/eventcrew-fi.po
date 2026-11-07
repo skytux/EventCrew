@@ -9391,3 +9391,15 @@ msgstr "0 paikalla tehtävä ei näy tauluilla."
 #. translators: %s: the task, like "Decorate · Sat 25 Jul 21:00–23:00".
 msgid "An organizer took you off %s."
 msgstr "Järjestäjä poisti sinut tehtävästä %s."
+
+msgid "Crew ticket"
+msgstr "Crew-lippu"
+
+msgid "No internet? Show these QR codes at the door."
+msgstr "Ei nettiä? Näytä nämä QR-koodit ovella."
+
+msgid "Your other tickets for this night still work. They are below."
+msgstr "Muut lippusi tälle illalle toimivat yhä. Ne ovat alla."
+
+msgid "Every ticket the person has for the night, each with its QR code, for the door. On a line of its own; when the text has no such line, the tickets go at the end."
+msgstr "Henkilön kaikki liput illalle, kukin QR-koodeineen, ovelle. Omalla rivillään; jos tekstissä ei ole tätä riviä, liput tulevat loppuun."

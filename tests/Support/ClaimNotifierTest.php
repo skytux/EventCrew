@@ -22,6 +22,7 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\Roles;
 use EventCrew\Support\SecondThoughts;
+use EventCrew\Support\ShortCode;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\SlotFreedNotice;
@@ -137,23 +138,65 @@ final class ClaimNotifierTest extends TestCase
         );
     }
 
-    /** Decision 1: a sign-up also gets the separate "Your ticket" email, with an EC-C code. */
-    public function testASignupAlsoGetsTheSeparateTicketEmail(): void
+    /**
+     * Owner, 2026-11-07: one email on sign-up. The sign-up email carries the
+     * ticket area with the crew ticket's QR code (EC-C code), short code and
+     * link at the bottom; no separate "Your ticket" email follows. The
+     * sign-up is marked as having had its ticket emailed.
+     */
+    public function testASignupGetsOneEmailWithTheTicketInIt(): void
     {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => EmailTemplate::HTML_OPTION === $name ? '1' : $default
+        );
         $this->wpdb->nextRows[] = $this->taskRow();
         $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
 
         $this->notifierWithTicketMail()->confirmSignup($this->person(), 5);
 
-        self::assertCount(2, $this->mails);
-        self::assertStringContainsString('Your ticket', $this->mails[1]['subject']);
-        self::assertSame('sam@example.com', $this->mails[1]['to']);
+        self::assertCount(1, $this->mails);
+        self::assertSame('sam@example.com', $this->mails[0]['to']);
+        self::assertStringNotContainsString('Your ticket', $this->mails[0]['subject']);
+        $body = $this->mails[0]['body'];
+        $qr = new TicketQr();
+        $data = TicketMail::crewCode(9);
+        self::assertSame(1, substr_count($body, $qr->table($data, $qr->fitCell($data, 150, '', 4))));
+        self::assertStringContainsString('Crew ticket', $body);
+        self::assertStringContainsString(ShortCode::forPerson(7, (string) $this->taskRow()['task_date']), $body);
+        self::assertStringContainsString('token=' . SignedLink::sign('ticket', 9), $body);
+        self::assertStringNotContainsString(Mailer::TICKETS_MARK, $body);
+        self::assertStringNotContainsString('{tickets}', $body);
+        // The ticket comes after the sign-up text, and the email stays light
+        // so the QR code stays dark on white.
+        self::assertGreaterThan((int) strpos($body, 'Thank you for joining the crew'), (int) strpos($body, 'Crew ticket'));
+        self::assertStringContainsString('content="light only"', $body);
         $marked = array_values(array_filter(
             $this->wpdb->updates,
             static fn (array $u): bool => 'wp_eventcrew_assignments' === $u['table']
         ));
         self::assertSame(['id' => 9], $marked[0]['where']);
         self::assertArrayHasKey('ticket_mailed_at', $marked[0]['data']);
+    }
+
+    /**
+     * A saved sign-up text from before {tickets} existed still gets the
+     * ticket, at the end.
+     */
+    public function testASavedTextWithoutTheTicketsLineStillGetsTheTicket(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => MessageTemplates::OPTION_PREFIX . 'signup_confirmed' === $name
+                ? [MessageTemplates::BODY => self::storedText("Hi {name},\n\nSee you on {when}.")]
+                : $default
+        );
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+
+        $this->notifierWithTicketMail()->confirmSignup($this->person(), 5);
+
+        self::assertCount(1, $this->mails);
+        self::assertStringContainsString('See you on', $this->mails[0]['body']);
+        self::assertGreaterThan((int) strpos($this->mails[0]['body'], 'See you on'), (int) strpos($this->mails[0]['body'], 'Crew ticket'));
     }
 
     /** Decision 4: cancelling a sign-up whose ticket was emailed sends "Your ticket is cancelled". */

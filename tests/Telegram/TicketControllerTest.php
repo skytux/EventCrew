@@ -403,6 +403,72 @@ final class TicketControllerTest extends TestCase
     }
 
     /**
+     * Owner, 2026-11-07: a person with a crew ticket and a free-entry ticket
+     * for the night gets two cards on the page, stacked. Each card has its
+     * own band, QR code and clock (own ids) and its own wait for the door.
+     */
+    public function testRenderPageDrawsOneCardPerTicket(): void
+    {
+        Functions\when('get_site_icon_url')->justReturn('');
+        $crew = ['role' => 'decorate', 'time' => '18:00–20:00', 'poll' => 'https://site.test/state?token=crew']
+            + $this->sampleTicket();
+        $credit = ['poll' => 'https://site.test/state?token=credit', 'short' => 'K7P2Q'] + $this->sampleTicket();
+
+        $html = $this->controller()->renderPage($crew, [$credit]);
+
+        self::assertStringContainsString('<main class="t-stack">', $html);
+        self::assertSame(2, substr_count($html, '<section class="t">'));
+        self::assertStringContainsString('id="ec-band"', $html);
+        self::assertStringContainsString('id="ec-band-2"', $html);
+        self::assertStringContainsString('id="ec-clock"', $html);
+        self::assertStringContainsString('id="ec-clock-2"', $html);
+        self::assertStringContainsString('"band":"ec-band-2"', $html);
+        self::assertStringContainsString('token=crew', $html);
+        self::assertStringContainsString('token=credit', $html);
+        self::assertStringContainsString('K7P2Q', $html);
+        self::assertSame(1, substr_count($html, 'qrcode.js'));
+        self::assertStringContainsString('id="ec-qr-2"', $html);
+
+        // One ticket alone is drawn as before.
+        $single = $this->controller()->renderPage($crew);
+        self::assertStringContainsString('<main class="t">', $single);
+        self::assertStringNotContainsString('<section', $single);
+    }
+
+    /**
+     * A crew ticket's link also shows the person's free-entry ticket for the
+     * same night; a free-entry link shows only itself.
+     */
+    public function testACrewTicketLinkAlsoShowsTheNightsFreeEntryTicket(): void
+    {
+        Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = [
+            'id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'decorate',
+            'capacity' => 2, 'event_post_id' => null, 'event_label' => 'Party',
+        ];
+        $this->wpdb->nextResults[] = [
+            ['id' => 3, 'person_id' => 7, 'redeemed_for' => '2026-08-01', 'event_label' => 'Party'],
+            ['id' => 4, 'person_id' => 7, 'redeemed_for' => '2026-08-08', 'event_label' => 'Party'],
+        ];
+        $this->wpdb->nextRows[] = ['id' => 3, 'person_id' => 7, 'redeemed_for' => '2026-08-01', 'event_label' => 'Party'];
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+
+        $more = $this->controller()->moreTickets(SignedLink::sign('ticket', 9));
+
+        self::assertCount(1, $more);
+        self::assertSame('2026-08-01', $more[0]['date']);
+        self::assertStringContainsString(
+            http_build_query(['token' => SignedLink::sign('credit_ticket', 3)]),
+            (string) $more[0]['poll']
+        );
+        self::assertSame([], $this->controller()->moreTickets(SignedLink::sign('credit_ticket', 3)));
+    }
+
+    /**
      * @return array{valid: bool, name: string, event: string, date: string, role: string, time: string, issued: string}
      */
     private function sampleTicket(): array
@@ -860,7 +926,7 @@ final class TicketControllerTest extends TestCase
         self::assertStringContainsString('for(var i=0;i<48;i++)', $html);
         // The sparkles' own scale (--s) stays at most 1.
         self::assertStringContainsString('--s:"+(.5+Math.random()*.5).toFixed(2)', $html);
-        self::assertStringContainsString('function out(){isIn=false;var x=document.querySelector(".t-fx");', $html);
+        self::assertStringContainsString('function out(){isIn=false;var k=b.closest?b.closest(".t"):null,x=k?k.querySelector(".t-fx"):null;', $html);
         self::assertStringContainsString('animation:t-fly var(--t,6.5s) linear var(--d,0s) both', $html);
         // They stay about twice as long (Owner 2026-11-07): 5.5 to 8.2 s each,
         // cleared after 9.5 s, once the last has faded.
@@ -916,7 +982,7 @@ final class TicketControllerTest extends TestCase
             $html
         );
         self::assertStringContainsString(
-            '#ec-band{display:grid;align-items:center;padding:.7em .45em}#ec-band>*{grid-area:1/1}',
+            '[id^="ec-band"]{display:grid;align-items:center;padding:.7em .45em}[id^="ec-band"]>*{grid-area:1/1}',
             $html
         );
         self::assertStringContainsString('.t-in{display:block;letter-spacing:.04em}.t-ghost{visibility:hidden}', $html);
