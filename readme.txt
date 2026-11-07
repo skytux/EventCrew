@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.178
+Stable tag: 1.140.179
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,15 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.179 =
+* Free-entry ticket: checking in plays a gold animation with falling stars and says "You're in. Welcome, Firstname!"; the page no longer shifts.
+* No-show and late-cancellation messages are warmer, explain why it matters and invite the person back; they show a standing bar with the change.
+* New thank-you message a day after a completed task, with credits and the standing bar; /me and the Me tab show the bar too.
+* Organizers can add or remove a person on a task from a private chat with the bot (/assign, /unassign); the assistant points to it instead of refusing.
+* Post-event email: the warm texts are back, the newsletter line is short, the ticket price fits on one line, and the DJ or host text sits under the next event's picture.
+* The sign-up confirmation DM no longer shows the DJ or host text.
+* Bot sign-up: a Use another email button when the confirmation email does not come.
 
 = 1.140.178 =
 * Organizers get their own hourly limit for bot answers in a private chat (default 60), set in Settings > Telegram bot.
@@ -1842,6 +1851,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.179 =
+No settings change.
 
 = 1.140.178 =
 No settings change.
