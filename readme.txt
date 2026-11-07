@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.167
+Stable tag: 1.140.168
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,16 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.168 =
+* Open-task lists in messages are grouped under a line per date (at most 3 dates, 8 tasks), with one See open tasks button instead of a button per task
+* The open-task call ends with a short line on what each listed task involves
+* Board: the shown day and the next two in the text; buttons only for the shown day, under a wide date button
+* Every bot menu sub-screen ends with a Back button to the screen above it
+* Menu items that were bare nouns now start with a verb (Get a free-entry ticket, Change language, Choose notifications...)
+* Welcome message reworked (still off): no bot commands or visible addresses, at most 3 buttons and 3 links, a Talking to the bot section, organizers get Help and EventCrew in wp-admin
+* New setting: Maintainer contact, shown in the welcome
+* Test: a buyer with two tickets shows as two door rows, each checked in on its own
 
 = 1.140.167 =
 * The group board shows only the tasks of roles ticked "Show on the guest board"
@@ -1775,6 +1785,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.168 =
+No settings change.
 
 = 1.140.167 =
 No settings change.
