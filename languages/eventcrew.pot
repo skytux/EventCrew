@@ -43,7 +43,7 @@ msgstr ""
 msgid "%1$d of %2$d events were posted in the group. The others could not be posted."
 msgstr ""
 
-#: src/Support/SlotFreedNotice.php:422 src/Support/WelcomeSender.php:835
+#: src/Support/SlotFreedNotice.php:422 src/Support/WelcomeSender.php:836
 #. translators: 1: free places, 2: places in total
 msgid "%1$d of %2$d places free"
 msgstr ""
@@ -147,7 +147,7 @@ msgstr ""
 msgid "%1$s now meets the conditions for the role %2$s. To give it to them, tap Give them the role below."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:595
+#: src/Support/WelcomeSender.php:596
 #. translators: 1: an email address, 2: a Telegram user name
 msgid "%1$s or %2$s"
 msgstr ""
@@ -1066,7 +1066,7 @@ msgstr ""
 msgid "An outcome this many days old counts half as much toward the score as a same-day one. Default 180."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:549
+#: src/Support/WelcomeSender.php:550
 msgid "And every task earns you free entry."
 msgstr ""
 
@@ -1144,7 +1144,7 @@ msgstr ""
 msgid "Answered: %s"
 msgstr ""
 
-#: src/Support/WelcomeSender.php:574
+#: src/Support/WelcomeSender.php:575
 msgid "Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers."
 msgstr ""
 
@@ -1297,7 +1297,7 @@ msgstr ""
 msgid "Beginner"
 msgstr ""
 
-#: src/Support/WelcomeSender.php:800
+#: src/Support/WelcomeSender.php:801
 #. translators: %d: good-standing percentage
 msgid "Below %d%%, you cannot sign up for new tasks until you talk to an organizer."
 msgstr ""
@@ -1496,7 +1496,7 @@ msgstr ""
 msgid "Cancelled late"
 msgstr ""
 
-#: src/Support/WelcomeSender.php:776
+#: src/Support/WelcomeSender.php:777
 #. translators: %d: hours of notice, e.g. 48
 msgid "Cancelled less than %d hours before"
 msgstr ""
@@ -1519,7 +1519,7 @@ msgstr ""
 msgid "Cancelled: %1$s for %2$s"
 msgstr ""
 
-#: src/Support/WelcomeSender.php:718
+#: src/Support/WelcomeSender.php:719
 #. translators: 1: hours of notice, 2: tasks before a rating, 3: good-standing percentage
 msgid "Cancelling %1$d hours or more before has no effect. Recent tasks count more than old ones. You get a rating after %2$d finished tasks. %3$d%% or higher is good standing."
 msgstr ""
@@ -1609,7 +1609,7 @@ msgstr ""
 msgid "Check your private chat with the bot: that day’s tasks are there."
 msgstr ""
 
-#: src/Telegram/TicketController.php:606 src/Web/DemoController.php:184
+#: src/Telegram/TicketController.php:609 src/Web/DemoController.php:184
 #. translators: %s: the time the door checked the ticket in, like 21:05
 msgid "Checked in at %s"
 msgstr ""
@@ -1878,7 +1878,7 @@ msgstr ""
 msgid "Credit spent — your ticket is in the next message."
 msgstr ""
 
-#: src/Admin/PeopleListTable.php:52 src/Support/WelcomeSender.php:707 templates/admin/people.php:226 templates/admin/people.php:295
+#: src/Admin/PeopleListTable.php:52 src/Support/WelcomeSender.php:708 templates/admin/people.php:226 templates/admin/people.php:295
 #: templates/public/signup.php:1020
 msgid "Credits"
 msgstr ""
@@ -1946,7 +1946,7 @@ msgctxt "date format"
 msgid "D j M H:i"
 msgstr ""
 
-#: src/Telegram/TicketController.php:537
+#: src/Telegram/TicketController.php:540
 msgid "DISABLED"
 msgstr ""
 
@@ -2509,7 +2509,7 @@ msgstr ""
 msgid "Every task you signed up for, when you signed up, and how it turned out: completed, covered by someone else, cancelled late, or not turned up to. Free-entry credits you have earned, been given or spent, and the events they were spent on."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:548
+#: src/Support/WelcomeSender.php:549
 msgid "Every task you take keeps the door open, the room ready and the music going."
 msgstr ""
 
@@ -2649,7 +2649,7 @@ msgstr ""
 msgid "Found a replacement"
 msgstr ""
 
-#: src/Support/TicketList.php:86 src/Telegram/TicketController.php:474 templates/admin/roster.php:131
+#: src/Support/TicketList.php:86 src/Telegram/TicketController.php:477 templates/admin/roster.php:131
 msgid "Free entry"
 msgstr ""
 
@@ -2858,7 +2858,7 @@ msgstr ""
 msgid "Guest display: people without this role see its tasks"
 msgstr ""
 
-#: src/Telegram/MenuButtons.php:223 src/Telegram/TicketController.php:355 src/Web/CrewAdminController.php:188 templates/admin/roster.php:183
+#: src/Telegram/MenuButtons.php:223 src/Telegram/TicketController.php:358 src/Web/CrewAdminController.php:188 templates/admin/roster.php:183
 #: templates/public/signup.php:1325
 msgid "Guest list"
 msgstr ""
@@ -2876,7 +2876,7 @@ msgstr ""
 msgid "Guest list — %s"
 msgstr ""
 
-#: src/Telegram/TicketController.php:352
+#: src/Telegram/TicketController.php:355
 #. translators: %d: how many people the guest may bring
 msgid "Guest list, +%d person"
 msgid_plural "Guest list, +%d people"
@@ -2916,7 +2916,7 @@ msgstr ""
 msgid "Guests added for %s"
 msgstr ""
 
-#: src/Telegram/TicketController.php:770
+#: src/Telegram/TicketController.php:778
 msgctxt "date format"
 msgid "H:i, D j M"
 msgstr ""
@@ -3003,7 +3003,7 @@ msgstr ""
 msgid "Hi %s!"
 msgstr ""
 
-#: src/Support/DmBody.php:40 src/Support/EmailBody.php:375 src/Support/FollowupMail.php:1394 src/Support/MessageTemplates.php:1723
+#: src/Support/DmBody.php:40 src/Support/EmailBody.php:422 src/Support/FollowupMail.php:1394 src/Support/MessageTemplates.php:1723
 #: src/Support/MessageTemplates.php:2487 src/Support/MessageTemplates.php:3123 src/Support/TicketMail.php:1167 src/Support/TicketText.php:92
 #. translators: %s: the person's first name
 msgid "Hi %s,"
@@ -3017,7 +3017,7 @@ msgstr ""
 msgid "Hi!"
 msgstr ""
 
-#: src/Support/EmailBody.php:373 src/Support/FollowupMail.php:1392 src/Support/TicketMail.php:1165
+#: src/Support/EmailBody.php:420 src/Support/FollowupMail.php:1392 src/Support/TicketMail.php:1165
 msgid "Hi,"
 msgstr ""
 
@@ -3137,7 +3137,7 @@ msgstr ""
 msgid "How tasks, tickets, credits and standing work, by email and Telegram, once to each member. Organizers also get the organizer guide. New members get it when they confirm their email; everyone else from the hourly run, inside the notification hours, 25 people per hour. Use \"Send me the welcome message\" below to check it first."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:655
+#: src/Support/WelcomeSender.php:656
 #. translators: %s: the crew's name (the site name)
 msgid "How the %s crew works. Your own numbers are in the Me tab, and the bot shows them when you ask in a private chat."
 msgstr ""
@@ -3260,7 +3260,7 @@ msgstr ""
 msgid "If you are removed from the guest list after your ticket was emailed, we email you that your ticket is cancelled."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:577
+#: src/Support/WelcomeSender.php:578
 #. translators: %s: how to reach the maintainer, e.g. an email address and a Telegram name
 msgid "If you cannot reach the bot, contact the maintainer, %s, or just try again a bit later."
 msgstr ""
@@ -3314,7 +3314,7 @@ msgstr ""
 msgid "In Telegram, press Start. It then shows three codes: press this one."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:573
+#: src/Support/WelcomeSender.php:574
 msgid "In a private chat with the bot, it is usually enough to write what you want in your own words. There are no commands or keywords to remember."
 msgstr ""
 
@@ -3359,7 +3359,7 @@ msgstr ""
 msgid "Installed"
 msgstr ""
 
-#: src/Telegram/TicketController.php:747
+#: src/Telegram/TicketController.php:755
 #. translators: %s: the date and time the ticket was issued
 msgid "Issued %s"
 msgstr ""
@@ -3368,7 +3368,7 @@ msgstr ""
 msgid "It has no effect on your standing."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:661
+#: src/Support/WelcomeSender.php:662
 msgid "It is the first button in your sign-up confirmation, and the Me tab lists all your tickets."
 msgstr ""
 
@@ -3376,7 +3376,7 @@ msgstr ""
 msgid "It is the first button in your sign-up confirmation, and the Me tab of the Crew app lists all your tickets."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:640
+#: src/Support/WelcomeSender.php:641
 msgid "It is the first button in your sign-up confirmation, and the bot lists all your tickets when you ask."
 msgstr ""
 
@@ -4148,7 +4148,7 @@ msgstr ""
 msgid "No open tasks right now. Check back soon!"
 msgstr ""
 
-#: src/Support/WelcomeSender.php:822
+#: src/Support/WelcomeSender.php:823
 msgid "No open tasks right now. New ones are posted on the board and in the Telegram group."
 msgstr ""
 
@@ -4725,7 +4725,7 @@ msgstr ""
 msgid "Open our group in Telegram"
 msgstr ""
 
-#: src/Support/WelcomeSender.php:556
+#: src/Support/WelcomeSender.php:557
 msgid "Open tasks"
 msgstr ""
 
@@ -4915,7 +4915,7 @@ msgstr ""
 msgid "Our data protection officer is %1$s, who you can contact directly at %2$s about anything on this page."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:547
+#: src/Support/WelcomeSender.php:548
 msgid "Our nights happen because people like you lend a hand."
 msgstr ""
 
@@ -6515,7 +6515,7 @@ msgstr ""
 msgid "Sorry text (missed)"
 msgstr ""
 
-#: src/Telegram/TicketController.php:586 src/Telegram/TicketController.php:633
+#: src/Telegram/TicketController.php:589 src/Telegram/TicketController.php:640
 msgid "Sorry, this ticket has expired"
 msgstr ""
 
@@ -6536,7 +6536,7 @@ msgstr ""
 msgid "Spend a free-entry credit on %s?"
 msgstr ""
 
-#: src/Admin/PeopleListTable.php:51 src/Support/PrivacyExporter.php:152 src/Support/WelcomeSender.php:713 templates/admin/people.php:206
+#: src/Admin/PeopleListTable.php:51 src/Support/PrivacyExporter.php:152 src/Support/WelcomeSender.php:714 templates/admin/people.php:206
 #: templates/admin/roster.php:132 templates/admin/roster.php:422 templates/public/signup.php:974
 msgid "Standing"
 msgstr ""
@@ -6706,7 +6706,7 @@ msgstr ""
 msgid "Talk to the team at an event"
 msgstr ""
 
-#: src/Support/WelcomeSender.php:572
+#: src/Support/WelcomeSender.php:573
 msgid "Talking to the bot"
 msgstr ""
 
@@ -7414,7 +7414,7 @@ msgstr ""
 msgid "The chosen signup page is missing or not published."
 msgstr ""
 
-#: src/Telegram/TicketController.php:757
+#: src/Telegram/TicketController.php:765
 msgid "The clock above must match the time now. A frozen clock is a screenshot."
 msgstr ""
 
@@ -8068,7 +8068,7 @@ msgstr ""
 msgid "The task, the event and the date, like Door at Dance Night, Sat 14 Nov 18:00–20:00."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:696
+#: src/Support/WelcomeSender.php:697
 msgid "The tasks"
 msgstr ""
 
@@ -8449,7 +8449,7 @@ msgstr ""
 msgid "This message does not use the text below yet: it still sends its built-in text. A text saved here is kept for when it does."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:552
+#: src/Support/WelcomeSender.php:553
 #. translators: %s: where to see your own numbers
 msgid "This message explains how it all works. %s"
 msgstr ""
@@ -8520,7 +8520,7 @@ msgstr ""
 msgid "This ticket"
 msgstr ""
 
-#: src/Telegram/TicketController.php:516
+#: src/Telegram/TicketController.php:519
 msgid "This ticket link is not valid."
 msgstr ""
 
@@ -8569,7 +8569,7 @@ msgstr ""
 msgid "Ticked: the sales desk can still add people, and shows a warning each time. Unticked: adding stops at the max."
 msgstr ""
 
-#: src/Telegram/TicketController.php:317 templates/public/door.php:242 templates/public/signup.php:492
+#: src/Telegram/TicketController.php:320 templates/public/door.php:242 templates/public/signup.php:492
 msgid "Ticket"
 msgstr ""
 
@@ -8673,7 +8673,7 @@ msgstr ""
 msgid "Ticket list not imported (email)"
 msgstr ""
 
-#: src/Telegram/TicketController.php:511
+#: src/Telegram/TicketController.php:514
 msgid "Ticket not found"
 msgstr ""
 
@@ -8707,7 +8707,7 @@ msgstr ""
 msgid "Ticket sold at the door"
 msgstr ""
 
-#: src/Support/NewsletterLayout.php:917 src/Support/WelcomeSender.php:698 src/Telegram/MenuButtons.php:97 templates/public/signup.php:528
+#: src/Support/NewsletterLayout.php:917 src/Support/WelcomeSender.php:699 src/Telegram/MenuButtons.php:97 templates/public/signup.php:528
 msgid "Tickets"
 msgstr ""
 
@@ -8761,7 +8761,7 @@ msgstr ""
 msgid "To see the list send /door and tap 👥 Guest list, or /door 1.8. for another night."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:610
+#: src/Support/WelcomeSender.php:611
 msgid "To see your numbers, tickets or credits, just ask the bot in a private chat."
 msgstr ""
 
@@ -8773,11 +8773,11 @@ msgstr ""
 msgid "To sign in to the crew app, press the code that the crew app on your screen shows. If you did not just press Telegram on the crew app yourself, press nothing."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:849
+#: src/Support/WelcomeSender.php:850
 msgid "To sign up, tap 📋 See open tasks below."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:629
+#: src/Support/WelcomeSender.php:630
 msgid "To spend a credit, ask the bot for a free-entry ticket, or use the web page."
 msgstr ""
 
@@ -9029,7 +9029,7 @@ msgstr ""
 msgid "Using the WordPress Site Icon for the installed app."
 msgstr ""
 
-#: src/Telegram/TicketController.php:587 src/Telegram/TicketController.php:632
+#: src/Telegram/TicketController.php:590 src/Telegram/TicketController.php:639
 msgid "VALID"
 msgstr ""
 
@@ -9216,7 +9216,7 @@ msgstr ""
 msgid "Welcome people at the door, check and sell tickets, and count how many people come in."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:544
+#: src/Support/WelcomeSender.php:545
 #. translators: %s: the crew's name (the site name)
 msgid "Welcome to the %s crew!"
 msgstr ""
@@ -9343,7 +9343,7 @@ msgstr ""
 msgid "When you buy a ticket in our web shop, we take these details from the shop's order export: your name, your email address, and your order or ticket code. We also store the date of the event your ticket is for. We take nothing else from your order."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:701
+#: src/Support/WelcomeSender.php:702
 #. translators: %s: where all your tickets are listed
 msgid "When you sign up for a task, you get a free ticket for that night. Show it at the door. %s"
 msgstr ""
@@ -9664,7 +9664,7 @@ msgstr ""
 msgid "You are already subscribed to the next events announcement"
 msgstr ""
 
-#: src/Support/WelcomeSender.php:526
+#: src/Support/WelcomeSender.php:527
 #. translators: %s: the crew's name (the site name)
 msgid "You are an organizer of %s. This guide explains how EventCrew works, first in short and then in detail."
 msgstr ""
@@ -9753,7 +9753,11 @@ msgstr ""
 msgid "You do not have permission to do this."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:710
+#: src/Support/WelcomeSender.php:529
+msgid "You don’t have to learn the commands: they are all under the bot’s menu button. You can also just write to the bot what you need, in your own words. It usually understands, in most languages."
+msgstr ""
+
+#: src/Support/WelcomeSender.php:711
 #. translators: 1: completed tasks needed for one credit, 2: how to spend a credit
 msgid "You earn 1 free-entry credit for every %1$d tasks you complete. %2$s You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits."
 msgstr ""
@@ -9896,7 +9900,7 @@ msgstr ""
 msgid "Your %s sign-in link"
 msgstr ""
 
-#: src/Telegram/TicketController.php:521
+#: src/Telegram/TicketController.php:524
 msgid "Your %s ticket"
 msgstr ""
 
@@ -10047,7 +10051,7 @@ msgstr ""
 msgid "Your site’s time (%s). Default 09:00."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:714
+#: src/Support/WelcomeSender.php:715
 msgid "Your standing comes from how your past tasks went:"
 msgstr ""
 
@@ -10118,7 +10122,7 @@ msgstr ""
 msgid "You’re in! See you there."
 msgstr ""
 
-#: src/Telegram/TicketController.php:603
+#: src/Telegram/TicketController.php:606
 msgid "You’re in, welcome!"
 msgstr ""
 
