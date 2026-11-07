@@ -1,0 +1,2 @@
+finger-cymbals.aac: "Finger cymbals 2" (ID 2275), BigSoundBank.com (Joseph Sardin), royalty-free.
+Played at 30% volume when a ticket page turns gold (TicketController::IN_SOUND).

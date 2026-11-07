@@ -4,16 +4,26 @@ Hi Person,
 
 You are an organizer of Test Crew. This guide explains how EventCrew works, first in short and then in detail.
 
+💡 You don’t have to learn the commands: they are all under the bot’s menu button. You can also just write to the bot what you need, in your own words. It usually understands, in most languages.
+
 <b>⚡ In short</b>
 
 🗓️ Tasks: you create them in wp-admin, EventCrew &gt; Tasks. One click makes all the tasks of a night.
+
 ✋ Sign-up: members tap a task on the board in the Telegram group, or use the web sign-up page. /board posts a new board in the group.
+
 🌙 On the night: /roster marks who arrived, who completed their task and who did not come. The sales desk link sells tickets and checks people in at the door; /door, then 💳 Sales desk, sends you the link.
+
 🎁 Credits: members earn 1 free-entry credit per 2 completed tasks. /people, then 🎁 Give credits, gives credits by hand.
+
 📈 Standing: 60% or higher is good standing. It comes from how each member's past tasks went.
+
 🔑 Roles: /people, then 🏷 Roles, organizers and passes, makes someone an organizer, gives a one-time pass past the sign-up gate, and gives or takes away roles such as DJ.
+
 🎧 Role tasks (DJ, VJ, Organize, ...) are not on the group board. People with the role see them with /board in a private chat and in the Crew app. You can add someone there, even a person who is not a crew member.
+
 🔔 Messages: reminders and calls go out by themselves, only between 09:00 and 21:00.
+
 ⚙️ wp-admin, EventCrew &gt; Settings changes how things work. EventCrew &gt; Diagnostics shows whether everything is running.
 
 <b>🤖 AI in EventCrew</b>

@@ -11146,3 +11146,6 @@ msgstr "設定 > Telegram ボットで AI サービスを設定すると、Event
 
 msgid "Previews: changes asked in the bot come with Confirm and Cancel, the announcement and the post-event email come to you first as a preview you can stop, and the AI texts of each event can be changed in EventCrew > Messages > Coming events or in the Admin tab. The full guide says how to switch each use off."
 msgstr "プレビュー: ボットで頼んだ変更は「確認」と「キャンセル」付きで届き、お知らせとイベント後のメールは停止できるプレビューとしてまずあなたに届きます。イベントごとの AI テキストは EventCrew > メッセージ > 今後のイベント、または管理タブで変更できます。それぞれの使い方をオフにする方法は完全版ガイドにあります。"
+
+msgid "You don’t have to learn the commands: they are all under the bot’s menu button. You can also just write to the bot what you need, in your own words. It usually understands, in most languages."
+msgstr "コマンドを覚える必要はありません。すべてボットのメニューボタンにあります。必要なことを自分の言葉でボットに書くだけでも大丈夫です。たいていの言語で、たいてい理解してくれます。"

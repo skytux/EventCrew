@@ -229,9 +229,12 @@ final class EmailBody
     }
 
     /**
-     * The text for a Telegram DM. Each emoji list line loses its "- " and the
-     * list lines stay on consecutive lines: never an empty line between the
-     * items of one list (Owner 2026-11-07, said twice).
+     * The text for a Telegram DM. Each emoji list line loses its "- ".
+     *
+     * Spacing (Owner 2026-11-07): a section is a run of lines with no empty
+     * line between them. When one of its lines is likely to wrap on a phone
+     * (longer than WRAP characters), every line of that section gets an
+     * empty line under it; otherwise the lines stay together.
      *
      * Plain ($html false): headings, bold and links as plainHeadings() makes
      * them. Telegram HTML ($html true, for a message sent with parse_mode
@@ -267,7 +270,51 @@ final class EmailBody
             $out[] = (string) preg_replace(self::ITALIC, '<i>$1</i>', $line);
         }
 
-        return implode("\n", $out);
+        return self::spaceSections($out, $html);
+    }
+
+    /** Characters a DM line holds before it likely wraps on a phone. */
+    public const WRAP = 50;
+
+    /**
+     * Joins the lines; a section with a line likely to wrap gets an empty
+     * line between all its lines (see forDm()).
+     *
+     * @param list<string> $lines
+     */
+    private static function spaceSections(array $lines, bool $html): string
+    {
+        $sections = [[]];
+
+        foreach ($lines as $line) {
+            if ('' === trim($line)) {
+                $sections[] = [];
+
+                continue;
+            }
+
+            $sections[count($sections) - 1][] = $line;
+        }
+
+        $out = [];
+
+        foreach ($sections as $section) {
+            $wraps = false;
+
+            foreach ($section as $line) {
+                $seen = $html ? html_entity_decode(strip_tags($line), ENT_QUOTES, 'UTF-8') : $line;
+
+                if (mb_strlen(trim($seen), 'UTF-8') > self::WRAP) {
+                    $wraps = true;
+
+                    break;
+                }
+            }
+
+            $out[] = implode($wraps ? "\n\n" : "\n", $section);
+        }
+
+        return implode("\n\n", array_values(array_filter($out, static fn (string $s): bool => '' !== $s)));
     }
 
     /**

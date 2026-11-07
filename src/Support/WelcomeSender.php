@@ -516,8 +516,9 @@ final class WelcomeSender
     }
 
     /**
-     * The first line of the organizer guide email and DM, with {crew} for the
-     * crew's name. Part of their built-in texts in MessageTemplates.
+     * The opening of the organizer guide email and DM, with {crew} for the
+     * crew's name, then a note that the commands need no learning (Owner
+     * 2026-11-07). Part of their built-in texts in MessageTemplates.
      */
     public static function organizerIntroTemplate(): string
     {
@@ -525,7 +526,7 @@ final class WelcomeSender
             /* translators: %s: the crew's name (the site name) */
             __('You are an organizer of %s. This guide explains how EventCrew works, first in short and then in detail.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             ['%s' => '{crew}']
-        );
+        ) . "\n\n💡 " . __('You don’t have to learn the commands: they are all under the bot’s menu button. You can also just write to the bot what you need, in your own words. It usually understands, in most languages.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
     }
 
     /**

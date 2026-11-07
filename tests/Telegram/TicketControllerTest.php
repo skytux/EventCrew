@@ -650,6 +650,20 @@ final class TicketControllerTest extends TestCase
         return $ticket;
     }
 
+    /** Turning gold plays the finger cymbals at 30% volume (Owner 2026-11-07). */
+    public function testTurningGoldPlaysTheCymbalsQuietly(): void
+    {
+        $html = $this->controller()->renderPage($this->ticketForEventStartingAt('19:00'));
+
+        self::assertStringContainsString(
+            '"sound":' . json_encode(EVENTCREW_PLUGIN_URL . TicketController::IN_SOUND . '?ver=' . EVENTCREW_VERSION),
+            $html
+        );
+        self::assertStringContainsString('snd.volume=0.3;', $html);
+        self::assertStringContainsString('b.innerHTML=c.inHtml;ding();', $html);
+        self::assertFileExists(dirname(__DIR__, 2) . '/' . TicketController::IN_SOUND);
+    }
+
     /** Before the doors close the band is VALID and the page knows when they close. */
     public function testBeforeTheDoorsCloseTheTicketIsValidAndCountsDownToThem(): void
     {

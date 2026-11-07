@@ -4,6 +4,8 @@ Hei Person,
 
 Olet Test Crew:n järjestäjä. Tämä opas kertoo, miten EventCrew toimii, ensin lyhyesti ja sitten tarkemmin.
 
+💡 Komentoja ei tarvitse opetella: ne kaikki löytyvät botin valikkopainikkeesta. Voit myös vain kirjoittaa botille omin sanoin, mitä tarvitset. Se ymmärtää yleensä useimmilla kielillä.
+
 📑 Sisältö
 
 - ⚡ Lyhyesti

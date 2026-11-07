@@ -11222,3 +11222,6 @@ msgstr "Met een AI-dienst ingesteld onder Instellingen > Telegram-bot stuurt Eve
 
 msgid "Previews: changes asked in the bot come with Confirm and Cancel, the announcement and the post-event email come to you first as a preview you can stop, and the AI texts of each event can be changed in EventCrew > Messages > Coming events or in the Admin tab. The full guide says how to switch each use off."
 msgstr "Voorbeelden: wijzigingen die je in de bot vraagt komen met Bevestigen en Annuleren, de aankondiging en de e-mail na het evenement komen eerst naar jou als voorbeeld dat je kunt stoppen, en de AI-teksten van elk evenement wijzig je onder EventCrew > Berichten > Komende evenementen of in het tabblad Beheer. De volledige gids zegt hoe je elk gebruik uitzet."
+
+msgid "You don’t have to learn the commands: they are all under the bot’s menu button. You can also just write to the bot what you need, in your own words. It usually understands, in most languages."
+msgstr "Je hoeft de commando’s niet te leren: ze staan allemaal onder de menuknop van de bot. Je kunt de bot ook gewoon in je eigen woorden schrijven wat je nodig hebt. Hij begrijpt het meestal, in de meeste talen."

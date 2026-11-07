@@ -11146,3 +11146,6 @@ msgstr "在“设置 > Telegram 机器人”中设置了 AI 服务后，EventCre
 
 msgid "Previews: changes asked in the bot come with Confirm and Cancel, the announcement and the post-event email come to you first as a preview you can stop, and the AI texts of each event can be changed in EventCrew > Messages > Coming events or in the Admin tab. The full guide says how to switch each use off."
 msgstr "预览：在机器人中请求的更改会附上“确认”和“取消”；公告和活动后邮件会先作为可停止的预览发给你；每个活动的 AI 文本可在“EventCrew > 消息 > 即将举行的活动”或“管理”标签中修改。完整指南说明了如何关闭每一项用途。"
+
+msgid "You don’t have to learn the commands: they are all under the bot’s menu button. You can also just write to the bot what you need, in your own words. It usually understands, in most languages."
+msgstr "不必记住命令：它们都在机器人的菜单按钮里。你也可以直接用自己的话告诉机器人你需要什么。它通常都能听懂，支持大多数语言。"

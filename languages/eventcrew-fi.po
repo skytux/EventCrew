@@ -9060,3 +9060,6 @@ msgstr "Rastita rivi, niin demolippu muuttuu itsestään kultaiseksi. Mikään t
 
 msgid "Open the ticket on one device and the desk on another, then tick the row: the ticket turns gold by itself. No login needed; the links work for 24 hours. Nothing in the demo touches real data."
 msgstr "Avaa lippu yhdellä laitteella ja myyntipiste toisella, ja rastita rivi: lippu muuttuu itsestään kultaiseksi. Kirjautumista ei tarvita; linkit toimivat 24 tuntia. Demo ei koske oikeisiin tietoihin."
+
+msgid "You don’t have to learn the commands: they are all under the bot’s menu button. You can also just write to the bot what you need, in your own words. It usually understands, in most languages."
+msgstr "Komentoja ei tarvitse opetella: ne kaikki löytyvät botin valikkopainikkeesta. Voit myös vain kirjoittaa botille omin sanoin, mitä tarvitset. Se ymmärtää yleensä useimmilla kielillä."

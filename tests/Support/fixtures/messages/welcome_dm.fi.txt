@@ -15,7 +15,9 @@ Tämä viesti kertoo, miten kaikki toimii. Kysy botilta yksityisviestillä, niin
 <b>🧩 Tehtävät</b>
 
 🎈 Somistus: Valmistelu ennen tansseja: sulje verhot, tarkista vessat, aseta LED-kynttilät, somista DJ-pöytä, valmistele vesi ja hedelmät ja avaa siirtoseinät.
+
 🙋 Vastaanotto: Toivota ihmiset tervetulleiksi ovella, tarkista ja myy liput ja laske, montako ihmistä tulee sisään.
+
 🧹 Siivous: Purku tanssien jälkeen: kerää kynttilät ja koristeet, korjaa vesi ja naposteltavat, tyhjennä täydet roskikset, sulje siirtoseinät, avaa verhot ja tee lopputarkistus.
 
 <b>🎟️ Liput</b>

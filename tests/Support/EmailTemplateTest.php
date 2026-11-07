@@ -318,14 +318,32 @@ final class EmailTemplateTest extends TestCase
         self::assertSame('- 🎟️ Tickets', EmailBody::toText('- 🎟️ [Tickets](#ec-tickets)'));
     }
 
-    /** List lines stay together in a DM: no empty line between items, ever (Owner 2026-11-07). */
-    public function testTheDmVersionNeverPutsAnEmptyLineBetweenListLines(): void
+    /** Short lines of a section stay together in a DM (Owner 2026-11-07). */
+    public function testShortListLinesStayTogether(): void
     {
         self::assertSame(
             "Tickets\n\n🔹 One\n🔹 Two\n- plain\n- plain",
             EmailBody::forDm("## Tickets\n\n- 🔹 One\n- 🔹 Two\n- plain\n- plain")
         );
-        self::assertStringNotContainsString("One\n\n", EmailBody::forDm("- 🔹 One\n- 🔹 Two", true));
+    }
+
+    /** One line likely to wrap spaces out its whole section, and only it (Owner 2026-11-07). */
+    public function testALineLikelyToWrapSpacesOutItsWholeSection(): void
+    {
+        $long = str_repeat('word ', 12) . 'end';
+
+        self::assertSame(
+            "🔹 One\n\n🔹 " . $long . "\n\n🔹 Two\n\n🔸 Short\n🔸 Lines",
+            EmailBody::forDm("- 🔹 One\n- 🔹 " . $long . "\n- 🔹 Two\n\n- 🔸 Short\n- 🔸 Lines", true)
+        );
+    }
+
+    /** Markup and escapes do not count towards the length. */
+    public function testOnlyTheVisibleTextCounts(): void
+    {
+        $line = str_repeat('a', EmailBody::WRAP - 4) . ' **b**';
+
+        self::assertSame("x\n" . str_repeat('a', EmailBody::WRAP - 4) . ' <b>b</b>', EmailBody::forDm("x\n" . $line, true));
     }
 
     /** Telegram shows a "## " heading bold, and escapes the rest for parse_mode HTML. */

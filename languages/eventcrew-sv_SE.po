@@ -12105,3 +12105,6 @@ msgstr "Bocka för raden så blir demobiljetten guld av sig själv. Inget här f
 
 msgid "Open the ticket on one device and the desk on another, then tick the row: the ticket turns gold by itself. No login needed; the links work for 24 hours. Nothing in the demo touches real data."
 msgstr "Öppna biljetten på en enhet och disken på en annan och bocka för raden: biljetten blir guld av sig själv. Ingen inloggning behövs; länkarna fungerar i 24 timmar. Demon rör inga riktiga uppgifter."
+
+msgid "You don’t have to learn the commands: they are all under the bot’s menu button. You can also just write to the bot what you need, in your own words. It usually understands, in most languages."
+msgstr "Du behöver inte lära dig kommandona: de finns alla under botens menyknapp. Du kan också bara skriva till boten vad du behöver, med egna ord. Den förstår oftast, på de flesta språk."

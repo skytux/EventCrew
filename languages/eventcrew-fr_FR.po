@@ -11243,3 +11243,6 @@ msgstr "Avec un service d’IA réglé dans Réglages > Bot Telegram, EventCrew 
 
 msgid "Previews: changes asked in the bot come with Confirm and Cancel, the announcement and the post-event email come to you first as a preview you can stop, and the AI texts of each event can be changed in EventCrew > Messages > Coming events or in the Admin tab. The full guide says how to switch each use off."
 msgstr "Aperçus : les changements demandés dans le bot arrivent avec Confirmer et Annuler, l’annonce et l’email d’après-soirée t’arrivent d’abord en aperçu que tu peux arrêter, et les textes IA de chaque événement se changent dans EventCrew > Messages > Prochains événements ou dans l’onglet Admin. Le guide complet dit comment couper chaque usage."
+
+msgid "You don’t have to learn the commands: they are all under the bot’s menu button. You can also just write to the bot what you need, in your own words. It usually understands, in most languages."
+msgstr "Inutile d’apprendre les commandes : elles sont toutes sous le bouton de menu du bot. Vous pouvez aussi simplement écrire au bot ce dont vous avez besoin, avec vos propres mots. Il comprend en général, dans la plupart des langues."
