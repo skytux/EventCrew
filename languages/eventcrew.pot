@@ -340,7 +340,7 @@ msgstr ""
 msgid "%s asks to take over your task"
 msgstr ""
 
-#: src/Telegram/HelpService.php:209
+#: src/Telegram/HelpService.php:213
 msgid "%s bot – commands"
 msgstr ""
 
@@ -434,31 +434,31 @@ msgstr ""
 msgid "+1 allowed"
 msgstr ""
 
-#: src/Telegram/HelpService.php:252
+#: src/Telegram/HelpService.php:256
 msgid "/board in a private chat – also ➕ to put a person on a task"
 msgstr ""
 
-#: src/Telegram/HelpService.php:226
+#: src/Telegram/HelpService.php:230
 msgid "/board – the open tasks; in a private chat also the tasks of your roles"
 msgstr ""
 
-#: src/Telegram/HelpService.php:241
+#: src/Telegram/HelpService.php:245
 msgid "/door [date] – buttons: 📋 door list, 👥 guest list, 💳 sales desk"
 msgstr ""
 
-#: src/Telegram/HelpService.php:249
+#: src/Telegram/HelpService.php:253
 msgid "/door add [date] Name +N ; note – add a guest (also edit, remove)"
 msgstr ""
 
-#: src/Telegram/HelpService.php:254
+#: src/Telegram/HelpService.php:258
 msgid "/events – post the coming events in the group as picture cards; you see them first"
 msgstr ""
 
-#: src/Telegram/HelpService.php:231
+#: src/Telegram/HelpService.php:235
 msgid "/help – this list"
 msgstr ""
 
-#: src/Telegram/HelpService.php:227
+#: src/Telegram/HelpService.php:231
 msgid "/me – your standing, credits and coming tasks"
 msgstr ""
 
@@ -466,7 +466,7 @@ msgstr ""
 msgid "/newsletter See you on the dance floor!"
 msgstr ""
 
-#: src/Telegram/HelpService.php:251
+#: src/Telegram/HelpService.php:255
 msgid "/people – buttons: 🎁 give credits, 🏷 roles, organizers and passes, ✅ who may hold each role"
 msgstr ""
 
@@ -474,7 +474,7 @@ msgstr ""
 msgid "/people, in a private chat with the bot, also gives a one-time pass past the sign-up gate, makes someone an organizer (or stops them being one), and gives or takes away roles such as DJ or VJ. The People page in wp-admin and the Admin tab in the Crew app can do the same."
 msgstr ""
 
-#: src/Telegram/HelpService.php:240
+#: src/Telegram/HelpService.php:244
 msgid "/roster [date] – who works that night; the sales desk marks 👋 arrived, organizers 👋 arrived, ✓ done, ⏰ late, ✗ no-show"
 msgstr ""
 
@@ -482,19 +482,19 @@ msgstr ""
 msgid "/roster in a private chat with the bot shows the night's crew. Mark each person arrived, arrived late, completed or no-show, one by one or a whole crew at once. EventCrew > Roster in wp-admin does the same for any date. The night's welcome crew can mark the crew too."
 msgstr ""
 
-#: src/Telegram/HelpService.php:253
+#: src/Telegram/HelpService.php:257
 msgid "/say text – post a message in the group; you see it first"
 msgstr ""
 
-#: src/Telegram/HelpService.php:230
+#: src/Telegram/HelpService.php:234
 msgid "/settings – notifications, language, web sign-in"
 msgstr ""
 
-#: src/Telegram/HelpService.php:228
+#: src/Telegram/HelpService.php:232
 msgid "/tasks – cancel, take over a task, past tasks"
 msgstr ""
 
-#: src/Telegram/HelpService.php:229
+#: src/Telegram/HelpService.php:233
 msgid "/tickets – your tickets, free-entry ticket"
 msgstr ""
 
@@ -890,7 +890,7 @@ msgstr ""
 msgid "Adjust what each outcome is worth (advanced)"
 msgstr ""
 
-#: src/Telegram/HelpService.php:172 src/Telegram/MenuButtons.php:104 templates/public/signup.php:102 templates/public/signup.php:689
+#: src/Telegram/HelpService.php:176 src/Telegram/MenuButtons.php:104 templates/public/signup.php:102 templates/public/signup.php:689
 msgid "Admin"
 msgstr ""
 
@@ -1374,7 +1374,7 @@ msgstr ""
 msgid "Can't make it? Tap Cancel on your task in the Board tab of the crew page (%s)."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:525 src/Telegram/BuyerListReset.php:155 src/Telegram/EventsCommand.php:98 src/Telegram/MenuButtons.php:218
+#: src/Telegram/AssistantService.php:525 src/Telegram/BuyerListReset.php:155 src/Telegram/EventsCommand.php:98 src/Telegram/MenuButtons.php:220
 #: src/Telegram/SayCommand.php:95 templates/admin/people.php:120 templates/admin/tasks.php:293 templates/public/signup-board.php:230
 #: templates/public/signup.php:906 templates/public/signup.php:1615
 msgid "Cancel"
@@ -2029,11 +2029,11 @@ msgstr ""
 msgid "Done. You will not get these emails after our events any more."
 msgstr ""
 
-#: src/Support/DoorDesk.php:1261 src/Telegram/MenuButtons.php:163 templates/public/signup.php:702
+#: src/Support/DoorDesk.php:1261 src/Telegram/MenuButtons.php:165 templates/public/signup.php:702
 msgid "Door"
 msgstr ""
 
-#: src/MailImport/MailedListImport.php:272 src/Support/MessageTemplates.php:1048 src/Telegram/MenuButtons.php:191 src/Web/CrewAdminController.php:186
+#: src/MailImport/MailedListImport.php:272 src/Support/MessageTemplates.php:1048 src/Telegram/MenuButtons.php:193 src/Web/CrewAdminController.php:186
 #: templates/admin/roster.php:91 templates/public/signup.php:1187
 msgid "Door list"
 msgstr ""
@@ -2398,7 +2398,7 @@ msgstr ""
 msgid "Every ticket with this code was already used tonight."
 msgstr ""
 
-#: src/Telegram/HelpService.php:225
+#: src/Telegram/HelpService.php:229
 msgid "Everyone"
 msgstr ""
 
@@ -2639,7 +2639,7 @@ msgstr ""
 msgid "Give a one-time pass"
 msgstr ""
 
-#: src/Telegram/MenuButtons.php:205
+#: src/Telegram/MenuButtons.php:207
 msgid "Give credits"
 msgstr ""
 
@@ -2710,7 +2710,7 @@ msgstr ""
 msgid "Guest added."
 msgstr ""
 
-#: src/Telegram/MenuButtons.php:192 src/Telegram/TicketController.php:184 src/Web/CrewAdminController.php:187 templates/admin/roster.php:183
+#: src/Telegram/MenuButtons.php:194 src/Telegram/TicketController.php:184 src/Web/CrewAdminController.php:187 templates/admin/roster.php:183
 #: templates/public/signup.php:1278
 msgid "Guest list"
 msgstr ""
@@ -3054,7 +3054,7 @@ msgstr ""
 msgid "I have passed this chat on to the organizers."
 msgstr ""
 
-#: src/Telegram/HelpService.php:218
+#: src/Telegram/HelpService.php:222
 msgid "I remember our private chat for 24 hours, so you can refer back to it."
 msgstr ""
 
@@ -3161,7 +3161,7 @@ msgstr ""
 msgid "In this time range: joins %1$d, leaves %2$d, sent newsletters %3$d."
 msgstr ""
 
-#: src/Telegram/HelpService.php:216
+#: src/Telegram/HelpService.php:220
 msgid "In your own words"
 msgstr ""
 
@@ -3317,7 +3317,7 @@ msgstr ""
 msgid "Label"
 msgstr ""
 
-#: src/Support/PrivacyExporter.php:273 src/Telegram/MenuButtons.php:147 src/Web/NewsletterController.php:1232
+#: src/Support/PrivacyExporter.php:273 src/Telegram/MenuButtons.php:149 src/Web/NewsletterController.php:1232
 msgid "Language"
 msgstr ""
 
@@ -4146,7 +4146,7 @@ msgstr ""
 msgid "Nothing was saved: that text was not found."
 msgstr ""
 
-#: src/Telegram/HelpService.php:192
+#: src/Telegram/HelpService.php:196
 msgid "Nothing was waiting for an answer."
 msgstr ""
 
@@ -4170,7 +4170,7 @@ msgstr ""
 msgid "Notification emails"
 msgstr ""
 
-#: src/Support/HealthReport.php:157 src/Telegram/MenuButtons.php:146 templates/admin/settings.php:919 templates/public/signup.php:567
+#: src/Support/HealthReport.php:157 src/Telegram/MenuButtons.php:148 templates/admin/settings.php:919 templates/public/signup.php:567
 msgid "Notifications"
 msgstr ""
 
@@ -4335,7 +4335,7 @@ msgstr ""
 msgid "Only organizers and that night’s welcome crew can see who has a ticket."
 msgstr ""
 
-#: src/Telegram/HelpService.php:120
+#: src/Telegram/HelpService.php:124
 msgid "Only organizers and the welcome crew of a coming night can use /door."
 msgstr ""
 
@@ -4363,7 +4363,7 @@ msgstr ""
 msgid "Only organizers can give out free-entry credits."
 msgstr ""
 
-#: src/Telegram/HelpService.php:167
+#: src/Telegram/HelpService.php:171
 msgid "Only organizers can open this."
 msgstr ""
 
@@ -4387,7 +4387,7 @@ msgstr ""
 msgid "Only organizers can use /newsletter."
 msgstr ""
 
-#: src/Telegram/HelpService.php:145
+#: src/Telegram/HelpService.php:149
 msgid "Only organizers can use /people."
 msgstr ""
 
@@ -4459,7 +4459,7 @@ msgstr ""
 msgid "Open our group in Telegram"
 msgstr ""
 
-#: src/Support/WelcomeSender.php:430
+#: src/Support/WelcomeSender.php:430 src/Telegram/MenuButtons.php:132
 msgid "Open tasks"
 msgstr ""
 
@@ -4598,7 +4598,7 @@ msgstr ""
 msgid "Organizer on the night (email)"
 msgstr ""
 
-#: src/Telegram/HelpService.php:248
+#: src/Telegram/HelpService.php:252
 msgid "Organizers"
 msgstr ""
 
@@ -4691,7 +4691,7 @@ msgstr ""
 msgid "Past"
 msgstr ""
 
-#: src/Telegram/MenuButtons.php:132
+#: src/Telegram/MenuButtons.php:134
 msgid "Past tasks"
 msgstr ""
 
@@ -4707,7 +4707,7 @@ msgstr ""
 msgid "Pending updates"
 msgstr ""
 
-#: src/Admin/Admin.php:448 src/Admin/Admin.php:449 src/Support/MessageTemplates.php:218 src/Telegram/MenuButtons.php:164
+#: src/Admin/Admin.php:448 src/Admin/Admin.php:449 src/Support/MessageTemplates.php:218 src/Telegram/MenuButtons.php:166
 #: templates/admin/people.php:24 templates/admin/people.php:27 templates/admin/settings.php:219 templates/public/signup.php:804
 #: templates/public/signup.php:1820
 msgid "People"
@@ -5222,7 +5222,7 @@ msgstr ""
 msgid "Roles saved."
 msgstr ""
 
-#: src/Telegram/MenuButtons.php:206
+#: src/Telegram/MenuButtons.php:208
 msgid "Roles, organizers and passes"
 msgstr ""
 
@@ -5230,7 +5230,7 @@ msgstr ""
 msgid "Roles: /people, then 🏷 Roles, organizers and passes, makes someone an organizer, gives a one-time pass past the sign-up gate, and gives or takes away roles such as DJ."
 msgstr ""
 
-#: src/Admin/Admin.php:439 src/Admin/Admin.php:440 src/Telegram/MenuButtons.php:162 templates/admin/roster.php:59
+#: src/Admin/Admin.php:439 src/Admin/Admin.php:440 src/Telegram/MenuButtons.php:164 templates/admin/roster.php:59
 msgid "Roster"
 msgstr ""
 
@@ -5259,7 +5259,7 @@ msgstr ""
 msgid "STARTTLS (usually port 143)"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:313 src/Telegram/MenuButtons.php:193 src/Web/DoorController.php:458 templates/public/door.php:107
+#: src/Support/MessageTemplates.php:313 src/Telegram/MenuButtons.php:195 src/Web/DoorController.php:458 templates/public/door.php:107
 #: templates/public/signup.php:421 templates/public/signup.php:1159
 msgid "Sales desk"
 msgstr ""
@@ -5533,7 +5533,7 @@ msgstr ""
 msgid "Send a test to me"
 msgstr ""
 
-#: src/Telegram/HelpService.php:202
+#: src/Telegram/HelpService.php:206
 msgid "Send me /help in a private chat for more."
 msgstr ""
 
@@ -6246,7 +6246,7 @@ msgstr ""
 msgid "Stop this night’s post-event email? It will not be sent."
 msgstr ""
 
-#: src/Telegram/HelpService.php:191
+#: src/Telegram/HelpService.php:195
 msgid "Stopped. Nothing is waiting for an answer."
 msgstr ""
 
@@ -6305,7 +6305,7 @@ msgstr ""
 msgid "Take one person off the count without a name"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:192 src/Telegram/MenuButtons.php:131
+#: src/Support/MessageTemplates.php:192 src/Telegram/MenuButtons.php:133
 msgid "Take over a task"
 msgstr ""
 
@@ -8700,7 +8700,7 @@ msgstr ""
 msgid "Web page"
 msgstr ""
 
-#: src/Telegram/MenuButtons.php:148
+#: src/Telegram/MenuButtons.php:150
 msgid "Web sign-in"
 msgstr ""
 
@@ -8742,7 +8742,7 @@ msgstr ""
 msgid "Welcome %s"
 msgstr ""
 
-#: src/Telegram/HelpService.php:238
+#: src/Telegram/HelpService.php:242
 msgid "Welcome crew  (date: 1.8. or 2026-08-01; default: next night)"
 msgstr ""
 
@@ -8960,7 +8960,7 @@ msgstr ""
 msgid "Who is responsible for your data"
 msgstr ""
 
-#: src/Telegram/MenuButtons.php:207
+#: src/Telegram/MenuButtons.php:209
 msgid "Who may hold each role"
 msgstr ""
 
@@ -9224,7 +9224,7 @@ msgstr ""
 msgid "You can also email the ticket file (.xlsx or .csv) to %s. It always goes to the next event, and only mail from an organizer’s address is accepted. Names typed in the mail itself go to the guest list; a guest with an email address on the line gets a ticket by email."
 msgstr ""
 
-#: src/Telegram/HelpService.php:217
+#: src/Telegram/HelpService.php:221
 msgid "You can also just write what you want, like \"sign me up for a task on Saturday\"."
 msgstr ""
 
@@ -9763,7 +9763,7 @@ msgstr ""
 msgid "free"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:496
+#: src/Telegram/BoardRenderer.php:499
 msgid "full"
 msgstr ""
 
@@ -10163,7 +10163,7 @@ msgstr ""
 msgid "👋 %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:417
+#: src/Telegram/BoardRenderer.php:420
 msgid "👋 New here? Sign up →"
 msgstr ""
 
@@ -10175,11 +10175,11 @@ msgstr ""
 msgid "👋 arrived · ✓ done · ⏰ late · ✗ no-show"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:408 src/Telegram/MenuButtons.php:176
+#: src/Telegram/BoardRenderer.php:411 src/Telegram/MenuButtons.php:178
 msgid "👤 My info"
 msgstr ""
 
-#: src/Telegram/HelpService.php:152
+#: src/Telegram/HelpService.php:156
 msgid "👥 People: choose what to do."
 msgstr ""
 
@@ -10191,7 +10191,7 @@ msgstr ""
 msgid "📅 Add to calendar"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:404
+#: src/Telegram/BoardRenderer.php:407
 msgid "📅 More tasks"
 msgstr ""
 
@@ -10204,7 +10204,7 @@ msgstr ""
 msgid "📝 About the task: %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:398
+#: src/Telegram/BoardRenderer.php:401
 msgid "📝 Task info"
 msgstr ""
 
@@ -10260,11 +10260,11 @@ msgstr ""
 msgid "🚪 Open the sales desk"
 msgstr ""
 
-#: src/Telegram/HelpService.php:130
+#: src/Telegram/HelpService.php:134
 msgid "🚪 The door on %s: choose what to open."
 msgstr ""
 
-#: src/Telegram/HelpService.php:128
+#: src/Telegram/HelpService.php:132
 msgid "🚪 The door: choose what to open."
 msgstr ""
 
