@@ -676,6 +676,11 @@ final class TicketController
         );
     }
 
+    /** A small white QR code drawn on the Show QR code button. */
+    private const QR_ICON = '<svg class="t-qr-icon" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"'
+        . ' focusable="false"><path d="M3 3h8v8H3zm2 2v4h4V5zm1 1h2v2H6zm7-3h8v8h-8zm2 2v4h4V5zm1 1h2v2h-2z'
+        . 'M3 13h8v8H3zm2 2v4h4v-4zm1 1h2v2H6zm7-3h3v3h-3zm5 0h3v3h-3zm-5 5h3v3h-3zm5 0h3v3h-3z"/></svg>';
+
     /**
      * A QR code of this ticket's own link, so door staff can open it on their
      * phone, with the site's icon (or logo) in the middle. The code is drawn in the
@@ -699,12 +704,15 @@ final class TicketController
 
         // The code stays hidden behind a button (Owner 2026-11-07): the tap
         // that shows it also lets the browser play the "you're in" sound.
-        return '<button type="button" class="t-qr-show" id="ec-qr-show">'
+        // The button covers the code's own square (t-qr-wrap), which is
+        // always laid out, so showing the code moves nothing on the page.
+        return '<div class="t-qr-wrap" id="ec-qr-wrap">'
+            . '<button type="button" class="t-qr-show" id="ec-qr-show">' . self::QR_ICON
             . esc_html__('Show QR code', 'eventcrew') . '</button>'
-            . '<div class="t-qr" id="ec-qr" hidden>' . $img . '</div>'
+            . '<div class="t-qr" id="ec-qr" hidden>' . $img . '</div></div>'
             . '<script src="' . esc_url($lib) . '"></script>'
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained script; wrapping adds stray whitespace.
-            . '<script>(function(){var h=document.getElementById("ec-qr"),s=document.getElementById("ec-qr-show");if(!h){return;}if("function"!==typeof window.qrcode){h.parentNode.removeChild(h);if(s){s.parentNode.removeChild(s);}return;}var q=window.qrcode(0,"H");q.addData(' . $content . ');q.make();h.insertAdjacentHTML("afterbegin",q.createSvgTag({cellSize:4,margin:8,scalable:true}));if(s){s.addEventListener("click",function(){s.parentNode.removeChild(s);h.hidden=false;});}else{h.hidden=false;}})();</script>';
+            . '<script>(function(){var h=document.getElementById("ec-qr"),s=document.getElementById("ec-qr-show"),w=document.getElementById("ec-qr-wrap");if(!h){return;}if("function"!==typeof window.qrcode){if(w){w.parentNode.removeChild(w);}return;}var q=window.qrcode(0,"H");q.addData(' . $content . ');q.make();h.insertAdjacentHTML("afterbegin",q.createSvgTag({cellSize:4,margin:8,scalable:true}));if(s){s.addEventListener("click",function(){h.hidden=false;s.parentNode.removeChild(s);});}else{h.hidden=false;}})();</script>';
     }
 
     /**
@@ -807,58 +815,87 @@ final class TicketController
             . '.t-band{margin:0 -1.2em 1em;padding:.45em;color:#fff;font-weight:700;letter-spacing:.15em}'
             . '.t-band.is-valid{background:#1a7f37}.t-band.is-disabled{background:#b32d2e}'
             . '.t-band.is-expired{background:#000;letter-spacing:.04em}'
-            // Gold with dark brown text (over 6:1 on the darkest gold). Every
-            // loop starts where it ends, so nothing snaps: the gold drifts by
-            // exactly one 200% tile (t-gold), a warm glow breathes in and out
-            // (t-glow, alternate), a soft white sheen sweeps across from
-            // outside the band to outside it (t-sheen), and eight stars
-            // twinkle (t-twinkle). A band drawn live (is-new) also eases in,
-            // flares (t-flare) and bursts its stars; each ends on the state
-            // its loop starts from. Less motion: no animation, the glow stays.
-            . '.t-band.is-in{position:relative;overflow:hidden;padding:.7em .45em;color:#3b2500;letter-spacing:.04em;'
-            . 'background:linear-gradient(90deg,#dcaa1f,#ffd34d 25%,#fff2b8 50%,#ffd34d 75%,#dcaa1f);'
+            // Gold with dark brown text (over 6:1 on the darkest gold). It all
+            // stays inside the band (Owner 2026-11-07: it went out of the
+            // frame): the glow is inset only, nothing scales above 1 and the
+            // band clips its sheen, bloom and stars. Every loop starts where
+            // it ends, so nothing snaps: the gold drifts by exactly one 200%
+            // tile (t-gold), the inner glow breathes (t-glow, alternate), a
+            // soft sheen sweeps from outside the band to outside it (t-sheen)
+            // and eight stars twinkle (t-twinkle). A band drawn live (is-new)
+            // fades in, blooms from the middle (t-bloom), flares (t-flare),
+            // lifts its text in (t-rise) and bursts its stars one by one;
+            // each ends on the state its loop starts from. Less motion: no
+            // animation, the gold and its glow stay.
+            . '.t-band.is-in{position:relative;overflow:hidden;isolation:isolate;padding:.7em .45em;color:#3b2500;'
+            . 'letter-spacing:.04em;'
+            . 'background:linear-gradient(90deg,#d9a51c,#f7c843 25%,#fff0b0 50%,#f7c843 75%,#d9a51c);'
             . 'background-size:200% 100%;'
-            . 'box-shadow:0 0 .6em rgba(255,196,40,.45),inset 0 0 .8em rgba(255,250,220,.5);'
-            . 'animation:t-gold 6s linear infinite,t-glow 2.8s ease-in-out infinite alternate}'
-            . '.t-band.is-in::before{content:"";position:absolute;top:0;bottom:0;left:0;width:40%;pointer-events:none;'
-            . 'background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.6) 50%,rgba(255,255,255,0));'
-            . 'transform:translateX(-160%) skewX(-20deg);animation:t-sheen 5s ease-in-out infinite}'
-            . '.t-in-text,.t-at{display:block;position:relative}'
-            . '.t-in-text{font-size:1.25em;text-shadow:0 0 .35em rgba(255,248,215,.95),0 0 .9em rgba(255,215,90,.8)}'
+            . 'box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -1px 0 rgba(140,90,0,.35),'
+            . 'inset 0 0 .9em rgba(255,250,220,.55);'
+            . 'animation:t-gold 8s linear infinite,t-glow 3s ease-in-out infinite alternate}'
+            . '.t-band.is-in::before{content:"";position:absolute;top:0;bottom:0;left:0;width:35%;pointer-events:none;'
+            . 'background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.55) 50%,rgba(255,255,255,0));'
+            . 'transform:translateX(-150%) skewX(-20deg);animation:t-sheen 6s ease-in-out infinite}'
+            . '.t-in-text,.t-at{display:block;position:relative;z-index:1}'
+            . '.t-in-text{font-size:1.25em;text-shadow:0 0 .3em rgba(255,248,215,.95),0 0 .7em rgba(255,225,120,.7)}'
             . '.t-at{font-size:.8em;font-weight:600;letter-spacing:normal;margin-top:.15em}'
-            . '.t-stars i{position:absolute;font-style:normal;color:#fff;line-height:1;opacity:.25;'
-            . 'text-shadow:0 0 4px #a86b00,0 0 10px #fff;animation:t-twinkle 2.4s ease-in-out infinite}'
-            . '.t-stars i:nth-child(1){left:5%;top:12%;font-size:.9em}'
-            . '.t-stars i:nth-child(2){left:16%;top:58%;font-size:.6em;animation-delay:-.5s}'
-            . '.t-stars i:nth-child(3){left:28%;top:8%;font-size:.7em;animation-delay:-1.2s}'
-            . '.t-stars i:nth-child(4){left:40%;top:70%;font-size:.5em;animation-delay:-1.7s}'
-            . '.t-stars i:nth-child(5){left:60%;top:6%;font-size:.6em;animation-delay:-.3s}'
-            . '.t-stars i:nth-child(6){left:72%;top:62%;font-size:.8em;animation-delay:-1.5s}'
-            . '.t-stars i:nth-child(7){left:84%;top:14%;font-size:.6em;animation-delay:-.8s}'
-            . '.t-stars i:nth-child(8){left:93%;top:55%;font-size:.9em;animation-delay:-2s}'
-            . '.t-band.is-new{animation:t-gold 6s linear infinite,t-pop .9s cubic-bezier(.22,1.25,.36,1),'
-            . 't-flare 1.4s ease-out,t-glow 2.8s ease-in-out 1.4s infinite alternate}'
-            . '.t-band.is-new .t-stars i{animation:t-burst 1.2s ease-out both,t-twinkle 2.4s ease-in-out 1.2s infinite}'
+            . '.t-stars i{position:absolute;z-index:1;font-style:normal;color:#fff;line-height:1;opacity:.3;'
+            . 'transform:scale(.5);text-shadow:0 0 3px #b07000,0 0 8px #fff;'
+            . 'animation:t-twinkle 2.6s ease-in-out calc(var(--d,0s)*-6) infinite}'
+            . '.t-stars i:nth-child(1){left:5%;top:14%;font-size:.9em}'
+            . '.t-stars i:nth-child(2){left:16%;top:56%;font-size:.6em;--d:.2s}'
+            . '.t-stars i:nth-child(3){left:28%;top:12%;font-size:.7em;--d:.05s}'
+            . '.t-stars i:nth-child(4){left:40%;top:66%;font-size:.5em;--d:.3s}'
+            . '.t-stars i:nth-child(5){left:60%;top:10%;font-size:.6em;--d:.1s}'
+            . '.t-stars i:nth-child(6){left:72%;top:58%;font-size:.8em;--d:.25s}'
+            . '.t-stars i:nth-child(7){left:84%;top:16%;font-size:.6em;--d:.15s}'
+            . '.t-stars i:nth-child(8){left:91%;top:54%;font-size:.9em;--d:.35s}'
+            . '.t-band.is-new{animation:t-gold 8s linear infinite,t-in .6s ease-out both,t-flare 1.6s ease-out,'
+            . 't-glow 3s ease-in-out 1.6s infinite alternate}'
+            . '.t-band.is-new::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;'
+            . 'background:radial-gradient(ellipse at center,rgba(255,255,245,.95),rgba(255,240,180,.5) 40%,'
+            . 'rgba(255,220,120,0) 70%);animation:t-bloom 1.6s ease-out}'
+            . '.t-band.is-new .t-in-text{animation:t-rise .7s ease-out .15s both}'
+            . '.t-band.is-new .t-at{animation:t-rise .7s ease-out .35s both}'
+            . '.t-band.is-new .t-stars i{animation:t-burst 1.2s ease-out var(--d,0s) both,'
+            . 't-twinkle 2.6s ease-in-out calc(1.2s + var(--d,0s)) infinite}'
             . '@keyframes t-gold{from{background-position:0 0}to{background-position:200% 0}}'
-            . '@keyframes t-glow{from{box-shadow:0 0 .6em rgba(255,196,40,.45),inset 0 0 .8em rgba(255,250,220,.5)}'
-            . 'to{box-shadow:0 0 1.6em rgba(255,196,40,.85),inset 0 0 1.4em rgba(255,250,220,.85)}}'
-            . '@keyframes t-flare{0%{box-shadow:0 0 0 rgba(255,196,40,0),inset 0 0 0 rgba(255,250,220,0)}'
-            . '35%{box-shadow:0 0 2.4em rgba(255,210,70,1),inset 0 0 2em rgba(255,255,240,1)}'
-            . '100%{box-shadow:0 0 .6em rgba(255,196,40,.45),inset 0 0 .8em rgba(255,250,220,.5)}}'
-            . '@keyframes t-sheen{0%{transform:translateX(-160%) skewX(-20deg)}'
-            . '55%,100%{transform:translateX(320%) skewX(-20deg)}}'
-            . '@keyframes t-twinkle{0%,100%{opacity:.25;transform:scale(.6) rotate(0deg)}'
-            . '50%{opacity:1;transform:scale(1.15) rotate(20deg)}}'
-            . '@keyframes t-pop{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}'
-            . '@keyframes t-burst{0%{opacity:0;transform:translateY(1.2em) scale(.2) rotate(0deg)}'
-            . '60%{opacity:1;transform:translateY(-.3em) scale(1.5) rotate(90deg)}'
-            . '100%{opacity:.25;transform:translateY(0) scale(.6) rotate(0deg)}}'
-            . '@media (prefers-reduced-motion:reduce){.t-band.is-in,.t-band.is-new,.t-stars i,'
-            . '.t-band.is-new .t-stars i{animation:none}.t-band.is-in::before{display:none}.t-stars i{opacity:.8}}'
-            . '.t-qr{position:relative;width:15em;max-width:100%;margin:0 auto 1em}'
-            . '.t-qr[hidden]{display:none}'
-            . '.t-qr-show{display:block;margin:0 auto 1em;padding:.6em 1.2em;font:inherit;font-weight:600;'
-            . 'color:#1d1d1f;background:#fff;border:1px solid #c9c9cf;border-radius:10px;cursor:pointer}'
+            . '@keyframes t-glow{from{box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -1px 0 rgba(140,90,0,.35),'
+            . 'inset 0 0 .9em rgba(255,250,220,.55)}'
+            . 'to{box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(140,90,0,.35),'
+            . 'inset 0 0 1.8em rgba(255,252,232,.95)}}'
+            . '@keyframes t-flare{0%{box-shadow:inset 0 1px 0 rgba(255,255,255,0),inset 0 -1px 0 rgba(140,90,0,0),'
+            . 'inset 0 0 0 rgba(255,250,220,0)}'
+            . '30%{box-shadow:inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 0 rgba(140,90,0,.35),'
+            . 'inset 0 0 3em rgba(255,255,245,1)}'
+            . '100%{box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -1px 0 rgba(140,90,0,.35),'
+            . 'inset 0 0 .9em rgba(255,250,220,.55)}}'
+            . '@keyframes t-sheen{0%{transform:translateX(-150%) skewX(-20deg)}'
+            . '50%,100%{transform:translateX(400%) skewX(-20deg)}}'
+            . '@keyframes t-twinkle{0%,100%{opacity:.3;transform:scale(.5) rotate(0deg)}'
+            . '50%{opacity:1;transform:scale(1) rotate(45deg)}}'
+            . '@keyframes t-in{from{opacity:0}to{opacity:1}}'
+            . '@keyframes t-bloom{0%{opacity:0;transform:scaleX(.3)}25%{opacity:1}100%{opacity:0;transform:scaleX(1)}}'
+            . '@keyframes t-rise{from{opacity:0;transform:translateY(.35em)}to{opacity:1;transform:translateY(0)}}'
+            . '@keyframes t-burst{0%{opacity:0;transform:translateY(.5em) scale(.2) rotate(-90deg)}'
+            . '60%{opacity:1;transform:translateY(0) scale(1) rotate(30deg)}'
+            . '100%{opacity:.3;transform:translateY(0) scale(.5) rotate(0deg)}}'
+            . '@media (prefers-reduced-motion:reduce){.t-band.is-in,.t-band.is-new,.t-band.is-new .t-in-text,'
+            . '.t-band.is-new .t-at,.t-stars i,.t-band.is-new .t-stars i{animation:none}'
+            . '.t-band.is-in::before,.t-band.is-new::after{display:none}.t-stars i{opacity:.8;transform:none}}'
+            // The code's square is always laid out, hidden until the tap, and
+            // the button covers it: showing the code moves nothing.
+            . '.t-qr-wrap{position:relative;width:15em;max-width:100%;margin:0 auto 1em}'
+            . '.t-qr{position:relative;aspect-ratio:1/1}'
+            . '.t-qr[hidden]{display:block;visibility:hidden}'
+            . '.t-qr-show{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;'
+            . 'justify-content:center;gap:.6em;width:100%;min-height:48px;margin:0;padding:1em;font:inherit;'
+            . 'font-size:1.15em;font-weight:700;color:#fff;background:#1d1d1f;border:0;border-radius:14px;'
+            . 'box-shadow:0 3px 10px rgba(0,0,0,.25);cursor:pointer;-webkit-tap-highlight-color:transparent}'
+            . '.t-qr-icon{display:block;width:3.4em;height:3.4em}'
+            . '.t-qr-show:hover{background:#000}.t-qr-show:active{background:#3a3a3f}'
+            . '.t-qr-show:focus-visible{outline:3px solid #0a66d8;outline-offset:3px}'
             . '.t-qr svg{display:block;width:100%;height:auto}'
             . '.t-qr-logo{display:none;position:absolute;left:50%;top:50%;width:20%;height:20%;'
             . 'transform:translate(-50%,-50%);object-fit:contain;background:#fff;padding:3%;border-radius:8px}'

@@ -678,6 +678,29 @@ final class TicketControllerTest extends TestCase
         self::assertStringContainsString('h.hidden=false', $html);
     }
 
+    /**
+     * Showing the QR code moves nothing on the page (Owner 2026-11-07): the
+     * button covers the code's own square, which is laid out while hidden.
+     */
+    public function testShowingTheQrCodeDoesNotMoveThePage(): void
+    {
+        $html = $this->controller()->renderPage($this->ticketForEventStartingAt('19:00'));
+
+        self::assertStringContainsString(
+            '<div class="t-qr-wrap" id="ec-qr-wrap"><button type="button" class="t-qr-show" id="ec-qr-show">',
+            $html
+        );
+        self::assertStringContainsString(
+            'Show QR code</button><div class="t-qr" id="ec-qr" hidden></div></div>',
+            $html
+        );
+        self::assertStringContainsString('.t-qr{position:relative;aspect-ratio:1/1}', $html);
+        self::assertStringContainsString('.t-qr[hidden]{display:block;visibility:hidden}', $html);
+        self::assertStringContainsString('.t-qr-show{position:absolute;inset:0;', $html);
+        self::assertStringContainsString('min-height:48px', $html);
+        self::assertStringContainsString('.t-qr-show:focus-visible{outline:3px solid', $html);
+    }
+
     /** Before the doors close the band is VALID and the page knows when they close. */
     public function testBeforeTheDoorsCloseTheTicketIsValidAndCountsDownToThem(): void
     {
@@ -740,16 +763,48 @@ final class TicketControllerTest extends TestCase
             $html
         );
         self::assertStringContainsString('@keyframes t-glow{', $html);
-        self::assertStringContainsString('t-glow 2.8s ease-in-out infinite alternate', $html);
+        self::assertStringContainsString('t-glow 3s ease-in-out infinite alternate', $html);
         self::assertStringContainsString('@keyframes t-sheen{', $html);
         self::assertStringContainsString('@keyframes t-twinkle{0%,100%{', $html);
         self::assertMatchesRegularExpression(
-            '/@media \(prefers-reduced-motion:reduce\)\{[^}]*\.t-band\.is-in[^}]*\{animation:none\}'
-            . '\.t-band\.is-in::before\{display:none\}/',
+            '/@media \\(prefers-reduced-motion:reduce\\)\\{[^}]*\\.t-band\\.is-in[^}]*\\{animation:none\\}'
+            . '\\.t-band\\.is-in::before,\\.t-band\\.is-new::after\\{display:none\\}/',
             $html
         );
         // The static glow stays on the band itself, outside any animation.
-        self::assertStringContainsString('box-shadow:0 0 .6em rgba(255,196,40,.45)', $html);
+        self::assertStringContainsString('inset 0 0 .9em rgba(255,250,220,.55);animation:t-gold', $html);
+    }
+
+    /**
+     * Nothing of the gold band reaches outside it (Owner 2026-11-07): every
+     * glow is inset, nothing grows above its own size, and the band clips
+     * what moves inside it.
+     */
+    public function testTheGoldBandStaysInsideItsFrame(): void
+    {
+        $ticket = $this->ticketForEventStartingAt('10:00');
+        $ticket['used'] = '2026-07-20 10:20:00';
+
+        $html = $this->controller()->renderPage($ticket);
+
+        self::assertStringContainsString('.t-band.is-in{position:relative;overflow:hidden;', $html);
+        // The gold band's rules and keyframes, up to the QR code's.
+        self::assertSame(1, preg_match('/\\.t-band\\.is-in\\{.*(?=\\.t-qr-wrap\\{)/s', $html, $m));
+        $css = $m[0];
+        preg_match_all('/box-shadow:([^;}]*)/', $css, $shadows);
+        self::assertNotEmpty($shadows[1]);
+        foreach ($shadows[1] as $shadow) {
+            foreach (preg_split('/,(?![^(]*\\))/', $shadow) ?: [] as $layer) {
+                self::assertStringStartsWith('inset', trim($layer), 'outer glow on the band: ' . $layer);
+            }
+        }
+        preg_match_all('/scale\\(([\\d.]+)\\)/', $css, $scales);
+        self::assertNotEmpty($scales[1]);
+        foreach ($scales[1] as $scale) {
+            self::assertLessThanOrEqual(1.0, (float) $scale);
+        }
+        self::assertStringNotContainsString('t-pop', $css);
+        self::assertStringNotContainsString('cubic-bezier', $css);
     }
 
     /** With no doors time the ticket never expires on the page. */
