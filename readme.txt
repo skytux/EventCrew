@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.176
+Stable tag: 1.140.177
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.177 =
+* Messages no longer paste the event page's raw description (door code, schedule, address in one line). {event_description} now shows only the board's short text about the DJ or host, or nothing.
+* The /events cards no longer post the raw description either.
+* The free-entry ticket DM and the crew ticket email thank the person for being part of the crew and welcome them to the night as our guest.
 
 = 1.140.176 =
 * The you're-in moment on the ticket now fills the whole card: a gold bloom, an edge flash, a light sweep, a lit border and flying sparkles, then a calm shimmer.
@@ -1833,6 +1838,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.177 =
+No settings change.
 
 = 1.140.176 =
 No settings change.
