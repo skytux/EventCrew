@@ -726,14 +726,16 @@ final class TranslatedText
      * @return array{ok: bool, lang: string, texts: array<string, string>, error: string}
      *     lang is the source's language ('' when it was not asked or
      *     failed). texts is empty unless ok. $timeout: seconds to wait for
-     *     the model.
+     *     the model. $note: the caller's own rule for this text, added to
+     *     the instruction (for example "keep it two sentences").
      */
     public function translate(
         string $source,
         int $maxLength = 0,
         bool $multiline = true,
         ?string $lang = null,
-        int $timeout = LlmClient::TIMEOUT
+        int $timeout = LlmClient::TIMEOUT,
+        string $note = ''
     ): array {
         $failed = static fn (string $error): array => ['ok' => false, 'lang' => '', 'texts' => [], 'error' => $error];
 
@@ -756,7 +758,7 @@ final class TranslatedText
 
         $answer = $this->llm->chat(
             [
-                ['role' => 'system', 'content' => self::prompt($maxLength, $lang)],
+                ['role' => 'system', 'content' => self::prompt($maxLength, $lang, $note)],
                 ['role' => 'user', 'content' => $source],
             ],
             self::TOKENS_PER_LANGUAGE * max(1, count($targets)),
@@ -1355,8 +1357,11 @@ final class TranslatedText
             . implode(', ', $shape) . '}';
     }
 
-    /** The instruction sent to the model with the source. */
-    private static function prompt(int $maxLength, string $lang = ''): string
+    /**
+     * The instruction sent to the model with the source. $note, when not
+     * '', is the caller's own rule about this text, sent after the usual ones.
+     */
+    private static function prompt(int $maxLength, string $lang = '', string $note = ''): string
     {
         $targets = [];
         $shape = [];
@@ -1383,6 +1388,7 @@ final class TranslatedText
             . 'Do not add anything and do not leave anything out. '
             . ($maxLength > 0 ? 'Keep each translation at most ' . $maxLength . ' characters long. ' : '')
             . ($known ? '' : 'Leave out the language the text is already written in. ')
+            . ('' === trim($note) ? '' : trim($note) . ' ')
             . 'Answer with JSON only, with no other text: '
             . '{"lang": '
             . ($known ? '"' . $lang . '"' : '"the two-letter code of the language the text is written in"')

@@ -680,8 +680,8 @@ msgid "A send is already waiting. It goes out at %s."
 msgstr "Отправка уже ждёт. Она уйдёт в %s."
 
 #: src/Support/MessageTemplates.php:565
-msgid "The AI’s short text about the event from the group board (at most two sentences), for English readers only; never the event’s own description. On a line of its own; the line goes when there is no such text."
-msgstr "Короткий текст ИИ о мероприятии с доски группы (не более двух предложений), только для читателей на английском; никогда не собственное описание мероприятия. На отдельной строке; строка исчезает, если такого текста нет."
+msgid "The AI’s short text about the event from the group board (at most two sentences), in the reader’s language; never the event’s own description. On a line of its own; the line goes when there is no such text in that language."
+msgstr "Короткий текст ИИ о мероприятии с доски группы (не более двух предложений), на языке читателя; никогда не собственное описание мероприятия. На отдельной строке; строка исчезает, если такого текста на этом языке нет."
 
 #: src/Support/MessageTemplates.php:1189
 msgid "A space and the sentence saying until how many hours before the task a cancellation does not affect the standing (Settings). Empty when that number is 0."
@@ -10056,6 +10056,10 @@ msgstr "сообщений на группу"
 #: templates/admin/settings.php:2213
 msgid "messages per person in a private chat"
 msgstr "сообщений на человека в личном чате"
+
+#: templates/admin/settings.php
+msgid "messages per organizer in a private chat"
+msgstr "сообщений на организатора в личном чате"
 
 #: templates/admin/settings.php:926
 msgid "never"

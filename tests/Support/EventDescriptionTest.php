@@ -9,6 +9,7 @@ use EventCrew\Models\Person;
 use EventCrew\Models\Task;
 use EventCrew\Support\EventDescription;
 use EventCrew\Support\EventDetailsText;
+use EventCrew\Support\Language;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Telegram\BoardDjText;
 use EventCrew\Tests\TestCase;
@@ -64,10 +65,20 @@ final class EventDescriptionTest extends TestCase
         Functions\when('get_the_title')->justReturn('Ecstatic Dance');
     }
 
-    /** The group board's current AI text about event 12 (BoardDjText). */
-    private function boardText(string $text): void
+    /**
+     * The group board's current AI text about event 12 (BoardDjText), with
+     * $translations [lang => text] made from it in the board's background run.
+     *
+     * @param array<string, string> $translations
+     */
+    private function boardText(string $text, array $translations = []): void
     {
-        $this->options[BoardDjText::OPTION] = [12 => ['hash' => md5(BoardDjText::source(12)), 'text' => $text]];
+        $this->options[BoardDjText::OPTION] = [12 => [
+            'hash' => md5(BoardDjText::source(12)),
+            'text' => $text,
+            'texts' => $translations,
+            'text_hash' => md5($text),
+        ]];
     }
 
     private function task(): Task
@@ -127,11 +138,57 @@ final class EventDescriptionTest extends TestCase
         $this->boardText('DJ Aino opens the night with warm grooves. Expect a slow build into deep dancing. A third one.');
 
         self::assertSame('DJ Aino opens the night with warm grooves. Expect a slow build into deep dancing.', EventDescription::short(12, 'en'));
-        self::assertSame('', EventDescription::short(12, 'fi'), 'the board text is English only');
+        self::assertSame('', EventDescription::short(12, 'fi'), 'no Finnish translation: empty, not English');
         self::assertSame('', EventDescription::short(null, 'en'));
 
         $this->content = '<p>Other text.</p>';
         self::assertSame('', EventDescription::short(12, 'en'), 'an old text is not used');
+    }
+
+    /**
+     * A Finnish reader gets the board text's Finnish translation, made in the
+     * board's background run; sending only reads it and never asks the model.
+     */
+    public function testAFinnishReaderGetsTheFinnishTextAndSendingNeverAsksTheModel(): void
+    {
+        Functions\expect('wp_remote_post')->never();
+        $this->content = self::RAW;
+        $this->boardText(
+            'DJ Aino opens the night with warm grooves. Expect a slow build into deep dancing.',
+            ['fi' => 'DJ Aino avaa illan lämpimillä grooveilla. Luvassa hidas nousu syvään tanssiin.']
+        );
+
+        self::assertSame(
+            'DJ Aino avaa illan lämpimillä grooveilla. Luvassa hidas nousu syvään tanssiin.',
+            EventDescription::short(12, 'fi')
+        );
+        self::assertSame('', EventDescription::short(12, 'sv'), 'no Swedish translation: empty, not English');
+
+        $body = Language::run(
+            Language::FINNISH,
+            fn (): string => MessageTemplates::body('reminder_dm', $this->context() + ['description' => ''])
+        );
+        self::assertStringEndsWith("\n\nDJ Aino avaa illan lämpimillä grooveilla. Luvassa hidas nousu syvään tanssiin.", $body);
+        self::assertStringNotContainsString('warm grooves', $body);
+    }
+
+    /** A new English board text drops the translations made from the old one. */
+    public function testAChangedBoardTextDropsItsTranslations(): void
+    {
+        $this->content = self::RAW;
+        $this->boardText('DJ Aino plays warm grooves.', ['fi' => 'DJ Aino soittaa lämpimiä grooveja.']);
+        self::assertSame('DJ Aino soittaa lämpimiä grooveja.', EventDescription::short(12, 'fi'));
+
+        // A new English text: the translations kept beside it were made from the old one.
+        $this->options[BoardDjText::OPTION][12]['text'] = 'DJ Ben plays lindy hop.';
+        self::assertSame('', EventDescription::short(12, 'fi'), 'not the old translation');
+        self::assertSame('DJ Ben plays lindy hop.', EventDescription::short(12, 'en'));
+
+        // The event changed (a new description): the English text and its translations go.
+        $this->boardText('DJ Aino plays warm grooves.', ['fi' => 'DJ Aino soittaa lämpimiä grooveja.']);
+        $this->content = '<p>Other text.</p>';
+        self::assertSame('', EventDescription::short(12, 'fi'));
+        self::assertSame('', EventDescription::short(12, 'en'));
     }
 
     /** A raw-only event: no raw text, door code or schedule in the reminder or "A spot opened". */

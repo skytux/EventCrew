@@ -30,11 +30,13 @@ final class AssistantSettings
     public const KEY_OPTION = 'eventcrew_assistant_key';
     public const PRIVATE_LIMIT_OPTION = 'eventcrew_assistant_private_limit';
     public const GROUP_LIMIT_OPTION = 'eventcrew_assistant_group_limit';
+    public const ORGANIZER_LIMIT_OPTION = 'eventcrew_assistant_organizer_limit';
     public const PAGES_OPTION = 'eventcrew_assistant_pages';
     public const FORWARD_OPTION = 'eventcrew_assistant_forward';
 
     public const DEFAULT_PRIVATE_LIMIT = 20;
     public const DEFAULT_GROUP_LIMIT = 60;
+    public const DEFAULT_ORGANIZER_LIMIT = 60;
 
     /** keyStatus(): no key stored. */
     public const KEY_NONE = 'none';
@@ -107,6 +109,12 @@ final class AssistantSettings
     public static function privateLimit(): int
     {
         return max(0, (int) get_option(self::PRIVATE_LIMIT_OPTION, self::DEFAULT_PRIVATE_LIMIT));
+    }
+
+    /** At most this many messages per organizer per hour in a private chat. */
+    public static function organizerLimit(): int
+    {
+        return max(0, (int) get_option(self::ORGANIZER_LIMIT_OPTION, self::DEFAULT_ORGANIZER_LIMIT));
     }
 
     /** At most this many messages per group per hour. */

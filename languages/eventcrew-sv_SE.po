@@ -10797,6 +10797,10 @@ msgstr "meddelanden per grupp"
 msgid "messages per person in a private chat"
 msgstr "meddelanden per person i en privat chatt"
 
+#: templates/admin/settings.php
+msgid "messages per organizer in a private chat"
+msgstr "meddelanden per arrangör i en privat chatt"
+
 #: templates/admin/settings.php:924
 msgid "never"
 msgstr "aldrig"
@@ -11271,8 +11275,8 @@ msgstr "🛠️ Öppna Admin-fliken"
 msgid "🧭 Organizer guide ↓"
 msgstr "🧭 Arrangörsguide ↓"
 
-msgid "The AI’s short text about the event from the group board (at most two sentences), for English readers only; never the event’s own description. On a line of its own; the line goes when there is no such text."
-msgstr "AI:ns korta text om evenemanget från gruppens tavla (högst två meningar), bara för engelskspråkiga läsare; aldrig evenemangets egen beskrivning. På en egen rad; raden försvinner när det inte finns någon sådan text."
+msgid "The AI’s short text about the event from the group board (at most two sentences), in the reader’s language; never the event’s own description. On a line of its own; the line goes when there is no such text in that language."
+msgstr "AI:ns korta text om evenemanget från gruppens tavla (högst två meningar), på läsarens språk; aldrig evenemangets egen beskrivning. På en egen rad; raden försvinner när det inte finns någon sådan text på det språket."
 
 #, php-format
 msgid "Blank: %s."

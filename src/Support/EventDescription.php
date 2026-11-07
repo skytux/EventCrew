@@ -17,8 +17,11 @@ use EventCrew\Telegram\BoardDjText;
  * The curated text is the group board's short text about the event's DJ or
  * host (BoardDjText::stored()): two sentences the language model wrote from
  * the event's DJs and description, under a prompt that forbids door codes.
- * The model writes it in English only, so a reader in another language gets
- * ''. '' too when there is no current text, so the line is left out.
+ * The model writes it in English; the same background run translates it into
+ * every other site language (BoardDjText::translate()), so a reader gets it
+ * in their own language. Sending never asks the model: a reader whose
+ * language has no current translation gets '' (not the English text), and
+ * so does everybody when there is no current text, so the line is left out.
  */
 final class EventDescription
 {
@@ -38,11 +41,7 @@ final class EventDescription
 
         $lang ??= Language::current() ?? Language::ENGLISH;
 
-        if (Language::ENGLISH !== $lang) {
-            return '';
-        }
-
-        return self::shorten(BoardDjText::stored($postId));
+        return self::shorten(BoardDjText::stored($postId, $lang));
     }
 
     /**

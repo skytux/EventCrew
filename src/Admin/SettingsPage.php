@@ -463,6 +463,7 @@ final class SettingsPage
             'model' => AssistantSettings::model(),
             'key_status' => AssistantSettings::keyStatus(),
             'private_limit' => AssistantSettings::privateLimit(),
+            'organizer_limit' => AssistantSettings::organizerLimit(),
             'group_limit' => AssistantSettings::groupLimit(),
             'pages' => AssistantSettings::pageIds(),
             'page_choices' => $choices,
@@ -1034,6 +1035,7 @@ final class SettingsPage
         foreach (
             [
                 'assistant_private_limit' => AssistantSettings::PRIVATE_LIMIT_OPTION,
+                'assistant_organizer_limit' => AssistantSettings::ORGANIZER_LIMIT_OPTION,
                 'assistant_group_limit' => AssistantSettings::GROUP_LIMIT_OPTION,
             ] as $field => $option
         ) {

@@ -751,8 +751,9 @@ final class BoardService
 
     /**
      * The next event's photo message, in English like render(), or null when
-     * the next event has no picture or there is none. When its DJ text is not
-     * written yet, a background run is asked for (BoardDjText::schedule());
+     * the next event has no picture or there is none. When its DJ text or a
+     * translation of it is missing, a background run is asked for
+     * (BoardDjText::schedule());
      * the model is never asked here.
      *
      * @return array{
@@ -766,7 +767,8 @@ final class BoardService
     {
         $card = Language::run(Language::ENGLISH, fn (): ?array => $this->renderer->nextCard());
 
-        if (null !== $card && '' === BoardDjText::stored($card['event'])) {
+        // A missing text, or its missing translations (schedule() checks).
+        if (null !== $card) {
             BoardDjText::schedule($card['event']);
         }
 

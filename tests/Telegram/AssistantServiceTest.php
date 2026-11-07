@@ -1071,6 +1071,28 @@ final class AssistantServiceTest extends TelegramTestCase
         );
     }
 
+    public function testOrganizersHaveTheirOwnPrivateLimit(): void
+    {
+        $this->options[AssistantSettings::PRIVATE_LIMIT_OPTION] = 1;
+        $this->options[AssistantSettings::ORGANIZER_LIMIT_OPTION] = 3;
+
+        for ($i = 0; $i < 5; $i++) {
+            // Every lookup of the sender finds the organizer.
+            for ($j = 0; $j < 4; $j++) {
+                $this->person(true);
+            }
+            $this->reply(true, true, 'Answer ' . $i);
+            $this->ask(self::privateMessage('question ' . $i));
+        }
+
+        self::assertCount(3, $this->llmCalls);
+    }
+
+    public function testTheOrganizerLimitDefaultsToSixty(): void
+    {
+        self::assertSame(60, AssistantSettings::organizerLimit());
+    }
+
     public function testGroupLimitIsSilent(): void
     {
         $this->options[AssistantSettings::GROUP_LIMIT_OPTION] = 1;

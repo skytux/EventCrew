@@ -650,8 +650,8 @@ msgid "A send is already waiting. It goes out at %s."
 msgstr "送信がすでに待機中です。%s に送信されます。"
 
 #: src/Support/MessageTemplates.php:565
-msgid "The AI’s short text about the event from the group board (at most two sentences), for English readers only; never the event’s own description. On a line of its own; the line goes when there is no such text."
-msgstr "グループボードにある、AIが書いたイベントの短い文 (2文以内)。英語の読み手にのみ表示し、イベント自体の説明は決して使いません。独立した行に表示し、その文がなければ行は消えます。"
+msgid "The AI’s short text about the event from the group board (at most two sentences), in the reader’s language; never the event’s own description. On a line of its own; the line goes when there is no such text in that language."
+msgstr "グループボードにある、AIが書いたイベントの短い文 (2文以内)。読み手の言語で表示し、イベント自体の説明は決して使いません。独立した行に表示し、その言語の文がなければ行は消えます。"
 
 #: src/Support/MessageTemplates.php:1189
 msgid "A space and the sentence saying until how many hours before the task a cancellation does not affect the standing (Settings). Empty when that number is 0."
@@ -9988,6 +9988,10 @@ msgstr "グループあたりのメッセージ数"
 #: templates/admin/settings.php:2213
 msgid "messages per person in a private chat"
 msgstr "プライベートチャットでの 1 人あたりのメッセージ数"
+
+#: templates/admin/settings.php
+msgid "messages per organizer in a private chat"
+msgstr "プライベートチャットでの主催者 1 人あたりのメッセージ数"
 
 #: templates/admin/settings.php:926
 msgid "never"

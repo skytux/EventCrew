@@ -767,6 +767,12 @@ final class AssistantService
         $count = (int) get_transient($key) + 1;
         set_transient($key, $count, HOUR_IN_SECONDS);
 
+        // Organizers have their own private limit. Looked up only past the
+        // ordinary one, so most messages cost no extra query.
+        if ($isPrivate && $count > $limit && $this->help->audience($fromId)['organizer']) {
+            $limit = AssistantSettings::organizerLimit();
+        }
+
         if ($count <= $limit) {
             return 'ok';
         }

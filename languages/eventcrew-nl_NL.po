@@ -665,8 +665,8 @@ msgid "A send is already waiting. It goes out at %s."
 msgstr "Er staat al een verzending klaar. Die gaat om %s de deur uit."
 
 #: src/Support/MessageTemplates.php:565
-msgid "The AI’s short text about the event from the group board (at most two sentences), for English readers only; never the event’s own description. On a line of its own; the line goes when there is no such text."
-msgstr "De korte AI-tekst over het evenement van het groepsbord (hoogstens twee zinnen), alleen voor Engelstalige lezers; nooit de eigen beschrijving van het evenement. Op een eigen regel; de regel vervalt als er geen zulke tekst is."
+msgid "The AI’s short text about the event from the group board (at most two sentences), in the reader’s language; never the event’s own description. On a line of its own; the line goes when there is no such text in that language."
+msgstr "De korte AI-tekst over het evenement van het groepsbord (hoogstens twee zinnen), in de taal van de lezer; nooit de eigen beschrijving van het evenement. Op een eigen regel; de regel vervalt als er geen zulke tekst in die taal is."
 
 #: src/Support/MessageTemplates.php:1189
 msgid "A space and the sentence saying until how many hours before the task a cancellation does not affect the standing (Settings). Empty when that number is 0."
@@ -10048,6 +10048,10 @@ msgstr "berichten per groep"
 #: templates/admin/settings.php:2213
 msgid "messages per person in a private chat"
 msgstr "berichten per persoon in een privéchat"
+
+#: templates/admin/settings.php
+msgid "messages per organizer in a private chat"
+msgstr "berichten per organisator in een privéchat"
 
 #: templates/admin/settings.php:926
 msgid "never"

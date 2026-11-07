@@ -577,7 +577,7 @@ final class MessageTemplates
         return [
             'venue' => self::venuePlaceholder($eventId),
             'event_description' => self::placeholder(
-                __('The AI’s short text about the event from the group board (at most two sentences), for English readers only; never the event’s own description. On a line of its own; the line goes when there is no such text.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+                __('The AI’s short text about the event from the group board (at most two sentences), in the reader’s language; never the event’s own description. On a line of its own; the line goes when there is no such text in that language.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
                 static fn (array $c): string => EventDescription::short($eventId($c)),
                 false,
                 true

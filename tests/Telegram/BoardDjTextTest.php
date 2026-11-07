@@ -146,7 +146,8 @@ final class BoardDjTextTest extends TelegramTestCase
 
         self::assertTrue($this->writer()->write(100));
 
-        self::assertCount(1, $this->requests);
+        // The text, then its translation (unanswered here).
+        self::assertCount(2, $this->requests);
         $system = $this->requests[0]['messages'][0]['content'];
         $user = $this->requests[0]['messages'][1]['content'];
         self::assertStringContainsString('exactly 2 sentences', $system);
@@ -158,6 +159,93 @@ final class BoardDjTextTest extends TelegramTestCase
         self::assertStringContainsString('A night of social dancing with DJ Anna.', $user);
 
         self::assertSame('DJ Anna plays swing and blues. She is based in Helsinki.', BoardDjText::stored(100));
+    }
+
+    /** The model's answer to a translation into Finnish. */
+    private static function translation(string $finnish): string
+    {
+        return (string) json_encode(['lang' => 'en', 'fi' => $finnish]);
+    }
+
+    /**
+     * The English text is translated in the same background run, under the
+     * translator's rule for this text; a Finnish reader then gets the
+     * Finnish text and nobody asks the model while reading it.
+     */
+    public function testTheTextIsTranslatedRightAfterItIsWritten(): void
+    {
+        $this->party();
+        $this->answers[] = self::answer('DJ Anna plays swing and blues. She is based in Helsinki.');
+        $this->answers[] = self::translation('DJ Anna soittaa swingiä ja bluesia. Hän asuu Helsingissä.');
+
+        self::assertTrue($this->writer()->write(100));
+
+        self::assertCount(2, $this->requests);
+        $system = $this->requests[1]['messages'][0]['content'];
+        self::assertStringContainsString(BoardDjText::TRANSLATE_NOTE, $system);
+        self::assertStringContainsString('Finnish (fi)', $system);
+        self::assertSame('DJ Anna plays swing and blues. She is based in Helsinki.', $this->requests[1]['messages'][1]['content']);
+
+        self::assertSame('DJ Anna soittaa swingiä ja bluesia. Hän asuu Helsingissä.', BoardDjText::stored(100, 'fi'));
+        self::assertSame('DJ Anna plays swing and blues. She is based in Helsinki.', BoardDjText::stored(100, 'en'));
+        self::assertSame([], BoardDjText::untranslated(100));
+        self::assertCount(2, $this->requests, 'reading never asks the model');
+    }
+
+    /**
+     * A failed translation leaves the Finnish text empty (never English); a
+     * later run asks again after RETRY_AFTER, not before; and a translation
+     * that adds a number the English text has not (a door code) is not kept.
+     */
+    public function testAMissingTranslationIsEmptyAndAskedAgainLater(): void
+    {
+        $this->party();
+        $this->answers[] = self::answer('DJ Anna plays swing and blues. She is based in Helsinki.');
+        $this->answers[] = 500;
+
+        self::assertTrue($this->writer()->write(100));
+        self::assertSame('', BoardDjText::stored(100, 'fi'));
+        self::assertSame(['fi'], BoardDjText::untranslated(100));
+
+        // Within the hour: no new request, no run asked for.
+        $this->queueTasks(1);
+        $this->writer()->run();
+        BoardDjText::schedule(100);
+        self::assertCount(2, $this->requests);
+        self::assertSame([], $this->scheduled);
+
+        // An hour later: asked again; an added door code is not kept.
+        $this->options[BoardDjText::OPTION][100]['tr_tried'] = time() - 3601;
+        BoardDjText::schedule(100);
+        self::assertSame([BoardDjText::HOOK], $this->scheduled);
+        $this->answers[] = self::translation('DJ Anna soittaa swingiä. Ovikoodi 7302.');
+        $this->queueTasks(1);
+        $this->writer()->run();
+        self::assertCount(3, $this->requests);
+        self::assertSame('', BoardDjText::stored(100, 'fi'));
+
+        $this->options[BoardDjText::OPTION][100]['tr_tried'] = 0;
+        $this->answers[] = self::translation('DJ Anna soittaa swingiä ja bluesia. Hän asuu Helsingissä.');
+        $this->queueTasks(1);
+        $this->writer()->run();
+        self::assertSame('DJ Anna soittaa swingiä ja bluesia. Hän asuu Helsingissä.', BoardDjText::stored(100, 'fi'));
+    }
+
+    /** A new English text (other DJs) drops the old translations and gets its own. */
+    public function testANewTextGetsNewTranslations(): void
+    {
+        $this->party();
+        $this->answers[] = self::answer('DJ Anna plays swing and blues. She is based in Helsinki.');
+        $this->answers[] = self::translation('DJ Anna soittaa swingiä ja bluesia. Hän asuu Helsingissä.');
+        $this->writer()->write(100);
+
+        $this->djs[100] = [['name' => 'DJ Ben', 'description' => 'Ben plays lindy hop.']];
+        self::assertSame('', BoardDjText::stored(100, 'fi'));
+
+        $this->answers[] = self::answer('DJ Ben plays lindy hop. Expect fast feet.');
+        $this->answers[] = self::translation('DJ Ben soittaa lindy hopia. Luvassa nopeita jalkoja.');
+        self::assertTrue($this->writer()->write(100));
+        self::assertSame('DJ Ben soittaa lindy hopia. Luvassa nopeita jalkoja.', BoardDjText::stored(100, 'fi'));
     }
 
     public function testAPromptChangedInWpAdminIsTheOneSent(): void
@@ -255,7 +343,7 @@ final class BoardDjTextTest extends TelegramTestCase
 
         $this->writer()->run();
 
-        self::assertCount(1, $this->requests);
+        self::assertCount(2, $this->requests, 'the text, then its translation');
         // The text board has no picture (Q360): only it is posted.
         self::assertSame(['sendMessage'], $this->calledMethods());
 

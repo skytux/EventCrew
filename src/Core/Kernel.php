@@ -574,7 +574,8 @@ final class Kernel
             fn (Container $container) => new BoardDjText(
                 $container->get(LlmClient::class),
                 $container->get(Logger::class),
-                $container->get(BoardService::class)
+                $container->get(BoardService::class),
+                $container->get(TranslatedText::class)
             )
         );
 
