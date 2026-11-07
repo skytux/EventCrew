@@ -149,7 +149,7 @@ final class BoardRenderer
             }
         }
 
-        foreach ($this->footRows($group ? $this->nextDay($dates, $shown) : '') as $row) {
+        foreach ($this->footRows($group ? $this->nextDay($dates, $shown) : '', $group) as $row) {
             $keyboard[] = $row;
         }
 
@@ -373,7 +373,7 @@ final class BoardRenderer
             }
         }
 
-        foreach ($this->footRows($group ? $this->nextDay($dates, $shown) : '') as $row) {
+        foreach ($this->footRows($group ? $this->nextDay($dates, $shown) : '', $group) as $row) {
             $keyboard[] = $row;
         }
 
@@ -388,9 +388,12 @@ final class BoardRenderer
      *
      * @param string $moreDay The day More tasks opens in the private chat
      *                        (Y-m-d); '' = no More tasks button.
+     * @param bool $group Whether this is the group's board. The private copy
+     *                    has no sign-up row (Owner 2026-11-07): there a tap on a
+     *                    task asks a newcomer to set up first anyway.
      * @return array<int, array<int, array<string, mixed>>>
      */
-    private function footRows(string $moreDay = ''): array
+    private function footRows(string $moreDay = '', bool $group = true): array
     {
         $rows = [];
 
@@ -414,7 +417,7 @@ final class BoardRenderer
             $rows[] = $links;
         }
 
-        $signUp = $this->deepLinkButton('onboard', __('👋 New here? Sign up →', 'eventcrew'));
+        $signUp = $group ? $this->deepLinkButton('onboard', __('👋 New here? Sign up →', 'eventcrew')) : null;
 
         if (null !== $signUp) {
             $rows[] = [$signUp];

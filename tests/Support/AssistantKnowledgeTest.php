@@ -14,6 +14,9 @@ final class AssistantKnowledgeTest extends TestCase
     /** @var array<string, string> */
     private array $meta = [];
 
+    /** @var array<string, mixed> */
+    private array $options = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -36,6 +39,9 @@ final class AssistantKnowledgeTest extends TestCase
         Functions\when('get_post_field')->justReturn('');
         Functions\when('wp_strip_all_tags')->alias(static fn (string $text): string => strip_tags($text));
         Functions\when('strip_shortcodes')->returnArg();
+        Functions\when('get_option')->alias(
+            fn (string $name, mixed $default = false): mixed => $this->options[$name] ?? $default
+        );
     }
 
     private function eventsText(): string
@@ -83,5 +89,72 @@ final class AssistantKnowledgeTest extends TestCase
 
         self::assertSame('- 2026-08-01: Summer Dance, starts 21:00, https://example.test/event/summer-dance/', $text);
         self::assertStringNotContainsString('ticket', $text);
+    }
+
+    /** @param array<int, string> $roleSlugs */
+    private function facts(array $roleSlugs): string
+    {
+        Functions\when('get_transient')->justReturn('');
+
+        return (new AssistantKnowledge(new TaskRepository()))->build($roleSlugs)['facts'];
+    }
+
+    /** @return array<string, mixed> */
+    private function taskRow(int $id, string $role): array
+    {
+        return [
+            'id' => $id,
+            'task_date' => '2026-08-01',
+            'role_slug' => $role,
+            'capacity' => 2,
+            'event_post_id' => null,
+            'event_label' => 'Party',
+            'starts_at' => null,
+            'ends_at' => null,
+            'notes' => '',
+            'created_at' => '2026-07-01 00:00:00',
+        ];
+    }
+
+    /**
+     * Owner 2026-11-07: the helper told a VJ there were no VJ tasks. A person
+     * with a restricted role gets that role's coming tasks and description,
+     * signed up for through /board; the board list still leaves them out.
+     */
+    public function testAPersonWithARestrictedRoleGetsItsTasks(): void
+    {
+        $this->options['eventcrew_roles'] = [
+            ['slug' => 'decorate', 'label' => 'Decorate'],
+            ['slug' => 'vj', 'label' => 'VJ', 'restricted' => true, 'description' => 'Visuals on the screen.'],
+        ];
+        Functions\when('current_time')->justReturn('2026-07-10');
+        $rows = [$this->taskRow(1, 'decorate'), $this->taskRow(2, 'vj')];
+        $this->wpdb->nextResults[] = $rows; // board tasks
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = $rows; // role tasks
+        $this->wpdb->nextResults[] = [['task_id' => 2, 'taken' => 1]];
+
+        $facts = $this->facts(['vj']);
+
+        self::assertStringContainsString('- VJ: Visuals on the screen.', $facts);
+        self::assertStringContainsString("## This person's role tasks", $facts);
+        self::assertStringContainsString('2026-08-01 (Saturday), Party: VJ, 1 signed up', $facts);
+        self::assertStringContainsString('give the action /board, never /join', $facts);
+        self::assertStringNotContainsString('task 2:', $facts);
+    }
+
+    /** Someone without the role hears nothing of it. */
+    public function testSomeoneWithoutTheRoleGetsNoRoleTasks(): void
+    {
+        $this->options['eventcrew_roles'] = [
+            ['slug' => 'vj', 'label' => 'VJ', 'restricted' => true, 'description' => 'Visuals on the screen.'],
+        ];
+        Functions\when('current_time')->justReturn('2026-07-10');
+        $this->wpdb->nextResults[] = [$this->taskRow(2, 'vj')];
+
+        $facts = $this->facts([]);
+
+        self::assertStringNotContainsString('VJ', $facts);
+        self::assertStringNotContainsString('role tasks', $facts);
     }
 }

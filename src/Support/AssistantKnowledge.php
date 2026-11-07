@@ -65,11 +65,17 @@ final class AssistantKnowledge
     /**
      * Everything at once, as the "facts" part of the instructions.
      *
+     * $roleSlugs are the person's roles: the coming tasks of their
+     * restricted roles (DJ, VJ, ...) are listed in a section of their own,
+     * since they are never on the board (Owner 2026-11-07: the helper told a
+     * VJ there were no VJ tasks).
+     *
+     * @param array<int, string> $roleSlugs
      * @return array{facts: string, tasks: array<int, int>}
-     *     tasks: the ids of the tasks listed, which are the only ones the
-     *     helper may offer to sign someone up for.
+     *     tasks: the ids of the board tasks listed, which are the only ones
+     *     the helper may offer to sign someone up for with /join.
      */
-    public function build(): array
+    public function build(array $roleSlugs = []): array
     {
         [$taskText, $taskIds] = $this->tasksText();
 
@@ -86,9 +92,15 @@ final class AssistantKnowledge
 
         $parts = [
             ...$parts,
-            '## Roles' . "\n" . $this->rolesText(),
+            '## Roles' . "\n" . $this->rolesText($roleSlugs),
             '## Open tasks (the board)' . "\n" . $taskText,
         ];
+
+        $roleTasks = $this->roleTasksText($roleSlugs);
+
+        if ('' !== $roleTasks) {
+            $parts[] = '## This person\'s role tasks' . "\n" . $roleTasks;
+        }
 
         $events = $this->eventsText();
 
@@ -173,12 +185,15 @@ final class AssistantKnowledge
         return sprintf('%s (%s), time now %s', $today, $this->weekday($today), (string) current_time('H:i'));
     }
 
-    private function rolesText(): string
+    /**
+     * @param array<int, string> $roleSlugs
+     */
+    private function rolesText(array $roleSlugs = []): string
     {
         $lines = [];
 
         foreach (Roles::active() as $role) {
-            if (Roles::isRestricted($role['slug'])) {
+            if (Roles::isRestricted($role['slug']) && ! in_array($role['slug'], $roleSlugs, true)) {
                 continue;
             }
 
@@ -205,6 +220,52 @@ final class AssistantKnowledge
             $this->tasks->upcoming(self::TASK_LIMIT),
             static fn (Task $task): bool => ! $task->isRestricted() && ! $task->hasStarted()
         ));
+    }
+
+    /**
+     * The coming tasks of the restricted roles in $roleSlugs; '' when the
+     * person has none. Signing up for these goes through the role task
+     * buttons /board sends in the bot, which ask about credit first.
+     *
+     * @param array<int, string> $roleSlugs
+     */
+    private function roleTasksText(array $roleSlugs): string
+    {
+        if ([] === $roleSlugs) {
+            return '';
+        }
+
+        $tasks = array_values(array_filter(
+            $this->tasks->upcoming(self::TASK_LIMIT),
+            static fn (Task $task): bool => $task->isRestricted()
+                && ! $task->hasStarted()
+                && in_array($task->roleSlug, $roleSlugs, true)
+        ));
+
+        if ([] === $tasks) {
+            return 'No coming tasks of this person\'s roles yet.';
+        }
+
+        $taken = $this->tasks->occupancyFor(array_map(static fn (Task $task): int => $task->id, $tasks));
+        $lines = [
+            'These are not on the group board. The person signs up for them with the role task buttons'
+                . ' that /board sends in this private chat, so for these give the action /board, never /join.',
+        ];
+
+        foreach ($tasks as $task) {
+            $time = $task->timeRange();
+            $lines[] = sprintf(
+                '- %s (%s), %s: %s%s, %d signed up',
+                $task->taskDate,
+                $this->weekday($task->taskDate),
+                $task->eventName(),
+                $task->roleLabel(),
+                '' !== $time ? ' ' . $time : '',
+                $taken[$task->id] ?? 0
+            );
+        }
+
+        return implode("\n", $lines);
     }
 
     /**

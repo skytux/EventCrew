@@ -83,7 +83,7 @@ final class HelpService
      * by the same rule. "roles" has the names of the crew roles they were
      * given (e.g. "DJ"), for the helper to know what to leave out.
      *
-     * @return array{organizer: bool, welcomeCrew: bool, verified: bool, roles: list<string>}
+     * @return array{organizer: bool, welcomeCrew: bool, verified: bool, roles: list<string>, roleSlugs: list<string>}
      */
     public function audience(int $telegramUserId): array
     {
@@ -96,6 +96,10 @@ final class HelpService
             'verified' => null !== $person && $person->isEmailVerified(),
             'roles' => null !== $person
                 ? array_values(array_map(static fn (string $slug): string => Roles::label($slug), $person->roleSlugs))
+                : [],
+            // Organize is not stored: it follows the organizer permission.
+            'roleSlugs' => null !== $person
+                ? array_values(array_unique([...$person->roleSlugs, ...($organizer ? [Roles::ORGANIZE_SLUG] : [])]))
                 : [],
         ];
     }
