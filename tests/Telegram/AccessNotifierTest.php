@@ -100,7 +100,7 @@ final class AccessNotifierTest extends TelegramTestCase
         $this->notifier()->roleGiven(8, 'dj');
 
         self::assertSame(
-            "📣 Test Site\n\nHi Sam,\n\nYou now have the role DJ, so you can sign up for its tasks.",
+            "💌 Test Site\n\nHi Sam,\n\nYou now have the role DJ, so you can sign up for its tasks.",
             $this->dm()
         );
         self::assertSame(
@@ -110,8 +110,8 @@ final class AccessNotifierTest extends TelegramTestCase
         self::assertCount(1, $this->mails);
         self::assertSame('sam@example.com', $this->mails[0]['to']);
         self::assertSame(
-            "You have a new role: DJ\n---\nHi Sam,\n\nYou now have the role DJ. Its tasks are open to you on the crew"
-                . " page, and you can sign up for them.\n\nSee open tasks: https://site.test/crew/#eventcrew-panel-board",
+            "You have a new role: DJ\n---\nHi Sam,\n\nYou now have the role DJ. Its tasks are open to you in the Crew"
+                . " app, and you can sign up for them.\n\nSee open tasks: https://site.test/crew/#eventcrew-panel-board",
             $this->mailText()
         );
     }
@@ -140,7 +140,7 @@ final class AccessNotifierTest extends TelegramTestCase
         $this->notifier()->roleGiven(8, 'dj');
 
         self::assertSame(
-            "📣 Test Site\n\nHi Sam,\n\nYou now have the role DJ, so you can sign up for its tasks.\n\nOpen now:"
+            "💌 Test Site\n\nHi Sam,\n\nYou now have the role DJ, so you can sign up for its tasks.\n\nOpen now:"
                 . "\n📅 Sat 14 Nov\n🔹 DJ 22:00–23:00 at Dance Night",
             $this->dm()
         );
@@ -164,7 +164,7 @@ final class AccessNotifierTest extends TelegramTestCase
         $this->notifier()->passGiven(8);
 
         self::assertSame(
-            "📣 Test Site\n\nHi Sam,\n\n🎟 You’ve a one-time pass to sign up for your next task, even while your"
+            "💌 Test Site\n\nHi Sam,\n\n🎟 You have a one-time pass to sign up for your next task, even while your"
                 . ' standing is low. It is used up the next time you sign up.',
             $this->dm()
         );
@@ -183,7 +183,7 @@ final class AccessNotifierTest extends TelegramTestCase
         $this->notifier()->organizerGiven(8);
 
         self::assertSame(
-            "📣 Test Site\n\nHi Sam,\n\n⭐ You’re now an organizer of Test Site. The Crew app has an Admin tab"
+            "💌 Test Site\n\nHi Sam,\n\n⭐ You’re now an organizer of Test Site. The Crew app has an Admin tab"
                 . ' for you, where you manage tasks and people.',
             $this->dm()
         );
@@ -196,7 +196,7 @@ final class AccessNotifierTest extends TelegramTestCase
             $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
         );
         self::assertSame(
-            "You are now an organizer of Test Site.\n---\nHi Sam,\n\nYou are now an organizer. The crew page has an"
+            "You are now an organizer of Test Site\n---\nHi Sam,\n\nYou are now an organizer. The Crew app has an"
                 . ' Admin tab for you, where you manage tasks and people.'
                 . "\n\n🛠️ Open the Admin tab: https://site.test/crew/#eventcrew-panel-admin",
             $this->mailText()
@@ -212,7 +212,7 @@ final class AccessNotifierTest extends TelegramTestCase
 
         self::assertNull($this->lastCallTo('sendMessage'));
         self::assertCount(1, $this->mails);
-        self::assertStringContainsString('Its tasks are open to you on the crew page', $this->mails[0]['body']);
+        self::assertStringContainsString('Its tasks are open to you in the Crew app', $this->mails[0]['body']);
         self::assertStringNotContainsString('/board', $this->mails[0]['body']);
     }
 
@@ -235,7 +235,7 @@ final class AccessNotifierTest extends TelegramTestCase
 
         $this->notifier()->roleGiven(8, 'dj');
 
-        self::assertStringStartsWith('📣 Test Site', $this->dm());
+        self::assertStringStartsWith('💌 Test Site', $this->dm());
         self::assertSame('Sinulla on uusi rooli: DJ', $this->mails[0]['subject']);
         self::assertStringContainsString('Sinulla on nyt rooli DJ. Sen tehtävät ovat avoinna', $this->mails[0]['body']);
         self::assertStringStartsWith('Hei Sam,', $this->mails[0]['body']);

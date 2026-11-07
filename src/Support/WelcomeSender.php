@@ -293,7 +293,7 @@ final class WelcomeSender
         $group = BoardService::groupLink();
 
         if ('' !== $group) {
-            $keyboard[] = [['text' => '💬 ' . __('Open the group', 'eventcrew'), 'url' => $group]];
+            $keyboard[] = [['text' => self::groupLabel(), 'url' => $group]];
         }
 
         $links = [];
@@ -313,7 +313,7 @@ final class WelcomeSender
             'person' => $person,
             'open_tasks' => $this->openTasksText(true),
         ];
-        $text = EmailBody::forDm(DmBody::frame($person, self::tidy(MessageTemplates::body(self::KIND_DM, $context)), true), true);
+        $text = EmailBody::forDm(DmBody::frame($person, self::tidy(MessageTemplates::body(self::KIND_DM, $context))), true);
 
         return $this->sendHtmlDm($person, $text, $keyboard, $links);
     }
@@ -470,7 +470,13 @@ final class WelcomeSender
     {
         $url = BoardService::groupLink();
 
-        return '' === $url ? null : ['label' => '💬 ' . __('Open our group in Telegram', 'eventcrew'), 'url' => $url];
+        return '' === $url ? null : ['label' => self::groupLabel(), 'url' => $url];
+    }
+
+    /** The group button, the same in the emails and the DM. */
+    public static function groupLabel(): string
+    {
+        return '💬 ' . __('Telegram group', 'eventcrew');
     }
 
     /**
@@ -613,9 +619,9 @@ final class WelcomeSender
 
     /**
      * $text without the gaps an empty placeholder leaves: a double space, a
-     * space before a line break or at the end.
+     * space before a line break or at the end. The preview runs it too.
      */
-    private static function tidy(string $text): string
+    public static function tidy(string $text): string
     {
         return (string) preg_replace(['/ {2,}/', '/ +(?=\n|$)/'], [' ', ''], $text);
     }

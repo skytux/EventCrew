@@ -13,7 +13,9 @@ use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Dates;
+use EventCrew\Support\DmBody;
 use EventCrew\Support\DoorLinkSender;
+use EventCrew\Support\EmailBody;
 use EventCrew\Support\EventName;
 use EventCrew\Support\JoinAnswers;
 use EventCrew\Support\Logger;
@@ -976,12 +978,20 @@ final class CrewAdminController
         ));
 
         foreach ($this->people->organizers() as $organizer) {
+            // Caused by someone else, so the DM opens and signs off (DmBody)
+            // and the email greets the organizer by name.
             if (null !== $organizer->telegramChatId) {
-                $this->telegram->sendMessage($organizer->telegramChatId, $dm, $markup);
+                $this->telegram->sendMessage($organizer->telegramChatId, DmBody::frame($organizer, $dm), $markup);
             }
 
             if ($organizer->isEmailVerified() && ! $organizer->isAnonymized()) {
-                $this->mailer->toPerson($organizer->id, $organizer->email, $subject, $body, $actions);
+                $this->mailer->toPerson(
+                    $organizer->id,
+                    $organizer->email,
+                    $subject,
+                    EmailBody::withGreeting($organizer->displayName, $body),
+                    $actions
+                );
             }
         }
     }

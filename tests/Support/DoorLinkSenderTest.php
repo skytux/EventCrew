@@ -222,6 +222,8 @@ final class DoorLinkSenderTest extends SalesDeskTestCase
 
         self::assertSame(1, $this->dmsSent());
         self::assertSame(508, $this->lastCallTo('sendMessage')['chat_id']);
+        // Nobody asked for it this time, so it opens with the frame (Owner, 2026-11-07).
+        self::assertStringStartsWith('💌 ', $this->lastCallTo('sendMessage')['text']);
     }
 
     public function testCrewOnAnyRoleMarkedAsOpeningTheSalesDeskGetItUnderTheSameRule(): void

@@ -137,8 +137,9 @@ final class MessagePreviewTest extends TestCase
             self::assertSame($template->actions, $all[$partner]->actions, $id . ' and ' . $partner . ' share their actions');
             self::assertNotSame($template->channel, $all[$partner]->channel, $id);
 
-            $context = (isset($template->preview['context']) ? ($template->preview['context'])() : [])
-                + $preview->sampleContext();
+            $sample = $preview->sampleContext();
+            $context = (isset($template->preview['context']) ? ($template->preview['context'])($sample) : [])
+                + $sample;
             $actions = $template->actions($context, $mailer);
             self::assertNotSame([], $actions, $id);
 

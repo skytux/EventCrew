@@ -84,6 +84,8 @@ final class SalesLinkServiceTest extends SalesDeskTestCase
         $this->salesLinkService()->onSalesCommand(501, 501, true);
 
         self::assertCount(1, $this->messages());
+        // Asked for a second ago: a bare reply, no frame (Owner, 2026-11-07).
+        self::assertStringNotContainsString('💌', (string) $this->messages()[0]['text']);
         // 💳 Sales desk is under /door: the link's last row is Back there.
         $rows = $this->messages()[0]['reply_markup']['inline_keyboard'];
         self::assertSame([['text' => '⬅️ Back', 'callback_data' => 'mn:door']], end($rows));

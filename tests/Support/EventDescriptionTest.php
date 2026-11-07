@@ -168,7 +168,11 @@ final class EventDescriptionTest extends TestCase
             Language::FINNISH,
             fn (): string => MessageTemplates::body('reminder_dm', $this->context() + ['description' => ''])
         );
-        self::assertStringEndsWith("\n\nDJ Aino avaa illan lämpimillä grooveilla. Luvassa hidas nousu syvään tanssiin.", $body);
+        // The cancel hint comes after it (cancelHelpDm()).
+        self::assertStringContainsString(
+            "\n\nDJ Aino avaa illan lämpimillä grooveilla. Luvassa hidas nousu syvään tanssiin.\n\n",
+            $body
+        );
         self::assertStringNotContainsString('warm grooves', $body);
     }
 
@@ -226,11 +230,11 @@ final class EventDescriptionTest extends TestCase
         $this->content = self::RAW;
         $this->boardText('Free dance in the hall. Bring water. Doors at 19.');
         $body = MessageTemplates::body('reminder_dm', $this->context() + ['description' => '']);
-        self::assertStringEndsWith("See you there!\n\nFree dance in the hall. Bring water.", $body);
+        self::assertStringEndsWith("See you there!\n\nFree dance in the hall. Bring water.\n\nCan’t make it? Tap Cancel below: there you can also hand the task over to someone else.", $body);
 
         $this->options = [];
         $body = MessageTemplates::body('reminder_dm', $this->context() + ['description' => '']);
-        self::assertStringEndsWith('See you there!', $body);
+        self::assertStringEndsWith("See you there!\n\nCan’t make it? Tap Cancel below: there you can also hand the task over to someone else.", $body);
 
         self::assertSame(
             'Opened.Anna',

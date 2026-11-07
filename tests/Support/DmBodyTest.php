@@ -47,26 +47,30 @@ final class DmBodyTest extends TestCase
         self::assertStringContainsString('Some tasks still need people.', $text);
     }
 
-    public function testTheSignOffIsAddedOnlyWhenAskedFor(): void
+    public function testEveryFramedMessageEndsWithTheSignOff(): void
     {
+        // Owner, 2026-11-07: every DM the person did not just ask for is framed and
+        // signed, the standing notices included.
         $this->options[Signature::OPTION] = 'Barefoot and with ♥ — the Ecstatic Dance Helsinki crew';
 
-        self::assertStringContainsString(
-            'Barefoot and with ♥',
-            DmBody::frame($this->person(), 'A spot just opened.', true)
-        );
+        $text = DmBody::frame($this->person(), 'A spot just opened.');
 
-        // A standing notice passes false: a warm sign-off under "you were marked
-        // as a no-show" would read as sarcasm.
-        self::assertStringNotContainsString(
-            'Barefoot and with ♥',
-            DmBody::frame($this->person(), 'You were marked as a no-show.')
-        );
+        self::assertStringStartsWith('💌 Ecstatic Dance Helsinki', $text);
+        self::assertStringEndsWith('Barefoot and with ♥ — the Ecstatic Dance Helsinki crew', $text);
+    }
+
+    public function testTheOpeningAndTheSignOffCanBeUsedApart(): void
+    {
+        // The newcomer request puts the handle and decision lines between them.
+        $this->options[Signature::OPTION] = 'The crew';
+
+        self::assertSame("💌 Ecstatic Dance Helsinki\n\nHi Sam,\n\nBody", DmBody::open($this->person(), 'Body'));
+        self::assertSame('The crew', DmBody::signOff());
     }
 
     public function testAnUnsetSignatureLeavesNoStrayBlankLine(): void
     {
-        $text = DmBody::frame($this->person(), 'A spot just opened.', true);
+        $text = DmBody::frame($this->person(), 'A spot just opened.');
 
         self::assertStringEndsWith('A spot just opened.', $text);
     }

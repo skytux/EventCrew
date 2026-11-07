@@ -165,8 +165,11 @@ final class Mailer
         $board = $this->boardUrl();
         // The closing shows the sign-off in each of the email's languages.
         $signature = Signature::bothText($languages);
+        // A footer that is a whole sentence gets the link on the next line,
+        // not "…event.: https://…".
+        $join = 1 === preg_match('/[.!?]$/u', $footer) ? "\n" : ': ';
         $text .= ('' === $signature ? '' : "\n\n" . $signature) . "\n\n—\n" . $footer
-            . ('' === $board ? '' : ': ' . $board);
+            . ('' === $board ? '' : $join . $board);
         // $corner (HTML, the ticket email's QR corner) goes under the sign-off,
         // above the footer line.
         $html = $this->template->render(

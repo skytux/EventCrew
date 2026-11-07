@@ -125,8 +125,7 @@ final class ReminderCall
                 $person->telegramChatId,
                 DmBody::frame(
                     $person,
-                    $withAbout(MessageAiText::body('reminder_dm', $context, $task->eventPostId)),
-                    true
+                    $withAbout(MessageAiText::body('reminder_dm', $context, $task->eventPostId))
                 ),
                 // The ticket, and a one-tap out, so a "can't make it" turns into
                 // an early cancel someone else can cover rather than a silent

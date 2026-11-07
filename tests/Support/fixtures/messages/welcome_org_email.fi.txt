@@ -36,6 +36,8 @@ Rooli on työn laji, esimerkiksi Vastaanotto tai Siivous. Roolit asetetaan Asetu
 
 Tehtävä on yksi rooli yhtenä päivänä. Kohdassa EventCrew > Tehtävät luot tehtävät yksi kerrallaan tai illan kaikki tehtävät kerralla roolien pohjalta. Tehtävän voi liittää tapahtumaan, jolloin se näkyy tapahtuman nimen alla. Tehtävä, jonka paikkamäärä on 0, pysyy tallessa mutta poistuu taululta.
 
+Yksityisessä chatissa botin kanssa voit tehdä saman: /addtask lisää tehtävän, /edittask muuttaa sen aikaa, paikkoja, muistiinpanoja tai lisähenkilöitä, /deletetask poistaa sen, /maketasks luo illan tehtävät rooleista ja /mailtasks lähettää avointen tehtävien sähköpostin nyt. Botti pyytää ensin vahvistuksen.
+
 📣 Taulu ja ilmoittautuminen
 
 Telegram-ryhmän taulu listaa avoimet tehtävät kunkin tapahtuman ja päivän alla. Jokainen tehtävä on painike, joka näyttää roolin, ajan ja varatut paikat; jäsen ilmoittautuu napauttamalla sitä. Taulu päivittyy itsestään aina, kun jokin muuttuu. Ryhmässä /board julkaisee uuden kopion alimmaksi. Asetukset > Telegram-botti > Päivitä taulu piirtää sen uudelleen samaan paikkaan.
@@ -52,7 +54,7 @@ Peruminen alle 48 tuntia ennen tehtävää on myöhäinen peruutus. Jäsen, joka
 
 Myyntipiste on verkkosivu ovelle. Se näyttää illan listan: crew’n, jäsenet, joilla on vapaalippu, vieraat ja Holvin lipunostajat. Merkitset ihmiset sisään ja ulos ja kerrot, montako ihmistä he toivat mukanaan. Lisää myy lipun ovella, lisää vieraan tai lisää jäsenen, joka käyttää vapaalipun tai ottaa jonkin illan tehtävistä.
 
-Kun olet ilmoittautunut illan Organize-tehtävään, saat myyntipisteen linkin 30 minuuttia ennen illan ensimmäistä tehtävää, ja mukana on painike Ylläpito-välilehdelle. Tervetulotiimi (roolin, jossa on valittuna "Opens the sales desk", tehtävissä olevat) saa sen, kun heidät on merkitty saapuneiksi. /door ja sitten 💳 Myyntipiste lähettää uuden linkin milloin vain. /door-komennossa on painikkeet ovilistalle (kenellä on lippu) ja vieraslistalle.
+Kun olet ilmoittautunut illan Organize-tehtävään, saat myyntipisteen linkin 30 minuuttia ennen illan ensimmäistä tehtävää, ja mukana on painike Ylläpito-välilehdelle. Tervetulotiimi (roolin, jossa on valittuna "Avaa myyntipisteen", tehtävissä olevat) saa sen, kun heidät on merkitty saapuneiksi. /door ja sitten 💳 Myyntipiste lähettää uuden linkin milloin vain. /door-komennossa on painikkeet ovilistalle (kenellä on lippu) ja vieraslistalle.
 
 Holvin lipunostajat: valitse kohdassa EventCrew > Läsnäolo päivä ja liitä nimet, yksi per rivi, kohtaan "Holvin lipunostajat". Listalla jo oleva nimi ohitetaan.
 

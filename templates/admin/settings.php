@@ -1518,10 +1518,10 @@ if (! defined('ABSPATH')) {
                         <?php esc_html_e('In emails the sign-off is centred under the message: the first line in italics, the next lines in gold. One line is split after its first comma, so “With love, the crew” becomes two lines.', 'eventcrew'); ?>
                     </p>
                     <p class="description">
-                        <?php esc_html_e('How your crew signs off. It closes every notification email, and the Telegram messages that go out to everyone — the open-task call, the reminders and the “a spot just opened” notice. Leave it blank for no sign-off.', 'eventcrew'); ?>
+                        <?php esc_html_e('How your crew signs off. It closes every notification email, and every Telegram message the person did not just ask for: reminders, calls, and news about their tasks, standing or access. Leave it blank for no sign-off.', 'eventcrew'); ?>
                     </p>
                     <p class="description">
-                        <?php esc_html_e('Deliberately not added to messages that answer a command, where the person is mid-conversation, nor to the standing notices, where a warm sign-off would land badly.', 'eventcrew'); ?>
+                        <?php esc_html_e('Not added to the bot’s direct reply to something the person just did, such as a sign-up or cancellation confirmation: they are mid-conversation.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>

@@ -132,10 +132,10 @@ final class EventVenueTest extends TestCase
         ];
 
         $this->meta['_eventmesh_venue_name'] = 'Hall A';
-        self::assertStringEndsWith("See you there!\n📍 Hall A", MessageTemplates::body('reminder_dm', $context));
+        self::assertStringEndsWith("See you there!\n📍 Hall A\n\nCan’t make it? Tap Cancel below: there you can also hand the task over to someone else.", MessageTemplates::body('reminder_dm', $context));
 
         unset($this->meta['_eventmesh_venue_name']);
-        self::assertStringEndsWith('See you there!', MessageTemplates::body('reminder_dm', $context));
+        self::assertStringEndsWith("See you there!\n\nCan’t make it? Tap Cancel below: there you can also hand the task over to someone else.", MessageTemplates::body('reminder_dm', $context));
 
         EventVenue::saveDefault('Studio');
         self::assertStringContainsString(

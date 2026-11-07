@@ -110,7 +110,8 @@ final class TaskCancelledNotice
 
             $telegram->sendMessage(
                 $chatId,
-                MessageTemplates::body('task_cancelled_dm', $context),
+                // An organizer's doing, so the DM opens and signs off (DmBody).
+                DmBody::frame($person, MessageTemplates::body('task_cancelled_dm', $context)),
                 MessageActions::replyMarkup(MessageActions::of('task_cancelled_dm', $context, $this->mailer))
             );
         });

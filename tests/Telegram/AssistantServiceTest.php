@@ -1346,12 +1346,12 @@ final class AssistantServiceTest extends TelegramTestCase
 
         self::assertSame('Bot chat: Sam wants a human', $this->mails[0]['subject']);
         self::assertMatchesRegularExpression(
-            '/^Sam \(sam@example\.com\) wrote to the bot in a private chat\. Here is that chat, oldest first\.\n\n'
+            '/^Hi Lee,\n\nSam \(sam@example\.com\) wrote to the bot in a private chat\. Here is that chat, oldest first\.\n\n'
             . '\[\d{4}-\d\d-\d\d \d\d:\d\d\] Sam: a message\n\n\[\d{4}-\d\d-\d\d \d\d:\d\d\] Bot: Thanks!/',
             $this->mails[0]['body']
         );
         self::assertSame(
-            ["📣 Test Site\n\nHi Lee,\n\nI emailed you a transcript of my private chat with Sam."],
+            ["💌 Test Site\n\nHi Lee,\n\nI emailed you a transcript of my private chat with Sam."],
             $this->textsTo(501)
         );
     }
@@ -1372,8 +1372,8 @@ final class AssistantServiceTest extends TelegramTestCase
         $this->ask(self::privateMessage('a message'));
 
         self::assertSame('Chat with Sam', $this->mails[0]['subject']);
-        self::assertMatchesRegularExpression('/^Sam <sam@example\.com>\n\n\[[^]]+\] Sam: a message/', $this->mails[0]['body']);
-        self::assertSame(["📣 Test Site\n\nHi Lee,\n\nCheck your email about Sam."], $this->textsTo(501));
+        self::assertMatchesRegularExpression('/^Hi Lee,\n\nSam <sam@example\.com>\n\n\[[^]]+\] Sam: a message/', $this->mails[0]['body']);
+        self::assertSame(["💌 Test Site\n\nHi Lee,\n\nCheck your email about Sam."], $this->textsTo(501));
     }
 
     public function testAtMostOneForwardPerPersonPerHour(): void

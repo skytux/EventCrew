@@ -230,6 +230,7 @@ final class RoleTaskService
             $organizer->id,
             MarkedBy::PERSON
         );
+        $this->notifier->removedByOrganizer($person, $task);
         $this->notifier->ticketTasksChanged($person, $task->taskDate);
 
         return ['code' => self::REMOVED, 'person' => $person];

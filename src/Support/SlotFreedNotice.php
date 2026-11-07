@@ -427,7 +427,7 @@ final class SlotFreedNotice
         if ($prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK)) {
             $this->telegram->sendMessage(
                 (int) $person->telegramChatId,
-                DmBody::frame($person, MessageAiText::body('slot_freed_dm', $context, $task->eventPostId), true),
+                DmBody::frame($person, MessageAiText::body('slot_freed_dm', $context, $task->eventPostId)),
                 MessageActions::replyMarkup(MessageActions::of('slot_freed_dm', $context, $this->mailer))
             );
             $sent = true;

@@ -132,15 +132,15 @@ final class MessageTemplatesTest extends TestCase
             self::assertArrayHasKey('{organization}', $template->placeholderList(), $template->id);
         }
 
-        self::assertSame('You are now an organizer of {organization}.', MessageTemplates::find('access_organizer')->defaultSubject());
-        self::assertSame('You are now an organizer of Test Site.', MessageTemplates::subject('access_organizer'));
+        self::assertSame('You are now an organizer of {organization}', MessageTemplates::find('access_organizer')->defaultSubject());
+        self::assertSame('You are now an organizer of Test Site', MessageTemplates::subject('access_organizer'));
 
         $this->options[Organization::OPTION] = 'Ecstatic Dance Helsinki';
 
-        self::assertSame('You are now an organizer of Ecstatic Dance Helsinki.', MessageTemplates::subject('access_organizer'));
+        self::assertSame('You are now an organizer of Ecstatic Dance Helsinki', MessageTemplates::subject('access_organizer'));
         self::assertStringStartsWith('⭐ You’re now an organizer of Ecstatic Dance Helsinki. ', MessageTemplates::body('access_organizer_dm'));
         self::assertSame(
-            'Olet nyt järjestäjä: Ecstatic Dance Helsinki.',
+            'Olet nyt järjestäjä: Ecstatic Dance Helsinki',
             Language::run(Language::FINNISH, static fn (): string => MessageTemplates::subject('access_organizer'))
         );
     }
@@ -154,7 +154,7 @@ final class MessageTemplatesTest extends TestCase
         );
         self::assertSame(
             "Hi Anna,\n\nAn organizer has given you 2 free-entry credits. You can spend them on upcoming"
-                . ' events — tap Get your free ticket below.',
+                . ' events — tap 🎟 Free-entry ticket below.',
             MessageTemplates::body('credit_granted', ['person' => $this->person(), 'credits' => 2])
         );
         self::assertStringContainsString(
@@ -188,12 +188,12 @@ final class MessageTemplatesTest extends TestCase
         );
         self::assertSame(
             "Hi Anna,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event —"
-                . ' tap Get your free ticket below.',
+                . ' tap 🎟 Free-entry ticket below.',
             MessageTemplates::body('credit_granted', $bot)
         );
         self::assertSame(
             "Hei Anna,\n\njärjestäjä antoi sinulle 3 vapaalippua. Voit käyttää ne tuleviin tapahtumiin —"
-                . ' napauta alta Hae ilmainen lippusi.',
+                . ' napauta alta 🎟 Vapaalippu.',
             Language::run(
                 Language::FINNISH,
                 static fn (): string => MessageTemplates::body('credit_granted', ['credits' => 3] + $bot)

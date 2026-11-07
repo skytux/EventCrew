@@ -57,11 +57,11 @@ final class ReminderDescriptionTest extends TestCase
     public function testTheBuiltInTextsHaveTheDescriptionAfterTheWhenLine(): void
     {
         self::assertSame(
-            "Hi {name},\n\nJust a reminder that you're on {role} at {event}, {when}.\n{venue}\n\n{description}\n\n{event_description}\n\n{cancel_help}",
+            "Hi {name},\n\nJust a reminder that you’re on {role} at {event}, {when}.\n{venue}\n\n{description}\n\n{event_description}\n\n{cancel_help}",
             MessageTemplates::find('reminder')->defaultBody()
         );
         self::assertSame(
-            "⏰ Reminder: you’re on {role} at {event}, {when}. See you there!\n{venue}\n\n{description}\n\n{event_description}",
+            "⏰ Reminder: you’re on {role} at {event}, {when}. See you there!\n{venue}\n\n{description}\n\n{event_description}\n\nCan’t make it? Tap Cancel below: there you can also hand the task over to someone else.",
             MessageTemplates::find('reminder_dm')->defaultBody()
         );
 
@@ -69,24 +69,24 @@ final class ReminderDescriptionTest extends TestCase
             Language::FINNISH,
             static fn (): string => MessageTemplates::find('reminder_dm')->defaultBody()
         );
-        self::assertStringEndsWith("\n\n{description}\n\n{event_description}", $finnish, 'the Finnish text keeps its translation');
+        self::assertStringEndsWith("\n\n{description}\n\n{event_description}\n\nEtkö pääsekään? Napauta alta Peru: siellä voit myös antaa tehtävän jollekulle toiselle.", $finnish, 'the Finnish text keeps its translation');
         self::assertArrayHasKey('{description}', MessageTemplates::find('reminder')->placeholderList());
     }
 
     public function testThePlaceholderIsFilled(): void
     {
         $body = MessageTemplates::body('reminder', $this->context("Bring a torch.\nMeet at the back."));
-        self::assertStringContainsString(".\n\nBring a torch.\nMeet at the back.\n\nCan't make it?", $body);
+        self::assertStringContainsString(".\n\nBring a torch.\nMeet at the back.\n\nCan’t make it?", $body);
 
         $dm = MessageTemplates::body('reminder_dm', $this->context('Bring a torch.'));
-        self::assertStringEndsWith("See you there!\n\nBring a torch.", $dm);
+        self::assertStringEndsWith("See you there!\n\nBring a torch.\n\nCan’t make it? Tap Cancel below: there you can also hand the task over to someone else.", $dm);
 
         // With no description in the context, the task's own comes first,
         // then its role's.
         self::assertSame('Own text.', RoleGuide::taskDescription($this->task('Own text.')));
         self::assertStringContainsString('LED candles', RoleGuide::taskDescription($this->task()));
         self::assertStringEndsWith(
-            "See you there!\n\nOwn text.",
+            "See you there!\n\nOwn text.\n\nCan’t make it? Tap Cancel below: there you can also hand the task over to someone else.",
             MessageTemplates::body('reminder_dm', ['task' => $this->task('Own text.')])
         );
     }
@@ -96,10 +96,10 @@ final class ReminderDescriptionTest extends TestCase
         $body = MessageTemplates::body('reminder', $this->context(''));
         self::assertStringNotContainsString("\n\n\n", $body);
         self::assertStringNotContainsString('{description}', $body);
-        self::assertMatchesRegularExpression("/08:00\\.\n\nCan't make it\\?/", $body);
+        self::assertMatchesRegularExpression("/08:00\\.\n\nCan’t make it\\?/", $body);
 
         $dm = MessageTemplates::body('reminder_dm', $this->context(''));
-        self::assertStringEndsWith('See you there!', $dm);
+        self::assertStringEndsWith("See you there!\n\nCan’t make it? Tap Cancel below: there you can also hand the task over to someone else.", $dm);
 
         $template = MessageTemplates::find('reminder_dm');
         self::assertSame("A\n\nB", $template->fill("A\n\n{description}\n\nB", ['description' => '']));

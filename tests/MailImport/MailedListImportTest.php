@@ -462,7 +462,7 @@ final class MailedListImportTest extends TestCase
 
         self::assertSame('Guests added for Sat 1 Aug', $this->mails[0]['subject']);
         self::assertStringStartsWith(
-            "4 guests were added to the guest list for Sat 1 Aug. They bring 3 plus-ones in total.\n\nThe list was sent from owner@example.com." . $roster,
+            "Hi,\n\n4 guests were added to the guest list for Sat 1 Aug. They bring 3 plus-ones in total.\n\nThe list was sent from owner@example.com." . $roster,
             $this->mails[0]['body']
         );
 
@@ -475,7 +475,7 @@ final class MailedListImportTest extends TestCase
         $this->controller()->importList('owner@example.com', "anna +2\n Bo \nBO +1\n", '<t2@example.com>');
 
         self::assertStringStartsWith(
-            "1 guests were added to the guest list for Sat 1 Aug.\n\n2 names were skipped because they were already on the guest list.\n\nThe list was sent from owner@example.com." . $roster,
+            "Hi,\n\n1 guests were added to the guest list for Sat 1 Aug.\n\n2 names were skipped because they were already on the guest list.\n\nThe list was sent from owner@example.com." . $roster,
             $this->mails[0]['body']
         );
     }
@@ -491,7 +491,7 @@ final class MailedListImportTest extends TestCase
 
         self::assertSame('Ticket buyers imported for Sat 1 Aug', $this->mails[0]['subject']);
         self::assertMatchesRegularExpression(
-            '/^3 tickets were imported for Sat 1 Aug\.\n\nThe ticket emails go out at \d\d:\d\d\. To stop them, press "Cancel sending" on the Roster page before then\.\n\nThe list was sent from owner@example\.com\.\n\nOpen the Roster page: /',
+            '/^Hi Owner,\n\n3 tickets were imported for Sat 1 Aug\.\n\nThe ticket emails go out at \d\d:\d\d\. To stop them, press "Cancel sending" on the Roster page before then\.\n\nThe list was sent from owner@example\.com\.\n\nOpen the Roster page: /',
             $this->mails[0]['body']
         );
 
@@ -503,7 +503,7 @@ final class MailedListImportTest extends TestCase
 
         self::assertSame('The ticket list could not be imported', $this->mails[0]['subject']);
         self::assertStringStartsWith(
-            "The columns of the attached file do not match any ticket file format in Settings → Email. Send the shop’s export as it is, or add a format with these columns there. The columns in the file are: Tilaus, Maa\n\nNothing was added to the door list.\n\nThe list was sent from owner@example.com.\n\n",
+            "Hi Owner,\n\nThe columns of the attached file do not match any ticket file format in Settings → Email. Send the shop’s export as it is, or add a format with these columns there. The columns in the file are: Tilaus, Maa\n\nNothing was added to the door list.\n\nThe list was sent from owner@example.com.\n\n",
             $this->mails[0]['body']
         );
     }
@@ -528,7 +528,7 @@ final class MailedListImportTest extends TestCase
         self::assertSame('1 guests on Sat 1 Aug', $this->mails[0]['subject']);
         // The empty {skipped} leaves no empty lines behind.
         self::assertStringStartsWith(
-            "Added 1.\n\nThey bring 2 plus-ones in total.\n\nFrom owner@example.com.\n\nOpen the Roster page: ",
+            "Hi,\n\nAdded 1.\n\nThey bring 2 plus-ones in total.\n\nFrom owner@example.com.\n\nOpen the Roster page: ",
             $this->mails[0]['body']
         );
 
@@ -539,7 +539,7 @@ final class MailedListImportTest extends TestCase
         $this->controller()->importList('owner@example.com', '', '<t6@example.com>', ['filename' => 'list.csv', 'bytes' => "Tilaus;Maa\n1;FI\n"]);
 
         self::assertSame('Import failed', $this->mails[0]['subject']);
-        self::assertStringStartsWith('No luck: The columns of the attached file', $this->mails[0]['body']);
+        self::assertStringStartsWith("Hi Owner,\n\nNo luck: The columns of the attached file", $this->mails[0]['body']);
     }
 
     // --- the bot messages --------------------------------------------------
@@ -627,6 +627,16 @@ final class MailedListImportTest extends TestCase
         $this->importTicketFile([self::twoOrganizers()[0]]);
 
         self::assertStringContainsString('t.me/crewbot?start=door-20260801', $this->mails[0]['body']);
+    }
+
+    public function testTheTicketsDmOffersTheSameDoorListLinkAsTheEmail(): void
+    {
+        $this->options['eventcrew_telegram_bot_username'] = 'crewbot';
+        $this->importTicketFile(self::organizersWithChats());
+
+        $links = $this->dms[0]['reply_markup']['inline_keyboard'][1];
+        self::assertSame(['Open the Roster page', 'Door list'], array_column($links, 'text'));
+        self::assertStringContainsString('t.me/crewbot?start=door-20260801', $links[1]['url']);
     }
 
     public function testTheMessageIsInTheOrganizersLanguage(): void

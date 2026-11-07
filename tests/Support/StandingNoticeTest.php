@@ -17,6 +17,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\Signature;
 use EventCrew\Support\StandingNotice;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
@@ -36,16 +37,23 @@ final class StandingNoticeTest extends TestCase
     /** @var array<int, array<string, mixed>> */
     private array $sends = [];
 
+    private string $signature = '';
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->mails = [];
         $this->sends = [];
+        $this->signature = '';
 
         Functions\when('get_option')->alias(
-            fn (string $name): mixed => TelegramClient::TOKEN_OPTION === $name ? 'BOT:TOKEN'
-                : ('eventcrew_link_secret' === $name ? 'test-secret' : false)
+            fn (string $name): mixed => match ($name) {
+                TelegramClient::TOKEN_OPTION => 'BOT:TOKEN',
+                'eventcrew_link_secret' => 'test-secret',
+                Signature::OPTION => '' !== $this->signature ? $this->signature : false,
+                default => false,
+            }
         );
         Functions\when('get_the_title')->justReturn('');
         Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
@@ -398,10 +406,14 @@ final class StandingNoticeTest extends TestCase
             $row(9, 'no_show', '2026-07-03'),
             $row(8, 'completed', '2026-06-26'),
         ];
+        $this->signature = 'With love, the crew';
 
         self::assertSame(1, $this->service()->sendDue(25));
 
         $dm = (string) $this->sends[0]['text'];
+        // Sent unasked by the scan: framed and signed (Owner, 2026-11-07).
+        self::assertStringStartsWith('💌 ', $dm);
+        self::assertStringEndsWith("\n\nWith love, the crew", $dm);
         self::assertStringContainsString('Thank you for Decorate at Party', $dm);
         self::assertStringContainsString('│', $dm);
         self::assertMatchesRegularExpression('/Standing \d+% → \d+%\./', $dm);

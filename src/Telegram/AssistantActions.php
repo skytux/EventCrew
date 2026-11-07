@@ -143,6 +143,39 @@ final class AssistantActions
                     . ' organizer to confirm first',
                 false
             );
+            $list[] = self::entry(
+                '/addtask [date] <role> ; time <start>-<end> ; places <n> ; notes <text> ; plus <n>',
+                'add one task to the next event (or to [date]); <role> is a role name (Host, Door, ...); every part'
+                    . ' after the role is optional: without a time it starts when the event starts, places default'
+                    . ' to the role\'s, plus is how many guests each person may bring. The bot asks to confirm first',
+                false
+            );
+            $list[] = self::entry(
+                '/edittask [date] <task> ; <field> <value> [; <field> <value>]',
+                'change a task of the next event (or of [date]); fields: time 21:00-02:00 (or start 21:00, end'
+                    . ' 02:00), places <n> (people needed; 0 takes it off the boards), notes <text> (notes - clears'
+                    . ' them), plus <n> (guests each person may bring). The bot warns when fewer places than people'
+                    . ' signed up and asks to confirm first',
+                false
+            );
+            $list[] = self::entry(
+                '/deletetask [date] <task>',
+                'delete (cancel) a task of the next event (or of [date]); everyone on it is taken off and gets an'
+                    . ' email. The bot asks to confirm first',
+                false
+            );
+            $list[] = self::entry(
+                '/maketasks [date]',
+                'create the next event\'s tasks (or those of the event on [date]) from the roles, one per role;'
+                    . ' roles that already have a task are skipped. The bot asks to confirm first',
+                false
+            );
+            $list[] = self::entry(
+                '/mailtasks',
+                'send the open-task email now, for the next night with open places, to everyone who gets it and'
+                    . ' has not had it yet. The bot asks to confirm first',
+                false
+            );
             $list[] = self::entry('/people', 'the people buttons: credits, roles, who may hold each role');
             $list[] = self::entry('menu:gift', 'give someone credits (the bot then asks who)');
             $list[] = self::entry('menu:roles', 'give or take roles, organizers and passes (the bot then asks who)');
@@ -313,6 +346,13 @@ final class AssistantActions
             case '/assign':
             case '/unassign':
                 return self::validateAssign($head, $rest, $audience, $today);
+
+            case '/addtask':
+            case '/edittask':
+            case '/deletetask':
+            case '/maketasks':
+            case '/mailtasks':
+                return self::validateTaskCommand($head, $rest, $audience, $today);
         }
 
         return self::refuse(self::ERROR_UNKNOWN);
@@ -346,6 +386,45 @@ final class AssistantActions
         }
 
         $line = $head . ' ' . $whole;
+
+        return self::accept($line, false, self::RUN_MESSAGE, $line);
+    }
+
+    /**
+     * The task commands (/addtask, /edittask, /deletetask, /maketasks,
+     * /mailtasks): organizers only. Only the shape is checked here; the
+     * command itself finds the task, role or event, asks when unclear, and
+     * confirms with ✅ / ✖️.
+     *
+     * @param array{organizer: bool, welcomeCrew: bool, verified: bool} $audience
+     * @return array{ok: bool, error: string, action: string, confirm: bool, run: string, payload: string}
+     */
+    private static function validateTaskCommand(string $head, string $rest, array $audience, string $today): array
+    {
+        if (! $audience['organizer']) {
+            return self::refuse(self::ERROR_NOT_PERMITTED);
+        }
+
+        $parts = preg_split('/\s+/u', $rest, 2) ?: [];
+        $hasDate = '' !== Dates::parseUserDate((string) ($parts[0] ?? ''), $today);
+        $body = $hasDate ? trim((string) ($parts[1] ?? '')) : $rest;
+        $sides = explode(';', $body, 2);
+        $name = trim($sides[0]);
+        $fields = trim((string) ($sides[1] ?? ''));
+
+        $ok = match ($head) {
+            '/mailtasks' => '' === $rest,
+            '/maketasks' => '' === $rest || ($hasDate && '' === $body),
+            '/deletetask' => '' !== $name && 1 === count($sides),
+            '/edittask' => '' !== $name && '' !== $fields,
+            default => '' !== $name,
+        };
+
+        if (! $ok) {
+            return self::refuse(self::ERROR_INVALID);
+        }
+
+        $line = trim($head . ' ' . $rest);
 
         return self::accept($line, false, self::RUN_MESSAGE, $line);
     }

@@ -136,8 +136,7 @@ final class StandingNotice
         ];
 
         if ($prefs->dmAllowed($person, NotificationPreferences::STANDING)) {
-            // Framed but not signed: a warm sign-off under "you were marked as a
-            // no-show" would read as sarcasm; the thank-you ends with its own.
+            // Framed and signed like every DM the scan sends unasked (DmBody).
             $this->telegram->sendMessage(
                 $person->telegramChatId,
                 DmBody::frame($person, MessageAiText::body($kind . '_dm', $context, $task->eventPostId)),
@@ -173,12 +172,7 @@ final class StandingNotice
             return '';
         }
 
-        return sprintf(
-            /* translators: 1: standing level and score, 2: number of free-entry credits */
-            __('Your standing: %1$s · %2$d free-entry credits.', 'eventcrew'),
-            $standing->ratedSummary(),
-            $standing->creditBalance
-        );
+        return $standing->line();
     }
 
     /**

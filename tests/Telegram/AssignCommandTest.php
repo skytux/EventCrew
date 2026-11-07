@@ -309,6 +309,7 @@ final class AssignCommandTest extends TelegramTestCase
     public function testAnOrganizerTakesAMemberOffATask(): void
     {
         $kim = $this->person(2, 'Kim Lee');
+        $this->options[\EventCrew\Support\Signature::OPTION] = 'The crew';
 
         $this->wpdb->nextRows[] = $this->organizer();
         $this->wpdb->nextResults[] = [$this->task(5, 'decorate')];
@@ -335,6 +336,33 @@ final class AssignCommandTest extends TelegramTestCase
         self::assertSame('cancelled', $this->wpdb->updates[0]['data']['status']);
         self::assertSame(1, $this->wpdb->updates[0]['data']['changed_by']);
         self::assertStringStartsWith('✅ Kim Lee · Decorate', $this->lastText());
+
+        // Kim hears it from the bot, framed like the other DMs that arrive.
+        $toKim = array_values(array_filter(
+            $this->telegramCalls,
+            static fn (array $call): bool => 'sendMessage' === $call['method'] && 602 === (int) ($call['body']['chat_id'] ?? 0)
+        ));
+        self::assertCount(1, $toKim);
+        $text = $toKim[0]['body']['text'];
+        self::assertStringContainsString("Test Site\n\nHi Kim,\n\nAn organizer took you off Decorate · Sat 25 Jul.\n\nThe crew", $text);
+    }
+
+    public function testNoDmWhenThePersonHasNoTelegram(): void
+    {
+        $kim = ['telegram_user_id' => null, 'telegram_chat_id' => null] + $this->person(2, 'Kim Lee');
+
+        $this->wpdb->nextRows[] = $this->task(5, 'decorate');
+        $this->wpdb->nextRows[] = $kim;
+        $this->wpdb->nextRows[] = ['id' => 50, 'task_id' => 5, 'person_id' => 2, 'status' => 'signed_up'];
+
+        $result = $this->roleTaskService()->removePerson(
+            \EventCrew\Models\Person::fromRow($this->organizer()),
+            5,
+            2
+        );
+
+        self::assertSame('removed', $result['code']);
+        self::assertSame([], array_filter($this->telegramCalls, static fn (array $call): bool => 'sendMessage' === $call['method']));
     }
 
     public function testMatchingForgivesTyposAndPartsOfNames(): void

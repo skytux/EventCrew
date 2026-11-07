@@ -108,7 +108,7 @@ final class RoleNotifierTest extends TelegramTestCase
         $this->notifier()->run();
 
         $button = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'][0][0];
-        self::assertSame('👥 Give them the role', $button['text']);
+        self::assertSame('🏷 Give them the role', $button['text']);
         self::assertSame(PermissionService::whoData(8), $button['callback_data']);
         self::assertStringContainsString('t.me/crewbot?start=who-8', $this->mails[0]['body']);
     }
@@ -300,10 +300,10 @@ final class RoleNotifierTest extends TelegramTestCase
             $this->telegramCalls = [];
             $this->runNotice($kind, $giver);
 
-            self::assertSame("📣 Test Site\n\nHi Owner,\n\n" . $line, $this->lastCallTo('sendMessage')['text'], $line);
+            self::assertSame("💌 Test Site\n\nHi Owner,\n\n" . $line, $this->lastCallTo('sendMessage')['text'], $line);
             self::assertCount(1, $this->mails, $line);
             self::assertSame($subject, $this->mails[0]['subject'], $line);
-            self::assertStringStartsWith($line . "\n\n", $this->mails[0]['body'], $line);
+            self::assertStringStartsWith("Hi Owner,\n\n" . $line . "\n\n", $this->mails[0]['body'], $line);
         }
     }
 
@@ -325,20 +325,20 @@ final class RoleNotifierTest extends TelegramTestCase
         ];
 
         $this->runNotice('given', 'Sam');
-        self::assertSame("📣 Test Site\n\nHi Owner,\n\nJo got Crew leader (Sam).", $this->lastCallTo('sendMessage')['text']);
+        self::assertSame("💌 Test Site\n\nHi Owner,\n\nJo got Crew leader (Sam).", $this->lastCallTo('sendMessage')['text']);
         self::assertSame('New role: Crew leader', $this->mails[0]['subject']);
-        self::assertStringStartsWith("Jo now has Crew leader, from Sam.\n\n", $this->mails[0]['body']);
+        self::assertStringStartsWith("Hi Owner,\n\nJo now has Crew leader, from Sam.\n\n", $this->mails[0]['body']);
 
         $this->mails = [];
         $this->runNotice('organizer', 'Sam');
         self::assertSame('Someone was made an organizer', $this->mails[0]['subject'], 'The subject was not changed.');
-        self::assertStringStartsWith("Jo organizes now.\n\n", $this->mails[0]['body']);
+        self::assertStringStartsWith("Hi Owner,\n\nJo organizes now.\n\n", $this->mails[0]['body']);
         self::assertStringEndsWith('Jo was made an organizer by Sam.', $this->lastCallTo('sendMessage')['text']);
 
         $this->mails = [];
         $this->runNotice('met');
         self::assertStringEndsWith("\n\nJo could be Crew leader.", $this->lastCallTo('sendMessage')['text']);
-        self::assertStringStartsWith('Jo now meets the conditions', $this->mails[0]['body']);
+        self::assertStringStartsWith("Hi Owner,\n\nJo now meets the conditions", $this->mails[0]['body']);
     }
 
     public function testBeingMadeAnOrganizerAgainIsNotAnnounced(): void

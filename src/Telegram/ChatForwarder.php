@@ -8,6 +8,7 @@ use EventCrew\Models\Person;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\DmBody;
+use EventCrew\Support\EmailBody;
 use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
@@ -120,7 +121,7 @@ final class ChatForwarder
                 $organizer->id,
                 $organizer->email,
                 MessageTemplates::subject('chat_forward', $context),
-                MessageTemplates::body('chat_forward', $context)
+                EmailBody::withGreeting($organizer->displayName, MessageTemplates::body('chat_forward', $context))
             )
         ) {
             return false;

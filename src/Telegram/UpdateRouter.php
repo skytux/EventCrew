@@ -69,7 +69,8 @@ final class UpdateRouter
         private readonly ?BuyerListReset $buyerListReset = null,
         private readonly ?NewcomerApproval $newcomers = null,
         private readonly ?PrivateChatGate $gate = null,
-        private readonly ?AssignCommand $assign = null
+        private readonly ?AssignCommand $assign = null,
+        private readonly ?TaskCommand $taskCommand = null
     ) {
     }
 
@@ -217,6 +218,8 @@ final class UpdateRouter
                 $this->newsletter->onCallback($callbackQuery);
             } elseif (null !== $this->assign && str_starts_with($data, AssignCommand::PREFIX)) {
                 $this->assign->onCallback($callbackQuery);
+            } elseif (null !== $this->taskCommand && str_starts_with($data, TaskCommand::PREFIX)) {
+                $this->taskCommand->onCallback($callbackQuery);
             } elseif (null !== $this->say && str_starts_with($data, SayCommand::PREFIX)) {
                 $this->say->onConfirm($callbackQuery);
             } elseif (null !== $this->events && str_starts_with($data, EventsCommand::PREFIX)) {
@@ -471,6 +474,17 @@ final class UpdateRouter
             $this->assign->onCommand($chatId, $fromId, $text, $isPrivate, AssignCommand::REMOVE);
 
             return;
+        }
+
+        // /addtask, /edittask, /deletetask, /maketasks, /mailtasks
+        // (organizers, private chat): the Admin tab's task tools, confirmed
+        // with buttons first.
+        foreach (null === $this->taskCommand ? [] : TaskCommand::MODES as $mode) {
+            if ($this->isCommand($text, $mode)) {
+                $this->taskCommand->onCommand($chatId, $fromId, $text, $isPrivate, $mode);
+
+                return;
+            }
         }
 
         // /say (organizers, private chat): a message for the group, shown

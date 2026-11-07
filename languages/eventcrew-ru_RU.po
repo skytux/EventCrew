@@ -94,8 +94,8 @@ msgstr "%1$s (баллов: %2$d)"
 
 #. translators: 1: the person's name, 2: their email
 #: src/Support/MessageTemplates.php:2322
-msgid "%1$s (%2$s) signed in for the first time and wants to join the crew. Press OK or No in the Admin tab of the crew page."
-msgstr "%1$s (%2$s) вошёл(вошла) впервые и хочет присоединиться к команде. Нажми OK или «Нет» на вкладке «Админ» страницы команды."
+msgid "%1$s (%2$s) signed in for the first time and wants to join the crew. Press OK or No in the Admin tab of the Crew app."
+msgstr "%1$s (%2$s) вошёл(вошла) впервые и хочет присоединиться к команде. Нажми OK или «Нет» на вкладке «Админ» в приложении Crew."
 
 #. translators: 1: the person's name, 2: their email address
 #: src/Support/MessageTemplates.php:2285
@@ -200,8 +200,8 @@ msgstr "%1$s: отписались — %2$d"
 
 #. translators: 1: cancellation kind, 2: role, 3: event, 4: standing note
 #: src/Support/MessageTemplates.php:1582
-msgid "%1$s: %2$s at %3$s. %4$s"
-msgstr "%1$s: %2$s на %3$s. %4$s"
+msgid "%1$s: %2$s at %3$s, %4$s. Your ticket is now disabled. %5$s"
+msgstr "%1$s: %2$s на %3$s, %4$s. Твой билет теперь недействителен. %5$s"
 
 #: templates/public/door.php:92
 msgid "%1$s: already used · %2$s"
@@ -262,8 +262,11 @@ msgstr[2] "%d отметок не сохранено, потому что они
 
 #. translators: %d: number of names skipped
 #: src/Support/MessageTemplates.php:2118
-msgid "%d names were skipped because they were already on the guest list."
-msgstr "Пропущено имён, которые уже были в списке гостей: %d."
+msgid "%d name was skipped because it was already on the guest list."
+msgid_plural "%d names were skipped because they were already on the guest list."
+msgstr[0] "Пропущено имён, которые уже были в списке гостей: %d."
+msgstr[1] "Пропущено имён, которые уже были в списке гостей: %d."
+msgstr[2] "Пропущено имён, которые уже были в списке гостей: %d."
 
 #. translators: %d: number of people
 #: src/Support/TicketMail.php:1435 src/Telegram/DoorListService.php:167
@@ -328,8 +331,11 @@ msgstr[2] "Удалено %d покупателей билетов."
 
 #. translators: %d: number of tickets skipped
 #: src/Support/MessageTemplates.php:2092
-msgid "%d tickets were skipped because they were already on the list."
-msgstr "Пропущено билетов, которые уже были в списке: %d."
+msgid "%d ticket was skipped because it was already on the list."
+msgid_plural "%d tickets were skipped because they were already on the list."
+msgstr[0] "Пропущено билетов, которые уже были в списке: %d."
+msgstr[1] "Пропущено билетов, которые уже были в списке: %d."
+msgstr[2] "Пропущено билетов, которые уже были в списке: %d."
 
 #: templates/public/door.php:97
 msgid "%d tickets with this code. Mark them arrived one at a time."
@@ -678,10 +684,6 @@ msgstr "Роль с галочкой «Только люди с этой рол�
 #: src/Admin/RosterPage.php:766
 msgid "A send is already waiting. It goes out at %s."
 msgstr "Отправка уже ждёт. Она уйдёт в %s."
-
-#: src/Support/MessageTemplates.php:565
-msgid "The AI’s short text about the event from the group board (at most two sentences), in the reader’s language; never the event’s own description. On a line of its own; the line goes when there is no such text in that language."
-msgstr "Короткий текст ИИ о мероприятии с доски группы (не более двух предложений), на языке читателя; никогда не собственное описание мероприятия. На отдельной строке; строка исчезает, если такого текста на этом языке нет."
 
 #: src/Support/MessageTemplates.php:1189
 msgid "A space and the sentence saying until how many hours before the task a cancellation does not affect the standing (Settings). Empty when that number is 0."
@@ -1390,12 +1392,12 @@ msgid "Buy a ticket"
 msgstr "Купить билет"
 
 #: src/Support/MessageTemplates.php:1251
-msgid "Can't make it? Tap Cancel below. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
+msgid "Can’t make it? Tap Cancel below. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
 msgstr "Не получается прийти? Нажми «Отмена» ниже. Или найди того, кто возьмёт задачу: он отправляет боту /me и нажимает 🔁 Взять задачу, а ты соглашаешься."
 
 #. translators: %s: link to the crew page
 #: src/Support/MessageTemplates.php:1254
-msgid "Can't make it? Tap Cancel on your task in the Board tab of the crew page (%s)."
+msgid "Can’t make it? Tap Cancel on your task in the Board tab of the crew page (%s)."
 msgstr "Не получается прийти? Нажми «Отмена» у своей задачи на вкладке «Доска» страницы команды (%s)."
 
 #: src/Telegram/AssistantService.php:525 src/Telegram/BuyerListReset.php:155
@@ -2000,8 +2002,8 @@ msgid "Deleting erases your account and history for good. This cannot be undone.
 msgstr "Удаление стирает твой аккаунт и историю навсегда. Это нельзя отменить."
 
 #: templates/admin/settings.php:1479
-msgid "Deliberately not added to messages that answer a command, where the person is mid-conversation, nor to the standing notices, where a warm sign-off would land badly."
-msgstr "Намеренно не добавляется к сообщениям, которые отвечают на команду, когда человек посреди разговора, и к уведомлениям о статусе, где тёплая подпись была бы неуместна."
+msgid "Not added to the bot’s direct reply to something the person just did, such as a sign-up or cancellation confirmation: they are mid-conversation."
+msgstr "Не добавляется к прямому ответу бота на то, что человек только что сделал, например к подтверждению записи или отмены: он в этот момент посреди разговора."
 
 #: src/Admin/BotProfileSettings.php:367 templates/admin/settings.php:384
 #: templates/admin/settings.php:1974 templates/public/signup.php:1888
@@ -2077,11 +2079,6 @@ msgstr "Список на входе"
 #: src/Support/MessageTemplates.php:2440
 msgid "Door list for %1$s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? %2$s"
 msgstr "Список на входе на %1$s: открой его кнопкой ниже. Ссылка срабатывает один раз, на одном устройстве; она держит это устройство в системе до 06:00. Пересылать её можно. Нужна ещё одна? %2$s"
-
-#. translators: %s: event day, e.g. "Sat 1 Aug"
-#: src/Support/MessageTemplates.php:2447
-msgid "Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine."
-msgstr "Список на входе на %s: открой его кнопкой ниже. Ссылка срабатывает один раз, на одном устройстве; она держит это устройство в системе до 06:00. Пересылать её можно."
 
 #: src/Web/DoorController.php:221
 msgid "Door ticket added and checked in."
@@ -2672,10 +2669,6 @@ msgstr "Получить мой билет"
 msgid "Get the coming events by email"
 msgstr "Получать ближайшие события по email"
 
-#: src/Support/MessageTemplates.php:203
-msgid "Get your free ticket"
-msgstr "Получи бесплатный билет"
-
 #: templates/admin/tasks.php:59
 msgid "Getting started"
 msgstr "С чего начать"
@@ -2901,12 +2894,7 @@ msgstr ""
 
 #. translators: 1: name, 2: role, 3: event, 4: date/time, 5: how to cancel
 #: src/Support/MessageTemplates.php:1281
-msgid ""
-"Hi %1$s,\n"
-"\n"
-"Just a reminder that you're on %2$s at %3$s, %4$s.\n"
-"\n"
-"%5$s"
+msgid "Hi %1$s,\n\nJust a reminder that you’re on %2$s at %3$s, %4$s.\n\n%5$s"
 msgstr "Привет, %1$s!\n\nНапоминаем: ты на задаче %2$s в %3$s, %4$s.\n\n%5$s"
 
 #. translators: 1: name, 2: open-task list grouped by date, 3: personal recap
@@ -2934,22 +2922,8 @@ msgstr ""
 
 #. translators: 1: name, 2: role, 3: event, 4: standing note, 5: standing line
 #: src/Support/MessageTemplates.php:1562
-msgid ""
-"Hi %1$s,\n"
-"\n"
-"You've cancelled %2$s at %3$s, and your ticket is now disabled.\n"
-"\n"
-"%4$s\n"
-"\n"
-"%5$s"
-msgstr ""
-"Привет, %1$s!\n"
-"\n"
-"Ты отменил(а) %2$s на %3$s, и твой билет теперь недействителен.\n"
-"\n"
-"%4$s\n"
-"\n"
-"%5$s"
+msgid "Hi %1$s,\n\nYou’ve cancelled %2$s at %3$s, %4$s, and your ticket is now disabled.\n\n%5$s\n\n%6$s"
+msgstr "Привет, %1$s!\n\nТы отменил(а) %2$s на %3$s, %4$s, и твой билет теперь недействителен.\n\n%5$s\n\n%6$s"
 
 #: src/Support/NewsletterLayout.php:192
 msgid "Hi %s!"
@@ -3112,8 +3086,8 @@ msgid "How to get the free ticket: in the bot or the Crew app, or, for a person 
 msgstr "Как получить бесплатный билет: в боте или в приложении Crew, или, для человека без чата в Telegram, на странице команды, со ссылкой на неё."
 
 #: templates/admin/settings.php:1476
-msgid "How your crew signs off. It closes every notification email, and the Telegram messages that go out to everyone — the open-task call, the reminders and the “a spot just opened” notice. Leave it blank for no sign-off."
-msgstr "Как прощается твоя команда. Эта подпись завершает каждое письмо-уведомление и сообщения в Telegram, которые уходят всем, — призыв на открытые задачи, напоминания и уведомление «только что освободилось место». Оставь пустым, чтобы без подписи."
+msgid "How your crew signs off. It closes every notification email, and every Telegram message the person did not just ask for: reminders, calls, and news about their tasks, standing or access. Leave it blank for no sign-off."
+msgstr "Как ваша команда подписывается. Подпись завершает каждое письмо-уведомление и каждое сообщение в Telegram, о котором человек сам только что не просил: напоминания, призывы и новости о его задачах, надёжности или правах. Оставьте пустым, чтобы не подписываться."
 
 #: templates/public/signup.php:379
 msgid "How your score works"
@@ -4571,11 +4545,6 @@ msgstr "Открыто сейчас:"
 #: templates/public/door.php:80
 msgid "Open on other device"
 msgstr "Открыть на другом устройстве"
-
-#: src/Support/MessageTemplates.php:1056 src/Support/MessageTemplates.php:1075
-#: src/Support/WelcomeSender.php:364
-msgid "Open our group in Telegram"
-msgstr "Открыть нашу группу в Telegram"
 
 #: src/Support/WelcomeSender.php:430 src/Telegram/MenuButtons.php:132
 msgid "Open tasks"
@@ -7875,8 +7844,8 @@ msgid "The team said OK to a newcomer (email)"
 msgstr "Команда сказала OK новичку (email)"
 
 #: src/Support/MessageTemplates.php:1901
-msgid "The team said OK. You can now take tasks on the crew page."
-msgstr "Команда сказала OK. Теперь ты можешь брать задачи на странице команды."
+msgid "The team said OK. You can now take tasks in the Crew app."
+msgstr "Команда сказала OK. Теперь ты можешь брать задачи в приложении Crew."
 
 #: src/Admin/RosterPage.php:725 src/Admin/RosterPage.php:747
 msgid "The test email could not be sent. Check the site’s email setup."
@@ -8073,8 +8042,11 @@ msgstr "У человека уже есть бесплатный вход сег
 
 #. translators: %d: total number of plus-ones the added guests bring
 #: src/Support/MessageTemplates.php:2108
-msgid "They bring %d plus-ones in total."
-msgstr "Всего они приводят сопровождающих: %d."
+msgid "They bring %d plus-one in total."
+msgid_plural "They bring %d plus-ones in total."
+msgstr[0] "Всего они приводят сопровождающих: %d."
+msgstr[1] "Всего они приводят сопровождающих: %d."
+msgstr[2] "Всего они приводят сопровождающих: %d."
 
 #: src/Support/DoorDesk.php:1128
 msgid "They could not be signed up for that task."
@@ -9348,12 +9320,12 @@ msgstr "Ты не вошёл в этом браузере. Вернись в б�
 
 #. translators: %s: the organization's name
 #: src/Support/MessageTemplates.php:1920
-msgid "You are now an organizer of %s."
-msgstr "Теперь ты организатор %s."
+msgid "You are now an organizer of %s"
+msgstr "Теперь ты организатор %s"
 
 #: src/Support/MessageTemplates.php:1923
-msgid "You are now an organizer. The crew page has an Admin tab for you, where you manage tasks and people."
-msgstr "Теперь ты организатор. На странице команды для тебя есть вкладка «Админ», где ты управляешь задачами и людьми."
+msgid "You are now an organizer."
+msgstr "Теперь ты организатор."
 
 #: src/Web/NewsletterController.php:624 src/Web/NewsletterController.php:1070
 msgid "You are now subscribed to the next events announcement. Thank you!"
@@ -9368,11 +9340,6 @@ msgstr "Ты организуешь %1$s. Кнопка кассы держит �
 #: src/Support/MessageTemplates.php:2577
 msgid "You are organizing on %s"
 msgstr "Ты организуешь %s"
-
-#. translators: %s: event day, e.g. "Sat 1 Aug"
-#: src/Support/MessageTemplates.php:2452
-msgid "You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks."
-msgstr "Ты организуешь %s. Кнопка кассы держит это устройство в списке на входе до 06:00; ссылка срабатывает один раз. Вкладка «Админ» находится в приложении Crew; войди там, если попросит."
 
 #. translators: %s: the import email address
 #: templates/admin/roster.php:356 templates/public/signup.php:1450
@@ -9506,8 +9473,8 @@ msgstr "Теперь у тебя роль %s, так что ты можешь з
 
 #. translators: %s: role name, such as DJ
 #: src/Support/MessageTemplates.php:1859
-msgid "You now have the role %s. Its tasks are open to you on the crew page, and you can sign up for them."
-msgstr "Теперь у тебя роль %s. Её задачи открыты тебе на странице команды, и ты можешь на них записываться."
+msgid "You now have the role %s. Its tasks are open to you in the Crew app, and you can sign up for them."
+msgstr "Теперь у тебя роль %s. Её задачи открыты тебе в приложении Crew, и ты можешь на них записываться."
 
 #: src/Support/MessageTemplates.php:2537
 msgid ""
@@ -9704,8 +9671,11 @@ msgstr "Твой статус зависит от того, как прошли 
 #. translators: 1: standing level and score, 2: number of free-entry credits
 #: src/Support/ClaimNotifier.php:282 src/Support/MessagePreview.php:160
 #: src/Support/StandingNotice.php:131
-msgid "Your standing: %1$s · %2$d free-entry credits."
-msgstr "Твой статус: %1$s · баллов за бесплатный вход: %2$d."
+msgid "Your standing: %1$s · %2$d free-entry credit."
+msgid_plural "Your standing: %1$s · %2$d free-entry credits."
+msgstr[0] "Твой статус: %1$s · баллов за бесплатный вход: %2$d."
+msgstr[1] "Твой статус: %1$s · баллов за бесплатный вход: %2$d."
+msgstr[2] "Твой статус: %1$s · баллов за бесплатный вход: %2$d."
 
 #. translators: %s: cover's name
 #: src/Support/MessageTemplates.php:2750
@@ -9983,10 +9953,6 @@ msgstr "сообщений на группу"
 msgid "messages per person in a private chat"
 msgstr "сообщений на человека в личном чате"
 
-#: templates/admin/settings.php
-msgid "messages per organizer in a private chat"
-msgstr "сообщений на организатора в личном чате"
-
 #: templates/admin/settings.php:926
 msgid "never"
 msgstr "никогда"
@@ -10070,8 +10036,8 @@ msgid "someone"
 msgstr "кто-то"
 
 #: src/Support/MessageTemplates.php:1441
-msgid "tap Get your free ticket below."
-msgstr "нажми ниже «Получи бесплатный билет»."
+msgid "tap 🎟 Free-entry ticket below."
+msgstr "нажми ниже 🎟 Билет на бесплатный вход."
 
 #: src/Support/PrivacyPolicy.php:310
 msgid "the English original"
@@ -10226,10 +10192,7 @@ msgstr "✅ Пусть забирает"
 
 #. translators: 1: role, 2: event, 3: date/time
 #: src/Support/MessageTemplates.php:1539
-msgid ""
-"✅ Signed up: %1$s at %2$s, %3$s.\n"
-"\n"
-"Show your ticket at the door - it is the first button below."
+msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door – it is the first button below."
 msgstr "✅ Ты записан(а): %1$s в %2$s, %3$s.\n\nПокажи билет на входе — это первая кнопка ниже."
 
 #: src/Support/MessageTemplates.php:1910
@@ -10298,7 +10261,7 @@ msgid "🎟 Your free-entry ticket for %s — show it at the door."
 msgstr "🎟 Твой билет на бесплатный вход на %s — покажи его на входе."
 
 #: src/Support/MessageTemplates.php:1892
-msgid "🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up."
+msgid "🎟 You have a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up."
 msgstr "🎟 У тебя есть одноразовый пропуск, чтобы записаться на следующую задачу, даже пока твой статус низкий. Он расходуется при следующей записи."
 
 #: src/Telegram/RosterService.php:645
@@ -11044,9 +11007,6 @@ msgstr "Извините, срок действия этого билета ис
 msgid "You’re in, welcome!"
 msgstr "Вход отмечен, добро пожаловать!"
 
-msgid "You’re in. Welcome, %s!"
-msgstr "Вход отмечен. Добро пожаловать, %s!"
-
 msgid "Checked in at %s"
 msgstr "Вход в %s"
 
@@ -11190,6 +11150,21 @@ msgstr "Чтобы задать текст только для следующе�
 
 msgid "an administrator"
 msgstr "администратор"
+
+#: src/Support/MessageTemplates.php
+msgid "Can’t make it? Tap Cancel below: there you can also hand the task over to someone else."
+msgstr "Не получается прийти? Нажми «Отмена» ниже: там можно и передать задачу кому-то другому."
+
+#: src/Support/MessageTemplates.php:565
+msgid "The AI’s short text about the event from the group board (at most two sentences), in the reader’s language; never the event’s own description. On a line of its own; the line goes when there is no such text in that language."
+msgstr "Короткий текст ИИ о мероприятии с доски группы (не более двух предложений), на языке читателя; никогда не собственное описание мероприятия. На отдельной строке; строка исчезает, если такого текста на этом языке нет."
+
+#: templates/admin/settings.php
+msgid "messages per organizer in a private chat"
+msgstr "сообщений на организатора в личном чате"
+
+msgid "You’re in. Welcome, %s!"
+msgstr "Вход отмечен. Добро пожаловать, %s!"
 
 #: src/Support/MessageTemplates.php
 msgid "Thank you for being part of the crew and helping make these nights happen."
@@ -11457,3 +11432,119 @@ msgstr "Ничего за несколько минут, даже в спаме?
 
 msgid "✏️ Use another email"
 msgstr "✏️ Другой email"
+
+#: src/Telegram/TaskCommand.php:559
+#. translators: %d: people signed up for the task.
+msgid "%d person is on it. Nobody is taken off."
+msgid_plural "%d people are on it. Nobody is taken off."
+msgstr[0] "На ней %d человек. Никого не снимают."
+msgstr[1] "На ней %d человека. Никого не снимают."
+msgstr[2] "На ней %d человек. Никого не снимают."
+
+#: src/Telegram/TaskCommand.php:539
+#. translators: %d: people signed up for the task.
+msgid "%d person on it is taken off and gets an email."
+msgid_plural "%d people on it are taken off and get an email."
+msgstr[0] "%d человек на ней будет снят и получит письмо."
+msgstr[1] "%d человека на ней будут сняты и получат письмо."
+msgstr[2] "%d человек на ней будут сняты и получат письмо."
+
+#: src/Telegram/HelpService.php:258
+msgid "/edittask task ; places 3 – change a task (also /addtask, /deletetask)"
+msgstr "/edittask задача ; places 3 – изменить задачу (также /addtask, /deletetask)"
+
+#: src/Telegram/HelpService.php:259
+msgid "/maketasks – a night's tasks from the roles; /mailtasks – the open-task email now"
+msgstr "/maketasks – задачи вечера по ролям; /mailtasks – письмо об открытых задачах сейчас"
+
+#: src/Telegram/TaskCommand.php:187
+msgid "Add a task: /addtask role ; time 21:00-23:00 ; places 2\nAlso: notes text, plus 1. A date first picks another night: /addtask 21.11. Host ; time 21:00"
+msgstr "Добавить задачу: /addtask роль ; time 21:00-23:00 ; places 2\nЕщё: notes текст, plus 1. Дата в начале выбирает другой вечер: /addtask 21.11. Host ; time 21:00"
+
+#: src/Telegram/TaskCommand.php:518
+msgid "Add the task %s?"
+msgstr "Добавить задачу %s?"
+
+#: src/Telegram/TaskCommand.php:554
+msgid "Change %s?"
+msgstr "Изменить %s?"
+
+#: src/Telegram/TaskCommand.php:188
+msgid "Change a task: /edittask task ; places 3\nFields: time 21:00-02:00, places, notes, plus. A date first picks another night: /edittask 21.11. Host ; time 22:00"
+msgstr "Изменить задачу: /edittask задача ; places 3\nПоля: time 21:00-02:00, places, notes, plus. Дата в начале выбирает другой вечер: /edittask 21.11. Host ; time 22:00"
+
+#: src/Telegram/TaskCommand.php:772
+#. translators: %s: the part of the command that could not be read.
+msgid "Could not read “%s”. Use time 21:00-23:00, places 2, notes text or plus 1."
+msgstr "Не удалось прочитать «%s». Используй time 21:00-23:00, places 2, notes текст или plus 1."
+
+#: src/Telegram/TaskCommand.php:479
+msgid "Create"
+msgstr "Создать"
+
+#: src/Telegram/TaskCommand.php:190
+msgid "Create a night's tasks from the roles: /maketasks\nA date picks another night: /maketasks 21.11."
+msgstr "Создать задачи вечера по ролям: /maketasks\nДата выбирает другой вечер: /maketasks 21.11."
+
+#: src/Telegram/TaskCommand.php:507
+#. translators: 1: an event name, 2: a short day label, like "Sat 14 Nov".
+msgid "Create the tasks of %1$s (%2$s) from the roles? Roles that already have a task are skipped."
+msgstr "Создать задачи %1$s (%2$s) по ролям? Роли, у которых уже есть задача, пропускаются."
+
+#: src/Telegram/TaskCommand.php:534
+msgid "Delete %s?"
+msgstr "Удалить %s?"
+
+#: src/Telegram/TaskCommand.php:189
+msgid "Delete a task: /deletetask task\nA date first picks another night: /deletetask 21.11. Host"
+msgstr "Удалить задачу: /deletetask задача\nДата в начале выбирает другой вечер: /deletetask 21.11. Host"
+
+#: src/Support/OrganizerGuide.php:131
+msgid "In a private chat with the bot you can do the same: /addtask adds a task, /edittask changes its time, places, notes or plus-ones, /deletetask deletes it, /maketasks creates a night's tasks from the roles, and /mailtasks sends the open-task email now. The bot asks you to confirm first."
+msgstr "В личном чате с ботом можно сделать то же самое: /addtask добавляет задачу, /edittask меняет её время, места, заметки или гостей, /deletetask удаляет её, /maketasks создаёт задачи вечера по ролям, а /mailtasks сразу отправляет письмо об открытых задачах. Бот сначала просит подтверждения."
+
+#: src/Telegram/TaskCommand.php:420
+msgid "No coming event was found."
+msgstr "Ближайшее мероприятие не найдено."
+
+#: src/Telegram/TaskCommand.php:422
+msgid "No event was found on %s."
+msgstr "Мероприятие на %s не найдено."
+
+#: src/Telegram/TaskCommand.php:310
+#. translators: 1: the role name the organizer typed, 2: comma-separated role names.
+msgid "No role called “%1$s”. Roles: %2$s"
+msgstr "Роли «%1$s» нет. Роли: %2$s"
+
+#: src/Telegram/TaskCommand.php:779
+msgid "Only organizers can change tasks."
+msgstr "Менять задачи могут только организаторы."
+
+#: src/Telegram/TaskCommand.php:480
+msgid "Send"
+msgstr "Отправить"
+
+#: src/Telegram/TaskCommand.php:499
+msgid "Send the open-task email now, for the next night with open places? People who already have it are skipped."
+msgstr "Отправить сейчас письмо об открытых задачах на ближайший вечер со свободными местами? Тех, кто его уже получил, пропускаем."
+
+#: src/Telegram/TaskCommand.php:191
+msgid "Send the open-task email now: /mailtasks"
+msgstr "Отправить сейчас письмо об открытых задачах: /mailtasks"
+
+#: src/Telegram/TaskCommand.php:458
+msgid "Which event?"
+msgstr "Какое мероприятие?"
+
+#: src/Telegram/TaskCommand.php:457
+msgid "Which role?"
+msgstr "Какая роль?"
+
+#: src/Telegram/TaskCommand.php:570
+msgid "With 0 places the task is off the boards."
+msgstr "С 0 мест задача не показывается на досках."
+
+#: src/Support/ClaimNotifier.php:265
+#. translators: %s: the task, like "Decorate · Sat 25 Jul 21:00–23:00".
+msgid "An organizer took you off %s."
+msgstr "Организатор снял тебя с задачи %s."

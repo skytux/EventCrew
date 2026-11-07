@@ -43,8 +43,8 @@ msgstr "%1$s · %2$d %%"
 #. translators: 1: cancellation kind, 2: role, 3: event, 4: standing note
 #: src/Support/ClaimNotifier.php:161
 #, php-format
-msgid "%1$s: %2$s at %3$s. %4$s"
-msgstr "%1$s: %2$s, %3$s. %4$s"
+msgid "%1$s: %2$s at %3$s, %4$s. Your ticket is now disabled. %5$s"
+msgstr "%1$s: %2$s, %3$s, %4$s. Lippusi on nyt mitätöity. %5$s"
 
 #. translators: %d: number of free-entry credits
 #: templates/public/signup.php:223
@@ -411,10 +411,6 @@ msgstr[1] "Annoit henkilölle %1$s %2$d vapaalippua — hänellä on nyt %3$d."
 msgid "Get my ticket"
 msgstr "Hae lippuni"
 
-#: src/Support/CreditGrantNotifier.php:75
-msgid "Get your free ticket"
-msgstr "Hae ilmainen lippusi"
-
 #: src/Web/CrewAdminController.php:113 templates/public/signup.php:505
 msgid "Give a credit"
 msgstr "Anna vapaalippu"
@@ -519,22 +515,8 @@ msgstr ""
 
 #: src/Support/ClaimNotifier.php:183
 #, php-format
-msgid ""
-"Hi %1$s,\n"
-"\n"
-"You've cancelled %2$s at %3$s, and your ticket is now disabled.\n"
-"\n"
-"%4$s\n"
-"\n"
-"%5$s"
-msgstr ""
-"Hei %1$s,\n"
-"\n"
-"peruit tehtävän %2$s, %3$s, ja lippusi on nyt mitätöity.\n"
-"\n"
-"%4$s\n"
-"\n"
-"%5$s"
+msgid "Hi %1$s,\n\nYou’ve cancelled %2$s at %3$s, %4$s, and your ticket is now disabled.\n\n%5$s\n\n%6$s"
+msgstr "Hei %1$s,\n\nperuit tehtävän %2$s, %3$s, %4$s, ja lippusi on nyt mitätöity.\n\n%5$s\n\n%6$s"
 
 #. translators: %s: the person's first name
 #: src/Support/DmBody.php:40 src/Support/WelcomeSender.php:250 src/Support/WelcomeSender.php:311
@@ -806,10 +788,6 @@ msgstr "Avaa EventCrew wp-adminissa"
 #: templates/public/door.php:61 templates/public/door.php:249
 msgid "Open on other device"
 msgstr "Avaa toisella laitteella"
-
-#: src/Support/WelcomeSender.php:339 templates/public/signup.php:280
-msgid "Open our group in Telegram"
-msgstr "Avaa ryhmämme Telegramissa"
 
 #: src/Support/WelcomeSender.php:396
 msgid "Open tasks"
@@ -1464,8 +1442,10 @@ msgstr "Luotettavuutesi perustuu siihen, miten menneet tehtäväsi sujuivat:"
 #. translators: 1: standing level and score, 2: number of free-entry credits
 #: src/Support/ClaimNotifier.php:225
 #, php-format
-msgid "Your standing: %1$s · %2$d free-entry credits."
-msgstr "Luotettavuutesi: %1$s · %2$d vapaalippua."
+msgid "Your standing: %1$s · %2$d free-entry credit."
+msgid_plural "Your standing: %1$s · %2$d free-entry credits."
+msgstr[0] "Luotettavuutesi: %1$s · %2$d vapaalippu."
+msgstr[1] "Luotettavuutesi: %1$s · %2$d vapaalippua."
 
 #: src/Telegram/ProfileService.php:150
 msgid "Your tickets"
@@ -1659,7 +1639,7 @@ msgid "🎟 Show your ticket"
 msgstr "🎟 Näytä lippusi"
 
 #: src/Telegram/PermissionService.php:244
-msgid "🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up."
+msgid "🎟 You have a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up."
 msgstr "🎟 Sinulla on kertaluontoinen lupa ilmoittautua seuraavaan tehtävääsi, vaikka luotettavuutesi on matala. Lupa kuluu, kun ilmoittaudut seuraavan kerran."
 
 #: src/Support/ClaimNotifier.php:115
@@ -2991,7 +2971,7 @@ msgid "This link was already used — ask an organizer for a new one (/door in T
 msgstr "Linkki on jo käytetty — pyydä järjestäjältä uusi (/door Telegramissa ja sitten 💳 Myyntipiste)."
 
 msgid "When you are signed up for the night's Organize task, you get the sales desk link %d minutes before the night's first task, with a button to the Admin tab. The welcome crew (people on tasks of a role marked \"Opens the sales desk\") get it once they are marked arrived. /door, then 💳 Sales desk, sends a new link any time. /door has buttons for the door list (who has a ticket) and the guest list."
-msgstr "Kun olet ilmoittautunut illan Organize-tehtävään, saat myyntipisteen linkin %d minuuttia ennen illan ensimmäistä tehtävää, ja mukana on painike Ylläpito-välilehdelle. Tervetulotiimi (roolin, jossa on valittuna \"Opens the sales desk\", tehtävissä olevat) saa sen, kun heidät on merkitty saapuneiksi. /door ja sitten 💳 Myyntipiste lähettää uuden linkin milloin vain. /door-komennossa on painikkeet ovilistalle (kenellä on lippu) ja vieraslistalle."
+msgstr "Kun olet ilmoittautunut illan Organize-tehtävään, saat myyntipisteen linkin %d minuuttia ennen illan ensimmäistä tehtävää, ja mukana on painike Ylläpito-välilehdelle. Tervetulotiimi (roolin, jossa on valittuna \"Avaa myyntipisteen\", tehtävissä olevat) saa sen, kun heidät on merkitty saapuneiksi. /door ja sitten 💳 Myyntipiste lähettää uuden linkin milloin vain. /door-komennossa on painikkeet ovilistalle (kenellä on lippu) ja vieraslistalle."
 
 msgid "Who meets the conditions for each role. ✅ = they have the role. Give a role with /people."
 msgstr "Kuka täyttää kunkin roolin ehdot. ✅ = hänellä on rooli. Anna rooli komennolla /people."
@@ -3002,8 +2982,8 @@ msgstr "Kuka täyttää kullekin roolille asetetut ehdot (Settings, Roles). Ehto
 msgid "Your tasks, credits, ticket, settings"
 msgstr "Tehtäväsi, vapaaliput, lippu, asetukset"
 
-msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door - it is the first button below."
-msgstr "✅ Ilmoittauduttu: %1$s, %2$s, %3$s.\n\nNäytä lippusi ovella - se on alla ensimmäisenä painikkeena."
+msgid "✅ Signed up: %1$s at %2$s, %3$s.\n\nShow your ticket at the door – it is the first button below."
+msgstr "✅ Ilmoittauduttu: %1$s, %2$s, %3$s.\n\nNäytä lippusi ovella – se on alla ensimmäisenä painikkeena."
 
 msgid "When the event starts and its doors close, like Event starts 19:00 · doors close 19:30. On a line of its own; the line goes when neither time is known."
 msgstr "Milloin tapahtuma alkaa ja ovet sulkeutuvat, esim. Tapahtuma alkaa 19:00 · ovet sulkeutuvat 19:30. Omalla rivillään; rivi poistuu, kun kumpaakaan aikaa ei tiedetä."
@@ -3622,11 +3602,15 @@ msgstr "Tämä kalenterilinkki ei ole kelvollinen."
 msgid "%1$d guests were added to the guest list for %2$s."
 msgstr "%1$d vierasta lisättiin vieraslistalle päivälle %2$s"
 
-msgid "They bring %d plus-ones in total."
-msgstr "Heillä on yhteensä %d aveceja."
+msgid "They bring %d plus-one in total."
+msgid_plural "They bring %d plus-ones in total."
+msgstr[0] "Heillä on yhteensä %d avec."
+msgstr[1] "Heillä on yhteensä %d aveceja."
 
-msgid "%d names were skipped because they were already on the guest list."
-msgstr "%d nimeä ohitettiin, koska ne olivat jo vieraslistalla."
+msgid "%d name was skipped because it was already on the guest list."
+msgid_plural "%d names were skipped because they were already on the guest list."
+msgstr[0] "%d nimi ohitettiin, koska se oli jo vieraslistalla."
+msgstr[1] "%d nimeä ohitettiin, koska ne olivat jo vieraslistalla."
 
 msgid "Guests added for %s"
 msgstr "Vieraat lisätty päivälle %s"
@@ -3850,11 +3834,11 @@ msgstr "Allekirjoitus"
 msgid "Barefoot and with ♥ — the Example crew"
 msgstr "Paljain jaloin ja ♥:llä — Example-crew"
 
-msgid "How your crew signs off. It closes every notification email, and the Telegram messages that go out to everyone — the open-task call, the reminders and the “a spot just opened” notice. Leave it blank for no sign-off."
-msgstr "Teksti, jolla crew’si lopettaa viestit. Se on jokaisen ilmoitussähköpostin lopussa sekä kaikille lähtevissä Telegram-viesteissä — avoimien tehtävien kutsussa, muistutuksissa ja ”paikka vapautui” -ilmoituksessa. Jätä tyhjäksi, jos et halua lopputervehdystä."
+msgid "How your crew signs off. It closes every notification email, and every Telegram message the person did not just ask for: reminders, calls, and news about their tasks, standing or access. Leave it blank for no sign-off."
+msgstr "Teksti, jolla crew’si lopettaa viestit. Se on jokaisen ilmoitussähköpostin lopussa ja jokaisessa Telegram-viestissä, jota henkilö ei juuri itse pyytänyt: muistutukset, kutsut ja uutiset hänen tehtävistään, luotettavuudestaan tai oikeuksistaan. Jätä tyhjäksi, jos et halua lopputervehdystä."
 
-msgid "Deliberately not added to messages that answer a command, where the person is mid-conversation, nor to the standing notices, where a warm sign-off would land badly."
-msgstr "Sitä ei tarkoituksella lisätä viesteihin, jotka vastaavat komentoon, koska henkilö on silloin keskellä keskustelua, eikä luotettavuusilmoituksiin, joihin lämmin lopputervehdys ei sovi."
+msgid "Not added to the bot’s direct reply to something the person just did, such as a sign-up or cancellation confirmation: they are mid-conversation."
+msgstr "Sitä ei lisätä botin suoraan vastaukseen siihen, mitä henkilö juuri teki, kuten ilmoittautumisen tai peruutuksen vahvistukseen: hän on silloin keskellä keskustelua."
 
 msgid "Format"
 msgstr "Muoto"
@@ -4519,8 +4503,10 @@ msgstr "Liitetiedoston sarakkeet eivät vastaa yhtään lipputiedoston muotoa ko
 msgid "%1$d tickets were imported for %2$s."
 msgstr "%1$d lippua tuotiin päivälle %2$s"
 
-msgid "%d tickets were skipped because they were already on the list."
-msgstr "%d lippua ohitettiin, koska ne olivat jo listalla."
+msgid "%d ticket was skipped because it was already on the list."
+msgid_plural "%d tickets were skipped because they were already on the list."
+msgstr[0] "%d lippu ohitettiin, koska se oli jo listalla."
+msgstr[1] "%d lippua ohitettiin, koska ne olivat jo listalla."
 
 msgid "The list was sent from %s."
 msgstr "Lista lähetettiin osoitteesta %s."
@@ -4896,10 +4882,6 @@ msgstr "viestiä ryhmää kohden"
 
 msgid "messages per person in a private chat"
 msgstr "viestiä henkilöä kohden yksityiskeskustelussa"
-
-#: templates/admin/settings.php
-msgid "messages per organizer in a private chat"
-msgstr "viestiä järjestäjää kohden yksityiskeskustelussa"
 
 msgid "In your own words"
 msgstr "Omin sanoin"
@@ -7325,13 +7307,13 @@ msgstr "« Edellinen"
 msgid "Next »"
 msgstr "Seuraava »"
 
-msgid "Hi %1$s,\n\nJust a reminder that you're on %2$s at %3$s, %4$s.\n\n%5$s"
+msgid "Hi %1$s,\n\nJust a reminder that you’re on %2$s at %3$s, %4$s.\n\n%5$s"
 msgstr "Hei %1$s,\n\nmuistutus: olet tehtävässä %2$s, %3$s, %4$s.\n\n%5$s"
 
-msgid "Can't make it? Tap Cancel below. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
+msgid "Can’t make it? Tap Cancel below. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept."
 msgstr "Etkö pääsekään? Napauta alta Peru. Tai etsi joku ottamaan se: hän lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
 
-msgid "Can't make it? Tap Cancel on your task in the Board tab of the crew page (%s)."
+msgid "Can’t make it? Tap Cancel on your task in the Board tab of the crew page (%s)."
 msgstr "Etkö pääsekään? Napauta Peru tehtävässäsi crew-sivun Taulu-välilehdellä (%s)."
 
 msgid "Not right? Tell us"
@@ -7342,12 +7324,6 @@ msgstr "Kerro järjestäjälle, mikä on väärin: hän voi korjata sen."
 
 msgid "Write here in a few words what is not right. The organizers get it and can correct it."
 msgstr "Kirjoita tähän lyhyesti, mikä on väärin. Järjestäjät saavat sen ja voivat korjata sen."
-
-msgid "Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine."
-msgstr "Ovilista %s: avaa se alla olevasta painikkeesta. Linkki toimii kerran, yhdellä laitteella; se pitää laitteen kirjautuneena klo 06:00 asti. Sen saa välittää eteenpäin."
-
-msgid "You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks."
-msgstr "Olet %s järjestäjänä. Myyntipisteen painike kirjaa tämän laitteen ovilistalle klo 06:00 asti; linkki toimii kerran. Ylläpito-välilehti on Crew-sovelluksessa; kirjaudu siellä, jos se pyytää."
 
 msgid "Door list for %1$s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? %2$s"
 msgstr "Ovilista %1$s: avaa se alla olevasta painikkeesta. Linkki toimii kerran, yhdellä laitteella; se pitää laitteen kirjautuneena klo 06:00 asti. Sen saa välittää eteenpäin. Tarvitsetko uuden? %2$s"
@@ -7391,8 +7367,8 @@ msgid "How to get the free ticket: in the bot or the Crew app, or, for a person 
 msgstr "Miten ilmainen lippu saadaan: botissa tai Crew-sovelluksessa, tai henkilölle ilman Telegram-keskustelua crew-sivulla, linkin kanssa."
 
 #, php-format
-msgid "tap Get your free ticket below."
-msgstr "napauta alta Hae ilmainen lippusi."
+msgid "tap 🎟 Free-entry ticket below."
+msgstr "napauta alta 🎟 Vapaalippu."
 
 msgid "open the Me tab of the crew page (%s) and pick a night under Tickets to get your free ticket."
 msgstr "avaa crew-sivun Minä-välilehti (%s) ja valitse ilta kohdasta Liput, niin saat ilmaisen lippusi."
@@ -7641,8 +7617,8 @@ msgid "You have a new role: %s"
 msgstr "Sinulla on uusi rooli: %s"
 
 #, php-format
-msgid "You now have the role %s. Its tasks are open to you on the crew page, and you can sign up for them."
-msgstr "Sinulla on nyt rooli %s. Sen tehtävät ovat avoinna sinulle crew-sivulla, ja voit ilmoittautua niihin."
+msgid "You now have the role %s. Its tasks are open to you in the Crew app, and you can sign up for them."
+msgstr "Sinulla on nyt rooli %s. Sen tehtävät ovat avoinna sinulle Crew-sovelluksessa, ja voit ilmoittautua niihin."
 
 msgid "You were given a role (Telegram)"
 msgstr "Sait roolin (Telegram)"
@@ -7679,11 +7655,11 @@ msgid "Sent to a person when an organizer makes them an organizer: with /people 
 msgstr "Lähetetään henkilölle, kun järjestäjä tekee hänestä järjestäjän: botin komennolla /people tai wp-adminin Ihmiset-sivulla. Ei lähetetä, kun järjestäjän oikeudet otetaan pois, eikä henkilölle, joka on kytkenyt pois sähköpostit oikeuksien muutoksista. Tervehdys lisätään tekstin yläpuolelle ja painike crew-sivun Ylläpito-välilehdelle sen alle."
 
 #, php-format
-msgid "You are now an organizer of %s."
-msgstr "Olet nyt järjestäjä: %s."
+msgid "You are now an organizer of %s"
+msgstr "Olet nyt järjestäjä: %s"
 
-msgid "You are now an organizer. The crew page has an Admin tab for you, where you manage tasks and people."
-msgstr "Olet nyt järjestäjä. Crew-sivulla on sinulle Ylläpito-välilehti, jossa hoidat tehtäviä ja ihmisiä."
+msgid "You are now an organizer."
+msgstr "Olet nyt järjestäjä."
 
 msgid "You were made an organizer (Telegram)"
 msgstr "Sinusta tehtiin järjestäjä (Telegram)"
@@ -7960,8 +7936,8 @@ msgstr "Uusi: %s haluaa mukaan"
 
 #. translators: 1: the person's name, 2: their email
 #, php-format
-msgid "%1$s (%2$s) signed in for the first time and wants to join the crew. Press OK or No in the Admin tab of the crew page."
-msgstr "%1$s (%2$s) kirjautui ensimmäistä kertaa ja haluaa mukaan crew'hun. Paina OK tai Ei crew-sivun Ylläpito-välilehdellä."
+msgid "%1$s (%2$s) signed in for the first time and wants to join the crew. Press OK or No in the Admin tab of the Crew app."
+msgstr "%1$s (%2$s) kirjautui ensimmäistä kertaa ja haluaa mukaan crew’hun. Paina OK tai Ei Crew-sovelluksen Ylläpito-välilehdellä."
 
 #. translators: 1: the person's name, 2: their email
 #, php-format
@@ -7971,8 +7947,8 @@ msgstr "🆕 Uusi: %1$s (%2$s) haluaa mukaan."
 msgid "The team said OK"
 msgstr "Tiimi hyväksyi sinut"
 
-msgid "The team said OK. You can now take tasks on the crew page."
-msgstr "Tiimi hyväksyi sinut. Voit nyt ottaa tehtäviä crew-sivulla."
+msgid "The team said OK. You can now take tasks in the Crew app."
+msgstr "Tiimi hyväksyi sinut. Voit nyt ottaa tehtäviä Crew-sovelluksessa."
 
 msgid "✅ The team said OK. You can now take tasks."
 msgstr "✅ Tiimi hyväksyi sinut. Voit nyt ottaa tehtäviä."
@@ -8001,9 +7977,6 @@ msgstr "organisaation nimi (Verkkosivu-välilehti, muuten sivuston nimi)."
 
 msgid "the event’s start time, like 19:00. Empty when the event has none."
 msgstr "tapahtuman alkamisaika, esim. 19:00. Tyhjä, jos tapahtumalla ei ole sitä."
-
-msgid "The AI’s short text about the event from the group board (at most two sentences), in the reader’s language; never the event’s own description. On a line of its own; the line goes when there is no such text in that language."
-msgstr "Ryhmän taulun tekoälyn kirjoittama lyhyt teksti tapahtumasta (enintään kaksi virkettä), lukijan kielellä; ei koskaan tapahtuman omaa kuvausta. Omalla rivillään; rivi jää pois, jos tekstiä ei ole sillä kielellä."
 
 msgid "The event’s start time, like 19:00. Empty when the event has none."
 msgstr "Tapahtuman alkamisaika, esim. 19:00. Tyhjä, jos tapahtumalla ei ole sitä."
@@ -8867,9 +8840,6 @@ msgstr "Pahoittelut, lippu on vanhentunut"
 msgid "You’re in, welcome!"
 msgstr "Olet sisällä, tervetuloa!"
 
-msgid "You’re in. Welcome, %s!"
-msgstr "Olet sisällä. Tervetuloa, %s!"
-
 msgid "Checked in at %s"
 msgstr "Kirjattu sisään klo %s"
 
@@ -9037,6 +9007,20 @@ msgstr "Aseta teksti vain seuraavaan tapahtuman jälkeiseen viestiin lähettäm�
 
 msgid "an administrator"
 msgstr "ylläpitäjä"
+
+#: src/Support/MessageTemplates.php
+msgid "Can’t make it? Tap Cancel below: there you can also hand the task over to someone else."
+msgstr "Etkö pääsekään? Napauta alta Peru: siellä voit myös antaa tehtävän jollekulle toiselle."
+
+#: templates/admin/settings.php
+msgid "messages per organizer in a private chat"
+msgstr "viestiä järjestäjää kohden yksityiskeskustelussa"
+
+msgid "The AI’s short text about the event from the group board (at most two sentences), in the reader’s language; never the event’s own description. On a line of its own; the line goes when there is no such text in that language."
+msgstr "Ryhmän taulun tekoälyn kirjoittama lyhyt teksti tapahtumasta (enintään kaksi virkettä), lukijan kielellä; ei koskaan tapahtuman omaa kuvausta. Omalla rivillään; rivi jää pois, jos tekstiä ei ole sillä kielellä."
+
+msgid "You’re in. Welcome, %s!"
+msgstr "Olet sisällä. Tervetuloa, %s!"
 
 #: src/Support/MessageTemplates.php
 msgid "Thank you for being part of the crew and helping make these nights happen."
@@ -9293,3 +9277,117 @@ msgstr "Eikö mitään muutamassa minuutissa, ei edes roskapostissa? Yritä uude
 
 msgid "✏️ Use another email"
 msgstr "✏️ Toinen sähköposti"
+
+#: src/Telegram/TaskCommand.php:559
+#. translators: %d: people signed up for the task.
+msgid "%d person is on it. Nobody is taken off."
+msgid_plural "%d people are on it. Nobody is taken off."
+msgstr[0] "%d henkilö on siinä. Ketään ei poisteta."
+msgstr[1] "%d henkilöä on siinä. Ketään ei poisteta."
+
+#: src/Telegram/TaskCommand.php:539
+#. translators: %d: people signed up for the task.
+msgid "%d person on it is taken off and gets an email."
+msgid_plural "%d people on it are taken off and get an email."
+msgstr[0] "%d henkilö poistetaan siitä ja saa sähköpostin."
+msgstr[1] "%d henkilöä poistetaan siitä ja saa sähköpostin."
+
+#: src/Telegram/HelpService.php:258
+msgid "/edittask task ; places 3 – change a task (also /addtask, /deletetask)"
+msgstr "/edittask tehtävä ; places 3 – muuta tehtävää (myös /addtask, /deletetask)"
+
+#: src/Telegram/HelpService.php:259
+msgid "/maketasks – a night's tasks from the roles; /mailtasks – the open-task email now"
+msgstr "/maketasks – illan tehtävät rooleista; /mailtasks – avointen tehtävien sähköposti nyt"
+
+#: src/Telegram/TaskCommand.php:187
+msgid "Add a task: /addtask role ; time 21:00-23:00 ; places 2\nAlso: notes text, plus 1. A date first picks another night: /addtask 21.11. Host ; time 21:00"
+msgstr "Lisää tehtävä: /addtask rooli ; time 21:00-23:00 ; places 2\nMyös: notes teksti, plus 1. Päivä ensin valitsee toisen illan: /addtask 21.11. Host ; time 21:00"
+
+#: src/Telegram/TaskCommand.php:518
+msgid "Add the task %s?"
+msgstr "Lisätäänkö tehtävä %s?"
+
+#: src/Telegram/TaskCommand.php:554
+msgid "Change %s?"
+msgstr "Muutetaanko %s?"
+
+#: src/Telegram/TaskCommand.php:188
+msgid "Change a task: /edittask task ; places 3\nFields: time 21:00-02:00, places, notes, plus. A date first picks another night: /edittask 21.11. Host ; time 22:00"
+msgstr "Muuta tehtävää: /edittask tehtävä ; places 3\nKentät: time 21:00-02:00, places, notes, plus. Päivä ensin valitsee toisen illan: /edittask 21.11. Host ; time 22:00"
+
+#: src/Telegram/TaskCommand.php:772
+#. translators: %s: the part of the command that could not be read.
+msgid "Could not read “%s”. Use time 21:00-23:00, places 2, notes text or plus 1."
+msgstr "En ymmärtänyt kohtaa ”%s”. Käytä: time 21:00-23:00, places 2, notes teksti tai plus 1."
+
+#: src/Telegram/TaskCommand.php:479
+msgid "Create"
+msgstr "Luo"
+
+#: src/Telegram/TaskCommand.php:190
+msgid "Create a night's tasks from the roles: /maketasks\nA date picks another night: /maketasks 21.11."
+msgstr "Luo illan tehtävät rooleista: /maketasks\nPäivä valitsee toisen illan: /maketasks 21.11."
+
+#: src/Telegram/TaskCommand.php:507
+#. translators: 1: an event name, 2: a short day label, like "Sat 14 Nov".
+msgid "Create the tasks of %1$s (%2$s) from the roles? Roles that already have a task are skipped."
+msgstr "Luodaanko tapahtuman %1$s (%2$s) tehtävät rooleista? Roolit, joilla on jo tehtävä, ohitetaan."
+
+#: src/Telegram/TaskCommand.php:534
+msgid "Delete %s?"
+msgstr "Poistetaanko %s?"
+
+#: src/Telegram/TaskCommand.php:189
+msgid "Delete a task: /deletetask task\nA date first picks another night: /deletetask 21.11. Host"
+msgstr "Poista tehtävä: /deletetask tehtävä\nPäivä ensin valitsee toisen illan: /deletetask 21.11. Host"
+
+#: src/Support/OrganizerGuide.php:131
+msgid "In a private chat with the bot you can do the same: /addtask adds a task, /edittask changes its time, places, notes or plus-ones, /deletetask deletes it, /maketasks creates a night's tasks from the roles, and /mailtasks sends the open-task email now. The bot asks you to confirm first."
+msgstr "Yksityisessä chatissa botin kanssa voit tehdä saman: /addtask lisää tehtävän, /edittask muuttaa sen aikaa, paikkoja, muistiinpanoja tai lisähenkilöitä, /deletetask poistaa sen, /maketasks luo illan tehtävät rooleista ja /mailtasks lähettää avointen tehtävien sähköpostin nyt. Botti pyytää ensin vahvistuksen."
+
+#: src/Telegram/TaskCommand.php:420
+msgid "No coming event was found."
+msgstr "Tulevaa tapahtumaa ei löytynyt."
+
+#: src/Telegram/TaskCommand.php:422
+msgid "No event was found on %s."
+msgstr "Päivältä %s ei löytynyt tapahtumaa."
+
+#: src/Telegram/TaskCommand.php:310
+#. translators: 1: the role name the organizer typed, 2: comma-separated role names.
+msgid "No role called “%1$s”. Roles: %2$s"
+msgstr "Roolia ”%1$s” ei ole. Roolit: %2$s"
+
+#: src/Telegram/TaskCommand.php:779
+msgid "Only organizers can change tasks."
+msgstr "Vain järjestäjät voivat muuttaa tehtäviä."
+
+#: src/Telegram/TaskCommand.php:480
+msgid "Send"
+msgstr "Lähetä"
+
+#: src/Telegram/TaskCommand.php:499
+msgid "Send the open-task email now, for the next night with open places? People who already have it are skipped."
+msgstr "Lähetetäänkö avointen tehtävien sähköposti nyt seuraavasta illasta, jossa on vapaita paikkoja? Sen jo saaneet ohitetaan."
+
+#: src/Telegram/TaskCommand.php:191
+msgid "Send the open-task email now: /mailtasks"
+msgstr "Lähetä avointen tehtävien sähköposti nyt: /mailtasks"
+
+#: src/Telegram/TaskCommand.php:458
+msgid "Which event?"
+msgstr "Mikä tapahtuma?"
+
+#: src/Telegram/TaskCommand.php:457
+msgid "Which role?"
+msgstr "Mikä rooli?"
+
+#: src/Telegram/TaskCommand.php:570
+msgid "With 0 places the task is off the boards."
+msgstr "0 paikalla tehtävä ei näy tauluilla."
+
+#: src/Support/ClaimNotifier.php:265
+#. translators: %s: the task, like "Decorate · Sat 25 Jul 21:00–23:00".
+msgid "An organizer took you off %s."
+msgstr "Järjestäjä poisti sinut tehtävästä %s."

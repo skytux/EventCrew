@@ -143,6 +143,7 @@ use EventCrew\Telegram\TicketController;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\LanguageService;
+use EventCrew\Telegram\TaskCommand;
 use EventCrew\Telegram\VerificationController;
 use EventCrew\Telegram\WebhookController;
 use EventCrew\Telegram\WebLoginBot;
@@ -1407,7 +1408,18 @@ final class Kernel
                 $container->get(BuyerListReset::class),
                 $container->get(NewcomerApproval::class),
                 $container->get(PrivateChatGate::class),
-                $container->get(AssignCommand::class)
+                $container->get(AssignCommand::class),
+                $container->get(TaskCommand::class)
+            )
+        );
+
+        $this->container->singleton(
+            TaskCommand::class,
+            fn (Container $container) => new TaskCommand(
+                $container->get(PersonRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(CrewAdminTasks::class),
+                $container->get(TelegramClient::class)
             )
         );
 

@@ -504,7 +504,7 @@ final class NewcomerApproval
                         $organizer->id,
                         $organizer->email,
                         MessageTemplates::subject('newcomer_decided', $context),
-                        MessageTemplates::body('newcomer_decided', $context)
+                        EmailBody::withGreeting($organizer->displayName, MessageTemplates::body('newcomer_decided', $context))
                     );
                 }
             });
@@ -596,7 +596,7 @@ final class NewcomerApproval
             $organizer->id,
             $organizer->email,
             MessageTemplates::subject('newcomer_waiting', $context),
-            MessageTemplates::body('newcomer_waiting', $context),
+            EmailBody::withGreeting($organizer->displayName, MessageTemplates::body('newcomer_waiting', $context)),
             $actions
         );
 
@@ -719,7 +719,9 @@ final class NewcomerApproval
      */
     private function requestText(Person $organizer, Person $person, string $line): array
     {
-        $plain = DmBody::frame($organizer, MessageTemplates::body('newcomer_waiting_dm', ['member' => $person]));
+        // Framed like every DM the organizer did not ask for (DmBody), with
+        // the sign-off last, under the profile and the decision lines.
+        $plain = DmBody::open($organizer, MessageTemplates::body('newcomer_waiting_dm', ['member' => $person]));
         $html = self::html($plain);
 
         if (null !== $person->telegramUserId && $person->telegramUserId > 0) {
@@ -736,6 +738,13 @@ final class NewcomerApproval
         if ('' !== $line) {
             $html .= "\n\n" . self::html($line);
             $plain .= "\n\n" . $line;
+        }
+
+        $signOff = DmBody::signOff();
+
+        if ('' !== $signOff) {
+            $html .= "\n\n" . self::html($signOff);
+            $plain .= "\n\n" . $signOff;
         }
 
         return [$html, $plain];

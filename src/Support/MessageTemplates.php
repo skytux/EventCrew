@@ -205,8 +205,8 @@ final class MessageTemplates
                 ...self::nightActions((array) ($c['nights'] ?? [])),
                 new MessageAction(
                     'free_ticket',
-                    __('Get your free ticket', 'eventcrew'),
                     '🎟 ' . __('Free-entry ticket', 'eventcrew'),
+                    '',
                     static fn (): string => $m->boardUrl(),
                     '',
                     'ticket'
@@ -233,7 +233,7 @@ final class MessageTemplates
                     $c,
                     'people',
                     __('Give them the role', 'eventcrew'),
-                    '👥 ' . __('Give them the role', 'eventcrew'),
+                    '🏷 ' . __('Give them the role', 'eventcrew'),
                     static fn (): string => HelpPage::url(DoorLinkSender::ADMIN_ANCHOR)
                 ),
             ],
@@ -1028,8 +1028,8 @@ final class MessageTemplates
      * What the Preview link needs to know about each kind's sender, beyond its
      * text (MessageTemplate::$preview): the buttons and how the text is
      * wrapped. A kind not listed here is previewed with the defaults (an email
-     * through Mailer::toPerson() with no buttons, or a DM framed without the
-     * sign-off and with no buttons). Keep it in step with the sender when a
+     * through Mailer::toPerson() with no buttons, or a DM framed with the
+     * opening and the sign-off and with no buttons). Keep it in step with the sender when a
      * sender changes its buttons.
      *
      * @return array<string, array<string, mixed>>
@@ -1038,7 +1038,6 @@ final class MessageTemplates
     {
         $greet = ['greeting' => true];
         $none = ['frame' => MessageTemplate::FRAME_NONE];
-        $signed = ['frame' => MessageTemplate::FRAME_SIGNED];
         $privacy = static fn (): array => '' === PrivacyPolicy::noticeUrl() ? [] : [PrivacyPolicy::noticeLinkLabel()];
         // The sender makes the one-time link; the preview shows a stand-in.
         $deskLink = ['context' => static fn (): array => ['desk_url' => Mailer::PREVIEW_LINK]];
@@ -1075,6 +1074,11 @@ final class MessageTemplates
             gmdate('Y-m-d', time() + 14 * DAY_IN_SECONDS) => Dates::dayLabel(gmdate('Y-m-d', time() + 14 * DAY_IN_SECONDS)),
         ]]];
 
+        // A role given: its name, as AccessNotifier writes it, not its slug.
+        $roleLabel = ['context' => static fn (array $c): array => [
+            'role' => ($c['task'] ?? null) instanceof Task ? Roles::label($c['task']->roleSlug) : '',
+        ]];
+
         // {open_tasks} as the welcome draws it, for the sample task.
         $welcomeOpenTasks = static fn (array $c): array => ['open_tasks' => WelcomeSender::openTasksBlock([
             ['task' => $c['task'], 'free' => max(1, $c['task']->capacity - 1)],
@@ -1083,16 +1087,14 @@ final class MessageTemplates
         return [
             'credit_granted' => $sampleNights,
             'credit_granted_dm' => $sampleNights,
-            'reminder_dm' => $signed,
             'slot_freed' => $sampleOthers,
-            'slot_freed_dm' => $signed + $sampleOthers,
+            'slot_freed_dm' => $sampleOthers,
             'task_cancelled' => $sampleOthers,
-            'task_cancelled_dm' => $none + $sampleOthers,
+            'task_cancelled_dm' => $sampleOthers,
             'free_ticket_dm' => $none + ['buttons' => [__('🎟 Show your ticket', 'eventcrew')]],
             'signup_confirmed_dm' => $none,
             'cancel_confirmed' => $sampleOthers,
             'cancel_confirmed_dm' => $none + $sampleOthers,
-            'open_task_call_dm' => $signed,
             'email_confirm' => [
                 'buttons' => static fn (): array => [__('Confirm your email', 'eventcrew'), ...$privacy()],
             ],
@@ -1111,12 +1113,13 @@ final class MessageTemplates
             ],
             'email_changed' => $greet,
             'delete_data_confirm' => $greet + ['buttons' => [__('Delete my data', 'eventcrew')]],
-            'access_role' => $greet,
+            'access_role' => $greet + $roleLabel,
+            'access_role_dm' => $roleLabel,
             'access_pass' => $greet,
             'newcomer_ok' => $greet,
             'newcomer_unknown' => $greet,
             'newcomer_timeout' => $greet,
-            'newcomer_decided' => ['context' => static fn (): array => [
+            'newcomer_decided' => $greet + ['context' => static fn (): array => [
                 'outcome' => NewcomerApproval::outcomeLine(
                     Person::APPROVAL_NO,
                     __('Sample Organizer', 'eventcrew'),
@@ -1125,33 +1128,39 @@ final class MessageTemplates
                 ),
             ]],
             'access_organizer' => $greet,
-            'role_met' => $sampleMet,
+            'role_met' => $greet + $sampleMet,
+            'role_given' => $greet,
+            'organizer_made' => $greet,
+            'chat_forward' => $greet,
+            'forged_request' => $greet,
+            'import_failed' => $greet,
             'role_met_dm' => $sampleMet,
-            'newcomer_waiting' => $sampleJoin + ['buttons' => [...$admin, __('Answer the request', 'eventcrew')]],
+            'newcomer_waiting' => $greet + $sampleJoin + ['buttons' => [...$admin, __('Answer the request', 'eventcrew')]],
             'newcomer_waiting_dm' => $sampleJoin + ['buttons' => ['✅ ' . __('OK', 'eventcrew'), '❌ ' . __('No', 'eventcrew')]],
-            'forged_request_dm' => $none,
-            'import_tickets' => ['buttons' => [__('Open the Roster page', 'eventcrew'), __('Door list', 'eventcrew')]],
-            'import_guests' => ['buttons' => [__('Open the Roster page', 'eventcrew')]],
-            'import_tickets_dm' => ['buttons' => ['🗑 ' . __('Reset the list', 'eventcrew'), __('Open the Roster page', 'eventcrew')]],
+            'import_tickets' => $greet + ['buttons' => [__('Open the Roster page', 'eventcrew'), __('Door list', 'eventcrew')]],
+            'import_guests' => $greet + ['buttons' => [__('Open the Roster page', 'eventcrew')]],
+            'import_tickets_dm' => ['buttons' => ['🗑 ' . __('Reset the list', 'eventcrew'), __('Open the Roster page', 'eventcrew'), __('Door list', 'eventcrew')]],
             'import_guests_dm' => ['buttons' => [__('Open the Roster page', 'eventcrew')]],
             // What WelcomeSender draws: at most three buttons (wp-admin on top
             // for organizers), then the links (Owner 2026-11-07).
             'welcome_email' => [
+                'tidy' => true,
                 'buttons' => static fn (): array => [
                     '📋 ' . __('See open tasks', 'eventcrew'),
-                    '💬 ' . __('Open our group in Telegram', 'eventcrew'),
+                    WelcomeSender::groupLabel(),
                     '📖 ' . __('Help', 'eventcrew'),
                     __('See open tasks', 'eventcrew'),
                     RoleGuide::label(),
                 ],
                 'context' => $welcomeOpenTasks,
             ],
-            'welcome_dm' => $signed + [
+            'welcome_dm' => [
                 'dm_format' => true,
+                'tidy' => true,
                 'buttons' => static fn (): array => [
                     __('👤 My info', 'eventcrew'),
                     '📋 ' . __('See open tasks', 'eventcrew'),
-                    '💬 ' . __('Open the group', 'eventcrew'),
+                    WelcomeSender::groupLabel(),
                     RoleGuide::label(),
                     '📖 ' . __('Help', 'eventcrew'),
                 ],
@@ -1161,7 +1170,7 @@ final class MessageTemplates
                 'buttons' => static fn (): array => [
                     DoorLinkSender::adminButtonLabel(),
                     '📖 ' . __('Help', 'eventcrew'),
-                    '💬 ' . __('Open our group in Telegram', 'eventcrew'),
+                    WelcomeSender::groupLabel(),
                     '🧰 ' . __('Open EventCrew in wp-admin', 'eventcrew'),
                     '👥 ' . __('People', 'eventcrew'),
                     '💳 ' . __('Sales desk', 'eventcrew'),
@@ -1194,14 +1203,11 @@ final class MessageTemplates
             'organizer_notice' => $greet + $deskLink,
             'organizer_notice_dm' => $deskLink,
             'takeover_ask' => ['buttons' => [__('Answer the request', 'eventcrew')]] + $sampleRecord,
-            'takeover_ask_dm' => $none + $sampleRecord + [
+            'takeover_ask_dm' => $sampleRecord + [
                 'buttons' => [__('✅ Let them take it', 'eventcrew'), __('❌ Keep my task', 'eventcrew')],
             ],
+            // The holder's own answer: the reply to their tap, bare.
             'takeover_done_dm' => $none,
-            'takeover_refused_dm' => $none,
-            'takeover_expired_dm' => $none,
-            'takeover_failed_dm' => $none,
-            'takeover_closed_dm' => $none,
         ];
     }
 
@@ -1268,7 +1274,10 @@ final class MessageTemplates
         // The credits held now, and the next nights to spend one on.
         $balance = self::placeholder(
             __('How many free-entry credits the person has now, like: You now have 3 free-entry credits. On a line of its own; the line goes when it is not known.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
-            static fn (array $c): string => isset($c['balance']) ? self::balanceLine((int) $c['balance']) : '',
+            // Not when it only repeats the credits just given (a first gift).
+            static fn (array $c): string => isset($c['balance']) && (int) $c['balance'] !== max(1, (int) ($c['credits'] ?? 1))
+                ? self::balanceLine((int) $c['balance'])
+                : '',
             false,
             true
         );
@@ -1313,6 +1322,11 @@ final class MessageTemplates
         );
         // phpcs:enable Generic.Files.LineLength.TooLong
 
+        $recap = self::placeholder(
+            __('The person\'s last three tasks and how many tasks they have completed in total.', 'eventcrew'),
+            static fn (array $c): string => (string) ($c['recap'] ?? '')
+        );
+
         // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
         $spotPlaceholders = [
             'task_details' => self::placeholder(
@@ -1350,10 +1364,10 @@ final class MessageTemplates
         // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
         $cancelHelp = self::botOrWeb(
             __('How to cancel the task or find someone to take it over: in the bot, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
-            static fn (): string => __("Can't make it? Tap Cancel below. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew'),
+            static fn (): string => __('Can’t make it? Tap Cancel below. Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task, and you accept.', 'eventcrew'),
             static fn (string $url): string => sprintf(
                 /* translators: %s: link to the crew page */
-                __("Can't make it? Tap Cancel on your task in the Board tab of the crew page (%s).", 'eventcrew'),
+                __('Can’t make it? Tap Cancel on your task in the Board tab of the crew page (%s).', 'eventcrew'),
                 $url
             )
         );
@@ -1441,7 +1455,7 @@ final class MessageTemplates
                 ),
                 static fn (): string => EventDetailsText::withVenue(EventDetailsText::withEventDescription(self::withDescription(self::tag(
                     /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: how to cancel */
-                    __("Hi %1\$s,\n\nJust a reminder that you're on %2\$s at %3\$s, %4\$s.\n\n%5\$s", 'eventcrew'),
+                    __("Hi %1\$s,\n\nJust a reminder that you’re on %2\$s at %3\$s, %4\$s.\n\n%5\$s", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}', '%5$s' => '{cancel_help}']
                 )))),
                 [
@@ -1463,7 +1477,7 @@ final class MessageTemplates
                     /* translators: 1: role, 2: event, 3: date/time */
                     __('⏰ Reminder: you’re on %1$s at %2$s, %3$s. See you there!', 'eventcrew'),
                     ['%1$s' => '{role}', '%2$s' => '{event}', '%3$s' => '{when}']
-                )))),
+                ) . "\n\n" . self::cancelHelpDm()))),
                 ['role' => $role, 'event' => $event, 'when' => $when, 'description' => $description]
             ),
             new MessageTemplate(
@@ -1674,7 +1688,7 @@ final class MessageTemplates
                     'credits' => $credits,
                     'credit_help' => self::botOrWeb(
                         __('How to get the free ticket: in the bot or the Crew app, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
-                        static fn (): string => __('tap Get your free ticket below.', 'eventcrew'),
+                        static fn (): string => __('tap 🎟 Free-entry ticket below.', 'eventcrew'),
                         static fn (string $url): string => sprintf(
                             /* translators: %s: link to the crew page */
                             __('open the Me tab of the crew page (%s) and pick a night under Tickets to get your free ticket.', 'eventcrew'),
@@ -1781,12 +1795,12 @@ final class MessageTemplates
                 __('Sent when a person signs up for a task, in the bot or on the web page. The ticket, calendar and crew guide buttons are added below the text.', 'eventcrew'),
                 null,
                 // The Cancel button asks first and offers the hand-over, so the
-                // text no longer explains them.
+                // last line only points at it (cancelHelpDm()).
                 static fn (): string => EventDetailsText::withVenue(FrictionB1Migration::withEventTimes(self::withDescription(self::tag(
                     /* translators: 1: role, 2: event, 3: date/time */
-                    __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door - it is the first button below.", 'eventcrew'),
+                    __("✅ Signed up: %1\$s at %2\$s, %3\$s.\n\nShow your ticket at the door – it is the first button below.", 'eventcrew'),
                     ['%1$s' => '{role}', '%2$s' => '{event}', '%3$s' => '{when}']
-                ) . "{free_cancel}\n\n{standing}"))),
+                ) . "{free_cancel}\n\n{standing}\n\n" . self::cancelHelpDm()))),
                 [
                     'role' => $role,
                     'event' => $event,
@@ -1806,14 +1820,15 @@ final class MessageTemplates
                     ['%1$s' => '{role}', '%2$s' => '{event}']
                 ),
                 static fn (): string => FrictionB1Migration::withOtherTasks(self::tag(
-                    /* translators: 1: name, 2: role, 3: event, 4: standing note, 5: standing line */
-                    __("Hi %1\$s,\n\nYou've cancelled %2\$s at %3\$s, and your ticket is now disabled.\n\n%4\$s\n\n%5\$s", 'eventcrew'),
-                    ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{note}', '%5$s' => '{standing}']
+                    /* translators: 1: name, 2: role, 3: event, 4: date/time, 5: standing note, 6: standing line */
+                    __("Hi %1\$s,\n\nYou’ve cancelled %2\$s at %3\$s, %4\$s, and your ticket is now disabled.\n\n%5\$s\n\n%6\$s", 'eventcrew'),
+                    ['%1$s' => '{name}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}', '%5$s' => '{note}', '%6$s' => '{standing}']
                 )),
                 [
                     'name' => $name,
                     'role' => $role,
                     'event' => $event,
+                    'when' => $when,
                     'note' => $cancelNote,
                     'other_tasks' => $spotPlaceholders['other_tasks'],
                     'standing' => $cancelStanding,
@@ -1826,9 +1841,9 @@ final class MessageTemplates
                 __('Sent when a person cancels their own task, in the bot or on the web page.', 'eventcrew'),
                 null,
                 static fn (): string => FrictionB1Migration::withOtherTasks(self::tag(
-                    /* translators: 1: cancellation kind, 2: role, 3: event, 4: standing note */
-                    __('%1$s: %2$s at %3$s. %4$s', 'eventcrew'),
-                    ['%1$s' => '{cancelled}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{note}']
+                    /* translators: 1: cancellation kind, 2: role, 3: event, 4: date/time, 5: standing note */
+                    __('%1$s: %2$s at %3$s, %4$s. Your ticket is now disabled. %5$s', 'eventcrew'),
+                    ['%1$s' => '{cancelled}', '%2$s' => '{role}', '%3$s' => '{event}', '%4$s' => '{when}', '%5$s' => '{note}']
                 ) . "\n\n{standing}"),
                 [
                     'cancelled' => self::placeholder(
@@ -1837,6 +1852,7 @@ final class MessageTemplates
                     ),
                     'role' => $role,
                     'event' => $event,
+                    'when' => $when,
                     'note' => $cancelNote,
                     'other_tasks' => $spotPlaceholders['other_tasks'],
                     'standing' => $cancelStanding,
@@ -1853,10 +1869,7 @@ final class MessageTemplates
                     __("Hi %1\$s,\n\nSome tasks still need people:\n\n%2\$s\n\n%3\$s", 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{open_tasks}', '%3$s' => '{recap}']
                 ),
-                ['name' => $name, 'open_tasks' => $openTasks, 'recap' => self::placeholder(
-                    __('The person\'s last three tasks and how many tasks they have completed in total.', 'eventcrew'),
-                    static fn (array $c): string => (string) ($c['recap'] ?? '')
-                )]
+                ['name' => $name, 'open_tasks' => $openTasks, 'recap' => $recap]
             ),
             new MessageTemplate(
                 'open_task_call_dm',
@@ -1868,8 +1881,8 @@ final class MessageTemplates
                     /* translators: %s: the open-task list, already grouped by date */
                     __("🔔 Some tasks still need people:\n\n%s", 'eventcrew'),
                     ['%s' => '{open_tasks}']
-                ),
-                ['open_tasks' => $openTasks]
+                ) . "\n\n{recap}",
+                ['open_tasks' => $openTasks, 'recap' => $recap]
             ),
             new MessageTemplate(
                 'email_confirm',
@@ -2074,7 +2087,7 @@ final class MessageTemplates
      * What AccessNotifier tells a person an organizer gave them: a role, a
      * one-time sign-up pass, organizer rights. An email and a Telegram text
      * for each. The context has 'person' (the reader) and, for a role,
-     * 'role' (its name). The emails name the crew page and get the greeting
+     * 'role' (its name). The emails name the Crew app and get the greeting
      * and a button in code; the Telegram texts name the bot.
      *
      * @return list<MessageTemplate>
@@ -2104,7 +2117,7 @@ final class MessageTemplates
                 ),
                 static fn (): string => self::tag(
                     /* translators: %s: role name, such as DJ */
-                    __('You now have the role %s. Its tasks are open to you on the crew page, and you can sign up for them.', 'eventcrew'),
+                    __('You now have the role %s. Its tasks are open to you in the Crew app, and you can sign up for them.', 'eventcrew'),
                     ['%s' => '{role}']
                 ) . '{open_tasks}',
                 $givenRole
@@ -2137,7 +2150,7 @@ final class MessageTemplates
                 $telegram,
                 __('Sent to a person who uses the bot when an organizer gives them a one-time sign-up pass: with /people in the bot, in the Admin tab of the crew page, or on the wp-admin People page. Not sent to a person who turned off Telegram messages about permission changes.', 'eventcrew'),
                 null,
-                static fn (): string => __('🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up.', 'eventcrew') . '{open_tasks}',
+                static fn (): string => __('🎟 You have a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up.', 'eventcrew') . '{open_tasks}',
                 $openTasks
             ),
             new MessageTemplate(
@@ -2146,7 +2159,7 @@ final class MessageTemplates
                 $email,
                 __('Sent to a new person without Telegram when an organizer presses OK for them. The greeting is added above the text, and a See open tasks button to the crew page under it.', 'eventcrew'),
                 static fn (): string => __('The team said OK', 'eventcrew'),
-                static fn (): string => __('The team said OK. You can now take tasks on the crew page.', 'eventcrew') . '{open_tasks}',
+                static fn (): string => __('The team said OK. You can now take tasks in the Crew app.', 'eventcrew') . '{open_tasks}',
                 $openTasks
             ),
             new MessageTemplate(
@@ -2197,10 +2210,10 @@ final class MessageTemplates
                 __('Sent to a person when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off emails about permission changes. The greeting is added above the text, and a button to the Admin tab of the crew page under it.', 'eventcrew'),
                 static fn (): string => self::tag(
                     /* translators: %s: the organization's name */
-                    __('You are now an organizer of %s.', 'eventcrew'),
+                    __('You are now an organizer of %s', 'eventcrew'),
                     ['%s' => Organization::TAG]
                 ),
-                static fn (): string => __('You are now an organizer. The crew page has an Admin tab for you, where you manage tasks and people.', 'eventcrew')
+                static fn (): string => __('You are now an organizer.', 'eventcrew') . ' ' . self::adminTabLine()
             ),
             new MessageTemplate(
                 'access_organizer_dm',
@@ -2379,7 +2392,7 @@ final class MessageTemplates
                 static fn (array $c): string => (int) ($c['skipped'] ?? 0) > 0
                     ? sprintf(
                         /* translators: %d: number of tickets skipped */
-                        __('%d tickets were skipped because they were already on the list.', 'eventcrew'),
+                        _n('%d ticket was skipped because it was already on the list.', '%d tickets were skipped because they were already on the list.', (int) $c['skipped'], 'eventcrew'),
                         (int) $c['skipped']
                     )
                     : ''
@@ -2395,7 +2408,7 @@ final class MessageTemplates
                 static fn (array $c): string => (int) ($c['plus_ones'] ?? 0) > 0
                     ? sprintf(
                         /* translators: %d: total number of plus-ones the added guests bring */
-                        __('They bring %d plus-ones in total.', 'eventcrew'),
+                        _n('They bring %d plus-one in total.', 'They bring %d plus-ones in total.', (int) $c['plus_ones'], 'eventcrew'),
                         (int) $c['plus_ones']
                     )
                     : ''
@@ -2405,7 +2418,7 @@ final class MessageTemplates
                 static fn (array $c): string => (int) ($c['skipped'] ?? 0) > 0
                     ? sprintf(
                         /* translators: %d: number of names skipped */
-                        __('%d names were skipped because they were already on the guest list.', 'eventcrew'),
+                        _n('%d name was skipped because it was already on the guest list.', '%d names were skipped because they were already on the guest list.', (int) $c['skipped'], 'eventcrew'),
                         (int) $c['skipped']
                     )
                     : ''
@@ -2609,7 +2622,7 @@ final class MessageTemplates
                 ),
                 static fn (): string => self::tag(
                     /* translators: 1: the person's name, 2: their email */
-                    __('%1$s (%2$s) signed in for the first time and wants to join the crew. Press OK or No in the Admin tab of the crew page.', 'eventcrew'),
+                    __('%1$s (%2$s) signed in for the first time and wants to join the crew. Press OK or No in the Admin tab of the Crew app.', 'eventcrew'),
                     ['%1$s' => '{name}', '%2$s' => '{email}']
                 ) . "\n\n{join_answers}",
                 ['name' => $member, 'email' => $memberEmail, 'join_answers' => $joinAnswers]
@@ -2743,18 +2756,8 @@ final class MessageTemplates
             __('Door list for %1$s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine. Need another one? %2$s', 'eventcrew'),
             ['%1$s' => '{day}', '%2$s' => '{door_help}']
         );
-        // The DMs leave out "Need another one?": the 💳 Sales desk button is
-        // right under the text.
-        $salesDeskDm = static fn (): string => self::tag(
-            /* translators: %s: event day, e.g. "Sat 1 Aug" */
-            __('Door list for %s: open it with the button below. The link works once, on one device; it logs that device in until 06:00. Forwarding it is fine.', 'eventcrew'),
-            ['%s' => '{day}']
-        );
-        $organizingDm = static fn (): string => self::tag(
-            /* translators: %s: event day, e.g. "Sat 1 Aug" */
-            __('You are organizing on %s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks.', 'eventcrew'),
-            ['%s' => '{day}']
-        );
+        // The DMs keep "Need another one?" too: the same text on both
+        // channels (the 💳 Sales desk button is under both).
         $organizing = static fn (): string => self::tag(
             /* translators: 1: event day, e.g. "Sat 1 Aug", 2: how to get another link */
             __('You are organizing on %1$s. The sales desk button logs this device in to the door list until 06:00; the link works once. The Admin tab is in the Crew app; sign in there if it asks. Need another sales desk link? %2$s', 'eventcrew'),
@@ -2865,7 +2868,7 @@ final class MessageTemplates
                 $telegram,
                 __('Sent on an event night to the people on a sales desk task, once they are marked arrived, and to anyone who asks with /door. The button under the text opens the sales desk.', 'eventcrew'),
                 null,
-                $salesDeskDm,
+                $salesDesk,
                 ['day' => $day, 'door_help' => $doorHelp]
             ),
             new MessageTemplate(
@@ -2887,7 +2890,7 @@ final class MessageTemplates
                 $telegram,
                 __('Sent on an event night to the organizers signed up on the Organize task, before the first task starts. The buttons under the text open the sales desk and the Admin tab.', 'eventcrew'),
                 null,
-                $organizingDm,
+                $organizing,
                 ['day' => $day, 'door_help' => $doorHelp]
             ),
         ];
@@ -3139,6 +3142,15 @@ final class MessageTemplates
             ? sprintf(__('Event starts %s', 'eventcrew'), $start)
             /* translators: 1: start time, 2: doors close time, like 19:00 and 19:30 */
             : sprintf(__('Event starts %1$s · doors close %2$s', 'eventcrew'), $start, $doors);
+    }
+
+    /**
+     * The DM's short "Can't make it?" line: its Cancel button asks first and
+     * offers the hand-over, so the line only points at it.
+     */
+    private static function cancelHelpDm(): string
+    {
+        return __('Can’t make it? Tap Cancel below: there you can also hand the task over to someone else.', 'eventcrew');
     }
 
     /**

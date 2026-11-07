@@ -453,7 +453,7 @@ final class AssignCommand
      *
      * @return array{0: string, 1: string}
      */
-    private static function takeDate(string $args): array
+    public static function takeDate(string $args): array
     {
         $parts = preg_split('/\s+/u', $args, 2);
         $date = Dates::parseUserDate((string) ($parts[0] ?? ''), current_time('Y-m-d'));
@@ -504,6 +504,29 @@ final class AssignCommand
      */
     public static function matchTasks(string $query, array $pool): array
     {
+        $found = self::bestMatches($query, $pool, static fn (Task $t): array => [$t->roleLabel(), $t->roleSlug]);
+
+        if ([] === $found) {
+            return [];
+        }
+
+        $first = $found[0]->taskDate;
+
+        return array_values(array_filter($found, static fn (Task $t): bool => $t->taskDate === $first));
+    }
+
+    /**
+     * The items whose name matches $query best: exact, then starts with, then
+     * contains, then off by a typo or two. $names gives an item's names (a
+     * label and a slug, say); any of them may match.
+     *
+     * @template T
+     * @param list<T> $items
+     * @param callable(T): array<int, string> $names
+     * @return list<T>
+     */
+    public static function bestMatches(string $query, array $items, callable $names): array
+    {
         $q = self::norm($query);
 
         if ('' === $q) {
@@ -519,14 +542,20 @@ final class AssignCommand
 
         foreach ($tests as $test) {
             $found = array_values(array_filter(
-                $pool,
-                static fn (Task $t): bool => $test(self::norm($t->roleLabel())) || $test(self::norm($t->roleSlug))
+                $items,
+                static function ($item) use ($test, $names): bool {
+                    foreach ($names($item) as $name) {
+                        if ($test(self::norm($name))) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
             ));
 
             if ([] !== $found) {
-                $first = $found[0]->taskDate;
-
-                return array_values(array_filter($found, static fn (Task $t): bool => $t->taskDate === $first));
+                return $found;
             }
         }
 
@@ -636,7 +665,8 @@ final class AssignCommand
         return array_values(array_filter(array_map(fn ($id): ?Person => $this->people->find((int) $id), $ids)));
     }
 
-    private function taskLabel(Task $task): string
+    /** A task as the bot names it: "Host · Sat 25 Jul 21:00–23:00". */
+    public static function taskLabel(Task $task): string
     {
         return trim($task->roleLabel() . ' · ' . Dates::dayLabel($task->taskDate) . ' ' . $task->timeRange());
     }

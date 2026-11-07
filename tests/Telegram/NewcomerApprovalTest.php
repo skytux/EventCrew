@@ -126,7 +126,7 @@ final class NewcomerApprovalTest extends TelegramTestCase
         $dm = $this->lastCallTo('sendMessage');
         self::assertNotNull($dm);
         self::assertSame(555, $dm['chat_id']);
-        self::assertStringContainsString('🆕 New: Sam Lee (sam@example.com) wants to join.', $dm['text']);
+        self::assertStringStartsWith("💌 Test Site\n\nHi Kim,\n\n🆕 New: Sam Lee (sam@example.com) wants to join.", $dm['text']);
         $buttons = $dm['reply_markup']['inline_keyboard'][0];
         self::assertSame('✅ OK', $buttons[0]['text']);
         self::assertSame('nco:ok:8', $buttons[0]['callback_data']);
@@ -135,9 +135,12 @@ final class NewcomerApprovalTest extends TelegramTestCase
 
         // Both organizers get the email, Kim's on top of her Telegram DM.
         self::assertSame(['kim@example.com', 'alex@example.com'], array_column($this->mails, 'to'));
+        // Every email to a person greets them (Owner, 2026-11-07).
+        self::assertStringStartsWith("Hi Kim,\n\n", $this->mails[0]['body']);
+        self::assertStringStartsWith("Hi Alex,\n\n", $this->mails[1]['body']);
         foreach ($this->mails as $mail) {
             self::assertSame('New: Sam Lee wants to join', $mail['subject']);
-            self::assertStringContainsString('Press OK or No in the Admin tab of the crew page.', $mail['body']);
+            self::assertStringContainsString('Press OK or No in the Admin tab of the Crew app.', $mail['body']);
             self::assertStringContainsString('https://site.test/crew/#', $mail['body']);
             self::assertStringContainsString('t.me/crewbot?start=nco-8', $mail['body']);
         }
@@ -450,7 +453,7 @@ final class NewcomerApprovalTest extends TelegramTestCase
         $edit = $this->lastCallTo('editMessageText');
         self::assertNotNull($edit);
         self::assertSame(
-            "📣 Test Site\n\nHi Kim,\n\n🆕 New: Sam Lee (sam@example.com) wants to join.\nDid not say whether they have worked on the crew here before.\n\n✅ OK, by Kim, 20 Jul 12:00.",
+            "💌 Test Site\n\nHi Kim,\n\n🆕 New: Sam Lee (sam@example.com) wants to join.\nDid not say whether they have worked on the crew here before.\n\n✅ OK, by Kim, 20 Jul 12:00.",
             $edit['text']
         );
         self::assertSame([], $edit['reply_markup']['inline_keyboard']);
@@ -476,7 +479,7 @@ final class NewcomerApprovalTest extends TelegramTestCase
         self::assertCount(1, $this->mails);
         self::assertSame('sam@example.com', $this->mails[0]['to']);
         self::assertSame('The team said OK', $this->mails[0]['subject']);
-        self::assertStringContainsString('The team said OK. You can now take tasks on the crew page.', $this->mails[0]['body']);
+        self::assertStringContainsString('The team said OK. You can now take tasks in the Crew app.', $this->mails[0]['body']);
         self::assertStringContainsString('See open tasks: https://site.test/crew/', $this->mails[0]['body']);
     }
 
@@ -507,7 +510,7 @@ final class NewcomerApprovalTest extends TelegramTestCase
         self::assertTrue($answer['show_alert']);
         self::assertNull($this->lastCallTo('sendMessage'));
         self::assertSame(
-            "📣 Test Site\n\nHi Kim,\n\n🆕 New: Sam Lee (sam@example.com) wants to join.\nDid not say whether they have worked on the crew here before.\n\n❌ No, by Alex.",
+            "💌 Test Site\n\nHi Kim,\n\n🆕 New: Sam Lee (sam@example.com) wants to join.\nDid not say whether they have worked on the crew here before.\n\n❌ No, by Alex.",
             $this->lastCallTo('editMessageText')['text']
         );
     }

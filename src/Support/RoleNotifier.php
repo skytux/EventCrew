@@ -185,7 +185,7 @@ final class RoleNotifier
             $organizer->id,
             $organizer->email,
             MessageTemplates::subject($template, $context),
-            MessageTemplates::body($template, $context),
+            EmailBody::withGreeting($organizer->displayName, MessageTemplates::body($template, $context)),
             MessageActions::email(MessageActions::of($template, $context, $this->mailer))
         );
     }

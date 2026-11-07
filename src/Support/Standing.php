@@ -81,4 +81,23 @@ final class Standing
             $this->scorePercent()
         );
     }
+
+    /**
+     * "Your standing: Beginner · 1 free-entry credit.", the line the sign-up
+     * and cancel confirmations end with.
+     */
+    public function line(): string
+    {
+        return sprintf(
+            /* translators: 1: standing level and score, 2: number of free-entry credits */
+            _n(
+                'Your standing: %1$s · %2$d free-entry credit.',
+                'Your standing: %1$s · %2$d free-entry credits.',
+                $this->creditBalance,
+                'eventcrew'
+            ),
+            $this->ratedSummary(),
+            $this->creditBalance
+        );
+    }
 }

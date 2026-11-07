@@ -227,16 +227,25 @@ final class DoorLinkSender
      * the caller has decided. 💳 Sales desk uses this for a link asked for by hand,
      * DM only, to $dmChatId. Returns false when the link would already be dead
      * (the night has closed for this person), and then sends nothing.
+     *
+     * $unasked is true for the scheduled send (sendOnce()): that DM opens
+     * and signs off (DmBody). A link the person asked for, in the bot or in
+     * the Crew app, is the reply to their own tap and comes bare.
      */
-    public function send(Person $person, string $date, bool $byEmail = true, ?int $dmChatId = null): bool
-    {
+    public function send(
+        Person $person,
+        string $date,
+        bool $byEmail = true,
+        ?int $dmChatId = null,
+        bool $unasked = false
+    ): bool {
         return Language::forPerson(
             $person,
-            fn (): bool => $this->sendInLanguage($person, $date, $byEmail, $dmChatId)
+            fn (): bool => $this->sendInLanguage($person, $date, $byEmail, $dmChatId, $unasked)
         );
     }
 
-    private function sendInLanguage(Person $person, string $date, bool $byEmail, ?int $dmChatId): bool
+    private function sendInLanguage(Person $person, string $date, bool $byEmail, ?int $dmChatId, bool $unasked): bool
     {
         $url = $this->loginUrl($person, $date);
 
@@ -259,11 +268,8 @@ final class DoorLinkSender
                 $markup = MenuButtons::withBack($markup, MenuButtons::DOOR);
             }
 
-            $this->telegram->sendMessage(
-                $chatId,
-                DmBody::frame($person, MessageTemplates::body('sales_desk_link_dm', $context)),
-                $markup
-            );
+            $text = MessageTemplates::body('sales_desk_link_dm', $context);
+            $this->telegram->sendMessage($chatId, $unasked ? DmBody::frame($person, $text) : $text, $markup);
         }
 
         // Only a verified address, the rule every other send here keeps: an
@@ -421,7 +427,7 @@ final class DoorLinkSender
             return;
         }
 
-        if ($this->send($person, $date)) {
+        if ($this->send($person, $date, unasked: true)) {
             $this->ledger->recordSent(self::KIND, $person->id, $date);
         }
     }

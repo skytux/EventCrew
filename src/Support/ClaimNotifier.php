@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Models\Person;
+use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -267,6 +268,30 @@ final class ClaimNotifier
     }
 
     /**
+     * An organizer took the person off a task (/unassign). A short DM in the
+     * person's language, framed like the other DMs that simply arrive
+     * (DmBody::frame()). Locked like the cancel confirmation: it is about a
+     * commitment of theirs, so a muted account still gets it.
+     */
+    public function removedByOrganizer(Person $person, Task $task): void
+    {
+        Language::forPerson($person, function () use ($person, $task): void {
+            $this->dm(
+                $person,
+                DmBody::frame(
+                    $person,
+                    sprintf(
+                        /* translators: %s: the task, like "Decorate · Sat 25 Jul 21:00–23:00". */
+                        __('An organizer took you off %s.', 'eventcrew'),
+                        trim($task->roleLabel() . ' · ' . Dates::dayLabel($task->taskDate) . ' ' . $task->timeRange())
+                    ),
+                    true
+                )
+            );
+        });
+    }
+
+    /**
      * The person's tasks on $date changed: a task was taken away from them.
      * Their emailed ticket for the night is sent again with the tasks left,
      * or cancelled when none is left (TicketMail::crewTasksChanged()).
@@ -304,11 +329,6 @@ final class ClaimNotifier
     {
         $standing = $this->standing->for($person->id);
 
-        return sprintf(
-            /* translators: 1: standing level and score, 2: number of free-entry credits */
-            __('Your standing: %1$s · %2$d free-entry credits.', 'eventcrew'),
-            $standing->ratedSummary(),
-            $standing->creditBalance
-        );
+        return $standing->line();
     }
 }

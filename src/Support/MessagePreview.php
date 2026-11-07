@@ -156,12 +156,7 @@ final class MessagePreview
             'name' => $person->name(),
             'email' => $person->email,
             'credits' => 2,
-            'standing' => sprintf(
-                /* translators: 1: standing level and score, 2: number of free-entry credits */
-                __('Your standing: %1$s · %2$d free-entry credits.', 'eventcrew'),
-                $standing->ratedSummary(),
-                $standing->creditBalance
-            ),
+            'standing' => $standing->line(),
             'free_cancel' => ClaimNotifier::freeCancelLine(),
             // The standing notices' before and after: 82% -> 74%.
             'standing_before' => new Standing(Standing::GOOD, 0.82, 6, 2, 7),
@@ -246,11 +241,9 @@ final class MessagePreview
         $eventId = $task instanceof Task ? $task->eventPostId : null;
 
         if (MessageTemplate::CHANNEL_TELEGRAM === $template->channel) {
-            $text = MessageAiText::body($template->id, $context, $eventId);
-            $frame = $preview['frame'] ?? MessageTemplate::FRAME_PLAIN;
-
-            if (MessageTemplate::FRAME_NONE !== $frame) {
-                $text = DmBody::frame($context['person'], $text, MessageTemplate::FRAME_SIGNED === $frame);
+            $text = self::tidied($template, MessageAiText::body($template->id, $context, $eventId));
+            if (MessageTemplate::FRAME_NONE !== ($preview['frame'] ?? MessageTemplate::FRAME_SIGNED)) {
+                $text = DmBody::frame($context['person'], $text);
             }
 
             // As the sender does: framed first, then the DM layout as
@@ -381,7 +374,7 @@ final class MessagePreview
         }
 
         $eventId = $task->eventPostId;
-        $body = MessageAiText::body($template->id, $context, $eventId);
+        $body = self::tidied($template, MessageAiText::body($template->id, $context, $eventId));
         $body = true === ($template->preview['greeting'] ?? false)
             ? EmailBody::withGreeting($person->name(), $body)
             : $body;
@@ -394,6 +387,15 @@ final class MessagePreview
         }
 
         $mailer->toPerson($person->id, $to, $subject, $body, $actions, EmailHero::for($template->id, $context));
+    }
+
+    /**
+     * $body as the sender hands it on: the welcome kinds go through
+     * WelcomeSender::tidy() (preview 'tidy').
+     */
+    private static function tidied(MessageTemplate $template, string $body): string
+    {
+        return true === ($template->preview['tidy'] ?? false) ? WelcomeSender::tidy($body) : $body;
     }
 
     /**

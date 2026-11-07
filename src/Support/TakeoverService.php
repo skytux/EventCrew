@@ -363,8 +363,9 @@ final class TakeoverService
 
         // Transactional: the holder must be able to answer, so the person's
         // notification settings do not apply.
+        // Someone else asks, so the DM opens and signs off (DmBody).
         if (null !== $holder->telegramChatId) {
-            $this->sendAsk($holder->telegramChatId, $id, $context);
+            $this->sendAsk($holder->telegramChatId, $id, $context, true);
         }
 
         $actions = [['label' => __('Answer the request', 'eventcrew'), 'url' => self::answerUrl($id)]];
@@ -447,10 +448,15 @@ final class TakeoverService
         ];
     }
 
-    /** @param array<string, mixed> $context */
-    private function sendAsk(int $chatId, int $id, array $context): void
+    /**
+     * @param array<string, mixed> $context
+     * @param bool $framed True when the request just arrives; false when the
+     *     holder opened it from the email's link, a reply to their own tap.
+     */
+    private function sendAsk(int $chatId, int $id, array $context, bool $framed = false): void
     {
         $text = MessageTemplates::body('takeover_ask_dm', $context);
+        $text = $framed ? DmBody::frame($context['person'], $text) : $text;
         $this->telegram->sendMessage($chatId, $text, ['inline_keyboard' => [[
             ['text' => __('✅ Let them take it', 'eventcrew'), 'callback_data' => self::CALLBACK_PREFIX . 'y:' . $id],
             ['text' => __('❌ Keep my task', 'eventcrew'), 'callback_data' => self::CALLBACK_PREFIX . 'n:' . $id],
@@ -514,9 +520,11 @@ final class TakeoverService
         $actions = MessageActions::of($kind, $context, $this->mailer);
 
         if (null !== $cover->telegramChatId) {
+            // The holder's answer, the clock or a change on the task, not
+            // the cover's own doing: the DM opens and signs off (DmBody).
             $this->telegram->sendMessage(
                 $cover->telegramChatId,
-                MessageTemplates::body($kind . '_dm', $context),
+                DmBody::frame($cover, MessageTemplates::body($kind . '_dm', $context)),
                 MessageActions::replyMarkup($actions)
             );
         }

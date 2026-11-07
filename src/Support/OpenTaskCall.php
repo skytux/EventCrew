@@ -258,11 +258,11 @@ final class OpenTaskCall
         $context = [
             'person' => $person,
             'open_tasks' => self::openTasksText($digest),
+            // Both channels end with it, like the email always did.
+            'recap' => $this->recap($person),
         ];
 
         if ($emailOk) {
-            $context['recap'] = $this->recap($person);
-
             $this->mailer->toPerson(
                 $person->id,
                 $person->email,
@@ -275,7 +275,7 @@ final class OpenTaskCall
         if ($dmOk) {
             $this->telegram->sendMessage(
                 (int) $person->telegramChatId,
-                DmBody::frame($person, MessageTemplates::body('open_task_call_dm', $context), true),
+                DmBody::frame($person, MessageTemplates::body('open_task_call_dm', $context)),
                 // The board, and the group a tap away rather than a scroll
                 // away (left out when its link is not known).
                 MessageActions::replyMarkup(MessageActions::of('open_task_call_dm', $context, $this->mailer))

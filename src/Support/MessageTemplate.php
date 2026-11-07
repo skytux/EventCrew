@@ -35,15 +35,16 @@ use Closure;
  * - preview: how the kind's sender wraps the text, for the Preview link on
  *   the Messages page (MessagePreview). Every key is optional; a kind with
  *   none is an email sent by Mailer::toPerson() with no buttons, or a DM
- *   framed by DmBody::frame() without the sign-off and with no buttons.
+ *   framed by DmBody::frame() (opening and sign-off) with no buttons.
  *   - send: PREVIEW_PERSON (default), PREVIEW_ADDRESS (an address nobody
  *     has confirmed, Mailer::toUnconfirmedAddress()), or the composer of a
  *     mail with its own layout: PREVIEW_TICKET, PREVIEW_TICKET_CANCELLED,
  *     PREVIEW_FOLLOWUP_CAME, PREVIEW_FOLLOWUP_MISSED, PREVIEW_NEWSLETTER.
  *   - greeting: true when the sender puts "Hi Name," in front of the email
  *     text (EmailBody::withGreeting()).
- *   - frame: for a DM, FRAME_PLAIN (default), FRAME_SIGNED (with the
- *     sign-off) or FRAME_NONE (sent as the text alone).
+ *   - frame: for a DM, FRAME_SIGNED (default: the opening and the
+ *     sign-off, for a message the person did not just ask for) or
+ *     FRAME_NONE (the text alone, for the reply to their own action).
  *   - dm_format: true when the sender passes the DM text through
  *     EmailBody::forDm().
  *   - buttons: the labels of the email's buttons or the DM's buttons, in
@@ -71,7 +72,6 @@ final class MessageTemplate
     public const PREVIEW_FOLLOWUP_MISSED = 'followup_missed';
     public const PREVIEW_NEWSLETTER = 'newsletter';
 
-    public const FRAME_PLAIN = 'plain';
     public const FRAME_SIGNED = 'signed';
     public const FRAME_NONE = 'none';
 

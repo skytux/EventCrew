@@ -258,7 +258,9 @@ final class AssistantKnowledge
                 'Every coming role task, of every role: this person is an organizer. They are not on the group'
                     . ' board. The organizer signs themselves up for one of their own roles with /board. To put'
                     . ' anyone on any task, also one for a role that person does not hold, give the action'
-                    . ' /assign <task> ; <person> (or /board, ➕ Add someone); /unassign takes someone off.',
+                    . ' /assign <task> ; <person> (or /board, ➕ Add someone); /unassign takes someone off. To'
+                    . ' change a task give /edittask <task> ; <field> <value>; /addtask, /deletetask, /maketasks'
+                    . ' and /mailtasks add one, delete one, create a night\'s tasks and send the open-task email.',
             ];
         }
 

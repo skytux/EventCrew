@@ -281,7 +281,7 @@ final class MailedListImport
             self::dropEmptyLines(MessageTemplates::body($template, $context())),
             $actions,
             static fn (): string => self::dropEmptyLines(MessageTemplates::body($template . '_dm', $context())),
-            static function () use ($fromFile, $date, $rosterUrl): array {
+            static function () use ($fromFile, $date, $rosterUrl, $doorUrl): array {
                 $roster = ['text' => __('Open the Roster page', 'eventcrew'), 'url' => $rosterUrl];
 
                 // Only the tickets can be reset from the bot.
@@ -289,8 +289,15 @@ final class MailedListImport
                     return ['inline_keyboard' => [[$roster]]];
                 }
 
+                // The same two links as the email, under the reset.
+                $links = [$roster];
+
+                if ('' !== $doorUrl) {
+                    $links[] = ['text' => __('Door list', 'eventcrew'), 'url' => $doorUrl];
+                }
+
                 $markup = BuyerListReset::markup($date);
-                $markup['inline_keyboard'][] = [$roster];
+                $markup['inline_keyboard'][] = $links;
 
                 return $markup;
             }
@@ -327,10 +334,10 @@ final class MailedListImport
     }
 
     /**
-     * One email to each organizer, and one to $from when it is not an
-     * organizer's address (an extra sender address). Each organizer with a
-     * private chat with the bot also gets $dm(), with the buttons of
-     * $markup(), built in their language. The organizer's LIST_IMPORT row
+     * One email to each organizer, greeted by name, and one to $from when it
+     * is not an organizer's address (an extra sender address, greeted "Hi,").
+     * Each organizer with a private chat with the bot also gets $dm(), with
+     * the buttons of $markup(), built in their language. The organizer's LIST_IMPORT row
      * decides whether each of the two comes.
      *
      * @param array<int, array{label: string, url: string}> $actions
@@ -356,7 +363,13 @@ final class MailedListImport
 
             if (! isset($sent[$address]) && $prefs->emailAllowed($organizer, NotificationPreferences::LIST_IMPORT)) {
                 $sent[$address] = true;
-                $this->mailer->toPerson($organizer->id, $organizer->email, $subject, $body, $actions);
+                $this->mailer->toPerson(
+                    $organizer->id,
+                    $organizer->email,
+                    $subject,
+                    EmailBody::withGreeting($organizer->displayName, $body),
+                    $actions
+                );
             }
 
             if (
@@ -377,7 +390,8 @@ final class MailedListImport
 
         // An organizer who turned the email off gets no copy as the sender.
         if ('' !== $from && ! isset($organizerAddresses[$from])) {
-            $this->mailer->toUnconfirmedAddress($from, $subject, $body, $actions);
+            // No name for an extra sender address: "Hi,".
+            $this->mailer->toUnconfirmedAddress($from, $subject, EmailBody::withGreeting('', $body), $actions);
         }
     }
 }

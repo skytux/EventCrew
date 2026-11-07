@@ -433,7 +433,8 @@ final class OpenTaskCallTest extends TestCase
             $this->mails[0]['body']
         );
         self::assertSame(
-            "📣 Test Site\n\nHi Sam,\n\n🔔 Some tasks still need people:\n\n" . self::OPEN,
+            "💌 Test Site\n\nHi Sam,\n\n🔔 Some tasks still need people:\n\n" . self::OPEN
+                . "\n\nThis will be your first task — welcome!\n\nTasks completed in total: 0.",
             (string) $dms[0]['text']
         );
         // The DM has the email's actions: the board, the group.
@@ -490,7 +491,7 @@ final class OpenTaskCallTest extends TestCase
             $this->mails[0]['body']
         );
         self::assertSame(
-            "📣 Test Site\n\nHi Sam,\n\nOpen: " . self::OPEN,
+            "💌 Test Site\n\nHi Sam,\n\nOpen: " . self::OPEN,
             (string) $dms[0]['text']
         );
     }

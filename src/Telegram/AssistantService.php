@@ -625,6 +625,11 @@ final class AssistantService
                 . ' bot then finds them, asks with buttons and confirms before anything changes. This works'
                 . ' for every task but Organize, also for a role the person does not hold. Never say you'
                 . ' cannot add someone to a task.';
+            $lines[] = '- An organizer can also manage tasks in a private chat: /addtask, /edittask (time, places,'
+                . ' notes, plus-ones), /deletetask, /maketasks (a night\'s tasks from the roles) and /mailtasks'
+                . ' (the open-task email now). When they ask for one of these, give that command with the task'
+                . ' or role name as they wrote it; the bot finds it, asks with buttons when unclear and confirms'
+                . ' before anything changes. Never say you cannot change, add or delete a task.';
         }
 
         if ($isPrivate) {

@@ -207,7 +207,8 @@ final class TakeoverMessagesTest extends TelegramTestCase
 
         self::assertTrue($result['ok']);
         $dm = $this->lastCallTo('sendMessage');
-        self::assertSame('Person 7 wants Decorate. Answer by Thu 23 Jul 12:00.', $dm['text']);
+        // It arrives unasked, so it is framed (Owner, 2026-11-07).
+        self::assertSame("💌 Test Site\n\nHi Person,\n\nPerson 7 wants Decorate. Answer by Thu 23 Jul 12:00.", $dm['text']);
         self::assertSame('tko:y:1', $dm['reply_markup']['inline_keyboard'][0][0]['callback_data'], 'the buttons stay');
 
         self::assertCount(1, $this->mails);
@@ -286,7 +287,7 @@ final class TakeoverMessagesTest extends TelegramTestCase
 
         $dm = $this->lastCallTo('sendMessage');
         self::assertSame(555, $dm['chat_id']);
-        self::assertSame('Person 9 said no to Decorate on Sat 1 Aug 20:00.', $dm['text']);
+        self::assertSame("💌 Test Site\n\nHi Person,\n\nPerson 9 said no to Decorate on Sat 1 Aug 20:00.", $dm['text']);
         self::assertSame('No from Person 9', $this->mails[0]['subject']);
         self::assertStringContainsString('Sorry Person, Person 9 keeps Decorate.', $this->mails[0]['body']);
     }

@@ -296,7 +296,7 @@ final class WelcomeSenderTest extends SalesDeskTestCase
 
         self::assertCount(3, $rows);
         self::assertStringStartsWith('https://t.me/crewbot?start=board-20260720', $rows[1][0]['url']);
-        self::assertSame('💬 Open the group', $rows[2][0]['text']);
+        self::assertSame('💬 Telegram group', $rows[2][0]['text']);
         self::assertSame('https://t.me/+crew', $rows[2][0]['url']);
     }
 
@@ -431,8 +431,8 @@ final class WelcomeSenderTest extends SalesDeskTestCase
 
         $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(1, true)));
 
-        self::assertStringContainsString('Open our group in Telegram: https://t.me/+crew', $this->mails[0]['body']);
-        self::assertStringContainsString('Open our group in Telegram: https://t.me/+crew', $this->mails[1]['body']);
+        self::assertStringContainsString('💬 Telegram group: https://t.me/+crew', $this->mails[0]['body']);
+        self::assertStringContainsString('💬 Telegram group: https://t.me/+crew', $this->mails[1]['body']);
         self::assertStringContainsString(
             'Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew',
             $this->mails[1]['body']
@@ -636,8 +636,8 @@ final class WelcomeSenderTest extends SalesDeskTestCase
 
         $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(1, true)));
 
-        self::assertStringNotContainsString('Open our group in Telegram', $this->mails[0]['body']);
-        self::assertStringNotContainsString('Open our group in Telegram', $this->mails[1]['body']);
+        self::assertStringNotContainsString('💬 Telegram group', $this->mails[0]['body']);
+        self::assertStringNotContainsString('💬 Telegram group', $this->mails[1]['body']);
     }
 
     public function testTheTestSendMarksMessagesThatDoNotApply(): void

@@ -247,6 +247,43 @@ final class AssistantActionsTest extends TestCase
         }
     }
 
+    public function testAnOrganizerMayManageTasksAndTheCommandsConfirmThemselves(): void
+    {
+        foreach (
+            [
+                '/edittask Host ; places 3',
+                '/edittask 21.11. Host ; time 21:00-02:00 ; notes Bring keys',
+                '/addtask Host ; time 21-23',
+                '/addtask 21.11. Door',
+                '/deletetask 21.11. Host',
+                '/maketasks',
+                '/maketasks 21.11.',
+                '/mailtasks',
+            ] as $action
+        ) {
+            $checked = self::check($action, self::organizer());
+            self::assertTrue($checked['ok'], $action);
+            self::assertFalse($checked['confirm'], $action);
+            self::assertSame(AssistantActions::RUN_MESSAGE, $checked['run'], $action);
+            self::assertSame($action, $checked['payload'], $action);
+        }
+
+        $usages = array_column(AssistantActions::catalogue(self::organizer()), 'usage');
+        self::assertContains('/edittask [date] <task> ; <field> <value> [; <field> <value>]', $usages);
+        self::assertContains('/mailtasks', $usages);
+        self::assertNotContains('/mailtasks', array_column(AssistantActions::catalogue(self::member()), 'usage'));
+    }
+
+    public function testTaskCommandsAreForOrganizersOnlyAndNeedTheirParts(): void
+    {
+        self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check('/edittask Host ; places 3', self::member())['error']);
+        self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check('/mailtasks', self::member())['error']);
+
+        foreach (['/edittask Host', '/edittask ; places 3', '/addtask', '/deletetask', '/deletetask Host ; x', '/maketasks Host', '/mailtasks now'] as $action) {
+            self::assertSame(AssistantActions::ERROR_INVALID, self::check($action, self::organizer())['error'], $action);
+        }
+    }
+
     public function testTheLanguageEntryNamesEverySiteLanguage(): void
     {
         \Brain\Monkey\Functions\when('get_option')->alias(

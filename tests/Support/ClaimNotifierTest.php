@@ -447,9 +447,10 @@ final class ClaimNotifierTest extends TestCase
             . ' candles, decorate the DJ table, prepare the water and fruit, and open the movable walls.';
         self::assertSame(
             "✅ Signed up: Decorate at Party, Sat 1 Aug 18:00–20:00.\n\n" . $about
-                . "\n\nShow your ticket at the door - it is the first button below."
+                . "\n\nShow your ticket at the door – it is the first button below."
                 . ' You can cancel without it affecting your standing up to 48 hours before the task.'
-                . "\n\nYour standing: Beginner · 0 free-entry credits.",
+                . "\n\nYour standing: Beginner · 0 free-entry credits."
+                . "\n\nCan’t make it? Tap Cancel below: there you can also hand the task over to someone else.",
             (string) $sends->items[0]['text']
         );
         self::assertSame('Thank you Sam! ✨ You’re on the crew for Party', $this->mails[0]['subject']);
@@ -457,7 +458,7 @@ final class ClaimNotifierTest extends TestCase
             "Hi Sam,\n\nThank you for joining the crew! You’re on Decorate at Party, Sat 1 Aug 18:00–20:00."
                 . "\n\n" . $about
                 . "\n\nShow your ticket at the door. We can’t wait to see you there ✨"
-                . "\n\nYour standing: Beginner · 0 free-entry credits.\n\nCan't make it? Tap Cancel below."
+                . "\n\nYour standing: Beginner · 0 free-entry credits.\n\nCan’t make it? Tap Cancel below."
                 . ' Or find someone to take it over: they send /me to the bot and tap 🔁 Take over a task,'
                 . ' and you accept. You can cancel without it affecting your standing up to 48 hours before the task.'
                 . "\n\n"
@@ -504,8 +505,9 @@ final class ClaimNotifierTest extends TestCase
             . ' somista DJ-pöytä, valmistele vesi ja hedelmät ja avaa siirtoseinät.';
         self::assertSame(
             "✅ Ilmoittauduttu: Somistus, Party, la 1.8. 18:00–20:00.\n\n" . $about
-                . "\n\nNäytä lippusi ovella - se on alla ensimmäisenä painikkeena."
-                . "\n\nLuotettavuutesi: Aloittelija · 0 vapaalippua.",
+                . "\n\nNäytä lippusi ovella – se on alla ensimmäisenä painikkeena."
+                . "\n\nLuotettavuutesi: Aloittelija · 0 vapaalippua."
+                . "\n\nEtkö pääsekään? Napauta alta Peru: siellä voit myös antaa tehtävän jollekulle toiselle.",
             (string) $sends->items[0]['text'],
             'a notice of 0 hours leaves out the free-cancel sentence'
         );
@@ -552,13 +554,14 @@ final class ClaimNotifierTest extends TestCase
 
             $line = 'late_cancel' === $status ? "\n\n" . $standing : '';
             self::assertSame(
-                $kind . ': Decorate at Party. ' . $note . $line,
+                $kind . ': Decorate at Party, Sat 1 Aug 18:00–20:00. Your ticket is now disabled. ' . $note . $line,
                 (string) $sends->items[0]['text'],
                 $status
             );
             self::assertSame('Cancelled: Decorate for Party', $this->mails[0]['subject'], $status);
             self::assertSame(
-                "Hi Sam,\n\nYou've cancelled Decorate at Party, and your ticket is now disabled.\n\n" . $note
+                "Hi Sam,\n\nYou’ve cancelled Decorate at Party, Sat 1 Aug 18:00–20:00, and your ticket is now disabled.\n\n"
+                    . $note
                     . $line . self::MANAGE,
                 $this->mails[0]['body'],
                 $status
@@ -635,7 +638,7 @@ final class ClaimNotifierTest extends TestCase
 
         $dm = $sends->items[0];
         self::assertStringStartsWith(
-            "❌ Cancelled: Decorate at Party. Thanks for the notice. This is an early cancellation: it is more than 48"
+            "❌ Cancelled: Decorate at Party, Sat 1 Aug 18:00–20:00. Your ticket is now disabled. Thanks for the notice. This is an early cancellation: it is more than 48"
                 . " hours before the task, so it has no effect on your standing.\n\nOther open tasks at Party:\n📅 Sat 1 Aug\n\n🔹 ",
             (string) $dm['text']
         );
@@ -740,7 +743,7 @@ final class ClaimNotifierTest extends TestCase
         self::assertSame([], $sends->items);
         $body = $this->mails[0]['body'];
         self::assertStringContainsString(
-            "Can't make it? Tap Cancel on your task in the Board tab of the crew page (https://site.test/crew/).",
+            "Can’t make it? Tap Cancel on your task in the Board tab of the crew page (https://site.test/crew/).",
             $body
         );
         self::assertStringContainsString("\nManage my tasks: https://site.test/crew/?eventcrew_login=", $body);
@@ -783,7 +786,7 @@ final class ClaimNotifierTest extends TestCase
         $this->signUp($this->personInLanguage(null));
 
         $body = $this->mails[0]['body'];
-        self::assertStringContainsString("Can't make it? Tap Cancel below.", $body);
+        self::assertStringContainsString("Can’t make it? Tap Cancel below.", $body);
         self::assertStringNotContainsString('Manage my tasks', $body);
         self::assertStringNotContainsString('crew page', $body);
 

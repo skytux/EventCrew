@@ -323,7 +323,7 @@ final class ReminderCallTest extends TelegramTestCase
 
         self::assertNull($this->lastCallTo('sendMessage'));
         self::assertStringContainsString(
-            "Can't make it? Tap Cancel on your task in the Board tab of the crew page"
+            "Can’t make it? Tap Cancel on your task in the Board tab of the crew page"
                 . ' (https://example.test/crew/).',
             $bodies[0]
         );
@@ -337,7 +337,7 @@ final class ReminderCallTest extends TelegramTestCase
         $this->call()->run(25);
 
         // The bot text, and Cancel leads to the crew page itself, not a sign-in link.
-        self::assertStringContainsString("Can't make it? Tap Cancel below.", $bodies[1]);
+        self::assertStringContainsString("Can’t make it? Tap Cancel below.", $bodies[1]);
         self::assertStringNotContainsString('Manage my tasks', $bodies[1]);
         self::assertStringContainsString("\nCan’t make it? Cancel: https://example.test/crew/\n", $bodies[1]);
     }
