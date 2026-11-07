@@ -177,6 +177,26 @@ final class AssignmentRepositoryTest extends TestCase
     }
 
     /**
+     * Q351: signing up again for a task one cancelled late puts the same row
+     * back to signed_up, so it is no longer a late cancellation and no longer
+     * counts against the standing.
+     */
+    public function testSigningUpAgainAfterALateCancelRemovesTheMark(): void
+    {
+        $this->wpdb->nextVars = [2]; // taskCapacity
+        $this->wpdb->nextRows = [
+            ['id' => 9, 'task_id' => 3, 'person_id' => 1, 'status' => AssignmentStatus::LATE_CANCEL],
+        ];
+        $this->wpdb->nextQueryResults = [1];
+
+        $result = (new AssignmentRepository())->join(3, 1);
+
+        self::assertSame(AssignmentRepository::JOIN_REJOINED, $result);
+        self::assertStringContainsString("SET target.status = 'signed_up'", $this->wpdb->lastQuery());
+        self::assertStringContainsString('WHERE target.id = 9', $this->wpdb->lastQuery());
+    }
+
+    /**
      * The organize task has no limit: the insert lets a row through when the
      * task is the organize task, whatever the count says. The check is inside
      * the same statement, read from the task row itself.

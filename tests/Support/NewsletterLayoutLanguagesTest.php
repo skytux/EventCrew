@@ -174,6 +174,7 @@ final class NewsletterLayoutLanguagesTest extends TestCase
     public function testThreeLanguagesGiveThreePartsInTheEveryLanguageVersion(): void
     {
         $this->siteLanguages(['fi', 'sv', 'en']);
+        $this->options[HybridPolicy::SHOWN_OPTION] = 3;
         $content = self::content();
 
         $html = NewsletterLayout::html($content['cards'], $content['later'], $content['text'], '#7a3cff');

@@ -112,14 +112,15 @@ final class Signature
     }
 
     /**
-     * $languages, or every site language when it is empty.
+     * $languages, or the shown site languages (HybridPolicy::shown()) when
+     * it is empty.
      *
      * @param list<string> $languages
      * @return list<string>
      */
     private static function languages(array $languages): array
     {
-        return [] === $languages ? SiteLanguages::codes() : array_values($languages);
+        return [] === $languages ? HybridPolicy::shown() : array_values($languages);
     }
 
     /**

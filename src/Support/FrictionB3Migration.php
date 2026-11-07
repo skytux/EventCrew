@@ -43,6 +43,10 @@ final class FrictionB3Migration
             'free_ticket_dm' => [
                 'free_ticket_dm' => static fn (string $text): string => self::appended($text, ["\n{event}", "\n{event_times}"]),
             ],
+            // Owner, Q344 2026-11-07: the event first, then the day, venue, times.
+            'free_ticket_event_first' => [
+                'free_ticket_dm' => self::eventFirst(...),
+            ],
         ];
     }
 
@@ -77,6 +81,38 @@ final class FrictionB3Migration
         return false === $end
             ? rtrim($text) . $add
             : substr($text, 0, $end) . $add . substr($text, $end);
+    }
+
+    /**
+     * $text with its line that is only {event} moved up, to just before the
+     * first line that has {date}. A text with no such lines, or with {event}
+     * already before {date}, comes back as it is.
+     */
+    public static function eventFirst(string $text): string
+    {
+        $lines = explode("\n", $text);
+        $event = null;
+        $date = null;
+
+        foreach ($lines as $i => $line) {
+            if (null === $event && '{event}' === trim($line)) {
+                $event = $i;
+            }
+
+            if (null === $date && str_contains($line, '{date}')) {
+                $date = $i;
+            }
+        }
+
+        if (null === $event || null === $date || $event < $date) {
+            return $text;
+        }
+
+        $moved = $lines[$event];
+        unset($lines[$event]);
+        array_splice($lines, $date, 0, [$moved]);
+
+        return implode("\n", $lines);
     }
 
     /**

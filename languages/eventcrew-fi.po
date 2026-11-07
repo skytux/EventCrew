@@ -40,12 +40,6 @@ msgstr "%1$s tuuraa henkilöä %2$s: %3$s, %4$s."
 msgid "%1$s · %2$d%%"
 msgstr "%1$s · %2$d %%"
 
-#. translators: 1: name, 2: standing level and score
-#: src/Telegram/ProfileService.php:63
-#, php-format
-msgid "%1$s — %2$s"
-msgstr "%1$s — %2$s"
-
 #. translators: 1: day, 2: time range or '', 3: role with emoji, 4: free places, 5: places in total
 #: src/Support/WelcomeSender.php:528
 #, php-format
@@ -251,12 +245,6 @@ msgstr "Tulossa:"
 #: src/Support/AssignmentStatus.php:106 templates/public/signup.php:557
 msgid "Completed"
 msgstr "Tehty"
-
-#. translators: 1: completed count, 2: credit balance
-#: src/Telegram/ProfileService.php:69
-#, php-format
-msgid "Completed tasks: %1$d · Free-entry credits: %2$d"
-msgstr "Tehdyt tehtävät: %1$d · Vapaaliput: %2$d"
 
 #: src/Support/Reputation.php:67
 msgid "Completed the task"
@@ -1409,14 +1397,6 @@ msgstr "Voit palata Telegramiin ja ilmoittautua tehtäviin."
 msgid "You earn 1 free-entry credit for every %d completed tasks."
 msgstr "Saat 1 vapaalipun jokaisesta %d tehdystä tehtävästä."
 
-#. translators: %d: number of free-entry credits
-#: src/Telegram/TicketRedemptionService.php:102
-#, php-format
-msgid "You have %d free-entry credit. Pick an event to spend it on:"
-msgid_plural "You have %d free-entry credits. Pick an event to spend one on:"
-msgstr[0] "Sinulla on %d vapaalippu. Valitse tapahtuma, johon käytät sen:"
-msgstr[1] "Sinulla on %d vapaalippua. Valitse tapahtuma, johon käytät yhden:"
-
 #: src/Telegram/TicketRedemptionService.php:320 src/Web/SignupController.php:707
 msgid "You have no free-entry credits to spend."
 msgstr "Sinulla ei ole vapaalippuja käytettäväksi."
@@ -1451,9 +1431,6 @@ msgstr "Perutaanko %s?"
 
 msgid "This close to the task it is a late cancellation: it counts against your standing."
 msgstr "Näin lähellä tehtävää se on myöhäinen peruutus: se heikentää luotettavuuttasi."
-
-msgid "Early enough: it does not affect your standing."
-msgstr "Ajoissa: se ei vaikuta luotettavuuteesi."
 
 msgid "Yes, cancel"
 msgstr "Kyllä, peru"
@@ -1749,12 +1726,6 @@ msgstr "⭐ Olet nyt järjestäjä: %s."
 #: src/Support/ClaimNotifier.php:114 src/Telegram/TicketRedemptionService.php:246
 msgid "🎟 Show your ticket"
 msgstr "🎟 Näytä lippusi"
-
-#. translators: %s: event date
-#: src/Telegram/TicketRedemptionService.php:243
-#, php-format
-msgid "🎟 Your free-entry ticket for %s — show it at the door."
-msgstr "🎟 Vapaalippusi tapahtumaan %s — näytä se ovella."
 
 #: src/Telegram/PermissionService.php:244
 msgid "🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up."
@@ -7044,8 +7015,15 @@ msgstr "EventCrew: sivustolla on %1$d kieltä. Monikieliset viestit toimivat eni
 msgid "Hybrid messages"
 msgstr "Monikieliset viestit"
 
-msgid "Telegram buttons show only the first two languages."
-msgstr "Telegram-painikkeissa näkyy vain kaksi ensimmäistä kieltä."
+#, php-format
+msgid "Texts and buttons in several languages show %1$d of the %2$d site languages: the reader’s own first, then the next ones. Change it in Settings > Email > Hybrid messages."
+msgstr "Monikieliset tekstit ja painikkeet näyttävät %1$d sivuston %2$d kielestä: lukijan oman ensin, sitten seuraavat. Muuta tätä kohdassa Asetukset > Sähköposti > Monikieliset viestit."
+
+msgid "Languages shown in multi-language texts and buttons"
+msgstr "Kieliä monikielisissä teksteissä ja painikkeissa"
+
+msgid "Telegram, emails and web pages. The reader’s own language first, then the next ones in the site’s order. Default 2."
+msgstr "Telegram, sähköpostit ja verkkosivut. Lukijan oma kieli ensin, sitten seuraavat sivuston järjestyksessä. Oletus 2."
 
 msgid "Hybrid"
 msgstr "Monikielinen"
@@ -7067,9 +7045,6 @@ msgstr "Välilyönti ja lause siitä, kuinka monta tuntia ennen tehtävää peru
 
 msgid "An empty line and the \"About the task\" text of the task's role. Empty when the role has none."
 msgstr "Tyhjä rivi ja tehtävän roolin \"Tehtävästä\"-teksti. Tyhjä, jos roolilla ei ole sitä."
-
-msgid "\"Thanks for the notice.\", or for a late cancellation the sentence saying it counts against the standing."
-msgstr "\"Kiitos ilmoituksesta.\", tai myöhäisessä peruutuksessa lause, joka kertoo sen heikentävän luotettavuutta."
 
 msgid "The next open tasks, under a line with each date."
 msgstr "Seuraavat avoimet tehtävät, kunkin päivän rivin alla."
@@ -8543,9 +8518,6 @@ msgstr[1] "Sinulla on nyt %d vapaalippua."
 msgid "Next nights for free entry:"
 msgstr "Seuraavat illat vapaalipulla:"
 
-msgid "The name of the event. On a line of its own; the line goes when it is not known."
-msgstr "Tapahtuman nimi. Omalla rivillään; rivi jää pois, jos sitä ei tiedetä."
-
 msgid "What the person has done: their tasks and their standing. On a line of its own; the line goes when it is not known."
 msgstr "Mitä henkilö on tehnyt: tehtävät ja taso. Omalla rivillään; rivi jää pois, jos sitä ei tiedetä."
 
@@ -8638,3 +8610,52 @@ msgstr "Vain crew-ryhmän jäsenet voivat aloittaa botin"
 #: templates/admin/settings.php
 msgid "On by default. Someone who is not yet in the crew and not in the group gets no answer from the bot. If they open the bot from a link in an email or on the website, they get a button to the crew group. Members who are already set up are not affected. Turn this off if the bot cannot check who is in the group."
 msgstr "Oletuksena päällä. Botti ei vastaa lainkaan henkilölle, joka ei ole vielä crew'ssa eikä ryhmässä. Jos hän avaa botin sähköpostin tai verkkosivun linkistä, hän saa painikkeen crew-ryhmään. Tämä ei koske jo rekisteröityneitä jäseniä. Kytke tämä pois, jos botti ei pysty tarkistamaan, kuka on ryhmässä."
+
+#: src/Telegram/ProfileService.php
+msgid "My info"
+msgstr "Omat tietoni"
+
+#: src/Telegram/ProfileService.php
+#, php-format
+msgid "Completed tasks: %d"
+msgstr "Tehdyt tehtävät: %d"
+
+#: src/Telegram/ProfileService.php src/Telegram/TicketRedemptionService.php
+#, php-format
+msgid "Free-entry credits: %d"
+msgstr "Vapaaliput: %d"
+
+#: src/Telegram/TicketRedemptionService.php
+msgid "Pick an event:"
+msgstr "Valitse tapahtuma:"
+
+#: src/Support/MessageTemplates.php
+msgid "Show it at the door."
+msgstr "Näytä se ovella."
+
+#: src/Support/MessageTemplates.php
+msgid "The name of the event and its DJs, like Ecstatic Dance · Esimerkki. On a line of its own; the line goes when it is not known."
+msgstr "Tapahtuman nimi ja sen DJ:t, kuten Ecstatic Dance · Esimerkki. Omalla rivillään; rivi jää pois, jos sitä ei tiedetä."
+
+msgid "\"Thanks for the notice.\" and why it has no effect on the standing (an early cancellation, more than the notice hours before the task), or for a late cancellation the sentences saying it counts against the standing and that Sign up again undoes it."
+msgstr "\"Kiitos ilmoituksesta.\" ja miksi se ei vaikuta luotettavuuteen (aikainen peruutus, yli ilmoitusajan tunteja ennen tehtävää), tai myöhäisessä peruutuksessa lauseet, jotka kertovat sen heikentävän luotettavuutta ja että Ilmoittaudu taas kumoaa sen."
+
+msgid "It has no effect on your standing."
+msgstr "Sillä ei ole vaikutusta luotettavuuteesi."
+
+msgid "You took this task only minutes ago, so cancelling it has no effect on your standing."
+msgstr "Otit tehtävän vasta muutama minuutti sitten, joten peruminen ei vaikuta luotettavuuteesi."
+
+msgid "Changed your mind? Tap Sign up again while the place is still free: you are back on the task and the late cancellation is removed."
+msgstr "Muutitko mielesi? Napauta Ilmoittaudu taas, kun paikka on vielä vapaa: olet taas tehtävässä ja myöhäinen peruutus poistuu."
+
+msgid "Sign up for it again while the place is free and the late cancellation is removed."
+msgstr "Ilmoittaudu siihen uudelleen, kun paikka on vapaa, niin myöhäinen peruutus poistuu."
+
+msgid "You’ve cancelled that task. This close to the event it counts as a late cancellation."
+msgstr "Peruit tehtävän. Näin lähellä tapahtumaa se lasketaan myöhäiseksi peruutukseksi."
+
+msgid "This is an early cancellation: it is more than %d hour before the task, so it has no effect on your standing."
+msgid_plural "This is an early cancellation: it is more than %d hours before the task, so it has no effect on your standing."
+msgstr[0] "Tämä on aikainen peruutus: tehtävään on yli %d tunti, joten se ei vaikuta luotettavuuteesi."
+msgstr[1] "Tämä on aikainen peruutus: tehtävään on yli %d tuntia, joten se ei vaikuta luotettavuuteesi."

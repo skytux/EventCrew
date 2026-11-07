@@ -243,7 +243,14 @@ final class SettingsPage
     /**
      * The Hybrid tick of each message kind, for Settings > Email.
      *
-     * @return array{allowed: bool, warning: string, kinds: array<string, array{label: string, ticked: bool}>}
+     * @return array{
+     *     allowed: bool,
+     *     warning: string,
+     *     buttons_warning: string,
+     *     shown: int,
+     *     shown_max: int,
+     *     kinds: array<string, array{label: string, ticked: bool}>
+     * }
      */
     public static function hybridView(): array
     {
@@ -257,6 +264,8 @@ final class SettingsPage
             'allowed' => HybridPolicy::isAllowed(),
             'warning' => HybridPolicy::isAllowed() ? '' : HybridPolicy::offWarning(),
             'buttons_warning' => HybridPolicy::buttonsWarning(),
+            'shown' => HybridPolicy::shownCount(),
+            'shown_max' => HybridPolicy::maxShown(),
             'kinds' => $kinds,
         ];
     }
@@ -811,6 +820,12 @@ final class SettingsPage
         if (HybridPolicy::isAllowed()) {
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only the keys are read, against HybridPolicy::KINDS.
             update_option(HybridPolicy::OPTION, HybridPolicy::fromPost(wp_unslash($_POST['hybrid'] ?? [])));
+        }
+        if (isset($_POST['languages_shown'])) {
+            update_option(
+                HybridPolicy::SHOWN_OPTION,
+                HybridPolicy::shownFromPost(sanitize_text_field(wp_unslash($_POST['languages_shown'])))
+            );
         }
         update_option(
             EmailTemplate::LOGO_OPTION,

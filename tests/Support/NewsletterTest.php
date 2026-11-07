@@ -1531,6 +1531,7 @@ final class NewsletterTest extends TestCase
     public function testAThirdSiteLanguageGetsItsOwnSubjectFooterAndNote(): void
     {
         $this->options[SiteLanguages::OPTION] = ['fi', 'sv', 'en'];
+        $this->options[\EventCrew\Support\HybridPolicy::SHOWN_OPTION] = 3;
         $text = [
             'fi' => 'Tervetuloa!',
             'sv' => 'Välkommen!',

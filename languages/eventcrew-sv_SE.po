@@ -21,12 +21,6 @@ msgid ""
 msgstr ""
 "\"Öppnar försäljningsdisken\": personerna på kvällens uppgift i den här rollen är välkomstcrewet. När de markerats som anlända får de länken till försäljningsdisken, kan se vem som har biljett och gästlistan, och kan markera crewet med /roster."
 
-#: src/Support/MessageTemplates.php:963
-msgid ""
-"\"Thanks for the notice.\", or for a late cancellation the sentence saying it counts against the standing."
-msgstr ""
-"\"Tack för beskedet.\", eller vid en sen avbokning meningen om att den räknas mot pålitligheten."
-
 #: templates/admin/messages-tab-events.php:172
 msgid ""
 "\"Write the AI texts now\" asks the AI at once instead of waiting for the day before. The day before, the AI then leaves these texts as they are."
@@ -198,11 +192,6 @@ msgstr "%1$s – %2$s, en stapel per månad."
 #: templates/admin/newsletter.php:129
 msgid "%1$s – %2$s, one bar per week."
 msgstr "%1$s – %2$s, en stapel per vecka."
-
-#: src/Telegram/ProfileService.php:63
-#. translators: 1: name, 2: standing level and score
-msgid "%1$s — %2$s"
-msgstr "%1$s — %2$s"
 
 #: src/Support/MessagePreview.php:137 src/Support/WelcomeSender.php:636
 #. translators: 1: day, 2: time range or '', 3: role with emoji, 4: free places, 5: places in total
@@ -1711,11 +1700,6 @@ msgid ""
 msgstr ""
 "Antal klara uppgifter en medlem gör för att tjäna en fribiljett. Standard 2."
 
-#: src/Telegram/ProfileService.php:69
-#. translators: 1: completed count, 2: credit balance
-msgid "Completed tasks: %1$d · Free-entry credits: %2$d"
-msgstr "Klara uppgifter: %1$d · Fribiljetter: %2$d"
-
 #: src/Support/Reputation.php:67
 msgid "Completed the task"
 msgstr "Gjorde uppgiften"
@@ -2243,10 +2227,6 @@ msgid ""
 "Each task’s ticket is on its row under My tasks. A free-entry credit you spend shows here."
 msgstr ""
 "Varje uppgifts biljett finns på dess rad under Mina uppgifter. En fribiljett du använder visas här."
-
-#: src/Telegram/BoardService.php:1246
-msgid "Early enough: it does not affect your standing."
-msgstr "I god tid: det påverkar inte din pålitlighet."
 
 #: src/Admin/PeopleListTable.php:126 src/Admin/TasksListTable.php:128 templates/public/signup.php:1708
 msgid "Edit"
@@ -3355,8 +3335,15 @@ msgstr "Hybrid"
 msgid "Hybrid messages"
 msgstr "Hybridmeddelanden"
 
-msgid "Telegram buttons show only the first two languages."
-msgstr "Telegram-knapparna visar bara de två första språken."
+#, php-format
+msgid "Texts and buttons in several languages show %1$d of the %2$d site languages: the reader’s own first, then the next ones. Change it in Settings > Email > Hybrid messages."
+msgstr "Texter och knappar på flera språk visar %1$d av webbplatsens %2$d språk: läsarens eget först, sedan nästa. Ändra det under Inställningar > E-post > Hybridmeddelanden."
+
+msgid "Languages shown in multi-language texts and buttons"
+msgstr "Språk som visas i flerspråkiga texter och knappar"
+
+msgid "Telegram, emails and web pages. The reader’s own language first, then the next ones in the site’s order. Default 2."
+msgstr "Telegram, e-post och webbsidor. Läsarens eget språk först, sedan nästa i webbplatsens ordning. Standard 2."
 
 #: src/Telegram/EventsCommand.php:55 src/Telegram/SayCommand.php:80
 msgid "I am not in the crew group yet."
@@ -10430,13 +10417,6 @@ msgid ""
 msgstr ""
 "Du får det här mejlet eftersom du gick med i utskicket om kommande evenemang. Ändra dina kontaktuppgifter eller lämna utskicket"
 
-#: src/Telegram/TicketRedemptionService.php:115
-#. translators: %d: number of free-entry credits
-msgid "You have %d free-entry credit. Pick an event to spend it on:"
-msgid_plural "You have %d free-entry credits. Pick an event to spend one on:"
-msgstr[0] "Du har %d fribiljett. Välj ett evenemang att använda den till:"
-msgstr[1] "Du har %d fribiljetter. Välj ett evenemang att använda en till:"
-
 #: src/Support/MessageTemplates.php:1548
 #. translators: %s: role name, such as DJ
 msgid "You have a new role: %s"
@@ -11340,11 +11320,6 @@ msgstr[1] ""
 msgid "🎟 Show your ticket"
 msgstr "🎟 Visa din biljett"
 
-#: src/Support/MessageTemplates.php:1210
-#. translators: %s: event date
-msgid "🎟 Your free-entry ticket for %s — show it at the door."
-msgstr "🎟 Din fribiljett för %s — visa den vid dörren."
-
 #: src/Support/MessageTemplates.php:1729
 msgid ""
 "🎟 You’ve a one-time pass to sign up for your next task, even while your standing is low. It is used up the next time you sign up."
@@ -11658,9 +11633,6 @@ msgstr[1] "Du har nu %d fribiljetter."
 msgid "Next nights for free entry:"
 msgstr "Nästa kvällar med fri entré:"
 
-msgid "The name of the event. On a line of its own; the line goes when it is not known."
-msgstr "Evenemangets namn. På en egen rad; raden tas bort när det inte är känt."
-
 msgid "What the person has done: their tasks and their standing. On a line of its own; the line goes when it is not known."
 msgstr "Vad personen har gjort: uppgifter och pålitlighet. På en egen rad; raden tas bort när det inte är känt."
 
@@ -11753,3 +11725,52 @@ msgstr "Bara personer i crew-gruppen kan starta boten"
 #: templates/admin/settings.php
 msgid "On by default. Someone who is not yet in the crew and not in the group gets no answer from the bot. If they open the bot from a link in an email or on the website, they get a button to the crew group. Members who are already set up are not affected. Turn this off if the bot cannot check who is in the group."
 msgstr "På som standard. Den som ännu inte är med i crewet och inte är med i gruppen får inget svar från boten. Om hen öppnar boten från en länk i ett mejl eller på webbplatsen får hen en knapp till crew-gruppen. Medlemmar som redan är registrerade påverkas inte. Stäng av detta om boten inte kan kontrollera vem som är med i gruppen."
+
+#: src/Telegram/ProfileService.php
+msgid "My info"
+msgstr "Min info"
+
+#: src/Telegram/ProfileService.php
+#, php-format
+msgid "Completed tasks: %d"
+msgstr "Klara uppgifter: %d"
+
+#: src/Telegram/ProfileService.php src/Telegram/TicketRedemptionService.php
+#, php-format
+msgid "Free-entry credits: %d"
+msgstr "Fribiljetter: %d"
+
+#: src/Telegram/TicketRedemptionService.php
+msgid "Pick an event:"
+msgstr "Välj ett evenemang:"
+
+#: src/Support/MessageTemplates.php
+msgid "Show it at the door."
+msgstr "Visa den vid dörren."
+
+#: src/Support/MessageTemplates.php
+msgid "The name of the event and its DJs, like Ecstatic Dance · Esimerkki. On a line of its own; the line goes when it is not known."
+msgstr "Evenemangets namn och dess DJ:s, som Ecstatic Dance · Esimerkki. På en egen rad; raden tas bort när det inte är känt."
+
+msgid "\"Thanks for the notice.\" and why it has no effect on the standing (an early cancellation, more than the notice hours before the task), or for a late cancellation the sentences saying it counts against the standing and that Sign up again undoes it."
+msgstr "\"Tack för beskedet.\" och varför den inte påverkar pålitligheten (en tidig avbokning, mer än framförhållningstimmarna före uppgiften), eller vid en sen avbokning meningarna om att den räknas mot pålitligheten och att Anmäl dig igen tar bort den."
+
+msgid "It has no effect on your standing."
+msgstr "Det påverkar inte din pålitlighet."
+
+msgid "You took this task only minutes ago, so cancelling it has no effect on your standing."
+msgstr "Du tog uppgiften för bara några minuter sedan, så avbokningen påverkar inte din pålitlighet."
+
+msgid "Changed your mind? Tap Sign up again while the place is still free: you are back on the task and the late cancellation is removed."
+msgstr "Ångrat dig? Tryck på Anmäl dig igen medan platsen är ledig: du är tillbaka på uppgiften och den sena avbokningen tas bort."
+
+msgid "Sign up for it again while the place is free and the late cancellation is removed."
+msgstr "Anmäl dig till den igen medan platsen är ledig, så tas den sena avbokningen bort."
+
+msgid "You’ve cancelled that task. This close to the event it counts as a late cancellation."
+msgstr "Du har avbokat den uppgiften. Så här nära evenemanget räknas det som en sen avbokning."
+
+msgid "This is an early cancellation: it is more than %d hour before the task, so it has no effect on your standing."
+msgid_plural "This is an early cancellation: it is more than %d hours before the task, so it has no effect on your standing."
+msgstr[0] "Det här är en tidig avbokning: det är mer än %d timme till uppgiften, så den påverkar inte din pålitlighet."
+msgstr[1] "Det här är en tidig avbokning: det är mer än %d timmar till uppgiften, så den påverkar inte din pålitlighet."

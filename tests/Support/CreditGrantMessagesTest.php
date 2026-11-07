@@ -62,14 +62,15 @@ final class CreditGrantMessagesTest extends TelegramTestCase
         self::assertSame(['tkt', '20261114'], MessageActions::screenPayload('tkt-20261114'));
     }
 
-    public function testTheTicketDmNamesTheEventOnItsOwnLine(): void
+    /** Owner, Q344 2026-11-07: a title, then the event, the day, the venue and the times. */
+    public function testTheTicketDmNamesTheEventFirst(): void
     {
         self::assertSame(
-            "🎟 Your free-entry ticket for Sat 1 Aug — show it at the door.\nParty",
+            "✨ Your free-entry ticket ✨\n\nParty\nSat 1 Aug\n\n💫 Show it at the door.",
             MessageTemplates::body('free_ticket_dm', ['date' => 'Sat 1 Aug', 'event' => 'Party'])
         );
         self::assertSame(
-            '🎟 Your free-entry ticket for Sat 1 Aug — show it at the door.',
+            "✨ Your free-entry ticket ✨\nSat 1 Aug\n\n💫 Show it at the door.",
             MessageTemplates::body('free_ticket_dm', ['date' => 'Sat 1 Aug'])
         );
     }

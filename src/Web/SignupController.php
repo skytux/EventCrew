@@ -9,6 +9,8 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\CancelNote;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\DmBody;
 use EventCrew\Support\DoorLinkSender;
@@ -803,6 +805,23 @@ final class SignupController
     }
 
     /**
+     * The notice after a cancel on the page, by what it recorded (Q351): a
+     * late cancel says Sign up again undoes it, an early one says why it has
+     * no effect on the standing. A free cancel inside the second thoughts
+     * window keeps the plain 'dropped'.
+     */
+    private function droppedNotice(string $status, int $taskId): string
+    {
+        if (AssignmentStatus::LATE_CANCEL === $status) {
+            return 'dropped_late';
+        }
+
+        $task = AssignmentStatus::CANCELLED === $status ? $this->tasks->find($taskId) : null;
+
+        return null !== $task && CancelNote::isEarly($task) ? 'dropped_early' : 'dropped';
+    }
+
+    /**
      * The account link in every email points at this public page carrying a
      * single-use `web_login` token (see Mailer::manageUrl). Opening it does not
      * use the token: a mail scanner that opens every link first would spend it.
@@ -1179,6 +1198,7 @@ final class SignupController
 
             if (null !== $assignment) {
                 $this->notifier->cancelled($person, $taskId, $assignment->status);
+                $notice = $this->droppedNotice($assignment->status, $taskId);
             }
         }
 
@@ -1202,6 +1222,9 @@ final class SignupController
             'signed_out' => __('You’re signed out.', 'eventcrew'),
             'claimed' => __('You’re signed up — thanks!', 'eventcrew'),
             'dropped' => __('You’ve cancelled that task.', 'eventcrew'),
+            'dropped_early' => __('You’ve cancelled that task.', 'eventcrew') . ' ' . CancelNote::early(),
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            'dropped_late' => __('You’ve cancelled that task. This close to the event it counts as a late cancellation.', 'eventcrew') . ' ' . CancelNote::undoShort(),
             'already' => __('You were already signed up for that.', 'eventcrew'),
             'full' => __('That slot just filled up.', 'eventcrew'),
             'gated' => __('Sign-ups are paused on your account — please contact the organizer.', 'eventcrew'),

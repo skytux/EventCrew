@@ -624,7 +624,7 @@ final class BoardServiceTest extends TelegramTestCase
         $ask = $this->lastCallTo('sendMessage');
         self::assertSame(555, $ask['chat_id']);
         self::assertStringContainsString('Party', (string) $ask['text']);
-        self::assertStringContainsString('does not affect your standing', (string) $ask['text']);
+        self::assertStringContainsString('This is an early cancellation: it is more than 48 hours before the task, so it has no effect on your standing.', (string) $ask['text']);
         self::assertSame('lc:5:y', $this->callbackOf($ask, '✅'));
         self::assertStringContainsString('private chat', (string) $this->lastCallTo('answerCallbackQuery')['text']);
     }
@@ -721,7 +721,7 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertNotNull($ask);
         self::assertStringContainsString('Cancel ', (string) $ask['text']);
         self::assertStringContainsString('Party', (string) $ask['text']);
-        self::assertStringContainsString('does not affect your standing', (string) $ask['text']);
+        self::assertStringContainsString('This is an early cancellation: it is more than 48 hours before the task, so it has no effect on your standing.', (string) $ask['text']);
         self::assertSame('lc:5:y', $this->callbackOf($ask, '✅'));
         self::assertSame('lc:5:f', $this->callbackOf($ask, '🔁'));
         self::assertSame('lc:5:k', $this->callbackOf($ask, '👍'));
@@ -757,7 +757,38 @@ final class BoardServiceTest extends TelegramTestCase
         ));
         self::assertCount(1, $edits);
         self::assertStringContainsString('You’re out', (string) $edits[0]['body']['text']);
+        // Q351: an early cancel says why it costs nothing, with the real hours.
+        self::assertStringContainsString(
+            'This is an early cancellation: it is more than 48 hours before the task',
+            (string) $edits[0]['body']['text']
+        );
         self::assertSame([], $edits[0]['body']['reply_markup']['inline_keyboard']);
+    }
+
+    /** Q351: the answer to a late Yes says signing up again removes the mark; the popup stays short. */
+    public function testALateYesSaysSigningUpAgainRemovesTheMark(): void
+    {
+        $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
+        $this->verifiedPerson(555);
+        $this->wpdb->nextRows[] = ['starts_at' => '2026-07-21 10:00:00'] + $this->taskRow(5, null, 'Party', '2026-07-21');
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+        $this->wpdb->nextRows[] = ['starts_at' => '2026-07-21 10:00:00', 'task_date' => '2026-07-21'];
+
+        $this->board()->onJoinLeave($this->cancelTap('lc:5:y'));
+
+        $edits = array_values(array_filter(
+            $this->telegramCalls,
+            static fn (array $call): bool => 'editMessageText' === $call['method'] && 42 === ($call['body']['message_id'] ?? 0)
+        ));
+        self::assertCount(1, $edits);
+        $text = (string) $edits[0]['body']['text'];
+        self::assertStringStartsWith('⚠️ You’re out. This close to the event it counts as a late cancellation.', $text);
+        self::assertStringContainsString(
+            'Sign up for it again while the place is free and the late cancellation is removed.',
+            $text
+        );
+        $popup = $this->lastCallTo('answerCallbackQuery');
+        self::assertStringNotContainsString('Sign up for it again', (string) ($popup['text'] ?? ''));
     }
 
     public function testKeepItChangesNothing(): void

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
+use EventCrew\Support\HybridPolicy;
 use EventCrew\Support\Language;
 use EventCrew\Support\SiteLanguages;
 use EventCrew\Tests\FinnishCatalog;
@@ -147,8 +148,8 @@ final class EventCardTest extends TelegramTestCase
 
     /**
      * A group post with three site languages: the text has a row for each
-     * language, in the site order, and a button has the first two only, on
-     * one row (Owner, 2026-11-06).
+     * shown language (two by default), in the site order, and a button has
+     * the same two, on one row (Owner, 2026-11-06, Q347).
      */
     public function testAGroupPostHasARowPerLanguageAndTwoLanguageButtons(): void
     {
@@ -165,7 +166,7 @@ final class EventCardTest extends TelegramTestCase
         $this->event(8, '2026-07-26', 'Day', ['_eventmesh_url' => self::SHOP]);
 
         self::assertStringContainsString(
-            "🚫 <b>Loppuunmyyty\nSold out\nSV Sold out</b>",
+            "🚫 <b>Loppuunmyyty\nSold out</b>",
             EventCard::forEvent(7)['caption']
         );
         self::assertSame(
@@ -174,6 +175,47 @@ final class EventCardTest extends TelegramTestCase
         );
         self::assertSame(
             [[['text' => '🎟 Osta lippu · Buy a ticket', 'url' => self::SHOP]]],
+            EventCard::forEvent(8)['buttons']
+        );
+    }
+
+    /**
+     * The setting "Languages shown in multi-language texts and buttons" (Owner,
+     * Q347): 1 shows the main language, 3 shows every site language, on the
+     * caption rows and on the buttons.
+     */
+    public function testTheLanguagesShownSettingCutsTheRowsAndButtons(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        Functions\when('__')->alias(
+            static fn (string $text): string => 'sv' === Language::current()
+                ? 'SV ' . $text
+                : FinnishCatalog::translate($text)
+        );
+        $this->event(7, '2026-07-25', 'Night', ['_eventmesh_sold_out' => '1']);
+        $this->event(8, '2026-07-26', 'Day', ['_eventmesh_url' => self::SHOP]);
+
+        $this->options[HybridPolicy::SHOWN_OPTION] = 1;
+        self::assertStringContainsString("🚫 <b>Loppuunmyyty</b>", EventCard::forEvent(7)['caption']);
+        self::assertSame(
+            [[['text' => '🎟 Osta lippu', 'url' => self::SHOP]]],
+            EventCard::forEvent(8)['buttons']
+        );
+
+        $this->options[HybridPolicy::SHOWN_OPTION] = 2;
+        self::assertStringContainsString("🚫 <b>Loppuunmyyty\nSold out</b>", EventCard::forEvent(7)['caption']);
+        self::assertSame(
+            [[['text' => '🎟 Osta lippu · Buy a ticket', 'url' => self::SHOP]]],
+            EventCard::forEvent(8)['buttons']
+        );
+
+        $this->options[HybridPolicy::SHOWN_OPTION] = 3;
+        self::assertStringContainsString(
+            "🚫 <b>Loppuunmyyty\nSold out\nSV Sold out</b>",
+            EventCard::forEvent(7)['caption']
+        );
+        self::assertSame(
+            [[['text' => '🎟 Osta lippu · Buy a ticket · SV Buy a ticket', 'url' => self::SHOP]]],
             EventCard::forEvent(8)['buttons']
         );
     }

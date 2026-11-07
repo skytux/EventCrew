@@ -1542,6 +1542,7 @@ final class FollowupMailTest extends TestCase
     public function testAThirdSiteLanguageGetsItsOwnCardText(): void
     {
         $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $this->options[\EventCrew\Support\HybridPolicy::SHOWN_OPTION] = 3;
         $this->cardNight();
         $this->model([
             '{"text": "Spin with DJ Kai at Old Hall."}',

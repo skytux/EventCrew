@@ -10,6 +10,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\CancelNote;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Dates;
 use EventCrew\Support\Language;
@@ -1287,6 +1288,21 @@ final class BoardService
     }
 
     /**
+     * What the cancel means for the standing, after leaveText() where the
+     * question was (no length limit there, unlike the tap's popup): a late
+     * cancel can be undone by signing up again, an early one costs nothing
+     * and says why. '' for anything else.
+     */
+    private static function leaveNote(string $status, ?Task $task): string
+    {
+        return match ($status) {
+            AssignmentStatus::LATE_CANCEL => ' ' . CancelNote::undoShort(),
+            AssignmentStatus::CANCELLED => ' ' . CancelNote::early($task),
+            default => '',
+        };
+    }
+
+    /**
      * A tap on the Cancel button under a message about one's own task, or on
      * one of the buttons of its question (CANCEL_ASK_PREFIX). The tap acts
      * for the person who tapped, so a forwarded message cancels nobody
@@ -1329,7 +1345,11 @@ final class BoardService
 
         if ('y' === $step) {
             $status = $this->leave($callbackId, $taskId, $person);
-            $this->replaceQuestion($chatId, $messageId, self::leaveIcon($status) . self::leaveText($status));
+            $this->replaceQuestion(
+                $chatId,
+                $messageId,
+                self::leaveIcon($status) . self::leaveText($status) . self::leaveNote($status, $task)
+            );
 
             if (self::isCancel($status)) {
                 $this->refresh();
@@ -1486,7 +1506,7 @@ final class BoardService
         ) . "\n\n" . ($late
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             ? '⚠️ ' . __('This close to the task it is a late cancellation: it counts against your standing.', 'eventcrew')
-            : __('Early enough: it does not affect your standing.', 'eventcrew'));
+            : CancelNote::early($task));
     }
 
     /**

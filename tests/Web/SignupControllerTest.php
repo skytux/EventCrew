@@ -1903,4 +1903,26 @@ final class SignupControllerTest extends TestCase
             }
         }
     }
+
+    /** Q351: the page's notice after a cancel says what it means for the standing. */
+    public function testTheCancelNoticesSayWhatTheCancelMeans(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed
+                => SignupService::NOTICE_HOURS_OPTION === $name ? 24 : $default
+        );
+
+        self::assertSame(
+            'You’ve cancelled that task. This is an early cancellation: it is more than 24 hours before the task,'
+                . ' so it has no effect on your standing.',
+            SignupController::noticeText('dropped_early')
+        );
+        self::assertSame(
+            'You’ve cancelled that task. This close to the event it counts as a late cancellation.'
+                . ' Sign up for it again while the place is free and the late cancellation is removed.',
+            SignupController::noticeText('dropped_late')
+        );
+        self::assertSame('You’ve cancelled that task.', SignupController::noticeText('dropped'));
+    }
+
 }

@@ -352,6 +352,7 @@ final class NewsletterWriterTest extends TestCase
     public function testAThirdSiteLanguageGetsItsOwnTexts(): void
     {
         $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $this->options[\EventCrew\Support\HybridPolicy::SHOWN_OPTION] = 3;
         $this->event(1, '2026-07-27', 'Summer Social');
         $this->answers = [
             self::answer('text', 'Tule tanssimaan.'),

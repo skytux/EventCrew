@@ -267,7 +267,7 @@ final class RoleTaskBotTest extends TelegramTestCase
         self::assertSame([], $this->wpdb->updates);
         $ask = $this->lastCallTo('sendMessage');
         self::assertStringContainsString('Cancel', (string) $ask['text']);
-        self::assertStringContainsString('does not affect your standing', (string) $ask['text']);
+        self::assertStringContainsString('This is an early cancellation: it is more than 48 hours before the task, so it has no effect on your standing.', (string) $ask['text']);
         self::assertContains('lc:9:y', $this->buttonData());
     }
 

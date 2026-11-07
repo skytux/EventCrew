@@ -107,9 +107,23 @@ final class FrictionB3MigrationTest extends TestCase
 
         FrictionB3Migration::run();
 
+        // The event is added under the date, then moved above it (Q344).
         self::assertSame(
-            "Ticket for {date}.\n{event}\n{event_times}",
+            "{event}\nTicket for {date}.\n{event_times}",
             $this->options[$prefix . 'free_ticket_dm'][MessageTemplates::BODY]
         );
+    }
+
+    /** Owner, Q344 2026-11-07: the event first, then the day, venue, times. */
+    public function testEventFirstMovesTheEventLineAboveTheDate(): void
+    {
+        self::assertSame(
+            "{event}\n🎟 Your free-entry ticket for {date} — show it at the door.\n{venue}\n{event_times}",
+            FrictionB3Migration::eventFirst(
+                "🎟 Your free-entry ticket for {date} — show it at the door.\n{venue}\n{event}\n{event_times}"
+            )
+        );
+        self::assertSame("{event}\n{date}", FrictionB3Migration::eventFirst("{event}\n{date}"));
+        self::assertSame('Ticket for {date}. {event}', FrictionB3Migration::eventFirst('Ticket for {date}. {event}'));
     }
 }

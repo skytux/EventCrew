@@ -180,6 +180,15 @@ final class SignupService
 
         $gate = $this->gateRefusal($personId, $person);
 
+        // Signing up again for a task one cancelled late undoes that cancel
+        // (the row goes back to signed up, so the mark is gone): the gate,
+        // which the late cancel itself may have closed, does not stop it, and
+        // an at-risk pass is not spent on it (Q351). Read only when the gate
+        // has a say, so an open gate costs no query.
+        if (('' !== $gate['refusal'] || $gate['pass']) && $this->undoesLateCancel($personId, $taskId)) {
+            $gate = ['refusal' => '', 'pass' => false];
+        }
+
         if ('' !== $gate['refusal']) {
             return $gate + ['task' => $task];
         }
@@ -194,6 +203,14 @@ final class SignupService
          * was not a problem.
          */
         return ['refusal' => '', 'pass' => $gate['pass'], 'task' => $task];
+    }
+
+    /** Whether the person's row for this task is a late cancellation, which a sign-up would undo. */
+    private function undoesLateCancel(int $personId, int $taskId): bool
+    {
+        $existing = $this->assignments->findFor($taskId, $personId);
+
+        return null !== $existing && AssignmentStatus::LATE_CANCEL === $existing->status;
     }
 
     /**

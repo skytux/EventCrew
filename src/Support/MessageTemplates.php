@@ -1195,7 +1195,8 @@ final class MessageTemplates
             ),
         ];
         $cancelNote = self::placeholder(
-            __('"Thanks for the notice.", or for a late cancellation the sentence saying it counts against the standing.', 'eventcrew'),
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            __('"Thanks for the notice." and why it has no effect on the standing (an early cancellation, more than the notice hours before the task), or for a late cancellation the sentences saying it counts against the standing and that Sign up again undoes it.', 'eventcrew'),
             static fn (array $c): string => (string) ($c['note'] ?? '')
         );
         // Only a late cancellation changes the standing; else the line goes.
@@ -1473,12 +1474,12 @@ final class MessageTemplates
                 $telegram,
                 __('Sent when a person spends a free-entry credit on a night. The ticket itself comes in the ticket email.', 'eventcrew'),
                 null,
-                // The event and its times on lines of their own (FrictionB3Migration).
-                static fn (): string => EventDetailsText::withVenue(self::tag(
-                    /* translators: %s: event date */
-                    __('🎟 Your free-entry ticket for %s — show it at the door.', 'eventcrew'),
-                    ['%s' => '{date}']
-                ) . "\n{event}\n{event_times}"),
+                // A title, then the event (with its DJs), the day, the venue
+                // and the times, each on a line of its own (Owner, Q344
+                // 2026-11-07; stored texts: FrictionB3Migration).
+                static fn (): string => '✨ ' . __('Your free-entry ticket', 'eventcrew') . " ✨\n\n"
+                    . "{event}\n{date}\n{venue}\n{event_times}\n\n💫 "
+                    . __('Show it at the door.', 'eventcrew'),
                 [
                     'date' => self::placeholder(
                         __('The day of the event, like Fri 14 Nov.', 'eventcrew'),
@@ -1488,8 +1489,11 @@ final class MessageTemplates
                         static fn (array $c): ?int => is_int($c['event_id'] ?? null) ? $c['event_id'] : null
                     ),
                     'event' => self::placeholder(
-                        __('The name of the event. On a line of its own; the line goes when it is not known.', 'eventcrew'),
-                        static fn (array $c): string => (string) ($c['event'] ?? ''),
+                        __('The name of the event and its DJs, like Ecstatic Dance · Esimerkki. On a line of its own; the line goes when it is not known.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal.
+                        static fn (array $c): string => self::eventWithDjs(
+                            (string) ($c['event'] ?? ''),
+                            is_int($c['event_id'] ?? null) ? $c['event_id'] : null
+                        ),
                         false,
                         true
                     ),
@@ -2805,6 +2809,18 @@ final class MessageTemplates
         bool $ownLine = false
     ): array {
         return ['description' => $description, 'resolve' => $resolve, 'required' => $required, 'own_line' => $ownLine];
+    }
+
+    /**
+     * "Ecstatic Dance · Esimerkki": $name and the DJs of event $eventId
+     * (EventName::djLine()); $name alone when there are none, '' when $name
+     * is ''.
+     */
+    private static function eventWithDjs(string $name, ?int $eventId): string
+    {
+        $djs = '' === $name || null === $eventId ? '' : EventName::djLine($eventId);
+
+        return '' === $djs ? $name : $name . ' · ' . $djs;
     }
 
     /**

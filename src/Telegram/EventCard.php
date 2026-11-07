@@ -382,7 +382,7 @@ final class EventCard
     }
 
     /**
-     * A button's words: the first two site languages on one row
+     * A button's words: the shown languages on one row
      * (HybridPolicy::buttonText()).
      *
      * @param array<string, array<string, string>> $words
@@ -404,9 +404,10 @@ final class EventCard
     }
 
     /**
-     * Every fixed word in each site language, main language first, keyed by
-     * language; the main language alone when hybrid is not allowed (4 or
-     * more site languages).
+     * Every fixed word in each shown language (HybridPolicy::shown(), the
+     * first site languages, main language first), keyed by language; the
+     * main language alone when hybrid is not allowed (4 or more site
+     * languages).
      *
      * @return array<string, array<string, string>>
      */
@@ -417,7 +418,7 @@ final class EventCard
             'listen' => __('Listen to the DJ', 'eventcrew'),
             'sold_out' => __('Sold out', 'eventcrew'),
         ];
-        $languages = HybridPolicy::isAllowed() ? HybridPolicy::siteLanguages() : [HybridPolicy::mainLanguage()];
+        $languages = HybridPolicy::isAllowed() ? HybridPolicy::shown() : [HybridPolicy::mainLanguage()];
 
         return HybridPolicy::inEach($languages, $words);
     }

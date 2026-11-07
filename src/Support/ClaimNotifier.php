@@ -202,7 +202,11 @@ final class ClaimNotifier
             ? __('This was a late cancellation, which counts against your standing. More notice keeps it clear next time.', 'eventcrew')
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             : __("This was a late cancellation, which counts against your standing. Next time, more notice keeps it clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.", 'eventcrew');
-        $note = AssignmentStatus::LATE_CANCEL === $status ? $lateNote : __('Thanks for the notice.', 'eventcrew');
+        // A late cancel can be undone with the Sign up again button under this
+        // message; an early one says why it costs nothing (Q351).
+        $note = AssignmentStatus::LATE_CANCEL === $status
+            ? $lateNote . ' ' . CancelNote::undo()
+            : __('Thanks for the notice.', 'eventcrew') . ' ' . CancelNote::early($task);
 
         // The texts are the Messages page templates (MessageTemplates).
         $context = [

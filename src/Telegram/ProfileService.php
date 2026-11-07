@@ -59,24 +59,28 @@ final class ProfileService
         $standing = $this->standing->for($person->id);
 
         // Only the facts, no explanations (Owner 2026-11-07): name and standing,
-        // the counts, and the coming tasks.
+        // the counts, and the coming tasks. A title line, blocks apart and a
+        // few sparkles (Owner, Q344 2026-11-07).
         $lines = [
+            '✨ ' . __('My info', 'eventcrew') . ' ✨',
+            '',
+            '🌟 ' . $person->name(),
+            $standing->ratedSummary(),
+            '',
             sprintf(
-                /* translators: 1: name, 2: standing level and score */
-                __('%1$s — %2$s', 'eventcrew'),
-                $person->name(),
-                $standing->ratedSummary()
+                /* translators: %d: completed tasks */
+                __('Completed tasks: %d', 'eventcrew'),
+                $standing->completedCount
             ),
             sprintf(
-                /* translators: 1: completed count, 2: credit balance */
-                __('Completed tasks: %1$d · Free-entry credits: %2$d', 'eventcrew'),
-                $standing->completedCount,
+                /* translators: %d: free-entry credits */
+                __('Free-entry credits: %d', 'eventcrew'),
                 $standing->creditBalance
             ),
             '',
         ];
 
-        $lines = array_merge($lines, $this->comingBlock($this->upcoming($person->id)[0]));
+        $lines = array_merge($lines, $this->comingBlock($this->upcoming($person->id)[0], '💫 '));
 
         $this->deliver(
             $telegramUserId,
@@ -337,16 +341,17 @@ final class ProfileService
     }
 
     /**
-     * "Coming up:" and the coming task lines, or "No coming tasks.".
+     * "Coming up:" and the coming task lines, or "No coming tasks.", with
+     * $mark (an emoji and a space, My info's) before the first line.
      *
      * @param array<int, string> $coming
      * @return array<int, string>
      */
-    private function comingBlock(array $coming): array
+    private function comingBlock(array $coming, string $mark = ''): array
     {
         return [] === $coming
-            ? [__('No coming tasks.', 'eventcrew')]
-            : array_merge([__('Coming up:', 'eventcrew')], $coming);
+            ? [$mark . __('No coming tasks.', 'eventcrew')]
+            : array_merge([$mark . __('Coming up:', 'eventcrew')], $coming);
     }
 
     /**

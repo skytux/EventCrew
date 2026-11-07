@@ -507,9 +507,14 @@ final class ClaimNotifierTest extends TestCase
         $sends = $this->captureWithOptions();
         $late = 'This was a late cancellation, which counts against your standing. Next time, more notice keeps it'
             . ' clear, and so does a replacement: they send /me to the bot and tap 🔁 Take over a task, and you accept.';
+        // Q351: a late cancel says Sign up again undoes it; an early one why it costs nothing.
+        $late .= ' Changed your mind? Tap Sign up again while the place is still free: you are back on the task'
+            . ' and the late cancellation is removed.';
+        $early = 'Thanks for the notice. This is an early cancellation: it is more than 48 hours before the task,'
+            . ' so it has no effect on your standing.';
         $standing = 'Your standing: Beginner · 0 free-entry credits.';
         $cases = [
-            'cancelled' => ['❌ Cancelled', 'Thanks for the notice.'],
+            'cancelled' => ['❌ Cancelled', $early],
             'late_cancel' => ['⚠️ Late cancellation', $late],
         ];
 
@@ -534,6 +539,39 @@ final class ClaimNotifierTest extends TestCase
                 $status
             );
         }
+    }
+
+    /**
+     * Q351: a free cancel close to the task (inside the second thoughts
+     * window) does not claim to be early; it says the task was just taken.
+     */
+    public function testAFreeCancelCloseToTheTaskSaysItWasJustTaken(): void
+    {
+        $sends = $this->captureWithOptions();
+        $this->wpdb->nextRows[] = ['starts_at' => '2026-07-21 10:00:00', 'task_date' => '2026-07-21'] + $this->taskRow();
+
+        $this->notifier()->confirmCancellation($this->personInLanguage(null), 5, 'cancelled');
+
+        self::assertStringContainsString(
+            'Thanks for the notice. You took this task only minutes ago, so cancelling it has no effect on your standing.',
+            (string) $sends->items[0]['text']
+        );
+        self::assertStringNotContainsString('Your standing', (string) $sends->items[0]['text']);
+    }
+
+    /** Q351: the late-cancel note in Finnish says Ilmoittaudu taas undoes it. */
+    public function testTheFinnishLateCancelSaysHowToUndoIt(): void
+    {
+        $sends = $this->captureWithOptions();
+        $this->wpdb->nextRows[] = $this->timedTaskRow();
+
+        $this->notifier()->confirmCancellation($this->personInLanguage('fi'), 5, 'late_cancel');
+
+        self::assertStringContainsString(
+            'Muutitko mielesi? Napauta Ilmoittaudu taas, kun paikka on vielä vapaa',
+            (string) $sends->items[0]['text']
+        );
+        self::assertStringContainsString('myöhäinen peruutus poistuu.', $this->mails[0]['body']);
     }
 
     /**
@@ -572,7 +610,8 @@ final class ClaimNotifierTest extends TestCase
 
         $dm = $sends->items[0];
         self::assertStringStartsWith(
-            "❌ Cancelled: Decorate at Party. Thanks for the notice.\n\nOther open tasks at Party:\n- ",
+            "❌ Cancelled: Decorate at Party. Thanks for the notice. This is an early cancellation: it is more than 48"
+                . " hours before the task, so it has no effect on your standing.\n\nOther open tasks at Party:\n- ",
             (string) $dm['text']
         );
         self::assertStringNotContainsString('Your standing', (string) $dm['text']);
@@ -582,7 +621,7 @@ final class ClaimNotifierTest extends TestCase
         self::assertStringContainsString('See open tasks', $buttons[1]['text']);
 
         $body = $this->mails[0]['body'];
-        self::assertStringContainsString("Thanks for the notice.\n\nOther open tasks at Party:\n- ", $body);
+        self::assertStringContainsString("so it has no effect on your standing.\n\nOther open tasks at Party:\n- ", $body);
         self::assertStringContainsString('Sign up again: https://site.test/crew/#', $body);
         self::assertStringContainsString('https://t.me/crewbot?start=task-5', $body);
         self::assertStringContainsString('See open tasks: https://site.test/crew/', $body);

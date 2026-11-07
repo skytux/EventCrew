@@ -138,8 +138,8 @@ final class EventVenueTest extends TestCase
         self::assertStringEndsWith('See you there!', MessageTemplates::body('reminder_dm', $context));
 
         EventVenue::saveDefault('Studio');
-        self::assertStringEndsWith(
-            "show it at the door.\n📍 Studio",
+        self::assertStringContainsString(
+            "Tue 21 Jul\n📍 Studio\n",
             MessageTemplates::body('free_ticket_dm', ['date' => 'Tue 21 Jul', 'event_id' => 12])
         );
 

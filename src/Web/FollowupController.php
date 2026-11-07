@@ -304,7 +304,8 @@ final class FollowupController
     }
 
     /**
-     * A page with $message in $languages (Finnish and English when null), and
+     * A page with $message in $languages (the shown site languages,
+     * HybridPolicy::shown(), when null), and
      * $extra under it.
      *
      * @param list<string>|null $languages
@@ -317,7 +318,7 @@ final class FollowupController
         ?callable $title = null,
         ?array $languages = null
     ): array {
-        $languages = $languages ?? [Language::FINNISH, Language::ENGLISH];
+        $languages = $languages ?? HybridPolicy::shown();
         $title = self::both($title ?? static fn (): string => __('Post-event email', 'eventcrew'), $languages);
         $inner = '';
 
@@ -380,14 +381,15 @@ final class FollowupController
     }
 
     /**
-     * "fi / en" (or the texts in $languages), each different text once.
+     * The texts in $languages, or in the shown site languages
+     * (HybridPolicy::shown()), "fi / en", each different text once.
      *
      * @param list<string>|null $languages
      */
     private static function both(callable $words, ?array $languages = null): string
     {
         return HybridPolicy::join(
-            array_map('strval', HybridPolicy::inEach($languages ?? [Language::FINNISH, Language::ENGLISH], $words))
+            array_map('strval', HybridPolicy::inEach($languages ?? HybridPolicy::shown(), $words))
         );
     }
 }

@@ -213,6 +213,33 @@ final class FollowupControllerTest extends TestCase
         self::assertSame(1, substr_count($page['html'], '<p lang='));
     }
 
+    /** The Stop page's button, with three site languages and the setting at 1, 2 and 3 (Q347). */
+    public function testTheStopPageShowsTheSetNumberOfLanguages(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        $token = FollowupMail::stopToken('2026-11-14');
+        $button = static function (string $html): string {
+            preg_match('/<button[^>]*>([^<]*)<\/button>/', $html, $match);
+
+            return $match[1] ?? '';
+        };
+
+        $this->options[HybridPolicy::SHOWN_OPTION] = 1;
+        self::assertSame(
+            'Älä lähetä tapahtuman jälkeistä viestiä',
+            $button($this->controller()->respond('stop', 'GET', $token)['html'])
+        );
+
+        $this->options[HybridPolicy::SHOWN_OPTION] = 2;
+        self::assertSame(
+            'Älä lähetä tapahtuman jälkeistä viestiä / Do not send the post-event email',
+            $button($this->controller()->respond('stop', 'GET', $token)['html'])
+        );
+
+        $this->options[HybridPolicy::SHOWN_OPTION] = 3;
+        self::assertSame(2, substr_count($button($this->controller()->respond('stop', 'GET', $token)['html']), ' / '));
+    }
+
     public function testAForgedOptOutTokenIsNotFound(): void
     {
         foreach (['GET', 'POST'] as $method) {

@@ -24,6 +24,10 @@ use EventCrew\Models\Person;
  *   site language when the kind is hybrid, else the main language (the
  *   first site language): ticket buyers, guests, subscribers and anyone else
  *   who is not a person, whose language is not known (Q290).
+ * - shown(): "every site language" is cut to shownCount() languages, the
+ *   wp-admin setting "Languages shown in multi-language texts and buttons"
+ *   (default 2, Owner Q347): the reader's own first, then the next ones in the
+ *   site's order. Telegram, emails and web pages all use it.
  *
  * Every sender that used to write Finnish then English asks this class which
  * languages to write in, so the rule is in one place.
@@ -37,10 +41,13 @@ final class HybridPolicy
     public const MAX_LANGUAGES = 3;
 
     /**
-     * A Telegram button of a hybrid message shows this many languages, the
-     * first site languages, on its one row (Owner, 2026-11-06).
+     * The stored number of languages a text or button in several languages
+     * shows (shownCount()): Telegram buttons and texts, emails, web pages.
      */
-    public const BUTTON_LANGUAGES = 2;
+    public const SHOWN_OPTION = 'eventcrew_languages_shown';
+
+    /** shownCount() when nothing is stored: two languages (Owner, Q347, 2026-11-07). */
+    public const DEFAULT_SHOWN = 2;
 
     /** The ticket email (TicketMail::compose()). */
     public const TICKET = 'ticket';
@@ -137,7 +144,56 @@ final class HybridPolicy
             return [$language];
         }
 
-        return self::isOn($kind) ? $site : [$site[0]];
+        return self::isOn($kind) ? self::shown() : [$site[0]];
+    }
+
+    /**
+     * How many languages a text or button in several languages shows: the
+     * stored setting, default DEFAULT_SHOWN, at least 1 and at most the
+     * number of site languages.
+     */
+    public static function shownCount(): int
+    {
+        $stored = function_exists('get_option')
+            ? get_option(self::SHOWN_OPTION, self::DEFAULT_SHOWN)
+            : self::DEFAULT_SHOWN;
+        $count = is_numeric($stored) ? (int) $stored : self::DEFAULT_SHOWN;
+
+        return max(1, min($count, self::maxShown()));
+    }
+
+    /** The highest shownCount(): the number of site languages. */
+    public static function maxShown(): int
+    {
+        return max(1, count(self::siteLanguages()));
+    }
+
+    /** The number to store from the posted setting, kept between 1 and maxShown(). */
+    public static function shownFromPost(mixed $posted): int
+    {
+        $count = is_numeric($posted) ? (int) $posted : self::DEFAULT_SHOWN;
+
+        return max(1, min($count, self::maxShown()));
+    }
+
+    /**
+     * The languages a text in several languages shows: $own first when it
+     * is one of $languages, then the next ones in the order of $languages
+     * (the site languages when null), shownCount() of them.
+     *
+     * @param list<string>|null $languages
+     * @return list<string>
+     */
+    public static function shown(?string $own = null, ?array $languages = null): array
+    {
+        $languages = array_values($languages ?? self::siteLanguages());
+        $own = is_string($own) ? strtolower(trim($own)) : '';
+
+        if (in_array($own, $languages, true)) {
+            $languages = array_values(array_unique([$own, ...$languages]));
+        }
+
+        return array_slice($languages, 0, self::shownCount());
     }
 
     /**
@@ -203,14 +259,14 @@ final class HybridPolicy
 
     /**
      * A Telegram button's label in a hybrid message: the texts of the first
-     * BUTTON_LANGUAGES languages on one row, "Osta lippu · Buy a ticket"; the
-     * other languages are left out, since a Telegram button has one row.
+     * shownCount() languages on one row, "Osta lippu · Buy a ticket"; the
+     * other languages are left out.
      *
      * @param array<string, string> $texts
      */
     public static function buttonText(array $texts): string
     {
-        return self::join(array_slice($texts, 0, self::BUTTON_LANGUAGES, true), ' · ');
+        return self::join(array_slice($texts, 0, self::shownCount(), true), ' · ');
     }
 
     /**
@@ -304,17 +360,24 @@ final class HybridPolicy
     }
 
     /**
-     * The admin warning while more than BUTTON_LANGUAGES site languages are
-     * chosen and hybrid works: a Telegram button leaves the others out
-     * (buttonText()). '' when there is nothing to say.
+     * The admin note while there are more site languages than shownCount()
+     * and hybrid works: texts and buttons in several languages leave the
+     * others out (shown()). '' when there is nothing to say.
      */
     public static function buttonsWarning(): string
     {
-        if (! self::isAllowed() || count(self::siteLanguages()) <= self::BUTTON_LANGUAGES) {
+        $site = count(self::siteLanguages());
+
+        if (! self::isAllowed() || $site <= self::shownCount()) {
             return '';
         }
 
-        return __('Telegram buttons show only the first two languages.', 'eventcrew');
+        return sprintf(
+            /* translators: 1: languages shown, 2: number of site languages */
+            __('Texts and buttons in several languages show %1$d of the %2$d site languages: the reader’s own first, then the next ones. Change it in Settings > Email > Hybrid messages.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            self::shownCount(),
+            $site
+        );
     }
 
     /** The admin warning while hybrid is off because of the number of languages. */

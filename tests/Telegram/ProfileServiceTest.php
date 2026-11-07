@@ -156,9 +156,13 @@ final class ProfileServiceTest extends TelegramTestCase
 
             $dm = $this->lastCallTo('sendMessage');
             $lines = explode("\n", (string) $dm['text']);
-            self::assertStringStartsWith('Sam — ', $lines[0]);
-            self::assertSame('Completed tasks: 0 · Free-entry credits: 0', $lines[1]);
-            self::assertSame(['', 'Coming up:', '• Mon 20 Jul — Decorate (Dance)'], array_slice($lines, 2));
+            // Owner, Q344 2026-11-07: a title line, the blocks apart, a few sparkles.
+            self::assertSame(['✨ My info ✨', '', '🌟 Sam'], array_slice($lines, 0, 3));
+            self::assertNotSame('', $lines[3]); // the standing
+            self::assertSame(
+                ['', 'Completed tasks: 0', 'Free-entry credits: 0', '', '💫 Coming up:', '• Mon 20 Jul — Decorate (Dance)'],
+                array_slice($lines, 4)
+            );
 
             $rows = $dm['reply_markup']['inline_keyboard'];
             $expected = ['mn:tix', 'mn:mytasks', 'mn:set', 'mn:help'];

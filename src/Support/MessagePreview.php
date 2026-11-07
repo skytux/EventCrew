@@ -166,7 +166,7 @@ final class MessagePreview
             'description' => '' !== RoleGuide::taskDescription($task)
                 ? RoleGuide::taskDescription($task)
                 : __('Sample description: what the task involves.', 'eventcrew'),
-            'note' => __('Thanks for the notice.', 'eventcrew'),
+            'note' => __('Thanks for the notice.', 'eventcrew') . ' ' . CancelNote::early(),
             'cancelled' => __('❌ Cancelled', 'eventcrew'),
             'open_tasks' => '- 📅 ' . sprintf(
                 /* translators: 1: day, 2: time range or '', 3: role with emoji, 4: free places, 5: places in total */

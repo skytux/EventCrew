@@ -6,7 +6,7 @@
  *
  * @var list<string> $languages The site's languages, main first.
  * @var string $main
- * @var string $buttons_warning '' or the warning that Telegram buttons show only the first two languages.
+ * @var string $buttons_warning '' or the note that texts and buttons in several languages show only some of the site languages (HybridPolicy::buttonsWarning()).
  * @var list<string> $no_catalog Site languages the plugin's own strings are not translated into.
  * @var array<string, array{0: string, 1: string, 2: string}> $known
  * @var bool $translate_auto

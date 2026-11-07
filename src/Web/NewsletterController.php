@@ -1208,12 +1208,12 @@ final class NewsletterController
      */
     private function manageForm(string $token, array $row): string
     {
-        $both = static function (callable $words): string {
-            $fi = (string) Language::run(Language::FINNISH, $words);
-            $en = (string) Language::run(Language::ENGLISH, $words);
-
-            return $fi === $en ? $en : $fi . ' / ' . $en;
-        };
+        // The subscriber's language first, then the next site languages
+        // (HybridPolicy::shown()), "Tallenna / Save".
+        $languages = HybridPolicy::shown((string) ($row['language'] ?? ''));
+        $both = static fn (callable $words): string => HybridPolicy::join(
+            array_map('strval', HybridPolicy::inEach($languages, $words))
+        );
         $hidden = static fn (string $act): string => '<input type="hidden" name="do" value="manage">'
             . '<input type="hidden" name="token" value="' . esc_attr($token) . '">'
             . '<input type="hidden" name="act" value="' . esc_attr($act) . '">';
@@ -1326,34 +1326,34 @@ final class NewsletterController
     }
 
     /**
-     * A page with $message in Finnish and in English, and $extra under it.
+     * A page with $message in the shown site languages (HybridPolicy::shown(),
+     * main language first), each different text once, and $extra under it.
      *
      * @return array{status: int, html: string}
      */
     private function page(int $status, callable $message, string $extra = ''): array
     {
-        $title = (string) Language::run(
-            Language::FINNISH,
+        $languages = HybridPolicy::shown();
+        $title = HybridPolicy::join(array_map('strval', HybridPolicy::inEach(
+            $languages,
             static fn (): string => __('Next events announcement', 'eventcrew')
-        );
-        $titleEn = (string) Language::run(
-            Language::ENGLISH,
-            static fn (): string => __('Next events announcement', 'eventcrew')
-        );
-        $fi = (string) Language::run(Language::FINNISH, $message);
-        $en = (string) Language::run(Language::ENGLISH, $message);
+        )));
+        $inner = '';
 
-        $inner = '<p lang="fi">' . esc_html($fi) . '</p>'
-            . ($fi === $en ? '' : '<p lang="en">' . esc_html($en) . '</p>')
-            . $extra;
+        foreach (array_unique(array_map('strval', HybridPolicy::inEach($languages, $message))) as $lang => $text) {
+            $inner .= '<p lang="' . esc_attr((string) $lang) . '">' . esc_html($text) . '</p>';
+        }
+
+        $inner .= $extra;
 
         return [
             'status' => $status,
             'html' => sprintf(
                 // phpcs:ignore Generic.Files.LineLength.TooLong -- one literal HTML document; wrapping it just adds stray whitespace.
-                '<!doctype html><html lang="fi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>%1$s</title></head><body style="font-family:sans-serif;max-width:28em;margin:3em auto;padding:0 1em"><h1 style="font-size:1.2em">%1$s</h1>%2$s</body></html>',
-                esc_html($title === $titleEn ? $titleEn : $title . ' / ' . $titleEn),
-                $inner
+                '<!doctype html><html lang="%3$s"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>%1$s</title></head><body style="font-family:sans-serif;max-width:28em;margin:3em auto;padding:0 1em"><h1 style="font-size:1.2em">%1$s</h1>%2$s</body></html>',
+                esc_html($title),
+                $inner,
+                esc_attr($languages[0] ?? Language::FINNISH)
             ),
         ];
     }
@@ -1370,15 +1370,14 @@ final class NewsletterController
 
     /**
      * One button that POSTs $do with the token back to this address. $words
-     * is the label, shown in Finnish and English; $red marks a button that
-     * ends something.
+     * is the label, shown in the shown site languages (HybridPolicy::shown());
+     * $red marks a button that ends something.
      *
      * @param callable(): string $words
      */
     private function buttonForm(string $do, string $token, callable $words, bool $red): string
     {
-        $label = (string) Language::run(Language::FINNISH, $words);
-        $labelEn = (string) Language::run(Language::ENGLISH, $words);
+        $label = HybridPolicy::join(array_map('strval', HybridPolicy::inEach(HybridPolicy::shown(), $words)));
 
         return sprintf(
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one literal HTML form; wrapping it just adds stray whitespace.
@@ -1386,7 +1385,7 @@ final class NewsletterController
             esc_attr($do),
             esc_attr($token),
             $red ? ';color:#b32d2e' : '',
-            esc_html($label === $labelEn ? $labelEn : $label . ' / ' . $labelEn)
+            esc_html($label)
         );
     }
 

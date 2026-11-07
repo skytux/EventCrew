@@ -313,7 +313,7 @@ final class TranslationsPageTest extends TestCase
         self::assertStringContainsString('row[texts][sv]', $html);
         self::assertStringContainsString('Translate missing', $html);
         self::assertStringContainsString('Showing 2 of 2 texts.', $html);
-        self::assertStringContainsString('Telegram buttons show only the first two languages.', $html);
+        self::assertStringContainsString('Texts and buttons in several languages show 2 of the 3 site languages', $html);
 
         $html = $this->rendered(['s' => 'kiitos', 'show' => '']);
         self::assertStringContainsString('Showing 0 of 2 texts.', $html);

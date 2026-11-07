@@ -19,6 +19,7 @@ use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Tests\Support\AiTextOptions;
+use EventCrew\Tests\Support\FakeEventNames;
 
 /**
  * The self-service credit spend, shared by the bot and the web profile. The
@@ -28,6 +29,7 @@ use EventCrew\Tests\Support\AiTextOptions;
 final class TicketRedemptionServiceTest extends TelegramTestCase
 {
     use AiTextOptions;
+    use FakeEventNames;
 
     protected function setUp(): void
     {
@@ -175,7 +177,8 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
 
         self::assertStringContainsString('AI ticket for Sat 1 Aug.', $dms[0]);
         // The tick is on but nothing was written for the event: the template's text.
-        self::assertStringContainsString('Your free-entry ticket for', $dms[1]);
+        self::assertStringContainsString('Your free-entry ticket', $dms[1]);
+        self::assertStringContainsString('Show it at the door.', $dms[1]);
     }
 
     private function serviceWithTicketMail(): TicketRedemptionService
@@ -322,6 +325,65 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         $this->wpdb->nextResults[] = [            // forDate (the night's label)
             ['id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'clean', 'capacity' => 3, 'event_post_id' => null, 'event_label' => 'Party'],
         ];
+    }
+
+    /**
+     * Owner, Q344 2026-11-07: the picker has a title line and the credits,
+     * and each event button names the event with its DJs, then the day.
+     */
+    public function testThePickerNamesEachEventWithItsDjs(): void
+    {
+        $this->fakeEventNames([42 => ['en' => 'Ecstatic Dance']], [42 => ['Esimerkki', 'Aino Testinen']]);
+        $this->wpdb->nextRows[] = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00', 'telegram_user_id' => 555,
+        ];
+        $rows = [];
+        for ($i = 0; $i < 4; $i++) {
+            $rows[] = ['id' => $i + 1, 'task_id' => $i + 1, 'person_id' => 7, 'status' => 'completed', 'task_date' => '2026-07-01'];
+        }
+        $this->wpdb->nextResults[] = $rows;       // historyFor (balance)
+        $this->wpdb->nextVars[] = 0;              // countFor redemptions
+        $this->wpdb->nextVars[] = 0;              // sumFor grants
+        $this->wpdb->nextResults[] = [];          // forPerson -> nothing redeemed
+        $this->wpdb->nextCols[] = ['2026-08-01']; // upcomingDates
+        $task = [
+            'id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'clean', 'capacity' => 3,
+            'event_post_id' => 42, 'event_label' => 'Party',
+        ];
+        $this->wpdb->nextResults[] = [$task];     // forDate (eligible label)
+        $this->wpdb->nextResults[] = [$task];     // forDate (the button)
+
+        $this->service()->onTicketCommand(555, 555);
+
+        $dm = $this->lastCallTo('sendMessage');
+        self::assertSame("✨ Free-entry ticket ✨\n\n🎟 Free-entry credits: 2\n\nPick an event:", $dm['text']);
+        self::assertSame(
+            [[['text' => '✨ Ecstatic Dance · Esimerkki & Aino Testinen · Sat 1 Aug', 'callback_data' => 'tkt:2026-08-01']]],
+            $dm['reply_markup']['inline_keyboard']
+        );
+    }
+
+    /** A long DJ list is cut with "…" so the button stays short; no name: the day alone. */
+    public function testTheButtonTextCutsALongDjList(): void
+    {
+        self::assertSame('Dance · A & B · Sat 1 Aug', TicketRedemptionService::buttonText('Dance', 'A & B', 'Sat 1 Aug'));
+        self::assertSame('Dance · Sat 1 Aug', TicketRedemptionService::buttonText('Dance', '', 'Sat 1 Aug'));
+        self::assertSame('Sat 1 Aug', TicketRedemptionService::buttonText('', 'A', 'Sat 1 Aug'));
+
+        $long = TicketRedemptionService::buttonText(
+            'Ecstatic Dance',
+            'Esimerkki, Aino Testinen, Bo Kokeilu & Somebody Else',
+            'Sat 14 Nov'
+        );
+        self::assertSame(TicketRedemptionService::BUTTON_MAX, mb_strlen($long));
+        self::assertStringStartsWith('Ecstatic Dance · Esimerkki, Milla', $long);
+        self::assertStringEndsWith('… · Sat 14 Nov', $long);
+
+        self::assertSame(
+            str_repeat('N', 50) . ' · Sat 14 Nov',
+            TicketRedemptionService::buttonText(str_repeat('N', 50), 'Somebody', 'Sat 14 Nov')
+        );
     }
 
     public function testTappingANightAsksFirstAndSaysWhatItCosts(): void

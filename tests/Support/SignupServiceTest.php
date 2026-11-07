@@ -287,6 +287,41 @@ final class SignupServiceTest extends TestCase
         self::assertNotSame([], $this->wpdb->updates);
     }
 
+    /**
+     * Q351: the late cancel itself may have put the member at risk. Signing up
+     * again for that same task undoes it, so the gate does not stop it.
+     */
+    public function testSigningUpAgainAfterALateCancelGetsPastTheGate(): void
+    {
+        $this->wpdb->nextRows[] = $this->taskRow('decorate'); // evaluate: tasks->find
+        $this->wpdb->nextRows[] = ['id' => 9];                // evaluate: people->find, no pass
+        $this->queueAtRiskStanding();
+        $this->wpdb->nextVars[] = 0;                          // gate: sumFor grants
+        $lateRow = ['id' => 3, 'task_id' => 5, 'person_id' => 9, 'status' => AssignmentStatus::LATE_CANCEL];
+        $this->wpdb->nextRows[] = $lateRow;                   // undoesLateCancel: findFor
+        $this->wpdb->nextVars[] = 2;                          // join: taskCapacity
+        $this->wpdb->nextRows[] = $lateRow;                   // join: findFor
+        $this->wpdb->nextQueryResults[] = 1;                  // reactivate
+
+        self::assertSame(AssignmentRepository::JOIN_REJOINED, $this->service()->claim(9, 5));
+        self::assertStringContainsString("SET target.status = 'signed_up'", $this->wpdb->lastQuery());
+        self::assertSame([], $this->wpdb->updates, 'no at-risk pass is spent');
+    }
+
+    /** A plain cancel is not undone by signing up again: the gate still holds. */
+    public function testSigningUpAgainAfterAnEarlyCancelStillMeetsTheGate(): void
+    {
+        $this->wpdb->nextRows[] = $this->taskRow('decorate');
+        $this->wpdb->nextRows[] = ['id' => 9];
+        $this->queueAtRiskStanding();
+        $this->wpdb->nextVars[] = 0;
+        $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 9, 'status' => AssignmentStatus::CANCELLED];
+
+        self::assertSame(SignupService::GATED, $this->service()->claim(9, 5));
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], array_filter($this->wpdb->queries, static fn (string $sql): bool => str_contains($sql, 'UPDATE')));
+    }
+
     public function testDropRecordsACancellation(): void
     {
         // cancel(): findFor -> an occupying row, then the task's start time.

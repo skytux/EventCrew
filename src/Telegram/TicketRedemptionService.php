@@ -8,6 +8,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Dates;
+use EventCrew\Support\EventName;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageAiText;
@@ -42,6 +43,9 @@ final class TicketRedemptionService
 
     /** How many nights a credit message offers as buttons. */
     public const NIGHTS_MAX = 3;
+
+    /** The longest picker button text before the emoji, in characters. */
+    public const BUTTON_MAX = 58;
 
     public function __construct(
         private readonly PersonRepository $people,
@@ -110,24 +114,11 @@ final class TicketRedemptionService
 
         $keyboard = [];
 
-        foreach ($dates as $date => $label) {
-            $keyboard[] = [['text' => $label, 'callback_data' => 'tkt:' . $date]];
+        foreach (array_keys($dates) as $date) {
+            $keyboard[] = [['text' => $this->pickerLabel($date), 'callback_data' => 'tkt:' . $date]];
         }
 
-        $this->telegram->sendMessage(
-            $telegramUserId,
-            sprintf(
-                /* translators: %d: number of free-entry credits */
-                _n(
-                    'You have %d free-entry credit. Pick an event to spend it on:',
-                    'You have %d free-entry credits. Pick an event to spend one on:',
-                    $balance,
-                    'eventcrew'
-                ),
-                $balance
-            ),
-            ['inline_keyboard' => $keyboard]
-        );
+        $this->telegram->sendMessage($telegramUserId, self::pickerText($balance), ['inline_keyboard' => $keyboard]);
         $this->sentDmNote($chatId, $isPrivate);
     }
 
@@ -153,18 +144,71 @@ final class TicketRedemptionService
 
         $this->telegram->sendMessage(
             $chatId,
-            sprintf(
-                /* translators: %d: number of free-entry credits */
-                _n(
-                    'You have %d free-entry credit. Pick an event to spend it on:',
-                    'You have %d free-entry credits. Pick an event to spend one on:',
-                    $balance,
-                    'eventcrew'
-                ),
-                $balance
-            ),
-            ['inline_keyboard' => [[['text' => $label, 'callback_data' => 'tkt:' . $date]]]]
+            self::pickerText($balance),
+            ['inline_keyboard' => [[['text' => $this->pickerLabel($date), 'callback_data' => 'tkt:' . $date]]]]
         );
+    }
+
+    /**
+     * The text above the event buttons (Owner, Q344 2026-11-07): a title line,
+     * the credits, and what to do, each block apart.
+     */
+    public static function pickerText(int $balance): string
+    {
+        return '✨ ' . __('Free-entry ticket', 'eventcrew') . " ✨\n\n"
+            . '🎟 ' . sprintf(
+                /* translators: %d: free-entry credits */
+                __('Free-entry credits: %d', 'eventcrew'),
+                $balance
+            ) . "\n\n"
+            . __('Pick an event:', 'eventcrew');
+    }
+
+    /**
+     * One event's button in the picker: "✨ Ecstatic Dance · Esimerkki ·
+     * Sat 14 Nov", the event's name with its DJs (EventName::djLine()), then
+     * the day (Owner, Q344 2026-11-07).
+     */
+    private function pickerLabel(string $date): string
+    {
+        [$eventId, $name] = $this->eventContext($date);
+
+        $djs = null === $eventId ? '' : EventName::djLine($eventId);
+
+        return '✨ ' . self::buttonText($name, $djs, $this->shortDate($date));
+    }
+
+    /**
+     * "Name · DJs · day", at most BUTTON_MAX characters: a long DJ list is
+     * cut with "…", and left out when not even a few of its letters fit.
+     * The day alone when there is no name.
+     */
+    public static function buttonText(string $name, string $djs, string $when): string
+    {
+        if ('' === $name) {
+            return $when;
+        }
+
+        $plain = $name . ' · ' . $when;
+
+        if ('' === $djs) {
+            return $plain;
+        }
+
+        $line = $name . ' · ' . $djs . ' · ' . $when;
+
+        if (mb_strlen($line) <= self::BUTTON_MAX) {
+            return $line;
+        }
+
+        // Room for the DJs: the whole minus the name, the day and two " · ".
+        $room = self::BUTTON_MAX - mb_strlen($plain) - 3;
+
+        if ($room < 5) {
+            return $plain;
+        }
+
+        return $name . ' · ' . rtrim(mb_substr($djs, 0, $room - 1), " ,&") . '… · ' . $when;
     }
 
     /**

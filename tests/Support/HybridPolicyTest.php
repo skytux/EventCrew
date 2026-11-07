@@ -65,7 +65,68 @@ final class HybridPolicyTest extends TestCase
 
         self::assertTrue(HybridPolicy::isAllowed());
         self::assertTrue(HybridPolicy::isOn(HybridPolicy::TICKET));
+        self::assertSame(['fi', 'en'], HybridPolicy::languagesFor(HybridPolicy::TICKET), 'two by default (Q347)');
+
+        $this->options[HybridPolicy::SHOWN_OPTION] = 3;
         self::assertSame(['fi', 'en', 'sv'], HybridPolicy::languagesFor(HybridPolicy::TICKET));
+    }
+
+    /**
+     * "Languages shown in multi-language texts and buttons" (Owner, Q347):
+     * default 2, kept between 1 and the number of site languages; the
+     * reader's own language first, then the next ones in the site's order.
+     */
+    public function testTheLanguagesShownSetting(): void
+    {
+        $this->siteLanguages(['fi', 'en', 'sv']);
+
+        self::assertSame(2, HybridPolicy::shownCount());
+        self::assertSame(3, HybridPolicy::maxShown());
+        self::assertSame(['fi', 'en'], HybridPolicy::shown());
+        self::assertSame(['sv', 'fi'], HybridPolicy::shown('sv'));
+        self::assertSame(['en', 'fi'], HybridPolicy::shown('en'));
+        self::assertSame(['fi', 'en'], HybridPolicy::shown('de'), 'not a site language');
+
+        $this->options[HybridPolicy::SHOWN_OPTION] = 1;
+        self::assertSame(['fi'], HybridPolicy::shown());
+        self::assertSame(['sv'], HybridPolicy::shown('sv'));
+        self::assertSame(['fi'], HybridPolicy::languagesFor(HybridPolicy::TICKET));
+        self::assertSame('Avaa', HybridPolicy::buttonText(['fi' => 'Avaa', 'en' => 'Open', 'sv' => 'Öppna']));
+
+        $this->options[HybridPolicy::SHOWN_OPTION] = 3;
+        self::assertSame(['fi', 'en', 'sv'], HybridPolicy::shown());
+        self::assertSame(['sv', 'fi', 'en'], HybridPolicy::shown('sv'));
+        self::assertSame(
+            'Avaa · Open · Öppna',
+            HybridPolicy::buttonText(['fi' => 'Avaa', 'en' => 'Open', 'sv' => 'Öppna'])
+        );
+        self::assertSame('', HybridPolicy::buttonsWarning(), 'every language is shown');
+
+        $this->options[HybridPolicy::SHOWN_OPTION] = 9;
+        self::assertSame(3, HybridPolicy::shownCount(), 'at most the number of site languages');
+        $this->options[HybridPolicy::SHOWN_OPTION] = '0';
+        self::assertSame(1, HybridPolicy::shownCount(), 'at least 1');
+        $this->options[HybridPolicy::SHOWN_OPTION] = 'x';
+        self::assertSame(2, HybridPolicy::shownCount(), 'nonsense gives the default');
+
+        self::assertSame(1, HybridPolicy::shownFromPost('-4'));
+        self::assertSame(3, HybridPolicy::shownFromPost('7'));
+        self::assertSame(2, HybridPolicy::shownFromPost('2'));
+        self::assertSame(2, HybridPolicy::shownFromPost(''));
+
+        $this->options[HybridPolicy::SHOWN_OPTION] = 1;
+        $view = \EventCrew\Admin\SettingsPage::hybridView();
+        self::assertSame(1, $view['shown']);
+        self::assertSame(3, $view['shown_max']);
+    }
+
+    /** With two site languages the setting cannot go above 2. */
+    public function testTwoSiteLanguagesShowAtMostTwo(): void
+    {
+        $this->options[HybridPolicy::SHOWN_OPTION] = 3;
+
+        self::assertSame(2, HybridPolicy::shownCount());
+        self::assertSame(['fi', 'en'], HybridPolicy::shown());
     }
 
     /** A message to one person is in their language only, even with the Hybrid tick on (Owner, 2026-11-06). */
@@ -79,12 +140,12 @@ final class HybridPolicyTest extends TestCase
             self::assertSame(['sv'], HybridPolicy::languagesFor($kind, 'sv'), $kind);
         }
 
-        // Not known, or not a site language: every site language, as before.
-        self::assertSame(['fi', 'en', 'sv'], HybridPolicy::languagesFor(HybridPolicy::TICKET, null));
-        self::assertSame(['fi', 'en', 'sv'], HybridPolicy::languagesFor(HybridPolicy::TICKET, $this->person('de')));
+        // Not known, or not a site language: the shown site languages (two by default).
+        self::assertSame(['fi', 'en'], HybridPolicy::languagesFor(HybridPolicy::TICKET, null));
+        self::assertSame(['fi', 'en'], HybridPolicy::languagesFor(HybridPolicy::TICKET, $this->person('de')));
     }
 
-    /** More than two site languages: wp-admin warns that Telegram buttons show only the first two (Owner, 2026-11-06). */
+    /** More site languages than shown: wp-admin says texts and buttons show only some (Owner, 2026-11-06, Q347). */
     public function testThreeLanguagesWarnAboutTheTelegramButtons(): void
     {
         self::assertSame('', HybridPolicy::buttonsWarning());
@@ -92,7 +153,11 @@ final class HybridPolicyTest extends TestCase
 
         $this->siteLanguages(['fi', 'en', 'sv']);
 
-        self::assertSame('Telegram buttons show only the first two languages.', HybridPolicy::buttonsWarning());
+        self::assertSame(
+            'Texts and buttons in several languages show 2 of the 3 site languages: the reader’s own first,'
+                . ' then the next ones. Change it in Settings > Email > Hybrid messages.',
+            HybridPolicy::buttonsWarning()
+        );
         self::assertSame('Avaa · Open', HybridPolicy::buttonText(['fi' => 'Avaa', 'en' => 'Open', 'sv' => 'Öppna']));
         self::assertSame("Avaa\nOpen\nÖppna", HybridPolicy::rows(['fi' => 'Avaa', 'en' => 'Open', 'sv' => 'Öppna']));
         self::assertArrayHasKey('buttons_warning', \EventCrew\Admin\SettingsPage::hybridView());
@@ -212,5 +277,48 @@ final class HybridPolicyTest extends TestCase
         self::assertStringNotContainsString(' / ', $mail->footer());
         self::assertStringNotContainsString('You get this email', $mail->footer());
         self::assertStringContainsString('You get this email', $mail->footer('en'), 'a known language is kept');
+    }
+
+    /** The ticket email to a buyer whose language is not known, with the setting at 1, 2 and 3 (Q347). */
+    public function testTheTicketEmailShowsTheSetNumberOfLanguages(): void
+    {
+        $this->siteLanguages(['fi', 'en', 'sv']);
+        Functions\when('get_the_title')->justReturn('');
+        Functions\when('get_permalink')->justReturn('https://site.test/crew/');
+        Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
+        $mail = new TicketMail(
+            new TicketBuyerRepository(),
+            new GuestRepository(),
+            new TaskRepository(),
+            new Mailer(new Logger(), new EmailTemplate(new Logger())),
+            new TicketQr(),
+            new AssignmentRepository(),
+            new RedemptionRepository()
+        );
+        $buyer = TicketBuyer::fromRow([
+            'id' => 1, 'event_date' => '2026-11-14', 'name' => 'Anna Virtanen', 'source' => 'holvi',
+            'batch' => 'b1', 'email' => 'anna@example.test', 'ticket_code' => 'AB12CD1', 'ticket_mail_status' => '',
+        ]);
+
+        $this->options[HybridPolicy::SHOWN_OPTION] = 1;
+        $one = $mail->compose($buyer);
+        self::assertSame('Lippusi – 14.11.2026', $one['subject']);
+        self::assertStringNotContainsString('>FI</span>', $one['html']);
+        self::assertStringNotContainsString('Hi Anna', $one['text']);
+
+        $this->options[HybridPolicy::SHOWN_OPTION] = 2;
+        $two = $mail->compose($buyer);
+        self::assertSame('Lippusi / Your ticket – 14.11.2026', $two['subject']);
+        self::assertStringContainsString('>FI</span>', $two['html']);
+        self::assertStringContainsString('>EN</span>', $two['html']);
+        self::assertStringNotContainsString('>SV</span>', $two['html']);
+
+        $this->options[HybridPolicy::SHOWN_OPTION] = 3;
+        $three = $mail->compose($buyer);
+        self::assertStringContainsString('>SV</span>', $three['html']);
+        self::assertSame(2, substr_count($three['subject'], ' / '), $three['subject']);
     }
 }
