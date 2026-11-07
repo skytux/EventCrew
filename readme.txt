@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.175
+Stable tag: 1.140.176
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.176 =
+* The you're-in moment on the ticket now fills the whole card: a gold bloom, an edge flash, a light sweep, a lit border and flying sparkles, then a calm shimmer.
+* The cymbals also play on a ticket page opened while already checked in, when the desk checks the person in again.
 
 = 1.140.175 =
 * The bot's follow-up confirmation shows each language's real translation once it is ready, says plainly when a text is not translated, and tries again before the email goes out.
@@ -1829,6 +1833,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.176 =
+No settings change.
 
 = 1.140.175 =
 No settings change.
