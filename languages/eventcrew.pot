@@ -43,7 +43,7 @@ msgstr ""
 msgid "%1$d of %2$d events were posted in the group. The others could not be posted."
 msgstr ""
 
-#: src/Support/SlotFreedNotice.php:422 src/Support/WelcomeSender.php:836
+#: src/Support/SlotFreedNotice.php:422 src/Support/WelcomeSender.php:841
 #. translators: 1: free places, 2: places in total
 msgid "%1$d of %2$d places free"
 msgstr ""
@@ -1297,7 +1297,7 @@ msgstr ""
 msgid "Beginner"
 msgstr ""
 
-#: src/Support/WelcomeSender.php:801
+#: src/Support/WelcomeSender.php:803
 #. translators: %d: good-standing percentage
 msgid "Below %d%%, you cannot sign up for new tasks until you talk to an organizer."
 msgstr ""
@@ -1496,9 +1496,9 @@ msgstr ""
 msgid "Cancelled late"
 msgstr ""
 
-#: src/Support/WelcomeSender.php:777
-#. translators: %d: hours of notice, e.g. 48
-msgid "Cancelled less than %d hours before"
+#: src/Support/WelcomeSender.php:778
+#. translators: %d: hours of notice, e.g. 48 ("h" = hours)
+msgid "Cancelled under %d h before"
 msgstr ""
 
 #: src/Telegram/AssistantService.php:194 src/Telegram/AssistantService.php:195 src/Telegram/BuyerListReset.php:105 src/Telegram/EventsCommand.php:145
@@ -8773,7 +8773,7 @@ msgstr ""
 msgid "To sign in to the crew app, press the code that the crew app on your screen shows. If you did not just press Telegram on the crew app yourself, press nothing."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:850
+#: src/Support/WelcomeSender.php:852
 msgid "To sign up, tap 📋 See open tasks below."
 msgstr ""
 

@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.171
+Stable tag: 1.140.172
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.172 =
+* Welcome standing list: the percent first (100%: Completed the task), and the late cancellation reads Cancelled under 48 h before.
+* Welcome open tasks: each task's free places on a line of its own.
 
 = 1.140.171 =
 * Telegram messages: a section whose lines are likely to wrap on a phone gets an empty line under every line; short lists stay together.
@@ -1807,6 +1811,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.172 =
+No settings change.
 
 = 1.140.171 =
 No settings change.
