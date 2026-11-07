@@ -471,7 +471,8 @@ final class TicketRedemptionService
                 'event' => $eventName,
                 'event_id' => $eventPostId ?? $dayEventId,
             ];
-            $this->telegram->sendMessage(
+            // The ticket is a record: it stays in the chat as its own message.
+            $this->telegram->record()->sendMessage(
                 $person->telegramChatId,
                 // The Messages page template (MessageTemplates).
                 MessageAiText::body('free_ticket_dm', $context, $eventPostId),

@@ -269,7 +269,8 @@ final class ClaimNotifier
             return;
         }
 
-        $this->telegram->sendMessage($person->telegramChatId, $text, $replyMarkup);
+        // A record the person keeps: a later button tap never replaces it.
+        $this->telegram->record()->sendMessage($person->telegramChatId, $text, $replyMarkup);
     }
 
     /**

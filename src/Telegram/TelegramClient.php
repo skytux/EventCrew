@@ -54,6 +54,19 @@ final class TelegramClient
     /** Set while a call is sent again to a migrated chat, so it is sent again only once. */
     private bool $followingMigration = false;
 
+    /**
+     * Where the bot's last message in each private chat is kept: its message
+     * id, or 0 when it is a record (a ticket, a confirmation, a request) that a
+     * button tap must not replace. Cleared when the person writes.
+     */
+    public const LAST_PREFIX = 'eventcrew_last_dm_';
+
+    /** Private chat id => message id the next sendMessage there replaces (replaceNextIn()). */
+    private array $replace = [];
+
+    /** Set by record(): the next send is kept as its own message. */
+    private bool $record = false;
+
     public function __construct(
         private readonly Logger $logger,
         private readonly DohResolver $resolver
@@ -102,6 +115,12 @@ final class TelegramClient
     {
         $this->lastError = '';
         $this->lastRetryAfter = 0;
+        $record = $this->record;
+
+        if (str_starts_with($method, 'send')) {
+            $this->record = false;
+        }
+
         $token = self::token();
 
         if ('' === $token) {
@@ -159,7 +178,50 @@ final class TelegramClient
             return null;
         }
 
-        return is_array($decoded['result'] ?? null) ? $decoded['result'] : [];
+        $result = is_array($decoded['result'] ?? null) ? $decoded['result'] : [];
+        $this->track($method, $params, $result, $record);
+
+        return $result;
+    }
+
+    /**
+     * Keeps the bot's last message per private chat (LAST_PREFIX) after a
+     * send, and drops a pending replacement whose message the handler edits
+     * or deletes itself.
+     *
+     * @param array<string, mixed> $params
+     * @param array<string, mixed> $result
+     */
+    private function track(string $method, array $params, array $result, bool $record): void
+    {
+        $chatId = (int) ($params['chat_id'] ?? 0);
+
+        if ($chatId <= 0) {
+            return;
+        }
+
+        $messageId = (int) ($params['message_id'] ?? 0);
+
+        $touchesTarget = 0 !== $messageId && ($this->replace[$chatId] ?? 0) === $messageId;
+
+        if ($touchesTarget && (str_starts_with($method, 'edit') || 'deleteMessage' === $method)) {
+            unset($this->replace[$chatId]);
+        }
+
+        if (! str_starts_with($method, 'send') || 'sendChatAction' === $method) {
+            return;
+        }
+
+        // A new message in the chat: the tapped one is no longer the last.
+        unset($this->replace[$chatId]);
+
+        $sent = (int) ($result['message_id'] ?? 0);
+
+        if (0 === $sent || ! function_exists('set_transient')) {
+            return;
+        }
+
+        set_transient(self::LAST_PREFIX . $chatId, $record ? 0 : $sent, 2 * DAY_IN_SECONDS);
     }
 
     /**
@@ -198,6 +260,47 @@ final class TelegramClient
     }
 
     /**
+     * A button tap on $messageId in a private chat: when that message is the
+     * bot's last one there and the person has not written since, the next
+     * sendMessage to the chat replaces it instead of posting a new message.
+     * Only for this request; an edit or delete of that message by the handler
+     * itself cancels it, so a handler that edits the tapped message keeps
+     * doing what it did.
+     */
+    public function replaceNextIn(int $chatId, int $messageId): void
+    {
+        if ($chatId <= 0 || $messageId <= 0 || ! function_exists('get_transient')) {
+            return;
+        }
+
+        if ((int) get_transient(self::LAST_PREFIX . $chatId) === $messageId) {
+            $this->replace[$chatId] = $messageId;
+        }
+    }
+
+    /** The person wrote in a private chat: the bot's last message there is no longer the last. */
+    public function forgetLast(int $chatId): void
+    {
+        unset($this->replace[$chatId]);
+
+        if ($chatId > 0 && function_exists('delete_transient')) {
+            delete_transient(self::LAST_PREFIX . $chatId);
+        }
+    }
+
+    /**
+     * The next send is a record the person keeps in the chat (a ticket, a
+     * confirmation, a request): it never replaces the tapped message, and a
+     * later tap on it does not replace it either.
+     */
+    public function record(): static
+    {
+        $this->record = true;
+
+        return $this;
+    }
+
+    /**
      * @param array<string, mixed>|null $replyMarkup
      * @return array<string, mixed>|null
      */
@@ -207,6 +310,17 @@ final class TelegramClient
 
         if (null !== $replyMarkup) {
             $params['reply_markup'] = $replyMarkup;
+        }
+
+        $target = $this->record ? 0 : ($this->replace[(int) $chatId] ?? 0);
+
+        if (0 !== $target) {
+            unset($this->replace[(int) $chatId]);
+            $edited = $this->call('editMessageText', $params + ['message_id' => $target], true);
+
+            if (null !== $edited) {
+                return [] === $edited ? ['message_id' => $target] : $edited;
+            }
         }
 
         return $this->call('sendMessage', $params);

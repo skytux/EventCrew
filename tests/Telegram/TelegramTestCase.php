@@ -117,6 +117,23 @@ abstract class TelegramTestCase extends TestCase
             }
         );
 
+        // The client keeps the bot's last private message as a transient
+        // (TelegramClient::LAST_PREFIX); an in-memory store by default.
+        $transients = [];
+        Functions\when('get_transient')->alias(static function (string $key) use (&$transients): mixed {
+            return $transients[$key] ?? false;
+        });
+        Functions\when('set_transient')->alias(static function (string $key, mixed $value) use (&$transients): bool {
+            $transients[$key] = $value;
+
+            return true;
+        });
+        Functions\when('delete_transient')->alias(static function (string $key) use (&$transients): bool {
+            unset($transients[$key]);
+
+            return true;
+        });
+
         Functions\when('wp_json_encode')->alias(static fn (mixed $data): string => (string) json_encode($data));
         Functions\when('is_wp_error')->justReturn(false);
         Functions\when('wp_remote_retrieve_body')->returnArg(1);

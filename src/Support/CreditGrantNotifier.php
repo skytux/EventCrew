@@ -47,7 +47,7 @@ final class CreditGrantNotifier
         ];
 
         if ($prefs->dmAllowed($person, NotificationPreferences::CREDIT)) {
-            $this->telegram->sendMessage(
+            $this->telegram->record()->sendMessage(
                 $person->telegramChatId,
                 DmBody::frame($person, MessageTemplates::body('credit_granted_dm', $context)),
                 MessageActions::replyMarkup(MessageActions::of('credit_granted_dm', $context, $this->mailer))

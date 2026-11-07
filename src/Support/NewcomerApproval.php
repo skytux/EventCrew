@@ -659,8 +659,9 @@ final class NewcomerApproval
         }
 
         // Telegram can refuse the profile link; the request then goes without it.
-        $result = $this->telegram->call('sendMessage', $params)
-            ?? $this->telegram->sendMessage($chatId, $plain, $markup);
+        // The request is a record: a button tap never replaces it with a screen.
+        $result = $this->telegram->record()->call('sendMessage', $params)
+            ?? $this->telegram->record()->sendMessage($chatId, $plain, $markup);
 
         return (int) ($result['message_id'] ?? 0);
     }

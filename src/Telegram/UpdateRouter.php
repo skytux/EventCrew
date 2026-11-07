@@ -120,6 +120,35 @@ final class UpdateRouter
     }
 
     /**
+     * In a private chat, a button tap on the bot's last message answers in
+     * that message instead of a new one (TelegramClient::replaceNextIn()); a
+     * message the person writes ends that, since the bot's message is no longer
+     * the last one.
+     *
+     * @param array<string, mixed> $update
+     */
+    private function replaceInPlace(array $update): void
+    {
+        $callback = is_array($update['callback_query'] ?? null) ? $update['callback_query'] : null;
+
+        if (null !== $callback) {
+            $message = is_array($callback['message'] ?? null) ? $callback['message'] : [];
+
+            if ('private' === ($message['chat']['type'] ?? '')) {
+                $this->telegram?->replaceNextIn((int) ($message['chat']['id'] ?? 0), (int) ($message['message_id'] ?? 0));
+            }
+
+            return;
+        }
+
+        $message = is_array($update['message'] ?? null) ? $update['message'] : null;
+
+        if (null !== $message && 'private' === ($message['chat']['type'] ?? '')) {
+            $this->telegram?->forgetLast((int) ($message['chat']['id'] ?? 0));
+        }
+    }
+
+    /**
      * @param array<string, mixed> $update
      * @param string|null $chosen The sender's language, null if not chosen yet.
      */
@@ -138,6 +167,8 @@ final class UpdateRouter
         if (null !== $this->gate && ! $this->gate->admits($update)) {
             return;
         }
+
+        $this->replaceInPlace($update);
 
         if (isset($update['callback_query']) && is_array($update['callback_query'])) {
             $callbackQuery = $update['callback_query'];
