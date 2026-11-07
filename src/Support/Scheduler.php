@@ -50,7 +50,8 @@ final class Scheduler
         private readonly ?Newsletter $newsletter = null,
         private readonly ?FollowupMail $followup = null,
         private readonly ?TakeoverService $takeovers = null,
-        private readonly ?SlotFreedNotice $slotFreed = null
+        private readonly ?SlotFreedNotice $slotFreed = null,
+        private readonly ?NewcomerApproval $newcomers = null
     ) {
     }
 
@@ -110,6 +111,11 @@ final class Scheduler
             // "A spot just opened", queued by a late cancellation. Dropped
             // here when the task is full again, under way or deleted.
             $this->slotFreed?->sendDue(self::BATCH);
+
+            // Newcomer requests nobody answered in 48 hours: turned down, and
+            // the person is told to talk to an organizer at an event. In the
+            // window, so nobody gets that message at night.
+            $this->newcomers?->expireDue(self::BATCH);
 
             $this->openTasks->sendDue(OpenTaskCall::leads(), self::BATCH);
             $this->standingNotices->sendDue(self::BATCH);

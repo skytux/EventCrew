@@ -839,7 +839,8 @@ final class Kernel
                 $container->get(Newsletter::class),
                 $container->get(FollowupMail::class),
                 $container->get(TakeoverService::class),
-                $container->get(SlotFreedNotice::class)
+                $container->get(SlotFreedNotice::class),
+                $container->get(NewcomerApproval::class)
             )
         );
 
@@ -1628,7 +1629,8 @@ final class Kernel
                 $container->get(CreditGrantRepository::class),
                 $container->get(CreditGrantNotifier::class),
                 $container->get(RoleConditions::class),
-                $container->get(PersonEraser::class)
+                $container->get(PersonEraser::class),
+                $container->get(NewcomerApproval::class)
             )
         );
 

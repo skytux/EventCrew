@@ -11774,3 +11774,163 @@ msgid "This is an early cancellation: it is more than %d hour before the task, s
 msgid_plural "This is an early cancellation: it is more than %d hours before the task, so it has no effect on your standing."
 msgstr[0] "Det här är en tidig avbokning: det är mer än %d timme till uppgiften, så den påverkar inte din pålitlighet."
 msgstr[1] "Det här är en tidig avbokning: det är mer än %d timmar till uppgiften, så den påverkar inte din pålitlighet."
+
+#: src/Support/MessageTemplates.php
+msgid "A newcomer is unknown to the organizers (Telegram)"
+msgstr "Arrangörerna känner inte nykomlingen (Telegram)"
+
+#: src/Support/MessageTemplates.php
+msgid "A newcomer is unknown to the organizers (email)"
+msgstr "Arrangörerna känner inte nykomlingen (e-post)"
+
+#: src/Support/MessageTemplates.php
+msgid "A newcomer request timed out (Telegram)"
+msgstr "En nykomlings begäran gick ut (Telegram)"
+
+#: src/Support/MessageTemplates.php
+msgid "A newcomer request timed out (email)"
+msgstr "En nykomlings begäran gick ut (e-post)"
+
+#: src/Support/MessageTemplates.php
+msgid "A newcomer request was answered (email)"
+msgstr "En nykomlings begäran besvarades (e-post)"
+
+#: src/Support/MessageTemplates.php
+msgid "About your sign-up"
+msgstr "Om din anmälan"
+
+#: templates/admin/people.php
+msgid "Accept"
+msgstr "Godkänn"
+
+#: src/Admin/PeoplePage.php
+msgid "Accepted. They can take tasks now, and they are told."
+msgstr "Godkänd. Personen kan ta uppgifter nu och får veta det."
+
+#: src/Support/MessageTemplates.php
+msgid "Answered: %s"
+msgstr "Besvarad: %s"
+
+#: templates/admin/people.php
+msgid "Newcomers an organizer turned down, and requests nobody answered in 48 hours. Accept gives the OK as the OK button does: they can take tasks, and they are told."
+msgstr "Nykomlingar som en arrangör sa nej till, och begäranden som ingen svarade på inom 48 timmar. Godkänn fungerar som OK-knappen: personen kan ta uppgifter och får veta det."
+
+#: src/Support/NewcomerApproval.php
+msgid "No organizer answered in 48 hours, so the request timed out on %s."
+msgstr "Ingen arrangör svarade inom 48 timmar, så begäran gick ut %s."
+
+#: src/Support/NewcomerApproval.php
+msgid "No organizer answered in 48 hours, so the request timed out."
+msgstr "Ingen arrangör svarade inom 48 timmar, så begäran gick ut."
+
+#: src/Admin/PeoplePage.php
+msgid "No organizer answered in 48 hours. They were told."
+msgstr "Ingen arrangör svarade inom 48 timmar. Personen fick veta."
+
+#: src/Support/NewcomerApproval.php
+msgid "No reason (not told)"
+msgstr "Inget skäl (får inte veta)"
+
+#: src/Admin/PeoplePage.php
+msgid "No reason. They were not told."
+msgstr "Inget skäl. Personen fick inte veta."
+
+#: src/Support/NewcomerApproval.php
+msgid "No, by %1$s, %2$s."
+msgstr "Nej, av %1$s, %2$s."
+
+#: src/Admin/PeoplePage.php
+msgid "Nobody (timed out)"
+msgstr "Ingen (gick ut)"
+
+#: templates/admin/people.php
+msgid "Nobody was turned down."
+msgstr "Ingen har fått nej."
+
+#: src/Support/NewcomerApproval.php
+msgid "OK, by %1$s, %2$s."
+msgstr "OK, av %1$s, %2$s."
+
+#: src/Support/NewcomerApproval.php
+msgid "Open their Telegram profile"
+msgstr "Öppna personens Telegram-profil"
+
+#: src/Support/MessageTemplates.php
+msgid "Sent to a new person who uses the bot when an organizer turns down their request with the reason Unknown to us. With No reason the person is not told."
+msgstr "Skickas till en ny person som använder boten när en arrangör säger nej med skälet Okänd för oss. Utan skäl får personen inte veta."
+
+#: src/Support/MessageTemplates.php
+msgid "Sent to a new person who uses the bot when no organizer answered their request in 48 hours. The request is then turned down."
+msgstr "Skickas till en ny person som använder boten när ingen arrangör svarade på begäran inom 48 timmar. Begäran får då nej."
+
+#: src/Support/MessageTemplates.php
+msgid "Sent to a new person without Telegram when an organizer turns down their request with the reason Unknown to us. The greeting is added above the text. With No reason the person is not told."
+msgstr "Skickas till en ny person utan Telegram när en arrangör säger nej med skälet Okänd för oss. Hälsningen läggs till ovanför texten. Utan skäl får personen inte veta."
+
+#: src/Support/MessageTemplates.php
+msgid "Sent to a new person without Telegram when no organizer answered their request in 48 hours. The request is then turned down. The greeting is added above the text."
+msgstr "Skickas till en ny person utan Telegram när ingen arrangör svarade på begäran inom 48 timmar. Begäran får då nej. Hälsningen läggs till ovanför texten."
+
+#: src/Support/MessageTemplates.php
+msgid "Sent to the organizers who got the email about a new person, when another organizer answers the request or when it times out after 48 hours."
+msgstr "Skickas till arrangörerna som fick e-post om en ny person, när en annan arrangör svarar på begäran eller när den går ut efter 48 timmar."
+
+#: src/Admin/PeoplePage.php
+msgid "That person could not be accepted. Someone may have done it already."
+msgstr "Personen kunde inte godkännas. Någon kan redan ha gjort det."
+
+#: src/Support/MessageTemplates.php
+msgid "The answer: OK or No, who gave it and when, and whether the person was told."
+msgstr "Svaret: OK eller Nej, vem som gav det och när, och om personen fick veta."
+
+#: src/Support/MessageTemplates.php
+msgid "The organizers do not know you yet, so they could not say OK to your sign-up. Please come and talk to us at an event; an organizer can then say OK."
+msgstr "Arrangörerna känner dig inte än, så de kunde inte säga OK till din anmälan. Kom och prata med oss på ett evenemang, så kan en arrangör säga OK då."
+
+#: src/Support/MessageTemplates.php
+msgid "The request of %1$s (%2$s) to join the crew is answered:"
+msgstr "Begäran från %1$s (%2$s) att gå med i crew är besvarad:"
+
+#: src/Support/NewcomerApproval.php
+msgid "They were not told."
+msgstr "Personen fick inte veta."
+
+#: src/Support/NewcomerApproval.php
+msgid "They were told to talk to an organizer at an event."
+msgstr "Personen ombads prata med en arrangör på ett evenemang."
+
+#: src/Support/NewcomerApproval.php
+msgid "They were told: unknown to the organizers."
+msgstr "Personen fick veta: okänd för arrangörerna."
+
+#: src/Support/NewcomerApproval.php
+msgid "Turn down %s?"
+msgstr "Säga nej till %s?"
+
+#: templates/admin/people.php
+msgid "Turned down"
+msgstr "Fått nej"
+
+#: templates/admin/people.php
+msgid "Turned down by"
+msgstr "Nej av"
+
+#: src/Admin/PeoplePage.php
+msgid "Unknown to the organizers. They were told."
+msgstr "Okänd för arrangörerna. Personen fick veta."
+
+#: src/Support/NewcomerApproval.php
+msgid "Unknown to us (they are told)"
+msgstr "Okänd för oss (får veta)"
+
+#: src/Support/NewcomerApproval.php
+msgid "With “Unknown to us” they get a message asking them to talk to an organizer at an event. With “No reason” they are not told."
+msgstr "Med ”Okänd för oss” får personen ett meddelande som ber dem prata med en arrangör på ett evenemang. Med ”Inget skäl” får personen inte veta."
+
+#: src/Support/MessageTemplates.php
+msgid "Your request to join the crew timed out: no organizer answered it in 48 hours. This can mean that no organizer recognized you. To finish signing up, please talk to an organizer directly at an event."
+msgstr "Din begäran att gå med i crew gick ut: ingen arrangör svarade inom 48 timmar. Det kan betyda att ingen arrangör kände igen dig. Prata med en arrangör direkt på ett evenemang för att slutföra anmälan."
+
+#: src/Support/MessageTemplates.php
+msgid "Your sign-up request timed out"
+msgstr "Din anmälan gick ut"

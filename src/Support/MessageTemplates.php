@@ -1039,6 +1039,16 @@ final class MessageTemplates
             'access_role' => $greet,
             'access_pass' => $greet,
             'newcomer_ok' => $greet,
+            'newcomer_unknown' => $greet,
+            'newcomer_timeout' => $greet,
+            'newcomer_decided' => ['context' => static fn (): array => [
+                'outcome' => NewcomerApproval::outcomeLine(
+                    Person::APPROVAL_NO,
+                    __('Sample Organizer', 'eventcrew'),
+                    (string) current_time('mysql'),
+                    NewcomerApproval::REASON_NONE
+                ),
+            ]],
             'access_organizer' => $greet,
             'role_met' => $sampleMet,
             'role_met_dm' => $sampleMet,
@@ -1915,6 +1925,38 @@ final class MessageTemplates
                 $openTasks
             ),
             new MessageTemplate(
+                'newcomer_unknown',
+                __('A newcomer is unknown to the organizers (email)', 'eventcrew'),
+                $email,
+                __('Sent to a new person without Telegram when an organizer turns down their request with the reason Unknown to us. The greeting is added above the text. With No reason the person is not told.', 'eventcrew'),
+                static fn (): string => __('About your sign-up', 'eventcrew'),
+                static fn (): string => __('The organizers do not know you yet, so they could not say OK to your sign-up. Please come and talk to us at an event; an organizer can then say OK.', 'eventcrew')
+            ),
+            new MessageTemplate(
+                'newcomer_unknown_dm',
+                __('A newcomer is unknown to the organizers (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to a new person who uses the bot when an organizer turns down their request with the reason Unknown to us. With No reason the person is not told.', 'eventcrew'),
+                null,
+                static fn (): string => __('The organizers do not know you yet, so they could not say OK to your sign-up. Please come and talk to us at an event; an organizer can then say OK.', 'eventcrew')
+            ),
+            new MessageTemplate(
+                'newcomer_timeout',
+                __('A newcomer request timed out (email)', 'eventcrew'),
+                $email,
+                __('Sent to a new person without Telegram when no organizer answered their request in 48 hours. The request is then turned down. The greeting is added above the text.', 'eventcrew'),
+                static fn (): string => __('Your sign-up request timed out', 'eventcrew'),
+                static fn (): string => __('Your request to join the crew timed out: no organizer answered it in 48 hours. This can mean that no organizer recognized you. To finish signing up, please talk to an organizer directly at an event.', 'eventcrew')
+            ),
+            new MessageTemplate(
+                'newcomer_timeout_dm',
+                __('A newcomer request timed out (Telegram)', 'eventcrew'),
+                $telegram,
+                __('Sent to a new person who uses the bot when no organizer answered their request in 48 hours. The request is then turned down.', 'eventcrew'),
+                null,
+                static fn (): string => '⌛ ' . __('Your request to join the crew timed out: no organizer answered it in 48 hours. This can mean that no organizer recognized you. To finish signing up, please talk to an organizer directly at an event.', 'eventcrew')
+            ),
+            new MessageTemplate(
                 'access_organizer',
                 __('You were made an organizer (email)', 'eventcrew'),
                 $email,
@@ -2340,6 +2382,30 @@ final class MessageTemplates
                     ['%1$s' => '{name}', '%2$s' => '{email}']
                 ),
                 ['name' => $member, 'email' => $memberEmail]
+            ),
+            new MessageTemplate(
+                'newcomer_decided',
+                __('A newcomer request was answered (email)', 'eventcrew'),
+                $email,
+                __('Sent to the organizers who got the email about a new person, when another organizer answers the request or when it times out after 48 hours.', 'eventcrew'),
+                static fn (): string => self::tag(
+                    /* translators: %s: the person's name */
+                    __('Answered: %s', 'eventcrew'),
+                    ['%s' => '{name}']
+                ),
+                static fn (): string => self::tag(
+                    /* translators: 1: the person's name, 2: their email */
+                    __('The request of %1$s (%2$s) to join the crew is answered:', 'eventcrew'),
+                    ['%1$s' => '{name}', '%2$s' => '{email}']
+                ) . "\n{outcome}",
+                [
+                    'name' => $member,
+                    'email' => $memberEmail,
+                    'outcome' => self::placeholder(
+                        __('The answer: OK or No, who gave it and when, and whether the person was told.', 'eventcrew'),
+                        static fn (array $c): string => (string) ($c['outcome'] ?? '')
+                    ),
+                ]
             ),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong

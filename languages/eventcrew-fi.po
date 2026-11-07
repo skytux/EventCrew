@@ -8659,3 +8659,163 @@ msgid "This is an early cancellation: it is more than %d hour before the task, s
 msgid_plural "This is an early cancellation: it is more than %d hours before the task, so it has no effect on your standing."
 msgstr[0] "Tämä on aikainen peruutus: tehtävään on yli %d tunti, joten se ei vaikuta luotettavuuteesi."
 msgstr[1] "Tämä on aikainen peruutus: tehtävään on yli %d tuntia, joten se ei vaikuta luotettavuuteesi."
+
+#: src/Support/MessageTemplates.php
+msgid "A newcomer is unknown to the organizers (Telegram)"
+msgstr "Järjestäjät eivät tunne uutta (Telegram)"
+
+#: src/Support/MessageTemplates.php
+msgid "A newcomer is unknown to the organizers (email)"
+msgstr "Järjestäjät eivät tunne uutta (sähköposti)"
+
+#: src/Support/MessageTemplates.php
+msgid "A newcomer request timed out (Telegram)"
+msgstr "Uuden pyyntö vanheni (Telegram)"
+
+#: src/Support/MessageTemplates.php
+msgid "A newcomer request timed out (email)"
+msgstr "Uuden pyyntö vanheni (sähköposti)"
+
+#: src/Support/MessageTemplates.php
+msgid "A newcomer request was answered (email)"
+msgstr "Uuden pyyntöön vastattiin (sähköposti)"
+
+#: src/Support/MessageTemplates.php
+msgid "About your sign-up"
+msgstr "Liittymisestäsi"
+
+#: templates/admin/people.php
+msgid "Accept"
+msgstr "Hyväksy"
+
+#: src/Admin/PeoplePage.php
+msgid "Accepted. They can take tasks now, and they are told."
+msgstr "Hyväksytty. Hän voi nyt ottaa tehtäviä, ja hänelle kerrotaan."
+
+#: src/Support/MessageTemplates.php
+msgid "Answered: %s"
+msgstr "Vastattu: %s"
+
+#: templates/admin/people.php
+msgid "Newcomers an organizer turned down, and requests nobody answered in 48 hours. Accept gives the OK as the OK button does: they can take tasks, and they are told."
+msgstr "Uudet, jotka järjestäjä hylkäsi, ja pyynnöt, joihin kukaan ei vastannut 48 tunnissa. Hyväksy toimii kuten OK-painike: hän voi ottaa tehtäviä, ja hänelle kerrotaan."
+
+#: src/Support/NewcomerApproval.php
+msgid "No organizer answered in 48 hours, so the request timed out on %s."
+msgstr "Kukaan järjestäjä ei vastannut 48 tunnissa, joten pyyntö vanheni %s."
+
+#: src/Support/NewcomerApproval.php
+msgid "No organizer answered in 48 hours, so the request timed out."
+msgstr "Kukaan järjestäjä ei vastannut 48 tunnissa, joten pyyntö vanheni."
+
+#: src/Admin/PeoplePage.php
+msgid "No organizer answered in 48 hours. They were told."
+msgstr "Kukaan järjestäjä ei vastannut 48 tunnissa. Hänelle kerrottiin."
+
+#: src/Support/NewcomerApproval.php
+msgid "No reason (not told)"
+msgstr "Ei syytä (ei kerrota)"
+
+#: src/Admin/PeoplePage.php
+msgid "No reason. They were not told."
+msgstr "Ei syytä. Hänelle ei kerrottu."
+
+#: src/Support/NewcomerApproval.php
+msgid "No, by %1$s, %2$s."
+msgstr "Ei, päätti %1$s, %2$s."
+
+#: src/Admin/PeoplePage.php
+msgid "Nobody (timed out)"
+msgstr "Ei kukaan (vanheni)"
+
+#: templates/admin/people.php
+msgid "Nobody was turned down."
+msgstr "Ketään ei ole hylätty."
+
+#: src/Support/NewcomerApproval.php
+msgid "OK, by %1$s, %2$s."
+msgstr "OK, päätti %1$s, %2$s."
+
+#: src/Support/NewcomerApproval.php
+msgid "Open their Telegram profile"
+msgstr "Avaa hänen Telegram-profiilinsa"
+
+#: src/Support/MessageTemplates.php
+msgid "Sent to a new person who uses the bot when an organizer turns down their request with the reason Unknown to us. With No reason the person is not told."
+msgstr "Lähetetään botin käyttäjälle, kun järjestäjä hylkää hänen pyyntönsä syyllä Emme tunne. Ilman syytä hänelle ei kerrota."
+
+#: src/Support/MessageTemplates.php
+msgid "Sent to a new person who uses the bot when no organizer answered their request in 48 hours. The request is then turned down."
+msgstr "Lähetetään botin käyttäjälle, kun kukaan järjestäjä ei vastannut hänen pyyntöönsä 48 tunnissa. Pyyntö hylätään silloin."
+
+#: src/Support/MessageTemplates.php
+msgid "Sent to a new person without Telegram when an organizer turns down their request with the reason Unknown to us. The greeting is added above the text. With No reason the person is not told."
+msgstr "Lähetetään uudelle ilman Telegramia, kun järjestäjä hylkää hänen pyyntönsä syyllä Emme tunne. Tervehdys lisätään tekstin yläpuolelle. Ilman syytä hänelle ei kerrota."
+
+#: src/Support/MessageTemplates.php
+msgid "Sent to a new person without Telegram when no organizer answered their request in 48 hours. The request is then turned down. The greeting is added above the text."
+msgstr "Lähetetään uudelle ilman Telegramia, kun kukaan järjestäjä ei vastannut hänen pyyntöönsä 48 tunnissa. Pyyntö hylätään silloin. Tervehdys lisätään tekstin yläpuolelle."
+
+#: src/Support/MessageTemplates.php
+msgid "Sent to the organizers who got the email about a new person, when another organizer answers the request or when it times out after 48 hours."
+msgstr "Lähetetään järjestäjille, jotka saivat sähköpostin uudesta, kun toinen järjestäjä vastaa pyyntöön tai kun se vanhenee 48 tunnin jälkeen."
+
+#: src/Admin/PeoplePage.php
+msgid "That person could not be accepted. Someone may have done it already."
+msgstr "Henkilöä ei voitu hyväksyä. Joku on ehkä jo tehnyt sen."
+
+#: src/Support/MessageTemplates.php
+msgid "The answer: OK or No, who gave it and when, and whether the person was told."
+msgstr "Vastaus: OK tai Ei, kuka antoi sen ja milloin, ja kerrottiinko henkilölle."
+
+#: src/Support/MessageTemplates.php
+msgid "The organizers do not know you yet, so they could not say OK to your sign-up. Please come and talk to us at an event; an organizer can then say OK."
+msgstr "Järjestäjät eivät vielä tunne sinua, joten he eivät voineet hyväksyä liittymistäsi. Tule juttelemaan kanssamme tapahtumassa, niin järjestäjä voi sitten hyväksyä sen."
+
+#: src/Support/MessageTemplates.php
+msgid "The request of %1$s (%2$s) to join the crew is answered:"
+msgstr "Henkilön %1$s (%2$s) pyyntöön liittyä crew’hun on vastattu:"
+
+#: src/Support/NewcomerApproval.php
+msgid "They were not told."
+msgstr "Hänelle ei kerrottu."
+
+#: src/Support/NewcomerApproval.php
+msgid "They were told to talk to an organizer at an event."
+msgstr "Häntä neuvottiin puhumaan järjestäjälle tapahtumassa."
+
+#: src/Support/NewcomerApproval.php
+msgid "They were told: unknown to the organizers."
+msgstr "Hänelle kerrottiin: järjestäjät eivät tunne häntä."
+
+#: src/Support/NewcomerApproval.php
+msgid "Turn down %s?"
+msgstr "Hylätäänkö %s?"
+
+#: templates/admin/people.php
+msgid "Turned down"
+msgstr "Hylätyt"
+
+#: templates/admin/people.php
+msgid "Turned down by"
+msgstr "Hylkääjä"
+
+#: src/Admin/PeoplePage.php
+msgid "Unknown to the organizers. They were told."
+msgstr "Järjestäjät eivät tunne. Hänelle kerrottiin."
+
+#: src/Support/NewcomerApproval.php
+msgid "Unknown to us (they are told)"
+msgstr "Emme tunne (hänelle kerrotaan)"
+
+#: src/Support/NewcomerApproval.php
+msgid "With “Unknown to us” they get a message asking them to talk to an organizer at an event. With “No reason” they are not told."
+msgstr "Valinnalla ”Emme tunne” hän saa viestin, jossa pyydetään puhumaan järjestäjälle tapahtumassa. Valinnalla ”Ei syytä” hänelle ei kerrota."
+
+#: src/Support/MessageTemplates.php
+msgid "Your request to join the crew timed out: no organizer answered it in 48 hours. This can mean that no organizer recognized you. To finish signing up, please talk to an organizer directly at an event."
+msgstr "Pyyntösi liittyä crew’hun vanheni: kukaan järjestäjä ei vastannut siihen 48 tunnissa. Se voi tarkoittaa, ettei kukaan järjestäjä tunnistanut sinua. Viimeistele liittyminen puhumalla järjestäjälle suoraan tapahtumassa."
+
+#: src/Support/MessageTemplates.php
+msgid "Your sign-up request timed out"
+msgstr "Liittymispyyntösi vanheni"

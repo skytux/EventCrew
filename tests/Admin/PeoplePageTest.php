@@ -178,4 +178,114 @@ final class PeoplePageTest extends TestCase
 
         self::assertContains([\EventCrew\Support\RoleNotifier::ORGANIZER_HOOK, [8, 'Owner']], $fired);
     }
+
+    /**
+     * The page with the person repository and the newcomer approval set.
+     */
+    private function pageWithNewcomers(): PeoplePage
+    {
+        $page = $this->page();
+        $approval = new \EventCrew\Support\NewcomerApproval(
+            new PersonRepository(),
+            new \EventCrew\Support\Mailer(new \EventCrew\Support\Logger(), new \EventCrew\Support\EmailTemplate(new \EventCrew\Support\Logger())),
+            new \EventCrew\Telegram\TelegramClient(new \EventCrew\Support\Logger(), new \EventCrew\Telegram\DohResolver(new \EventCrew\Support\Logger()))
+        );
+        (function (\EventCrew\Support\NewcomerApproval $newcomers): void {
+            $this->newcomers = $newcomers;
+        })->call($page, $approval);
+
+        return $page;
+    }
+
+    /** Brief AB point 6: the Turned down list shows when, who, by whom and the reason. */
+    public function testTheTurnedDownListShowsWhenWhoAndTheReason(): void
+    {
+        Functions\when('current_time')->justReturn('2026-07-20 12:00:00');
+        $this->wpdb->nextResults[] = [
+            [
+                'id' => 8, 'display_name' => 'Sam', 'email' => 'sam@example.com', 'approval' => 'no', 'approval_by' => 'Kim',
+                'role_notices' => '{"newcomer:decided":"2026-07-19 18:30:00","newcomer:reason":"unknown"}',
+            ],
+            [
+                'id' => 9, 'display_name' => 'Jo', 'email' => 'jo@example.com', 'approval' => 'no', 'approval_by' => '',
+                'role_notices' => '{"newcomer:decided":"2026-07-18 09:00:00","newcomer:reason":"timeout"}',
+            ],
+            [
+                'id' => 10, 'display_name' => 'Ari', 'email' => 'ari@example.com', 'approval' => 'no', 'approval_by' => 'Kim',
+                'role_notices' => '{"newcomer:decided":"2026-07-17 09:00:00","newcomer:reason":"none"}',
+            ],
+        ];
+
+        $rows = $this->pageWithNewcomers()->turnedDownRows();
+
+        self::assertSame([8, 9, 10], array_column($rows, 'id'));
+        self::assertSame(['Sam', 'Jo', 'Ari'], array_column($rows, 'name'));
+        self::assertSame(['Kim', 'Nobody (timed out)', 'Kim'], array_column($rows, 'by'));
+        self::assertSame(
+            [
+                'Unknown to the organizers. They were told.',
+                'No organizer answered in 48 hours. They were told.',
+                'No reason. They were not told.',
+            ],
+            array_column($rows, 'reason')
+        );
+        self::assertNotSame('', $rows[0]['when']);
+        self::assertStringContainsString("approval = 'no'", (string) end($this->wpdb->queries));
+    }
+
+    /** Accept on someone no longer turned down changes nothing and says so. */
+    public function testAcceptOnSomeoneNoLongerTurnedDownSaysSo(): void
+    {
+        $_POST = ['person_id' => '8'];
+        $notice = null;
+        Functions\when('set_transient')->alias(static function (string $key, mixed $value) use (&$notice): bool {
+            $notice = $value;
+
+            return true;
+        });
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'email' => 'sam@example.com', 'approval' => 'ok'];
+        $this->wpdb->nextQueryResults[] = 0;
+
+        try {
+            $this->pageWithNewcomers()->acceptNewcomer();
+            self::fail('Expected the redirect.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('redirected', $e->getMessage());
+        }
+
+        self::assertSame('error', $notice['type']);
+        self::assertSame('That person could not be accepted. Someone may have done it already.', $notice['message']);
+    }
+
+    /** Accept on a turned-down person gives the OK, recorded as the wp-admin user. */
+    public function testAcceptGivesTheOkAsTheAdminUser(): void
+    {
+        $_POST = ['person_id' => '8'];
+        $notice = null;
+        Functions\when('set_transient')->alias(static function (string $key, mixed $value) use (&$notice): bool {
+            $notice = $value;
+
+            return true;
+        });
+        Functions\when('current_time')->justReturn('2026-07-20 12:00:00');
+        Functions\when('wp_mail')->justReturn(true);
+        Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'email' => 'sam@example.com', 'approval' => 'no'];
+        $this->wpdb->nextQueryResults[] = 1;
+
+        try {
+            $this->pageWithNewcomers()->acceptNewcomer();
+            self::fail('Expected the redirect.');
+        } catch (\RuntimeException $e) {
+            self::assertSame('redirected', $e->getMessage());
+        }
+
+        $update = array_values(array_filter(
+            array_map('strval', $this->wpdb->queries),
+            static fn (string $q): bool => str_contains($q, 'SET approval')
+        ));
+        self::assertStringContainsString("approval_by = 'Owner'", $update[0]);
+        self::assertSame('success', $notice['type']);
+        self::assertSame('Accepted. They can take tasks now, and they are told.', $notice['message']);
+    }
 }

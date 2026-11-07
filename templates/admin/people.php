@@ -10,6 +10,7 @@
  * @var string $nonce_action Nonce action for the save form.
  * @var string $page_slug Admin page slug, for form targets.
  * @var list<array{label: string, conditions: string, people: list<array{id: int, name: string, holds: bool}>}> $condition_roles Roles with conditions and who meets them.
+ * @var list<array{id: int, name: string, email: string, when: string, by: string, reason: string}>|null $turned_down Turned-down newcomer requests (Turned down tab), null when not wired.
  */
 
 declare(strict_types=1);
@@ -26,6 +27,9 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
     <h2 class="nav-tab-wrapper eventcrew-people-tabs" style="margin:.5em 0 1em">
         <a href="#" class="nav-tab" data-ec-tab="people"><?php esc_html_e('People', 'eventcrew'); ?></a>
         <a href="#" class="nav-tab" data-ec-tab="conditions"><?php esc_html_e('Role conditions', 'eventcrew'); ?></a>
+        <?php if (null !== ($turned_down ?? null)) : ?>
+            <a href="#" class="nav-tab" data-ec-tab="turned-down"><?php esc_html_e('Turned down', 'eventcrew'); ?></a>
+        <?php endif; ?>
     </h2>
 
     <div class="ec-tab-panel" data-ec-tab="people">
@@ -309,6 +313,55 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
         </div>
     <?php endif; ?>
     </div>
+
+    <?php if (null !== ($turned_down ?? null)) : ?>
+    <div class="ec-tab-panel" data-ec-tab="turned-down">
+        <p class="description" style="max-width:60em">
+            <?php esc_html_e('Newcomers an organizer turned down, and requests nobody answered in 48 hours. Accept gives the OK as the OK button does: they can take tasks, and they are told.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+        </p>
+        <?php if ([] === $turned_down) : ?>
+            <p><?php esc_html_e('Nobody was turned down.', 'eventcrew'); ?></p>
+        <?php else : ?>
+            <div class="eventcrew-scroll">
+            <table class="widefat striped" style="max-width:70em">
+                <thead>
+                    <tr>
+                        <th><?php esc_html_e('When', 'eventcrew'); ?></th>
+                        <th><?php esc_html_e('Person', 'eventcrew'); ?></th>
+                        <th><?php esc_html_e('Email', 'eventcrew'); ?></th>
+                        <th><?php esc_html_e('Turned down by', 'eventcrew'); ?></th>
+                        <th><?php esc_html_e('Reason', 'eventcrew'); ?></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($turned_down as $eventcrew_refused) : ?>
+                        <tr>
+                            <td><?php echo '' === $eventcrew_refused['when'] ? '&mdash;' : esc_html($eventcrew_refused['when']); ?></td>
+                            <td>
+                                <a href="<?php echo esc_url(add_query_arg(['page' => $page_slug, 'person' => $eventcrew_refused['id']], admin_url('admin.php'))); ?>">
+                                    <?php echo esc_html($eventcrew_refused['name']); ?>
+                                </a>
+                            </td>
+                            <td><?php echo esc_html($eventcrew_refused['email']); ?></td>
+                            <td><?php echo '' === $eventcrew_refused['by'] ? '&mdash;' : esc_html($eventcrew_refused['by']); ?></td>
+                            <td><?php echo '' === $eventcrew_refused['reason'] ? '&mdash;' : esc_html($eventcrew_refused['reason']); ?></td>
+                            <td>
+                                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin:0">
+                                    <input type="hidden" name="action" value="eventcrew_accept_newcomer">
+                                    <?php wp_nonce_field($nonce_action); ?>
+                                    <input type="hidden" name="person_id" value="<?php echo esc_attr((string) $eventcrew_refused['id']); ?>">
+                                    <button type="submit" class="button"><?php esc_html_e('Accept', 'eventcrew'); ?></button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 
     <div class="ec-tab-panel" data-ec-tab="conditions">
         <p class="description">

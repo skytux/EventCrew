@@ -9,6 +9,8 @@ use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\AccessNotifier;
 use EventCrew\Support\CreditGrantNotifier;
+use EventCrew\Support\Dates;
+use EventCrew\Support\NewcomerApproval;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\RoleConditions;
 use EventCrew\Support\RoleNotifier;
@@ -29,7 +31,8 @@ final class PeoplePage
         private readonly CreditGrantRepository $grants,
         private readonly CreditGrantNotifier $notifier,
         private readonly RoleConditions $conditions,
-        private readonly PersonEraser $eraser
+        private readonly PersonEraser $eraser,
+        private readonly ?NewcomerApproval $newcomers = null
     ) {
     }
 
@@ -56,6 +59,9 @@ final class PeoplePage
                 // The Role conditions view, shown as a second tab on this page:
                 // for each role with conditions, who meets them.
                 'condition_roles' => $this->conditionRows(),
+                // The Turned down tab: refused and timed-out newcomer
+                // requests, each with an Accept button.
+                'turned_down' => null === $this->newcomers ? null : $this->turnedDownRows(),
             ]
         );
     }
@@ -86,6 +92,60 @@ final class PeoplePage
         }
 
         return $rows;
+    }
+
+    /**
+     * The newcomers who were turned down or whose request timed out, newest
+     * first: when, who, the email, who decided and the reason.
+     *
+     * @return list<array{id: int, name: string, email: string, when: string, by: string, reason: string}>
+     */
+    public function turnedDownRows(): array
+    {
+        $rows = [];
+
+        foreach ($this->people->turnedDownNewcomers() as $person) {
+            $reason = NewcomerApproval::reason($person);
+            $at = NewcomerApproval::decidedAt($person);
+            $timeout = NewcomerApproval::REASON_TIMEOUT === $reason;
+
+            $rows[] = [
+                'id' => $person->id,
+                'name' => $person->name(),
+                'email' => $person->email,
+                'when' => '' === $at ? '' : Dates::signedUpLabel($at),
+                'by' => $timeout ? __('Nobody (timed out)', 'eventcrew') : $person->approvalBy,
+                'reason' => match ($reason) {
+                    NewcomerApproval::REASON_TIMEOUT => __('No organizer answered in 48 hours. They were told.', 'eventcrew'),
+                    NewcomerApproval::REASON_UNKNOWN => __('Unknown to the organizers. They were told.', 'eventcrew'),
+                    NewcomerApproval::REASON_NONE => __('No reason. They were not told.', 'eventcrew'),
+                    default => '',
+                },
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Accept on the Turned down tab: the person gets the OK exactly as with
+     * the ✅ OK button, and the same message.
+     */
+    public function acceptNewcomer(): void
+    {
+        Admin::assertCanSave(self::NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
+        $personId = isset($_POST['person_id']) ? (int) $_POST['person_id'] : 0;
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        $by = (string) wp_get_current_user()->display_name;
+
+        if (null === $this->newcomers || ! $this->newcomers->accept($personId, $by)) {
+            Admin::redirectTo(self::PAGE_SLUG, __('That person could not be accepted. Someone may have done it already.', 'eventcrew'), 'error');
+        }
+
+        Admin::redirectTo(self::PAGE_SLUG, __('Accepted. They can take tasks now, and they are told.', 'eventcrew'));
     }
 
     /**

@@ -17,6 +17,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\NewcomerApproval;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\ReminderCall;
@@ -36,7 +37,7 @@ use EventCrew\Tests\TestCase;
 
 final class SchedulerTest extends TestCase
 {
-    private function scheduler(?SlotFreedNotice $slotFreed = null): Scheduler
+    private function scheduler(?SlotFreedNotice $slotFreed = null, ?NewcomerApproval $newcomers = null): Scheduler
     {
         $tasks = new TaskRepository();
         $assignments = new AssignmentRepository();
@@ -84,7 +85,8 @@ final class SchedulerTest extends TestCase
             null,
             null,
             null,
-            $slotFreed
+            $slotFreed,
+            $newcomers
         );
     }
 
@@ -310,5 +312,45 @@ final class SchedulerTest extends TestCase
 
         self::assertContains(Scheduler::HOOK, $cleared);
         self::assertContains(\EventCrew\Support\TicketMail::START_HOOK, $cleared);
+    }
+
+    /**
+     * Runs the scheduler with the newcomer approval set, the window opening
+     * at $openHour (the test clock is 12:00), and says whether it looked for
+     * newcomer requests to time out.
+     */
+    private function runLooksForTimedOutNewcomers(int $openHour): bool
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $key, mixed $default = false): mixed => SendWindow::OPTION === $key ? $openHour : $default
+        );
+        Functions\when('update_option')->justReturn(true);
+        $newcomers = new NewcomerApproval(
+            new PersonRepository(),
+            new Mailer(new Logger(), new EmailTemplate(new Logger())),
+            new TelegramClient(new Logger(), new DohResolver(new Logger()))
+        );
+
+        $this->scheduler(null, $newcomers)->run();
+
+        foreach ($this->wpdb->queries as $sql) {
+            if (str_contains((string) $sql, 'email_verified_at IS NOT NULL') && str_contains((string) $sql, 'approval =')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Brief AB point 4: the hourly run times out newcomer requests inside the send window. */
+    public function testRunTimesOutNewcomerRequestsInsideTheSendWindow(): void
+    {
+        self::assertTrue($this->runLooksForTimedOutNewcomers(9));
+    }
+
+    /** Outside the window the time-outs wait, so nobody gets that message at night. */
+    public function testRunLeavesNewcomerRequestsOutsideTheSendWindow(): void
+    {
+        self::assertFalse($this->runLooksForTimedOutNewcomers(13));
     }
 }

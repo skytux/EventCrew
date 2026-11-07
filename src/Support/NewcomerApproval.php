@@ -21,18 +21,33 @@ use EventCrew\Telegram\TelegramClient;
  *   (organizers with Telegram) and by email with a button to the Admin
  *   tab. Each organizer's NotificationPreferences::NEWCOMER row switches
  *   either route off; both are on by default.
+ * - The request DM shows the person's @username and a link to their
+ *   Telegram profile when they use the bot.
  * - The first organizer to press OK or No decides
  *   (PersonRepository::decideNewcomer()); a later press is told who did.
- * - On OK the newcomer is told: by Telegram if linked, else by email. On
- *   No they are not messaged; the board shows a short neutral text.
+ *   No first asks "Turn down <name>?" with a reason: Unknown to us (the
+ *   person is told to talk to an organizer at an event) or No reason (the
+ *   person is not told).
+ * - On OK the newcomer is told: by Telegram if linked, else by email.
+ * - Once decided, every organizer's Telegram copy of the request shows the
+ *   outcome (who, OK or No, when), and the organizers who got the request
+ *   email get a short email with the outcome.
+ * - A request nobody answers in 48 hours is turned down by the heartbeat
+ *   (expireDue()); the person is told why and what to do.
+ * - A turned-down person can be accepted from wp-admin (accept()), with the
+ *   same OK message.
  * - A person who is given a role or a one-time pass is OK from then on.
+ *
+ * What the request needs to remember lives in the person's role_notices
+ * record: when the organizers were asked, each organizer's Telegram copy
+ * (chat:message), who got the email, when it was decided and the reason.
  *
  * People an organizer adds are never waiting, and everyone already in the
  * list at schema 33 is OK.
  */
 final class NewcomerApproval
 {
-    /** Callback data prefix of the OK and No buttons: "nco:ok:<id>", "nco:no:<id>". */
+    /** Callback data prefix of the buttons: "nco:<verb>:<id>". */
     public const PREFIX = 'nco:';
 
     /** The start payload verb nco-<person_id>: shows the OK and No buttons (showRequest()). */
@@ -47,8 +62,38 @@ final class NewcomerApproval
     /** decide(): no such person, or they are not a newcomer. */
     public const UNKNOWN = 'unknown';
 
+    /** Turned down with no reason: the person is not told. */
+    public const REASON_NONE = 'none';
+
+    /** Turned down as unknown to the organizers: the person is told to talk to us at an event. */
+    public const REASON_UNKNOWN = 'unknown';
+
+    /** Nobody answered in TIMEOUT_HOURS: turned down, and the person is told. */
+    public const REASON_TIMEOUT = 'timeout';
+
+    /** How long the organizers have to answer before the request times out. */
+    public const TIMEOUT_HOURS = 48;
+
     /** The role_notices key that records the organizers were asked. */
     private const ASKED_KEY = 'newcomer:asked';
+
+    /** role_notices: when the request was decided. */
+    private const DECIDED_KEY = 'newcomer:decided';
+
+    /** role_notices: the REASON_* of a No ('' for an OK). */
+    private const REASON_KEY = 'newcomer:reason';
+
+    /** role_notices: DM_KEY . <organizer id> => "<chat id>:<message id>" of their Telegram copy. */
+    private const DM_KEY = 'newcomer:dm:';
+
+    /** role_notices: MAIL_KEY . <organizer id> => when they were emailed the request. */
+    private const MAIL_KEY = 'newcomer:mail:';
+
+    /** @var array<int, string> Telegram usernames looked up in this request, by person id. */
+    private array $handles = [];
+
+    /** @var list<string> The "<chat>:<message>" copies the last decision edited. */
+    private array $edited = [];
 
     public function __construct(
         private readonly PersonRepository $people,
@@ -81,6 +126,31 @@ final class NewcomerApproval
     }
 
     /**
+     * The buttons of "Turn down <name>?": with the reason Unknown to us (the
+     * person is told), with no reason (not told), or back to OK and No.
+     *
+     * @return array<string, mixed>
+     */
+    public static function confirmMarkup(int $personId): array
+    {
+        return ['inline_keyboard' => [
+            [['text' => '📨 ' . __('Unknown to us (they are told)', 'eventcrew'), 'callback_data' => self::PREFIX . 'nu:' . $personId]],
+            [['text' => '🔕 ' . __('No reason (not told)', 'eventcrew'), 'callback_data' => self::PREFIX . 'nn:' . $personId]],
+            [['text' => '↩ ' . __('Back', 'eventcrew'), 'callback_data' => self::PREFIX . 'bk:' . $personId]],
+        ]];
+    }
+
+    /** The question under the request after No. */
+    public static function confirmText(Person $person): string
+    {
+        return sprintf(
+            /* translators: %s: the person's name */
+            __('Turn down %s?', 'eventcrew'),
+            $person->name()
+        ) . "\n" . __('With “Unknown to us” they get a message asking them to talk to an organizer at an event. With “No reason” they are not told.', 'eventcrew');
+    }
+
+    /**
      * A confirmed address. A waiting newcomer's first one asks the
      * organizers; every later one (each web sign-in re-confirms) does
      * nothing.
@@ -97,9 +167,14 @@ final class NewcomerApproval
         // not ask twice.
         $this->people->markRoleNotice($person->id, self::ASKED_KEY);
 
+        $sent = [];
+
         foreach ($this->people->organizers() as $organizer) {
-            Language::forPerson($organizer, fn () => $this->ask($organizer, $person));
+            $sent += (array) Language::forPerson($organizer, fn (): array => $this->ask($organizer, $person));
         }
+
+        // Each organizer's Telegram copy and email, for the outcome later.
+        $this->people->addRoleNotices($person->id, $sent);
     }
 
     /** RoleNotifier::GIVEN_HOOK and AccessNotifier::PASS_HOOK: a role or a pass makes the person OK. */
@@ -111,12 +186,14 @@ final class NewcomerApproval
     }
 
     /**
-     * An organizer pressed OK or No (in Telegram or on the crew page).
+     * An organizer said OK or No (in Telegram or on the crew page).
      * Returns self::DECIDED, self::ALREADY or self::UNKNOWN. On OK the
-     * newcomer is told.
+     * newcomer is told; on No only with the reason REASON_UNKNOWN. The other
+     * organizers' copies of the request then show the outcome.
      */
-    public function decide(int $personId, bool $ok, Person $organizer): string
+    public function decide(int $personId, bool $ok, Person $organizer, string $reason = self::REASON_NONE): string
     {
+        $this->edited = [];
         $person = $personId > 0 ? $this->people->find($personId) : null;
 
         if (null === $person || $person->isAnonymized()) {
@@ -127,16 +204,69 @@ final class NewcomerApproval
             return self::ALREADY;
         }
 
-        if ($ok) {
-            Language::forPerson($person, fn () => $this->tellOk($person));
-        }
+        $reason = $ok ? '' : (self::REASON_UNKNOWN === $reason ? self::REASON_UNKNOWN : self::REASON_NONE);
+        $this->finish($person, $ok, $reason, $organizer->id, true);
 
         return self::DECIDED;
     }
 
     /**
-     * A tap on OK or No under the Telegram notice. A message can be
-     * forwarded, so the person tapping must be an organizer.
+     * The heartbeat: turns down the requests nobody answered in
+     * TIMEOUT_HOURS, tells each person why, and shows the outcome in the
+     * organizers' copies. At most $limit per run. Returns how many.
+     */
+    public function expireDue(int $limit): int
+    {
+        $cutoff = (int) current_time('timestamp') - self::TIMEOUT_HOURS * HOUR_IN_SECONDS;
+        $done = 0;
+
+        foreach ($this->people->waitingNewcomers() as $person) {
+            if ($done >= $limit) {
+                break;
+            }
+
+            $asked = $person->roleNotices[self::ASKED_KEY] ?? '';
+            $at = '' === $asked ? false : strtotime($asked . ' UTC');
+
+            if (false === $at || $at > $cutoff) {
+                continue;
+            }
+
+            if (! $this->people->decideNewcomer($person->id, false, '')) {
+                continue;
+            }
+
+            $this->finish($person, false, self::REASON_TIMEOUT, 0, true);
+            $done++;
+        }
+
+        return $done;
+    }
+
+    /**
+     * An admin accepts a turned-down person (the list in wp-admin): the same
+     * OK as the ✅ button, with the same message to the person. The
+     * organizers' Telegram copies show the new outcome. False when the person
+     * is not turned down.
+     */
+    public function accept(int $personId, string $by): bool
+    {
+        $this->edited = [];
+        $person = $personId > 0 ? $this->people->find($personId) : null;
+
+        if (null === $person || $person->isAnonymized() || ! $this->people->acceptTurnedDown($person->id, $by)) {
+            return false;
+        }
+
+        $this->finish($person, true, '', 0, false);
+
+        return true;
+    }
+
+    /**
+     * A tap under the Telegram notice: OK, No (asks to confirm), a reason
+     * (turns down), or Back. A message can be forwarded, so the person
+     * tapping must be an organizer.
      *
      * @param array<string, mixed> $callbackQuery
      */
@@ -147,7 +277,7 @@ final class NewcomerApproval
         $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
         $data = (string) ($callbackQuery['data'] ?? '');
 
-        if (1 !== preg_match('/^nco:(ok|no):(\d+)$/', $data, $m)) {
+        if (1 !== preg_match('/^nco:(ok|no|nu|nn|bk):(\d+)$/', $data, $m)) {
             $this->telegram->answerCallbackQuery($callbackId);
 
             return;
@@ -161,8 +291,16 @@ final class NewcomerApproval
             return;
         }
 
+        $verb = $m[1];
         $personId = (int) $m[2];
-        $outcome = $this->decide($personId, 'ok' === $m[1], $organizer);
+
+        if ('no' === $verb || 'bk' === $verb) {
+            $this->askAgain($callbackId, $message, $organizer, $personId, 'no' === $verb);
+
+            return;
+        }
+
+        $outcome = $this->decide($personId, 'ok' === $verb, $organizer, 'nu' === $verb ? self::REASON_UNKNOWN : self::REASON_NONE);
 
         if (self::UNKNOWN === $outcome) {
             $this->telegram->answerCallbackQuery($callbackId, __('That person was not found.', 'eventcrew'), true);
@@ -180,7 +318,22 @@ final class NewcomerApproval
             $this->telegram->answerCallbackQuery($callbackId);
         }
 
-        $this->replace($message, $line);
+        // The copies of the request were edited already; a message that is
+        // not one of them (opened from the email link) is edited here.
+        $chatId = (int) ($message['chat']['id'] ?? 0);
+        $messageId = (int) ($message['message_id'] ?? 0);
+
+        if (null === $person) {
+            $this->replace($message, $line);
+
+            return;
+        }
+
+        if (in_array($chatId . ':' . $messageId, $this->edited, true)) {
+            return;
+        }
+
+        Language::forPerson($organizer, fn () => $this->editRequest($chatId, $messageId, $organizer, $person, $line, ['inline_keyboard' => []]));
     }
 
     /**
@@ -205,51 +358,207 @@ final class NewcomerApproval
             return;
         }
 
-        $text = DmBody::frame($organizer, MessageTemplates::body('newcomer_waiting_dm', ['member' => $person]));
-
         if ($person->isWaitingForOk()) {
-            $this->telegram->sendMessage($chatId, $text, self::markup($person->id));
+            $this->sendRequest($chatId, $organizer, $person, '', self::markup($person->id));
 
             return;
         }
 
-        $this->telegram->sendMessage($chatId, $text . "\n\n" . self::decisionLine($person));
+        $this->sendRequest($chatId, $organizer, $person, self::decisionLine($person), null);
     }
 
     /**
-     * "OK by <name>." or "No by <name>.": who decided, for a later press and
-     * under the decided notice.
+     * The outcome of the request, like "✅ OK, by Kim, 2 Nov 14:05.": for a
+     * later press, under the decided notice, and in the outcome email.
      */
     public static function decisionLine(Person $person): string
     {
-        $by = '' !== $person->approvalBy ? $person->approvalBy : __('an organizer', 'eventcrew');
+        return self::outcomeLine(
+            $person->approval,
+            $person->approvalBy,
+            $person->roleNotices[self::DECIDED_KEY] ?? '',
+            $person->roleNotices[self::REASON_KEY] ?? ''
+        );
+    }
 
-        return $person->isTurnedDown()
+    /** When the request was decided (current_time('mysql')), '' when not recorded. */
+    public static function decidedAt(Person $person): string
+    {
+        return $person->roleNotices[self::DECIDED_KEY] ?? '';
+    }
+
+    /** The REASON_* of a turned-down request, '' when not recorded. */
+    public static function reason(Person $person): string
+    {
+        return $person->roleNotices[self::REASON_KEY] ?? '';
+    }
+
+    /**
+     * The outcome line from its parts: the approval (Person::APPROVAL_*),
+     * who decided, when (a current_time('mysql') value, '' when not known)
+     * and the REASON_* of a No.
+     */
+    public static function outcomeLine(string $approval, string $by, string $at, string $reason): string
+    {
+        $when = '' === $at ? '' : Dates::signedUpLabel($at);
+        $turnedDown = Person::APPROVAL_NO === $approval;
+
+        if ($turnedDown && self::REASON_TIMEOUT === $reason) {
+            return '⌛ ' . ('' === $when
+                ? __('No organizer answered in 48 hours, so the request timed out.', 'eventcrew')
+                : sprintf(
+                    /* translators: %s: when, like 2 Nov 14:05 */
+                    __('No organizer answered in 48 hours, so the request timed out on %s.', 'eventcrew'),
+                    $when
+                )) . ' ' . __('They were told to talk to an organizer at an event.', 'eventcrew');
+        }
+
+        $by = '' !== $by ? $by : __('an organizer', 'eventcrew');
+
+        if (! $turnedDown) {
+            return '✅ ' . ('' === $when
+                /* translators: %s: the name of the organizer who said OK */
+                ? sprintf(__('OK, by %s.', 'eventcrew'), $by)
+                /* translators: 1: the name of the organizer who said OK, 2: when, like 2 Nov 14:05 */
+                : sprintf(__('OK, by %1$s, %2$s.', 'eventcrew'), $by, $when));
+        }
+
+        $line = '' === $when
             /* translators: %s: the name of the organizer who said No */
-            ? '❌ ' . sprintf(__('No, by %s.', 'eventcrew'), $by)
-            /* translators: %s: the name of the organizer who said OK */
-            : '✅ ' . sprintf(__('OK, by %s.', 'eventcrew'), $by);
+            ? sprintf(__('No, by %s.', 'eventcrew'), $by)
+            /* translators: 1: the name of the organizer who said No, 2: when, like 2 Nov 14:05 */
+            : sprintf(__('No, by %1$s, %2$s.', 'eventcrew'), $by, $when);
+
+        if (self::REASON_UNKNOWN === $reason) {
+            $line .= ' ' . __('They were told: unknown to the organizers.', 'eventcrew');
+        } elseif (self::REASON_NONE === $reason) {
+            $line .= ' ' . __('They were not told.', 'eventcrew');
+        }
+
+        return '❌ ' . $line;
+    }
+
+    /**
+     * After the decision: records when and why, tells the person (OK, or a
+     * No with a reason they are told), and shows the outcome in the
+     * organizers' copies. $deciderId is the organizer who decided (0: the
+     * timeout or wp-admin), who gets no outcome email.
+     */
+    private function finish(Person $person, bool $ok, string $reason, int $deciderId, bool $email): void
+    {
+        $this->people->addRoleNotices($person->id, [
+            self::DECIDED_KEY => (string) current_time('mysql'),
+            self::REASON_KEY => $reason,
+        ]);
+
+        $decided = $this->people->find($person->id) ?? $person;
+
+        if ($ok) {
+            Language::forPerson($decided, fn () => $this->tellOk($decided));
+        } elseif (self::REASON_UNKNOWN === $reason) {
+            Language::forPerson($decided, fn () => $this->tell($decided, 'newcomer_unknown'));
+        } elseif (self::REASON_TIMEOUT === $reason) {
+            Language::forPerson($decided, fn () => $this->tell($decided, 'newcomer_timeout'));
+        }
+
+        $this->fanOut($decided, $deciderId, $email);
+    }
+
+    /**
+     * Every organizer's Telegram copy of the request shows the outcome and
+     * loses its buttons; with $email, the organizers who were emailed the
+     * request (except the one who decided) get the outcome by email.
+     */
+    private function fanOut(Person $person, int $deciderId, bool $email): void
+    {
+        foreach ($this->people->organizers() as $organizer) {
+            $copy = $person->roleNotices[self::DM_KEY . $organizer->id] ?? '';
+            $mail = $email && $organizer->id !== $deciderId && isset($person->roleNotices[self::MAIL_KEY . $organizer->id]);
+
+            if ('' === $copy && ! $mail) {
+                continue;
+            }
+
+            Language::forPerson($organizer, function () use ($organizer, $person, $copy, $mail): void {
+                $line = self::decisionLine($person);
+
+                if (1 === preg_match('/^(-?\d+):(\d+)$/', $copy, $m)) {
+                    $this->editRequest((int) $m[1], (int) $m[2], $organizer, $person, $line, ['inline_keyboard' => []]);
+                    $this->edited[] = $copy;
+                }
+
+                if ($mail) {
+                    $context = ['member' => $person, 'outcome' => $line];
+                    $this->mailer->toPerson(
+                        $organizer->id,
+                        $organizer->email,
+                        MessageTemplates::subject('newcomer_decided', $context),
+                        MessageTemplates::body('newcomer_decided', $context)
+                    );
+                }
+            });
+        }
+    }
+
+    /**
+     * No (the confirm) or Back (OK and No again) on a request still waiting.
+     * Once decided, the tap is told who decided and the message shows it.
+     *
+     * @param array<string, mixed> $message
+     */
+    private function askAgain(string $callbackId, array $message, Person $organizer, int $personId, bool $confirm): void
+    {
+        $person = $personId > 0 ? $this->people->find($personId) : null;
+
+        if (null === $person || $person->isAnonymized()) {
+            $this->telegram->answerCallbackQuery($callbackId, __('That person was not found.', 'eventcrew'), true);
+            $this->replace($message, '');
+
+            return;
+        }
+
+        $chatId = (int) ($message['chat']['id'] ?? 0);
+        $messageId = (int) ($message['message_id'] ?? 0);
+
+        if (! $person->isWaitingForOk()) {
+            $line = self::decisionLine($person);
+            $this->telegram->answerCallbackQuery($callbackId, $line, true);
+            Language::forPerson($organizer, fn () => $this->editRequest($chatId, $messageId, $organizer, $person, $line, ['inline_keyboard' => []]));
+
+            return;
+        }
+
+        $this->telegram->answerCallbackQuery($callbackId);
+
+        Language::forPerson($organizer, fn () => $confirm
+            ? $this->editRequest($chatId, $messageId, $organizer, $person, self::confirmText($person), self::confirmMarkup($person->id))
+            : $this->editRequest($chatId, $messageId, $organizer, $person, '', self::markup($person->id)));
     }
 
     /**
      * One organizer, in their language: by Telegram (if they have it) and by
-     * email, each unless they switched that route off.
+     * email, each unless they switched that route off. Returns the
+     * role_notices entries of what was sent.
+     *
+     * @return array<string, string>
      */
-    private function ask(Person $organizer, Person $person): void
+    private function ask(Person $organizer, Person $person): array
     {
+        $sent = [];
         $context = ['member' => $person];
         $prefs = new NotificationPreferences();
 
         if ($prefs->dmAllowed($organizer, NotificationPreferences::NEWCOMER)) {
-            $this->telegram->sendMessage(
-                $organizer->telegramChatId,
-                DmBody::frame($organizer, MessageTemplates::body('newcomer_waiting_dm', $context)),
-                self::markup($person->id)
-            );
+            $chatId = (int) $organizer->telegramChatId;
+            $messageId = $this->sendRequest($chatId, $organizer, $person, '', self::markup($person->id));
+
+            if ($messageId > 0) {
+                $sent[self::DM_KEY . $organizer->id] = $chatId . ':' . $messageId;
+            }
         }
 
         if (! $prefs->emailAllowed($organizer, NotificationPreferences::NEWCOMER)) {
-            return;
+            return $sent;
         }
 
         $url = HelpPage::url(DoorLinkSender::ADMIN_ANCHOR);
@@ -272,6 +581,10 @@ final class NewcomerApproval
             MessageTemplates::body('newcomer_waiting', $context),
             $actions
         );
+
+        $sent[self::MAIL_KEY . $organizer->id] = (string) current_time('mysql');
+
+        return $sent;
     }
 
     /**
@@ -299,6 +612,131 @@ final class NewcomerApproval
             EmailBody::withGreeting($person->displayName, MessageTemplates::body('newcomer_ok', $context)),
             MessageActions::email(MessageActions::of('newcomer_ok', $context, $this->mailer))
         );
+    }
+
+    /**
+     * A turned-down newcomer told why ($kind: newcomer_unknown or
+     * newcomer_timeout): Telegram if linked, else email.
+     */
+    private function tell(Person $person, string $kind): void
+    {
+        $context = ['person' => $person];
+
+        if (null !== $person->telegramChatId) {
+            $this->telegram->sendMessage(
+                $person->telegramChatId,
+                DmBody::frame($person, MessageTemplates::body($kind . '_dm', $context))
+            );
+
+            return;
+        }
+
+        $this->mailer->toPerson(
+            $person->id,
+            $person->email,
+            MessageTemplates::subject($kind, $context),
+            EmailBody::withGreeting($person->displayName, MessageTemplates::body($kind, $context))
+        );
+    }
+
+    /**
+     * Sends the request to an organizer, with $line under it. Returns the
+     * message id, 0 when it was not sent.
+     *
+     * @param array<string, mixed>|null $markup
+     */
+    private function sendRequest(int $chatId, Person $organizer, Person $person, string $line, ?array $markup): int
+    {
+        if (0 === $chatId) {
+            return 0;
+        }
+
+        [$html, $plain] = $this->requestText($organizer, $person, $line);
+        $params = ['chat_id' => $chatId, 'text' => $html, 'parse_mode' => 'HTML'];
+
+        if (null !== $markup) {
+            $params['reply_markup'] = $markup;
+        }
+
+        // Telegram can refuse the profile link; the request then goes without it.
+        $result = $this->telegram->call('sendMessage', $params)
+            ?? $this->telegram->sendMessage($chatId, $plain, $markup);
+
+        return (int) ($result['message_id'] ?? 0);
+    }
+
+    /**
+     * Rewrites an organizer's copy of the request with $line under it and
+     * $markup as its buttons.
+     *
+     * @param array<string, mixed> $markup
+     */
+    private function editRequest(int $chatId, int $messageId, Person $organizer, Person $person, string $line, array $markup): void
+    {
+        if (0 === $chatId || 0 === $messageId) {
+            return;
+        }
+
+        [$html, $plain] = $this->requestText($organizer, $person, $line);
+        $done = $this->telegram->call('editMessageText', [
+            'chat_id' => $chatId,
+            'message_id' => $messageId,
+            'text' => $html,
+            'parse_mode' => 'HTML',
+            'reply_markup' => $markup,
+        ]);
+
+        if (null === $done) {
+            $this->telegram->editMessageText($chatId, $messageId, $plain, $markup);
+        }
+    }
+
+    /**
+     * The request as the organizer reads it, with $line under it: Telegram
+     * HTML with the person's @username and a link to their profile (it shows
+     * their picture), and the same as plain text without the link.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private function requestText(Person $organizer, Person $person, string $line): array
+    {
+        $plain = DmBody::frame($organizer, MessageTemplates::body('newcomer_waiting_dm', ['member' => $person]));
+        $html = self::html($plain);
+
+        if (null !== $person->telegramUserId && $person->telegramUserId > 0) {
+            $handle = $this->handle($person);
+            $link = '<a href="tg://user?id=' . $person->telegramUserId . '">'
+                . self::html(__('Open their Telegram profile', 'eventcrew')) . '</a>';
+            $html .= "\n👤 " . ('' === $handle ? '' : self::html('@' . $handle) . ' · ') . $link;
+
+            if ('' !== $handle) {
+                $plain .= "\n👤 @" . $handle;
+            }
+        }
+
+        if ('' !== $line) {
+            $html .= "\n\n" . self::html($line);
+            $plain .= "\n\n" . $line;
+        }
+
+        return [$html, $plain];
+    }
+
+    /** The person's Telegram username, asked from Telegram once per request; '' when they have none. */
+    private function handle(Person $person): string
+    {
+        if (! isset($this->handles[$person->id])) {
+            $chat = null === $person->telegramUserId ? null : $this->telegram->getChat($person->telegramUserId);
+            $this->handles[$person->id] = is_array($chat) ? trim((string) ($chat['username'] ?? '')) : '';
+        }
+
+        return $this->handles[$person->id];
+    }
+
+    /** Plain text made safe for Telegram HTML. */
+    private static function html(string $text): string
+    {
+        return htmlspecialchars($text, ENT_NOQUOTES, 'UTF-8');
     }
 
     /**

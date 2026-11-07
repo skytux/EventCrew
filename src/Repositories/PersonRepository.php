@@ -325,6 +325,25 @@ final class PersonRepository
     }
 
     /**
+     * Adds key => value entries to the person's role_notices record, read
+     * fresh and written once. The newcomer request keeps its Telegram copies,
+     * emails and outcome there (NewcomerApproval). Nothing is written when
+     * the person is not found, so a failed read never wipes the record.
+     *
+     * @param array<string, string> $entries
+     */
+    public function addRoleNotices(int $id, array $entries): void
+    {
+        $person = [] === $entries ? null : $this->find($id);
+
+        if (null === $person) {
+            return;
+        }
+
+        $this->update($id, ['role_notices' => (string) wp_json_encode(array_merge($person->roleNotices, $entries))]);
+    }
+
+    /**
      * Records an organizer's OK or No for a newcomer, only while they are
      * still waiting. True when this call made the decision, false when
      * someone else had already decided: the first organizer to press wins.
@@ -366,6 +385,56 @@ final class PersonRepository
                 Person::APPROVAL_WAITING,
                 Person::APPROVAL_NO
             )
+        );
+    }
+
+    /**
+     * Gives the OK to a newcomer who was turned down (or whose request timed
+     * out), from the list of turned-down requests in wp-admin. True when this
+     * call changed them, false when they were not turned down (any more).
+     */
+    public function acceptTurnedDown(int $id, string $by): bool
+    {
+        global $wpdb;
+
+        $affected = $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$this->table()} SET approval = %s, approval_by = %s, updated_at = %s
+                WHERE id = %d AND approval = %s",
+                Person::APPROVAL_OK,
+                $by,
+                current_time('mysql'),
+                $id,
+                Person::APPROVAL_NO
+            )
+        );
+
+        return is_int($affected) && $affected > 0;
+    }
+
+    /**
+     * Newcomers who were turned down or whose request timed out, newest
+     * first. Erased people are left out.
+     *
+     * @return array<int, Person>
+     */
+    public function turnedDownNewcomers(): array
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table()}
+                WHERE approval = %s AND anonymized_at IS NULL
+                ORDER BY updated_at DESC, id DESC",
+                Person::APPROVAL_NO
+            ),
+            ARRAY_A
+        );
+
+        return array_map(
+            static fn (array $row): Person => Person::fromRow($row),
+            is_array($rows) ? $rows : []
         );
     }
 

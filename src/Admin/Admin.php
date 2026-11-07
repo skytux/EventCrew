@@ -247,6 +247,11 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_accept_newcomer',
+            [$this->container->get(PeoplePage::class), 'acceptNewcomer']
+        );
+
+        add_action(
             'admin_post_' . TranslationsPage::SAVE_SETTINGS_ACTION,
             [$this->container->get(TranslationsPage::class), 'saveSettings']
         );

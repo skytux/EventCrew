@@ -112,8 +112,10 @@ final class NewcomerApprovalTest extends TelegramTestCase
     public function testAWaitingNewcomerAsksOrganizersByTelegramAndByEmail(): void
     {
         $this->options[BoardService::USERNAME_OPTION] = 'crewbot';
+        $this->telegramResults['sendMessage'] = ['message_id' => 71];
         $this->wpdb->nextRows[] = self::sam(); // find
         $this->wpdb->nextRows[] = self::sam(); // markRoleNotice find
+        $this->wpdb->nextRows[] = self::sam(); // addRoleNotices find
         $this->wpdb->nextResults[] = [
             self::kim(),
             ['id' => 3, 'display_name' => 'Alex', 'email' => 'alex@example.com', 'is_organizer' => 1],
@@ -145,8 +147,50 @@ final class NewcomerApprovalTest extends TelegramTestCase
             $this->wpdb->updates,
             static fn (array $u): bool => isset($u['data']['role_notices'])
         ));
-        self::assertCount(1, $notice);
+        self::assertCount(2, $notice);
         self::assertStringContainsString('newcomer:asked', (string) $notice[0]['data']['role_notices']);
+
+        // Kim's Telegram copy and both emails are kept, for the outcome later.
+        $sent = json_decode((string) $notice[1]['data']['role_notices'], true);
+        self::assertSame('555:71', $sent['newcomer:dm:2']);
+        self::assertArrayHasKey('newcomer:mail:2', $sent);
+        self::assertArrayHasKey('newcomer:mail:3', $sent);
+        self::assertArrayNotHasKey('newcomer:dm:3', $sent);
+    }
+
+    /** Point 5: the request shows the person's @username and a link to their Telegram profile. */
+    public function testTheRequestShowsTheTelegramHandleAndAProfileLink(): void
+    {
+        $this->telegramResults['getChat'] = ['id' => 4242, 'username' => 'samlee'];
+        $this->wpdb->nextRows[] = self::sam(['telegram_user_id' => 4242, 'telegram_chat_id' => 4242]);
+        $this->wpdb->nextRows[] = self::sam();
+        $this->wpdb->nextRows[] = self::sam();
+        $this->wpdb->nextResults[] = [self::kim()];
+
+        $this->approval()->onEmailVerified(8);
+
+        $dm = $this->lastCallTo('sendMessage');
+        self::assertSame('HTML', $dm['parse_mode']);
+        self::assertStringContainsString(
+            "\n👤 @samlee · <a href=\"tg://user?id=4242\">Open their Telegram profile</a>",
+            $dm['text']
+        );
+    }
+
+    public function testAPersonWithoutTelegramHasNoProfileLink(): void
+    {
+        $this->wpdb->nextRows[] = self::sam(['display_name' => 'Sam <b>&</b>']);
+        $this->wpdb->nextRows[] = self::sam();
+        $this->wpdb->nextRows[] = self::sam();
+        $this->wpdb->nextResults[] = [self::kim()];
+
+        $this->approval()->onEmailVerified(8);
+
+        $dm = $this->lastCallTo('sendMessage');
+        self::assertStringNotContainsString('tg://user', $dm['text']);
+        // The name is escaped for Telegram HTML.
+        self::assertStringContainsString('Sam &lt;b&gt;&amp;&lt;/b&gt;', $dm['text']);
+        self::assertNull($this->lastCallTo('getChat'));
     }
 
     public function testTheOrganizersAreAskedOnlyOnce(): void
@@ -235,6 +279,8 @@ final class NewcomerApprovalTest extends TelegramTestCase
         $this->wpdb->nextRows[] = self::kim();
         $this->wpdb->nextRows[] = self::sam(['telegram_chat_id' => 999]);
         $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = self::sam(['telegram_chat_id' => 999]); // addRoleNotices
+        $this->wpdb->nextRows[] = self::sam(['approval' => 'ok', 'approval_by' => 'Kim', 'telegram_chat_id' => 999]);
         $this->wpdb->nextRows[] = self::sam(['approval' => 'ok', 'approval_by' => 'Kim']);
         $this->wpdb->nextResults[] = [[                             // upcoming
             'id' => 40,
@@ -268,10 +314,18 @@ final class NewcomerApprovalTest extends TelegramTestCase
 
     public function testTheFirstOkDecidesAndTheNewcomerIsToldByTelegram(): void
     {
+        $decided = self::sam([
+            'approval' => 'ok',
+            'approval_by' => 'Kim',
+            'telegram_chat_id' => 999,
+            'role_notices' => '{"newcomer:decided":"2026-07-20 12:00:00","newcomer:reason":""}',
+        ]);
         $this->wpdb->nextRows[] = self::kim();                                   // tapping organizer
         $this->wpdb->nextRows[] = self::sam(['telegram_chat_id' => 999]);        // decide find
         $this->wpdb->nextQueryResults[] = 1;                                     // decideNewcomer
-        $this->wpdb->nextRows[] = self::sam(['approval' => 'ok', 'approval_by' => 'Kim']); // after
+        $this->wpdb->nextRows[] = self::sam(['telegram_chat_id' => 999]);        // addRoleNotices
+        $this->wpdb->nextRows[] = $decided;                                      // finish
+        $this->wpdb->nextRows[] = $decided;                                      // after
 
         $this->approval()->onTap(self::tap('nco:ok:8'));
 
@@ -295,10 +349,19 @@ final class NewcomerApprovalTest extends TelegramTestCase
         $edit = $this->lastCallTo('editMessageText');
         self::assertNotNull($edit);
         self::assertSame(
-            "🆕 New: Sam Lee (sam@example.com) wants to join.\n\n✅ OK, by Kim.",
+            "📣 Test Site\n\nHi Kim,\n\n🆕 New: Sam Lee (sam@example.com) wants to join.\n\n✅ OK, by Kim, 20 Jul 12:00.",
             $edit['text']
         );
         self::assertSame([], $edit['reply_markup']['inline_keyboard']);
+
+        // When and why are recorded.
+        $notices = array_values(array_filter(
+            $this->wpdb->updates,
+            static fn (array $u): bool => isset($u['data']['role_notices'])
+        ));
+        $recorded = json_decode((string) $notices[0]['data']['role_notices'], true);
+        self::assertSame('2026-07-20 12:00:00', $recorded['newcomer:decided']);
+        self::assertSame('', $recorded['newcomer:reason']);
     }
 
     public function testANewcomerWithoutTelegramIsToldByEmail(): void
@@ -343,7 +406,7 @@ final class NewcomerApprovalTest extends TelegramTestCase
         self::assertTrue($answer['show_alert']);
         self::assertNull($this->lastCallTo('sendMessage'));
         self::assertSame(
-            "🆕 New: Sam Lee (sam@example.com) wants to join.\n\n❌ No, by Alex.",
+            "📣 Test Site\n\nHi Kim,\n\n🆕 New: Sam Lee (sam@example.com) wants to join.\n\n❌ No, by Alex.",
             $this->lastCallTo('editMessageText')['text']
         );
     }
@@ -395,6 +458,272 @@ final class NewcomerApprovalTest extends TelegramTestCase
         self::assertSame('Only organizers can answer this.', $this->lastCallTo('answerCallbackQuery')['text']);
         self::assertSame([], $this->updatesOfApproval());
         self::assertNull($this->lastCallTo('editMessageText'));
+    }
+
+    // ---- Turning down: confirm and reasons ---------------------------------
+
+    /** Point 1 and 2: No asks "Turn down <name>?" with the reasons, and decides nothing yet. */
+    public function testNoAsksToConfirmWithTheReasons(): void
+    {
+        $this->wpdb->nextRows[] = self::kim();
+        $this->wpdb->nextRows[] = self::sam();
+
+        $this->approval()->onTap(self::tap('nco:no:8'));
+
+        self::assertSame([], $this->updatesOfApproval());
+        $edit = $this->lastCallTo('editMessageText');
+        self::assertSame(71, $edit['message_id']);
+        self::assertStringContainsString("wants to join.\n\nTurn down Sam Lee?\n", $edit['text']);
+        self::assertStringContainsString('With “No reason” they are not told.', $edit['text']);
+        self::assertSame(
+            [['nco:nu:8'], ['nco:nn:8'], ['nco:bk:8']],
+            array_map(
+                static fn (array $row): array => array_column($row, 'callback_data'),
+                $edit['reply_markup']['inline_keyboard']
+            )
+        );
+        self::assertSame('📨 Unknown to us (they are told)', $edit['reply_markup']['inline_keyboard'][0][0]['text']);
+        self::assertSame('🔕 No reason (not told)', $edit['reply_markup']['inline_keyboard'][1][0]['text']);
+        self::assertNull($this->lastCallTo('sendMessage'));
+    }
+
+    public function testBackShowsOkAndNoAgain(): void
+    {
+        $this->wpdb->nextRows[] = self::kim();
+        $this->wpdb->nextRows[] = self::sam();
+
+        $this->approval()->onTap(self::tap('nco:bk:8'));
+
+        $edit = $this->lastCallTo('editMessageText');
+        self::assertStringEndsWith('wants to join.', $edit['text']);
+        self::assertSame(['nco:ok:8', 'nco:no:8'], array_column($edit['reply_markup']['inline_keyboard'][0], 'callback_data'));
+        self::assertSame([], $this->updatesOfApproval());
+    }
+
+    public function testNoOnARequestDecidedAlreadySaysWhoDecided(): void
+    {
+        $this->wpdb->nextRows[] = self::kim();
+        $this->wpdb->nextRows[] = self::sam(['approval' => 'ok', 'approval_by' => 'Alex']);
+
+        $this->approval()->onTap(self::tap('nco:no:8'));
+
+        self::assertSame('✅ OK, by Alex.', $this->lastCallTo('answerCallbackQuery')['text']);
+        $edit = $this->lastCallTo('editMessageText');
+        self::assertStringEndsWith("\n\n✅ OK, by Alex.", $edit['text']);
+        self::assertSame([], $edit['reply_markup']['inline_keyboard']);
+    }
+
+    /** Point 2: the reason Unknown to us turns them down and tells them, by Telegram. */
+    public function testUnknownToUsTurnsDownAndTellsThePerson(): void
+    {
+        $decided = self::sam([
+            'approval' => 'no',
+            'approval_by' => 'Kim',
+            'telegram_chat_id' => 999,
+            'role_notices' => '{"newcomer:decided":"2026-07-20 12:00:00","newcomer:reason":"unknown"}',
+        ]);
+        $this->wpdb->nextRows[] = self::kim();
+        $this->wpdb->nextRows[] = self::sam(['telegram_chat_id' => 999]);
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = self::sam(['telegram_chat_id' => 999]);
+        $this->wpdb->nextRows[] = $decided;
+        $this->wpdb->nextRows[] = $decided;
+
+        $this->approval()->onTap(self::tap('nco:nu:8'));
+
+        self::assertStringContainsString("SET approval = 'no', approval_by = 'Kim'", $this->updatesOfApproval()[0]);
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(999, $sent['chat_id']);
+        self::assertStringContainsString(
+            'The organizers do not know you yet, so they could not say OK to your sign-up. Please come and talk to us at an event; an organizer can then say OK.',
+            $sent['text']
+        );
+        self::assertStringEndsWith(
+            '❌ No, by Kim, 20 Jul 12:00. They were told: unknown to the organizers.',
+            $this->lastCallTo('editMessageText')['text']
+        );
+        $notices = array_values(array_filter($this->wpdb->updates, static fn (array $u): bool => isset($u['data']['role_notices'])));
+        self::assertSame('unknown', json_decode((string) $notices[0]['data']['role_notices'], true)['newcomer:reason']);
+    }
+
+    public function testUnknownToUsReachesAPersonWithoutTelegramByEmail(): void
+    {
+        $this->wpdb->nextRows[] = self::sam();
+        $this->wpdb->nextQueryResults[] = 1;
+
+        $this->approval()->decide(8, false, Person::fromRow(self::kim()), NewcomerApproval::REASON_UNKNOWN);
+
+        self::assertSame(['sam@example.com'], array_column($this->mails, 'to'));
+        self::assertSame('About your sign-up', $this->mails[0]['subject']);
+        self::assertStringContainsString('Please come and talk to us at an event', $this->mails[0]['body']);
+    }
+
+    /** Point 1: with No reason the person is not told, and the copy says so. */
+    public function testNoReasonTellsNobody(): void
+    {
+        $decided = self::sam([
+            'approval' => 'no',
+            'approval_by' => 'Kim',
+            'telegram_chat_id' => 999,
+            'role_notices' => '{"newcomer:decided":"2026-07-20 12:00:00","newcomer:reason":"none"}',
+        ]);
+        $this->wpdb->nextRows[] = self::kim();
+        $this->wpdb->nextRows[] = self::sam(['telegram_chat_id' => 999]);
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = self::sam(['telegram_chat_id' => 999]);
+        $this->wpdb->nextRows[] = $decided;
+        $this->wpdb->nextRows[] = $decided;
+
+        $this->approval()->onTap(self::tap('nco:nn:8'));
+
+        self::assertNull($this->lastCallTo('sendMessage'));
+        self::assertSame([], $this->mails);
+        self::assertStringEndsWith(
+            '❌ No, by Kim, 20 Jul 12:00. They were not told.',
+            $this->lastCallTo('editMessageText')['text']
+        );
+    }
+
+    // ---- The other organizers' copies --------------------------------------
+
+    /** Point 3: every Telegram copy shows the outcome, and the other emailed organizers get an email. */
+    public function testTheOutcomeReachesEveryCopyAndTheOtherEmailedOrganizers(): void
+    {
+        $notices = json_encode([
+            'newcomer:asked' => '2026-07-19 10:00:00',
+            'newcomer:dm:2' => '555:71',
+            'newcomer:dm:3' => '777:72',
+            'newcomer:mail:2' => '2026-07-19 10:00:00',
+            'newcomer:mail:3' => '2026-07-19 10:00:00',
+            'newcomer:decided' => '2026-07-20 12:00:00',
+            'newcomer:reason' => 'none',
+        ]);
+        $this->wpdb->nextRows[] = self::sam(['role_notices' => $notices]);
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = self::sam(['role_notices' => $notices]);
+        $this->wpdb->nextRows[] = self::sam(['approval' => 'no', 'approval_by' => 'Kim', 'role_notices' => $notices]);
+        $this->wpdb->nextResults[] = [
+            self::kim(),
+            ['id' => 3, 'display_name' => 'Alex', 'email' => 'alex@example.com', 'telegram_chat_id' => 777, 'is_organizer' => 1],
+            ['id' => 5, 'display_name' => 'Robin', 'email' => 'robin@example.com', 'is_organizer' => 1],
+        ];
+
+        $outcome = $this->approval()->decide(8, false, Person::fromRow(self::kim()));
+
+        self::assertSame(NewcomerApproval::DECIDED, $outcome);
+        $edits = array_values(array_filter($this->telegramCalls, static fn (array $c): bool => 'editMessageText' === $c['method']));
+        self::assertSame([[555, 71], [777, 72]], array_map(static fn (array $c): array => [$c['body']['chat_id'], $c['body']['message_id']], $edits));
+        self::assertStringContainsString('Hi Alex,', $edits[1]['body']['text']);
+        foreach ($edits as $edit) {
+            self::assertStringEndsWith('❌ No, by Kim, 20 Jul 12:00. They were not told.', $edit['body']['text']);
+            self::assertSame([], $edit['body']['reply_markup']['inline_keyboard']);
+        }
+
+        // Kim decided and Robin was never emailed: only Alex gets the email.
+        self::assertSame(['alex@example.com'], array_column($this->mails, 'to'));
+        self::assertSame('Answered: Sam Lee', $this->mails[0]['subject']);
+        self::assertStringContainsString(
+            "The request of Sam Lee (sam@example.com) to join the crew is answered:\n❌ No, by Kim, 20 Jul 12:00. They were not told.",
+            $this->mails[0]['body']
+        );
+    }
+
+    // ---- 48 hours -----------------------------------------------------------
+
+    /** Point 4: a request older than 48 hours is turned down, the person is told why, the copies show it. */
+    public function testARequestNobodyAnsweredIn48HoursTimesOut(): void
+    {
+        $old = '{"newcomer:asked":"2026-07-18 11:00:00","newcomer:dm:2":"555:71","newcomer:mail:2":"2026-07-18 11:00:00"}';
+        $fresh = '{"newcomer:asked":"2026-07-19 13:00:00"}';
+        $decided = '{"newcomer:asked":"2026-07-18 11:00:00","newcomer:dm:2":"555:71","newcomer:mail:2":"2026-07-18 11:00:00",'
+            . '"newcomer:decided":"2026-07-20 12:00:00","newcomer:reason":"timeout"}';
+        $this->wpdb->nextResults[] = [                                   // waitingNewcomers
+            self::sam(['role_notices' => $old, 'telegram_chat_id' => 999]),
+            self::sam(['id' => 9, 'email' => 'jo@example.com', 'role_notices' => $fresh]),
+        ];
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = self::sam(['role_notices' => $old]);                 // addRoleNotices
+        $this->wpdb->nextRows[] = self::sam(['approval' => 'no', 'role_notices' => $decided, 'telegram_chat_id' => 999]);
+        $this->wpdb->nextResults[] = [self::kim()];                      // organizers
+
+        self::assertSame(1, $this->approval()->expireDue(25));
+
+        $update = $this->updatesOfApproval();
+        self::assertCount(1, $update);
+        self::assertStringContainsString("SET approval = 'no', approval_by = ''", $update[0]);
+        self::assertStringContainsString('WHERE id = 8', $update[0]);
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(999, $sent['chat_id']);
+        self::assertStringContainsString(
+            '⌛ Your request to join the crew timed out: no organizer answered it in 48 hours. This can mean that no organizer recognized you. To finish signing up, please talk to an organizer directly at an event.',
+            $sent['text']
+        );
+
+        self::assertStringEndsWith(
+            '⌛ No organizer answered in 48 hours, so the request timed out on 20 Jul 12:00. They were told to talk to an organizer at an event.',
+            $this->lastCallTo('editMessageText')['text']
+        );
+        // Kim was emailed the request, so she gets the outcome too.
+        self::assertSame(['kim@example.com'], array_column($this->mails, 'to'));
+        self::assertSame('Answered: Sam Lee', $this->mails[0]['subject']);
+    }
+
+    public function testATimedOutPersonWithoutTelegramIsToldByEmail(): void
+    {
+        $old = '{"newcomer:asked":"2026-07-17 11:00:00"}';
+        $this->wpdb->nextResults[] = [self::sam(['role_notices' => $old])];
+        $this->wpdb->nextQueryResults[] = 1;
+
+        self::assertSame(1, $this->approval()->expireDue(25));
+
+        self::assertSame(['sam@example.com'], array_column($this->mails, 'to'));
+        self::assertSame('Your sign-up request timed out', $this->mails[0]['subject']);
+        self::assertStringContainsString('please talk to an organizer directly at an event', $this->mails[0]['body']);
+    }
+
+    public function testARequestWithoutAnAskedTimeDoesNotTimeOut(): void
+    {
+        $this->wpdb->nextResults[] = [self::sam()];
+
+        self::assertSame(0, $this->approval()->expireDue(25));
+        self::assertSame([], $this->updatesOfApproval());
+    }
+
+    // ---- Accept from the list -----------------------------------------------
+
+    /** Point 6: Accept gives the OK and the same message as the OK button. */
+    public function testAcceptGivesTheOkAndTheSameMessage(): void
+    {
+        $notices = '{"newcomer:dm:2":"555:71","newcomer:mail:2":"x","newcomer:decided":"2026-07-20 12:00:00","newcomer:reason":""}';
+        $this->wpdb->nextRows[] = self::sam(['approval' => 'no', 'telegram_chat_id' => 999]);
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = self::sam(['approval' => 'no']);
+        $this->wpdb->nextRows[] = self::sam(['approval' => 'ok', 'approval_by' => 'Admin Ann', 'telegram_chat_id' => 999, 'role_notices' => $notices]);
+        $this->wpdb->nextResults[] = [];                // open tasks
+        $this->wpdb->nextResults[] = [self::kim()];     // organizers
+
+        self::assertTrue($this->approval()->accept(8, 'Admin Ann'));
+
+        $update = $this->updatesOfApproval();
+        self::assertStringContainsString("SET approval = 'ok', approval_by = 'Admin Ann'", $update[0]);
+        self::assertStringContainsString("approval = 'no'", $update[0]);
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(999, $sent['chat_id']);
+        self::assertStringContainsString('✅ The team said OK. You can now take tasks.', $sent['text']);
+        self::assertStringEndsWith('✅ OK, by Admin Ann, 20 Jul 12:00.', $this->lastCallTo('editMessageText')['text']);
+        // No outcome email for an accept.
+        self::assertSame([], $this->mails);
+    }
+
+    public function testAcceptDoesNothingForSomeoneNotTurnedDown(): void
+    {
+        $this->wpdb->nextRows[] = self::sam(['approval' => 'ok']);
+        $this->wpdb->nextQueryResults[] = 0;
+
+        self::assertFalse($this->approval()->accept(8, 'Admin Ann'));
+        self::assertNull($this->lastCallTo('sendMessage'));
+        self::assertSame([], $this->mails);
     }
 
     // ---- A role or a pass -------------------------------------------------
