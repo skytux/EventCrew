@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.192
+Stable tag: 1.140.193
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,14 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.193 =
+* Each crew member has one working ticket per night for all their tasks, with its own code that never changes.
+* A free-entry ticket can't be cancelled by its holder, only given away; a bought ticket never becomes a credit.
+* Each extra task on the same night earns one more free-entry credit: pending until after the event, added for tasks done (arrived late counts), not for tasks marked as not counting toward credit.
+* An extra-task credit is taken back, with a message, when its task is later marked as not done.
+* The help, organizer guide, assistant and privacy policy explain the ticket and credit rules.
+* The crew page shows no crew guide link to guests.
 
 = 1.140.192 =
 * The header card has a 🎟 Tickets button, named as in the bot's /me, that opens the Tickets card.
@@ -1916,6 +1924,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.193 =
+No settings change.
 
 = 1.140.192 =
 No settings change.
