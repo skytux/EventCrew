@@ -12500,3 +12500,7 @@ msgstr "Имя получателя"
 #: src/Telegram/TransferBot.php
 msgid "What is their name?"
 msgstr "Как зовут получателя?"
+
+#: templates/public/signup.php
+msgid "Sign in first to take a task."
+msgstr "Сначала войди, чтобы взять задачу."

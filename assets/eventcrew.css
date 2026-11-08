@@ -107,7 +107,7 @@
  */
 .eventcrew-toast {
     position: fixed; left: 50%; bottom: 1.5em; transform: translateX(-50%) translateY(.5em);
-    z-index: 100000; max-width: 90vw;
+    z-index: 100000; width: max-content; max-width: 90vw; box-sizing: border-box;
     padding: .6em 1.1em; border-radius: 8px;
     background: #222; color: #fff; font-weight: 600; box-shadow: 0 4px 16px rgba(0, 0, 0, .28);
     opacity: 0; visibility: hidden; transition: opacity .18s ease, transform .18s ease;
@@ -814,6 +814,8 @@
 .eventcrew-signup .eventcrew-header-card .eventcrew-identity { margin: 0; align-items: center; }
 .eventcrew-signup .eventcrew-header-card .eventcrew-identity-name { font-weight: 600; }
 .eventcrew-signup .eventcrew-header-card .eventcrew-disclosure { margin-bottom: 0; }
+/* The crew guide under the person's details: one card body, so no second gap. */
+.eventcrew-signup .eventcrew-header-card .eventcrew-card-body + .eventcrew-header-guide { padding-top: 0; }
 .eventcrew-signup .eventcrew-disclosure { margin: .3em 0 .8em; font-size: .9em; }
 .eventcrew-signup .eventcrew-disclosure summary { cursor: pointer; opacity: .8; padding: .3em 0; }
 .eventcrew-signup .eventcrew-score-help table { border-collapse: collapse; margin: .4em 0; }
@@ -900,8 +902,8 @@
 .eventcrew-signup .eventcrew-join-more input { box-sizing: border-box; width: 6em; height: 2.4em; padding-inline: .6em; }
 
 /*
- * Signed out, the sign-in card wears the next event's picture, the one the
- * Telegram board posts as its photo message (BoardRenderer::nextCardPhoto()).
+ * Signed out, the sign-in card wears the banner the Telegram board message
+ * carries (BoardBanner::url(), a 3:1 strip of the chosen page's picture).
  * A dark layer over it keeps the white heading, question and notes at AA
  * whatever the photo: at least 55% black, so even a white pixel under it is no
  * lighter than #737373. The dark colour under the picture stands in until it
@@ -922,6 +924,27 @@
     text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
 }
 .eventcrew-signup .eventcrew-signin-card.has-image .eventcrew-hint { opacity: 1; }
+
+/*
+ * A guest's Sign up scrolls back to the sign-in card, which then glows once
+ * (about a second) to show where to go. Programmatic focus lands on the card
+ * for screen readers and the keyboard; it draws no outline of its own. Less
+ * motion: a steady ring for the same second instead of the pulse.
+ */
+.eventcrew-signup .eventcrew-signin-card { scroll-margin-top: 16px; }
+.eventcrew-signup .eventcrew-signin-card:focus { outline: none; }
+.eventcrew-signup .eventcrew-signin-card.is-calling { animation: eventcrew-signin-call 1s ease-out 1; }
+@keyframes eventcrew-signin-call {
+    0% { box-shadow: 0 0 0 0 rgba(255, 196, 64, .9); }
+    35% { box-shadow: 0 0 0 6px rgba(255, 196, 64, .7); }
+    100% { box-shadow: 0 0 0 14px rgba(255, 196, 64, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .eventcrew-signup .eventcrew-signin-card.is-calling {
+        animation: none;
+        box-shadow: 0 0 0 4px rgba(255, 196, 64, .9);
+    }
+}
 
 /*
  * The sign-in choice: the Email button and the Telegram button side by side,
@@ -1125,4 +1148,51 @@
 
 @media (prefers-reduced-motion: reduce) {
     .tg-auth-button.is-busy::after { animation-duration: 2s; }
+}
+
+/*
+ * The website's banner at the top of the Crew app page (SiteBanner): the site
+ * logo on a dark rounded plate, as the website's pages show it, over the
+ * picture they open with. Full width and a fixed height that grows a little
+ * with the screen, so nothing under it moves while the pictures load. The
+ * logo is sized by its height; its width follows from its width and height
+ * attributes.
+ */
+.eventcrew-site-banner {
+    --eventcrew-banner-height: clamp(96px, 14vw, 168px);
+    position: relative;
+    box-sizing: border-box;
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; height: var(--eventcrew-banner-height);
+    padding: 12px 16px;
+    overflow: hidden;
+    background: #1d1630;
+}
+.eventcrew-site-banner-picture {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; max-width: none;
+    object-fit: cover;
+}
+.eventcrew-site-banner-home {
+    position: relative;
+    display: block; max-width: 100%;
+    line-height: 0; text-decoration: none; color: #fff;
+}
+.eventcrew-site-banner-plate {
+    box-sizing: border-box;
+    display: inline-block; max-width: 100%;
+    padding: .5em .9em;
+    border-radius: 1.6em 1.6em 1.6em 0;
+    background: rgba(0, 0, 0, .5);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
+}
+.eventcrew-site-banner-logo {
+    display: block;
+    width: auto; max-width: 100%;
+    height: calc(var(--eventcrew-banner-height) - 24px - 1em);
+    object-fit: contain;
+}
+.eventcrew-site-banner-name {
+    display: block;
+    font-size: clamp(1.2em, 4vw, 2em); font-weight: 700; line-height: 1.2;
 }

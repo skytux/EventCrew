@@ -12382,3 +12382,7 @@ msgstr "受け取る人の名前"
 #: src/Telegram/TransferBot.php
 msgid "What is their name?"
 msgstr "受け取る人の名前は？"
+
+#: templates/public/signup.php
+msgid "Sign in first to take a task."
+msgstr "タスクを担当するには、先にサインインしてください。"

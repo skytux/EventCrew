@@ -12483,3 +12483,7 @@ msgstr "Son nom"
 #: src/Telegram/TransferBot.php
 msgid "What is their name?"
 msgstr "Comment s’appelle cette personne ?"
+
+#: templates/public/signup.php
+msgid "Sign in first to take a task."
+msgstr "Connecte-toi d’abord pour prendre une tâche."

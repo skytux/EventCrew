@@ -3,10 +3,12 @@
 /**
  * The links at the top of the crew page: the crew's Telegram group (the main button,
  * filled) and the crew guide (a text link beside it). Signed out
- * there is no group link, so only the guide shows. Nothing is drawn when
- * neither is set.
+ * there is no group link, so only the guide shows; signed in, the guide sits
+ * under the person's details in the header card instead. Nothing is drawn
+ * when neither is shown.
  *
  * @var string $eventcrew_group_link The Telegram group link, or '' to leave it out.
+ * @var bool   $eventcrew_links_guide Whether the crew guide is shown here.
  */
 
 declare(strict_types=1);
@@ -15,7 +17,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-$eventcrew_guide = \EventCrew\Support\RoleGuide::emailAction();
+$eventcrew_guide = ($eventcrew_links_guide ?? true) ? \EventCrew\Support\RoleGuide::emailAction() : null;
 
 if ('' === $eventcrew_group_link && null === $eventcrew_guide) {
     return;

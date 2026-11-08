@@ -12500,3 +12500,7 @@ msgstr "Imię tej osoby"
 #: src/Telegram/TransferBot.php
 msgid "What is their name?"
 msgstr "Jak ta osoba ma na imię?"
+
+#: templates/public/signup.php
+msgid "Sign in first to take a task."
+msgstr "Najpierw się zaloguj, aby wziąć zadanie."

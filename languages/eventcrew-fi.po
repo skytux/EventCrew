@@ -9992,3 +9992,7 @@ msgstr "Saajan nimi"
 #: src/Telegram/TransferBot.php
 msgid "What is their name?"
 msgstr "Mikä on saajan nimi?"
+
+#: templates/public/signup.php
+msgid "Sign in first to take a task."
+msgstr "Kirjaudu ensin ottaaksesi tehtävän."

@@ -12948,3 +12948,7 @@ msgstr "Mottagarens namn"
 #: src/Telegram/TransferBot.php
 msgid "What is their name?"
 msgstr "Vad heter mottagaren?"
+
+#: templates/public/signup.php
+msgid "Sign in first to take a task."
+msgstr "Logga in först för att ta en uppgift."

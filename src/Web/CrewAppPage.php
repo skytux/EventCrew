@@ -9,8 +9,9 @@ use EventCrew\Support\PageLanguage;
 /**
  * The Crew app page (the page set as the signup page) shown as a page of its
  * own: the full browser width, without the theme's header, menu and footer,
- * with a "← Website" link at the top. Its background is the app colour
- * (Settings, App), with white or black text, whichever reads better on it.
+ * with the website's banner (SiteBanner) and a "← Website" link at the top.
+ * Its background is the app colour (Settings, App), with white or black
+ * text, whichever reads better on it.
  *
  * Also sends the old address of a page whose address was changed to its new
  * one. WordPress does this for posts but not for pages, and the Crew app's
@@ -82,6 +83,12 @@ final class CrewAppPage
     public function language(): ?string
     {
         return $this->signup->pageLanguage();
+    }
+
+    /** The website's own banner at the top (SiteBanner), its logo linking home. */
+    public function banner(): string
+    {
+        return SiteBanner::html($this->websiteUrl());
     }
 
     /** The "← Website" link: the home page in the language the page is shown in. */

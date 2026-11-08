@@ -12462,3 +12462,7 @@ msgstr "Hun naam"
 #: src/Telegram/TransferBot.php
 msgid "What is their name?"
 msgstr "Hoe heet die persoon?"
+
+#: templates/public/signup.php
+msgid "Sign in first to take a task."
+msgstr "Log eerst in om een taak te nemen."

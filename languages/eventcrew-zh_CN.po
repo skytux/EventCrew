@@ -12382,3 +12382,7 @@ msgstr "对方的姓名"
 #: src/Telegram/TransferBot.php
 msgid "What is their name?"
 msgstr "对方叫什么名字？"
+
+#: templates/public/signup.php
+msgid "Sign in first to take a task."
+msgstr "请先登录再接任务。"

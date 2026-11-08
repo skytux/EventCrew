@@ -27,18 +27,17 @@ use EventCrew\Support\JoinAnswers;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\BoardBanner;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Tests\Support\FakeEventNames;
-use EventCrew\Tests\Telegram\FakeEvents;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\SignupController;
 
 final class SignupControllerTest extends TestCase
 {
     use FakeEventNames;
-    use FakeEvents;
 
     /** @var array<int, string> */
     private array $mails = [];
@@ -275,41 +274,33 @@ final class SignupControllerTest extends TestCase
     }
 
     /**
-     * Signed out, the sign-in card wears the picture the Telegram board posts
-     * as its next-event card (BoardRenderer::nextCardPhoto()): the EventMesh
-     * event's picture, not the post's featured image.
+     * Signed out, the sign-in card wears the banner the Telegram board message
+     * carries (BoardBanner::url()), not an event's picture.
      */
-    public function testSignedOutTheSignInCardShowsTheNextEventsBoardPicture(): void
+    public function testSignedOutTheSignInCardShowsTheBoardBanner(): void
     {
-        $this->fakeEvents();
-        $this->event(42, '2026-08-01', 'Party', ['_eventmesh_image_url' => 'https://cdn.example.test/party.jpg']);
         $this->stubPageRender();
-        Functions\when('get_the_post_thumbnail_url')->justReturn(false);
+        $this->chooseBannerPage();
+        Functions\when('get_the_post_thumbnail_url')->justReturn('https://site.test/night.jpg');
 
-        $row = $this->taskRow();
-        $row['event_post_id'] = 42;
-        $this->wpdb->nextResults[] = [$row]; // upcoming
-        $this->wpdb->nextResults[] = [];     // occupancyFor
+        $this->wpdb->nextResults[] = [$this->taskRow()]; // upcoming
+        $this->wpdb->nextResults[] = [];                 // occupancyFor
 
         $html = $this->controller()->renderShortcode();
 
-        self::assertStringContainsString(
-            'class="eventcrew-event eventcrew-me-card eventcrew-signin-card has-image" id="eventcrew-signin"'
-            . ' style="--eventcrew-event-image: url(&quot;https://cdn.example.test/party.jpg&quot;)"',
+        self::assertMatchesRegularExpression(
+            '~class="eventcrew-event eventcrew-me-card eventcrew-signin-card has-image" id="eventcrew-signin"'
+            . ' style="--eventcrew-event-image: url\(&quot;https://site\.test/uploads/eventcrew/board-banner-823-[0-9a-f]+\.jpg&quot;\)"~',
             $html
         );
     }
 
-    public function testWithoutAPictureTheSignInCardIsPlain(): void
+    public function testWithoutABannerTheSignInCardIsPlain(): void
     {
-        $this->fakeEvents();
-        $this->event(42, '2026-08-01', 'Party');
         $this->stubPageRender();
-        Functions\when('get_the_post_thumbnail_url')->justReturn(false);
+        Functions\when('get_the_post_thumbnail_url')->justReturn('https://site.test/night.jpg');
 
-        $row = $this->taskRow();
-        $row['event_post_id'] = 42;
-        $this->wpdb->nextResults[] = [$row];
+        $this->wpdb->nextResults[] = [$this->taskRow()];
         $this->wpdb->nextResults[] = [];
 
         $html = $this->controller()->renderShortcode();
@@ -318,7 +309,67 @@ final class SignupControllerTest extends TestCase
             '<section class="eventcrew-event eventcrew-me-card eventcrew-signin-card" id="eventcrew-signin">',
             $html
         );
-        self::assertStringNotContainsString('--eventcrew-event-image', $html);
+    }
+
+    /**
+     * Chooses page 822 for the board banner, with featured image 823 on file;
+     * the strip is "made" by a stub image editor.
+     */
+    private function chooseBannerPage(): void
+    {
+        $file = (string) tempnam(sys_get_temp_dir(), 'ecb');
+
+        Functions\when('get_option')->alias(
+            static fn (string $name): mixed => match ($name) {
+                'eventcrew_telegram_group_link' => 'https://t.me/+secretcrew',
+                BoardBanner::PAGE_OPTION => 822,
+                default => false,
+            }
+        );
+        Functions\when('get_post')->alias(static function (int $id): ?object {
+            if (822 !== $id) {
+                return null;
+            }
+
+            $post = new \WP_Post();
+            $post->ID = 822;
+            $post->post_status = 'publish';
+
+            return $post;
+        });
+        Functions\when('parse_blocks')->justReturn([]);
+        Functions\when('get_post_thumbnail_id')->justReturn(823);
+        Functions\when('get_attached_file')->justReturn($file);
+        Functions\when('wp_upload_dir')->justReturn([
+            'basedir' => sys_get_temp_dir() . '/ec-signin-banner-' . getmypid(),
+            'baseurl' => 'https://site.test/uploads',
+            'error' => false,
+        ]);
+        Functions\when('trailingslashit')->alias(static fn (string $path): string => rtrim($path, '/') . '/');
+        Functions\when('wp_mkdir_p')->justReturn(true);
+        Functions\when('wp_delete_file')->justReturn(null);
+        Functions\when('wp_get_image_editor')->justReturn(new class () {
+            /** @return array{width: int, height: int} */
+            public function get_size(): array // phpcs:ignore PSR1.Methods.CamelCapsMethodName
+            {
+                return ['width' => 1200, 'height' => 800];
+            }
+
+            public function crop(): bool
+            {
+                return true;
+            }
+
+            public function set_quality(): bool // phpcs:ignore PSR1.Methods.CamelCapsMethodName
+            {
+                return true;
+            }
+
+            public function save(): bool
+            {
+                return true;
+            }
+        });
     }
 
     /** With EventMesh's clean name the card header shows it, and the DJ line on its own line. */
@@ -379,6 +430,67 @@ final class SignupControllerTest extends TestCase
         self::assertStringContainsString('Sam', $html);
         // The template's last line came out: nothing stopped it half-way.
         self::assertStringEndsWith('</script>', rtrim($html));
+    }
+
+    /**
+     * Signed in, the crew guide sits under the person's details in the header
+     * card, not at the top of the page (Owner 2026-11-08).
+     */
+    public function testSignedInTheCrewGuideSitsUnderThePersonsDetails(): void
+    {
+        $this->stubPageRender();
+        $this->setGuideUrl();
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+
+        $person = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+        ];
+        $this->wpdb->nextRows[] = $person;               // pageLanguage: currentPerson
+        $this->wpdb->nextRows[] = $person;               // viewModel: currentPerson
+        $this->wpdb->nextResults[] = [$this->taskRow()]; // upcoming
+        $this->wpdb->nextResults[] = [];                 // occupancyFor
+        $this->wpdb->nextResults[] = [];                 // forPerson (occupiedTaskIds)
+        $this->wpdb->nextResults[] = [];                 // standing historyFor
+        $this->wpdb->nextVars[] = 0;                     // standing countFor
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertSame(1, preg_match('~<p class="eventcrew-links">.*?</p>~s', $html, $links));
+        self::assertStringContainsString('https://t.me/+secretcrew', $links[0]);
+        self::assertStringNotContainsString('Crew guide', $links[0]);
+        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card">.*?</section>~s', $html, $card));
+        self::assertStringContainsString('class="eventcrew-card-body eventcrew-header-guide"', $card[0]);
+        self::assertStringContainsString('href="https://docs.example/guide"', $card[0]);
+        self::assertSame(1, substr_count($html, 'Crew guide'));
+    }
+
+    public function testSignedOutTheCrewGuideStaysAtTheTop(): void
+    {
+        $this->stubPageRender();
+        $this->setGuideUrl();
+        $this->wpdb->nextResults[] = [$this->taskRow()];
+        $this->wpdb->nextResults[] = [];
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertSame(1, preg_match('~<p class="eventcrew-links">.*?</p>~s', $html, $links));
+        self::assertStringContainsString('href="https://docs.example/guide"', $links[0]);
+        self::assertLessThan(strpos($html, 'id="eventcrew-signin"'), strpos($html, 'Crew guide'));
+        self::assertStringNotContainsString('eventcrew-header-guide', $html);
+    }
+
+    private function setGuideUrl(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => match ($name) {
+                'eventcrew_telegram_group_link' => 'https://t.me/+secretcrew',
+                Roles::GUIDE_URL_OPTION => 'https://docs.example/guide',
+                default => $default,
+            }
+        );
     }
 
     /**
@@ -1805,7 +1917,28 @@ final class SignupControllerTest extends TestCase
         self::assertStringContainsString('href="#eventcrew-signin" data-eventcrew-signin-task="5">Sign up</a>', $html);
         // Task 6 is full: no way in, signed out or not.
         self::assertStringNotContainsString('data-eventcrew-signin-task="6"', $html);
-        self::assertStringContainsString('"eventcrew-task-" + link.getAttribute(\'data-eventcrew-signin-task\')', $html);
+        self::assertStringContainsString('back.hash = "eventcrew-task-" + task;', $html);
+    }
+
+    /**
+     * Signed out, Sign up scrolls back to the sign-in card (a jump with less
+     * motion), makes it glow once and says in the toast to sign in first;
+     * without JavaScript the link still jumps there.
+     */
+    public function testSignedOutSignUpLeadsBackToTheSignInCardWithAToast(): void
+    {
+        $this->stubPageRender();
+        $this->wpdb->nextResults[] = [$this->taskRow()];
+        $this->wpdb->nextResults[] = [];
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertStringContainsString('href="#eventcrew-signin" data-eventcrew-signin-task="5"', $html);
+        self::assertStringContainsString("matchMedia('(prefers-reduced-motion: reduce)')", $html);
+        self::assertStringContainsString("behavior: still ? 'auto' : 'smooth'", $html);
+        self::assertStringContainsString("card.classList.add('is-calling')", $html);
+        self::assertStringContainsString('toast.textContent = "Sign in first to take a task.";', $html);
+        self::assertStringContainsString('id="eventcrew-toast" class="eventcrew-toast" role="status" aria-live="polite"', $html);
     }
 
     public function testThePendingButtonTextIsShort(): void

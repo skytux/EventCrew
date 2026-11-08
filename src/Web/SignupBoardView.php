@@ -21,6 +21,7 @@ use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketList;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
+use EventCrew\Telegram\BoardBanner;
 use EventCrew\Telegram\BoardRenderer;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\CalendarController;
@@ -73,9 +74,9 @@ final class SignupBoardView
             'standing' => $standing,
             'csrf' => null === $person ? '' : WebSession::csrfToken($person->id),
             'groups' => $this->groupByEvent($tasks, $occupancy, $mine, $person),
-            // Signed out, the sign-in card wears the picture the Telegram
-            // board's next-event card posts; '' when there is none.
-            'signin_image' => null === $person ? BoardRenderer::nextCardPhoto($tasks) : '',
+            // Signed out, the sign-in card wears the banner the Telegram
+            // board message carries (BoardBanner); '' when there is none.
+            'signin_banner' => null === $person ? BoardBanner::url() : '',
             'telegram_group_link' => BoardService::groupLink(),
             'turnstile_site_key' => $this->turnstile->siteKey(),
             'ticket_dates' => $ticketDates,

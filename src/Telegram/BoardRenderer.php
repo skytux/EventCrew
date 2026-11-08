@@ -413,19 +413,6 @@ final class BoardRenderer
     }
 
     /**
-     * The picture of the board's next-event card for $upcoming (as
-     * TaskRepository::upcoming() returns them), or '' when there is none:
-     * the same picture the group gets as its photo message. The crew page
-     * shows it behind its sign-in card, from the tasks it has already read.
-     *
-     * @param array<int, Task> $upcoming
-     */
-    public static function nextCardPhoto(array $upcoming): string
-    {
-        return self::cardTarget(self::onGuestBoard($upcoming))['photo'] ?? '';
-    }
-
-    /**
      * The first event with a picture on the first day of $tasks, its day and
      * its picture, or null.
      *

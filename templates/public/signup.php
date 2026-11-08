@@ -114,8 +114,10 @@ if ($eventcrew_link_expired) {
 
     <?php
     // The Telegram group and crew guide buttons, at the top of the page so
-    // they show above every tab. Signed out there is no group link.
+    // they show above every tab. Signed out there is no group link; signed
+    // in, the guide moves under the person's details in the header card.
     $eventcrew_group_link = null === $eventcrew_person ? '' : (string) ($view['telegram_group_link'] ?? '');
+    $eventcrew_links_guide = null === $eventcrew_person;
     require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-links.php';
     ?>
 
@@ -124,13 +126,13 @@ if ($eventcrew_link_expired) {
         // - so there is nothing to tab between and no tab strip is drawn.
         ?>
         <?php
-        // The next event's picture behind the card, as on the Telegram
-        // board's card (BoardRenderer::nextCardPhoto()); none: the plain card.
-        $eventcrew_signin_image = (string) ($view['signin_image'] ?? '');
+        // The banner the Telegram board message carries (BoardBanner::url()),
+        // behind the card; none: the plain card.
+        $eventcrew_signin_banner = (string) ($view['signin_banner'] ?? '');
         ?>
-        <section class="eventcrew-event eventcrew-me-card eventcrew-signin-card<?php echo '' !== $eventcrew_signin_image ? ' has-image' : ''; ?>" id="eventcrew-signin"<?php
-        if ('' !== $eventcrew_signin_image) {
-            printf(' style="%s"', esc_attr('--eventcrew-event-image: url("' . esc_url($eventcrew_signin_image) . '")'));
+        <section class="eventcrew-event eventcrew-me-card eventcrew-signin-card<?php echo '' !== $eventcrew_signin_banner ? ' has-image' : ''; ?>" id="eventcrew-signin"<?php
+        if ('' !== $eventcrew_signin_banner) {
+            printf(' style="%s"', esc_attr('--eventcrew-event-image: url("' . esc_url($eventcrew_signin_banner) . '")'));
         }
         ?>>
             <header class="eventcrew-event-head">
@@ -324,15 +326,57 @@ if ($eventcrew_link_expired) {
             // A board row's Sign up, signed out, jumps here (#eventcrew-signin).
             // The sign-in, by email link or Telegram, then comes back to
             // that task's row instead of the top of the page.
+            //
+            // With JavaScript the jump is a smooth scroll (a plain jump when
+            // the visitor asks for less motion), the card glows once, and a
+            // toast says to sign in first. Without it the link still jumps.
             document.addEventListener('click', function (event) {
-                var link = event.target.closest ? event.target.closest('[data-eventcrew-signin-task]') : null;
+                var link = event.target.closest ? event.target.closest('[data-eventcrew-signin-task], a[href="#eventcrew-signin"]') : null;
                 if (!link) { return; }
-                var back = new URL(<?php echo wp_json_encode($eventcrew_signin_return); ?>, window.location.href);
-                back.hash = <?php echo wp_json_encode(\EventCrew\Support\SlotFreedNotice::ANCHOR_PREFIX); ?> + link.getAttribute('data-eventcrew-signin-task');
-                var field = document.querySelector('form[data-eventcrew-signin] input[name="redirect_to"]');
-                var choice = document.querySelector('[data-eventcrew-tg-login]');
-                if (field) { field.value = back.toString(); }
-                if (choice) { choice.setAttribute('data-here', back.toString()); }
+                var task = link.getAttribute('data-eventcrew-signin-task');
+                if (task) {
+                    var back = new URL(<?php echo wp_json_encode($eventcrew_signin_return); ?>, window.location.href);
+                    back.hash = <?php echo wp_json_encode(\EventCrew\Support\SlotFreedNotice::ANCHOR_PREFIX); ?> + task;
+                    var field = document.querySelector('form[data-eventcrew-signin] input[name="redirect_to"]');
+                    var choice = document.querySelector('[data-eventcrew-tg-login]');
+                    if (field) { field.value = back.toString(); }
+                    if (choice) { choice.setAttribute('data-here', back.toString()); }
+                }
+
+                var card = document.getElementById('eventcrew-signin');
+                if (!card || !card.scrollIntoView) { return; }
+                event.preventDefault();
+                var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                card.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+                if (!card.hasAttribute('tabindex')) { card.setAttribute('tabindex', '-1'); }
+                try { card.focus({ preventScroll: true }); } catch (e) { /* an old browser: no focus move */ }
+
+                // The glow once the card is in view: on scrollend, or after a
+                // moment where that event does not exist.
+                var glowed = false;
+                function glow() {
+                    if (glowed) { return; }
+                    glowed = true;
+                    window.removeEventListener('scrollend', glow);
+                    card.classList.remove('is-calling');
+                    void card.offsetWidth; // restart the animation on a second press
+                    card.classList.add('is-calling');
+                    setTimeout(function () { card.classList.remove('is-calling'); }, 1200);
+                }
+                if (still) { glow(); } else {
+                    window.addEventListener('scrollend', glow);
+                    setTimeout(glow, 700);
+                }
+
+                // The board script moves the toast to <body>; it is a polite
+                // live region, so the text is read out without taking focus.
+                var toast = document.getElementById('eventcrew-toast');
+                if (toast) {
+                    toast.textContent = <?php echo wp_json_encode(__('Sign in first to take a task.', 'eventcrew')); ?>;
+                    toast.classList.add('show');
+                    clearTimeout(toast.eventcrewSigninTimer);
+                    toast.eventcrewSigninTimer = setTimeout(function () { toast.classList.remove('show'); }, 3000);
+                }
             });
             </script>
             <?php if (null !== $eventcrew_tg_login) : ?>
@@ -467,6 +511,20 @@ if ($eventcrew_link_expired) {
                         </table>
                         <p class="eventcrew-muted"><?php esc_html_e('Recent tasks count for more than old ones. You’re rated once you’ve completed a few tasks, and you earn one free-entry credit for every two completed tasks.', 'eventcrew'); ?></p>
                     </details>
+                </div>
+            <?php endif; ?>
+            <?php
+            // The crew guide, under the person's details (Owner 2026-11-08):
+            // signed out it is the link at the top of the page instead.
+            $eventcrew_header_guide = \EventCrew\Support\RoleGuide::emailAction();
+            ?>
+            <?php if (null !== $eventcrew_header_guide) : ?>
+                <div class="eventcrew-card-body eventcrew-header-guide">
+                    <p>
+                        <a class="eventcrew-textlink" href="<?php echo esc_url($eventcrew_header_guide['url']); ?>" target="_blank" rel="noopener">
+                            <?php echo esc_html($eventcrew_header_guide['label']); ?>
+                        </a>
+                    </p>
                 </div>
             <?php endif; ?>
         </section>
