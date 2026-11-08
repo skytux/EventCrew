@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.185
+Stable tag: 1.140.186
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.186 =
+* Announcement: one opening paragraph that builds on the first event's DJ text (it waits up to 3 hours for that text), a picture alt text with DJ, event, date, time and place, only Doors close under the picture, and the crew part with its buttons before the sign-off.
+* Ticket email: the event picture and the DJ text right under the Open my ticket button.
+* No email addresses in the code or the docs; without a maintainer contact in Settings, the welcome message names the privacy contact.
 
 = 1.140.185 =
 * The message to a new organizer also tells about the organizer commands in the bot, links the organizer help, and says wp-admin access can be asked from the contact address. Edited texts get the new lines.
@@ -1884,6 +1889,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.186 =
+No settings change.
 
 = 1.140.185 =
 No settings change.
