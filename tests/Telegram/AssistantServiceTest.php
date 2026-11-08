@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\FollowupRepository;
 use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\HistoryRepository;
 use EventCrew\Repositories\NewsletterHistoryRepository;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
@@ -55,6 +56,9 @@ final class AssistantServiceTest extends TelegramTestCase
 
     /** Whether the helper's facts include the live status (AssistantStatus). */
     private bool $withStatus = false;
+
+    /** Whether that status also reads the history (HistoryRepository). */
+    private bool $withHistory = false;
 
     protected function setUp(): void
     {
@@ -148,7 +152,8 @@ final class AssistantServiceTest extends TelegramTestCase
                 new RedemptionRepository(),
                 new TicketBuyerRepository(),
                 new FreeEntryGate(),
-                new AssignmentRepository()
+                new AssignmentRepository(),
+                actions: $this->withHistory ? new HistoryRepository() : null
             ) : null),
             $this->help(),
             new Logger(),
@@ -510,6 +515,52 @@ final class AssistantServiceTest extends TelegramTestCase
     public function testAnOrganizerInTheGroupGetsNoCancellations(): void
     {
         self::assertFalse($this->promptHasCancellations(true, self::groupMessage('@crewbot who cancelled lately?')));
+    }
+
+    /**
+     * Whether the helper read the history for this message, or put it in the
+     * system prompt.
+     *
+     * @param array<string, mixed> $message
+     */
+    private function promptHasHistory(bool $organizer, array $message): bool
+    {
+        $this->withStatus = true;
+        $this->withHistory = true;
+        $this->person($organizer);
+        $this->reply(true, true, 'Here.');
+
+        $this->ask($message);
+
+        $queried = [] !== array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_contains($sql, 'eventcrew_history')
+        );
+        $prompt = [] === $this->llmCalls ? '' : $this->systemPrompt(0);
+
+        return $queried || str_contains($prompt, 'Recent history (') || str_contains($prompt, 'History of ');
+    }
+
+    public function testAnOrganizerInAPrivateChatGetsTheRecentHistory(): void
+    {
+        self::assertTrue($this->promptHasHistory(true, self::privateMessage('who took Sam off on 14.11.?')));
+        self::assertStringContainsString('Recent history (the last 7 days', $this->systemPrompt(0));
+        self::assertStringContainsString('## History asked about', $this->systemPrompt(0));
+        self::assertStringContainsString('History of the night', $this->systemPrompt(0));
+        self::assertStringContainsString(
+            'Never send the organizer to the bot log, the task list or wp-admin for any of this.',
+            $this->systemPrompt(0)
+        );
+    }
+
+    public function testSomeoneWhoIsNotAnOrganizerGetsNoHistory(): void
+    {
+        self::assertFalse($this->promptHasHistory(false, self::privateMessage('who took Sam off on 14.11.?')));
+    }
+
+    public function testAnOrganizerInTheGroupGetsNoHistory(): void
+    {
+        self::assertFalse($this->promptHasHistory(true, self::groupMessage('@crewbot who took Sam off on 14.11.?')));
     }
 
     public function testTheFactsGiveTheOfficialEmailAddressFromThePrivacyContact(): void

@@ -492,6 +492,15 @@ final class PrivacyPolicy
             );
         }
 
+        $paragraphs[] = sprintf(
+            /* translators: %d: number of days */
+            __(
+                'The organizers keep a history of actions: who signed up for or cancelled a task, was put on or taken off one, checked in at the door, got or used a credit or gave a ticket away, and when. It never contains what you wrote. Only organizers can read it. Each entry is deleted after %d days. If your record is erased, the entries no longer say it was you.',
+                'eventcrew'
+            ),
+            History::KEEP_DAYS
+        );
+
         if (TelegramLogin::isAvailable()) {
             $paragraphs[] = __(
                 'If you sign in with Telegram, the Crew app makes a one-time code and puts a cookie in your browser that ties the code to that browser. The bot uses your Telegram account number to find your crew account. The code and the cookie expire after 30 minutes and cannot be used twice.',

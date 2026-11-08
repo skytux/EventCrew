@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace EventCrew\Database;
 
+use EventCrew\Repositories\HistoryRepository;
 use EventCrew\Repositories\NewsletterHistoryRepository;
+use EventCrew\Support\History;
 
 /**
  * Owns every EventCrew table definition and the migration that applies them.
@@ -19,7 +21,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '36';
+    public const DB_VERSION = '37';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -50,6 +52,14 @@ final class Schema
     public const NEWSLETTER_SENDS = 'eventcrew_newsletter_sends';
     public const TICKET_TRANSFERS = 'eventcrew_ticket_transfers';
     public const DOOR_NOTES = 'eventcrew_door_notes';
+    public const HISTORY = 'eventcrew_history';
+
+    /**
+     * Set by the schema 37 update when it has made the history from older
+     * data (HistoryRepository::backfill()). add_option() is the claim: of two
+     * requests running the update at once, only one adds it and backfills.
+     */
+    public const HISTORY_BACKFILLED_OPTION = 'eventcrew_history_backfilled';
 
     /**
      * @return array<int, string>
@@ -74,6 +84,7 @@ final class Schema
             self::NEWSLETTER_SENDS,
             self::TICKET_TRANSFERS,
             self::DOOR_NOTES,
+            self::HISTORY,
         ];
     }
 
@@ -137,7 +148,33 @@ final class Schema
         // appear, never for nights before (no migration of old nights).
         add_option(self::EXTRA_TASK_CREDIT_SINCE_OPTION, (string) current_time('Y-m-d'), '', false);
 
+        // Schema 37: the history table. dbDelta adds it; the history of the
+        // last year is made once from the older tables.
+        self::backfillHistory((string) get_option(self::VERSION_OPTION, ''));
+
         update_option(self::VERSION_OPTION, self::DB_VERSION);
+    }
+
+    /**
+     * Schema 37: fills the new history table from the older tables, once, for
+     * the last History::KEEP_DAYS days (HistoryRepository::backfill()).
+     * Skipped on a new install (nothing stored yet, nothing to make), once the
+     * stored schema is 37 or later, and when the claim option is already
+     * there. Returns how many rows were added, -1 when skipped.
+     */
+    public static function backfillHistory(
+        string $storedVersion,
+        HistoryRepository $repository = new HistoryRepository()
+    ): int {
+        if ('' === $storedVersion || (int) $storedVersion >= 37) {
+            return -1;
+        }
+
+        if (! add_option(self::HISTORY_BACKFILLED_OPTION, (string) current_time('mysql'), '', false)) {
+            return -1;
+        }
+
+        return $repository->backfill(History::cutoff((string) current_time('mysql')));
     }
 
     /**
@@ -449,6 +486,7 @@ final class Schema
         $newsletterSends = self::table(self::NEWSLETTER_SENDS);
         $ticketTransfers = self::table(self::TICKET_TRANSFERS);
         $doorNotes = self::table(self::DOOR_NOTES);
+        $history = self::table(self::HISTORY);
 
         return [
             // anonymized_at is the retention purge's high-water mark. Without it
@@ -933,6 +971,44 @@ final class Schema
                 PRIMARY KEY  (id),
                 KEY sent_at (sent_at),
                 KEY plan_id (plan_id)
+            ) ENGINE=InnoDB {$charsetCollate};",
+
+            // The history of actions (schema 37, Support\History): one row per
+            // action - a sign-up, a cancellation, a task added, a check-in, a
+            // credit given, a person's roles changed, settings saved. created_at
+            // is site time, like the assignments and tasks it describes (the
+            // bot log alone keeps UTC). actor_kind is 'person' (acting for
+            // themselves), 'organizer' (a person acting for someone else),
+            // 'wp_user' (actor_wp_user_id, in wp-admin), 'system' (WP-Cron) or
+            // '' (not known: backfilled rows); channel is 'bot', 'web',
+            // 'admin', 'system' or ''. person_id is the person acted on and
+            // other_person_id the second person (the cover who took over, the
+            // receiver of a ticket). details is short JSON of keys, ids and
+            // counts only: never free text, an email or a setting's value.
+            // source is 'backfill' for the rows the schema 37 update made from
+            // older data. An erased person's ids are emptied (NULL). Rows older
+            // than History::KEEP_DAYS are deleted by the heartbeat.
+            "CREATE TABLE {$history} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                created_at datetime NOT NULL,
+                actor_kind varchar(10) NOT NULL DEFAULT '',
+                actor_person_id bigint(20) unsigned DEFAULT NULL,
+                actor_wp_user_id bigint(20) unsigned DEFAULT NULL,
+                channel varchar(10) NOT NULL DEFAULT '',
+                kind varchar(24) NOT NULL DEFAULT '',
+                person_id bigint(20) unsigned DEFAULT NULL,
+                other_person_id bigint(20) unsigned DEFAULT NULL,
+                task_id bigint(20) unsigned DEFAULT NULL,
+                event_date date DEFAULT NULL,
+                details varchar(191) NOT NULL DEFAULT '',
+                source varchar(10) NOT NULL DEFAULT '',
+                PRIMARY KEY  (id),
+                KEY created_at (created_at),
+                KEY person_id (person_id),
+                KEY other_person_id (other_person_id),
+                KEY actor_person_id (actor_person_id),
+                KEY task_id (task_id),
+                KEY event_date (event_date)
             ) ENGINE=InnoDB {$charsetCollate};",
         ];
     }

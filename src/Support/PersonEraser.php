@@ -7,6 +7,7 @@ namespace EventCrew\Support;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\HistoryRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
@@ -40,7 +41,8 @@ final class PersonEraser
         private readonly AuthTokenRepository $tokens,
         private readonly NotificationsRepository $notifications,
         private readonly TakeoverRepository $takeovers = new TakeoverRepository(),
-        private readonly ?TicketTransferRepository $transfers = null
+        private readonly ?TicketTransferRepository $transfers = null,
+        private readonly ?HistoryRepository $history = null
     ) {
     }
 
@@ -67,6 +69,25 @@ final class PersonEraser
         $this->transfers?->deleteForReceiver($personId);
         $this->grants->deleteForPerson($personId);
         $this->people->delete($personId);
+        $this->forgetInHistory($personId, []);
+    }
+
+    /**
+     * Empties the person's ids in the history of actions, so their rows stay
+     * as anonymous actions ("someone cancelled"), and records the erasure
+     * itself without saying who it was.
+     *
+     * @param array<string, int> $details
+     */
+    private function forgetInHistory(int $personId, array $details): void
+    {
+        try {
+            $this->history?->forgetPerson($personId);
+        } catch (\Throwable) {
+            // The history never stops an erasure.
+        }
+
+        History::record(History::PERSON_ERASED, ['details' => $details, 'erased_person_id' => $personId]);
     }
 
     /**
@@ -102,7 +123,9 @@ final class PersonEraser
         // tickets they think they should have) is about them, so it goes.
         $this->people->replaceRoleNotices($personId, JoinAnswers::KEYS);
 
-        $this->people->update($personId, [
+        // Muted: the organizer flag cleared here is part of the erasure, not
+        // a change of its own.
+        History::muted(fn () => $this->people->update($personId, [
             'email' => 'anonymised-' . $personId . '@removed.invalid',
             'display_name' => '',
             'email_verified_at' => null,
@@ -119,6 +142,8 @@ final class PersonEraser
             // erase() needs no equivalent: it deletes the row, and the cookie
             // then resolves to nobody.
             'sessions_valid_from' => current_time('mysql'),
-        ]);
+        ]));
+
+        $this->forgetInHistory($personId, ['aged_out' => 1]);
     }
 }

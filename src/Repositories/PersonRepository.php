@@ -6,6 +6,7 @@ namespace EventCrew\Repositories;
 
 use EventCrew\Database\Schema;
 use EventCrew\Models\Person;
+use EventCrew\Support\History;
 use EventCrew\Support\Language;
 use EventCrew\Support\Roles;
 
@@ -103,7 +104,13 @@ final class PersonRepository
             ]
         );
 
-        return (int) $wpdb->insert_id;
+        $id = (int) $wpdb->insert_id;
+
+        if ($id > 0) {
+            History::record(History::PERSON_ADDED, ['person_id' => $id]);
+        }
+
+        return $id;
     }
 
     /**
@@ -118,6 +125,14 @@ final class PersonRepository
         }
 
         $data['updated_at'] = current_time('mysql');
+
+        // Recorded before the write: the recorder compares the organizer flag
+        // and the roles with the stored ones and keeps only what changes.
+        $roles = array_intersect_key($data, ['is_organizer' => true, 'role_slugs' => true]);
+
+        if ([] !== $roles) {
+            History::record(History::PERSON_CHANGED, ['person_id' => $id] + $roles);
+        }
 
         $wpdb->update($this->table(), $data, ['id' => $id]);
     }

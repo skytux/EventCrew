@@ -13245,3 +13245,172 @@ msgstr "Inga kommande biljetter."
 
 msgid "Past tickets"
 msgstr "Tidigare biljetter"
+
+msgid "%1$s and %2$d more"
+msgstr "%1$s och %2$d till"
+
+msgid "%1$s gave their ticket to %2$s"
+msgstr "%1$s gav sin biljett till %2$s"
+
+msgid "%1$s got %2$d credit"
+msgid_plural "%1$s got %2$d credits"
+msgstr[0] "%1$s fick %2$d fribiljett"
+msgstr[1] "%1$s fick %2$d fribiljetter"
+
+msgid "%1$s marked: %2$s"
+msgstr "%1$s markerad: %2$s"
+
+msgid "%1$s offered their ticket to %2$s"
+msgstr "%1$s erbjöd sin biljett till %2$s"
+
+msgid "%1$s roles: %2$s"
+msgstr "%1$s, roller: %2$s"
+
+msgid "%1$s took over from %2$s"
+msgstr "%1$s tog över efter %2$s"
+
+msgid "%s added"
+msgstr "%s tillagd"
+
+msgid "%s cancelled"
+msgstr "%s avbokade"
+
+msgid "%s cancelled late"
+msgstr "%s avbokade sent"
+
+msgid "%s checked in"
+msgstr "%s incheckad"
+
+msgid "%s gave their ticket away"
+msgstr "%s gav bort sin biljett"
+
+msgid "%s got a credit for an extra task"
+msgstr "%s fick en fribiljett för en extra uppgift"
+
+msgid "%s lost the credit for an extra task"
+msgstr "%s förlorade fribiljetten för en extra uppgift"
+
+msgid "%s made organizer"
+msgstr "%s blev arrangör"
+
+msgid "%s marked as no-show"
+msgstr "%s markerad: uteblev"
+
+msgid "%s no longer organizer"
+msgstr "%s inte längre arrangör"
+
+msgid "%s offered their ticket"
+msgstr "%s erbjöd sin biljett"
+
+msgid "%s signed up"
+msgstr "%s anmälde sig"
+
+msgid "%s used a credit for free entry"
+msgstr "%s använde en fribiljett"
+
+msgid "%s was put on the task"
+msgstr "%s sattes på uppgiften"
+
+msgid "%s was taken off the task"
+msgstr "%s togs bort från uppgiften"
+
+msgid "%s was taken off: the task was deleted"
+msgstr "%s togs bort: uppgiften raderades"
+
+msgid "A person was erased"
+msgstr "En person raderades"
+
+msgid "A person was erased (record aged out)"
+msgstr "En person raderades (för gamla uppgifter)"
+
+msgid "All"
+msgstr "Alla"
+
+msgid "Check-in undone: %s"
+msgstr "Incheckning ångrad: %s"
+
+msgid "Credits and tickets"
+msgstr "Fribiljetter och biljetter"
+
+msgid "Done by"
+msgstr "Gjort av"
+
+msgid "Free entry cancelled: %s"
+msgstr "Fri entré ångrad: %s"
+
+msgid "History"
+msgstr "Historik"
+
+msgid "Kind"
+msgstr "Typ"
+
+msgid "Night"
+msgstr "Kväll"
+
+msgid "Nothing recorded for this choice."
+msgstr "Inget sparat för det här valet."
+
+msgid "Settings changed: %s"
+msgstr "Inställningar ändrade: %s"
+
+msgid "Task added"
+msgstr "Uppgift tillagd"
+
+msgid "Task changed: %s"
+msgstr "Uppgift ändrad: %s"
+
+msgid "Task deleted"
+msgstr "Uppgift raderad"
+
+msgid "Task deleted, %d place cancelled"
+msgid_plural "Task deleted, %d places cancelled"
+msgstr[0] "Uppgift raderad, %d plats avbokad"
+msgstr[1] "Uppgift raderad, %d platser avbokade"
+
+msgid "Task list"
+msgstr "Uppgiftslista"
+
+msgid "Task sign-ups"
+msgstr "Anmälningar"
+
+msgid "The organizers keep a history of actions: who signed up for or cancelled a task, was put on or taken off one, checked in at the door, got or used a credit or gave a ticket away, and when. It never contains what you wrote. Only organizers can read it. Each entry is deleted after %d days. If your record is erased, the entries no longer say it was you."
+msgstr "Arrangörerna för en historik över händelser: vem som anmälde sig till eller avbokade en uppgift, sattes på eller togs bort från en, checkade in vid dörren, fick eller använde en fribiljett eller gav bort en biljett, och när. Den innehåller aldrig vad du skrev. Bara arrangörer kan läsa den. Varje post raderas efter %d dagar. Om dina uppgifter raderas visar posterna inte längre att det var du."
+
+msgid "Ticket gift cancelled: %s"
+msgstr "Biljettgåva ångrad: %s"
+
+msgid "Ticket offer lapsed: %s"
+msgstr "Biljetterbjudande gick ut: %s"
+
+msgid "What happened"
+msgstr "Vad hände"
+
+msgid "Who did what, and when: tasks, the door, credits, people and settings. Setting values are never stored. Rows are deleted after %d days."
+msgstr "Vem gjorde vad och när: uppgifter, dörren, fribiljetter, personer och inställningar. Inställningarnas värden sparas aldrig. Rader raderas efter %d dagar."
+
+msgid "a guest"
+msgstr "en gäst"
+
+msgid "a ticket buyer"
+msgstr "en biljettköpare"
+
+msgid "a ticket from %s"
+msgstr "en biljett från %s"
+
+msgid "automatic"
+msgstr "automatiskt"
+
+msgid "bot"
+msgstr "bot"
+
+msgid "someone (erased)"
+msgstr "någon (raderad)"
+
+msgid "user #%d"
+msgstr "användare #%d"
+
+msgid "web"
+msgstr "webb"
+
+msgid "wp-admin"
+msgstr "wp-admin"

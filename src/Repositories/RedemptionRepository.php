@@ -6,6 +6,7 @@ namespace EventCrew\Repositories;
 
 use EventCrew\Database\Schema;
 use EventCrew\Models\Redemption;
+use EventCrew\Support\History;
 
 /**
  * All reads and writes of the redemptions table - one row per credit spent for
@@ -91,7 +92,7 @@ final class RedemptionRepository
         $arguments[] = $personId;
         $arguments[] = $date;
 
-        $wpdb->query(
+        $inserted = $wpdb->query(
             $wpdb->prepare(
                 "INSERT INTO {$this->table()}
                     (person_id, redeemed_for, event_post_id, event_label, redeemed_at, note)
@@ -107,7 +108,13 @@ final class RedemptionRepository
             )
         );
 
-        return (int) $wpdb->insert_id;
+        $id = (int) $wpdb->insert_id;
+
+        if (1 === $inserted && $id > 0) {
+            History::record(History::CREDIT_REDEEMED, ['person_id' => $personId, 'event_date' => $date]);
+        }
+
+        return $id;
     }
 
     /**
@@ -205,13 +212,17 @@ final class RedemptionRepository
     {
         global $wpdb;
 
-        $wpdb->query(
+        $changed = $wpdb->query(
             $wpdb->prepare(
                 "UPDATE {$this->table()} SET cancelled_at = %s WHERE id = %d AND cancelled_at IS NULL",
                 current_time('mysql'),
                 $id
             )
         );
+
+        if (is_int($changed) && $changed > 0) {
+            History::record(History::REDEMPTION_CANCELLED, ['redemption_id' => $id]);
+        }
     }
 
     /**

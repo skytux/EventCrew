@@ -10,6 +10,7 @@ use EventCrew\Support\DoorHandoff;
 use EventCrew\Support\DoorNewMember;
 use EventCrew\Support\DoorQuota;
 use EventCrew\Support\DoorSession;
+use EventCrew\Support\History;
 use EventCrew\Support\Language;
 use EventCrew\Telegram\TicketRedemptionService;
 
@@ -140,6 +141,7 @@ final class DoorController
         // is where the language is left.
         if (null !== $session) {
             Language::enter($session['person']->language);
+            History::actAs(History::CHANNEL_WEB, $session['person']->id);
         }
 
         if (DoorSession::PAGE_ACTION === $action) {

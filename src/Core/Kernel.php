@@ -9,6 +9,7 @@ use EventCrew\Admin\AiPromptsPage;
 use EventCrew\Admin\BotLogPage;
 use EventCrew\Admin\BotProfileSettings;
 use EventCrew\Admin\DiagnosticsPage;
+use EventCrew\Admin\HistoryPage;
 use EventCrew\Admin\JobsStatus;
 use EventCrew\Admin\MessagesPage;
 use EventCrew\Admin\NewsletterPage;
@@ -26,6 +27,7 @@ use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\DoorNoteRepository;
 use EventCrew\Repositories\FollowupRepository;
 use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\HistoryRepository;
 use EventCrew\Repositories\NewsletterHistoryRepository;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\NotificationsRepository;
@@ -59,6 +61,7 @@ use EventCrew\Support\FrictionB1Migration;
 use EventCrew\Support\FrictionB3Migration;
 use EventCrew\Support\FrictionB4Migration;
 use EventCrew\Support\HealthReport;
+use EventCrew\Support\HistoryRecorder;
 use EventCrew\Support\EventAiText;
 use EventCrew\Support\EventDetailsText;
 use EventCrew\Support\VenueReader;
@@ -196,6 +199,9 @@ final class Kernel
 
         $this->registerServices();
         $this->validateServicesWhenDebugging();
+
+        // The history of actions: from here on, History::record() writes rows.
+        $this->container->get(HistoryRecorder::class)->boot();
 
         // Adds the organize task to nights created before it existed. Runs
         // once per site, on the first request of any kind after the update.
@@ -476,6 +482,16 @@ final class Kernel
         $this->container->singleton(
             PersonRepository::class,
             fn () => new PersonRepository()
+        );
+
+        $this->container->singleton(
+            HistoryRepository::class,
+            fn () => new HistoryRepository()
+        );
+
+        $this->container->singleton(
+            HistoryRecorder::class,
+            fn (Container $container) => new HistoryRecorder($container->get(HistoryRepository::class))
         );
 
         $this->container->singleton(
@@ -1215,7 +1231,8 @@ final class Kernel
                 $container->get(AuthTokenRepository::class),
                 $container->get(NotificationsRepository::class),
                 $container->get(TakeoverRepository::class),
-                transfers: $container->get(TicketTransferRepository::class)
+                transfers: $container->get(TicketTransferRepository::class),
+                history: $container->get(HistoryRepository::class)
             )
         );
 
@@ -1656,7 +1673,8 @@ final class Kernel
                 $container->get(FreeEntryGate::class),
                 $container->get(AssignmentRepository::class),
                 $container->get(StandingCalculator::class),
-                $container->get(TicketTransferService::class)
+                $container->get(TicketTransferService::class),
+                $container->get(HistoryRepository::class)
             )
         );
 
@@ -1917,6 +1935,14 @@ final class Kernel
         $this->container->singleton(
             BotLogPage::class,
             fn (Container $container) => new BotLogPage($container->get(View::class))
+        );
+
+        $this->container->singleton(
+            HistoryPage::class,
+            fn (Container $container) => new HistoryPage(
+                $container->get(View::class),
+                $container->get(HistoryRepository::class)
+            )
         );
 
         $this->container->singleton(

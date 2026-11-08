@@ -393,18 +393,35 @@ final class TakeoverService
         Person $holder,
         bool $viaBot
     ): string {
-        $this->assignments->setStatus($original->id, AssignmentStatus::REPLACED, $cover->id, MarkedBy::PERSON);
-        // The cover steps into the same slot, so it keeps the slot's answer
-        // to "Count toward free-entry credit?".
-        $outcome = $this->assignments->join($task->id, $cover->id, $original->countsCredit);
+        // The history gets one line for the move ("Sam took over from Kim"),
+        // not the holder's status change and the cover's sign-up apart.
+        $outcome = History::muted(function () use ($original, $task, $cover): string {
+            $this->assignments->setStatus($original->id, AssignmentStatus::REPLACED, $cover->id, MarkedBy::PERSON);
+
+            // The cover steps into the same slot, so it keeps the slot's answer
+            // to "Count toward free-entry credit?".
+            return $this->assignments->join($task->id, $cover->id, $original->countsCredit);
+        });
 
         if (! in_array($outcome, [AssignmentRepository::JOIN_OK, AssignmentRepository::JOIN_REJOINED], true)) {
-            $this->assignments->setStatus($original->id, AssignmentStatus::SIGNED_UP, $cover->id, MarkedBy::PERSON);
+            History::muted(fn () => $this->assignments->setStatus(
+                $original->id,
+                AssignmentStatus::SIGNED_UP,
+                $cover->id,
+                MarkedBy::PERSON
+            ));
             $this->takeovers->setStatus($takeover->id, Takeover::CANCELLED);
             Language::forPerson($cover, fn () => $this->sendToCover($cover, $holder, $task, 'failed'));
 
             return __('The task could not be moved, so you keep it.', 'eventcrew');
         }
+
+        History::record(History::REPLACED, [
+            'person_id' => $holder->id,
+            'other_person_id' => $cover->id,
+            'task_id' => $task->id,
+            'event_date' => $task->taskDate,
+        ]);
 
         $this->claims->confirmSignup($cover, $task->id);
 

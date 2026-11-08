@@ -8,6 +8,7 @@ use EventCrew\Database\Schema;
 use EventCrew\Models\Task;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\BoardVisibility;
+use EventCrew\Support\History;
 use EventCrew\Support\Roles;
 
 /**
@@ -74,7 +75,16 @@ final class TaskRepository
             ]
         );
 
-        return (int) $wpdb->insert_id;
+        $id = (int) $wpdb->insert_id;
+
+        if ($id > 0) {
+            History::record(History::TASK_CREATED, [
+                'task_id' => $id,
+                'event_date' => (string) ($data['task_date'] ?? ''),
+            ]);
+        }
+
+        return $id;
     }
 
     /**
@@ -83,6 +93,10 @@ final class TaskRepository
     public function update(int $id, array $data): void
     {
         global $wpdb;
+
+        // Recorded before the write: the recorder compares with the stored
+        // task to keep only the names of the fields that change.
+        History::record(History::TASK_CHANGED, ['task_id' => $id, 'fields' => $data]);
 
         $wpdb->update($this->table(), $data, ['id' => $id]);
     }
@@ -127,6 +141,16 @@ final class TaskRepository
                 $id
             )
         );
+
+        foreach ($personIds as $personId) {
+            History::record(History::TAKEN_OFF, [
+                'task_id' => $id,
+                'person_id' => $personId,
+                'details' => ['task_deleted' => 1],
+            ]);
+        }
+
+        History::record(History::TASK_DELETED, ['task_id' => $id, 'details' => ['places' => count($personIds)]]);
 
         do_action('eventcrew/task_deleted', $id, $personIds);
     }

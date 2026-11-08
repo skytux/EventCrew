@@ -7,6 +7,7 @@ namespace EventCrew\Telegram;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\GuestCommand;
+use EventCrew\Support\History;
 use EventCrew\Support\Language;
 use EventCrew\Support\MessageActions;
 use EventCrew\Support\NewcomerApproval;
@@ -89,6 +90,9 @@ final class UpdateRouter
         if (! $this->isFreshUpdate($update)) {
             return;
         }
+
+        // What this update changes is done by its sender (the history).
+        History::actAs(History::CHANNEL_BOT, null, $this->senderId($update));
 
         if (null === $this->language) {
             $this->route($update, null);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Repositories;
 
 use EventCrew\Database\Schema;
+use EventCrew\Support\History;
 
 /**
  * All reads and writes of the door check-ins table: who has come in on one
@@ -242,7 +243,35 @@ final class CheckinRepository
             )
         );
 
-        return 1 === $affected;
+        if (1 !== $affected) {
+            return false;
+        }
+
+        History::record(History::CHECKED_IN, self::historyEntry($date, $kind, $refId) + [
+            'actor_person_id' => $checkedBy > 0 ? $checkedBy : null,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * What the history keeps of a door entry: the night, the list, and the
+     * person for a task or credit ticket (a guest or buyer is not a person),
+     * or the ticket given away for a transfer. Never a guest's name.
+     *
+     * @return array<string, mixed>
+     */
+    private static function historyEntry(string $date, string $kind, int $refId): array
+    {
+        $entry = ['event_date' => $date, 'details' => ['list' => $kind]];
+
+        if (self::KIND_CREW === $kind || self::KIND_CREDIT === $kind) {
+            $entry['person_id'] = $refId;
+        } elseif (self::KIND_TRANSFER === $kind) {
+            $entry['transfer_id'] = $refId;
+        }
+
+        return $entry;
     }
 
     /**
@@ -252,11 +281,17 @@ final class CheckinRepository
     {
         global $wpdb;
 
-        return (int) $wpdb->delete(
+        $removed = (int) $wpdb->delete(
             $this->table(),
             ['event_date' => $date, 'kind' => $kind, 'ref_id' => $refId],
             ['%s', '%s', '%d']
         ) > 0;
+
+        if ($removed) {
+            History::record(History::CHECKIN_UNDONE, self::historyEntry($date, $kind, $refId));
+        }
+
+        return $removed;
     }
 
     /**

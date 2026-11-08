@@ -77,7 +77,9 @@ final class AssistantKnowledge
      *
      * The site's live state (AssistantStatus) goes in as "Current status" for
      * an organizer, and $personId's own tasks, tickets and credits as "This
-     * person" (0 = none: a group chat or an unknown person).
+     * person" (0 = none: a group chat or an unknown person). For an organizer,
+     * $question (their message) picks the people and nights whose history goes
+     * in as "History asked about".
      *
      * @param array<int, string> $roleSlugs
      * @return array{facts: string, tasks: array<int, int>}
@@ -88,7 +90,8 @@ final class AssistantKnowledge
         array $roleSlugs = [],
         bool $organizer = false,
         bool $member = false,
-        int $personId = 0
+        int $personId = 0,
+        string $question = ''
     ): array
     {
         [$taskText, $taskIds] = $this->tasksText($member, $organizer);
@@ -128,7 +131,7 @@ final class AssistantKnowledge
             $parts[] = '## Site pages' . "\n" . $pages;
         }
 
-        $parts = [...$parts, ...$this->statusParts($organizer, $personId)];
+        $parts = [...$parts, ...$this->statusParts($organizer, $personId, $question)];
 
         // Private-chat commands for organizers and members (ag-people).
         $parts[] = '## Private-chat commands' . "\n" . self::chatCommandsText($organizer);
@@ -141,7 +144,7 @@ final class AssistantKnowledge
      *
      * @return list<string>
      */
-    private function statusParts(bool $organizer, int $personId): array
+    private function statusParts(bool $organizer, int $personId, string $question = ''): array
     {
         $parts = [];
         $person = null === $this->status ? '' : $this->status->personText($personId);
@@ -152,6 +155,12 @@ final class AssistantKnowledge
 
         if ($organizer && null !== $this->status) {
             $parts[] = '## Current status' . "\n" . $this->status->text();
+
+            $asked = $this->status->askedHistoryText($question, (string) current_time('Y-m-d'));
+
+            if ('' !== $asked) {
+                $parts[] = '## History asked about' . "\n" . $asked;
+            }
         }
 
         return $parts;

@@ -6,6 +6,7 @@ namespace EventCrew\Repositories;
 
 use EventCrew\Database\Schema;
 use EventCrew\Models\TicketTransfer;
+use EventCrew\Support\History;
 
 /**
  * All reads and writes of the ticket transfer table (TicketTransfer).
@@ -42,8 +43,20 @@ final class TicketTransferRepository
         ];
 
         $ok = $wpdb->insert($this->table(), $row);
+        $id = false === $ok ? 0 : (int) $wpdb->insert_id;
 
-        return false === $ok ? 0 : (int) $wpdb->insert_id;
+        if ($id > 0) {
+            History::record(
+                TicketTransfer::STATUS_ISSUED === $fields['status'] ? History::TICKET_GIVEN : History::TICKET_OFFERED,
+                [
+                    'person_id' => (int) $fields['giver_person_id'],
+                    'other_person_id' => $fields['receiver_person_id'],
+                    'event_date' => (string) $fields['event_date'],
+                ]
+            );
+        }
+
+        return $id;
     }
 
     public function find(int $id): ?TicketTransfer
@@ -141,7 +154,13 @@ final class TicketTransferRepository
             )
         );
 
-        return is_int($changed) && $changed > 0;
+        if (! is_int($changed) || $changed <= 0) {
+            return false;
+        }
+
+        History::record(History::TICKET_GIVEN, ['transfer_id' => $id]);
+
+        return true;
     }
 
     /**
@@ -162,7 +181,16 @@ final class TicketTransferRepository
             )
         );
 
-        return is_int($changed) && $changed > 0;
+        if (! is_int($changed) || $changed <= 0) {
+            return false;
+        }
+
+        History::record(History::TICKET_OFFER_ENDED, [
+            'transfer_id' => $id,
+            'details' => ['status' => 1 === preg_match('/^[a-z_]{1,16}$/', $status) ? $status : ''],
+        ]);
+
+        return true;
     }
 
     public function markTicketMailed(int $id): void

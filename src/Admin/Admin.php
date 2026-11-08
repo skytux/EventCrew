@@ -512,6 +512,15 @@ final class Admin
 
         add_submenu_page(
             self::MENU_SLUG,
+            __('History', 'eventcrew'),
+            __('History', 'eventcrew'),
+            self::CAPABILITY,
+            HistoryPage::PAGE_SLUG,
+            [$this->container->get(HistoryPage::class), 'render']
+        );
+
+        add_submenu_page(
+            self::MENU_SLUG,
             __('Bot log', 'eventcrew'),
             __('Bot log', 'eventcrew'),
             self::CAPABILITY,

@@ -10,6 +10,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\FollowupRepository;
 use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\HistoryRepository;
 use EventCrew\Repositories\NewsletterHistoryRepository;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
@@ -28,7 +29,10 @@ use EventCrew\Repositories\TicketBuyerRepository;
  *   emails, the next NIGHTS nights (tasks, Organize, free-entry tickets,
  *   guest list, ticket sales, free entry open or closed, stop flags), the
  *   recent cancellations (who, which task, when, by whom, open or
- *   re-filled), the organizers and the newcomers waiting.
+ *   re-filled), the organizers and the newcomers waiting, and the history of
+ *   actions of the last HISTORY_DAYS days (who did what, and when).
+ * - askedHistoryText(): the history of the people or nights an organizer's
+ *   question names, for organizers only.
  * - personText(): the "This person" section: one person's own coming tasks,
  *   tickets, completed tasks and free-entry credits, for that person only.
  *
@@ -50,6 +54,24 @@ final class AssistantStatus
     /** How many cancellations are listed at most. */
     public const CANCEL_LIMIT = 15;
 
+    /** How many days back the history of actions is listed. */
+    public const HISTORY_DAYS = 7;
+
+    /** How many history lines "Current status" lists at most. */
+    public const HISTORY_LIMIT = 30;
+
+    /** How many history lines are listed for one person a question names. */
+    public const ASKED_PERSON_LIMIT = 20;
+
+    /** How many history lines are listed for one night a question names. */
+    public const ASKED_NIGHT_LIMIT = 30;
+
+    /** How many people, and how many nights, one question can ask about. */
+    public const ASKED_MAX = 3;
+
+    /** The shortest first name matched on its own in a question. */
+    private const MIN_FIRST_NAME = 3;
+
     public function __construct(
         private readonly TaskRepository $tasks,
         private readonly PersonRepository $people,
@@ -62,7 +84,8 @@ final class AssistantStatus
         private readonly FreeEntryGate $freeEntry,
         private readonly AssignmentRepository $assignments,
         private readonly ?StandingCalculator $standing = null,
-        private readonly ?TicketTransferService $transfers = null
+        private readonly ?TicketTransferService $transfers = null,
+        private readonly ?HistoryRepository $actions = null
     ) {
     }
 
@@ -86,6 +109,7 @@ final class AssistantStatus
 
         $parts[] = implode("\n", $this->cancellationLines($today, $now));
         $parts[] = implode("\n", $this->peopleLines());
+        $parts[] = implode("\n", $this->historyLines($now));
 
         return implode("\n", array_filter($parts, static fn (string $part): bool => '' !== $part));
     }
@@ -683,6 +707,200 @@ final class AssistantStatus
         $time = strtotime($ymd . ' 12:00:00 UTC');
 
         return false === $time || '' === $ymd ? $ymd : $ymd . ' (' . gmdate('l', $time) . ')';
+    }
+
+    /**
+     * The history of actions of the last HISTORY_DAYS days, newest first, at
+     * most HISTORY_LIMIT lines; says so when there were more.
+     *
+     * @return list<string>
+     */
+    public function historyLines(string $now): array
+    {
+        if (null === $this->actions) {
+            return [];
+        }
+
+        $nowTime = strtotime($now . ' UTC');
+        $since = gmdate('Y-m-d H:i:s', (false === $nowTime ? time() : $nowTime) - self::HISTORY_DAYS * DAY_IN_SECONDS);
+        $rows = $this->actions->page(['since' => $since], self::HISTORY_LIMIT + 1);
+        $capped = count($rows) > self::HISTORY_LIMIT;
+
+        $lines = ['Recent history (the last ' . self::HISTORY_DAYS . ' days, newest first; who did what, and when):'];
+
+        if ([] === $rows) {
+            $lines[] = '- Nothing recorded.';
+
+            return $lines;
+        }
+
+        foreach (array_slice($rows, 0, self::HISTORY_LIMIT) as $row) {
+            $lines[] = '- ' . self::historyLine($row);
+        }
+
+        if ($capped) {
+            $lines[] = '- Only the latest ' . self::HISTORY_LIMIT . ' are listed; there are more. For older or'
+                . ' other lines, the organizer can ask about one person or one night by name or date.';
+        }
+
+        return $lines;
+    }
+
+    /**
+     * The history of the people (by name) and the nights (by date) an
+     * organizer's question names: at most ASKED_MAX of each, ASKED_PERSON_LIMIT
+     * lines per person and ASKED_NIGHT_LIMIT per night, newest first. '' when
+     * the question names none of them.
+     */
+    public function askedHistoryText(string $question, string $today): string
+    {
+        if (null === $this->actions || '' === trim($question)) {
+            return '';
+        }
+
+        $parts = [];
+
+        foreach ($this->peopleNamedIn($question) as $person) {
+            $parts[] = $this->askedBlock(
+                'History of ' . $person['name'],
+                ['person' => $person['id']],
+                self::ASKED_PERSON_LIMIT
+            );
+        }
+
+        foreach (self::datesIn($question, $today) as $date) {
+            $parts[] = $this->askedBlock(
+                'History of the night ' . self::day($date),
+                ['date' => $date],
+                self::ASKED_NIGHT_LIMIT
+            );
+        }
+
+        return implode("\n\n", $parts);
+    }
+
+    /**
+     * @param array{person?: int, date?: string} $filter
+     */
+    private function askedBlock(string $title, array $filter, int $limit): string
+    {
+        $rows = null === $this->actions ? [] : $this->actions->page($filter, $limit + 1);
+        $lines = [$title . ' (newest first; kept ' . History::KEEP_DAYS . ' days):'];
+
+        foreach (array_slice($rows, 0, $limit) as $row) {
+            $lines[] = '- ' . self::historyLine($row);
+        }
+
+        if ([] === $rows) {
+            $lines[] = '- Nothing recorded.';
+        } elseif (count($rows) > $limit) {
+            $lines[] = '- Only the latest ' . $limit . ' are listed; there are more.';
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * The people a question names: a whole display name, or a first name of
+     * at least MIN_FIRST_NAME letters as a whole word, at most ASKED_MAX.
+     *
+     * @return list<array{id: int, name: string}>
+     */
+    private function peopleNamedIn(string $question): array
+    {
+        if (null === $this->actions) {
+            return [];
+        }
+
+        $text = mb_strtolower($question);
+        $found = [];
+
+        foreach ($this->actions->names() as $person) {
+            $name = mb_strtolower(trim($person['name']));
+            $first = (string) strtok($name, ' ');
+
+            if ('' === $name) {
+                continue;
+            }
+
+            $whole = mb_strlen($name) >= self::MIN_FIRST_NAME && self::hasWord($text, $name);
+            $byFirst = $first !== $name && mb_strlen($first) >= self::MIN_FIRST_NAME && self::hasWord($text, $first);
+
+            if ($whole || $byFirst) {
+                $found[] = $person;
+            }
+
+            if (count($found) >= self::ASKED_MAX) {
+                break;
+            }
+        }
+
+        return $found;
+    }
+
+    private static function hasWord(string $text, string $word): bool
+    {
+        return 1 === preg_match('/(?<![\p{L}\p{N}])' . preg_quote($word, '/') . '(?![\p{L}\p{N}])/u', $text);
+    }
+
+    /**
+     * The dates a question names ("14.11.", "2026-11-14"), at most ASKED_MAX.
+     *
+     * @return list<string>
+     */
+    private static function datesIn(string $question, string $today): array
+    {
+        $dates = [];
+
+        foreach (preg_split('/[\s,;:!?()]+/u', $question) ?: [] as $word) {
+            $date = Dates::parseUserDate($word, $today);
+
+            if ('' === $date) {
+                // "14.11.2026." at the end of a sentence.
+                $date = Dates::parseUserDate(rtrim($word, '.'), $today);
+            }
+
+            if ('' !== $date && ! in_array($date, $dates, true)) {
+                $dates[] = $date;
+            }
+
+            if (count($dates) >= self::ASKED_MAX) {
+                break;
+            }
+        }
+
+        return $dates;
+    }
+
+    /**
+     * One history row as a line, in English: "2026-11-14 (Saturday) 21:42:
+     * Sam cancelled late (task Bar 20:00; night 2026-11-15 (Sunday); by Kim, bot)".
+     *
+     * @param array<string, mixed> $row
+     */
+    public static function historyLine(array $row): string
+    {
+        return (string) Language::run('en', static function () use ($row): string {
+            $about = [];
+            $task = HistoryText::task($row);
+            $night = (string) ($row['event_date'] ?? '');
+            $actor = HistoryText::actor($row);
+
+            if ('' !== $task) {
+                $about[] = 'task ' . $task;
+            }
+
+            if ('' !== $night) {
+                $about[] = 'night ' . self::day($night);
+            }
+
+            if ('' !== $actor) {
+                $about[] = 'by ' . $actor;
+            }
+
+            return self::moment((string) ($row['created_at'] ?? '')) . ': ' . HistoryText::action($row)
+                . ([] === $about ? '' : ' (' . implode('; ', $about) . ')');
+        });
     }
 
     /** "2026-11-14 (Saturday) 18:00" for a site-time "Y-m-d H:i:s". */

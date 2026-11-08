@@ -170,6 +170,10 @@ final class Scheduler
         // BotLog::KEEP_DAYS, as the privacy notice says.
         BotLog::purgeIfDue();
 
+        // Once a day, delete the history rows older than History::KEEP_DAYS
+        // (one year), as the privacy notice says.
+        History::purgeIfDue();
+
         // Enforce the published retention period. Not inside the send window:
         // it notifies nobody, so there is no unsociable hour to protect anyone
         // from, and a job that only runs half the day takes twice as long to

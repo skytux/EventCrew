@@ -7,6 +7,7 @@ namespace EventCrew\Repositories;
 use EventCrew\Database\Schema;
 use EventCrew\Models\Assignment;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\History;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\Roles;
 
@@ -85,9 +86,17 @@ final class AssignmentRepository
             // An occupying row is a genuine duplicate; a freed one (a prior
             // cancellation) is reactivated, since the unique key means we
             // cannot insert a second row for this person and task.
-            return $existing->isOccupying()
-                ? self::JOIN_DUPLICATE
-                : $this->reactivate($existing->id, $taskId, $countsCredit);
+            if ($existing->isOccupying()) {
+                return self::JOIN_DUPLICATE;
+            }
+
+            $result = $this->reactivate($existing->id, $taskId, $countsCredit);
+
+            if (self::JOIN_REJOINED === $result) {
+                History::record(History::SIGNED_UP, ['task_id' => $taskId, 'person_id' => $personId]);
+            }
+
+            return $result;
         }
 
         $statuses = AssignmentStatus::occupying();
@@ -130,6 +139,8 @@ final class AssignmentRepository
         $inserted = $wpdb->query($wpdb->prepare($sql, ...$params));
 
         if (1 === $inserted) {
+            History::record(History::SIGNED_UP, ['task_id' => $taskId, 'person_id' => $personId]);
+
             return self::JOIN_OK;
         }
 
@@ -385,6 +396,13 @@ final class AssignmentRepository
         global $wpdb;
 
         $changedByKind = null !== $changedBy && MarkedBy::isKind($changedByKind) ? $changedByKind : null;
+
+        History::record(History::STATUS, [
+            'assignment_id' => $id,
+            'status' => $status,
+            'actor_person_id' => MarkedBy::PERSON === $changedByKind ? $changedBy : null,
+            'actor_wp_user_id' => MarkedBy::WP_USER === $changedByKind ? $changedBy : null,
+        ]);
 
         $wpdb->update(
             $this->table(),

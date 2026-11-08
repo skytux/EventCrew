@@ -75,6 +75,14 @@ final class PrivacyPolicyTest extends TestCase
         self::assertStringContainsString('dpo@example.test', $text);
     }
 
+    public function testTheNoticeDescribesTheHistoryOfActions(): void
+    {
+        $text = $this->flatten(PrivacyPolicy::sections());
+
+        self::assertStringContainsString('The organizers keep a history of actions', $text);
+        self::assertStringContainsString('Each entry is deleted after 365 days.', $text);
+    }
+
     /**
      * With no officer designated the notice says so and explains why, rather
      * than leaving the reader to wonder whether the question was forgotten.

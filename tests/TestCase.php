@@ -24,6 +24,9 @@ abstract class TestCase extends PHPUnitTestCase
         $this->wpdb = new FakeWpdb();
         $GLOBALS['wpdb'] = $this->wpdb;
 
+        // No history recorder and no acting person left over from a test.
+        \EventCrew\Support\History::reset();
+
         $this->stubCommonFunctions();
 
         // The count of jobs a request queued lives for one request.

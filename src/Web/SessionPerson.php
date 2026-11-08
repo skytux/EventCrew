@@ -6,6 +6,7 @@ namespace EventCrew\Web;
 
 use EventCrew\Models\Person;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\History;
 use EventCrew\Support\WebSession;
 
 /**
@@ -48,6 +49,13 @@ final class SessionPerson
 
         $issuedAt = WebSession::issuedAt($cookie);
 
-        return null !== $issuedAt && $person->acceptsSessionIssuedAt($issuedAt) ? $person : null;
+        if (null === $issuedAt || ! $person->acceptsSessionIssuedAt($issuedAt)) {
+            return null;
+        }
+
+        // What this request changes is done by this person (the history).
+        History::actAs(History::CHANNEL_WEB, $person->id);
+
+        return $person;
     }
 }

@@ -6,6 +6,7 @@ namespace EventCrew\Repositories;
 
 use EventCrew\Database\Schema;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\History;
 
 /**
  * All reads and writes of the credit-grants table - one row per bonus credit an
@@ -65,6 +66,13 @@ final class CreditGrantRepository
                 'granted_at' => current_time('mysql'),
             ]
         );
+
+        History::record(History::CREDIT_GRANTED, [
+            'person_id' => $personId,
+            'details' => ['credits' => max(1, $credits)],
+            'actor_person_id' => $grantedByPersonId,
+            'actor_wp_user_id' => null === $grantedByPersonId && $grantedBy > 0 ? $grantedBy : null,
+        ]);
     }
 
     /**
@@ -112,7 +120,17 @@ final class CreditGrantRepository
             )
         );
 
-        return is_int($result) && $result > 0;
+        $added = is_int($result) && $result > 0;
+
+        if ($added) {
+            History::record(History::CREDIT_GRANTED, [
+                'assignment_id' => $assignmentId,
+                'person_id' => $personId,
+                'details' => ['credits' => 1, 'extra_task' => 1],
+            ]);
+        }
+
+        return $added;
     }
 
     /**
@@ -334,7 +352,17 @@ final class CreditGrantRepository
             ['%d', '%s', '%d']
         );
 
-        return is_int($result) && $result > 0;
+        $removed = is_int($result) && $result > 0;
+
+        if ($removed) {
+            History::record(History::CREDIT_REMOVED, [
+                'assignment_id' => $assignmentId,
+                'person_id' => $personId,
+                'details' => ['credits' => 1, 'extra_task' => 1],
+            ]);
+        }
+
+        return $removed;
     }
 
     public function deleteForPerson(int $personId): void

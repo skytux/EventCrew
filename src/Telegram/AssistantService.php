@@ -327,7 +327,10 @@ final class AssistantService
             $audience['roleSlugs'] ?? [],
             $isPrivate && $audience['organizer'],
             $isPrivate && (bool) ($audience['member'] ?? false),
-            $isPrivate ? (int) ($audience['personId'] ?? 0) : 0
+            $isPrivate ? (int) ($audience['personId'] ?? 0) : 0,
+            // The history of the people and nights the message names: only
+            // for an organizer in a private chat.
+            $isPrivate && $audience['organizer'] ? $text : ''
         );
         // Read before this message is added: the message itself goes as the
         // user turn. A group has its own record per person (0 = private).
@@ -653,9 +656,17 @@ final class AssistantService
                 . ' email (newsletter), the post-event email, the ticket emails, the coming nights (tasks, who is on'
                 . ' Organize, free-entry tickets, guest list, ticket holders, free entry open or closed, stopped'
                 . ' emails), the recent cancellations (who, which task, when, whether the task is filled again)'
-                . ' and the organizers. Answer status questions such as "has the announcement gone out?" or'
-                . ' "who cancelled lately?" directly from it, with the names and times it gives. Do not send the'
-                . ' organizer to the bot log, the task list or wp-admin for cancellations.';
+                . ' the organizers and the recent history (who did what, and when, in the last days). Answer'
+                . ' status questions such as "has the announcement gone out?" or "who cancelled lately?" directly'
+                . ' from it, with the names and times it gives.';
+            $lines[] = '- For an organizer, "Recent history" in "Current status" and "History asked about" (the'
+                . ' history of a person or night named in the message) list who did what, and when: sign-ups,'
+                . ' cancellations, people taken off or put on tasks, take-overs, door check-ins, credits, tickets'
+                . ' given away, people added or changed and settings changed. Answer "what happened", "who did'
+                . ' it" and "when" questions from them, with the names and times they give. When a line says'
+                . ' there are more, say the answer may not be complete and that asking about one person or one'
+                . ' night by name or date shows more. Never send the organizer to the bot log, the task list or'
+                . ' wp-admin for any of this.';
             $lines[] = '- An organizer can also manage tasks in a private chat: /addtask, /edittask (time, places,'
                 . ' notes, plus-ones), /deletetask, /maketasks (a night\'s tasks from the roles) and /mailtasks'
                 . ' (the open-task email now). When they ask for one of these, give that command with the task'

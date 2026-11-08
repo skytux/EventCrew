@@ -10295,3 +10295,172 @@ msgstr "Ei tulevia lippuja."
 
 msgid "Past tickets"
 msgstr "Menneet liput"
+
+msgid "%1$s and %2$d more"
+msgstr "%1$s ja %2$d muuta"
+
+msgid "%1$s gave their ticket to %2$s"
+msgstr "%1$s antoi lippunsa: %2$s"
+
+msgid "%1$s got %2$d credit"
+msgid_plural "%1$s got %2$d credits"
+msgstr[0] "%1$s sai %2$d vapaalipun"
+msgstr[1] "%1$s sai %2$d vapaalippua"
+
+msgid "%1$s marked: %2$s"
+msgstr "%1$s merkitty: %2$s"
+
+msgid "%1$s offered their ticket to %2$s"
+msgstr "%1$s tarjosi lippuaan: %2$s"
+
+msgid "%1$s roles: %2$s"
+msgstr "%1$s, roolit: %2$s"
+
+msgid "%1$s took over from %2$s"
+msgstr "%1$s otti tehtävän: %2$s"
+
+msgid "%s added"
+msgstr "%s lisätty"
+
+msgid "%s cancelled"
+msgstr "%s perui"
+
+msgid "%s cancelled late"
+msgstr "%s perui myöhään"
+
+msgid "%s checked in"
+msgstr "%s kirjattu sisään"
+
+msgid "%s gave their ticket away"
+msgstr "%s antoi lippunsa pois"
+
+msgid "%s got a credit for an extra task"
+msgstr "%s sai vapaalipun lisätehtävästä"
+
+msgid "%s lost the credit for an extra task"
+msgstr "%s menetti lisätehtävän vapaalipun"
+
+msgid "%s made organizer"
+msgstr "%s tehty järjestäjäksi"
+
+msgid "%s marked as no-show"
+msgstr "%s merkitty: ei saapunut"
+
+msgid "%s no longer organizer"
+msgstr "%s ei enää järjestäjä"
+
+msgid "%s offered their ticket"
+msgstr "%s tarjosi lippuaan"
+
+msgid "%s signed up"
+msgstr "%s ilmoittautui"
+
+msgid "%s used a credit for free entry"
+msgstr "%s käytti vapaalipun"
+
+msgid "%s was put on the task"
+msgstr "%s lisättiin tehtävään"
+
+msgid "%s was taken off the task"
+msgstr "%s poistettiin tehtävästä"
+
+msgid "%s was taken off: the task was deleted"
+msgstr "%s poistettiin: tehtävä poistettiin"
+
+msgid "A person was erased"
+msgstr "Henkilö poistettiin"
+
+msgid "A person was erased (record aged out)"
+msgstr "Henkilö poistettiin (tiedot vanhenivat)"
+
+msgid "All"
+msgstr "Kaikki"
+
+msgid "Check-in undone: %s"
+msgstr "Sisäänkirjaus peruttu: %s"
+
+msgid "Credits and tickets"
+msgstr "Vapaaliput ja liput"
+
+msgid "Done by"
+msgstr "Tekijä"
+
+msgid "Free entry cancelled: %s"
+msgstr "Vapaalippu peruttu: %s"
+
+msgid "History"
+msgstr "Historia"
+
+msgid "Kind"
+msgstr "Laji"
+
+msgid "Night"
+msgstr "Ilta"
+
+msgid "Nothing recorded for this choice."
+msgstr "Tälle valinnalle ei ole merkintöjä."
+
+msgid "Settings changed: %s"
+msgstr "Asetuksia muutettu: %s"
+
+msgid "Task added"
+msgstr "Tehtävä lisätty"
+
+msgid "Task changed: %s"
+msgstr "Tehtävä muutettu: %s"
+
+msgid "Task deleted"
+msgstr "Tehtävä poistettu"
+
+msgid "Task deleted, %d place cancelled"
+msgid_plural "Task deleted, %d places cancelled"
+msgstr[0] "Tehtävä poistettu, %d paikka peruttu"
+msgstr[1] "Tehtävä poistettu, %d paikkaa peruttu"
+
+msgid "Task list"
+msgstr "Tehtävälista"
+
+msgid "Task sign-ups"
+msgstr "Ilmoittautumiset"
+
+msgid "The organizers keep a history of actions: who signed up for or cancelled a task, was put on or taken off one, checked in at the door, got or used a credit or gave a ticket away, and when. It never contains what you wrote. Only organizers can read it. Each entry is deleted after %d days. If your record is erased, the entries no longer say it was you."
+msgstr "Järjestäjät pitävät historiaa toiminnoista: kuka ilmoittautui tehtävään tai perui sen, lisättiin tehtävään tai poistettiin siitä, kirjattiin sisään ovella, sai tai käytti vapaalipun tai antoi lippunsa pois, ja milloin. Siinä ei koskaan ole mitä kirjoitit. Vain järjestäjät voivat lukea sen. Jokainen merkintä poistetaan %d päivän jälkeen. Jos tietosi poistetaan, merkinnöistä ei enää näe, että se olit sinä."
+
+msgid "Ticket gift cancelled: %s"
+msgstr "Lipun lahjoitus peruttu: %s"
+
+msgid "Ticket offer lapsed: %s"
+msgstr "Lipputarjous raukesi: %s"
+
+msgid "What happened"
+msgstr "Mitä tapahtui"
+
+msgid "Who did what, and when: tasks, the door, credits, people and settings. Setting values are never stored. Rows are deleted after %d days."
+msgstr "Kuka teki mitä ja milloin: tehtävät, ovi, vapaaliput, ihmiset ja asetukset. Asetusten arvoja ei tallenneta. Rivit poistetaan %d päivän jälkeen."
+
+msgid "a guest"
+msgstr "vieras"
+
+msgid "a ticket buyer"
+msgstr "lipun ostaja"
+
+msgid "a ticket from %s"
+msgstr "lippu henkilöltä %s"
+
+msgid "automatic"
+msgstr "automaattinen"
+
+msgid "bot"
+msgstr "botti"
+
+msgid "someone (erased)"
+msgstr "joku (poistettu)"
+
+msgid "user #%d"
+msgstr "käyttäjä #%d"
+
+msgid "web"
+msgstr "verkko"
+
+msgid "wp-admin"
+msgstr "wp-admin"
