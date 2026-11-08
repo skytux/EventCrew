@@ -28,12 +28,12 @@ final class EmailClicksTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        EmailClicks::boot();
 
         $this->options = [];
         $this->calls = [];
         $this->server = $_SERVER;
         $this->get = $_GET; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        Functions\when('wp_salt')->justReturn('salt');
         Functions\when('wp_unslash')->returnArg();
         Functions\when('wp_timezone')->justReturn(new \DateTimeZone('UTC'));
         Functions\when('get_option')->alias(
@@ -61,6 +61,7 @@ final class EmailClicksTest extends TestCase
 
     protected function tearDown(): void
     {
+        EmailClicks::reset();
         $_SERVER = $this->server;
         $_GET = $this->get;
 

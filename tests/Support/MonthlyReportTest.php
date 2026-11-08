@@ -40,6 +40,11 @@ final class MonthlyReportTest extends TestCase
 
             return true;
         });
+        Functions\when('delete_option')->alias(function (string $name): bool {
+            unset($this->options[$name]);
+
+            return true;
+        });
         Functions\when('is_email')->alias(static fn (string $email): bool => str_contains($email, '@'));
         Functions\when('add_action')->justReturn(true);
         Functions\when('remove_action')->justReturn(true);

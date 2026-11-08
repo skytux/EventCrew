@@ -43,15 +43,26 @@ final class EmailClicks
     /** The REST routes whose links sign someone in or act for them. */
     private const SIGN_IN_ROUTES = ['/eventcrew/v1/verify', '/eventcrew/v1/manage'];
 
+    /** Whether boot() hooked the handler; links are wrapped only then. */
+    private static bool $booted = false;
+
     /** Hooks the counting link: early, before WordPress looks up a page. */
     public static function boot(): void
     {
+        self::$booted = true;
         add_action('init', [self::class, 'handle'], 1);
+    }
+
+    /** Stops wrapping links until boot() runs again (tests). */
+    public static function reset(): void
+    {
+        self::$booted = false;
     }
 
     /**
      * $url as a counting link for $button of the email $mail, or $url as it
-     * is when it is not wrapped: empty, not a web link, or a sign-in link.
+     * is when it is not wrapped: not booted, empty, not a web link, or a
+     * sign-in link.
      */
     public static function wrap(string $url, string $mail, string $button): string
     {
@@ -60,7 +71,8 @@ final class EmailClicks
         $button = self::key($button);
 
         if (
-            '' === $url
+            ! self::$booted
+            || '' === $url
             || '' === $mail
             || '' === $button
             || 1 !== preg_match('#^https?://#i', $url)

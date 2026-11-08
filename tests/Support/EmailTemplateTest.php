@@ -28,6 +28,7 @@ final class EmailTemplateTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        EmailClicks::boot();
 
         $this->options = ['eventcrew_email_html' => '1'];
         $this->mails = [];
@@ -46,6 +47,13 @@ final class EmailTemplateTest extends TestCase
                 return true;
             }
         );
+    }
+
+    protected function tearDown(): void
+    {
+        EmailClicks::reset();
+
+        parent::tearDown();
     }
 
     private function mailer(): Mailer
