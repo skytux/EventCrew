@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.193
+Stable tag: 1.140.194
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,20 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.194 =
+* The Me tab uses the bot's words: Tasks, Past tasks, completed tasks and free-entry credits; a task can be cancelled from the Tasks card.
+* Full tasks offer Take someone's task, on the web board and in Telegram.
+* Tasks and Past tasks show 25 at a time, in the bot and on the web; Settings has the same items in both.
+* Tickets card: free-entry tickets can be given away from the web, and a waiting offer cancelled.
+* Help in the bot is a menu: How this works?, Commands and a FAQ.
+* Lists of open tasks follow the board: no tasks of archived or hidden roles.
+* New per-role Members display tick: signed-in members see that role's tasks even without the role.
+* An organizer can put another organizer on Organize, with /assign, the board or the assistant.
+* Organizers add people to the newsletter with /subscribe; members turn the newsletter on or off in Notifications.
+* Organizers also get the announcement preview on Telegram, as picture cards in their own language, with a Do Not Send This button.
+* The assistant reads the live status (announcement, post-event and ticket emails, coming nights) and the person's own tasks, tickets and credits.
+* The DJ text under the event picture in emails is left-aligned.
 
 = 1.140.193 =
 * Each crew member has one working ticket per night for all their tasks, with its own code that never changes.
@@ -1924,6 +1938,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.194 =
+No settings change.
 
 = 1.140.193 =
 No settings change.
