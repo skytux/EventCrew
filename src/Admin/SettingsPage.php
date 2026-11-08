@@ -42,6 +42,7 @@ use EventCrew\Support\SecureUrl;
 use EventCrew\Support\Roles;
 use EventCrew\Support\Scheduler;
 use EventCrew\Support\SendWindow;
+use EventCrew\Support\SeveralTickets;
 use EventCrew\Support\SecondThoughts;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\SiteTexts;
@@ -115,6 +116,9 @@ final class SettingsPage
     /** The translation error kind from saving the role names and descriptions, '' when none. */
     private string $rolesError = '';
 
+    /** Waits the given number of seconds. */
+    private readonly \Closure $sleep;
+
     public function __construct(
         private readonly View $view,
         private readonly TelegramClient $telegram,
@@ -124,8 +128,13 @@ final class SettingsPage
         private readonly WelcomeSender $welcome,
         private readonly PersonRepository $people,
         private readonly CommandMenu $commandMenu,
-        private readonly ?LlmClient $llm = null
+        private readonly ?LlmClient $llm = null,
+        ?\Closure $sleep = null
     ) {
+        // Waits between webhook tries; the tests pass one that only records.
+        $this->sleep = $sleep ?? static function (int $seconds): void {
+            sleep($seconds);
+        };
     }
 
     public function render(): void
@@ -158,6 +167,7 @@ final class SettingsPage
                 'reputation_weights' => $this->reputationWeightRows(),
                 'tasks_per_credit' => $reputation->tasksPerCredit(),
                 'extra_task_credit' => ExtraTaskCredits::isOn(),
+                'several_tickets' => SeveralTickets::isOn(),
                 'min_rated_tasks' => $reputation->minRatedTasks(),
                 'reputation_half_life' => $reputation->halfLifeDays(),
                 'reputation_gate' => (bool) get_option(SignupService::GATE_OPTION, true),
@@ -691,6 +701,7 @@ final class SettingsPage
         update_option(ReputationSettings::TASKS_PER_CREDIT_OPTION, $tasksPerCredit);
 
         ExtraTaskCredits::save(isset($_POST['extra_task_credit']));
+        SeveralTickets::save(isset($_POST['several_tickets']));
 
         $minRatedTasks = isset($_POST['min_rated_tasks'])
             ? max(1, (int) $_POST['min_rated_tasks'])
@@ -2058,7 +2069,7 @@ final class SettingsPage
                 return $installed;
             }
 
-            sleep(min($wait, self::WEBHOOK_MAX_WAIT));
+            ($this->sleep)(min($wait, self::WEBHOOK_MAX_WAIT));
         }
     }
 

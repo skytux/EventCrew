@@ -12,6 +12,18 @@ if (! is_dir(dirname(__DIR__) . '/.patchwork-cache')) {
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
+// Load Patchwork now rather than at the first Monkey\setUp(). Brain Monkey
+// loads it lazily, and by then PHPUnit has read every test class: Patchwork
+// then lists all their methods (some 37,000) as "defined too early", and
+// every Functions\when() searches that list (Patchwork\hasMissed), about
+// 0.15 ms each, some 45 times per test. Loaded here, the list is the few
+// thousand callables of PHPUnit itself.
+require_once dirname(__DIR__) . '/vendor/antecedent/patchwork/Patchwork.php';
+
+// The common WordPress functions with their default test behaviour; after
+// Patchwork, so that a test can still redefine them.
+require_once __DIR__ . '/stubs/wp-functions.php';
+
 if (! defined('EVENTCREW_PLUGIN_DIR')) {
     define('EVENTCREW_PLUGIN_DIR', dirname(__DIR__) . '/');
 }

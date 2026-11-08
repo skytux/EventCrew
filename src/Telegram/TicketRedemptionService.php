@@ -14,6 +14,7 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageAiText;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\ReputationSettings;
+use EventCrew\Support\SeveralTickets;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketMail;
@@ -254,13 +255,15 @@ final class TicketRedemptionService
             return;
         }
 
-        if ('y' !== $step) {
+        if ('y' !== substr($step, 0, 1)) {
             $this->askCredit($callbackId, $person->id, $date, $chatId, $messageId, 'k' === $step);
 
             return;
         }
 
-        $result = $this->redeem($person->id, $date);
+        // y<N>: the person held N tickets for the night when asked, so a
+        // double-tap cannot buy two (a plain y, from before, is 0).
+        $result = $this->redeem($person->id, $date, 'self-service', (int) substr($step, 1));
 
         if (self::TICKET_READY !== $result['code']) {
             $this->telegram->answerCallbackQuery($callbackId, $this->noticeText($result['code']), true);
@@ -313,7 +316,8 @@ final class TicketRedemptionService
             return;
         }
 
-        $refusal = $this->refusal($personId, $date, $balance);
+        $held = $this->heldFor($personId, $date);
+        $refusal = $this->refusal($date, $balance, $held);
 
         if ('' !== $refusal) {
             $this->telegram->answerCallbackQuery($callbackId, $this->noticeText($refusal), true);
@@ -322,11 +326,13 @@ final class TicketRedemptionService
         }
 
         $this->telegram->answerCallbackQuery($callbackId);
+        // y<N> carries the tickets already held (redeem()); plain y is none.
+        $yes = 'tkt:' . $date . ':y' . ($held > 0 ? $held : '');
         $this->telegram->sendMessage(
             $chatId,
             self::creditQuestion($this->dateLabel($date), $balance),
             ['inline_keyboard' => [
-                [['text' => '✅ ' . __('Yes, use a credit', 'eventcrew'), 'callback_data' => 'tkt:' . $date . ':y']],
+                [['text' => '✅ ' . __('Yes, use a credit', 'eventcrew'), 'callback_data' => $yes]],
                 [['text' => '👍 ' . __('Keep my credit', 'eventcrew'), 'callback_data' => 'tkt:' . $date . ':k']],
             ]]
         );
@@ -358,12 +364,12 @@ final class TicketRedemptionService
     }
 
     /** redeem()'s refusal for this date now, or '' when a credit can be spent on it. */
-    private function refusal(int $personId, string $date, int $balance): string
+    private function refusal(string $date, int $balance, int $held): string
     {
         return match (true) {
             ! $this->isUpcomingEventDate($date) => self::NOT_ELIGIBLE,
             $this->freeEntry->isClosed($date) => self::ENTRY_CLOSED,
-            $this->alreadyRedeemed($personId, $date) => self::ALREADY_REDEEMED,
+            $held > 0 && ! SeveralTickets::isOn() => self::ALREADY_REDEEMED,
             $balance < 1 => self::NO_CREDIT,
             default => '',
         };
@@ -382,10 +388,13 @@ final class TicketRedemptionService
     /**
      * The one place a credit is spent, shared by the bot and the web profile.
      * Every guard is re-checked here so a stale button or page cannot overspend.
+     * $held is how many tickets for the night the person held when they asked
+     * (SeveralTickets): another ticket is only bought when that is still true,
+     * so a double-tap or two open pages cannot buy two.
      *
      * @return array{code: string, url: string}
      */
-    public function redeem(int $personId, string $date, string $note = 'self-service'): array
+    public function redeem(int $personId, string $date, string $note = 'self-service', int $held = 0): array
     {
         if (! $this->isUpcomingEventDate($date)) {
             return ['code' => self::NOT_ELIGIBLE, 'url' => ''];
@@ -395,7 +404,7 @@ final class TicketRedemptionService
             return ['code' => self::ENTRY_CLOSED, 'url' => ''];
         }
 
-        return $this->spend($personId, $date, $note);
+        return $this->spend($personId, $date, $note, SeveralTickets::isOn() ? $held : null);
     }
 
     /**
@@ -411,15 +420,20 @@ final class TicketRedemptionService
      */
     public function redeemAtDoor(int $personId, string $date): array
     {
-        return $this->spend($personId, $date, 'door');
+        return $this->spend($personId, $date, 'door', null);
     }
 
     /**
+     * $held null: one ticket per night. Otherwise another ticket, when the
+     * person still holds exactly $held for the night (redeem()).
+     *
      * @return array{code: string, url: string}
      */
-    private function spend(int $personId, string $date, string $note): array
+    private function spend(int $personId, string $date, string $note, ?int $held): array
     {
-        if ($this->alreadyRedeemed($personId, $date)) {
+        $count = $this->heldFor($personId, $date);
+
+        if (null === $held ? $count > 0 : $count !== $held) {
             return ['code' => self::ALREADY_REDEEMED, 'url' => ''];
         }
 
@@ -428,7 +442,7 @@ final class TicketRedemptionService
         }
 
         [$eventPostId, $eventLabel] = $this->eventContext($date);
-        $redemptionId = $this->redemptions->record($personId, $date, $eventPostId, $eventLabel, $note);
+        $redemptionId = $this->redemptions->record($personId, $date, $eventPostId, $eventLabel, $note, $count);
 
         // 0 means the write found a redemption already there - a second request
         // that got past the check above while this one was in flight. The
@@ -572,25 +586,42 @@ final class TicketRedemptionService
 
     /**
      * Upcoming event dates this person can still spend a credit on: has tasks,
-     * not closed to free entry, and not already redeemed by them. Keyed by date
-     * with a short label, soonest first.
+     * not closed to free entry, and not already redeemed by them (unless
+     * SeveralTickets is on). Keyed by date with a short label, soonest first.
      *
      * @return array<string, string> date (Y-m-d) => button label
      */
     public function eligibleDatesFor(int $personId): array
     {
-        $redeemed = $this->redeemedDates($personId);
-        $dates = [];
+        return array_map(
+            static fn (array $night): string => $night['label'],
+            $this->eligibleNights($personId)
+        );
+    }
+
+    /**
+     * eligibleDatesFor() with how many tickets the person already holds for
+     * each night, which the web page sends back with Get a ticket (redeem()).
+     *
+     * @return array<string, array{label: string, held: int}>
+     */
+    public function eligibleNights(int $personId): array
+    {
+        $held = $this->heldCounts($personId);
+        $several = SeveralTickets::isOn();
+        $nights = [];
 
         foreach ($this->tasks->upcomingDates() as $date) {
-            if ($this->freeEntry->isClosed($date) || isset($redeemed[$date])) {
+            $count = $held[$date] ?? 0;
+
+            if ($this->freeEntry->isClosed($date) || ($count > 0 && ! $several)) {
                 continue;
             }
 
-            $dates[$date] = $this->dateLabel($date);
+            $nights[$date] = ['label' => $this->dateLabel($date), 'held' => $count];
         }
 
-        return $dates;
+        return $nights;
     }
 
     /**
@@ -635,21 +666,22 @@ final class TicketRedemptionService
         return in_array($date, $this->tasks->upcomingDates(), true);
     }
 
-    private function alreadyRedeemed(int $personId, string $date): bool
+    /** How many live free-entry tickets the person holds for $date. */
+    private function heldFor(int $personId, string $date): int
     {
-        return isset($this->redeemedDates($personId)[$date]);
+        return $this->heldCounts($personId)[$date] ?? 0;
     }
 
     /**
-     * @return array<string, true> the dates this person already holds a redemption for
+     * @return array<string, int> date => how many live tickets this person holds for it
      */
-    private function redeemedDates(int $personId): array
+    private function heldCounts(int $personId): array
     {
         $dates = [];
 
         foreach ($this->redemptions->forPerson($personId) as $redemption) {
             if (null !== $redemption->redeemedFor) {
-                $dates[$redemption->redeemedFor] = true;
+                $dates[$redemption->redeemedFor] = ($dates[$redemption->redeemedFor] ?? 0) + 1;
             }
         }
 

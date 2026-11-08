@@ -456,11 +456,15 @@ final class HistoryRepository
                         '}'),
                     '{$source}'
                 FROM {$tasks} AS t WHERE t.deleted_at IS NOT NULL AND t.deleted_at >= %s",
-            // Check-ins: a person for crew and credit, a list for guests and buyers.
+            // Check-ins: a person for crew and credit (a further ticket's through
+            // its redemption), a list for guests and buyers.
             "INSERT INTO {$h} ({$columns})
                 SELECT c.checked_in_at, IF(c.checked_by IS NULL OR c.checked_by = 0, '', 'person'),
                     NULLIF(c.checked_by, 0), NULL, '', 'checked_in',
-                    IF(c.kind IN ('crew', 'credit'), c.ref_id, NULL), NULL, NULL, c.event_date,
+                    CASE WHEN c.kind IN ('crew', 'credit') THEN c.ref_id
+                        WHEN c.kind = 'credit_x'
+                            THEN (SELECT r.person_id FROM {$redemptions} AS r WHERE r.id = c.ref_id)
+                        ELSE NULL END, NULL, NULL, c.event_date,
                     CONCAT('{\"list\":\"', c.kind, '\"}'), '{$source}'
                 FROM {$checkins} AS c WHERE c.checked_in_at >= %s",
             // Credits given (not the zero-credit notes).

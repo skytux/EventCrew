@@ -1135,7 +1135,8 @@ final class TicketControllerTest extends TestCase
     public function testTheStateAnswersAtOnceForATicketAlreadyIn(): void
     {
         $slept = 0;
-        $this->wpdb->nextVars[] = '2026-07-20 11:58:00';
+        // The person's first ticket of the night is this one: their credit row.
+        array_push($this->wpdb->nextVars, '3', '2026-07-20 11:58:00');
 
         $response = $this->waitingController($slept)->state($this->stateRequest('2026-07-20'));
 
@@ -1151,7 +1152,7 @@ final class TicketControllerTest extends TestCase
     public function testTheStateAnswersTheMomentTheDoorMarksTheTicketIn(): void
     {
         $slept = 0;
-        array_push($this->wpdb->nextVars, null, null, null, '2026-07-20 12:00:03');
+        array_push($this->wpdb->nextVars, '3', null, null, null, '2026-07-20 12:00:03');
 
         $response = $this->waitingController($slept)->state($this->stateRequest('2026-07-20'));
 

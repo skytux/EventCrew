@@ -229,13 +229,15 @@ final class TicketController
         if (null !== $redemptionId) {
             $redemption = $this->redemptions->find($redemptionId);
 
-            return null === $redemption || null === $redemption->redeemedFor
-                ? null
-                : [
-                    'date' => $redemption->redeemedFor,
-                    'kinds' => CheckinRepository::CREDIT_TICKET_KINDS,
-                    'ref' => $redemption->personId,
-                ];
+            if (null === $redemption || null === $redemption->redeemedFor) {
+                return null;
+            }
+
+            // The first ticket of the night is the person's credit row, a
+            // further one its own (SeveralTickets).
+            [$kind, $ref] = $this->redemptions->checkinEntry($redemption);
+
+            return ['date' => $redemption->redeemedFor, 'kinds' => [$kind], 'ref' => $ref];
         }
 
         $transfer = $this->issuedTransfer($token);
@@ -685,6 +687,10 @@ final class TicketController
             return null;
         }
 
+        // The first ticket of the night is the person's credit row, a further
+        // one its own (SeveralTickets).
+        [$entryKind, $entryRef] = $this->redemptions->checkinEntry($redemption);
+
         return [
             'valid' => ! $redemption->isCancelled(),
             'name' => $person->name(),
@@ -696,12 +702,8 @@ final class TicketController
             'issued' => $redemption->redeemedAt,
             'language' => $person->language,
             'image' => SignupBoardView::eventImage($redemption->eventPostId),
-            'used' => $this->checkins->inAt(
-                $redemption->redeemedFor,
-                CheckinRepository::CREDIT_TICKET_KINDS,
-                $person->id
-            ),
-            'short' => ShortCode::forCredit($person->id, $redemption->redeemedFor),
+            'used' => $this->checkins->inAt($redemption->redeemedFor, [$entryKind], $entryRef),
+            'short' => ShortCode::forRow($entryKind, $entryRef, $redemption->redeemedFor),
         ] + $this->giveState($redemption, $token);
     }
 

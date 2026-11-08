@@ -24,6 +24,7 @@ $eventcrew_csrf = (string) $view['csrf'];
 $eventcrew_turnstile_site_key = (string) $view['turnstile_site_key'];
 /** @var array<string, string> $eventcrew_ticket_dates date => label a credit can be spent on */
 $eventcrew_ticket_dates = is_array($view['ticket_dates'] ?? null) ? $view['ticket_dates'] : [];
+$eventcrew_ticket_held = is_array($view['ticket_held'] ?? null) ? $view['ticket_held'] : [];
 $eventcrew_redeem_action = (string) ($view['redeem_action'] ?? '');
 /** @var array<string, array{label: string, dm: bool, email: bool}> $eventcrew_notify_matrix */
 $eventcrew_notify_matrix = is_array($view['notify_matrix'] ?? null) ? $view['notify_matrix'] : [];
@@ -422,6 +423,7 @@ if ($eventcrew_link_expired) {
         <section class="eventcrew-event eventcrew-me-card eventcrew-header-card">
             <header class="eventcrew-event-head eventcrew-identity">
                 <span class="eventcrew-identity-name">
+                    <span class="eventcrew-standing-icon" aria-hidden="true">👤</span>
                     <?php
                     printf(/* translators: %s: person's name */
                         esc_html__('Signed in as %s.', 'eventcrew'),
@@ -484,23 +486,25 @@ if ($eventcrew_link_expired) {
             </header>
             <?php if (null !== $eventcrew_standing) : ?>
                 <div class="eventcrew-card-body">
-                    <p class="eventcrew-standing">
-                        <span><?php echo esc_html($eventcrew_standing->ratedSummary()); ?></span>
-                        &middot;
-                        <?php
-                        // The same counts and words as the bot's My info (Owner
-                        // 2026-11-08), so one translation serves both.
-                        ?>
-                        <span><?php echo esc_html(sprintf(/* translators: %d: completed tasks */
+                    <?php
+                    /*
+                     * One line each with an icon (Owner 2026-11-08): the
+                     * standing, the completed tasks and the free-entry
+                     * credits. The same counts and words as the bot's My info
+                     * (Owner 2026-11-08), so one translation serves both.
+                     */
+                    ?>
+                    <ul class="eventcrew-standing">
+                        <li><span class="eventcrew-standing-icon" aria-hidden="true">🌟</span><span><?php echo esc_html($eventcrew_standing->ratedSummary()); ?></span></li>
+                        <li><span class="eventcrew-standing-icon" aria-hidden="true">✅</span><span><?php echo esc_html(sprintf(/* translators: %d: completed tasks */
                             __('Completed tasks: %d', 'eventcrew'),
                             $eventcrew_standing->completedCount
-                        )); ?></span>
-                        &middot;
-                        <span><?php echo esc_html(sprintf(/* translators: %d: free-entry credits */
+                        )); ?></span></li>
+                        <li><span class="eventcrew-standing-icon" aria-hidden="true">🎟️</span><span><?php echo esc_html(sprintf(/* translators: %d: free-entry credits */
                             __('Free-entry credits: %d', 'eventcrew'),
                             $eventcrew_standing->creditBalance
-                        ) . \EventCrew\Support\ExtraTaskCredits::pendingSuffix((int) ($eventcrew_pending ?? 0))); ?></span>
-                    </p>
+                        ) . \EventCrew\Support\ExtraTaskCredits::pendingSuffix((int) ($eventcrew_pending ?? 0))); ?></span></li>
+                    </ul>
                     <?php
                     /*
                      * The standing as one bar once rated, green, orange or
@@ -620,6 +624,9 @@ if ($eventcrew_link_expired) {
                                     <option value="<?php echo esc_attr((string) $eventcrew_date); ?>"><?php echo esc_html($eventcrew_date_label); ?></option>
                                 <?php endforeach; ?>
                             </select>
+                            <?php foreach ($eventcrew_ticket_dates as $eventcrew_date => $eventcrew_date_label) : ?>
+                                <input type="hidden" name="ticket_held[<?php echo esc_attr((string) $eventcrew_date); ?>]" value="<?php echo esc_attr((string) ($eventcrew_ticket_held[$eventcrew_date] ?? 0)); ?>">
+                            <?php endforeach; ?>
                             <button type="submit" class="wp-element-button"><?php esc_html_e('Get my ticket', 'eventcrew'); ?></button>
                         </form>
                     </div>

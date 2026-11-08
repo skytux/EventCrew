@@ -100,7 +100,19 @@ final class TicketList
             $date >= $today ? $upcoming[] = $item : $past[] = $item;
         }
 
-        foreach ($this->redemptions->forPerson($personId) as $redemption) {
+        $redemptions = $this->redemptions->forPerson($personId);
+        // The first (lowest) live ticket of each night is checked in as the
+        // person's credit row; each further one (SeveralTickets) on its own.
+        $firstOf = [];
+
+        foreach ($redemptions as $redemption) {
+            if (null !== $redemption->redeemedFor) {
+                $night = $redemption->redeemedFor;
+                $firstOf[$night] = min($firstOf[$night] ?? PHP_INT_MAX, $redemption->id);
+            }
+        }
+
+        foreach ($redemptions as $redemption) {
             if (null === $redemption->redeemedFor) {
                 continue;
             }
@@ -123,6 +135,15 @@ final class TicketList
                 'kinds' => CheckinRepository::CREDIT_TICKET_KINDS,
                 'redemption_id' => $redemption->id,
             ];
+
+            if ($firstOf[$redemption->redeemedFor] !== $redemption->id) {
+                $times = $this->checkins->checkedInAt(
+                    $redemption->redeemedFor,
+                    CheckinRepository::KIND_CREDIT_EXTRA,
+                    [$redemption->id]
+                );
+                $item['used'] = [] === $times ? null : (string) reset($times);
+            }
 
             $redemption->redeemedFor >= $today ? $upcoming[] = $item : $past[] = $item;
         }

@@ -88,98 +88,19 @@ abstract class TestCase extends PHPUnitTestCase
     }
 
     /**
-     * The handful of WordPress functions that almost every unit touches.
-     * Anything a single test cares about asserting on should be re-stubbed
-     * there with an explicit expectation instead.
+     * The handful of WordPress functions that almost every unit touches are
+     * plain functions with their default behaviour in stubs/wp-functions.php
+     * (stubbing them here for every test cost more than most tests). Only the
+     * two that Brain Monkey defines itself are stubbed here. Anything a single
+     * test cares about asserting on should be re-stubbed there with an
+     * explicit expectation instead.
      */
     private function stubCommonFunctions(): void
     {
-        // English as written, unless the code under test is inside a Finnish
-        // Language::run(); then the shipped .mo answers (see FinnishCatalog).
-        $translate = static fn (string $text): string => FinnishCatalog::translate($text);
-        Functions\when('__')->alias($translate);
-        Functions\when('_x')->alias(
-            static fn (string $text, string $context): string => FinnishCatalog::translateInContext($text, $context)
-        );
-        // Returns the singular or plural template by count, the way WordPress
-        // does; sprintf in the caller still fills in the number.
-        Functions\when('_n')->alias(
-            static fn (string $single, string $plural, int $number): string => FinnishCatalog::translatePlural(
-                $single,
-                $plural,
-                $number
-            )
-        );
-        Functions\when('esc_html__')->alias($translate);
-        Functions\when('esc_attr__')->alias($translate);
-        Functions\when('sanitize_key')->alias(
-            static fn (string $key): string => strtolower(preg_replace('/[^a-z0-9_\-]/i', '', $key) ?? '')
-        );
-        Functions\when('sanitize_text_field')->alias(
-            static fn (string $value): string => trim(strip_tags($value))
-        );
-        // 'timestamp' answers with a real integer, not gmdate('timestamp'):
-        // SendWindow asks for one, and a garbage value would read as midnight
-        // and hold every scheduled notification in every test.
-        Functions\when('current_time')->alias(
-            static function (string $format): string|int {
-                $at = (int) strtotime('2026-07-20 12:00:00');
-
-                if ('mysql' === $format) {
-                    return '2026-07-20 12:00:00';
-                }
-
-                return 'timestamp' === $format ? $at : gmdate($format, $at);
-            }
-        );
         // Harmless by default: several repositories and services fire actions
         // (e.g. eventcrew/board_stale) that most tests do not care about. A
         // test that does care re-stubs this with a capturing alias.
         Functions\when('do_action')->justReturn(null);
-        // Language reads the site's languages (SiteLanguages) from an option,
-        // so nearly every unit reads one. Nothing stored: the defaults. A test
-        // with options of its own re-stubs this.
-        Functions\when('get_option')->alias(static fn (string $name, mixed $default = false): mixed => $default);
-        // The webhook claim writes its option in SQL and then drops the cached
-        // copy; there is no cache in the tests to drop.
-        Functions\when('wp_cache_delete')->justReturn(true);
-
-        $this->stubEmailFunctions();
-    }
-
-    /**
-     * What rendering an email touches. Every notification now goes through the
-     * HTML template, so any unit that sends one reaches these whether or not it
-     * is what the test is about. The defaults describe a plain site - no custom
-     * logo, no Site Icon, no edited template - which lands on the built-in
-     * design; a test about the template itself re-stubs them.
-     */
-    private function stubEmailFunctions(): void
-    {
-        Functions\stubEscapeFunctions();
-
-        Functions\when('sanitize_hex_color')->returnArg(1);
-        Functions\when('get_bloginfo')->justReturn('Test Site');
-        Functions\when('home_url')->alias(
-            static fn (string $path = ''): string => 'https://site.test' . $path
-        );
-        Functions\when('get_theme_mod')->justReturn(false);
-        Functions\when('has_site_icon')->justReturn(false);
-        Functions\when('get_site_icon_url')->justReturn('');
-        Functions\when('wp_get_attachment_image_src')->justReturn(false);
-        Functions\when('wp_get_global_settings')->justReturn([]);
-        Functions\when('do_blocks')->returnArg(1);
-        Functions\when('get_post')->justReturn(null);
-        Functions\when('get_post_type')->justReturn(false);
-        // EventMesh is off unless a test fakes its events (EventTimes reads them).
-        Functions\when('post_type_exists')->justReturn(false);
-        Functions\when('wp_insert_post')->justReturn(123);
-        Functions\when('update_option')->justReturn(true);
         Functions\when('is_wp_error')->justReturn(false);
-        // An import asks WP-Cron to email the tickets (TicketMail::schedule).
-        Functions\when('wp_next_scheduled')->justReturn(false);
-        Functions\when('wp_schedule_single_event')->justReturn(true);
-        // Admin::notice() keeps each notice per administrator.
-        Functions\when('get_current_user_id')->justReturn(1);
     }
 }

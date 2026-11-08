@@ -122,7 +122,11 @@ final class TicketTransferService
             return self::NOT_GIVABLE;
         }
 
-        if (null !== $this->checkins->inAt($date, CheckinRepository::CREDIT_TICKET_KINDS, $giverPersonId)) {
+        // This ticket's own check-in: a person may hold several for a night
+        // (SeveralTickets) and give away one that was not used.
+        [$entryKind, $entryRef] = $this->redemptions->checkinEntry($redemption);
+
+        if (null !== $this->checkins->inAt($date, [$entryKind], $entryRef)) {
             return self::NOT_GIVABLE;
         }
 

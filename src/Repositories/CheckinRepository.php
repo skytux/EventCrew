@@ -22,6 +22,13 @@ final class CheckinRepository
     public const KIND_BUYER = 'buyer';
     /** A ticket someone gave away (TicketTransfer): ref_id is the transfer id. */
     public const KIND_TRANSFER = 'transfer';
+    /**
+     * A person's second or later free-entry ticket for one night
+     * (SeveralTickets): ref_id is the redemption id, so each of their
+     * tickets is checked in on its own. Their first ticket of the night
+     * stays KIND_CREDIT with the person id (creditEntry()).
+     */
+    public const KIND_CREDIT_EXTRA = 'credit_x';
 
     /** The kinds a task's ticket is marked in as, for inAt(), in order. */
     public const TASK_TICKET_KINDS = [self::KIND_CREW];
@@ -42,7 +49,56 @@ final class CheckinRepository
      */
     public static function kinds(): array
     {
-        return [self::KIND_CREW, self::KIND_CREDIT, self::KIND_GUEST, self::KIND_BUYER, self::KIND_TRANSFER];
+        return [
+            self::KIND_CREW,
+            self::KIND_CREDIT,
+            self::KIND_GUEST,
+            self::KIND_BUYER,
+            self::KIND_TRANSFER,
+            self::KIND_CREDIT_EXTRA,
+        ];
+    }
+
+    /**
+     * The door entry [kind, ref_id] a free-entry ticket is checked in as.
+     * The person's first live ticket of the night ($firstLiveId, 0 when
+     * they hold none) is their credit row (KIND_CREDIT, the person id), as
+     * it always was; every other ticket of theirs that night is its own
+     * row (KIND_CREDIT_EXTRA, the redemption id). When the first ticket
+     * stops being live, RedemptionRepository::reslotCheckins() moves the
+     * rows so this stays true.
+     *
+     * @return array{0: string, 1: int}
+     */
+    public static function creditEntry(int $redemptionId, int $personId, int $firstLiveId): array
+    {
+        return 0 === $firstLiveId || $firstLiveId === $redemptionId
+            ? [self::KIND_CREDIT, $personId]
+            : [self::KIND_CREDIT_EXTRA, $redemptionId];
+    }
+
+    /**
+     * Moves a check-in to another entry of the same night, keeping its time
+     * and plus-ones. Nothing happens when there is no row to move or the
+     * target already has one. Returns true when a row moved.
+     */
+    public function move(string $date, string $fromKind, int $fromRef, string $toKind, int $toRef): bool
+    {
+        global $wpdb;
+
+        $moved = $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE IGNORE {$this->table()} SET kind = %s, ref_id = %d
+                WHERE event_date = %s AND kind = %s AND ref_id = %d",
+                $toKind,
+                $toRef,
+                $date,
+                $fromKind,
+                $fromRef
+            )
+        );
+
+        return is_int($moved) && $moved > 0;
     }
 
     /**
@@ -267,6 +323,9 @@ final class CheckinRepository
 
         if (self::KIND_CREW === $kind || self::KIND_CREDIT === $kind) {
             $entry['person_id'] = $refId;
+        } elseif (self::KIND_CREDIT_EXTRA === $kind) {
+            // The history finds the person through the ticket.
+            $entry['redemption_id'] = $refId;
         } elseif (self::KIND_TRANSFER === $kind) {
             $entry['transfer_id'] = $refId;
         }

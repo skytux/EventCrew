@@ -859,7 +859,11 @@
 
 /* The collapsible disclosures. */
 /* Part of the header card, so it sits tight under the name. */
-.eventcrew-signup .eventcrew-standing { margin: 0 0 .2em; font-weight: 600; }
+.eventcrew-signup .eventcrew-standing { margin: 0 0 .2em; padding: 0; list-style: none; font-weight: 600; }
+/* One item a line, a fixed-width icon in front so the texts line up. */
+.eventcrew-signup .eventcrew-standing li { display: flex; align-items: baseline; gap: .45em; margin: 0 0 .15em; padding: 0; }
+.eventcrew-signup .eventcrew-standing li::before { content: none; }
+.eventcrew-signup .eventcrew-standing-icon { flex: none; display: inline-block; width: 1.3em; text-align: center; font-weight: normal; }
 /*
  * The standing bar (StandingBar): one fill on a track, green, orange or red
  * by the zone (the same colours as the email; mid tones that show on a light

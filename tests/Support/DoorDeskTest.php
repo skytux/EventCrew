@@ -1441,6 +1441,56 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame('credit:8', $scan['key']);
     }
 
+    /**
+     * Lou 2026-11-08 (SeveralTickets): two free-entry tickets of one person
+     * for one night are two rows, each scanned and checked in on its own.
+     */
+    public function testTwoTicketsOfOnePersonAreCheckedInOneByOne(): void
+    {
+        $first = ['id' => 44, 'person_id' => 9, 'redeemed_for' => self::NIGHT];
+        $second = ['id' => 45, 'person_id' => 9, 'redeemed_for' => self::NIGHT];
+
+        // The second ticket's QR code finds its own row.
+        $this->wpdb->nextRows[] = $second;               // redemptions->find
+        $this->wpdb->nextRows[] = $this->personRow(9);   // the name
+        $this->wpdb->nextResults[] = [];                 // tonight's tasks: none
+        $this->wpdb->nextResults[] = [$first, $second];  // tonight's redemptions, oldest first
+        $this->wpdb->nextRows[] = $this->personRow(9);
+        $this->wpdb->nextRows[] = $this->personRow(9);
+
+        $scan = $this->desk()->scan(self::NIGHT, SignedLink::sign('credit_ticket', 45));
+
+        self::assertSame(DoorDesk::SCAN_OK, $scan['code']);
+        self::assertSame('credit_x:45', $scan['key']);
+
+        // Checking it in writes its own row, not the person's credit row.
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [$first, $second];
+        $this->wpdb->nextRows[] = $this->personRow(9);
+        $this->wpdb->nextRows[] = $this->personRow(9);
+        $this->wpdb->nextQueryResults[] = 1;
+
+        self::assertTrue($this->desk()->mark(self::NIGHT, 1, CheckinRepository::KIND_CREDIT_EXTRA, 45, true, 0));
+        self::assertStringContainsString("'credit_x', 45, 0,", $this->wpdb->lastQuery());
+
+        // The first ticket is still the credit row.
+        $this->wpdb->nextRows[] = $first;
+        $this->wpdb->nextRows[] = $this->personRow(9);
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [$first, $second];
+        $this->wpdb->nextRows[] = $this->personRow(9);
+        $this->wpdb->nextRows[] = $this->personRow(9);
+
+        self::assertSame('credit:9', $this->desk()->scan(self::NIGHT, SignedLink::sign('credit_ticket', 44))['key']);
+    }
+
+    public function testACheckinEntryIsTheFirstTicketsCreditRowOrTheTicketsOwn(): void
+    {
+        self::assertSame(['credit', 9], CheckinRepository::creditEntry(44, 9, 44));
+        self::assertSame(['credit', 9], CheckinRepository::creditEntry(44, 9, 0));
+        self::assertSame(['credit_x', 45], CheckinRepository::creditEntry(45, 9, 44));
+    }
+
     public function testSomeOtherQrCodeIsNotOneOfOurs(): void
     {
         $desk = $this->desk();

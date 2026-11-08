@@ -56,6 +56,15 @@ final class ShortCode
         return self::make('short_code|credit|' . $date, $personId);
     }
 
+    /**
+     * A person's second or later free-entry ticket on one night
+     * (SeveralTickets): its own door row, by redemption id.
+     */
+    public static function forExtraCredit(int $redemptionId): string
+    {
+        return self::make('short_code|credit_x', $redemptionId);
+    }
+
     /** A ticket someone gave away: the receiver's door row (TicketTransfer id). */
     public static function forTransfer(int $transferId): string
     {
@@ -69,6 +78,7 @@ final class ShortCode
             CheckinRepository::KIND_BUYER => self::forBuyer($ref),
             CheckinRepository::KIND_GUEST => self::forGuest($ref),
             CheckinRepository::KIND_CREDIT => self::forCredit($ref, $date),
+            CheckinRepository::KIND_CREDIT_EXTRA => self::forExtraCredit($ref),
             CheckinRepository::KIND_TRANSFER => self::forTransfer($ref),
             default => self::forPerson($ref, $date),
         };

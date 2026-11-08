@@ -17,6 +17,7 @@ use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\SeveralTickets;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
 use EventCrew\Support\TicketTransferService;
@@ -456,6 +457,98 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         self::assertStringContainsString('This uses 1 of your 2 free-entry credits.', (string) $ask['text']);
         $data = array_column(array_merge(...$ask['reply_markup']['inline_keyboard']), 'callback_data');
         self::assertSame(['tkt:2026-08-01:y', 'tkt:2026-08-01:k'], $data);
+    }
+
+    /** One live ticket of person 7 for 2026-08-01, as forPerson() reads it. */
+    private const HELD_TICKET = [
+        'id' => 40, 'person_id' => 7, 'redeemed_for' => '2026-08-01', 'redeemed_at' => '2026-07-20 10:00:00',
+    ];
+
+    /** Lou 2026-11-08: several free-entry tickets per night, on by default. */
+    public function testASecondTicketForTheSameNightIsSpentWhileSeveralTicketsIsOn(): void
+    {
+        $this->wpdb->nextCols[] = ['2026-08-01'];          // upcomingDates (eligible)
+        $this->wpdb->nextResults[] = [self::HELD_TICKET];  // forPerson: one ticket held
+        $this->queueBalanceAndEvent(2);
+        $this->wpdb->nextQueryResults[] = 1;
+
+        $result = $this->service()->redeem(7, '2026-08-01', 'web', 1);
+
+        self::assertSame(TicketRedemptionService::TICKET_READY, $result['code']);
+        $insert = (string) current(array_filter($this->wpdb->queries, static fn (string $q): bool => str_contains($q, 'INSERT')));
+        // The guard is the count the person saw, so a double-tap cannot buy two.
+        self::assertStringContainsString('SELECT COUNT(*)', $insert);
+        self::assertStringContainsString(") = 1", $insert);
+        self::assertStringNotContainsString('NOT EXISTS', $insert);
+    }
+
+    public function testASecondTicketIsRefusedWhileSeveralTicketsIsOff(): void
+    {
+        $this->options[SeveralTickets::OPTION] = '0';
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [self::HELD_TICKET];
+
+        $result = $this->service()->redeem(7, '2026-08-01', 'web', 1);
+
+        self::assertSame(TicketRedemptionService::ALREADY_REDEEMED, $result['code']);
+        self::assertStringNotContainsString('INSERT', implode("\n", $this->wpdb->queries));
+    }
+
+    /** A double-tap, or a page opened before the first ticket: the count is stale. */
+    public function testAStaleTicketCountBuysNothing(): void
+    {
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [self::HELD_TICKET];
+
+        $result = $this->service()->redeem(7, '2026-08-01', 'web', 0);
+
+        self::assertSame(TicketRedemptionService::ALREADY_REDEEMED, $result['code']);
+        self::assertStringNotContainsString('INSERT', implode("\n", $this->wpdb->queries));
+    }
+
+    public function testTheSettingIsOnWhenNeverSaved(): void
+    {
+        unset($this->options[SeveralTickets::OPTION]);
+        self::assertTrue(SeveralTickets::isOn());
+
+        SeveralTickets::save(false);
+        self::assertSame('0', $this->options[SeveralTickets::OPTION]);
+        self::assertFalse(SeveralTickets::isOn());
+
+        SeveralTickets::save(true);
+        self::assertTrue(SeveralTickets::isOn());
+    }
+
+    /** The date pickers (bot, web) keep a night with a ticket only while the setting is on. */
+    public function testThePickersKeepANightWithATicketOnlyWhileSeveralTicketsIsOn(): void
+    {
+        $this->wpdb->nextResults[] = [self::HELD_TICKET];  // forPerson
+        $this->wpdb->nextCols[] = ['2026-08-01'];          // upcomingDates
+
+        $nights = $this->service()->eligibleNights(7);
+
+        self::assertSame(['2026-08-01'], array_keys($nights));
+        self::assertSame(1, $nights['2026-08-01']['held']);
+
+        $this->options[SeveralTickets::OPTION] = '0';
+        $this->wpdb->nextResults[] = [self::HELD_TICKET];
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+
+        self::assertSame([], $this->service()->eligibleDatesFor(7));
+    }
+
+    /** The bot's Yes button carries the tickets held, and the tap sends it back. */
+    public function testTheBotQuestionCarriesTheTicketsHeldForTheNight(): void
+    {
+        $this->queueQuestion(4);
+        // forPerson: the ticket already held, in place of none.
+        $this->wpdb->nextResults[1] = [self::HELD_TICKET];
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'tkt:2026-08-01']);
+
+        $ask = $this->lastCallTo('sendMessage');
+        $data = array_column(array_merge(...$ask['reply_markup']['inline_keyboard']), 'callback_data');
+        self::assertSame(['tkt:2026-08-01:y1', 'tkt:2026-08-01:k'], $data);
     }
 
     public function testTheQuestionSaysWhenItIsTheLastCredit(): void

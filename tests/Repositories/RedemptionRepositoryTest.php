@@ -127,6 +127,47 @@ final class RedemptionRepositoryTest extends TestCase
         self::assertStringContainsString('WHERE cancelled_at IS NULL', $this->wpdb->lastQuery());
     }
 
+    /**
+     * SeveralTickets: when a person's first ticket of the night is cancelled
+     * and they hold another, that one takes over the credit door row.
+     */
+    public function testCancellingTheFirstOfTwoTicketsMovesTheDoorRows(): void
+    {
+        $this->wpdb->nextQueryResults[] = 1;   // the cancel
+        $this->wpdb->nextRows[] = ['person_id' => 9, 'redeemed_for' => '2026-08-01', 'first_live' => 45];
+
+        $this->repository()->cancel(44);
+
+        $moves = array_values(array_filter(
+            $this->wpdb->queries,
+            static fn (string $q): bool => str_contains($q, 'UPDATE IGNORE')
+        ));
+        self::assertCount(2, $moves);
+        self::assertStringContainsString("SET kind = 'credit_x', ref_id = 44", $moves[0]);
+        self::assertStringContainsString("kind = 'credit' AND ref_id = 9", $moves[0]);
+        self::assertStringContainsString("SET kind = 'credit', ref_id = 9", $moves[1]);
+        self::assertStringContainsString("kind = 'credit_x' AND ref_id = 45", $moves[1]);
+    }
+
+    public function testCancellingALaterTicketMovesNothing(): void
+    {
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = ['person_id' => 9, 'redeemed_for' => '2026-08-01', 'first_live' => 44];
+
+        $this->repository()->cancel(45);
+
+        self::assertStringNotContainsString('UPDATE IGNORE', implode("\n", $this->wpdb->queries));
+    }
+
+    public function testAHeldCountGuardsTheInsertByCount(): void
+    {
+        $this->wpdb->nextQueryResults[] = 0;
+
+        self::assertSame(0, $this->repository()->record(9, '2026-08-01', null, '', '', 2));
+        self::assertStringContainsString('SELECT COUNT(*)', $this->wpdb->lastQuery());
+        self::assertStringContainsString(') = 2', $this->wpdb->lastQuery());
+    }
+
     public function testDeleteForPersonRemovesEveryRow(): void
     {
         $this->repository()->deleteForPerson(9);

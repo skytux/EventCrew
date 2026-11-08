@@ -616,7 +616,8 @@ final class SignupControllerTest extends TestCase
         $html = $this->controller()->renderShortcode();
 
         self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card">.*?</section>~s', $html, $card));
-        self::assertStringNotContainsString('🎟', $card[0]);
+        // The 🎟️ in front of the credits line is an icon, not the old button.
+        self::assertDoesNotMatchRegularExpression('~<a[^>]*>\s*🎟~u', $card[0]);
         self::assertStringNotContainsString('eventcrew-my-tickets-btn', $html);
         self::assertStringNotContainsString('wp-element-button', $card[0]);
         self::assertMatchesRegularExpression('~<div class="eventcrew-card-body eventcrew-header-guide">\s*<p>\s*<a class="eventcrew-textlink"[^>]*>[^<]*Crew guide~', $card[0]);
@@ -652,6 +653,10 @@ final class SignupControllerTest extends TestCase
         self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card">.*?</section>~s', $html, $card));
         self::assertStringContainsString('Completed tasks: 0', $card[0]);
         self::assertStringContainsString('Free-entry credits: 0', $card[0]);
+        // One line each with an icon (Owner 2026-11-08), no middot run.
+        self::assertMatchesRegularExpression('~<ul class="eventcrew-standing">\s*<li><span class="eventcrew-standing-icon" aria-hidden="true">🌟</span>.*?</li>\s*<li><span class="eventcrew-standing-icon" aria-hidden="true">✅</span><span>Completed tasks: 0</span></li>\s*<li><span class="eventcrew-standing-icon" aria-hidden="true">🎟️</span><span>Free-entry credits: 0</span></li>\s*</ul>~s', $card[0]);
+        self::assertStringContainsString('<span class="eventcrew-standing-icon" aria-hidden="true">👤</span>', $card[0]);
+        self::assertStringNotContainsString('&middot;', $card[0]);
         self::assertStringNotContainsString('0 credits', $html);
         self::assertStringContainsString('<h3 class="eventcrew-event-title">Tasks</h3>', $html);
         self::assertStringNotContainsString('My tasks', $html);

@@ -13417,3 +13417,15 @@ msgstr "webb"
 
 msgid "wp-admin"
 msgstr "wp-admin"
+
+#: templates/admin/settings.php
+msgid "Free-entry tickets"
+msgstr "Fribiljetter"
+
+#: templates/admin/settings.php
+msgid "Allow several free-entry tickets per night"
+msgstr "Tillåt flera fribiljetter per kväll"
+
+#: templates/admin/settings.php
+msgid "When on, a member can spend more credits on a night they already have a free-entry ticket for: one credit for each ticket. When off, one free-entry ticket per night."
+msgstr "När på kan en medlem använda fler fribiljetter på en kväll där hen redan har en biljett: en fribiljett för varje biljett. När av, en fribiljett per kväll."

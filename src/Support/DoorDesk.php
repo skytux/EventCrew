@@ -780,7 +780,25 @@ final class DoorDesk
             return self::scanAnswer(self::SCAN_OTHER_NIGHT, '', $name, (string) $redemption->redeemedFor);
         }
 
-        return $this->scanPerson($date, $redemption->personId, $name, CheckinRepository::KIND_CREDIT);
+        // A second or later ticket of the night has its own row
+        // (SeveralTickets); the first is the person's credit row.
+        $credit = $this->entrants($date)[1];
+
+        $slots = [
+            [CheckinRepository::KIND_CREDIT_EXTRA, $redemption->id],
+            [CheckinRepository::KIND_CREDIT, $redemption->personId],
+        ];
+
+        foreach ($slots as [$kind, $ref]) {
+            foreach ($credit as $row) {
+                if ($row['kind'] === $kind && $row['ref'] === $ref) {
+                    return $this->inScanWindow($date)
+                        ?? self::scanAnswer(self::SCAN_OK, $row['kind'] . ':' . $row['ref'], $row['name'], $date);
+                }
+            }
+        }
+
+        return self::scanAnswer(self::SCAN_NOT_ON_LIST, '', $name, $date);
     }
 
     /**
@@ -1233,7 +1251,10 @@ final class DoorDesk
         }
 
         foreach ($credit as $row) {
-            $onList[$row['ref']] ??= [CheckinRepository::KIND_CREDIT, __('Free-entry credit', 'eventcrew')];
+            // A second ticket's row is keyed by the ticket, not the person.
+            if (CheckinRepository::KIND_CREDIT === $row['kind']) {
+                $onList[$row['ref']] ??= [CheckinRepository::KIND_CREDIT, __('Free-entry credit', 'eventcrew')];
+            }
         }
 
         $matches = [];
@@ -1510,17 +1531,25 @@ final class DoorDesk
         }
 
         $credit = [];
+        $held = [];
 
         // Someone who works tonight and also holds a free-entry ticket has
         // two rows: they may give the ticket to someone else (Owner 2026-11-07).
+        // Each further ticket of theirs (SeveralTickets) is a row of its own,
+        // checked in on its own; forDate() is oldest first, so the first
+        // ticket is the credit row (CheckinRepository::creditEntry()).
         foreach ($this->redemptions->forDate($date) as $redemption) {
+            $held[$redemption->personId] = ($held[$redemption->personId] ?? 0) + 1;
+            $first = 1 === $held[$redemption->personId];
             $credit[] = $this->row(
-                CheckinRepository::KIND_CREDIT,
-                $redemption->personId,
+                $first ? CheckinRepository::KIND_CREDIT : CheckinRepository::KIND_CREDIT_EXTRA,
+                $first ? $redemption->personId : $redemption->id,
                 $this->nameOf($redemption->personId),
-                __('Credit', 'eventcrew'),
+                $first ? __('Credit', 'eventcrew') : __('Credit', 'eventcrew') . ' #' . $held[$redemption->personId],
                 null,
-                ShortCode::forCredit($redemption->personId, $date)
+                $first
+                    ? ShortCode::forCredit($redemption->personId, $date)
+                    : ShortCode::forExtraCredit($redemption->id)
             );
         }
 
@@ -1605,7 +1634,12 @@ final class DoorDesk
         ?int $max = null,
         string $short = ''
     ): array {
-        $alone = [CheckinRepository::KIND_CREW, CheckinRepository::KIND_CREDIT, CheckinRepository::KIND_TRANSFER];
+        $alone = [
+            CheckinRepository::KIND_CREW,
+            CheckinRepository::KIND_CREDIT,
+            CheckinRepository::KIND_CREDIT_EXTRA,
+            CheckinRepository::KIND_TRANSFER,
+        ];
         $max ??= in_array($kind, $alone, true) ? 0 : CheckinRepository::MAX_PLUS_ONES;
 
         return [

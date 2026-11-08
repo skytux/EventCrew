@@ -208,9 +208,16 @@ final class SettingsPageTest extends TelegramTestCase
             $this->boardService(),
             $this->welcomeSender(),
             new \EventCrew\Repositories\PersonRepository(),
-            $this->commandMenu()
+            $this->commandMenu(),
+            null,
+            function (int $seconds): void {
+                $this->slept[] = $seconds;
+            }
         );
     }
+
+    /** @var array<int, int> The waits between webhook tries, instead of sleeping. */
+    private array $slept = [];
 
     public function testInstallOnUpdateDoesNothingWhenAlreadyCurrent(): void
     {
@@ -297,6 +304,8 @@ final class SettingsPageTest extends TelegramTestCase
 
         self::assertTrue($result['ok']);
         self::assertSame(['deleteWebhook', 'setWebhook', 'setWebhook'], $this->webhookCalls());
+        // Waited as long as Telegram asked before trying again.
+        self::assertSame([1], $this->slept);
     }
 
     public function testInstallOnUpdateStampsTheVersionWhenTheInstallWorks(): void
@@ -640,6 +649,22 @@ final class SettingsPageTest extends TelegramTestCase
         $template = (string) file_get_contents(dirname(__DIR__, 2) . '/templates/admin/settings.php');
         self::assertStringContainsString('name="extra_task_credit"', $template);
         self::assertStringContainsString('Credit for extra tasks on the same night', $template);
+    }
+
+    public function testTheSeveralTicketsSwitchSavesAndIsOnByDefault(): void
+    {
+        self::assertTrue(\EventCrew\Support\SeveralTickets::isOn());
+
+        $this->saveUntil([], \EventCrew\Support\SeveralTickets::OPTION);
+        self::assertSame('0', $this->options[\EventCrew\Support\SeveralTickets::OPTION]);
+        self::assertFalse(\EventCrew\Support\SeveralTickets::isOn());
+
+        $this->saveUntil(['several_tickets' => '1'], \EventCrew\Support\SeveralTickets::OPTION);
+        self::assertSame('1', $this->options[\EventCrew\Support\SeveralTickets::OPTION]);
+
+        $template = (string) file_get_contents(dirname(__DIR__, 2) . '/templates/admin/settings.php');
+        self::assertStringContainsString('name="several_tickets"', $template);
+        self::assertStringContainsString('Allow several free-entry tickets per night', $template);
     }
 
     public function testTheTelegramSignInSwitchSaves(): void

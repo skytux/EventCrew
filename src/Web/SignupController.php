@@ -1263,7 +1263,12 @@ final class SignupController
 
         if (self::REDEEM_ACTION === $action) {
             $date = isset($_POST['ticket_date']) ? sanitize_text_field(wp_unslash($_POST['ticket_date'])) : '';
-            $result = $this->tickets->redeem($person->id, $date, 'web');
+            // The tickets the page saw the person holding for each night.
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- read through absint below.
+            $held = isset($_POST['ticket_held']) && is_array($_POST['ticket_held'])
+                ? wp_unslash($_POST['ticket_held'])
+                : [];
+            $result = $this->tickets->redeem($person->id, $date, 'web', absint($held[$date] ?? 0));
 
             // On an AJAX call the page opens the returned ticket link itself; a
             // no-JS fallback lands straight on the ticket, or back with a notice.

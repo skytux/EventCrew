@@ -1,3 +1,19 @@
 {
-    "cache-path": ".patchwork-cache"
+    "cache-path": ".patchwork-cache",
+    "blacklist": [
+        "src/",
+        "tests/",
+        "vendor/composer/",
+        "vendor/hamcrest/",
+        "vendor/mockery/",
+        "vendor/myclabs/",
+        "vendor/nikic/",
+        "vendor/phar-io/",
+        "vendor/phpunit/",
+        "vendor/sebastian/",
+        "vendor/theseer/"
+    ],
+    "whitelist": [
+        "tests/stubs/"
+    ]
 }

@@ -80,9 +80,10 @@ final class SignupBoardView
 
         // A person with a credit to spend is offered the events they can spend
         // it on, so the profile can redeem a free-entry ticket without the bot.
-        $ticketDates = null !== $standing && $standing->creditBalance >= 1
-            ? $this->tickets->eligibleDatesFor($person->id)
+        $ticketNights = null !== $standing && $standing->creditBalance >= 1
+            ? $this->tickets->eligibleNights($person->id)
             : [];
+        $ticketDates = array_map(static fn (array $night): string => $night['label'], $ticketNights);
 
         // Paged inside the array below, so the queries keep the order they
         // had before paging (the tests' scripted database relies on it).
@@ -102,6 +103,9 @@ final class SignupBoardView
             'telegram_group_link' => BoardService::groupLink(),
             'turnstile_site_key' => $this->turnstile->siteKey(),
             'ticket_dates' => $ticketDates,
+            // How many tickets the person holds for each of those nights,
+            // sent back with Get my ticket (TicketRedemptionService::redeem()).
+            'ticket_held' => array_map(static fn (array $night): int => $night['held'], $ticketNights),
             'notify_matrix' => null === $person ? [] : (new NotificationPreferences())->matrix($person),
             'my_tickets' => null === $person
                 ? ['upcoming' => [], 'past' => []]

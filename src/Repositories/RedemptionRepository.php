@@ -73,7 +73,8 @@ final class RedemptionRepository
         string $date,
         ?int $eventPostId = null,
         string $eventLabel = '',
-        string $note = ''
+        string $note = '',
+        int $held = 0
     ): int {
         global $wpdb;
 
@@ -92,18 +93,34 @@ final class RedemptionRepository
         $arguments[] = $personId;
         $arguments[] = $date;
 
+        // With several tickets per night (SeveralTickets) the guard is the
+        // number of live tickets the person held when they asked: a
+        // double-tap finds one more and is refused, a deliberate second
+        // ticket names the count it saw.
+        if ($held > 0) {
+            $arguments[] = $held;
+            $guard = "WHERE (
+                     SELECT COUNT(*) FROM (
+                         SELECT person_id, redeemed_for FROM {$this->table()} WHERE cancelled_at IS NULL
+                     ) AS existing
+                     WHERE existing.person_id = %d AND existing.redeemed_for = %s
+                 ) = %d";
+        } else {
+            $guard = "WHERE NOT EXISTS (
+                     SELECT 1 FROM (
+                         SELECT person_id, redeemed_for FROM {$this->table()} WHERE cancelled_at IS NULL
+                     ) AS existing
+                     WHERE existing.person_id = %d AND existing.redeemed_for = %s
+                 )";
+        }
+
         $inserted = $wpdb->query(
             $wpdb->prepare(
                 "INSERT INTO {$this->table()}
                     (person_id, redeemed_for, event_post_id, event_label, redeemed_at, note)
                  SELECT %d, %s, {$eventValue}, %s, %s, %s
                  FROM (SELECT 1) AS placeholder
-                 WHERE NOT EXISTS (
-                     SELECT 1 FROM (
-                         SELECT person_id, redeemed_for FROM {$this->table()} WHERE cancelled_at IS NULL
-                     ) AS existing
-                     WHERE existing.person_id = %d AND existing.redeemed_for = %s
-                 )",
+                 {$guard}",
                 $arguments
             )
         );
@@ -222,7 +239,88 @@ final class RedemptionRepository
 
         if (is_int($changed) && $changed > 0) {
             History::record(History::REDEMPTION_CANCELLED, ['redemption_id' => $id]);
+            $this->reslotCheckins($id);
         }
+    }
+
+    /**
+     * The id of the person's first live ticket for the night (the lowest),
+     * or 0 when they hold none - the ticket checked in as their credit row
+     * (CheckinRepository::creditEntry()).
+     */
+    public function firstLiveIdFor(int $personId, string $date): int
+    {
+        global $wpdb;
+
+        return (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT MIN(id) FROM {$this->table()}
+                WHERE person_id = %d AND redeemed_for = %s AND cancelled_at IS NULL",
+                $personId,
+                $date
+            )
+        );
+    }
+
+    /**
+     * The door entry [kind, ref_id] ticket $redemption is checked in as
+     * (CheckinRepository::creditEntry()).
+     *
+     * @return array{0: string, 1: int}
+     */
+    public function checkinEntry(Redemption $redemption): array
+    {
+        if (null === $redemption->redeemedFor) {
+            return [CheckinRepository::KIND_CREDIT, $redemption->personId];
+        }
+
+        return CheckinRepository::creditEntry(
+            $redemption->id,
+            $redemption->personId,
+            $this->firstLiveIdFor($redemption->personId, $redemption->redeemedFor)
+        );
+    }
+
+    /**
+     * After ticket $id stopped being live: when it was the person's first
+     * ticket of the night and they hold another, the door rows are swapped
+     * so the new first ticket owns the credit row (person id) and the one
+     * that left keeps its own (CheckinRepository::creditEntry()).
+     */
+    private function reslotCheckins(int $id): void
+    {
+        global $wpdb;
+
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT r.person_id, r.redeemed_for, (
+                    SELECT MIN(o.id) FROM {$this->table()} o
+                    WHERE o.person_id = r.person_id AND o.redeemed_for = r.redeemed_for
+                    AND o.cancelled_at IS NULL
+                ) AS first_live
+                FROM {$this->table()} r WHERE r.id = %d",
+                $id
+            ),
+            ARRAY_A
+        );
+
+        if (!is_array($row) || null === ($row['redeemed_for'] ?? null)) {
+            return;
+        }
+
+        $first = (int) ($row['first_live'] ?? 0);
+
+        // Only when the ticket that left came before every live one.
+        if ($first <= $id) {
+            return;
+        }
+
+        $personId = (int) $row['person_id'];
+        $date = (string) $row['redeemed_for'];
+        $checkins = new CheckinRepository();
+
+        $checkins->move($date, CheckinRepository::KIND_CREDIT, $personId, CheckinRepository::KIND_CREDIT_EXTRA, $id);
+        $checkins->move($date, CheckinRepository::KIND_CREDIT_EXTRA, $first, CheckinRepository::KIND_CREDIT, $personId);
     }
 
     /**
@@ -245,7 +343,13 @@ final class RedemptionRepository
             )
         );
 
-        return is_int($changed) && $changed > 0;
+        if (!is_int($changed) || $changed <= 0) {
+            return false;
+        }
+
+        $this->reslotCheckins($id);
+
+        return true;
     }
 
     /** Records that the "Your ticket" email (TicketMail) was sent for this credit, now. */

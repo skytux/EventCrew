@@ -873,9 +873,32 @@ final class MessageTemplates
      */
     public static function defaultValue(string $id, string $part): array
     {
+        $built = null;
+
+        return self::defaultValueOf($id, $part, $built);
+    }
+
+    /**
+     * defaultValue(), building every kind once per language into $built
+     * (language => all()) when it is an array, rather than once per call:
+     * translationRows() asks for the built-in text of every kind in every
+     * language, and building all the kinds for each of them took seconds.
+     * null: build them for this call only, as before.
+     *
+     * @param array<string, array<string, MessageTemplate>>|null $built
+     * @return array{source: string, lang: string, detected: bool, texts: array<string, string>, manual: array<string, bool>}
+     */
+    private static function defaultValueOf(string $id, string $part, ?array &$built): array
+    {
         $value = TranslatedText::blank();
-        $text = static function () use ($id, $part): string {
-            $template = self::find($id);
+        $text = static function () use ($id, $part, &$built): string {
+            if (null === $built) {
+                $template = self::find($id);
+            } else {
+                $language = (string) Language::current();
+                $built[$language] ??= self::all();
+                $template = $built[$language][$id] ?? null;
+            }
 
             if (null === $template) {
                 return '';
@@ -951,6 +974,8 @@ final class MessageTemplates
     public static function translationRows(): array
     {
         $rows = [];
+        // Every kind, built once per language for all the built-in texts.
+        $built = [];
 
         foreach (self::all() as $id => $template) {
             $group = MessageTemplate::CHANNEL_EMAIL === $template->channel
@@ -970,7 +995,7 @@ final class MessageTemplates
                         $template->label
                     ),
                     $group,
-                    self::value($id, $part),
+                    self::stored($id)[$part] ?? self::defaultValueOf($id, $part, $built),
                     static function (array $value) use ($id, $part): void {
                         self::storePart($id, $part, $value);
                     },
