@@ -7,18 +7,27 @@ namespace EventCrew\Telegram;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\DoorAccess;
+use EventCrew\Support\Faq;
 use EventCrew\Support\Language;
 use EventCrew\Support\Roles;
 use EventCrew\Support\Organization;
+use EventCrew\Support\WelcomeSender;
 
 /**
  * /help, /door, /people and the answer to the Cancel button.
  *
- * /help lists the commands the asker may use. In a private chat that is the
- * Everyone section, the Welcome crew section for organizers and for people on
- * a nearby night's sales-desk task, and the Organizers section for organizers.
- * In the group it is only the Everyone section, in English, with a pointer to
- * the private chat for the rest.
+ * /help in a private chat, and the ❓ Help button under /me, open the Help
+ * menu (Owner 2026-11-08): How this works? (the welcome guide, sent again by
+ * WelcomeSender), Commands, FAQ (Faq, paged when long) and, for organizers,
+ * the organizer guide. The "In your own words" lines sit on the menu itself,
+ * since they are about how to talk to the bot at all.
+ *
+ * Commands lists the commands the asker may use: the Everyone section, the
+ * Welcome crew section for organizers and for people on a nearby night's
+ * sales-desk task, and the Organizers section for organizers. A mistyped or
+ * removed command gets this list straight away. In the group /help is only
+ * the Everyone section, in English, with a pointer to the private chat for
+ * the rest.
  *
  * /door and /people answer in the private chat with MenuButtons; each button
  * opens a service that checks again who may use it.
@@ -30,36 +39,58 @@ final class HelpService
 {
     use GroupBreadcrumb;
 
+    /** Room left under Telegram's limit for the FAQ page's title line and the HTML tags. */
+    private const FAQ_PAGE_TEXT = 3500;
+
     public function __construct(
         private readonly PersonRepository $people,
         private readonly DoorAccess $doorAccess,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        private readonly ?WelcomeSender $welcome = null
     ) {
     }
 
     /**
-     * @param bool $fromMe True for the ❓ Help button under /me, which puts
-     *                     Back to My info under the list.
+     * /help and the ❓ Help button: the Help menu in a private chat, the
+     * group's command list in a group.
      */
-    public function onHelp(int $telegramUserId, int $chatId, bool $isPrivate = true, bool $fromMe = false): void
+    public function onHelp(int $telegramUserId, int $chatId, bool $isPrivate = true): void
     {
         if (! $isPrivate) {
-            $this->telegram->sendMessage(
-                $chatId,
-                Language::run(Language::ENGLISH, fn (): string => $this->groupText())
-            );
+            $this->sendGroupText($chatId);
 
             return;
         }
 
-        $audience = $this->audience($telegramUserId);
-        $sections = [$this->title()];
+        $sections = ['❓ ' . __('Help', 'eventcrew')];
 
         if (AssistantSettings::isActive()) {
             $sections[] = $this->plainWords();
         }
 
-        $sections[] = $this->everyone();
+        $person = 0 !== $telegramUserId ? $this->people->findByTelegramUserId($telegramUserId) : null;
+
+        $this->telegram->sendMessage(
+            $chatId,
+            implode("\n\n", $sections),
+            MenuButtons::help(null !== $person && $person->isOrganizer)
+        );
+    }
+
+    /**
+     * Commands under Help, and the answer to a command the bot does not
+     * know: the commands this person may use, with Back to the Help menu.
+     */
+    public function onCommands(int $telegramUserId, int $chatId, bool $isPrivate = true): void
+    {
+        if (! $isPrivate) {
+            $this->sendGroupText($chatId);
+
+            return;
+        }
+
+        $audience = $this->audience($telegramUserId);
+        $sections = [$this->title(), $this->everyone()];
 
         if ($audience['welcomeCrew']) {
             $sections[] = $this->welcomeCrew();
@@ -72,7 +103,125 @@ final class HelpService
         $this->telegram->sendMessage(
             $chatId,
             implode("\n\n", $sections),
-            $fromMe ? ['inline_keyboard' => [MenuButtons::backRow()]] : null
+            MenuButtons::back(MenuButtons::HELP)
+        );
+    }
+
+    /**
+     * How this works? under Help: the welcome DM again (WelcomeSender), or
+     * with $organizer the organizer guide DM, with Back to the Help menu.
+     * Someone without a confirmed email gets the setup nudge, as on /me.
+     */
+    public function onGuide(int $telegramUserId, int $chatId, bool $isPrivate = true, bool $organizer = false): void
+    {
+        $person = 0 !== $telegramUserId ? $this->people->findByTelegramUserId($telegramUserId) : null;
+
+        if (null === $person || ! $person->isEmailVerified() || null === $this->welcome) {
+            $this->telegram->sendMessage($chatId, SetupNudge::text(! $isPrivate));
+
+            return;
+        }
+
+        if ($organizer && ! $person->isOrganizer) {
+            $this->telegram->sendMessage($chatId, __('Only organizers can open this.', 'eventcrew'));
+
+            return;
+        }
+
+        $this->welcome->sendGuide($person, $organizer, [MenuButtons::backRow(MenuButtons::HELP)]);
+    }
+
+    /**
+     * FAQ under Help: the questions and answers (Faq), as many to a page as
+     * fit in one message, with « Previous / Next » when there is more than
+     * one page and Back to the Help menu. $page counts from 0.
+     */
+    public function onFaq(int $chatId, int $page = 0): void
+    {
+        $pages = self::faqPages();
+        $count = count($pages);
+        $page = max(0, min($page, $count - 1));
+        $title = '💡 ' . __('FAQ', 'eventcrew') . ($count > 1 ? MessagePages::note($page, $count) : '');
+        $rows = [];
+        $paging = MessagePages::buttons(MenuButtons::FAQ, $page, $count);
+
+        if ([] !== $paging) {
+            $rows[] = $paging;
+        }
+
+        $rows[] = MenuButtons::backRow(MenuButtons::HELP);
+
+        $this->telegram->sendMessage(
+            $chatId,
+            '<b>' . self::html($title) . "</b>\n\n" . implode("\n\n", $pages[$page]),
+            ['inline_keyboard' => $rows],
+            ['parse_mode' => 'HTML']
+        );
+    }
+
+    /**
+     * The FAQ as Telegram HTML pages: each item a bold question and its
+     * answer, as many items to a page as fit under FAQ_PAGE_TEXT. Always at
+     * least one page.
+     *
+     * @return list<list<string>>
+     */
+    public static function faqPages(): array
+    {
+        $pages = [];
+        $page = [];
+        $length = 0;
+
+        foreach (Faq::items() as $item) {
+            $block = '<b>' . self::html('❓ ' . $item['q']) . "</b>\n" . self::html($item['a']);
+            $size = MessagePages::textLength([$block, '']);
+
+            if ([] !== $page && $length + $size > self::FAQ_PAGE_TEXT) {
+                $pages[] = $page;
+                $page = [];
+                $length = 0;
+            }
+
+            $page[] = $block;
+            $length += $size;
+        }
+
+        $pages[] = $page;
+
+        return $pages;
+    }
+
+    /**
+     * The Everyone commands, one "/command – what it does" line each, without
+     * the section title: the web Help tab lists them too (Owner 2026-11-08).
+     *
+     * @return list<string>
+     */
+    public static function everyoneLines(): array
+    {
+        return [
+            __('/board – the open tasks; in a private chat also the tasks of your roles', 'eventcrew'),
+            __('/me – your standing, credits and coming tasks', 'eventcrew'),
+            __('/tasks – cancel, take over a task, past tasks', 'eventcrew'),
+            __('/tickets – your tickets, free-entry ticket', 'eventcrew'),
+            __('/settings – notifications, language, web sign-in', 'eventcrew'),
+            // Private-chat commands for members (ag-people).
+            __('/crew – who works with you on your next nights', 'eventcrew'),
+            __('/name, /email – change your name or email', 'eventcrew'),
+            __('/help – how this works, commands and FAQ', 'eventcrew'),
+        ];
+    }
+
+    private static function html(string $text): string
+    {
+        return htmlspecialchars($text, ENT_NOQUOTES, 'UTF-8');
+    }
+
+    private function sendGroupText(int $chatId): void
+    {
+        $this->telegram->sendMessage(
+            $chatId,
+            Language::run(Language::ENGLISH, fn (): string => $this->groupText())
         );
     }
 
@@ -91,9 +240,13 @@ final class HelpService
         $organizer = null !== $person && $person->isOrganizer;
 
         return [
+            // Who is asking, for the helper's "This person" facts (0 = unknown).
+            'personId' => null !== $person ? $person->id : 0,
             'organizer' => $organizer,
             'welcomeCrew' => $organizer || (null !== $person && $this->doorAccess->isWelcomeCrew($person)),
             'verified' => null !== $person && $person->isEmailVerified(),
+            // A known person: their own board also shows the Members display roles.
+            'member' => null !== $person,
             'roles' => null !== $person
                 ? array_values(array_map(static fn (string $slug): string => Roles::label($slug), $person->roleSlugs))
                 : [],
@@ -225,18 +378,7 @@ final class HelpService
 
     private function everyone(): string
     {
-        return implode("\n", [
-            __('Everyone', 'eventcrew'),
-            __('/board – the open tasks; in a private chat also the tasks of your roles', 'eventcrew'),
-            __('/me – your standing, credits and coming tasks', 'eventcrew'),
-            __('/tasks – cancel, take over a task, past tasks', 'eventcrew'),
-            __('/tickets – your tickets, free-entry ticket', 'eventcrew'),
-            __('/settings – notifications, language, web sign-in', 'eventcrew'),
-            // Private-chat commands for members (ag-people).
-            __('/crew – who works with you on your next nights', 'eventcrew'),
-            __('/name, /email – change your name or email', 'eventcrew'),
-            __('/help – this list', 'eventcrew'),
-        ]);
+        return implode("\n", [__('Everyone', 'eventcrew'), ...self::everyoneLines()]);
     }
 
     private function welcomeCrew(): string
@@ -273,6 +415,7 @@ final class HelpService
             __('/newboard – post a new board in the group', 'eventcrew'),
             __('/sendtickets – send the ticket emails now (or cancel)', 'eventcrew'),
             __('/tell task ; text – message everyone on a task', 'eventcrew'),
+            __('/subscribe email – add someone to the newsletter; they confirm by email', 'eventcrew'),
         ]);
     }
 }

@@ -126,6 +126,121 @@ final class ProfileServiceTest extends TelegramTestCase
         self::assertSame(['mn:board', 'mn:replace', 'mn:hist', 'mn:me'], array_column(array_merge(...array_slice($rows, 2)), 'callback_data'));
     }
 
+    private function sam(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+        ];
+    }
+
+    /**
+     * $count past tasks, newest first, as historyFor gives them; their tasks
+     * are not looked up (get_row returns nothing), so each reads "a task".
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function pastEntries(int $count): array
+    {
+        $entries = [];
+
+        for ($i = 1; $i <= $count; $i++) {
+            $entries[] = ['id' => $i, 'task_id' => $i, 'person_id' => 7, 'status' => 'completed', 'task_date' => '2026-06-30'];
+        }
+
+        return $entries;
+    }
+
+    /**
+     * Owner 2026-11-08: all past tasks, 25 to a page, with ◀️ ▶️.
+     */
+    public function testPastTasksComeTwentyFiveToAPage(): void
+    {
+        Functions\when('current_time')->justReturn('2026-07-10');
+
+        // Exactly 25: one page, no page buttons, no "page 1 of 1".
+        $this->sam();
+        $this->wpdb->nextResults[] = $this->pastEntries(25);
+        $this->service()->onMyHistory(555, 555);
+        $dm = $this->lastCallTo('sendMessage');
+        self::assertSame(26, substr_count((string) $dm['text'], "\n") + 1);
+        self::assertStringNotContainsString('page', (string) $dm['text']);
+        self::assertSame([[['text' => '⬅️ Back', 'callback_data' => 'mn:mytasks']]], $dm['reply_markup']['inline_keyboard']);
+
+        // 26: the first page has 25 and ▶️ to page 2.
+        $this->sam();
+        $this->wpdb->nextResults[] = $this->pastEntries(26);
+        $this->service()->onMyHistory(555, 555);
+        $dm = $this->lastCallTo('sendMessage');
+        self::assertSame(25, substr_count((string) $dm['text'], '• '));
+        self::assertStringEndsWith("\n\npage 1 of 2", (string) $dm['text']);
+        self::assertSame('mn:hist:2', $dm['reply_markup']['inline_keyboard'][0][0]['callback_data']);
+
+        // Page 2 has the 26th and ◀️ back to page 1; a page beyond the last
+        // shows the last.
+        foreach ([2, 7] as $page) {
+            $this->sam();
+            $this->wpdb->nextResults[] = $this->pastEntries(26);
+            $this->service()->onMyHistory(555, 555, true, $page);
+            $dm = $this->lastCallTo('sendMessage');
+            self::assertSame(1, substr_count((string) $dm['text'], '• '));
+            self::assertStringEndsWith('page 2 of 2', (string) $dm['text']);
+            $rows = $dm['reply_markup']['inline_keyboard'];
+            self::assertSame([['text' => '◀️', 'callback_data' => 'mn:hist']], $rows[0]);
+            self::assertSame('mn:mytasks', $rows[1][0]['callback_data']);
+        }
+    }
+
+    public function testNoPastTasksSaysSo(): void
+    {
+        Functions\when('current_time')->justReturn('2026-07-10');
+        $this->sam();
+        $this->wpdb->nextResults[] = [];
+
+        $this->service()->onMyHistory(555, 555, true, 3);
+
+        $dm = $this->lastCallTo('sendMessage');
+        self::assertSame('No past tasks yet — your history starts once you’ve worked one.', $dm['text']);
+        self::assertSame(['mn:mytasks'], array_column(array_merge(...$dm['reply_markup']['inline_keyboard']), 'callback_data'));
+    }
+
+    /**
+     * Owner 2026-11-08: coming tasks page too, each page with the cancel
+     * buttons of its own tasks.
+     */
+    public function testComingTasksPageWithTheirCancelButtons(): void
+    {
+        Functions\when('current_time')->justReturn('2026-07-10');
+        $coming = [];
+
+        // historyFor is newest first: id 26 is the latest, id 1 the soonest.
+        for ($i = 26; $i >= 1; $i--) {
+            $coming[] = ['id' => $i, 'task_id' => $i, 'person_id' => 7, 'status' => 'signed_up', 'task_date' => '2026-07-20'];
+        }
+
+        foreach ([1 => 25, 2 => 1] as $page => $count) {
+            $this->sam();
+            $this->wpdb->nextResults[] = $coming;
+
+            for ($i = 1; $i <= 26; $i++) {
+                $this->wpdb->nextRows[] = ['id' => $i] + $this->taskRow($i);
+            }
+
+            $this->service()->onMyTasks(555, 555, true, $page);
+
+            $dm = $this->lastCallTo('sendMessage');
+            self::assertStringStartsWith("📋 Tasks · page {$page} of 2\n", (string) $dm['text']);
+            self::assertSame($count, substr_count((string) $dm['text'], '• '));
+            $data = array_column(array_merge(...$dm['reply_markup']['inline_keyboard']), 'callback_data');
+            $cancels = array_values(array_filter($data, static fn (string $d): bool => str_starts_with($d, 'l:')));
+            self::assertSame(1 === $page ? array_map(static fn (int $i): string => 'l:' . $i, range(1, 25)) : ['l:26'], $cancels);
+            self::assertContains(1 === $page ? 'mn:mytasks:2' : 'mn:mytasks', $data);
+        }
+    }
+
     /**
      * Owner 2026-11-07: My info is only the facts - no explanations - and one
      * full-width button per row: Tickets, Tasks, Settings, Help, and Admin

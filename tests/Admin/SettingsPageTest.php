@@ -531,6 +531,24 @@ final class SettingsPageTest extends TelegramTestCase
         );
     }
 
+    /** The Members display tick (Owner 2026-11-08) saves per row, off unless ticked. */
+    public function testTheMembersDisplayTickSavesPerRole(): void
+    {
+        $this->options[\EventCrew\Support\Roles::OPTION_NAME] = [
+            ['slug' => 'decorate', 'label' => 'Decorate', 'capacity' => 2],
+            ['slug' => 'clean', 'label' => 'Clean', 'capacity' => 2],
+        ];
+
+        $this->saveUntil([
+            'role_slug' => ['decorate', 'clean'],
+            'role_label' => [['source' => 'Decorate'], ['source' => 'Clean']],
+            'role_members_display' => [1 => '1'],
+        ], \EventCrew\Support\Roles::GUIDE_URL_OPTION);
+
+        self::assertFalse(\EventCrew\Support\Roles::membersDisplay('decorate'));
+        self::assertTrue(\EventCrew\Support\Roles::membersDisplay('clean'));
+    }
+
     public function testASecretIsShownOnlyByItsLastFourCharacters(): void
     {
         self::assertSame('', \EventCrew\Support\SecretMask::mask(''));

@@ -195,6 +195,59 @@ final class OpenTaskCallTest extends TestCase
         self::assertStringNotContainsString('Organize', $this->mails[0]['body']);
     }
 
+    /** Settings > Roles with Decorate's ticks as given. */
+    private function decorateRole(array $ticks): void
+    {
+        $roles = [['slug' => 'decorate', 'label' => 'Decorate', 'emoji' => '🎈'] + $ticks];
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => 'eventcrew_roles' === $name ? $roles : null
+        );
+    }
+
+    /**
+     * A role off the guest board is called about only to the people whose
+     * board shows it (BoardVisibility): its holders here, not a guest.
+     */
+    public function testAHiddenRoleIsCalledAboutOnlyToItsHolders(): void
+    {
+        $this->decorateRole(['on_board' => false]);
+        $this->queueOpenDate();
+        $this->wpdb->nextResults[] = [
+            $this->activePerson(),
+            ['id' => 8, 'email' => 'deco@example.com', 'email_verified_at' => '2026-07-01 00:00:00', 'role_slugs' => '["decorate"]'],
+        ];
+        // Sam is skipped before the ledger is asked.
+        $this->wpdb->nextVars[] = null;            // ledger.hasSent, the decorator
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->queueRecap();
+
+        self::assertSame(1, $this->call()->sendForDate('2026-08-01'));
+        self::assertSame(['deco@example.com'], array_column($this->mails, 'to'));
+        self::assertStringContainsString('Decorate', $this->mails[0]['body']);
+    }
+
+    public function testMembersDisplayCallsEveryoneAboutAHiddenRole(): void
+    {
+        $this->decorateRole(['on_board' => false, 'members_display' => true]);
+        $this->queueOpenDate();
+        $this->wpdb->nextResults[] = [$this->activePerson()];
+        $this->wpdb->nextVars[] = null;
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->queueRecap();
+
+        self::assertSame(1, $this->call()->sendForDate('2026-08-01'));
+        self::assertSame(['sam@example.com'], array_column($this->mails, 'to'));
+    }
+
+    public function testAnArchivedRoleIsNoReasonToMail(): void
+    {
+        $this->decorateRole(['archived' => true]);
+        $this->queueOpenDate();
+
+        self::assertSame(0, $this->call()->sendForDate('2026-08-01'));
+        self::assertSame([], $this->mails);
+    }
+
     public function testSkipsAnyoneAlreadyMailedForThatDate(): void
     {
         $this->queueOpenDate();

@@ -2956,8 +2956,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
     {
         $this->signIn($this->organizerRow(1));
         $this->wpdb->nextCols[] = [self::NIGHT];          // upcoming dates
-        $this->queueOpenTaskDate();                       // hasOpenSlotsOn
-        $this->queueOpenTaskDate();                       // sendForDate
+        // The date's open tasks are read once: the next-open-date check and
+        // sendForDate share the read.
+        $this->queueOpenTaskDate();
         $this->wpdb->nextResults[] = [['id' => 7, 'email' => 'sam@example.com', 'email_verified_at' => '2026-07-01 00:00:00']];
         $this->wpdb->nextVars[] = null;                   // not sent yet
         $this->wpdb->nextVars[] = 0;                      // recap: completed
@@ -2987,6 +2988,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             'role_sales_desk' => '1',
             'role_on_board' => '1',
             'role_anonymous' => '1',
+            'role_members_display' => '1',
             'role_title_contains' => 'party',
             'role_plus_ones' => '1',
             'role_count' => ['decorate' => '2'],
@@ -3010,8 +3012,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertTrue($role['restricted']);
         self::assertFalse($role['every_night']);
         self::assertTrue($role['sales_desk']);
-        // The three guest ticks: shown, no guest sign-up, names hidden.
+        // The guest ticks: shown, also to members, no guest sign-up, names hidden.
         self::assertTrue($role['on_board']);
+        self::assertTrue($role['members_display']);
         self::assertFalse($role['guest_signup']);
         self::assertTrue($role['anonymous']);
         self::assertFalse($role['archived']);

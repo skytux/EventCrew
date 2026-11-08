@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Models\Person;
+use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\DoorDesk;
 use EventCrew\Support\NotificationPreferences;
 
 /**
@@ -15,6 +18,11 @@ use EventCrew\Support\NotificationPreferences;
  *
  * The same per-type, per-channel preferences the web Notifications tab edits, so
  * a change in one shows in the other.
+ *
+ * The last row is 📰 Newsletter (Owner, 2026-11-08): the announcement email, on
+ * or off for the person's verified address, in the ✉ column only. On adds the
+ * address as a confirmed subscriber (it is verified, so no confirmation email)
+ * or brings back one who left; off unsubscribes it.
  */
 final class NotificationSettingsService
 {
@@ -23,9 +31,14 @@ final class NotificationSettingsService
     /** Callback data prefix for a toggle: np:<type>:<dm|email>. */
     private const PREFIX = 'np:';
 
+    /** The newsletter row's callback data. */
+    private const NEWSLETTER = 'np:newsletter';
+
     public function __construct(
         private readonly PersonRepository $people,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        // Optional: without it there is no newsletter row.
+        private readonly ?NewsletterSubscriberRepository $subscribers = null
     ) {
     }
 
@@ -50,7 +63,11 @@ final class NotificationSettingsService
         }
 
         $map = (new NotificationPreferences())->asMap($person);
-        $this->telegram->sendMessage($telegramUserId, $this->text(), ['inline_keyboard' => $this->keyboard($map)]);
+        $this->telegram->sendMessage(
+            $telegramUserId,
+            $this->text(),
+            ['inline_keyboard' => $this->keyboard($map, $this->subscribed($person))]
+        );
         $this->sentDmNote($chatId, $isPrivate);
     }
 
@@ -63,9 +80,16 @@ final class NotificationSettingsService
     {
         $callbackId = (string) ($callbackQuery['id'] ?? '');
         $telegramUserId = (int) ($callbackQuery['from']['id'] ?? 0);
-        [$type, $channel] = $this->parse((string) ($callbackQuery['data'] ?? ''));
+        $data = (string) ($callbackQuery['data'] ?? '');
+        [$type, $channel] = $this->parse($data);
 
         $person = 0 === $telegramUserId ? null : $this->people->findByTelegramUserId($telegramUserId);
+
+        if (self::NEWSLETTER === $data && null !== $person && null !== $this->subscribers) {
+            $this->toggleNewsletter($person, $callbackQuery);
+
+            return;
+        }
 
         if (null === $person || '' === $type) {
             $this->telegram->answerCallbackQuery($callbackId);
@@ -90,7 +114,72 @@ final class NotificationSettingsService
         $messageId = (int) ($message['message_id'] ?? 0);
 
         if (0 !== $chatId && 0 !== $messageId) {
-            $this->telegram->editMessageText($chatId, $messageId, $this->text(), ['inline_keyboard' => $this->keyboard($map)]);
+            $this->telegram->editMessageText(
+                $chatId,
+                $messageId,
+                $this->text(),
+                ['inline_keyboard' => $this->keyboard($map, $this->subscribed($person))]
+            );
+        }
+    }
+
+    /**
+     * Whether the person's address gets the newsletter. null when there is no
+     * newsletter row: no subscriber store, or no verified address.
+     */
+    private function subscribed(Person $person): ?bool
+    {
+        if (null === $this->subscribers || ! $person->isEmailVerified() || '' === trim($person->email)) {
+            return null;
+        }
+
+        $row = $this->subscribers->findByEmail($person->email);
+
+        return null !== $row && NewsletterSubscriberRepository::STATUS_CONFIRMED === ($row['status'] ?? '');
+    }
+
+    /**
+     * The 📰 Newsletter tap: on adds the verified address as confirmed (or
+     * brings it back), off unsubscribes it. Then the menu is edited in place.
+     *
+     * @param array<string, mixed> $callbackQuery
+     */
+    private function toggleNewsletter(Person $person, array $callbackQuery): void
+    {
+        $callbackId = (string) ($callbackQuery['id'] ?? '');
+        $on = $this->subscribed($person);
+
+        if (null === $on || null === $this->subscribers) {
+            $this->telegram->answerCallbackQuery($callbackId);
+
+            return;
+        }
+
+        if ($on) {
+            $row = $this->subscribers->findByEmail($person->email);
+            $done = null !== $row && $this->subscribers->unsubscribe((int) $row['id']);
+        } else {
+            $first = DoorDesk::firstName($person->name());
+            $done = $this->subscribers->addFromTicket($person->email, $first, (string) $person->language) > 0;
+        }
+
+        $this->telegram->answerCallbackQuery(
+            $callbackId,
+            $done ? __('Saved.', 'eventcrew') : __('Something went wrong. Please try again.', 'eventcrew')
+        );
+
+        $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
+        $chatId = (int) ($message['chat']['id'] ?? 0);
+        $messageId = (int) ($message['message_id'] ?? 0);
+
+        if (0 !== $chatId && 0 !== $messageId) {
+            $map = (new NotificationPreferences())->asMap($person);
+            $this->telegram->editMessageText(
+                $chatId,
+                $messageId,
+                $this->text(),
+                ['inline_keyboard' => $this->keyboard($map, $this->subscribed($person))]
+            );
         }
     }
 
@@ -102,10 +191,13 @@ final class NotificationSettingsService
     }
 
     /**
+     * $newsletter: whether the address gets the newsletter; null leaves the
+     * newsletter row out.
+     *
      * @param array<string, array{dm: bool, email: bool}> $map
      * @return array<int, array<int, array{text: string, callback_data: string}>>
      */
-    private function keyboard(array $map): array
+    private function keyboard(array $map, ?bool $newsletter = null): array
     {
         $rows = [];
 
@@ -141,6 +233,15 @@ final class NotificationSettingsService
                     'text' => $pref['email'] ? '✅' : '❌',
                     'callback_data' => self::PREFIX . $type . ':email',
                 ],
+            ];
+        }
+
+        // The newsletter is email only: the 📱 cell is a no-op dash.
+        if (null !== $newsletter) {
+            $rows[] = [
+                ['text' => '📰 ' . __('Newsletter', 'eventcrew'), 'callback_data' => self::PREFIX . 'noop'],
+                ['text' => '—', 'callback_data' => self::PREFIX . 'noop'],
+                ['text' => $newsletter ? '✅' : '❌', 'callback_data' => self::NEWSLETTER],
             ];
         }
 

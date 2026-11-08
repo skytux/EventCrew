@@ -433,10 +433,6 @@ msgstr "/door add [fecha] Nombre +N ; nota – añadir un invitado (también edi
 msgid "/events – post the coming events in the group as picture cards; you see them first"
 msgstr "/events – publica los próximos eventos en el grupo como tarjetas con imagen; tú los ves primero"
 
-#: src/Telegram/HelpService.php:235
-msgid "/help – this list"
-msgstr "/help – esta lista"
-
 #: src/Telegram/HelpService.php:231
 msgid "/me – your standing, credits and coming tasks"
 msgstr "/me – tu fiabilidad, créditos y próximas tareas"
@@ -1104,10 +1100,6 @@ msgstr "Llegado tarde"
 #: src/Support/Reputation.php:68
 msgid "Arrived late, did the task"
 msgstr "Llegó tarde, hizo la tarea"
-
-#: src/Support/OrganizerGuide.php:245
-msgid "As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
-msgstr "Como organizador puedes añadir a cualquiera a cualquier tarea de una noche salvo Organizar, también a una de un rol que no tiene (entonces recibe el rol): en un chat privado con /assign tarea ; nombre (/unassign lo quita) o con ➕ Añadir a alguien en /board, en la pestaña Admin de la app Crew o en la taquilla."
 
 #: templates/admin/translations.php:213
 msgid "As written"
@@ -3720,10 +3712,6 @@ msgstr "La mayoría de organizadores de eventos no necesitan uno. Un DPD solo es
 #: src/Support/EventTaskMover.php:67
 msgid "Move the tasks too"
 msgstr "Mover también las tareas"
-
-#: templates/public/signup.php:435
-msgid "My tasks"
-msgstr "Mis tareas"
 
 #: src/Admin/PeopleListTable.php:47 src/Support/PrivacyExporter.php:136
 #: src/Support/PrivacyExporter.php:219 src/Support/PrivacyExporter.php:245
@@ -7158,10 +7146,6 @@ msgstr "Las columnas del archivo adjunto no coinciden con ningún formato de arc
 msgid "The coming events, as the newsletter writes them."
 msgstr "Los próximos eventos, tal como los escribe el boletín."
 
-#: src/Telegram/CommandMenu.php:282
-msgid "The commands you can use"
-msgstr "Los comandos que puedes usar"
-
 #: src/Admin/SettingsPage.php:1060
 msgid "The connection test failed: %s."
 msgstr "La prueba de conexión ha fallado: %s."
@@ -8878,10 +8862,6 @@ msgstr "Lo que ha hecho la persona: sus tareas y su fiabilidad. En una línea pr
 msgid "What we hold about you"
 msgstr "Qué datos tenemos sobre ti"
 
-#: templates/public/signup.php:464
-msgid "What you’ve done"
-msgstr "Lo que has hecho"
-
 #: templates/admin/diagnostics.php:124 templates/admin/people.php:294
 msgid "When"
 msgstr "Cuándo"
@@ -9592,10 +9572,6 @@ msgstr "Tu tarea pasó a %s"
 msgid "Your tasks on this night:"
 msgstr "Tus tareas esta noche:"
 
-#: src/Telegram/CommandMenu.php:284
-msgid "Your tasks, credits, ticket, settings"
-msgstr "Tus tareas, créditos, entrada y ajustes"
-
 #: templates/admin/settings.php:1558
 msgid "Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one."
 msgstr "Tu plantilla mantiene el diseño con el que se creó. Usa “Restablecer la plantilla” abajo para pasar a la integrada actual."
@@ -9645,10 +9621,6 @@ msgstr "Ya estás apuntado a eso."
 #: src/Telegram/BoardService.php:1212 src/Telegram/RoleTaskBot.php:395
 msgid "You’re in! See you there."
 msgstr "¡Estás dentro! Nos vemos allí."
-
-#: templates/public/signup.php:438
-msgid "You’re not signed up for anything yet — take a look at the board."
-msgstr "Aún no estás apuntado a nada: echa un vistazo al tablón."
 
 #: src/Telegram/BoardService.php:1262 src/Telegram/RoleTaskBot.php:425
 msgid "You’re out. Thanks for the notice."
@@ -10901,8 +10873,12 @@ msgid "Guest display: people without this role see its tasks"
 msgstr "Vista de invitados: quien no tiene este rol ve sus tareas"
 
 #: templates/admin/settings.php templates/public/signup.php
-msgid "Guest sign up: people without this role can sign up (needs Guest display)"
-msgstr "Inscripción de invitados: quien no tiene este rol puede inscribirse (requiere Vista de invitados)"
+msgid "Members display: signed-in members see its tasks, even without the role"
+msgstr "Vista de miembros: los miembros con sesión iniciada ven sus tareas, aunque no tengan el rol"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest sign up: people without this role can sign up (needs Guest or Members display)"
+msgstr "Inscripción de invitados: quien no tiene este rol puede inscribirse (requiere Vista de invitados o de miembros)"
 
 #: templates/admin/settings.php templates/public/signup.php
 msgid "Anonymous display: hide the names from people without this role"
@@ -11082,9 +11058,6 @@ msgstr "No se encontró ningún miembro llamado «%s». Alguien que aún no es m
 
 msgid "No task called “%1$s”. Tasks on %2$s: %3$s"
 msgstr "No hay ninguna tarea llamada «%1$s». Tareas el %2$s: %3$s"
-
-msgid "Organize tasks are for organizers only. Make someone an organizer with /people."
-msgstr "Las tareas de Organizar son solo para organizadores. Haz organizador a alguien con /people."
 
 msgid "Put a member on a task: /assign task ; name\nExample: /assign Host ; Milla\nA date first picks another event: /assign 21.11. Host ; Milla"
 msgstr "Poner a un miembro en una tarea: /assign tarea ; nombre\nEjemplo: /assign Host ; Milla\nUna fecha delante elige otra noche: /assign 21.11. Host ; Milla"
@@ -12585,3 +12558,215 @@ msgstr[1] "Una de tus tareas se marcó como no hecha, así que se retiraron %d c
 #: src/Support/StandingNotice.php
 msgid "A free-entry credit was taken back"
 msgstr "Se retiró un crédito de entrada gratis"
+
+msgid "How this works?"
+msgstr "¿Cómo funciona esto?"
+
+msgid "FAQ"
+msgstr "Preguntas frecuentes"
+
+msgid "/help – how this works, commands and FAQ"
+msgstr "/help – cómo funciona esto, comandos y preguntas frecuentes"
+
+msgid "How this works, commands and FAQ"
+msgstr "Cómo funciona esto, comandos y preguntas frecuentes"
+
+msgid "Your standing, credits and coming tasks"
+msgstr "Tu fiabilidad, créditos y próximas tareas"
+
+msgid "In a private chat with the bot you can also use these commands, or just write what you need in your own words."
+msgstr "En un chat privado con el bot también puedes usar estos comandos, o simplemente escribir con tus palabras lo que necesitas."
+
+msgid "How do I sign up for a task?"
+msgstr "¿Cómo me apunto a una tarea?"
+
+msgid "Open the board (See open tasks in the bot, or the Board tab on the web page) and tap the task. You get a confirmation and a ticket for that night. If you are new, the team first says OK; we message you when it comes."
+msgstr "Abre el tablón (Ver tareas abiertas en el bot, o la pestaña Tablón en la página web) y pulsa la tarea. Recibes una confirmación y una entrada para esa noche. Si eres nuevo, el equipo primero da el visto bueno; te avisamos cuando llegue."
+
+msgid "Open Tasks and tap Cancel next to the task."
+msgstr "Abre Tareas y pulsa Cancelar junto a la tarea."
+
+msgid "Changed your mind? Within %d minutes of taking a task, cancelling it never counts against you."
+msgstr "¿Cambiaste de idea? Si cancelas en los %d minutos siguientes a apuntarte, nunca cuenta en tu contra."
+
+msgid "Cancelling closes %d minutes before the task starts; after that, tell an organizer."
+msgstr "Cancelar se cierra %d minutos antes de que empiece la tarea; después, avisa a un organizador."
+
+msgid "How do I cancel a task?"
+msgstr "¿Cómo cancelo una tarea?"
+
+msgid "What if I cancel late?"
+msgstr "¿Y si cancelo tarde?"
+
+msgid "Cancelling %1$d hours or more before has no effect. Later, it counts as a late cancellation in your standing (%2$d%%). Better: find someone to take your task. When they take it, it counts as Found a replacement (%3$d%%)."
+msgstr "Cancelar con %1$d horas o más de antelación no tiene efecto. Más tarde, cuenta como cancelación tardía en tu fiabilidad (%2$d%%). Mejor: busca a alguien que se quede tu tarea. Cuando la acepte, cuenta como Encontró sustituto (%3$d%%)."
+
+msgid "A task is full. Can I still get it?"
+msgstr "Una tarea está completa. ¿Puedo conseguirla igualmente?"
+
+msgid "Tap Take someone’s task and choose whose task you want. They are asked and decide; nothing changes until they say yes. If they do not answer in time, they keep the task."
+msgstr "Pulsa Quedarse la tarea de alguien y elige de quién quieres la tarea. Se le pregunta a esa persona y decide; nada cambia hasta que diga que sí. Si no responde a tiempo, se queda con la tarea."
+
+msgid "What happens if I do not show up?"
+msgstr "¿Qué pasa si no me presento?"
+
+msgid "A no-show counts %d%% in your standing, the worst outcome. If you cannot come, cancel or find a replacement instead. If it was marked by mistake, tell an organizer or the bot."
+msgstr "No presentarse cuenta %d%% en tu fiabilidad, el peor resultado. Si no puedes ir, cancela o busca un sustituto. Si se marcó por error, avisa a un organizador o al bot."
+
+msgid "It comes from how your past tasks went, and recent tasks count more. You get a rating after %1$d finished tasks; %2$d%% or higher is good standing."
+msgstr "Sale de cómo fueron tus tareas pasadas, y las recientes cuentan más. Recibes una valoración tras %1$d tareas terminadas; un %2$d%% o más es buena fiabilidad."
+
+msgid "Below that, you cannot sign up for new tasks until you talk to an organizer."
+msgstr "Por debajo, no puedes apuntarte a nuevas tareas hasta que hables con un organizador."
+
+msgid "How does standing work?"
+msgstr "¿Cómo funciona la fiabilidad?"
+
+msgid "How do I get free entry?"
+msgstr "¿Cómo consigo entrada gratis?"
+
+msgid "Every %d completed tasks earn 1 free-entry credit. To use one, open Tickets, tap Get a free-entry ticket and choose the night. Some nights (sold out, or special events) do not accept credits."
+msgstr "Cada %d tareas completadas dan 1 crédito de entrada gratuita. Para usarlo, abre Entradas, pulsa Conseguir entrada gratuita y elige la noche. Algunas noches (agotadas o eventos especiales) no aceptan créditos."
+
+msgid "Do I need a ticket for a night I work?"
+msgstr "¿Necesito entrada para una noche en la que trabajo?"
+
+msgid "Signing up gives you a working ticket for that night. It covers all your tasks that night; show it at the door. Its code never changes, so a screenshot works. It is personal and cannot be given away."
+msgstr "Al apuntarte recibes una entrada de trabajo para esa noche. Cubre todas tus tareas de esa noche; enséñala en la puerta. Su código nunca cambia, así que sirve una captura de pantalla. Es personal y no se puede regalar."
+
+msgid "Why is a credit pending?"
+msgstr "¿Por qué hay un crédito pendiente?"
+
+msgid "Each extra task on the same night earns one more credit. It shows as pending and is added after the event, if you did the task. A cancelled or missed task gives nothing."
+msgstr "Cada tarea extra en la misma noche da un crédito más. Aparece como pendiente y se suma después del evento, si hiciste la tarea. Una tarea cancelada o a la que faltaste no da nada."
+
+msgid "Can I cancel a free-entry ticket?"
+msgstr "¿Puedo cancelar una entrada gratuita?"
+
+msgid "No, and the credit stays spent. But you can give the ticket to someone else: open Tickets and tap Give away. A ticket given to you cannot be given on."
+msgstr "No, y el crédito sigue gastado. Pero puedes dar la entrada a otra persona: abre Entradas y pulsa Regalar. Una entrada que te han regalado no se puede volver a regalar."
+
+msgid "No, and the credit stays spent."
+msgstr "No, y el crédito sigue gastado."
+
+msgid "I already have a ticket for that night. Can I still take a task?"
+msgstr "Ya tengo entrada para esa noche. ¿Puedo apuntarme a una tarea?"
+
+msgid "Yes. Your ticket stays as it is. A bought ticket never turns into a credit."
+msgstr "Sí. Tu entrada se queda como está. Una entrada comprada nunca se convierte en crédito."
+
+msgid "You can give away a free-entry ticket you no longer need."
+msgstr "Puedes regalar una entrada gratuita que ya no necesites."
+
+msgid "Where do I see my credits and tasks?"
+msgstr "¿Dónde veo mis créditos y tareas?"
+
+msgid "In My info in the bot, and in the Me tab on the web page."
+msgstr "En Mis datos en el bot, y en la pestaña Yo de la página web."
+
+msgid "How do I choose which messages I get?"
+msgstr "¿Cómo elijo qué mensajes recibo?"
+
+msgid "Under Settings, choose notifications and switch off what you do not want. Sign-up confirmations and reminders always come."
+msgstr "En Ajustes, elige los avisos y desactiva lo que no quieras. Las confirmaciones de inscripción y los recordatorios llegan siempre."
+
+msgid "How do I sign in on the web page?"
+msgstr "¿Cómo inicio sesión en la página web?"
+
+msgid "Enter your email on the web page and open the sign-in link we send. In the bot, Settings also has a web sign-in link."
+msgstr "Escribe tu correo en la página web y abre el enlace de acceso que te enviamos. En el bot, Ajustes también tiene un enlace de acceso web."
+
+msgid "How do I change the language?"
+msgstr "¿Cómo cambio el idioma?"
+
+msgid "Under Settings: Change language. Messages to you then come in that language."
+msgstr "En Ajustes: Cambiar idioma. Desde entonces, los mensajes te llegan en ese idioma."
+
+msgid "How do I delete my data?"
+msgstr "¿Cómo borro mis datos?"
+
+msgid "Under Settings: Delete my data. It erases your account and history and cannot be undone. To stop only some messages, choose notifications instead."
+msgstr "En Ajustes: Borrar mis datos. Elimina tu cuenta y tu historial y no se puede deshacer. Para dejar de recibir solo algunos mensajes, elige los avisos."
+
+msgid "Person %d"
+msgstr "Persona %d"
+
+msgid "Take someone’s task"
+msgstr "Tomar la tarea de alguien"
+
+msgid "No task here can be taken over."
+msgstr "Aquí no hay ninguna tarea que se pueda tomar."
+
+msgid "Whose task do you want to take? They decide."
+msgstr "¿La tarea de quién quieres tomar? Esa persona decide."
+
+msgid "Whose task?"
+msgstr "¿De quién?"
+
+#: src/Telegram/MenuButtons.php
+msgid "Change name"
+msgstr "Cambiar nombre"
+
+#: src/Telegram/MenuButtons.php
+msgid "Change email"
+msgstr "Cambiar correo"
+
+#: src/Telegram/MemberCommands.php
+msgid "Sign out of the web board on every browser and phone? Nothing is lost; you just sign in again."
+msgstr "¿Cerrar sesión en la web en todos los navegadores y teléfonos? No se pierde nada; solo vuelves a iniciar sesión."
+
+#: src/Telegram/MemberCommands.php
+msgid "A link goes to your email first; your data is deleted only when you open it."
+msgstr "Primero llega un enlace a tu correo; tus datos solo se borran cuando lo abres."
+
+#: templates/public/signup.php
+msgid "Your Telegram is linked to this account."
+msgstr "Tu Telegram está vinculado a esta cuenta."
+
+#: templates/public/signup.php
+msgid "The bot asks for your email and sends a link there; opening it links your Telegram to this account."
+msgstr "El bot te pide tu correo y te envía allí un enlace; al abrirlo, tu Telegram queda vinculado a esta cuenta."
+
+#: src/Support/OrganizerGuide.php:245
+msgid "As an organizer you can add anyone to any task of a night, also one for a role they do not hold (they then get the role), and an organizer to Organize: in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
+msgstr "Como organizador puedes añadir a cualquiera a cualquier tarea de una noche, también a una de un rol que no tiene (entonces recibe el rol), y a un organizador a Organizar: en un chat privado con /assign tarea ; nombre (/unassign lo quita) o con ➕ Añadir a alguien en /board, en la pestaña Admin de la app Crew o en la taquilla."
+
+#. translators: %s: a person's name.
+#: src/Support/RoleTaskService.php
+msgid "%s is not an organizer. Make them one with /people first."
+msgstr "%s no es organizador. Hazlo organizador primero con /people."
+
+#: src/Support/RoleTaskService.php
+msgid "Only an organizer can go on an Organize task. Make them one first, with /people or on the People page."
+msgstr "Solo un organizador puede ir en una tarea de Organizar. Hazlo organizador primero, con /people o en la página Personas."
+
+#: src/Telegram/RoleTaskBot.php
+msgid "Send the organizer's name. Only an organizer can go on an Organize task."
+msgstr "Envía el nombre del organizador. Solo un organizador puede ir en una tarea de Organizar."
+
+msgid "Something went wrong. Please try again."
+msgstr "Algo salió mal. Inténtalo de nuevo."
+
+msgid "Use /subscribe in a private chat with me."
+msgstr "Usa /subscribe en un chat privado conmigo."
+
+msgid "Only organizers can use /subscribe."
+msgstr "Solo los organizadores pueden usar /subscribe."
+
+msgid "“%s” is not an email address."
+msgstr "«%s» no es una dirección de correo."
+
+msgid "A confirmation email went to %s. They are on the list once they open it."
+msgstr "Se envió un correo de confirmación a %s. Estará en la lista cuando lo abra."
+
+msgid "%s is already on the newsletter."
+msgstr "%s ya recibe el boletín."
+
+msgid "Add someone to the newsletter: /subscribe name@example.com\nAdd a language code to choose their language: %s."
+msgstr "Añade a alguien al boletín: /subscribe nombre@example.com\nAñade un código de idioma para elegir su idioma: %s."
+
+msgid "/subscribe email – add someone to the newsletter; they confirm by email"
+msgstr "/subscribe correo – añade a alguien al boletín; confirma por correo"
+
+msgid "Preview of the next announcement"
+msgstr "Vista previa del próximo anuncio"

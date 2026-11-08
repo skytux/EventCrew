@@ -20,6 +20,11 @@ use EventCrew\Web\SignupController;
  * - /email <new address>: change the email, after ✅, through the crew
  *   page's own flow (SignupController::updateProfile): a link goes to the new
  *   address and nothing changes until it is opened. RATE_LIMIT an hour.
+ * - Settings' 🚪 Sign out everywhere and 🗑 Delete my data (Owner
+ *   2026-11-08, as on the web), each asked first: the first signs the web
+ *   out on every browser (SignupController's revoke action), the second
+ *   mails the one-time delete link, as the web's Delete my data does
+ *   (ManageController::mailDeleteLink()), so nothing is erased from a chat.
  */
 final class MemberCommands
 {
@@ -29,6 +34,10 @@ final class MemberCommands
     public const CREW = 'crew';
     public const NAME = 'name';
     public const EMAIL = 'email';
+
+    /** Settings' buttons, not typed commands: their ops in a waiting request. */
+    public const SIGN_OUT = 'signout';
+    public const DELETE = 'delete';
 
     /** The commands this class answers. */
     public const COMMANDS = [self::CREW, self::NAME, self::EMAIL];
@@ -48,7 +57,9 @@ final class MemberCommands
         private readonly TaskRepository $tasks,
         private readonly AssignmentRepository $assignments,
         private readonly SignupController $signup,
-        TelegramClient $telegram
+        TelegramClient $telegram,
+        // Optional: without it Delete my data says the email could not be sent.
+        private readonly ?ManageController $manage = null
     ) {
         $this->flow = new CommandFlow($people, $telegram, self::PREFIX, self::STATE_PREFIX);
     }
@@ -78,8 +89,13 @@ final class MemberCommands
 
         if (self::NAME === $command) {
             if ('' === $args) {
-                /* translators: %s: the member's name. */
-                $telegram->sendMessage($chatId, sprintf(__("Your name: %s\nChange it: /name New Name", 'eventcrew'), $member->name()));
+                // Settings' Change name lands here too, so Back goes to Settings.
+                $telegram->sendMessage(
+                    $chatId,
+                    /* translators: %s: the member's name. */
+                    sprintf(__("Your name: %s\nChange it: /name New Name", 'eventcrew'), $member->name()),
+                    MenuButtons::back(MenuButtons::SETTINGS)
+                );
 
                 return;
             }
@@ -105,8 +121,12 @@ final class MemberCommands
         }
 
         if ('' === $args) {
-            /* translators: %s: the member's email address. */
-            $telegram->sendMessage($chatId, sprintf(__("Your email: %s\nChange it: /email new@example.com", 'eventcrew'), $member->email));
+            $telegram->sendMessage(
+                $chatId,
+                /* translators: %s: the member's email address. */
+                sprintf(__("Your email: %s\nChange it: /email new@example.com", 'eventcrew'), $member->email),
+                MenuButtons::back(MenuButtons::SETTINGS)
+            );
 
             return;
         }
@@ -142,6 +162,64 @@ final class MemberCommands
     }
 
     /**
+     * 🚪 Sign out everywhere under Settings: asks first, like the web's
+     * button does.
+     */
+    public function askSignOut(int $chatId, int $fromId, bool $isPrivate): void
+    {
+        if (null === $this->memberOrNudge($chatId, $fromId, $isPrivate)) {
+            return;
+        }
+
+        $id = $this->flow->start(['user' => $fromId, 'op' => self::SIGN_OUT, 'value' => '1']);
+        $this->flow->confirm($chatId, $id, self::signOutQuestion(), __('Sign out everywhere', 'eventcrew'));
+    }
+
+    /**
+     * 🗑 Delete my data under Settings: says what goes and that a link comes
+     * first, then asks. The ✅ mails the same one-time link the web's Delete
+     * my data does; only opening it deletes.
+     */
+    public function askDelete(int $chatId, int $fromId, bool $isPrivate): void
+    {
+        if (null === $this->memberOrNudge($chatId, $fromId, $isPrivate)) {
+            return;
+        }
+
+        $id = $this->flow->start(['user' => $fromId, 'op' => self::DELETE, 'value' => '1']);
+        $this->flow->confirm($chatId, $id, self::deleteQuestion(), __('Delete my data', 'eventcrew'));
+    }
+
+    /** What 🚪 Sign out everywhere asks. */
+    public static function signOutQuestion(): string
+    {
+        return __('Sign out of the web board on every browser and phone? Nothing is lost; you just sign in again.', 'eventcrew');
+    }
+
+    /** What 🗑 Delete my data asks: the web's warning, and the link that comes first. */
+    public static function deleteQuestion(): string
+    {
+        return __('Delete your account and all your history? This cannot be undone.', 'eventcrew')
+            . "\n\n"
+            . __('A link goes to your email first; your data is deleted only when you open it.', 'eventcrew');
+    }
+
+    private function memberOrNudge(int $chatId, int $fromId, bool $isPrivate): ?Person
+    {
+        if (! $isPrivate) {
+            return null;
+        }
+
+        $member = $this->flow->member($fromId);
+
+        if (null === $member) {
+            $this->flow->telegram()->sendMessage($chatId, SetupNudge::text());
+        }
+
+        return $member;
+    }
+
+    /**
      * @param array<string, mixed> $callbackQuery
      */
     public function onCallback(array $callbackQuery): void
@@ -169,7 +247,33 @@ final class MemberCommands
             return;
         }
 
-        if (self::NAME === ($tap['state']['op'] ?? '')) {
+        $op = (string) ($tap['state']['op'] ?? '');
+
+        if (self::SIGN_OUT === $op) {
+            // The web's revoke action: every web session cookie stops working.
+            $this->people->revokeSessions($member->id);
+            $telegram->sendMessage(
+                $tap['chat'],
+                CommandFlow::result(true, '', SignupController::noticeText('sessions_revoked')),
+                MenuButtons::back(MenuButtons::SETTINGS)
+            );
+
+            return;
+        }
+
+        if (self::DELETE === $op) {
+            $telegram->sendMessage(
+                $tap['chat'],
+                null === $this->manage
+                    ? __('The email could not be sent. Try again later.', 'eventcrew')
+                    : $this->manage->mailDeleteLink($member),
+                MenuButtons::back(MenuButtons::SETTINGS)
+            );
+
+            return;
+        }
+
+        if (self::NAME === $op) {
             $code = $this->signup->updateProfile($member, $value, '');
             $telegram->sendMessage($tap['chat'], CommandFlow::result(
                 'profile_saved' === $code,

@@ -73,8 +73,8 @@ final class CommandMenuTest extends TelegramTestCase
 
         self::assertSame('Show the open tasks', $calls[0][4][0]);
         self::assertSame('Näytä avoimet tehtävät', $calls[1][4][0]);
-        self::assertSame('The commands you can use', $calls[2][4][5]);
-        self::assertSame('Komennot, joita voit käyttää', $calls[3][4][5]);
+        self::assertSame('How this works, commands and FAQ', $calls[2][4][5]);
+        self::assertSame('Miten tämä toimii, komennot ja UKK', $calls[3][4][5]);
 
         foreach ($calls as $call) {
             foreach ($call[4] as $description) {

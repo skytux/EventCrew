@@ -72,7 +72,8 @@ final class UpdateRouter
         private readonly ?AssignCommand $assign = null,
         private readonly ?TaskCommand $taskCommand = null,
         private readonly ?ChatCommands $chatCommands = null,
-        private readonly ?TransferBot $transfer = null
+        private readonly ?TransferBot $transfer = null,
+        private readonly ?SubscribeCommand $subscribe = null
     ) {
     }
 
@@ -294,7 +295,7 @@ final class UpdateRouter
             return;
         }
 
-        // /help: the commands this person may use.
+        // /help: the Help menu (Owner 2026-11-08).
         if (null !== $this->help && $this->isCommand($text, 'help')) {
             $this->help->onHelp($fromId, $chatId, $isPrivate);
 
@@ -443,6 +444,17 @@ final class UpdateRouter
             return;
         }
 
+        if (null !== $this->subscribe && $this->isCommand($text, SubscribeCommand::COMMAND)) {
+            $this->subscribe->onCommand(
+                $fromId,
+                $chatId,
+                $isPrivate,
+                $this->commandArguments($text, SubscribeCommand::COMMAND)
+            );
+
+            return;
+        }
+
         if (null !== $this->newsletter && $this->isCommand($text, 'newsletter')) {
             // The helper's action was confirmed with the text it replaces shown.
             $this->newsletter->onCommand(
@@ -520,7 +532,8 @@ final class UpdateRouter
         // /help answer, so the person sees what they can type. In a group, a
         // command addressed to another bot (/x@otherbot) is left alone.
         if (null !== $this->help && str_starts_with($text, '/') && ! $this->isForAnotherBot($text)) {
-            $this->help->onHelp($fromId, $chatId, $isPrivate);
+            // The command list itself, not the Help menu (Owner 2026-11-08).
+            $this->help->onCommands($fromId, $chatId, $isPrivate);
 
             return;
         }
@@ -669,7 +682,36 @@ final class UpdateRouter
             return;
         }
 
+        // The FAQ's pages: mn:faq is page one, mn:faq:<n> the others.
+        if (MenuButtons::FAQ === $data || str_starts_with($data, MenuButtons::FAQ . ':')) {
+            $this->help?->onFaq($chatId, (int) substr($data, strlen(MenuButtons::FAQ) + 1));
+
+            return;
+        }
+
+        // ◀️ ▶️ under Tasks and Past tasks: the screen again, at that page.
+        $paged = MenuButtons::parsePage($data);
+
+        if (null !== $paged) {
+            [$screen, $page] = $paged;
+
+            if (MenuButtons::HISTORY === $screen) {
+                $this->profile->onMyHistory($fromId, $chatId, $isPrivate, $page);
+            } else {
+                $this->profile->onMyTasks($fromId, $chatId, $isPrivate, $page);
+            }
+
+            return;
+        }
+
         match ($data) {
+            // Settings' Change name / Change email open the /name and /email
+            // flows; Sign out everywhere and Delete my data ask first
+            // (Owner 2026-11-08, as on the web).
+            MenuButtons::NAME => $this->chatCommands?->onCommand($chatId, $fromId, '/' . MemberCommands::NAME, $isPrivate),
+            MenuButtons::EMAIL => $this->chatCommands?->onCommand($chatId, $fromId, '/' . MemberCommands::EMAIL, $isPrivate),
+            MenuButtons::SIGN_OUT => $this->chatCommands?->member()->askSignOut($chatId, $fromId, $isPrivate),
+            MenuButtons::DELETE => $this->chatCommands?->member()->askDelete($chatId, $fromId, $isPrivate),
             MenuButtons::TICKET => $this->tickets->onTicketCommand($fromId, $chatId, $isPrivate),
             MenuButtons::REPLACE => $this->replacement->start($fromId, $chatId, $isPrivate),
             MenuButtons::WEB => $this->profile->onWeb($fromId, $chatId, $isPrivate),
@@ -686,10 +728,11 @@ final class UpdateRouter
             MenuButtons::TELL => $this->askWhatIsWrong($fromId, $chatId, $isPrivate),
             MenuButtons::TASK_INFO => $this->board->sendTaskInfo($fromId),
             MenuButtons::TICKETS => $this->profile->onMyTickets($fromId, $chatId, $isPrivate),
-            MenuButtons::MY_TASKS => $this->profile->onMyTasks($fromId, $chatId, $isPrivate),
-            MenuButtons::HISTORY => $this->profile->onMyHistory($fromId, $chatId, $isPrivate),
             MenuButtons::SETTINGS => $this->profile->onSettings($fromId, $chatId, $isPrivate),
-            MenuButtons::HELP => $this->help?->onHelp($fromId, $chatId, $isPrivate, true),
+            MenuButtons::HELP => $this->help?->onHelp($fromId, $chatId, $isPrivate),
+            MenuButtons::HELP_GUIDE => $this->help?->onGuide($fromId, $chatId, $isPrivate),
+            MenuButtons::HELP_COMMANDS => $this->help?->onCommands($fromId, $chatId, $isPrivate),
+            MenuButtons::HELP_ORGANIZER => $this->help?->onGuide($fromId, $chatId, $isPrivate, true),
             MenuButtons::ADMIN => $this->help?->onAdmin($fromId, $chatId, $isPrivate),
             MenuButtons::ROSTER => $this->roster->onRosterCommand($fromId, $chatId, $isPrivate, ''),
             MenuButtons::DOOR => $this->help?->onDoor($fromId, $chatId, $isPrivate, ''),

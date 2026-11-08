@@ -279,9 +279,9 @@ final class CommandMenu
     private function descriptions(): array
     {
         return [
-            'help' => __('The commands you can use', 'eventcrew'),
+            'help' => __('How this works, commands and FAQ', 'eventcrew'),
             'board' => __('Show the open tasks', 'eventcrew'),
-            'me' => __('Your tasks, credits, ticket, settings', 'eventcrew'),
+            'me' => __('Your standing, credits and coming tasks', 'eventcrew'),
             'tasks' => __('Your coming tasks; cancel or take over one', 'eventcrew'),
             'tickets' => __('Your tickets and free-entry ticket', 'eventcrew'),
             'settings' => __('Notifications, language, web sign-in', 'eventcrew'),

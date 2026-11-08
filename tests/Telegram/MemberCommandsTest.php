@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -16,9 +17,11 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\PersonEraser;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\Turnstile;
+use EventCrew\Telegram\ManageController;
 use EventCrew\Telegram\MemberCommands;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Web\SignupController;
@@ -77,7 +80,14 @@ final class MemberCommandsTest extends TelegramTestCase
             new TicketRedemptionService($people, new TaskRepository(), new RedemptionRepository(), $standing, new FreeEntryGate(), $this->client(), $mailer)
         );
 
-        return new MemberCommands($people, new TaskRepository(), $assignments, $signup, $this->client());
+        $manage = new ManageController(
+            $people,
+            new PersonEraser($people, $assignments, new RedemptionRepository(), new CreditGrantRepository(), new AuthTokenRepository(), new NotificationsRepository()),
+            new AuthTokenRepository(),
+            $mailer
+        );
+
+        return new MemberCommands($people, new TaskRepository(), $assignments, $signup, $this->client(), $manage);
     }
 
     /**
@@ -159,6 +169,8 @@ final class MemberCommandsTest extends TelegramTestCase
         $this->command()->onCommand(607, 607, '/name', true, MemberCommands::NAME);
 
         self::assertSame("Your name: Milla Virtanen\nChange it: /name New Name", $this->lastText());
+        // Settings' Change name opens this too, so Back goes to Settings.
+        self::assertSame(['mn:set'], $this->buttonData());
     }
 
     public function testEmailSendsALinkAndChangesNothingYet(): void
@@ -206,6 +218,73 @@ final class MemberCommandsTest extends TelegramTestCase
         $this->command()->onCommand(607, 607, '/email milla@new.example', true, MemberCommands::EMAIL);
 
         self::assertSame('You asked for a link a few times already. Try again in an hour.', $this->lastText());
+    }
+
+    /**
+     * Owner 2026-11-08: Settings' Sign out everywhere asks first, then does
+     * what the web's does - every web session stops working.
+     */
+    public function testSignOutEverywhereAsksThenRevokesTheWebSessions(): void
+    {
+        $this->wpdb->nextRows[] = $this->milla();
+
+        $this->command()->askSignOut(607, 607, true);
+
+        self::assertSame(MemberCommands::signOutQuestion(), $this->lastText());
+        $id = $this->requestId('mc:');
+        self::assertSame(['mc:y:' . $id, 'mc:x:' . $id], $this->buttonData());
+        self::assertSame([], $this->wpdb->updates);
+
+        $this->wpdb->nextRows[] = $this->milla();
+        $this->command()->onCallback($this->tap('mc:y:' . $id, 607));
+
+        self::assertCount(1, $this->wpdb->updates);
+        self::assertArrayHasKey('sessions_valid_from', $this->wpdb->updates[0]['data']);
+        self::assertSame(
+            '✅ Signed out everywhere. Any other browser or phone that was signed in as you will need a fresh link.',
+            $this->lastText()
+        );
+        self::assertSame(['mn:set'], $this->buttonData());
+    }
+
+    /**
+     * Owner 2026-11-08: Settings' Delete my data says what goes, asks, and
+     * then - like the web's - only mails the one-time delete link; nothing
+     * is erased from the chat.
+     */
+    public function testDeleteMyDataAsksThenMailsTheOneTimeLink(): void
+    {
+        $this->wpdb->nextRows[] = $this->milla();
+
+        $this->command()->askDelete(607, 607, true);
+
+        self::assertSame(
+            "Delete your account and all your history? This cannot be undone.\n\n"
+            . 'A link goes to your email first; your data is deleted only when you open it.',
+            $this->lastText()
+        );
+        $id = $this->requestId('mc:');
+        self::assertSame('✅ Delete my data', $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'][0][0]['text']);
+
+        $this->wpdb->nextRows[] = $this->milla();
+        $this->command()->onCallback($this->tap('mc:y:' . $id, 607));
+
+        self::assertSame(['p7@example.com'], $this->mailedTo);
+        self::assertSame([], $this->wpdb->deletes);
+        self::assertSame('We sent a link to p7@example.com. Open it within 30 minutes to delete your data.', $this->lastText());
+    }
+
+    public function testCancellingDeleteMyDataChangesNothing(): void
+    {
+        $this->wpdb->nextRows[] = $this->milla();
+        $this->command()->askDelete(607, 607, true);
+        $id = $this->requestId('mc:');
+
+        $this->command()->onCallback($this->tap('mc:x:' . $id, 607));
+
+        self::assertSame([], $this->mailedTo);
+        self::assertSame([], $this->wpdb->deletes);
+        self::assertSame('✖️ Cancelled. Nothing was changed.', $this->lastText());
     }
 
     public function testATapFromAnotherUserChangesNothing(): void

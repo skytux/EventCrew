@@ -60,8 +60,9 @@ final class TaskCancelledNotice
             return;
         }
 
-        // The event's other open tasks, to pick another one.
-        $others = null === $this->slots ? [] : $this->slots->otherOpen($task);
+        // The event's other open tasks, to pick another one: read once, and
+        // each person gets the ones their board shows.
+        $open = null === $this->slots ? [] : $this->slots->openOthers($task);
 
         foreach (array_unique(array_map('intval', $personIds)) as $personId) {
             $person = $this->people->find($personId);
@@ -69,6 +70,8 @@ final class TaskCancelledNotice
             if (null === $person || $person->isAnonymized()) {
                 continue;
             }
+
+            $others = SlotFreedNotice::seenBy($open, $person);
 
             $this->dm($person, $task, $others);
 

@@ -263,8 +263,8 @@ final class ClaimNotifier
                 ? __('⚠️ Late cancellation', 'eventcrew')
                 : __('❌ Cancelled', 'eventcrew'),
             'note' => $note,
-            // The other open tasks of the event, to pick another one.
-            'other_rows' => null === $this->slots ? [] : $this->slots->otherOpen($task),
+            // The other open tasks of the event their board shows, to pick another one.
+            'other_rows' => null === $this->slots ? [] : $this->slots->otherOpen($task, $person),
             // Only a late cancellation changes the standing; else the line goes.
             'standing' => AssignmentStatus::LATE_CANCEL === $status ? $this->standingLine($person) : '',
         ];

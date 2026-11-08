@@ -252,6 +252,7 @@ final class CrewAdminTasks
             'on_board' => isset($post['role_on_board']),
             'guest_signup' => isset($post['role_guest_signup']),
             'anonymous' => isset($post['role_anonymous']),
+            'members_display' => isset($post['role_members_display']),
             'title_contains' => sanitize_text_field((string) ($post['role_title_contains'] ?? '')),
             'plus_ones' => (int) ($post['role_plus_ones'] ?? 0),
             'conditions' => [

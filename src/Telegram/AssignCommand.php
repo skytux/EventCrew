@@ -9,7 +9,6 @@ use EventCrew\Models\Task;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Dates;
-use EventCrew\Support\Roles;
 use EventCrew\Support\RoleTaskService;
 
 /**
@@ -25,6 +24,8 @@ use EventCrew\Support\RoleTaskService;
  * - Nothing is written before the organizer taps ✅ on the confirmation. On a
  *   role-restricted task the confirmation says when the person lacks the role
  *   (adding gives it to them) and asks "Count toward free-entry credit?".
+ * - An Organize task takes only someone who is an organizer: only organizers
+ *   are matched for it, and anyone else is refused by name.
  * - The write is RoleTaskService::addPerson() / removePerson(), the same
  *   service behind "➕ Add someone" under /board, so the person gets the
  *   normal sign-up confirmation and ticket.
@@ -117,12 +118,36 @@ final class AssignCommand
         $tasks = self::matchTasks($taskQuery, $pool);
 
         if ([] === $tasks) {
-            $this->telegram->sendMessage($chatId, $this->noTask($taskQuery, $pool, $mode, $date));
+            $this->telegram->sendMessage($chatId, $this->noTask($taskQuery, $pool));
 
             return;
         }
 
-        $people = self::matchPeople($personQuery, $this->members());
+        $members = $this->members();
+        $organizersOnly = self::ADD === $mode
+            && [] === array_filter($tasks, static fn (Task $t): bool => ! $t->isOrganizersOnly());
+
+        if ($organizersOnly) {
+            $organizers = array_values(array_filter($members, static fn (Person $p): bool => $p->isOrganizer));
+            $people = self::matchPeople($personQuery, $organizers);
+
+            $found = [] === $people ? self::matchPeople($personQuery, $members) : [];
+
+            if ([] !== $found) {
+                $this->telegram->sendMessage(
+                    $chatId,
+                    RoleTaskService::text(
+                        RoleTaskService::NOT_ORGANIZER,
+                        false,
+                        1 === count($found) ? $found[0]->name() : $personQuery
+                    )
+                );
+
+                return;
+            }
+        } else {
+            $people = self::matchPeople($personQuery, $members);
+        }
 
         if ([] === $people) {
             $this->telegram->sendMessage(
@@ -254,7 +279,12 @@ final class AssignCommand
         $done = RoleTaskService::ADDED === $result['code'];
         $this->telegram->sendMessage(
             $chatId,
-            $this->result($done, $result['person'], $task, RoleTaskService::text($result['code'], $result['emailed']))
+            $this->result(
+                $done,
+                $result['person'],
+                $task,
+                RoleTaskService::text($result['code'], $result['emailed'], $result['person']?->name() ?? '')
+            )
         );
     }
 
@@ -350,7 +380,9 @@ final class AssignCommand
 
         $stop = null;
 
-        if ($person->isBanned()) {
+        if ($task->isOrganizersOnly() && ! $person->isOrganizer) {
+            $stop = RoleTaskService::text(RoleTaskService::NOT_ORGANIZER, false, $name);
+        } elseif ($person->isBanned()) {
             /* translators: %s: a person's name. */
             $stop = sprintf(__('%s is blocked from sign-ups. An organizer can lift it on the People page.', 'eventcrew'), $name);
         } elseif ($isOn) {
@@ -416,16 +448,8 @@ final class AssignCommand
      *
      * @param list<Task> $pool
      */
-    private function noTask(string $query, array $pool, string $mode, string $date): string
+    private function noTask(string $query, array $pool): string
     {
-        $all = self::ADD === $mode ? $this->tasks->upcoming() : [];
-
-        foreach ($all as $task) {
-            if (('' === $date || $task->taskDate === $date) && Roles::ORGANIZE_SLUG === $task->roleSlug && [] !== self::matchTasks($query, [$task])) {
-                return __('Organize tasks are for organizers only. Make someone an organizer with /people.', 'eventcrew');
-            }
-        }
-
         $first = [] === $pool ? '' : $pool[0]->taskDate;
         $names = [];
 

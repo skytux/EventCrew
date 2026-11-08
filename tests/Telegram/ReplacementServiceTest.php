@@ -128,13 +128,13 @@ final class ReplacementServiceTest extends TelegramTestCase
 
     public function testSelectOnlySendsTheHolderARequestAndMovesNothing(): void
     {
-        // find(assignment 3) -> the original's occupying slot on task 5
-        $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP];
         // findByTelegramUserId(555) -> the cover (id 7)
         $this->wpdb->nextRows[] = array_merge($this->verifiedPersonRow(7, 555), ['telegram_chat_id' => 555]);
+        // find(assignment 3) -> the original's occupying slot on task 5
+        $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP];
         // tasks->find(5)
         $this->wpdb->nextRows[] = $this->taskRow(5);
-        // refusalFor: findFor(5,7) -> null (not already on)
+        // requestFor: findFor(5,7) -> null (not already on)
         $this->wpdb->nextRows[] = null;
         // request: people->find(9) -> the holder, then no pending request yet
         $this->wpdb->nextRows[] = array_merge($this->verifiedPersonRow(9, 999), ['telegram_chat_id' => 999]);
@@ -232,8 +232,8 @@ final class ReplacementServiceTest extends TelegramTestCase
 
     public function testSelectRefusesTheOrganizeTaskToACoverWhoIsNotAnOrganizer(): void
     {
-        $this->wpdb->nextRows[] = ['id' => 4, 'task_id' => 6, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP];
         $this->wpdb->nextRows[] = $this->verifiedPersonRow(7, 555);
+        $this->wpdb->nextRows[] = ['id' => 4, 'task_id' => 6, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP];
         $this->wpdb->nextRows[] = array_merge($this->taskRow(6), ['role_slug' => 'organize']);
 
         $this->service()->onSelect([
@@ -247,11 +247,46 @@ final class ReplacementServiceTest extends TelegramTestCase
         self::assertSame('That task is no longer available.', $answer['text']);
     }
 
+    /**
+     * A role with Guest sign up off (shown by Guest or Members display) is
+     * not taken over by someone without it either.
+     */
+    public function testATaskClosedToGuestsIsNotOfferedOrGivenToACoverWithoutTheRole(): void
+    {
+        $this->options[\EventCrew\Support\Roles::OPTION_NAME] = [[
+            'slug' => 'decorate', 'label' => 'Decorate', 'on_board' => false,
+            'members_display' => true, 'guest_signup' => false,
+        ]];
+
+        $this->wpdb->nextResults[] = [$this->verifiedPersonRow(9, 999)]; // name search
+        $this->wpdb->nextResults[] = [                                    // forPerson(9)
+            ['id' => 3, 'task_id' => 5, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP],
+        ];
+        $this->wpdb->nextRows[] = $this->taskRow(5);                      // tasks->find(5)
+        $this->wpdb->nextRows[] = $this->verifiedPersonRow(7, 555);       // the cover, no role
+
+        $this->service()->captureTarget(555, 555, 'Person 9', []);
+
+        self::assertStringNotContainsString(
+            'rep:3',
+            (string) json_encode($this->lastCallTo('sendMessage')['reply_markup'] ?? [])
+        );
+
+        $this->wpdb->nextRows[] = $this->verifiedPersonRow(7, 555);
+        $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP];
+        $this->wpdb->nextRows[] = $this->taskRow(5);
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'rep:3']);
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame('That task is no longer available.', $this->lastCallTo('answerCallbackQuery')['text']);
+    }
+
     public function testSelectRefusesCoveringYourOwnTask(): void
     {
         // The original slot belongs to person 7, and the cover is also 7.
-        $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 7, 'status' => AssignmentStatus::SIGNED_UP];
         $this->wpdb->nextRows[] = $this->verifiedPersonRow(7, 555);
+        $this->wpdb->nextRows[] = ['id' => 3, 'task_id' => 5, 'person_id' => 7, 'status' => AssignmentStatus::SIGNED_UP];
         $this->wpdb->nextRows[] = $this->taskRow(5);
 
         $this->service()->onSelect([
@@ -260,5 +295,77 @@ final class ReplacementServiceTest extends TelegramTestCase
 
         self::assertSame([], $this->wpdb->updates);
         self::assertTrue((bool) $this->lastCallTo('answerCallbackQuery')['show_alert']);
+    }
+
+    /**
+     * Owner 2026-11-08: a full task's 🔁 Take someone's task (rep:t:<id>)
+     * lists its holders by first name in the DM, each a rep:<assignment>
+     * button that asks that holder.
+     */
+    public function testTakeSomeonesTaskListsTheHoldersOfAFullTask(): void
+    {
+        $this->wpdb->nextRows[] = array_merge($this->verifiedPersonRow(7, 555), ['telegram_chat_id' => 555]);
+        $this->wpdb->nextRows[] = $this->taskRow(5);                         // tasks->find(5)
+        $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 2]];       // occupancyFor: full
+        $this->wpdb->nextResults[] = [                                       // forTask(5)
+            ['id' => 3, 'task_id' => 5, 'person_id' => 8, 'status' => AssignmentStatus::SIGNED_UP],
+            ['id' => 4, 'task_id' => 5, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP],
+        ];
+        $this->wpdb->nextRows[] = array_merge($this->verifiedPersonRow(8, 888), ['display_name' => 'Anna Virtanen']);
+        $this->wpdb->nextRows[] = $this->verifiedPersonRow(9, 999);
+
+        $this->service()->onSelect([
+            'id' => 'cbq', 'from' => ['id' => 555], 'data' => ReplacementService::TASK_PREFIX . '5',
+            'message' => ['message_id' => 1, 'chat' => ['id' => 555, 'type' => 'private']],
+        ]);
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(555, $sent['chat_id']);
+        self::assertSame('Whose task do you want to take? They decide.', $sent['text']);
+        $keyboard = $sent['reply_markup']['inline_keyboard'];
+        self::assertSame(['rep:3', 'rep:4'], array_map(static fn (array $row): string => $row[0]['callback_data'], $keyboard));
+        self::assertStringStartsWith('Anna · ', $keyboard[0][0]['text']);
+        self::assertStringStartsWith('Person · ', $keyboard[1][0]['text']);
+        self::assertSame([], $this->wpdb->inserts, 'listing asks nobody yet');
+    }
+
+    /** The board's row (rep:d:<date>) covers that day's full tasks only. */
+    public function testTheBoardsTakeSomeonesTaskListsTheDaysFullTasks(): void
+    {
+        $this->wpdb->nextRows[] = array_merge($this->verifiedPersonRow(7, 555), ['telegram_chat_id' => 555]);
+        $this->wpdb->nextResults[] = [$this->taskRow(5), $this->taskRow(6)];   // upcoming
+        $this->wpdb->nextResults[] = [['task_id' => 6, 'taken' => 2]];          // only 6 is full
+        $this->wpdb->nextResults[] = [
+            ['id' => 4, 'task_id' => 6, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP],
+        ];
+        $this->wpdb->nextRows[] = $this->verifiedPersonRow(9, 999);
+
+        $this->service()->onSelect([
+            'id' => 'cbq', 'from' => ['id' => 555], 'data' => ReplacementService::DAY_PREFIX . '2026-08-01',
+        ]);
+
+        $keyboard = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
+        self::assertSame(['rep:4'], array_map(static fn (array $row): string => $row[0]['callback_data'], $keyboard));
+    }
+
+    /** The cover already on the task, or nobody to ask: a popup, no list. */
+    public function testTakeSomeonesTaskOnATaskYouAreOnSaysThereIsNothingToTake(): void
+    {
+        $this->wpdb->nextRows[] = $this->verifiedPersonRow(7, 555);
+        $this->wpdb->nextRows[] = $this->taskRow(5);
+        $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 2]];
+        $this->wpdb->nextResults[] = [
+            ['id' => 3, 'task_id' => 5, 'person_id' => 7, 'status' => AssignmentStatus::SIGNED_UP],
+            ['id' => 4, 'task_id' => 5, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP],
+        ];
+
+        $this->service()->onSelect([
+            'id' => 'cbq', 'from' => ['id' => 555], 'data' => ReplacementService::TASK_PREFIX . '5',
+        ]);
+
+        $answer = $this->lastCallTo('answerCallbackQuery');
+        self::assertTrue((bool) $answer['show_alert']);
+        self::assertSame('No task here can be taken over.', $answer['text']);
+        self::assertNull($this->lastCallTo('sendMessage'));
     }
 }

@@ -306,11 +306,23 @@
  * at whatever width the column happened to be.
  */
 .eventcrew-signup .eventcrew-plain-list { list-style: none; margin: 0; padding: 0; }
+/* Previous · page 2 of 3 · Next under a paged Me-tab list: one line of text links. */
+.eventcrew-signup .eventcrew-pager {
+    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: .4em 1em;
+    margin: 0;
+}
 .eventcrew-signup .eventcrew-plain-list li {
     display: flex; flex-direction: column; gap: .1em;
     padding: .5em 0; border-bottom: 1px solid var(--eventcrew-line);
 }
 .eventcrew-signup .eventcrew-plain-list li:last-child { border-bottom: 0; }
+/* A row's text-link action (Cancel, Give away): on its own line, left. */
+.eventcrew-signup .eventcrew-inline-form { align-self: flex-start; margin: 0; }
+/* Give away opens a small email + name form under its link. */
+.eventcrew-signup .eventcrew-give summary { list-style: none; }
+.eventcrew-signup .eventcrew-give summary::-webkit-details-marker { display: none; }
+.eventcrew-signup .eventcrew-give-form { display: flex; flex-direction: column; gap: .3em; max-width: 24em; margin: 0 0 .3em; }
+.eventcrew-signup .eventcrew-give-form button { align-self: flex-start; }
 .eventcrew-signup .eventcrew-mine-label { font-weight: 600; }
 .eventcrew-signup .eventcrew-mine-when { font-size: .85em; opacity: .75; }
 .eventcrew-signup .eventcrew-mine-when a { white-space: nowrap; }
@@ -386,7 +398,7 @@
 .eventcrew-signup .eventcrew-admin-roles strong { flex: 1 1 8em; }
 .eventcrew-signup .eventcrew-admin-roles label { display: inline-flex; gap: .3em; margin: 0; white-space: nowrap; }
 /* Guest sign up means nothing while Guest display is off: greyed out then. */
-.eventcrew-signup .eventcrew-admin-roles:has(input[name="role_on_board"]:not(:checked)) .eventcrew-needs-display { opacity: .5; }
+.eventcrew-signup .eventcrew-admin-roles:has(input[name="role_on_board"]:not(:checked)):has(input[name="role_members_display"]:not(:checked)) .eventcrew-needs-display { opacity: .5; }
 /* The task list for "Add a person to a task" is long: a scroll box, one task per line. */
 .eventcrew-signup .eventcrew-admin-tasks {
     margin: 0 0 .7em; padding: .3em .7em .5em; max-height: 16em; overflow-y: auto;
@@ -525,6 +537,12 @@
 .eventcrew-signup .eventcrew-links.eventcrew-help-orglink { margin: 0 0 1.2em; }
 .eventcrew-signup .eventcrew-help-organizer { margin-top: 2em; scroll-margin-top: 1em; }
 .eventcrew-signup .eventcrew-help-organizer > h2 { margin: 0 0 .8em; }
+/* The Help tab's parts, named as in the bot's Help menu (Owner 2026-11-08). */
+.eventcrew-signup .eventcrew-help-part { margin: 1.6em 0 .8em; scroll-margin-top: 1em; }
+.eventcrew-signup .eventcrew-faq-item { border-bottom: 1px solid rgba(127, 127, 127, .25); padding: .5em 0; }
+.eventcrew-signup .eventcrew-faq-item:last-child { border-bottom: 0; }
+.eventcrew-signup .eventcrew-faq-item summary { cursor: pointer; font-weight: 600; line-height: 1.4; }
+.eventcrew-signup .eventcrew-faq-item p { margin: .5em 0 .2em; }
 
 /* The count above the action, the pair as narrow as the button itself. */
 .eventcrew-signup .eventcrew-task-side {

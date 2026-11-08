@@ -448,10 +448,6 @@ msgstr "/door add [дата] Имя +N ; заметка — добавить г�
 msgid "/events – post the coming events in the group as picture cards; you see them first"
 msgstr "/events — опубликовать ближайшие события в группе карточками с картинками; сначала их видишь ты"
 
-#: src/Telegram/HelpService.php:235
-msgid "/help – this list"
-msgstr "/help — этот список"
-
 #: src/Telegram/HelpService.php:231
 msgid "/me – your standing, credits and coming tasks"
 msgstr "/me – твой статус, баллы и предстоящие задачи"
@@ -1119,10 +1115,6 @@ msgstr "Опоздание"
 #: src/Support/Reputation.php:68
 msgid "Arrived late, did the task"
 msgstr "Опоздание, задача выполнена"
-
-#: src/Support/OrganizerGuide.php:245
-msgid "As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
-msgstr "Как организатор ты можешь добавить кого угодно на любую задачу вечера, кроме «Организация», даже на задачу роли, которой у человека нет (тогда он получит роль): в личном чате через /assign задача ; имя (/unassign снимает) или через ➕ Добавить кого-то в /board, на вкладке «Админ» в приложении Crew или на кассе."
 
 #: templates/admin/translations.php:213
 msgid "As written"
@@ -3723,10 +3715,6 @@ msgstr "Большинству организаторов событий он н
 #: src/Support/EventTaskMover.php:67
 msgid "Move the tasks too"
 msgstr "Перенести и задачи"
-
-#: templates/public/signup.php:435
-msgid "My tasks"
-msgstr "Мои задачи"
 
 #: src/Admin/PeopleListTable.php:47 src/Support/PrivacyExporter.php:136
 #: src/Support/PrivacyExporter.php:219 src/Support/PrivacyExporter.php:245
@@ -7168,10 +7156,6 @@ msgstr "Столбцы прикреплённого файла не подход
 msgid "The coming events, as the newsletter writes them."
 msgstr "Ближайшие события так, как их пишет рассылка."
 
-#: src/Telegram/CommandMenu.php:282
-msgid "The commands you can use"
-msgstr "Команды, которые тебе доступны"
-
 #: src/Admin/SettingsPage.php:1060
 msgid "The connection test failed: %s."
 msgstr "Проверка соединения не прошла: %s."
@@ -8890,10 +8874,6 @@ msgstr "Что человек сделал: его задачи и статус.
 msgid "What we hold about you"
 msgstr "Что мы о тебе храним"
 
-#: templates/public/signup.php:464
-msgid "What you’ve done"
-msgstr "Что ты сделал"
-
 #: templates/admin/diagnostics.php:124 templates/admin/people.php:294
 msgid "When"
 msgstr "Когда"
@@ -9608,10 +9588,6 @@ msgstr "Твоя задача передана: %s"
 msgid "Your tasks on this night:"
 msgstr "Твои задачи в этот вечер:"
 
-#: src/Telegram/CommandMenu.php:284
-msgid "Your tasks, credits, ticket, settings"
-msgstr "Твои задачи, баллы, билет, настройки"
-
 #: templates/admin/settings.php:1558
 msgid "Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one."
 msgstr "Твой шаблон сохраняет тот дизайн, с которым был создан. Нажми «Сбросить шаблон» ниже, чтобы взять текущий встроенный."
@@ -9661,10 +9637,6 @@ msgstr "Ты уже записан на это."
 #: src/Telegram/BoardService.php:1212 src/Telegram/RoleTaskBot.php:395
 msgid "You’re in! See you there."
 msgstr "Ты записан! До встречи."
-
-#: templates/public/signup.php:438
-msgid "You’re not signed up for anything yet — take a look at the board."
-msgstr "Ты пока ни на что не записан — загляни на доску."
 
 #: src/Telegram/BoardService.php:1262 src/Telegram/RoleTaskBot.php:425
 msgid "You’re out. Thanks for the notice."
@@ -10924,8 +10896,12 @@ msgid "Guest display: people without this role see its tasks"
 msgstr "Показ гостям: люди без этой роли видят её задачи"
 
 #: templates/admin/settings.php templates/public/signup.php
-msgid "Guest sign up: people without this role can sign up (needs Guest display)"
-msgstr "Запись гостей: люди без этой роли могут записаться (нужен показ гостям)"
+msgid "Members display: signed-in members see its tasks, even without the role"
+msgstr "Показ участникам: вошедшие участники видят её задачи, даже без этой роли"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest sign up: people without this role can sign up (needs Guest or Members display)"
+msgstr "Запись гостей: люди без этой роли могут записаться (нужен показ гостям или участникам)"
 
 #: templates/admin/settings.php templates/public/signup.php
 msgid "Anonymous display: hide the names from people without this role"
@@ -11105,9 +11081,6 @@ msgstr "Участник с именем «%s» не найден. Если че
 
 msgid "No task called “%1$s”. Tasks on %2$s: %3$s"
 msgstr "Нет задачи «%1$s». Задачи на %2$s: %3$s"
-
-msgid "Organize tasks are for organizers only. Make someone an organizer with /people."
-msgstr "Задачи «Организация» только для организаторов. Сделай кого-то организатором через /people."
 
 msgid "Put a member on a task: /assign task ; name\nExample: /assign Host ; Milla\nA date first picks another event: /assign 21.11. Host ; Milla"
 msgstr "Поставить участника на задачу: /assign задача ; имя\nПример: /assign Host ; Milla\nДата в начале выбирает другой вечер: /assign 21.11. Host ; Milla"
@@ -12627,3 +12600,215 @@ msgstr[2] "Одна из твоих задач отмечена как невы�
 #: src/Support/StandingNotice.php
 msgid "A free-entry credit was taken back"
 msgstr "Балл за бесплатный вход отменён"
+
+msgid "How this works?"
+msgstr "Как это работает?"
+
+msgid "FAQ"
+msgstr "Частые вопросы"
+
+msgid "/help – how this works, commands and FAQ"
+msgstr "/help – как это работает, команды и частые вопросы"
+
+msgid "How this works, commands and FAQ"
+msgstr "Как это работает, команды и частые вопросы"
+
+msgid "Your standing, credits and coming tasks"
+msgstr "Твой статус, баллы и ближайшие задачи"
+
+msgid "In a private chat with the bot you can also use these commands, or just write what you need in your own words."
+msgstr "В личном чате с ботом можно также использовать эти команды или просто написать своими словами, что тебе нужно."
+
+msgid "How do I sign up for a task?"
+msgstr "Как записаться на задачу?"
+
+msgid "Open the board (See open tasks in the bot, or the Board tab on the web page) and tap the task. You get a confirmation and a ticket for that night. If you are new, the team first says OK; we message you when it comes."
+msgstr "Открой доску (Посмотреть открытые задачи в боте или вкладка Доска на сайте) и нажми на задачу. Ты получишь подтверждение и билет на этот вечер. Если ты новенький, команда сначала даёт добро; мы напишем, когда это случится."
+
+msgid "Open Tasks and tap Cancel next to the task."
+msgstr "Открой Задачи и нажми Отмена рядом с задачей."
+
+msgid "Changed your mind? Within %d minutes of taking a task, cancelling it never counts against you."
+msgstr "Передумал? В течение %d мин после записи отмена никогда не засчитывается против тебя."
+
+msgid "Cancelling closes %d minutes before the task starts; after that, tell an organizer."
+msgstr "Отменить можно не позже чем за %d мин до начала задачи; после этого сообщи организатору."
+
+msgid "How do I cancel a task?"
+msgstr "Как отменить задачу?"
+
+msgid "What if I cancel late?"
+msgstr "А если я отменю поздно?"
+
+msgid "Cancelling %1$d hours or more before has no effect. Later, it counts as a late cancellation in your standing (%2$d%%). Better: find someone to take your task. When they take it, it counts as Found a replacement (%3$d%%)."
+msgstr "Отмена за %1$d ч или раньше ни на что не влияет. Позже она считается поздней отменой в твоём статусе (%2$d%%). Лучше найди того, кто возьмёт твою задачу. Когда он её возьмёт, это засчитывается как Нашёл замену (%3$d%%)."
+
+msgid "A task is full. Can I still get it?"
+msgstr "Задача заполнена. Могу ли я всё равно её получить?"
+
+msgid "Tap Take someone’s task and choose whose task you want. They are asked and decide; nothing changes until they say yes. If they do not answer in time, they keep the task."
+msgstr "Нажми Взять чужую задачу и выбери, чью задачу ты хочешь. Человека спросят, и он решит; ничего не изменится, пока он не согласится. Если он не ответит вовремя, задача останется за ним."
+
+msgid "What happens if I do not show up?"
+msgstr "Что будет, если я не приду?"
+
+msgid "A no-show counts %d%% in your standing, the worst outcome. If you cannot come, cancel or find a replacement instead. If it was marked by mistake, tell an organizer or the bot."
+msgstr "Неявка засчитывается в статус как %d%%, это худший результат. Если не можешь прийти, лучше отмени или найди замену. Если отметили по ошибке, сообщи организатору или боту."
+
+msgid "It comes from how your past tasks went, and recent tasks count more. You get a rating after %1$d finished tasks; %2$d%% or higher is good standing."
+msgstr "Он зависит от того, как прошли твои прошлые задачи, и недавние весят больше. Оценка появляется после %1$d выполненных задач; %2$d%% и выше — хороший статус."
+
+msgid "Below that, you cannot sign up for new tasks until you talk to an organizer."
+msgstr "Ниже этого порога ты не сможешь записываться на новые задачи, пока не поговоришь с организатором."
+
+msgid "How does standing work?"
+msgstr "Как работает статус?"
+
+msgid "How do I get free entry?"
+msgstr "Как получить бесплатный вход?"
+
+msgid "Every %d completed tasks earn 1 free-entry credit. To use one, open Tickets, tap Get a free-entry ticket and choose the night. Some nights (sold out, or special events) do not accept credits."
+msgstr "Каждые %d выполненных задач дают 1 балл за бесплатный вход. Чтобы использовать его, открой Билеты, нажми Получить бесплатный билет и выбери вечер. Некоторые вечера (распроданные или особые события) не принимают баллы."
+
+msgid "Do I need a ticket for a night I work?"
+msgstr "Нужен ли мне билет на вечер, когда я работаю?"
+
+msgid "Signing up gives you a working ticket for that night. It covers all your tasks that night; show it at the door. Its code never changes, so a screenshot works. It is personal and cannot be given away."
+msgstr "При записи ты получаешь рабочий билет на этот вечер. Он действует на все твои задачи в этот вечер; покажи его на входе. Его код не меняется, так что подойдёт скриншот. Билет именной, его нельзя отдать."
+
+msgid "Why is a credit pending?"
+msgstr "Почему балл ожидает начисления?"
+
+msgid "Each extra task on the same night earns one more credit. It shows as pending and is added after the event, if you did the task. A cancelled or missed task gives nothing."
+msgstr "Каждая дополнительная задача в тот же вечер даёт ещё один балл. Он отображается как ожидающий и начисляется после события, если ты выполнил задачу. Отменённая или пропущенная задача ничего не даёт."
+
+msgid "Can I cancel a free-entry ticket?"
+msgstr "Можно ли отменить бесплатный билет?"
+
+msgid "No, and the credit stays spent. But you can give the ticket to someone else: open Tickets and tap Give away. A ticket given to you cannot be given on."
+msgstr "Нет, и балл остаётся потраченным. Но ты можешь отдать билет другому человеку: открой Билеты и нажми Отдать. Билет, который отдали тебе, нельзя отдать дальше."
+
+msgid "No, and the credit stays spent."
+msgstr "Нет, и балл остаётся потраченным."
+
+msgid "I already have a ticket for that night. Can I still take a task?"
+msgstr "У меня уже есть билет на этот вечер. Могу ли я всё равно взять задачу?"
+
+msgid "Yes. Your ticket stays as it is. A bought ticket never turns into a credit."
+msgstr "Да. Твой билет остаётся как есть. Купленный билет никогда не превращается в балл."
+
+msgid "You can give away a free-entry ticket you no longer need."
+msgstr "Бесплатный билет, который тебе больше не нужен, можно отдать."
+
+msgid "Where do I see my credits and tasks?"
+msgstr "Где посмотреть мои баллы и задачи?"
+
+msgid "In My info in the bot, and in the Me tab on the web page."
+msgstr "В разделе Мои данные в боте и на вкладке Я на сайте."
+
+msgid "How do I choose which messages I get?"
+msgstr "Как выбрать, какие сообщения я получаю?"
+
+msgid "Under Settings, choose notifications and switch off what you do not want. Sign-up confirmations and reminders always come."
+msgstr "В Настройках выбери уведомления и отключи то, что не нужно. Подтверждения записи и напоминания приходят всегда."
+
+msgid "How do I sign in on the web page?"
+msgstr "Как войти на сайт?"
+
+msgid "Enter your email on the web page and open the sign-in link we send. In the bot, Settings also has a web sign-in link."
+msgstr "Введи свой e-mail на сайте и открой ссылку для входа, которую мы пришлём. В боте в Настройках тоже есть ссылка для входа на сайт."
+
+msgid "How do I change the language?"
+msgstr "Как сменить язык?"
+
+msgid "Under Settings: Change language. Messages to you then come in that language."
+msgstr "В Настройках: Сменить язык. После этого сообщения будут приходить тебе на этом языке."
+
+msgid "How do I delete my data?"
+msgstr "Как удалить мои данные?"
+
+msgid "Under Settings: Delete my data. It erases your account and history and cannot be undone. To stop only some messages, choose notifications instead."
+msgstr "В Настройках: Удалить мои данные. Это удаляет твой аккаунт и историю, отменить нельзя. Чтобы отключить только некоторые сообщения, лучше выбери уведомления."
+
+msgid "Person %d"
+msgstr "Участник %d"
+
+msgid "Take someone’s task"
+msgstr "Взять чужую задачу"
+
+msgid "No task here can be taken over."
+msgstr "Здесь нет задачи, которую можно взять."
+
+msgid "Whose task do you want to take? They decide."
+msgstr "Чью задачу хочешь взять? Решает этот человек."
+
+msgid "Whose task?"
+msgstr "Чья задача?"
+
+#: src/Telegram/MenuButtons.php
+msgid "Change name"
+msgstr "Изменить имя"
+
+#: src/Telegram/MenuButtons.php
+msgid "Change email"
+msgstr "Изменить e-mail"
+
+#: src/Telegram/MemberCommands.php
+msgid "Sign out of the web board on every browser and phone? Nothing is lost; you just sign in again."
+msgstr "Выйти с сайта во всех браузерах и на всех телефонах? Ничего не потеряется; просто войдите снова."
+
+#: src/Telegram/MemberCommands.php
+msgid "A link goes to your email first; your data is deleted only when you open it."
+msgstr "Сначала на вашу почту придёт ссылка; данные удалятся, только когда вы её откроете."
+
+#: templates/public/signup.php
+msgid "Your Telegram is linked to this account."
+msgstr "Ваш Telegram привязан к этому аккаунту."
+
+#: templates/public/signup.php
+msgid "The bot asks for your email and sends a link there; opening it links your Telegram to this account."
+msgstr "Бот спросит вашу почту и пришлёт туда ссылку; открыв её, вы привяжете свой Telegram к этому аккаунту."
+
+#: src/Support/OrganizerGuide.php:245
+msgid "As an organizer you can add anyone to any task of a night, also one for a role they do not hold (they then get the role), and an organizer to Organize: in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
+msgstr "Как организатор ты можешь добавить кого угодно на любую задачу вечера, даже на задачу роли, которой у человека нет (тогда он получит роль), а организатора — и на «Организация»: в личном чате через /assign задача ; имя (/unassign снимает) или через ➕ Добавить кого-то в /board, на вкладке «Админ» в приложении Crew или на кассе."
+
+#. translators: %s: a person's name.
+#: src/Support/RoleTaskService.php
+msgid "%s is not an organizer. Make them one with /people first."
+msgstr "%s не организатор. Сначала сделай его организатором через /people."
+
+#: src/Support/RoleTaskService.php
+msgid "Only an organizer can go on an Organize task. Make them one first, with /people or on the People page."
+msgstr "На задачу «Организация» можно поставить только организатора. Сначала сделай человека организатором через /people или на странице «Люди»."
+
+#: src/Telegram/RoleTaskBot.php
+msgid "Send the organizer's name. Only an organizer can go on an Organize task."
+msgstr "Пришли имя организатора. На задачу «Организация» можно поставить только организатора."
+
+msgid "Something went wrong. Please try again."
+msgstr "Что-то пошло не так. Попробуйте ещё раз."
+
+msgid "Use /subscribe in a private chat with me."
+msgstr "Используйте /subscribe в личном чате со мной."
+
+msgid "Only organizers can use /subscribe."
+msgstr "Только организаторы могут использовать /subscribe."
+
+msgid "“%s” is not an email address."
+msgstr "«%s» — не адрес электронной почты."
+
+msgid "A confirmation email went to %s. They are on the list once they open it."
+msgstr "Письмо с подтверждением отправлено на %s. Человек окажется в списке, когда откроет его."
+
+msgid "%s is already on the newsletter."
+msgstr "%s уже получает рассылку."
+
+msgid "Add someone to the newsletter: /subscribe name@example.com\nAdd a language code to choose their language: %s."
+msgstr "Добавить кого-то в рассылку: /subscribe name@example.com\nДобавьте код языка, чтобы выбрать язык: %s."
+
+msgid "/subscribe email – add someone to the newsletter; they confirm by email"
+msgstr "/subscribe почта – добавить кого-то в рассылку; подтверждение по почте"
+
+msgid "Preview of the next announcement"
+msgstr "Предпросмотр следующего анонса"

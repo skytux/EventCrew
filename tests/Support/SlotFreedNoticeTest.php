@@ -161,6 +161,81 @@ final class SlotFreedNoticeTest extends TestCase
         self::assertSame(['cleaner@example.com', 'organizer@example.com'], array_column($this->mails, 'to'));
     }
 
+    /**
+     * A role off the guest board is announced only to the people whose board
+     * shows it: its holders and organizers, or every known person with
+     * Members display on (Owner 2026-11-08).
+     */
+    public function testAHiddenRoleIsAnnouncedOnlyToThoseWhoSeeIt(): void
+    {
+        $recipients = [
+            $this->person(8, 'guest@example.com'),
+            $this->person(9, 'cleaner@example.com', ['role_slugs' => '["clean"]']),
+            $this->person(10, 'organizer@example.com', ['is_organizer' => 1]),
+        ];
+        $this->options['eventcrew_roles'] = [['slug' => 'clean', 'label' => 'Clean', 'on_board' => false]];
+        $this->queueAndPrepare($this->taskRow(), 2, $recipients);
+
+        $this->notice()->sendDue(25);
+
+        self::assertSame(['cleaner@example.com', 'organizer@example.com'], array_column($this->mails, 'to'));
+
+        $this->mails = [];
+        $this->options['eventcrew_roles'][0]['members_display'] = true;
+        $this->queueAndPrepare($this->taskRow(), 2, $recipients);
+
+        $this->notice()->sendDue(25);
+
+        self::assertSame(
+            ['guest@example.com', 'cleaner@example.com', 'organizer@example.com'],
+            array_column($this->mails, 'to')
+        );
+    }
+
+    public function testATaskOfAnArchivedRoleIsNotAnnounced(): void
+    {
+        $this->options['eventcrew_roles'] = [['slug' => 'clean', 'label' => 'Clean', 'archived' => true]];
+        $this->notice()->queue(5, 7);
+        $this->wpdb->nextRows[] = $this->taskRow();
+
+        $this->notice()->sendDue(25);
+
+        self::assertSame([], $this->mails);
+        self::assertSame([], $this->options[SlotFreedNotice::QUEUE_OPTION]);
+    }
+
+    /**
+     * The other open tasks follow each reader's board: a role hidden from
+     * guests shows only to its holders, an archived role to nobody.
+     */
+    public function testTheOtherOpenTasksAreTheOnesTheReadersBoardShows(): void
+    {
+        $this->options['eventcrew_roles'] = [
+            ['slug' => 'clean', 'label' => 'Clean'],
+            ['slug' => 'welcome', 'label' => 'Welcome', 'on_board' => false],
+            ['slug' => 'decorate', 'label' => 'Decorate', 'archived' => true],
+        ];
+        $task = $this->taskRow();
+        $this->queueAndPrepare($task, 1, [
+            $this->person(8, 'guest@example.com'),
+            $this->person(9, 'greeter@example.com', ['role_slugs' => '["welcome"]']),
+        ]);
+        $this->wpdb->nextResults[] = [ // forDate: the night's tasks
+            $task,
+            $this->taskRow(['id' => 6, 'role_slug' => 'welcome', 'capacity' => 2]),
+            $this->taskRow(['id' => 7, 'role_slug' => 'decorate', 'capacity' => 2]),
+        ];
+        $this->wpdb->nextResults[] = [];
+
+        $this->notice()->sendDue(25);
+
+        self::assertSame(['guest@example.com', 'greeter@example.com'], array_column($this->mails, 'to'));
+        self::assertStringNotContainsString('Other open tasks', $this->mails[0]['body']);
+        self::assertStringContainsString('Other open tasks at Party:', $this->mails[1]['body']);
+        self::assertStringContainsString('Welcome', $this->mails[1]['body']);
+        self::assertStringNotContainsString('Decorate', $this->mails[1]['body']);
+    }
+
     public function testATaskFullAgainDropsTheNotice(): void
     {
         $this->queueAndPrepare($this->taskRow(), 3, [$this->person(9, 'free@example.com')]);

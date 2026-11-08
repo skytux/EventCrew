@@ -186,6 +186,8 @@ final class RolesTest extends TestCase
         self::assertTrue($role['on_board']);
         self::assertTrue($role['guest_signup']);
         self::assertFalse($role['anonymous']);
+        self::assertFalse($role['members_display']);
+        self::assertFalse(Roles::membersDisplay('decorate'));
     }
 
     /**

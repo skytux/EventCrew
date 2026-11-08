@@ -87,7 +87,7 @@ Ilmoittautumisraja on päällä: jäsen, jonka luotettavuus on alle 60%, ei voi 
 
 Roolilla voi olla ehtoja kohdassa EventCrew > Settings: kuinka monta minkäkin roolin tehtävää jäsen on tehnyt. Ehtojen täyttyminen ei anna roolia. Saat Telegram-viestin ja sähköpostin, kun joku ensimmäisen kerran täyttää roolin ehdot ja kun jollekulle ensimmäisen kerran annetaan rooli. /people ja sitten ✅ Kuka voi saada minkäkin roolin näyttää, kuka täyttää kunkin roolin ehdot.
 
-Järjestäjänä voit lisätä kenet tahansa mihin tahansa illan tehtävään paitsi Järjestelyihin, myös roolin tehtävään, jota hänellä ei ole (hän saa roolin): yksityiskeskustelussa komennolla /assign tehtävä ; nimi (/unassign poistaa) tai napilla ➕ Lisää joku komennon /board alla, Crew-sovelluksen Ylläpito-välilehdellä tai myyntipisteessä.
+Järjestäjänä voit lisätä kenet tahansa mihin tahansa illan tehtävään, myös roolin tehtävään, jota hänellä ei ole (hän saa roolin), ja järjestäjän Järjestelyihin: yksityiskeskustelussa komennolla /assign tehtävä ; nimi (/unassign poistaa) tai napilla ➕ Lisää joku komennon /board alla, Crew-sovelluksen Ylläpito-välilehdellä tai myyntipisteessä.
 
 /people antaa yksityiskeskustelussa botin kanssa myös kertaluvan ilmoittautumisrajan ohi, tekee jostakusta järjestäjän (tai lopettaa sen) ja antaa tai poistaa rooleja, kuten DJ tai VJ. Samaan pystyvät wp-adminin People-sivu ja Crew-sovelluksen Ylläpito-välilehti.
 

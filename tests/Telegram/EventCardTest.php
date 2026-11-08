@@ -342,4 +342,36 @@ final class EventCardTest extends TelegramTestCase
             $titles
         );
     }
+
+    /** The announcement's Telegram preview: one card in the organizer's language alone. */
+    public function testAOneLanguageCardHasThatLanguageAlone(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
+        Functions\when('__')->alias(
+            static fn (string $text): string => 'sv' === Language::current()
+                ? 'SV ' . $text
+                : FinnishCatalog::translate($text)
+        );
+        $this->bilingualEvent(7, 'Night', 'English text', 'Suomi', [
+            '_eventmesh_sold_out' => '1',
+            '_eventmesh_embed_source_url' => self::MUSIC,
+        ]);
+        $this->event(8, '2026-07-26', 'Day', ['_eventmesh_url' => self::SHOP]);
+
+        $fi = EventCard::forEvent(7, null, 'fi');
+        self::assertStringContainsString('<b>Suomeksi: Night</b>', $fi['caption']);
+        self::assertStringNotContainsString('<i>', $fi['caption']);
+        self::assertStringContainsString('🚫 <b>Loppuunmyyty</b>', $fi['caption']);
+        self::assertStringNotContainsString('Sold out', $fi['caption']);
+        self::assertSame([[['text' => '▶ Kuuntele DJ:tä', 'url' => self::MUSIC]]], $fi['buttons']);
+
+        $en = EventCard::forEvent(7, null, 'en');
+        self::assertStringContainsString('<b>Night</b>', $en['caption']);
+        self::assertStringNotContainsString('Suomeksi', $en['caption']);
+
+        self::assertSame(
+            [[['text' => '🎟 SV Buy a ticket', 'url' => self::SHOP]]],
+            EventCard::forEvent(8, null, 'sv')['buttons']
+        );
+    }
 }

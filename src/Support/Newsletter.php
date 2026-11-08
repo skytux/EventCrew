@@ -8,6 +8,7 @@ use EventCrew\Models\Person;
 use EventCrew\Repositories\NewsletterHistoryRepository;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Telegram\NewsletterPreviewDm;
 
 /**
  * The newsletter: an email about the coming events, sent by itself a set
@@ -149,7 +150,9 @@ final class Newsletter
         private readonly Mailer $mailer,
         private readonly Logger $logger,
         private readonly ?NewsletterWriter $writer = null,
-        private readonly ?NewsletterHistoryRepository $history = null
+        private readonly ?NewsletterHistoryRepository $history = null,
+        // Optional: without it the preview is the email alone.
+        private readonly ?NewsletterPreviewDm $previewDm = null
     ) {
     }
 
@@ -697,7 +700,7 @@ final class Newsletter
         $events = $this->eligibleEvents($state['ledger'], $today, $all);
 
         foreach ($events as $index => $first) {
-            $previewAt = NewsletterSchedule::previewAt($first, $this->previousEvent($all, $first['starts_at']));
+            $previewAt = NewsletterSchedule::previewAt($first, self::previousEvent($all, $first['starts_at']));
             $sendAt = NewsletterSchedule::sendAt($first['date']);
 
             if ($now < NewsletterSchedule::planAt($previewAt, $sendAt)) {
@@ -1027,6 +1030,19 @@ final class Newsletter
                     $sentTo++;
                 }
             }
+
+            // The same announcement on Telegram, in the organizer's own language.
+            $this->previewDm?->send(
+                $person,
+                array_map(
+                    static fn (array $event): int => (int) $event['id'],
+                    $this->previewEvents($plan, substr($sendAt, 0, 10))
+                ),
+                $this->previewIntro($plan),
+                $sendAt,
+                array_sum($byLanguage),
+                $stopUrl
+            );
         }
 
         return $sentTo;
@@ -1080,11 +1096,7 @@ final class Newsletter
     private function previewContent(array $plan, string $sendAt, string $lang): array
     {
         $today = substr($sendAt, 0, 10);
-        $events = array_values(array_filter(
-            $plan['events'],
-            static fn (array $event): bool => $event['date'] > $today
-                && ! in_array(EventSource::closedReason($event['id']), self::HIDDEN_REASONS, true)
-        ));
+        $events = $this->previewEvents($plan, $today);
 
         return $this->compose(
             $events,
@@ -1093,6 +1105,40 @@ final class Newsletter
             $plan['written'] ?? null,
             $lang
         ) + self::footerParts($lang, false);
+    }
+
+    /**
+     * The plan's events as they go out on $today ("Y-m-d", the send day):
+     * the ones after it that are not hidden.
+     *
+     * @param array<string, mixed> $plan
+     * @return array<int, array<string, mixed>>
+     */
+    private function previewEvents(array $plan, string $today): array
+    {
+        return array_values(array_filter(
+            $plan['events'],
+            static fn (array $event): bool => $event['date'] > $today
+                && ! in_array(EventSource::closedReason($event['id']), self::HIDDEN_REASONS, true)
+        ));
+    }
+
+    /**
+     * The text above the cards, keyed by language: the organizers' text, or
+     * else the language model's opening; null when there is neither.
+     *
+     * @param array<string, mixed> $plan
+     * @return array<string, string>|null
+     */
+    private function previewIntro(array $plan): ?array
+    {
+        $stored = $this->text->get();
+
+        if (null !== $stored && is_array($stored['texts'] ?? null)) {
+            return array_map('strval', $stored['texts']);
+        }
+
+        return NewsletterWriter::opening($plan['written'] ?? null);
     }
 
     /**
@@ -1262,12 +1308,13 @@ final class Newsletter
 
     /**
      * The latest event that starts before $startsAt and is not hidden, or
-     * null: the event whose end the preview may wait for.
+     * null: the event whose end the preview may wait for. AssistantStatus
+     * uses it too, to tell when the next preview is due.
      *
      * @param array<int, array{id: int, starts_at: string, ends_at: string}> $all Sorted by start.
      * @return array{starts_at: string, ends_at: string}|null
      */
-    private function previousEvent(array $all, string $startsAt): ?array
+    public static function previousEvent(array $all, string $startsAt): ?array
     {
         foreach (array_reverse($all) as $event) {
             if (

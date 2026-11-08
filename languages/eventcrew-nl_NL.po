@@ -433,10 +433,6 @@ msgstr "/door add [datum] Naam +N ; notitie – een gast toevoegen (ook edit, re
 msgid "/events – post the coming events in the group as picture cards; you see them first"
 msgstr "/events – de komende evenementen als fotokaarten in de groep plaatsen; jij ziet ze eerst"
 
-#: src/Telegram/HelpService.php:235
-msgid "/help – this list"
-msgstr "/help – deze lijst"
-
 #: src/Telegram/HelpService.php:231
 msgid "/me – your standing, credits and coming tasks"
 msgstr "/me – je status, credits en komende taken"
@@ -1104,10 +1100,6 @@ msgstr "Te laat aangekomen"
 #: src/Support/Reputation.php:68
 msgid "Arrived late, did the task"
 msgstr "Te laat aangekomen, taak gedaan"
-
-#: src/Support/OrganizerGuide.php:245
-msgid "As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
-msgstr "Als organisator kun je iedereen aan elke taak van een avond toevoegen behalve Organiseren, ook aan een taak van een rol die diegene niet heeft (die krijgt dan de rol): in een privéchat met /assign taak ; naam (/unassign haalt eraf) of met ➕ Iemand toevoegen onder /board, in het tabblad Beheer van de Crew-app of aan de kassa."
 
 #: templates/admin/translations.php:213
 msgid "As written"
@@ -3720,10 +3712,6 @@ msgstr "De meeste organisatoren van evenementen hebben er geen nodig. Een FG is 
 #: src/Support/EventTaskMover.php:67
 msgid "Move the tasks too"
 msgstr "De taken ook verplaatsen"
-
-#: templates/public/signup.php:435
-msgid "My tasks"
-msgstr "Mijn taken"
 
 #: src/Admin/PeopleListTable.php:47 src/Support/PrivacyExporter.php:136
 #: src/Support/PrivacyExporter.php:219 src/Support/PrivacyExporter.php:245
@@ -7158,10 +7146,6 @@ msgstr "De kolommen van het bijgevoegde bestand passen bij geen enkel ticketbest
 msgid "The coming events, as the newsletter writes them."
 msgstr "De komende evenementen, zoals de nieuwsbrief ze schrijft."
 
-#: src/Telegram/CommandMenu.php:282
-msgid "The commands you can use"
-msgstr "De commando's die je kunt gebruiken"
-
 #: src/Admin/SettingsPage.php:1060
 msgid "The connection test failed: %s."
 msgstr "De verbindingstest is mislukt: %s."
@@ -8878,10 +8862,6 @@ msgstr "Wat de persoon heeft gedaan: de taken en de status. Op een eigen regel; 
 msgid "What we hold about you"
 msgstr "Wat we over je bewaren"
 
-#: templates/public/signup.php:464
-msgid "What you’ve done"
-msgstr "Wat je hebt gedaan"
-
 #: templates/admin/diagnostics.php:124 templates/admin/people.php:294
 msgid "When"
 msgstr "Wanneer"
@@ -9592,10 +9572,6 @@ msgstr "Je taak is overgegaan naar %s"
 msgid "Your tasks on this night:"
 msgstr "Je taken op deze avond:"
 
-#: src/Telegram/CommandMenu.php:284
-msgid "Your tasks, credits, ticket, settings"
-msgstr "Je taken, credits, ticket, instellingen"
-
 #: templates/admin/settings.php:1558
 msgid "Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one."
 msgstr "Je template houdt het ontwerp waarmee hij is gemaakt. Gebruik “De template resetten” hieronder om het huidige ingebouwde ontwerp over te nemen."
@@ -9645,10 +9621,6 @@ msgstr "Daarvoor ben je al ingeschreven."
 #: src/Telegram/BoardService.php:1212 src/Telegram/RoleTaskBot.php:395
 msgid "You’re in! See you there."
 msgstr "Je bent erbij! Tot dan."
-
-#: templates/public/signup.php:438
-msgid "You’re not signed up for anything yet — take a look at the board."
-msgstr "Je bent nog nergens voor ingeschreven — kijk eens op het takenbord."
 
 #: src/Telegram/BoardService.php:1262 src/Telegram/RoleTaskBot.php:425
 msgid "You’re out. Thanks for the notice."
@@ -10901,8 +10873,12 @@ msgid "Guest display: people without this role see its tasks"
 msgstr "Gastweergave: mensen zonder deze rol zien de taken"
 
 #: templates/admin/settings.php templates/public/signup.php
-msgid "Guest sign up: people without this role can sign up (needs Guest display)"
-msgstr "Gastaanmelding: mensen zonder deze rol kunnen zich aanmelden (vereist Gastweergave)"
+msgid "Members display: signed-in members see its tasks, even without the role"
+msgstr "Ledenweergave: ingelogde leden zien de taken, ook zonder de rol"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest sign up: people without this role can sign up (needs Guest or Members display)"
+msgstr "Gastaanmelding: mensen zonder deze rol kunnen zich aanmelden (vereist Gast- of Ledenweergave)"
 
 #: templates/admin/settings.php templates/public/signup.php
 msgid "Anonymous display: hide the names from people without this role"
@@ -11082,9 +11058,6 @@ msgstr "Geen lid met de naam ‘%s’ gevonden. Iemand die nog geen lid is: ➕ 
 
 msgid "No task called “%1$s”. Tasks on %2$s: %3$s"
 msgstr "Geen taak met de naam ‘%1$s’. Taken op %2$s: %3$s"
-
-msgid "Organize tasks are for organizers only. Make someone an organizer with /people."
-msgstr "Organiseren-taken zijn alleen voor organisatoren. Maak iemand organisator met /people."
 
 msgid "Put a member on a task: /assign task ; name\nExample: /assign Host ; Milla\nA date first picks another event: /assign 21.11. Host ; Milla"
 msgstr "Een lid op een taak zetten: /assign taak ; naam\nVoorbeeld: /assign Host ; Milla\nEen datum vooraan kiest een andere avond: /assign 21.11. Host ; Milla"
@@ -12585,3 +12558,215 @@ msgstr[1] "Een van je taken is gemarkeerd als niet gedaan, dus %d tegoeden voor 
 #: src/Support/StandingNotice.php
 msgid "A free-entry credit was taken back"
 msgstr "Een tegoed voor gratis toegang is teruggenomen"
+
+msgid "How this works?"
+msgstr "Hoe werkt dit?"
+
+msgid "FAQ"
+msgstr "FAQ"
+
+msgid "/help – how this works, commands and FAQ"
+msgstr "/help – hoe dit werkt, commando's en FAQ"
+
+msgid "How this works, commands and FAQ"
+msgstr "Hoe dit werkt, commando's en FAQ"
+
+msgid "Your standing, credits and coming tasks"
+msgstr "Je status, credits en komende taken"
+
+msgid "In a private chat with the bot you can also use these commands, or just write what you need in your own words."
+msgstr "In een privéchat met de bot kun je ook deze commando's gebruiken, of gewoon in je eigen woorden schrijven wat je nodig hebt."
+
+msgid "How do I sign up for a task?"
+msgstr "Hoe schrijf ik me in voor een taak?"
+
+msgid "Open the board (See open tasks in the bot, or the Board tab on the web page) and tap the task. You get a confirmation and a ticket for that night. If you are new, the team first says OK; we message you when it comes."
+msgstr "Open het takenbord (Open taken bekijken in de bot, of het tabblad Takenbord op de webpagina) en tik op de taak. Je krijgt een bevestiging en een ticket voor die avond. Ben je nieuw, dan geeft het team eerst akkoord; we sturen je een bericht als dat er is."
+
+msgid "Open Tasks and tap Cancel next to the task."
+msgstr "Open Taken en tik op Annuleren naast de taak."
+
+msgid "Changed your mind? Within %d minutes of taking a task, cancelling it never counts against you."
+msgstr "Bedacht? Binnen %d minuten nadat je een taak hebt genomen, telt annuleren nooit tegen je."
+
+msgid "Cancelling closes %d minutes before the task starts; after that, tell an organizer."
+msgstr "Annuleren sluit %d minuten voor de taak begint; laat het daarna een organisator weten."
+
+msgid "How do I cancel a task?"
+msgstr "Hoe annuleer ik een taak?"
+
+msgid "What if I cancel late?"
+msgstr "Wat als ik laat annuleer?"
+
+msgid "Cancelling %1$d hours or more before has no effect. Later, it counts as a late cancellation in your standing (%2$d%%). Better: find someone to take your task. When they take it, it counts as Found a replacement (%3$d%%)."
+msgstr "Annuleren %1$d uur of meer van tevoren heeft geen gevolgen. Later telt het als late annulering in je status (%2$d%%). Beter: zoek iemand die je taak overneemt. Als die het doet, telt het als Vervanger gevonden (%3$d%%)."
+
+msgid "A task is full. Can I still get it?"
+msgstr "Een taak is vol. Kan ik hem toch krijgen?"
+
+msgid "Tap Take someone’s task and choose whose task you want. They are asked and decide; nothing changes until they say yes. If they do not answer in time, they keep the task."
+msgstr "Tik op Taak van iemand overnemen en kies wiens taak je wilt. Die persoon krijgt de vraag en beslist; er verandert niets tot die ja zegt. Antwoordt die niet op tijd, dan houdt die de taak."
+
+msgid "What happens if I do not show up?"
+msgstr "Wat gebeurt er als ik niet kom opdagen?"
+
+msgid "A no-show counts %d%% in your standing, the worst outcome. If you cannot come, cancel or find a replacement instead. If it was marked by mistake, tell an organizer or the bot."
+msgstr "Een no-show telt %d%% in je status, de slechtste uitkomst. Kun je niet komen, annuleer dan of zoek een vervanger. Is het per vergissing gemarkeerd, laat het een organisator of de bot weten."
+
+msgid "It comes from how your past tasks went, and recent tasks count more. You get a rating after %1$d finished tasks; %2$d%% or higher is good standing."
+msgstr "Die komt voort uit hoe je eerdere taken zijn gegaan, en recente taken tellen zwaarder. Na %1$d afgeronde taken krijg je een beoordeling; %2$d%% of hoger is een goede status."
+
+msgid "Below that, you cannot sign up for new tasks until you talk to an organizer."
+msgstr "Daaronder kun je je pas weer voor nieuwe taken inschrijven als je met een organisator hebt gepraat."
+
+msgid "How does standing work?"
+msgstr "Hoe werkt de status?"
+
+msgid "How do I get free entry?"
+msgstr "Hoe krijg ik gratis toegang?"
+
+msgid "Every %d completed tasks earn 1 free-entry credit. To use one, open Tickets, tap Get a free-entry ticket and choose the night. Some nights (sold out, or special events) do not accept credits."
+msgstr "Elke %d afgeronde taken leveren 1 credit voor gratis toegang op. Om er een te gebruiken, open Tickets, tik op Gratis ticket halen en kies de avond. Sommige avonden (uitverkocht of speciale evenementen) accepteren geen credits."
+
+msgid "Do I need a ticket for a night I work?"
+msgstr "Heb ik een ticket nodig voor een avond waarop ik werk?"
+
+msgid "Signing up gives you a working ticket for that night. It covers all your tasks that night; show it at the door. Its code never changes, so a screenshot works. It is personal and cannot be given away."
+msgstr "Door je in te schrijven krijg je een werkticket voor die avond. Het geldt voor al je taken die avond; laat het zien bij de deur. De code verandert nooit, dus een screenshot werkt. Het is persoonlijk en kan niet worden weggegeven."
+
+msgid "Why is a credit pending?"
+msgstr "Waarom staat een credit in behandeling?"
+
+msgid "Each extra task on the same night earns one more credit. It shows as pending and is added after the event, if you did the task. A cancelled or missed task gives nothing."
+msgstr "Elke extra taak op dezelfde avond levert nog een credit op. Die staat in behandeling en wordt na het evenement toegevoegd, als je de taak hebt gedaan. Een geannuleerde of gemiste taak levert niets op."
+
+msgid "Can I cancel a free-entry ticket?"
+msgstr "Kan ik een gratis ticket annuleren?"
+
+msgid "No, and the credit stays spent. But you can give the ticket to someone else: open Tickets and tap Give away. A ticket given to you cannot be given on."
+msgstr "Nee, en de credit blijft besteed. Maar je kunt het ticket aan iemand anders geven: open Tickets en tik op Weggeven. Een ticket dat je hebt gekregen kun je niet doorgeven."
+
+msgid "No, and the credit stays spent."
+msgstr "Nee, en de credit blijft besteed."
+
+msgid "I already have a ticket for that night. Can I still take a task?"
+msgstr "Ik heb al een ticket voor die avond. Kan ik toch een taak nemen?"
+
+msgid "Yes. Your ticket stays as it is. A bought ticket never turns into a credit."
+msgstr "Ja. Je ticket blijft zoals het is. Een gekocht ticket wordt nooit een credit."
+
+msgid "You can give away a free-entry ticket you no longer need."
+msgstr "Je kunt een gratis ticket dat je niet meer nodig hebt weggeven."
+
+msgid "Where do I see my credits and tasks?"
+msgstr "Waar zie ik mijn credits en taken?"
+
+msgid "In My info in the bot, and in the Me tab on the web page."
+msgstr "Bij Mijn info in de bot, en in het tabblad Ik op de webpagina."
+
+msgid "How do I choose which messages I get?"
+msgstr "Hoe kies ik welke berichten ik krijg?"
+
+msgid "Under Settings, choose notifications and switch off what you do not want. Sign-up confirmations and reminders always come."
+msgstr "Kies onder Instellingen de meldingen en zet uit wat je niet wilt. Inschrijfbevestigingen en herinneringen komen altijd."
+
+msgid "How do I sign in on the web page?"
+msgstr "Hoe log ik in op de webpagina?"
+
+msgid "Enter your email on the web page and open the sign-in link we send. In the bot, Settings also has a web sign-in link."
+msgstr "Vul je e-mailadres in op de webpagina en open de inloglink die we sturen. In de bot staat onder Instellingen ook een link om op het web in te loggen."
+
+msgid "How do I change the language?"
+msgstr "Hoe wijzig ik de taal?"
+
+msgid "Under Settings: Change language. Messages to you then come in that language."
+msgstr "Onder Instellingen: Taal wijzigen. Berichten aan jou komen dan in die taal."
+
+msgid "How do I delete my data?"
+msgstr "Hoe verwijder ik mijn gegevens?"
+
+msgid "Under Settings: Delete my data. It erases your account and history and cannot be undone. To stop only some messages, choose notifications instead."
+msgstr "Onder Instellingen: Mijn gegevens verwijderen. Dat wist je account en geschiedenis en kan niet ongedaan worden gemaakt. Wil je alleen sommige berichten stoppen, kies dan de meldingen."
+
+msgid "Person %d"
+msgstr "Persoon %d"
+
+msgid "Take someone’s task"
+msgstr "Neem iemands taak over"
+
+msgid "No task here can be taken over."
+msgstr "Hier is geen taak om over te nemen."
+
+msgid "Whose task do you want to take? They decide."
+msgstr "Wiens taak wil je overnemen? Die persoon beslist."
+
+msgid "Whose task?"
+msgstr "Wiens taak?"
+
+#: src/Telegram/MenuButtons.php
+msgid "Change name"
+msgstr "Naam wijzigen"
+
+#: src/Telegram/MenuButtons.php
+msgid "Change email"
+msgstr "E-mail wijzigen"
+
+#: src/Telegram/MemberCommands.php
+msgid "Sign out of the web board on every browser and phone? Nothing is lost; you just sign in again."
+msgstr "Uitloggen van de website op elke browser en telefoon? Er gaat niets verloren; je logt gewoon opnieuw in."
+
+#: src/Telegram/MemberCommands.php
+msgid "A link goes to your email first; your data is deleted only when you open it."
+msgstr "Er gaat eerst een link naar je e-mail; je gegevens worden pas verwijderd als je die opent."
+
+#: templates/public/signup.php
+msgid "Your Telegram is linked to this account."
+msgstr "Je Telegram is gekoppeld aan dit account."
+
+#: templates/public/signup.php
+msgid "The bot asks for your email and sends a link there; opening it links your Telegram to this account."
+msgstr "De bot vraagt om je e-mail en stuurt daar een link heen; als je die opent, wordt je Telegram aan dit account gekoppeld."
+
+#: src/Support/OrganizerGuide.php:245
+msgid "As an organizer you can add anyone to any task of a night, also one for a role they do not hold (they then get the role), and an organizer to Organize: in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
+msgstr "Als organisator kun je iedereen aan elke taak van een avond toevoegen, ook aan een taak van een rol die diegene niet heeft (die krijgt dan de rol), en een organisator aan Organiseren: in een privéchat met /assign taak ; naam (/unassign haalt eraf) of met ➕ Iemand toevoegen onder /board, in het tabblad Beheer van de Crew-app of aan de kassa."
+
+#. translators: %s: a person's name.
+#: src/Support/RoleTaskService.php
+msgid "%s is not an organizer. Make them one with /people first."
+msgstr "%s is geen organisator. Maak diegene eerst organisator met /people."
+
+#: src/Support/RoleTaskService.php
+msgid "Only an organizer can go on an Organize task. Make them one first, with /people or on the People page."
+msgstr "Alleen een organisator kan op een Organiseren-taak. Maak diegene eerst organisator, met /people of op de pagina Mensen."
+
+#: src/Telegram/RoleTaskBot.php
+msgid "Send the organizer's name. Only an organizer can go on an Organize task."
+msgstr "Stuur de naam van de organisator. Alleen een organisator kan op een Organiseren-taak."
+
+msgid "Something went wrong. Please try again."
+msgstr "Er ging iets mis. Probeer het opnieuw."
+
+msgid "Use /subscribe in a private chat with me."
+msgstr "Gebruik /subscribe in een privéchat met mij."
+
+msgid "Only organizers can use /subscribe."
+msgstr "Alleen organisatoren kunnen /subscribe gebruiken."
+
+msgid "“%s” is not an email address."
+msgstr "‘%s’ is geen e-mailadres."
+
+msgid "A confirmation email went to %s. They are on the list once they open it."
+msgstr "Er ging een bevestigingsmail naar %s. Ze staan op de lijst zodra ze die openen."
+
+msgid "%s is already on the newsletter."
+msgstr "%s krijgt de nieuwsbrief al."
+
+msgid "Add someone to the newsletter: /subscribe name@example.com\nAdd a language code to choose their language: %s."
+msgstr "Iemand toevoegen aan de nieuwsbrief: /subscribe naam@example.com\nVoeg een taalcode toe om hun taal te kiezen: %s."
+
+msgid "/subscribe email – add someone to the newsletter; they confirm by email"
+msgstr "/subscribe e-mail – iemand toevoegen aan de nieuwsbrief; bevestiging per e-mail"
+
+msgid "Preview of the next announcement"
+msgstr "Voorbeeld van de volgende aankondiging"

@@ -29,6 +29,9 @@ use EventCrew\Support\TicketMail;
  *   and belongs in no message (Owner, 2026-11-07). The whole caption fits
  *   Telegram's 1024 characters: the text is cut at the end of a sentence, or
  *   at the end of a word with "…".
+ * - one language: forEvent() with a language code (the Telegram preview of
+ *   the announcement, Owner 2026-11-08) gives the title, the DJ text and
+ *   every fixed word in that language only.
  * - buttons: rows of link buttons. "🎟 Osta lippu · Buy a ticket · 22 €" to
  *   the ticket shop (not on a sold-out event), "▶ Kuuntele DJ:tä · Listen to
  *   the DJ" to the DJ's music page when there is one, and "📱 Crew app" to the
@@ -108,13 +111,16 @@ final class EventCard
      * (BoardDjText::stored()), and '' (or no such text) shows none. Never the
      * event's own description.
      *
+     * $lang: '' for the shown site languages (the group's card); a language
+     * code for a card in that one language.
+     *
      * @return array{
      *     photo: string,
      *     caption: string,
      *     buttons: array<int, array<int, array{text: string, url: string}>>
      * }|null
      */
-    public static function forEvent(int $postId, ?string $about = null): ?array
+    public static function forEvent(int $postId, ?string $about = null, string $lang = ''): ?array
     {
         $event = EventSource::describe($postId);
 
@@ -122,11 +128,14 @@ final class EventCard
             return null;
         }
 
+        $one = '' !== $lang;
         $details = EventSource::card($postId) + [
             'date' => $event['date'],
             'time' => substr($event['starts_at'], 11, 5),
-            'title' => EventName::name($postId, Language::ENGLISH, $event['title']),
-            'title_fi' => EventName::name(
+            'title' => $one
+                ? EventName::name($postId, $lang, self::orElse(EventSource::translatedTitle($postId, $lang), $event['title']))
+                : EventName::name($postId, Language::ENGLISH, $event['title']),
+            'title_fi' => $one ? '' : EventName::name(
                 $postId,
                 Language::FINNISH,
                 EventSource::translatedTitle($postId, Language::FINNISH)
@@ -134,11 +143,15 @@ final class EventCard
             'dj' => EventName::djLine($postId),
             'sold_out' => 'sold_out' === EventSource::closedReason($postId),
             'app_url' => self::appUrl(),
+            'lang' => $lang,
         ];
 
         return [
             'photo' => self::isLink((string) $details['image']) ? (string) $details['image'] : '',
-            'caption' => self::caption($details, $about ?? BoardDjText::stored($postId)),
+            'caption' => self::caption(
+                $details,
+                $about ?? ($one ? BoardDjText::stored($postId, $lang) : BoardDjText::stored($postId))
+            ),
             'buttons' => self::buttons($details),
         ];
     }
@@ -192,7 +205,7 @@ final class EventCard
      */
     public static function caption(array $event, ?string $about = null): string
     {
-        $words = self::words();
+        $words = self::words((string) ($event['lang'] ?? ''));
         $title = self::cut(self::plain((string) ($event['title'] ?? '')), self::TITLE_MAX);
         $titleFi = self::cut(self::plain((string) ($event['title_fi'] ?? '')), self::TITLE_MAX);
         $dj = self::cut(self::plain((string) ($event['dj'] ?? '')), self::DJ_MAX);
@@ -238,7 +251,7 @@ final class EventCard
      */
     public static function buttons(array $event): array
     {
-        $words = self::words();
+        $words = self::words((string) ($event['lang'] ?? ''));
         $ticket = (string) ($event['ticket_url'] ?? '');
         $listen = (string) ($event['listen'] ?? '');
         $app = (string) ($event['app_url'] ?? '');
@@ -327,6 +340,11 @@ final class EventCard
         return trim(html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
     }
 
+    private static function orElse(string $text, string $fallback): string
+    {
+        return '' !== trim($text) ? $text : $fallback;
+    }
+
     private static function isLink(string $url): bool
     {
         return 1 === preg_match('#^https?://\S+$#i', $url);
@@ -371,18 +389,20 @@ final class EventCard
      * Every fixed word in each shown language (HybridPolicy::shown(), the
      * first site languages, main language first), keyed by language; the
      * main language alone when hybrid is not allowed (4 or more site
-     * languages).
+     * languages). $lang, when given, is the one language.
      *
      * @return array<string, array<string, string>>
      */
-    private static function words(): array
+    private static function words(string $lang = ''): array
     {
         $words = static fn (): array => [
             'buy' => __('Buy a ticket', 'eventcrew'),
             'listen' => __('Listen to the DJ', 'eventcrew'),
             'sold_out' => __('Sold out', 'eventcrew'),
         ];
-        $languages = HybridPolicy::isAllowed() ? HybridPolicy::shown() : [HybridPolicy::mainLanguage()];
+        $languages = '' !== $lang
+            ? [$lang]
+            : (HybridPolicy::isAllowed() ? HybridPolicy::shown() : [HybridPolicy::mainLanguage()]);
 
         return HybridPolicy::inEach($languages, $words);
     }

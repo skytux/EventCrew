@@ -177,6 +177,17 @@ final class ManageController
      */
     private function sendDeleteLink(Person $person): string
     {
+        return $this->document(self::title(), '<p>' . esc_html($this->mailDeleteLink($person)) . '</p>');
+    }
+
+    /**
+     * Mails the one-time delete link to the person's own address and returns
+     * the sentence that says so, or that it failed. The web's Delete my data
+     * and the bot's (MemberCommands) both end here, so both delete only
+     * through the link in the person's own mailbox.
+     */
+    public function mailDeleteLink(Person $person): string
+    {
         $raw = $this->tokens->issue($person->id, self::DELETE_PURPOSE, self::DELETE_TTL);
         $url = add_query_arg([self::DELETE_PARAM => $raw], rest_url('eventcrew/v1/manage'));
 
@@ -199,7 +210,7 @@ final class ManageController
             $message = __('The email could not be sent. Try again later.', 'eventcrew');
         }
 
-        return $this->document(self::title(), '<p>' . esc_html($message) . '</p>');
+        return $message;
     }
 
     private function accountPage(Person $person, string $token): string

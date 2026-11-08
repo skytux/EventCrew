@@ -122,6 +122,49 @@ final class TakeoverServiceTest extends TelegramTestCase
         $this->wpdb->nextRows[] = self::personRow(9, 999); // holder
     }
 
+    /** requestFor() (web and the bot's rep:<id>) refuses with the bot's words. */
+    public function testRequestForRefusesYourOwnAGoneAndADoubleTask(): void
+    {
+        $this->wpdb->nextRows[] = self::slotRow();
+        $this->wpdb->nextRows[] = self::taskRow();
+        $own = $this->takeoverService()->requestFor(3, Person::fromRow(self::personRow(9)));
+        self::assertSame(['ok' => false, 'text' => 'That’s your own task.'], $own);
+
+        $this->wpdb->nextRows[] = self::slotRow(AssignmentStatus::CANCELLED);
+        $this->wpdb->nextRows[] = self::taskRow();
+        $gone = $this->takeoverService()->requestFor(3, Person::fromRow(self::personRow(7)));
+        self::assertSame(['ok' => false, 'text' => 'That task is no longer available.'], $gone);
+
+        $this->wpdb->nextRows[] = self::slotRow();
+        $this->wpdb->nextRows[] = self::taskRow();
+        $this->wpdb->nextRows[] = ['id' => 4, 'task_id' => 5, 'person_id' => 7, 'status' => AssignmentStatus::SIGNED_UP];
+        $double = $this->takeoverService()->requestFor(3, Person::fromRow(self::personRow(7)));
+        self::assertSame(['ok' => false, 'text' => 'You’re already signed up for that one.'], $double);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    /** holdersFor() lists each person on a task by first name, and nobody for one of them. */
+    public function testHoldersForListsThePeopleOnATaskButNotForOneOfThem(): void
+    {
+        $task = Task::fromRow(self::taskRow());
+        $onIt = [
+            ['id' => 3, 'task_id' => 5, 'person_id' => 8, 'status' => AssignmentStatus::SIGNED_UP],
+            ['id' => 4, 'task_id' => 5, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP],
+        ];
+
+        $this->wpdb->nextResults[] = $onIt;
+        $this->wpdb->nextRows[] = array_merge(self::personRow(8), ['display_name' => 'Anna Virtanen']);
+        $this->wpdb->nextRows[] = array_merge(self::personRow(9), ['display_name' => 'Bo']);
+        self::assertSame(
+            [['assignment_id' => 3, 'name' => 'Anna'], ['assignment_id' => 4, 'name' => 'Bo']],
+            $this->takeoverService()->holdersFor($task, Person::fromRow(self::personRow(7)))
+        );
+
+        $this->wpdb->nextResults[] = $onIt;
+        $this->wpdb->nextRows[] = self::personRow(8);
+        self::assertSame([], $this->takeoverService()->holdersFor($task, Person::fromRow(self::personRow(9))));
+    }
+
     public function testARequestAsksTheHolderByTelegramAndByEmailWithTheDeadline(): void
     {
         $this->options[BoardService::USERNAME_OPTION] = 'crewbot';

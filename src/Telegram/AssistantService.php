@@ -199,13 +199,15 @@ final class AssistantService
             return;
         }
 
-        // Checked again: who may do what can change in ten minutes.
+        // Checked again: who may do what can change in ten minutes. The
+        // question is only ever asked in a private chat.
+        $audience = $this->help->audience($fromId);
         $checked = AssistantActions::validate(
             (string) ($pending['action'] ?? ''),
-            $this->help->audience($fromId),
+            $audience,
             null,
             (string) current_time('Y-m-d'),
-            $this->knowledge->offeredTaskIds()
+            $this->knowledge->offeredTaskIds((bool) ($audience['member'] ?? false), (bool) $audience['organizer'])
         );
 
         if (! $checked['ok']) {
@@ -313,7 +315,15 @@ final class AssistantService
         $audience = $this->help->audience($fromId);
         // An organizer sees every role and role task, but only in a private
         // chat: a group answer must not list what the crew there may not see.
-        $knowledge = $this->knowledge->build($audience['roleSlugs'] ?? [], $isPrivate && $audience['organizer']);
+        // The Members display roles' tasks, and the person's own tasks,
+        // tickets and credits, only in a private chat, where nobody else
+        // reads the answer.
+        $knowledge = $this->knowledge->build(
+            $audience['roleSlugs'] ?? [],
+            $isPrivate && $audience['organizer'],
+            $isPrivate && (bool) ($audience['member'] ?? false),
+            $isPrivate ? (int) ($audience['personId'] ?? 0) : 0
+        );
         // Read before this message is added: the message itself goes as the
         // user turn. A group has its own record per person (0 = private).
         $logChat = $isPrivate ? 0 : $chatId;
@@ -596,6 +606,12 @@ final class AssistantService
             '- Use only the FACTS below. Never make up dates, times, prices, codes, names, links or numbers.',
             '- "known" is true when the FACTS answer the message, or when it needs no facts (a greeting, thanks).'
                 . ' Otherwise "known" is false and "reply" says you do not know and points to /help or an organizer.',
+            '- "This person" in the FACTS, when present, is the person\'s own coming tasks, tickets, completed'
+                . ' tasks and free-entry credits, read just now: answer questions about them from it.',
+            '- Never say you have no access to something that is in the FACTS, and never tell the person to look'
+                . ' in the bot log, the scheduled jobs or wp-admin for it. When something truly is not in the FACTS,'
+                . ' say so in one short sentence and name the bot command that shows or changes it, if there is one.'
+                . ' Never claim access you do not have, and never make up a status.',
             '- "action" is null, or exactly one line from ACTIONS with its <...> and [...] parts filled in from'
                 . ' the message or the FACTS. Never use a command, task number or guest number that is not'
                 . ' in ACTIONS, the FACTS or the message.',
@@ -623,8 +639,14 @@ final class AssistantService
                 . ' someone off one, give /assign or /unassign with the task name and the person\'s name as'
                 . ' they wrote them, even when the name is partial or several people or tasks could fit: the'
                 . ' bot then finds them, asks with buttons and confirms before anything changes. This works'
-                . ' for every task but Organize, also for a role the person does not hold. Never say you'
-                . ' cannot add someone to a task.';
+                . ' for every task, also for a role the person does not hold. The Organize task takes only'
+                . ' someone who is an organizer: you do not know who is, so give /assign anyway and the bot'
+                . ' checks and says so if they are not. Never say you cannot add someone to a task.';
+            $lines[] = '- For an organizer, "Current status" in the FACTS is live, read just now: the announcement'
+                . ' email (newsletter), the post-event email, the ticket emails, the coming nights (tasks, who is on'
+                . ' Organize, free-entry tickets, guest list, ticket holders, free entry open or closed, stopped'
+                . ' emails) and the organizers. Answer status questions such as "has the announcement gone out?"'
+                . ' directly from it, with the times it gives.';
             $lines[] = '- An organizer can also manage tasks in a private chat: /addtask, /edittask (time, places,'
                 . ' notes, plus-ones), /deletetask, /maketasks (a night\'s tasks from the roles) and /mailtasks'
                 . ' (the open-task email now). When they ask for one of these, give that command with the task'

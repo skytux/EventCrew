@@ -365,6 +365,198 @@ final class AssignCommandTest extends TelegramTestCase
         self::assertSame([], array_filter($this->telegramCalls, static fn (array $call): bool => 'sendMessage' === $call['method']));
     }
 
+    /**
+     * Heidi (person 4) is an organizer with her own Telegram account.
+     *
+     * @return array<string, mixed>
+     */
+    private function heidi(): array
+    {
+        return ['telegram_user_id' => 604, 'telegram_chat_id' => 604] + $this->person(4, 'Heidi Aalto', '', true);
+    }
+
+    public function testAnOrganizerPutsAnotherOrganizerOnOrganizeAfterConfirming(): void
+    {
+        $heidi = $this->heidi();
+
+        $this->wpdb->nextRows[] = $this->organizer();
+        $this->wpdb->nextResults[] = [$this->task(5, 'decorate'), $this->task(3, Roles::ORGANIZE_SLUG)];
+        $this->wpdb->nextResults[] = [$this->person(2, 'Heidi Lee'), $heidi];
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);   // confirm: task
+        $this->wpdb->nextRows[] = $heidi;                                 // confirm: person
+        $this->wpdb->nextRows[] = null;                                   // not on the task yet
+
+        // Two members match "heidi", but only the organizer can go on Organize.
+        $this->command()->onCommand(555, 555, '/assign organize ; heidi', true, AssignCommand::ADD);
+
+        $text = $this->lastText();
+        self::assertStringStartsWith('Add Heidi Aalto to Organize', $text);
+        self::assertStringNotContainsString('does not have the', $text);
+        self::assertStringContainsString('Count toward free-entry credit?', $text);
+        $id = $this->requestId();
+        self::assertSame(['as:y:' . $id, 'as:n:' . $id, 'as:x:' . $id], $this->buttonData());
+        $this->nothingWritten();
+
+        $this->wpdb->nextRows[] = $this->organizer();                     // the tapper
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);   // result label
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);   // addPerson: task
+        $this->wpdb->nextRows[] = $heidi;                                 // addPerson: person
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);   // claim: task
+        $this->wpdb->nextRows[] = $heidi;                                 // claim: person
+        $this->wpdb->nextVars[] = 1;
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);   // confirmation: task
+        $this->wpdb->nextRows[] = ['id' => 51, 'task_id' => 3, 'person_id' => 4, 'status' => 'signed_up'];
+
+        $this->command()->onCallback($this->tap('as:n:' . $id));
+
+        // No role is written: Organize follows the organizer permission.
+        self::assertSame([], $this->wpdb->updates);
+        self::assertStringContainsString("SELECT 3, 4, 'signed_up', '2026-07-20 12:00:00', 0", implode("\n", $this->wpdb->queries));
+        self::assertStringStartsWith('✅ Heidi Aalto · Organize', $this->lastText());
+        self::assertSame([], $this->transients);
+    }
+
+    public function testSomeoneWhoIsNotAnOrganizerIsNotPutOnOrganize(): void
+    {
+        $this->wpdb->nextRows[] = $this->organizer();
+        $this->wpdb->nextResults[] = [$this->task(3, Roles::ORGANIZE_SLUG)];
+        $this->wpdb->nextResults[] = [$this->person(2, 'Kim Lee')];
+
+        $this->command()->onCommand(555, 555, '/assign Organize ; kim', true, AssignCommand::ADD);
+
+        self::assertSame('Kim Lee is not an organizer. Make them one with /people first.', $this->lastText());
+        self::assertSame([], $this->buttonData());
+        self::assertSame([], $this->transients);
+        $this->nothingWritten();
+    }
+
+    public function testATapCannotPutSomeoneWhoIsNotAnOrganizerOnOrganize(): void
+    {
+        // The request was made, then the person stopped being an organizer.
+        $this->transients[AssignCommand::STATE_PREFIX . 'bbbbbbbbbbbbbbbb'] = [
+            'user' => 555, 'mode' => 'assign', 'tasks' => [3], 'people' => [2], 'task' => 3, 'person' => 2,
+        ];
+        $this->wpdb->nextRows[] = $this->organizer();                     // the tapper
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);   // result label
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);   // addPerson: task
+        $this->wpdb->nextRows[] = $this->person(2, 'Kim Lee');            // addPerson: person
+
+        $this->command()->onCallback($this->tap('as:y:bbbbbbbbbbbbbbbb'));
+
+        self::assertSame(
+            "⚠️ Kim Lee · Organize · Sat 25 Jul\nKim Lee is not an organizer. Make them one with /people first.",
+            $this->lastText()
+        );
+        $this->nothingWritten();
+    }
+
+    public function testAnOrganizerTakesAnotherOrganizerOffOrganize(): void
+    {
+        $heidi = $this->heidi();
+
+        $this->wpdb->nextRows[] = $this->organizer();
+        $this->wpdb->nextResults[] = [$this->task(3, Roles::ORGANIZE_SLUG)];
+        $this->wpdb->nextResults[] = [$heidi];
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);
+        $this->wpdb->nextRows[] = $heidi;
+        $this->wpdb->nextRows[] = ['id' => 51, 'task_id' => 3, 'person_id' => 4, 'status' => 'signed_up'];
+
+        $this->command()->onCommand(555, 555, '/unassign Organize ; Heidi', true, AssignCommand::REMOVE);
+
+        self::assertStringStartsWith('Take Heidi Aalto off Organize', $this->lastText());
+        $id = $this->requestId();
+
+        $this->wpdb->nextRows[] = $this->organizer();
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);
+        $this->wpdb->nextRows[] = $heidi;
+        $this->wpdb->nextRows[] = ['id' => 51, 'task_id' => 3, 'person_id' => 4, 'status' => 'signed_up'];
+
+        $this->command()->onCallback($this->tap('as:y:' . $id));
+
+        self::assertSame('cancelled', $this->wpdb->updates[0]['data']['status']);
+        self::assertStringStartsWith('✅ Heidi Aalto · Organize', $this->lastText());
+    }
+
+    public function testAddPersonPutsOnlyAnOrganizerOnOrganize(): void
+    {
+        Functions\when('sanitize_email')->alias(static fn (string $e): string => trim($e));
+        Functions\when('is_email')->alias(static fn (string $e): bool => str_contains($e, '@'));
+        $service = $this->roleTaskService();
+        $owner = \EventCrew\Models\Person::fromRow($this->organizer());
+
+        // By person id: someone who is not an organizer is refused, by name.
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);
+        $this->wpdb->nextRows[] = $this->person(2, 'Kim Lee');
+        $result = $service->addPerson($owner, 3, '', '', true, 2);
+        self::assertSame(\EventCrew\Support\RoleTaskService::NOT_ORGANIZER, $result['code']);
+        self::assertSame(2, $result['person']?->id);
+        $this->nothingWritten();
+
+        // By an email that belongs to someone who is not an organizer.
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);
+        $this->wpdb->nextRows[] = $this->person(2, 'Kim Lee');
+        $result = $service->addPerson($owner, 3, 'Kim', 'p2@example.com', true);
+        self::assertSame(\EventCrew\Support\RoleTaskService::NOT_ORGANIZER, $result['code']);
+        $this->nothingWritten();
+
+        // By a name no organizer has: nobody is made.
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);
+        $this->wpdb->nextResults[] = [$this->heidi()];
+        $result = $service->addPerson($owner, 3, 'Kim Lee', '', true);
+        self::assertSame(\EventCrew\Support\RoleTaskService::NOT_ORGANIZER, $result['code']);
+        self::assertNull($result['person']);
+        self::assertSame(
+            'Only an organizer can go on an Organize task. Make them one first, with /people or on the People page.',
+            \EventCrew\Support\RoleTaskService::text($result['code'])
+        );
+        $this->nothingWritten();
+
+        // By an organizer's name, case aside.
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);
+        $this->wpdb->nextResults[] = [$this->organizer(), $this->heidi()];
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);   // claim: task
+        $this->wpdb->nextRows[] = $this->heidi();                         // claim: person
+        $this->wpdb->nextVars[] = 1;
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);
+        $this->wpdb->nextRows[] = ['id' => 51, 'task_id' => 3, 'person_id' => 4, 'status' => 'signed_up'];
+        $result = $service->addPerson($owner, 3, 'heidi aalto', '', true);
+        self::assertSame(\EventCrew\Support\RoleTaskService::ADDED, $result['code']);
+        self::assertSame(4, $result['person']?->id);
+        self::assertStringContainsString("SELECT 3, 4, 'signed_up', '2026-07-20 12:00:00', 1", implode("\n", $this->wpdb->queries));
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testAddPersonByIdPutsAnOrganizerOnOrganize(): void
+    {
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);
+        $this->wpdb->nextRows[] = $this->heidi();
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);   // claim: task
+        $this->wpdb->nextRows[] = $this->heidi();                         // claim: person
+        $this->wpdb->nextVars[] = 1;
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = $this->task(3, Roles::ORGANIZE_SLUG);
+        $this->wpdb->nextRows[] = ['id' => 51, 'task_id' => 3, 'person_id' => 4, 'status' => 'signed_up'];
+
+        $result = $this->roleTaskService()->addPerson(
+            \EventCrew\Models\Person::fromRow($this->organizer()),
+            3,
+            '',
+            '',
+            false,
+            4
+        );
+
+        self::assertSame(\EventCrew\Support\RoleTaskService::ADDED, $result['code']);
+        self::assertStringContainsString("SELECT 3, 4, 'signed_up', '2026-07-20 12:00:00', 0", implode("\n", $this->wpdb->queries));
+        self::assertSame([], $this->wpdb->updates);
+    }
+
     public function testMatchingForgivesTyposAndPartsOfNames(): void
     {
         $people = array_map(

@@ -133,6 +133,7 @@ if (! defined('ABSPATH')) {
             'on_board' => true,
             'guest_signup' => true,
             'anonymous' => false,
+            'members_display' => false,
             'title_contains' => '',
             'plus_ones' => 0,
             'conditions' => \EventCrew\Support\Roles::noConditions(),
@@ -324,8 +325,9 @@ if (! defined('ABSPATH')) {
                             /*
                              * What people without this role get on the boards
                              * (BoardVisibility). Guest sign up greys out while
-                             * Guest display is off, which it then means nothing
-                             * without (eventcrew-admin.css).
+                             * Guest display and Members display are both off,
+                             * which it then means nothing without
+                             * (eventcrew-admin.css).
                              */
                             ?>
                             <label>
@@ -336,13 +338,21 @@ if (! defined('ABSPATH')) {
                                     <?php checked($eventcrew_role['on_board']); ?>>
                                 <?php esc_html_e('Guest display: people without this role see its tasks', 'eventcrew'); ?>
                             </label><br>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="role_members_display[<?php echo esc_attr($eventcrew_i); ?>]"
+                                    value="1"
+                                    <?php checked($eventcrew_role['members_display'] ?? false); ?>>
+                                <?php esc_html_e('Members display: signed-in members see its tasks, even without the role', 'eventcrew'); ?>
+                            </label><br>
                             <label class="eventcrew-needs-display">
                                 <input
                                     type="checkbox"
                                     name="role_guest_signup[<?php echo esc_attr($eventcrew_i); ?>]"
                                     value="1"
                                     <?php checked($eventcrew_role['guest_signup'] ?? true); ?>>
-                                <?php esc_html_e('Guest sign up: people without this role can sign up (needs Guest display)', 'eventcrew'); ?>
+                                <?php esc_html_e('Guest sign up: people without this role can sign up (needs Guest or Members display)', 'eventcrew'); ?>
                             </label><br>
                             <label>
                                 <input

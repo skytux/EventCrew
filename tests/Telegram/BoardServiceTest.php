@@ -361,7 +361,7 @@ final class BoardServiceTest extends TelegramTestCase
 
     /**
      * Every link set: my info and task info share a row, and the crew guide
-     * is not on the board (Owner 2026-11-06). A full task has no button, and two open tasks with the same role
+     * is not on the board (Owner 2026-11-06). A full task has no button of its own, and two open tasks with the same role
      * are told apart by their times.
      */
     public function testTheBoardHasOnlyOpenTasksThenTheFourLinks(): void
@@ -385,10 +385,13 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertSame(['t:1', 't:2', BoardRenderer::SPACER_DATA], array_column($rendered['keyboard'][1], 'callback_data'));
         self::assertStringContainsString('🎈 Decorate · ', $rows[1][0]);
         self::assertNotSame($rows[1][0], $rows[1][1]);
+        // The full door has one full-width Take someone's task row instead
+        // (Owner 2026-11-08), for the shown day.
         self::assertSame(
-            [['👤 My info', '📝 Task info'], ['👋 New here? Sign up →']],
+            [['🔁 Take someone’s task'], ['👤 My info', '📝 Task info'], ['👋 New here? Sign up →']],
             array_slice($rows, 2)
         );
+        self::assertSame('rep:d:2026-08-01', $rendered['keyboard'][2][0]['callback_data']);
         self::assertStringContainsString('2/2 · full', $rendered['text']);
     }
 
@@ -1619,6 +1622,31 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertSame('That task is no longer available.', $this->lastCallTo('sendMessage')['text']);
 
         $this->wpdb->nextRows[] = array_merge($this->taskRow(5, 100, 'Party'), ['role_slug' => 'organize']);
+        $this->board()->sendTask(555, 5);
+        self::assertSame('That task is no longer available.', $this->lastCallTo('sendMessage')['text']);
+    }
+
+    /**
+     * A task the reader's board does not show is not sent either: a role
+     * hidden from them, or an archived one. Its holder still gets it.
+     */
+    public function testSendTaskRefusesATaskTheReadersBoardDoesNotShow(): void
+    {
+        $this->options[Roles::OPTION_NAME] = [['slug' => 'decorate', 'label' => 'Decorate', 'on_board' => false]];
+        $this->wpdb->nextRows[] = $this->taskRow(5, 100, 'Party');
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'p7@example.com', 'telegram_user_id' => 555]; // the reader, no role
+        $this->board()->sendTask(555, 5);
+        self::assertSame('That task is no longer available.', $this->lastCallTo('sendMessage')['text']);
+
+        $this->wpdb->nextRows[] = $this->taskRow(5, 100, 'Party');
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'p7@example.com', 'telegram_user_id' => 555, 'role_slugs' => '["decorate"]'];
+        $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 1]];
+        $this->board()->sendTask(555, 5);
+        self::assertSame('j:5', $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'][0][0]['callback_data']);
+
+        $this->options[Roles::OPTION_NAME] = [['slug' => 'decorate', 'label' => 'Decorate', 'archived' => true]];
+        $this->wpdb->nextRows[] = $this->taskRow(5, 100, 'Party');
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'p7@example.com', 'telegram_user_id' => 555, 'role_slugs' => '["decorate"]'];
         $this->board()->sendTask(555, 5);
         self::assertSame('That task is no longer available.', $this->lastCallTo('sendMessage')['text']);
     }

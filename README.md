@@ -308,12 +308,15 @@ nobody; `/board` in the group posts a fresh copy at the bottom instead.
   (bot, crew page, sales desk, and an organizer adding someone). A No is stored
   on the assignment (`counts_credit = 0`) and that task is left out of credits
   and standing.
-- An organizer can put someone on a restricted task (not Organize) from the
-  crew page's Admin tab or ➕ under `/board` in a private chat, even a person who is not a crew member:
+- An organizer can put someone on a restricted task from the
+  crew page's Admin tab, `/assign` or ➕ under `/board` in a private chat, even a person who is not a crew member:
   a name and an optional email. The person is created if the email is new (or
   there is none), given the role and signed up; with an email they get the
   normal sign-up email with their ticket. A person with no email gets a
-  placeholder `@added.invalid` address, which is never mailed.
+  placeholder `@added.invalid` address, which is never mailed. The Organize
+  task is the exception: it takes only someone who is an organizer already
+  (by name, or by an organizer's email); anyone else is refused, and nobody is
+  created for it. Make someone an organizer with `/people` or on the People page.
 
 ## Notifications
 

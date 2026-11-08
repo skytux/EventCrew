@@ -111,7 +111,9 @@ final class BoardRenderer
      * their roles, which the group's message never shows, under the same
      * event headings, with the ✋ / ❌ / ➕ buttons of RoleTaskBot under the
      * board's own task buttons (roleButtons()). Its day buttons include the days
-     * that have only such tasks.
+     * that have only such tasks. It also shows the tasks of roles with Members
+     * display on (BoardVisibility::onMembersBoard()), with join buttons only
+     * when the role's Guest sign up is on.
      *
      * @param string      $date   The day to show (Y-m-d); '' or a day with no open
      *                            tasks shows the next one.
@@ -158,13 +160,16 @@ final class BoardRenderer
             $taken = $this->tasks->occupancyFor($ids);
         }
 
+        // The board's own task buttons: the guest board's tasks, and on a
+        // private copy also the open tasks of roles ticked Members display.
         // A task whose role has Guest sign up off has no button for a guest
         // (BoardVisibility::blocksGuestSignup()): on the group's message for
         // nobody, on a private copy unless the reader holds the role or is an
         // organizer.
         $guest = array_values(array_filter(
             $tasks,
-            static fn (Task $t): bool => BoardVisibility::onGuestBoard($t) && ! BoardVisibility::blocksGuestSignup($t, $viewer)
+            static fn (Task $t): bool => self::onSharedBoard($t, $viewer) && ! $t->isRestricted()
+                && ! BoardVisibility::blocksGuestSignup($t, $viewer)
         ));
         $own = array_values(array_filter($tasks, static fn (Task $t): bool => isset($extra[$t->id])));
         $role = null === $viewer || $group ? ['buttons' => [], 'legend' => ''] : $this->roleButtons($own, $addable, $taken, $viewer);
@@ -208,10 +213,18 @@ final class BoardRenderer
         // 2026-11-07). Above them, across the whole row, the day they are
         // for, as the text now shows more days than the buttons (Q365).
         $buttons = array_merge($this->taskButtons($guest, $taken, $daySuffix), $role['buttons']);
-        $keyboard = [] === $buttons ? [] : [[self::dayButton($shown)]];
+        // A full task has no button; one full-width 🔁 Take someone's task
+        // under the rest starts a takeover for the day's full tasks (Owner
+        // 2026-11-08).
+        $take = ReplacementService::boardButton(array_merge($guest, $own), $taken, $shown);
+        $keyboard = [] === $buttons && null === $take ? [] : [[self::dayButton($shown)]];
 
         foreach (self::rowsOfThree($buttons) as $row) {
             $keyboard[] = $row;
+        }
+
+        if (null !== $take) {
+            $keyboard[] = [$take];
         }
 
         if (! $group) {
@@ -246,7 +259,8 @@ final class BoardRenderer
      * - every task $viewer may see (BoardVisibility::visibleTo()), the lines
      *   of the text; without a viewer only the guest board's;
      * - the tasks whose days the board shows: the guest board's, and on a
-     *   private copy also the ones $viewer can act on;
+     *   private copy also the Members display ones and the ones $viewer can
+     *   act on;
      * - the ids of the special tasks $viewer can act on (a restricted task of
      *   their role, or for an organizer any they can add someone to), which
      *   get RoleTaskBot's buttons (roleButtons());
@@ -286,16 +300,29 @@ final class BoardRenderer
         $days = [];
 
         foreach ($upcoming as $task) {
-            if (BoardVisibility::onGuestBoard($task)) {
+            $shared = self::onSharedBoard($task, $viewer);
+
+            if ($shared && ! $task->isRestricted()) {
                 // Already on the board with its own button: no ➕ for it.
                 unset($extra[$task->id], $addable[$task->id]);
-                $days[] = $task;
-            } elseif (isset($extra[$task->id])) {
+            }
+
+            if ($shared || isset($extra[$task->id])) {
                 $days[] = $task;
             }
         }
 
         return [$upcoming, $days, $extra, $addable];
+    }
+
+    /**
+     * Whether a task is on the board every reader of this copy shares: the
+     * guest board's on the group's message (no viewer), and on a private copy
+     * also those of the roles ticked Members display (BoardVisibility).
+     */
+    private static function onSharedBoard(Task $task, ?Person $viewer): bool
+    {
+        return null === $viewer ? BoardVisibility::onGuestBoard($task) : BoardVisibility::onMembersBoard($task);
     }
 
     /**
@@ -473,7 +500,7 @@ final class BoardRenderer
             $parts[] = sprintf('%d/%d', count($names), $task->capacity);
         }
 
-        if (BoardVisibility::blocksGuestSignup($task, $viewer)) {
+        if (BoardVisibility::crewOnly($task, $viewer)) {
             $parts[] = self::crewOnly();
         }
 
@@ -743,7 +770,7 @@ final class BoardRenderer
             }
         }
 
-        if (BoardVisibility::blocksGuestSignup($task, $viewer)) {
+        if (BoardVisibility::crewOnly($task, $viewer)) {
             $parts[] = self::crewOnly();
         }
 

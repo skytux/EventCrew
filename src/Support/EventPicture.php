@@ -105,7 +105,7 @@ final class EventPicture
         foreach ($texts as $lang => $text) {
             $html .= sprintf(
                 '<p style="margin:14px 0 0;font-family:%1$s;font-size:15px;line-height:1.6;color:%2$s;'
-                    . 'text-align:center">%3$s%4$s</p>',
+                    . 'text-align:left">%3$s%4$s</p>',
                 EmailBody::FONT,
                 EmailBody::TEXT_COLOR,
                 '' === $tags[$lang] ? '' : EmailBody::langTag($tags[$lang]),

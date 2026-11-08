@@ -19,6 +19,12 @@ final class ChatCommands
     ) {
     }
 
+    /** The member commands, for Settings' buttons (MenuButtons::SIGN_OUT, DELETE). */
+    public function member(): MemberCommands
+    {
+        return $this->member;
+    }
+
     /**
      * Every command word handled here.
      *

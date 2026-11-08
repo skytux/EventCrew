@@ -432,10 +432,6 @@ msgid ""
 msgstr ""
 "/events – posta kommande evenemang i gruppen som bildkort; du ser dem först"
 
-#: src/Telegram/HelpService.php:206
-msgid "/help – this list"
-msgstr "/help – den här listan"
-
 #: src/Telegram/NewsletterCommand.php:86
 msgid "/newsletter See you on the dance floor!"
 msgstr "/newsletter Vi ses på dansgolvet!"
@@ -3887,10 +3883,6 @@ msgstr ""
 #: src/Support/EventTaskMover.php:67
 msgid "Move the tasks too"
 msgstr "Flytta även uppgifterna"
-
-#: templates/public/signup.php:435
-msgid "My tasks"
-msgstr "Mina uppgifter"
 
 #: src/Admin/PeopleListTable.php:47 src/Support/PrivacyExporter.php:136 src/Support/PrivacyExporter.php:219 src/Support/PrivacyExporter.php:245
 #: src/Support/PrivacyExporter.php:272 templates/admin/messages-tab-ai.php:65 templates/admin/messages-tab-ai.php:76 templates/admin/people.php:62
@@ -7524,10 +7516,6 @@ msgstr ""
 msgid "The coming events, as the newsletter writes them."
 msgstr "De kommande evenemangen, så som nyhetsbrevet skriver dem."
 
-#: src/Telegram/CommandMenu.php:281
-msgid "The commands you can use"
-msgstr "Kommandona du kan använda"
-
 #: src/Admin/SettingsPage.php:1049
 msgid "The connection test failed: %s."
 msgstr "Anslutningstestet misslyckades: %s."
@@ -9470,10 +9458,6 @@ msgstr ""
 msgid "What we hold about you"
 msgstr "Vad vi har om dig"
 
-#: templates/public/signup.php:464
-msgid "What you’ve done"
-msgstr "Vad du har gjort"
-
 #: templates/admin/diagnostics.php:124 templates/admin/people.php:294
 msgid "When"
 msgstr "När"
@@ -10271,10 +10255,6 @@ msgstr "Din uppgift gick till %s"
 msgid "Your tasks on this night:"
 msgstr "Dina uppgifter den här kvällen:"
 
-#: src/Telegram/CommandMenu.php:283
-msgid "Your tasks, credits, ticket, settings"
-msgstr "Dina uppgifter, fribiljetter, biljett, inställningar"
-
 #: templates/admin/settings.php:1540
 msgid ""
 "Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one."
@@ -10325,10 +10305,6 @@ msgstr "Du är redan anmäld till det."
 #: src/Telegram/BoardService.php:1050 src/Telegram/RoleTaskBot.php:394
 msgid "You’re in! See you there."
 msgstr "Du är med! Vi ses där."
-
-#: templates/public/signup.php:438
-msgid "You’re not signed up for anything yet — take a look at the board."
-msgstr "Du är inte anmäld till något än — ta en titt på tavlan."
 
 #: src/Telegram/BoardService.php:1074 src/Telegram/RoleTaskBot.php:414
 msgid "You’re out. Thanks for the notice."
@@ -11675,8 +11651,12 @@ msgid "Guest display: people without this role see its tasks"
 msgstr "Gästvisning: personer utan den här rollen ser dess uppgifter"
 
 #: templates/admin/settings.php templates/public/signup.php
-msgid "Guest sign up: people without this role can sign up (needs Guest display)"
-msgstr "Gästanmälan: personer utan den här rollen kan anmäla sig (kräver Gästvisning)"
+msgid "Members display: signed-in members see its tasks, even without the role"
+msgstr "Medlemsvisning: inloggade medlemmar ser dess uppgifter, även utan rollen"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest sign up: people without this role can sign up (needs Guest or Members display)"
+msgstr "Gästanmälan: personer utan den här rollen kan anmäla sig (kräver Gäst- eller Medlemsvisning)"
 
 #: templates/admin/settings.php templates/public/signup.php
 msgid "Anonymous display: hide the names from people without this role"
@@ -11842,9 +11822,6 @@ msgstr "Lägg till, räknas"
 msgid "Add, no credit"
 msgstr "Lägg till, räknas ej"
 
-msgid "As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
-msgstr "Som arrangör kan du lägga till vem som helst på vilken uppgift som helst under en kväll utom Arrangemang, även en uppgift för en roll som personen inte har (den får då rollen): i en privat chatt med /assign uppgift ; namn (/unassign tar bort) eller ➕ Lägg till någon under /board, under fliken Admin i Crew-appen, eller vid försäljningsdisken."
-
 msgid "Cancelled. Nothing was changed."
 msgstr "Avbrutet. Inget ändrades."
 
@@ -11868,9 +11845,6 @@ msgstr "Ingen medlem som heter “%s” hittades. Någon som inte är medlem än
 
 msgid "No task called “%1$s”. Tasks on %2$s: %3$s"
 msgstr "Ingen uppgift som heter “%1$s”. Uppgifter den %2$s: %3$s"
-
-msgid "Organize tasks are for organizers only. Make someone an organizer with /people."
-msgstr "Arrangemangsuppgifter är bara för arrangörer. Gör någon till arrangör med /people."
 
 msgid "Put a member on a task: /assign task ; name\nExample: /assign Host ; Milla\nA date first picks another event: /assign 21.11. Host ; Milla"
 msgstr "Sätt en medlem på en uppgift: /assign uppgift ; namn\nExempel: /assign Host ; Milla\nEtt datum först väljer en annan kväll: /assign 21.11. Host ; Milla"
@@ -13051,3 +13025,214 @@ msgstr[1] "En av dina uppgifter markerades som inte gjord, så %d fribiljettkred
 #: src/Support/StandingNotice.php
 msgid "A free-entry credit was taken back"
 msgstr "En fribiljettkredit togs tillbaka"
+
+msgid "How this works?"
+msgstr "Hur fungerar det här?"
+
+msgid "FAQ"
+msgstr "Vanliga frågor"
+
+msgid "/help – how this works, commands and FAQ"
+msgstr "/help – hur det här fungerar, kommandon och vanliga frågor"
+
+msgid "How this works, commands and FAQ"
+msgstr "Hur det här fungerar, kommandon och vanliga frågor"
+
+msgid "Your standing, credits and coming tasks"
+msgstr "Din pålitlighet, fribiljetter och kommande uppgifter"
+
+msgid "In a private chat with the bot you can also use these commands, or just write what you need in your own words."
+msgstr "I en privat chatt med boten kan du också använda de här kommandona, eller bara skriva med egna ord vad du behöver."
+
+msgid "How do I sign up for a task?"
+msgstr "Hur anmäler jag mig till en uppgift?"
+
+msgid "Open the board (See open tasks in the bot, or the Board tab on the web page) and tap the task. You get a confirmation and a ticket for that night. If you are new, the team first says OK; we message you when it comes."
+msgstr "Öppna tavlan (Se lediga uppgifter i boten, eller fliken Tavlan på webbsidan) och tryck på uppgiften. Du får en bekräftelse och en biljett för den kvällen. Om du är ny godkänner teamet dig först; vi skickar ett meddelande när det är klart."
+
+msgid "Open Tasks and tap Cancel next to the task."
+msgstr "Öppna Uppgifter och tryck på Avbryt bredvid uppgiften."
+
+msgid "Changed your mind? Within %d minutes of taking a task, cancelling it never counts against you."
+msgstr "Ångrat dig? Inom %d minuter efter att du tagit en uppgift räknas en avbokning aldrig mot dig."
+
+msgid "Cancelling closes %d minutes before the task starts; after that, tell an organizer."
+msgstr "Avbokningen stänger %d minuter innan uppgiften börjar; säg sedan till en arrangör."
+
+msgid "How do I cancel a task?"
+msgstr "Hur avbokar jag en uppgift?"
+
+msgid "What if I cancel late?"
+msgstr "Vad händer om jag avbokar sent?"
+
+msgid "Cancelling %1$d hours or more before has no effect. Later, it counts as a late cancellation in your standing (%2$d%%). Better: find someone to take your task. When they take it, it counts as Found a replacement (%3$d%%)."
+msgstr "Att avboka %1$d timmar eller mer innan påverkar inget. Senare räknas det som en sen avbokning i din pålitlighet (%2$d%%). Bättre: hitta någon som tar din uppgift. När hen tar den räknas det som Hittade en ersättare (%3$d%%)."
+
+msgid "A task is full. Can I still get it?"
+msgstr "En uppgift är full. Kan jag ändå få den?"
+
+msgid "Tap Take someone’s task and choose whose task you want. They are asked and decide; nothing changes until they say yes. If they do not answer in time, they keep the task."
+msgstr "Tryck på Ta någons uppgift och välj vems uppgift du vill ha. Hen tillfrågas och bestämmer; inget ändras förrän hen säger ja. Svarar hen inte i tid behåller hen uppgiften."
+
+msgid "What happens if I do not show up?"
+msgstr "Vad händer om jag inte dyker upp?"
+
+msgid "A no-show counts %d%% in your standing, the worst outcome. If you cannot come, cancel or find a replacement instead. If it was marked by mistake, tell an organizer or the bot."
+msgstr "Att utebli räknas %d%% i din pålitlighet, det sämsta utfallet. Om du inte kan komma, avboka eller hitta en ersättare i stället. Om det markerats av misstag, säg till en arrangör eller boten."
+
+msgid "It comes from how your past tasks went, and recent tasks count more. You get a rating after %1$d finished tasks; %2$d%% or higher is good standing."
+msgstr "Den bygger på hur dina tidigare uppgifter gick, och nya uppgifter väger tyngre. Du får ett betyg efter %1$d avslutade uppgifter; %2$d%% eller mer är god pålitlighet."
+
+msgid "Below that, you cannot sign up for new tasks until you talk to an organizer."
+msgstr "Under det kan du inte anmäla dig till nya uppgifter förrän du har pratat med en arrangör."
+
+msgid "How does standing work?"
+msgstr "Hur fungerar pålitlighet?"
+
+msgid "How do I get free entry?"
+msgstr "Hur får jag fritt inträde?"
+
+msgid "Every %d completed tasks earn 1 free-entry credit. To use one, open Tickets, tap Get a free-entry ticket and choose the night. Some nights (sold out, or special events) do not accept credits."
+msgstr "För varje %d avslutade uppgifter får du 1 fribiljett. Öppna Biljetter, tryck på Hämta fribiljett och välj kväll för att använda den. Vissa kvällar (utsålda eller särskilda evenemang) tar inte emot fribiljetter."
+
+msgid "Do I need a ticket for a night I work?"
+msgstr "Behöver jag en biljett för en kväll då jag jobbar?"
+
+msgid "Signing up gives you a working ticket for that night. It covers all your tasks that night; show it at the door. Its code never changes, so a screenshot works. It is personal and cannot be given away."
+msgstr "När du anmäler dig får du en arbetsbiljett för den kvällen. Den gäller alla dina uppgifter den kvällen; visa den i dörren. Koden ändras aldrig, så en skärmbild fungerar. Den är personlig och kan inte ges bort."
+
+msgid "Why is a credit pending?"
+msgstr "Varför väntar en fribiljett?"
+
+msgid "Each extra task on the same night earns one more credit. It shows as pending and is added after the event, if you did the task. A cancelled or missed task gives nothing."
+msgstr "Varje extra uppgift samma kväll ger en fribiljett till. Den visas som väntande och läggs till efter evenemanget, om du gjorde uppgiften. En avbokad eller missad uppgift ger inget."
+
+msgid "Can I cancel a free-entry ticket?"
+msgstr "Kan jag avboka en fribiljett?"
+
+msgid "No, and the credit stays spent. But you can give the ticket to someone else: open Tickets and tap Give away. A ticket given to you cannot be given on."
+msgstr "Nej, och den använda fribiljetten kommer inte tillbaka. Men du kan ge biljetten till någon annan: öppna Biljetter och tryck på Ge bort. En biljett du har fått kan inte ges vidare."
+
+msgid "No, and the credit stays spent."
+msgstr "Nej, och den använda fribiljetten kommer inte tillbaka."
+
+msgid "I already have a ticket for that night. Can I still take a task?"
+msgstr "Jag har redan en biljett för den kvällen. Kan jag ändå ta en uppgift?"
+
+msgid "Yes. Your ticket stays as it is. A bought ticket never turns into a credit."
+msgstr "Ja. Din biljett förblir som den är. En köpt biljett blir aldrig en fribiljett."
+
+msgid "You can give away a free-entry ticket you no longer need."
+msgstr "Du kan ge bort en fribiljett som du inte längre behöver."
+
+msgid "Where do I see my credits and tasks?"
+msgstr "Var ser jag mina fribiljetter och uppgifter?"
+
+msgid "In My info in the bot, and in the Me tab on the web page."
+msgstr "Under Min info i boten och på fliken Jag på webbsidan."
+
+msgid "How do I choose which messages I get?"
+msgstr "Hur väljer jag vilka meddelanden jag får?"
+
+msgid "Under Settings, choose notifications and switch off what you do not want. Sign-up confirmations and reminders always come."
+msgstr "Under Inställningar väljer du aviseringar och stänger av det du inte vill ha. Anmälningsbekräftelser och påminnelser kommer alltid."
+
+msgid "How do I sign in on the web page?"
+msgstr "Hur loggar jag in på webbsidan?"
+
+msgid "Enter your email on the web page and open the sign-in link we send. In the bot, Settings also has a web sign-in link."
+msgstr "Ange din e-post på webbsidan och öppna inloggningslänken vi skickar. I boten finns också en länk för webbinloggning under Inställningar."
+
+msgid "How do I change the language?"
+msgstr "Hur byter jag språk?"
+
+msgid "Under Settings: Change language. Messages to you then come in that language."
+msgstr "Under Inställningar: Byt språk. Meddelanden till dig kommer sedan på det språket."
+
+msgid "How do I delete my data?"
+msgstr "Hur tar jag bort mina data?"
+
+msgid "Under Settings: Delete my data. It erases your account and history and cannot be undone. To stop only some messages, choose notifications instead."
+msgstr "Under Inställningar: Ta bort mina data. Det raderar ditt konto och din historik och kan inte ångras. Vill du bara stoppa vissa meddelanden, välj aviseringar i stället."
+
+msgid "Person %d"
+msgstr "Person %d"
+
+msgid "Take someone’s task"
+msgstr "Ta någons uppgift"
+
+msgid "No task here can be taken over."
+msgstr "Här finns ingen uppgift att ta över."
+
+msgid "Whose task do you want to take? They decide."
+msgstr "Vems uppgift vill du ta? Hen bestämmer."
+
+msgid "Whose task?"
+msgstr "Vems uppgift?"
+
+#: src/Telegram/MenuButtons.php
+msgid "Change name"
+msgstr "Byt namn"
+
+#: src/Telegram/MenuButtons.php
+msgid "Change email"
+msgstr "Byt e-post"
+
+#: src/Telegram/MemberCommands.php
+msgid "Sign out of the web board on every browser and phone? Nothing is lost; you just sign in again."
+msgstr "Logga ut från webbsidan i alla webbläsare och telefoner? Inget försvinner; du loggar bara in igen."
+
+#: src/Telegram/MemberCommands.php
+msgid "A link goes to your email first; your data is deleted only when you open it."
+msgstr "En länk skickas först till din e-post; dina data tas bort först när du öppnar den."
+
+#: templates/public/signup.php
+msgid "Your Telegram is linked to this account."
+msgstr "Ditt Telegram är kopplat till det här kontot."
+
+#: templates/public/signup.php
+msgid "The bot asks for your email and sends a link there; opening it links your Telegram to this account."
+msgstr "Boten frågar efter din e-post och skickar en länk dit; när du öppnar den kopplas ditt Telegram till det här kontot."
+
+msgid "As an organizer you can add anyone to any task of a night, also one for a role they do not hold (they then get the role), and an organizer to Organize: in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
+msgstr "Som arrangör kan du lägga till vem som helst på vilken uppgift som helst under en kväll, även en uppgift för en roll som personen inte har (den får då rollen), och en arrangör på Arrangemang: i en privat chatt med /assign uppgift ; namn (/unassign tar bort) eller ➕ Lägg till någon under /board, under fliken Admin i Crew-appen, eller vid försäljningsdisken."
+
+#. translators: %s: a person's name.
+#: src/Support/RoleTaskService.php
+msgid "%s is not an organizer. Make them one with /people first."
+msgstr "%s är inte arrangör. Gör personen till arrangör med /people först."
+
+#: src/Support/RoleTaskService.php
+msgid "Only an organizer can go on an Organize task. Make them one first, with /people or on the People page."
+msgstr "Bara en arrangör kan gå på en Arrangemangsuppgift. Gör personen till arrangör först, med /people eller på sidan Personer."
+
+#: src/Telegram/RoleTaskBot.php
+msgid "Send the organizer's name. Only an organizer can go on an Organize task."
+msgstr "Skicka arrangörens namn. Bara en arrangör kan gå på en Arrangemangsuppgift."
+
+msgid "Something went wrong. Please try again."
+msgstr "Något gick fel. Försök igen."
+
+msgid "Use /subscribe in a private chat with me."
+msgstr "Använd /subscribe i en privat chatt med mig."
+
+msgid "Only organizers can use /subscribe."
+msgstr "Bara arrangörer kan använda /subscribe."
+
+msgid "“%s” is not an email address."
+msgstr "”%s” är ingen e-postadress."
+
+msgid "A confirmation email went to %s. They are on the list once they open it."
+msgstr "Ett bekräftelsemejl gick till %s. De står på listan när de öppnar det."
+
+msgid "%s is already on the newsletter."
+msgstr "%s får redan nyhetsbrevet."
+
+msgid "Add someone to the newsletter: /subscribe name@example.com\nAdd a language code to choose their language: %s."
+msgstr "Lägg till någon i nyhetsbrevet: /subscribe namn@example.com\nLägg till en språkkod för att välja språk: %s."
+
+msgid "/subscribe email – add someone to the newsletter; they confirm by email"
+msgstr "/subscribe e-post – lägg till någon i nyhetsbrevet; de bekräftar via e-post"
+
+msgid "Preview of the next announcement"
+msgstr "Förhandsvisning av nästa utskick"

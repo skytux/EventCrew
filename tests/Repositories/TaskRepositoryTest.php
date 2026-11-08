@@ -112,6 +112,30 @@ final class TaskRepositoryTest extends TestCase
         self::assertTrue((new TaskRepository())->hasOpenSlotsOn('2026-08-01'));
     }
 
+    /**
+     * BoardPush re-posts the group's board for this: a task the guest board
+     * does not show (Guest display off, even with Members display, or an
+     * archived role) is no reason to.
+     */
+    public function testHasOpenSlotsOnIgnoresTasksOffTheGuestBoard(): void
+    {
+        $roles = [
+            ['slug' => 'decorate', 'label' => 'Decorate', 'on_board' => false, 'members_display' => true],
+            ['slug' => 'clean', 'label' => 'Clean', 'archived' => true],
+        ];
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => 'eventcrew_roles' === $name ? $roles : $default
+        );
+        $this->wpdb->nextResults[] = [
+            ['id' => 1, 'task_date' => '2026-08-01', 'role_slug' => 'decorate', 'capacity' => 2],
+            ['id' => 2, 'task_date' => '2026-08-01', 'role_slug' => 'clean', 'capacity' => 2],
+        ];
+
+        self::assertFalse((new TaskRepository())->hasOpenSlotsOn('2026-08-01'));
+        // Nothing left to count: occupancy is not read.
+        self::assertCount(1, $this->wpdb->queries);
+    }
+
     public function testHasTaskCreatedSinceLeavesOutTheOrganizeTask(): void
     {
         (new TaskRepository())->hasTaskCreatedSince('2026-08-01', '2026-07-01 00:00:00');

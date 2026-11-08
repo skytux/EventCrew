@@ -616,10 +616,6 @@ msgstr "Jäsen lisätty. Hän sai sähköpostin, jolla vahvistaa osoitteensa ja 
 msgid "Member name or email"
 msgstr "Jäsenen nimi tai sähköposti"
 
-#: templates/public/signup.php:298
-msgid "My tasks"
-msgstr "Tehtäväni"
-
 #: templates/public/door.php:199 templates/public/door.php:218
 msgid "Name"
 msgstr "Nimi"
@@ -1245,10 +1241,6 @@ msgstr "Tervetuloa crew’hun: näin tehtävät, liput ja vapaaliput toimivat"
 msgid "Welcome! What's your email address? I'll send a link to confirm it, and then you can sign up for tasks."
 msgstr "Tervetuloa! Mikä on sähköpostiosoitteesi? Lähetän linkin, jolla vahvistat sen, ja sitten voit ilmoittautua tehtäviin."
 
-#: templates/public/signup.php:318
-msgid "What you’ve done"
-msgstr "Mitä olet tehnyt"
-
 #: src/Telegram/ReplacementService.php:117
 msgid "Which of their tasks are you covering?"
 msgstr "Mitä hänen tehtävistään tuuraat?"
@@ -1427,10 +1419,6 @@ msgstr "Olet jo ilmoittautunut siihen."
 #: src/Telegram/BoardService.php:498
 msgid "You’re in! See you there."
 msgstr "Olet mukana! Nähdään siellä."
-
-#: templates/public/signup.php:300
-msgid "You’re not signed up for anything yet — take a look at the board."
-msgstr "Et ole vielä ilmoittautunut mihinkään — katso taulua."
 
 #: src/Telegram/BoardService.php:522
 msgid "You’re out. Thanks for the notice."
@@ -2801,10 +2789,6 @@ msgstr "👋 saapui · ✓ tehty · ⏰ myöhässä · ✗ ei saapunut"
 msgid "🔔 Your notifications — tap to toggle 📱 Telegram or ✉ email.\n\nSignup confirmations and task reminders always send on both."
 msgstr "🔔 Ilmoituksesi — napauta, niin 📱 Telegram tai ✉ sähköposti menee päälle tai pois.\n\nIlmoittautumisvahvistukset ja tehtävämuistutukset lähetetään aina molempia kanavia."
 
-#: src/Telegram/CommandMenu.php:292
-msgid "The commands you can use"
-msgstr "Komennot, joita voit käyttää"
-
 #: src/Telegram/CommandMenu.php:293
 msgid "Show the open tasks"
 msgstr "Näytä avoimet tehtävät"
@@ -2846,9 +2830,6 @@ msgstr "/board – avoimet tehtävät; yksityiskeskustelussa myös roolejesi teh
 msgid "/door [date] – buttons: 📋 door list, 👥 guest list, 💳 sales desk"
 msgstr "/door [päivä] – painikkeet: 📋 ovilista, 👥 vieraslista, 💳 myyntipiste"
 
-msgid "/help – this list"
-msgstr "/help – tämä lista"
-
 msgid "/people – buttons: 🎁 give credits, 🏷 roles, organizers and passes, ✅ who may hold each role"
 msgstr "/people – painikkeet: 🎁 anna vapaalippuja, 🏷 roolit, järjestäjät ja passit, ✅ kuka voi saada minkäkin roolin"
 
@@ -2860,9 +2841,6 @@ msgstr "Roolilla voi olla ehtoja kohdassa EventCrew > Settings: kuinka monta min
 
 msgid "A role ticked \"Only people with this role\" (a DJ, a VJ, a ceremony leader) is shown only to people given that role, in the Crew app, in the bot and at the sales desk. Its tasks have no sign-up limit and are never posted on the Telegram group board. Give people the role on the People page, in the Crew app Admin tab, or with /people in the bot. With \"Add to every night\" ticked, every upcoming night gets one task of that role, including nights that already exist; unticking it later removes nothing."
 msgstr "Rooli, jossa on valittuna \"Only people with this role\" (DJ, VJ, seremonian vetäjä), näytetään vain niille, joilla rooli on: Crew-sovelluksessa, botissa ja myyntipisteessä. Sen tehtävillä ei ole ilmoittautumisrajaa, eikä niitä koskaan julkaista Telegram-ryhmän taululla. Anna rooli People-sivulla, Crew-sovelluksen Ylläpito-välilehdellä tai botissa komennolla /people. Kun \"Add to every night\" on valittuna, jokainen tuleva ilta saa yhden tämän roolin tehtävän, myös jo olemassa olevat illat; valinnan poistaminen myöhemmin ei poista mitään."
-
-msgid "As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
-msgstr "Järjestäjänä voit lisätä kenet tahansa mihin tahansa illan tehtävään paitsi Järjestelyihin, myös roolin tehtävään, jota hänellä ei ole (hän saa roolin): yksityiskeskustelussa komennolla /assign tehtävä ; nimi (/unassign poistaa) tai napilla ➕ Lisää joku komennon /board alla, Crew-sovelluksen Ylläpito-välilehdellä tai myyntipisteessä."
 
 msgid "Cancelling less than %d hours before the task counts as a late cancellation. A member who cannot come can find a replacement: the replacement sends /tasks to the bot, taps 🔁 Take over a task, and the member accepts."
 msgstr "Peruminen alle %d tuntia ennen tehtävää on myöhäinen peruutus. Jäsen, joka ei pääse, voi etsiä tuuraajan: tuuraaja lähettää botille /tasks, napauttaa 🔁 Ota tehtävä, ja jäsen hyväksyy."
@@ -2951,9 +2929,6 @@ msgstr "Kuka täyttää kunkin roolin ehdot. ✅ = hänellä on rooli. Anna rool
 
 msgid "Who meets the conditions set on each role (Settings, Roles). Meeting them lets nobody sign up; it is a signal. Give the role by editing a person, in the Crew app, or with the bot’s /people. ✅ = already has the role."
 msgstr "Kuka täyttää kullekin roolille asetetut ehdot (Settings, Roles). Ehtojen täyttyminen ei anna kenellekään oikeutta ilmoittautua; se on vain merkki. Anna rooli muokkaamalla henkilöä, Crew-sovelluksessa tai botin komennolla /people. ✅ = rooli on jo."
-
-msgid "Your tasks, credits, ticket, settings"
-msgstr "Tehtäväsi, vapaaliput, lippu, asetukset"
 
 msgid "When the event starts and its doors close, like Event starts 19:00 · doors close 19:30. On a line of its own; the line goes when neither time is known."
 msgstr "Milloin tapahtuma alkaa ja ovet sulkeutuvat, esim. Tapahtuma alkaa 19:00 · ovet sulkeutuvat 19:30. Omalla rivillään; rivi poistuu, kun kumpaakaan aikaa ei tiedetä."
@@ -8768,8 +8743,12 @@ msgid "Guest display: people without this role see its tasks"
 msgstr "Vierasnäkymä: ne, joilla ei ole tätä roolia, näkevät sen tehtävät"
 
 #: templates/admin/settings.php templates/public/signup.php
-msgid "Guest sign up: people without this role can sign up (needs Guest display)"
-msgstr "Vieraiden ilmoittautuminen: ne, joilla ei ole tätä roolia, voivat ilmoittautua (vaatii vierasnäkymän)"
+msgid "Members display: signed-in members see its tasks, even without the role"
+msgstr "Jäsennäkymä: kirjautuneet jäsenet näkevät sen tehtävät ilman roolia"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest sign up: people without this role can sign up (needs Guest or Members display)"
+msgstr "Vieraiden ilmoittautuminen: ne, joilla ei ole tätä roolia, voivat ilmoittautua (vaatii vieras- tai jäsennäkymän)"
 
 #: templates/admin/settings.php templates/public/signup.php
 msgid "Anonymous display: hide the names from people without this role"
@@ -8949,9 +8928,6 @@ msgstr "Jäsentä nimeltä “%s” ei löytynyt. Jos hän ei ole vielä jäsen:
 
 msgid "No task called “%1$s”. Tasks on %2$s: %3$s"
 msgstr "Ei tehtävää “%1$s”. Tehtävät %2$s: %3$s"
-
-msgid "Organize tasks are for organizers only. Make someone an organizer with /people."
-msgstr "Järjestelytehtävät ovat vain järjestäjille. Tee joku järjestäjäksi komennolla /people."
 
 msgid "Put a member on a task: /assign task ; name\nExample: /assign Host ; Milla\nA date first picks another event: /assign 21.11. Host ; Milla"
 msgstr "Lisää jäsen tehtävään: /assign tehtävä ; nimi\nEsimerkki: /assign Host ; Milla\nPäivä ensin valitsee toisen illan: /assign 21.11. Host ; Milla"
@@ -10099,3 +10075,214 @@ msgstr[1] "Tehtäväsi merkittiin tekemättömäksi, joten %d vapaalippua sen il
 #: src/Support/StandingNotice.php
 msgid "A free-entry credit was taken back"
 msgstr "Vapaalippu peruttiin"
+
+msgid "How this works?"
+msgstr "Miten tämä toimii?"
+
+msgid "FAQ"
+msgstr "UKK"
+
+msgid "/help – how this works, commands and FAQ"
+msgstr "/help – miten tämä toimii, komennot ja UKK"
+
+msgid "How this works, commands and FAQ"
+msgstr "Miten tämä toimii, komennot ja UKK"
+
+msgid "Your standing, credits and coming tasks"
+msgstr "Luotettavuutesi, vapaaliput ja tulevat tehtävät"
+
+msgid "In a private chat with the bot you can also use these commands, or just write what you need in your own words."
+msgstr "Yksityisviestissä botille voit käyttää myös näitä komentoja tai kirjoittaa omin sanoin, mitä tarvitset."
+
+msgid "How do I sign up for a task?"
+msgstr "Miten ilmoittaudun tehtävään?"
+
+msgid "Open the board (See open tasks in the bot, or the Board tab on the web page) and tap the task. You get a confirmation and a ticket for that night. If you are new, the team first says OK; we message you when it comes."
+msgstr "Avaa taulu (botissa Avoimet tehtävät, verkkosivulla Taulu-välilehti) ja napauta tehtävää. Saat vahvistuksen ja lipun sille illalle. Jos olet uusi, tiimi hyväksyy sinut ensin; kerromme viestillä, kun se on tehty."
+
+msgid "Open Tasks and tap Cancel next to the task."
+msgstr "Avaa Tehtävät ja napauta tehtävän vieressä Peru."
+
+msgid "Changed your mind? Within %d minutes of taking a task, cancelling it never counts against you."
+msgstr "Muutitko mielesi? Kun perut %d minuutin sisällä tehtävän ottamisesta, se ei koskaan lasketa sinua vastaan."
+
+msgid "Cancelling closes %d minutes before the task starts; after that, tell an organizer."
+msgstr "Peruminen sulkeutuu %d minuuttia ennen tehtävän alkua; sen jälkeen kerro järjestäjälle."
+
+msgid "How do I cancel a task?"
+msgstr "Miten perun tehtävän?"
+
+msgid "What if I cancel late?"
+msgstr "Entä jos perun myöhään?"
+
+msgid "Cancelling %1$d hours or more before has no effect. Later, it counts as a late cancellation in your standing (%2$d%%). Better: find someone to take your task. When they take it, it counts as Found a replacement (%3$d%%)."
+msgstr "Jos perut vähintään %1$d tuntia ennen, sillä ei ole vaikutusta. Myöhemmin se on myöhäinen peruutus luotettavuudessasi (%2$d %%). Parempi: etsi joku ottamaan tehtäväsi. Kun hän ottaa sen, se lasketaan kohtaan Löysi tuuraajan (%3$d %%)."
+
+msgid "A task is full. Can I still get it?"
+msgstr "Tehtävä on täynnä. Voinko silti saada sen?"
+
+msgid "Tap Take someone’s task and choose whose task you want. They are asked and decide; nothing changes until they say yes. If they do not answer in time, they keep the task."
+msgstr "Napauta Ota toisen tehtävä ja valitse, kenen tehtävän haluat. Häneltä kysytään, ja hän päättää; mikään ei muutu ennen kuin hän suostuu. Jos hän ei vastaa ajoissa, tehtävä jää hänelle."
+
+msgid "What happens if I do not show up?"
+msgstr "Mitä tapahtuu, jos en tule paikalle?"
+
+msgid "A no-show counts %d%% in your standing, the worst outcome. If you cannot come, cancel or find a replacement instead. If it was marked by mistake, tell an organizer or the bot."
+msgstr "Poisjäänti lasketaan luotettavuuteesi %d %%, mikä on huonoin tulos. Jos et pääse, peru tai etsi tuuraaja. Jos merkintä on virhe, kerro järjestäjälle tai botille."
+
+msgid "It comes from how your past tasks went, and recent tasks count more. You get a rating after %1$d finished tasks; %2$d%% or higher is good standing."
+msgstr "Se perustuu siihen, miten aiemmat tehtäväsi sujuivat, ja tuoreet painavat enemmän. Saat arvion %1$d tehdyn tehtävän jälkeen; %2$d %% tai enemmän on hyvä taso."
+
+msgid "Below that, you cannot sign up for new tasks until you talk to an organizer."
+msgstr "Sen alapuolella et voi ilmoittautua uusiin tehtäviin ennen kuin puhut järjestäjän kanssa."
+
+msgid "How does standing work?"
+msgstr "Miten luotettavuus toimii?"
+
+msgid "How do I get free entry?"
+msgstr "Miten pääsen sisään ilmaiseksi?"
+
+msgid "Every %d completed tasks earn 1 free-entry credit. To use one, open Tickets, tap Get a free-entry ticket and choose the night. Some nights (sold out, or special events) do not accept credits."
+msgstr "Jokaisesta %d tehdystä tehtävästä saat 1 vapaalipun. Käytä se avaamalla Liput, napauttamalla Hae vapaalippu ja valitsemalla ilta. Jotkin illat (loppuunmyydyt tai erikoistapahtumat) eivät ota vapaalippuja."
+
+msgid "Do I need a ticket for a night I work?"
+msgstr "Tarvitsenko lipun illalle, jona teen tehtävän?"
+
+msgid "Signing up gives you a working ticket for that night. It covers all your tasks that night; show it at the door. Its code never changes, so a screenshot works. It is personal and cannot be given away."
+msgstr "Ilmoittautuminen antaa sinulle työlipun sille illalle. Se kattaa kaikki illan tehtäväsi; näytä se ovella. Sen koodi ei muutu, joten kuvakaappaus käy. Lippu on henkilökohtainen, eikä sitä voi antaa pois."
+
+msgid "Why is a credit pending?"
+msgstr "Miksi vapaalippu odottaa?"
+
+msgid "Each extra task on the same night earns one more credit. It shows as pending and is added after the event, if you did the task. A cancelled or missed task gives nothing."
+msgstr "Jokainen lisätehtävä samana iltana tuo yhden vapaalipun lisää. Se näkyy odottavana ja lisätään tapahtuman jälkeen, jos teit tehtävän. Peruttu tai väliin jäänyt tehtävä ei tuo mitään."
+
+msgid "Can I cancel a free-entry ticket?"
+msgstr "Voinko perua vapaalipun?"
+
+msgid "No, and the credit stays spent. But you can give the ticket to someone else: open Tickets and tap Give away. A ticket given to you cannot be given on."
+msgstr "Et, eikä käytetty vapaalippu palaa. Voit kuitenkin antaa lipun jollekulle toiselle: avaa Liput ja napauta Anna pois. Sinulle annettua lippua ei voi antaa eteenpäin."
+
+msgid "No, and the credit stays spent."
+msgstr "Et, eikä käytetty vapaalippu palaa."
+
+msgid "I already have a ticket for that night. Can I still take a task?"
+msgstr "Minulla on jo lippu sille illalle. Voinko silti ottaa tehtävän?"
+
+msgid "Yes. Your ticket stays as it is. A bought ticket never turns into a credit."
+msgstr "Voit. Lippusi pysyy ennallaan. Ostettu lippu ei koskaan muutu vapaalipuksi."
+
+msgid "You can give away a free-entry ticket you no longer need."
+msgstr "Voit antaa pois vapaalipun, jota et enää tarvitse."
+
+msgid "Where do I see my credits and tasks?"
+msgstr "Mistä näen vapaalippuni ja tehtäväni?"
+
+msgid "In My info in the bot, and in the Me tab on the web page."
+msgstr "Botissa kohdassa Omat tietoni ja verkkosivulla Minä-välilehdellä."
+
+msgid "How do I choose which messages I get?"
+msgstr "Miten valitsen, mitä viestejä saan?"
+
+msgid "Under Settings, choose notifications and switch off what you do not want. Sign-up confirmations and reminders always come."
+msgstr "Valitse kohdassa Asetukset ilmoitukset ja kytke pois ne, joita et halua. Ilmoittautumisvahvistukset ja muistutukset tulevat aina."
+
+msgid "How do I sign in on the web page?"
+msgstr "Miten kirjaudun verkkosivulle?"
+
+msgid "Enter your email on the web page and open the sign-in link we send. In the bot, Settings also has a web sign-in link."
+msgstr "Kirjoita sähköpostiosoitteesi verkkosivulle ja avaa lähettämämme kirjautumislinkki. Botin Asetuksissa on myös linkki verkkokirjautumiseen."
+
+msgid "How do I change the language?"
+msgstr "Miten vaihdan kielen?"
+
+msgid "Under Settings: Change language. Messages to you then come in that language."
+msgstr "Kohdassa Asetukset: Vaihda kieli. Sen jälkeen viestit tulevat sinulle sillä kielellä."
+
+msgid "How do I delete my data?"
+msgstr "Miten poistan tietoni?"
+
+msgid "Under Settings: Delete my data. It erases your account and history and cannot be undone. To stop only some messages, choose notifications instead."
+msgstr "Kohdassa Asetukset: Poista tietoni. Se poistaa tilisi ja historiasi, eikä sitä voi perua. Jos haluat lopettaa vain osan viesteistä, valitse ilmoitukset."
+
+msgid "Person %d"
+msgstr "Henkilö %d"
+
+msgid "Take someone’s task"
+msgstr "Ota toisen tehtävä"
+
+msgid "No task here can be taken over."
+msgstr "Täällä ei ole tehtävää, jonka voisi ottaa."
+
+msgid "Whose task do you want to take? They decide."
+msgstr "Kenen tehtävän haluat ottaa? Hän päättää."
+
+msgid "Whose task?"
+msgstr "Kenen tehtävä?"
+
+#: src/Telegram/MenuButtons.php
+msgid "Change name"
+msgstr "Vaihda nimi"
+
+#: src/Telegram/MenuButtons.php
+msgid "Change email"
+msgstr "Vaihda sähköposti"
+
+#: src/Telegram/MemberCommands.php
+msgid "Sign out of the web board on every browser and phone? Nothing is lost; you just sign in again."
+msgstr "Kirjaudutaanko ulos verkkosivulta kaikilla selaimilla ja puhelimilla? Mitään ei katoa; kirjaudut vain uudelleen."
+
+#: src/Telegram/MemberCommands.php
+msgid "A link goes to your email first; your data is deleted only when you open it."
+msgstr "Linkki tulee ensin sähköpostiisi; tietosi poistetaan vasta, kun avaat sen."
+
+#: templates/public/signup.php
+msgid "Your Telegram is linked to this account."
+msgstr "Telegramisi on yhdistetty tähän tiliin."
+
+#: templates/public/signup.php
+msgid "The bot asks for your email and sends a link there; opening it links your Telegram to this account."
+msgstr "Botti kysyy sähköpostisi ja lähettää sinne linkin; sen avaaminen yhdistää Telegramisi tähän tiliin."
+
+msgid "As an organizer you can add anyone to any task of a night, also one for a role they do not hold (they then get the role), and an organizer to Organize: in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
+msgstr "Järjestäjänä voit lisätä kenet tahansa mihin tahansa illan tehtävään, myös roolin tehtävään, jota hänellä ei ole (hän saa roolin), ja järjestäjän Järjestelyihin: yksityiskeskustelussa komennolla /assign tehtävä ; nimi (/unassign poistaa) tai napilla ➕ Lisää joku komennon /board alla, Crew-sovelluksen Ylläpito-välilehdellä tai myyntipisteessä."
+
+#. translators: %s: a person's name.
+#: src/Support/RoleTaskService.php
+msgid "%s is not an organizer. Make them one with /people first."
+msgstr "%s ei ole järjestäjä. Tee hänestä ensin järjestäjä komennolla /people."
+
+#: src/Support/RoleTaskService.php
+msgid "Only an organizer can go on an Organize task. Make them one first, with /people or on the People page."
+msgstr "Järjestelytehtävään voi lisätä vain järjestäjän. Tee hänestä ensin järjestäjä komennolla /people tai People-sivulla."
+
+#: src/Telegram/RoleTaskBot.php
+msgid "Send the organizer's name. Only an organizer can go on an Organize task."
+msgstr "Lähetä järjestäjän nimi. Järjestelytehtävään voi lisätä vain järjestäjän."
+
+msgid "Something went wrong. Please try again."
+msgstr "Jokin meni pieleen. Yritä uudelleen."
+
+msgid "Use /subscribe in a private chat with me."
+msgstr "Käytä /subscribe-komentoa yksityisviestissä minulle."
+
+msgid "Only organizers can use /subscribe."
+msgstr "Vain järjestäjät voivat käyttää /subscribe-komentoa."
+
+msgid "“%s” is not an email address."
+msgstr "”%s” ei ole sähköpostiosoite."
+
+msgid "A confirmation email went to %s. They are on the list once they open it."
+msgstr "Vahvistusviesti lähti osoitteeseen %s. Hän on listalla, kun avaa sen."
+
+msgid "%s is already on the newsletter."
+msgstr "%s on jo uutiskirjeen tilaaja."
+
+msgid "Add someone to the newsletter: /subscribe name@example.com\nAdd a language code to choose their language: %s."
+msgstr "Lisää joku uutiskirjeeseen: /subscribe nimi@example.com\nLisää kielikoodi valitaksesi kielen: %s."
+
+msgid "/subscribe email – add someone to the newsletter; they confirm by email"
+msgstr "/subscribe sähköposti – lisää joku uutiskirjeeseen; hän vahvistaa sähköpostilla"
+
+msgid "Preview of the next announcement"
+msgstr "Seuraavan tiedotteen esikatselu"

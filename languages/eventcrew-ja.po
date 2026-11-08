@@ -418,10 +418,6 @@ msgstr "/door add [日付] 名前 +N ; メモ – ゲストを追加（edit、re
 msgid "/events – post the coming events in the group as picture cards; you see them first"
 msgstr "/events – 今後のイベントを画像カードとしてグループに投稿。先にあなたが確認します"
 
-#: src/Telegram/HelpService.php:235
-msgid "/help – this list"
-msgstr "/help – この一覧"
-
 #: src/Telegram/HelpService.php:231
 msgid "/me – your standing, credits and coming tasks"
 msgstr "/me – 評価、クレジット、今後のタスク"
@@ -1089,10 +1085,6 @@ msgstr "遅れて到着"
 #: src/Support/Reputation.php:68
 msgid "Arrived late, did the task"
 msgstr "遅れて到着し、タスクを完了"
-
-#: src/Support/OrganizerGuide.php:245
-msgid "As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
-msgstr "主催者は、運営を除くその夜のどのタスクにも誰でも追加できます。持っていない役割のタスクにも追加でき、その場合は役割が付与されます。方法: プライベートチャットで /assign タスク ; 名前（/unassign で外す）、/board の ➕ 誰かを追加、Crew アプリの管理タブ、または販売デスク。"
 
 #: templates/admin/translations.php:213
 msgid "As written"
@@ -3681,10 +3673,6 @@ msgstr "ほとんどのイベント主催者には不要です。DPO が必要�
 #: src/Support/EventTaskMover.php:67
 msgid "Move the tasks too"
 msgstr "タスクも移動する"
-
-#: templates/public/signup.php:435
-msgid "My tasks"
-msgstr "マイタスク"
 
 #: src/Admin/PeopleListTable.php:47 src/Support/PrivacyExporter.php:136
 #: src/Support/PrivacyExporter.php:219 src/Support/PrivacyExporter.php:245
@@ -7112,10 +7100,6 @@ msgstr "添付ファイルの列が、設定 → メールのどのチケット�
 msgid "The coming events, as the newsletter writes them."
 msgstr "ニュースレターが書く今後のイベント。"
 
-#: src/Telegram/CommandMenu.php:282
-msgid "The commands you can use"
-msgstr "使えるコマンド"
-
 #: src/Admin/SettingsPage.php:1060
 msgid "The connection test failed: %s."
 msgstr "接続テストに失敗しました: %s。"
@@ -8830,10 +8814,6 @@ msgstr "その人がしたこと: タスクと評価。独立した行に表示�
 msgid "What we hold about you"
 msgstr "保持しているあなたの情報"
 
-#: templates/public/signup.php:464
-msgid "What you’ve done"
-msgstr "これまでの活動"
-
 #: templates/admin/diagnostics.php:124 templates/admin/people.php:294
 msgid "When"
 msgstr "日時"
@@ -9540,10 +9520,6 @@ msgstr "タスクは %s さんに移りました"
 msgid "Your tasks on this night:"
 msgstr "この夜のあなたのタスク:"
 
-#: src/Telegram/CommandMenu.php:284
-msgid "Your tasks, credits, ticket, settings"
-msgstr "タスク、クレジット、チケット、設定"
-
 #: templates/admin/settings.php:1558
 msgid "Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one."
 msgstr "テンプレートは作成時のデザインのままです。現在の組み込みデザインにするには、下の「テンプレートをリセット」を使ってください。"
@@ -9593,10 +9569,6 @@ msgstr "それにはすでに申し込んでいます。"
 #: src/Telegram/BoardService.php:1212 src/Telegram/RoleTaskBot.php:395
 msgid "You’re in! See you there."
 msgstr "申し込みました！当日お会いしましょう。"
-
-#: templates/public/signup.php:438
-msgid "You’re not signed up for anything yet — take a look at the board."
-msgstr "まだ何にも申し込んでいません — ボードを見てみてください。"
 
 #: src/Telegram/BoardService.php:1262 src/Telegram/RoleTaskBot.php:425
 msgid "You’re out. Thanks for the notice."
@@ -10836,8 +10808,12 @@ msgid "Guest display: people without this role see its tasks"
 msgstr "ゲスト表示：この役割のない人にもタスクを表示"
 
 #: templates/admin/settings.php templates/public/signup.php
-msgid "Guest sign up: people without this role can sign up (needs Guest display)"
-msgstr "ゲスト登録：この役割のない人も登録できる（ゲスト表示が必要）"
+msgid "Members display: signed-in members see its tasks, even without the role"
+msgstr "メンバー表示：ログインしたメンバーには、この役割がなくてもタスクを表示"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest sign up: people without this role can sign up (needs Guest or Members display)"
+msgstr "ゲスト登録：この役割のない人も登録できる（ゲスト表示またはメンバー表示が必要）"
 
 #: templates/admin/settings.php templates/public/signup.php
 msgid "Anonymous display: hide the names from people without this role"
@@ -11017,9 +10993,6 @@ msgstr "「%s」という名前のメンバーは見つかりませんでした�
 
 msgid "No task called “%1$s”. Tasks on %2$s: %3$s"
 msgstr "「%1$s」というタスクはありません。%2$s のタスク: %3$s"
-
-msgid "Organize tasks are for organizers only. Make someone an organizer with /people."
-msgstr "運営タスクは主催者専用です。/people で誰かを主催者にしてください。"
 
 msgid "Put a member on a task: /assign task ; name\nExample: /assign Host ; Milla\nA date first picks another event: /assign 21.11. Host ; Milla"
 msgstr "メンバーをタスクに入れる: /assign タスク ; 名前\n例: /assign Host ; Milla\n先頭に日付を書くと別の夜を選べます: /assign 21.11. Host ; Milla"
@@ -12501,3 +12474,215 @@ msgstr[0] "あなたのタスクの1つが未実施とされたため、その�
 #: src/Support/StandingNotice.php
 msgid "A free-entry credit was taken back"
 msgstr "無料入場クレジットが取り消されました"
+
+msgid "How this works?"
+msgstr "使い方は?"
+
+msgid "FAQ"
+msgstr "よくある質問"
+
+msgid "/help – how this works, commands and FAQ"
+msgstr "/help – 使い方、コマンド、よくある質問"
+
+msgid "How this works, commands and FAQ"
+msgstr "使い方、コマンド、よくある質問"
+
+msgid "Your standing, credits and coming tasks"
+msgstr "あなたの評価、クレジット、今後のタスク"
+
+msgid "In a private chat with the bot you can also use these commands, or just write what you need in your own words."
+msgstr "ボットとのプライベートチャットでは、これらのコマンドも使えます。必要なことを自分の言葉で書くだけでもかまいません。"
+
+msgid "How do I sign up for a task?"
+msgstr "タスクに申し込むには?"
+
+msgid "Open the board (See open tasks in the bot, or the Board tab on the web page) and tap the task. You get a confirmation and a ticket for that night. If you are new, the team first says OK; we message you when it comes."
+msgstr "ボードを開き(ボットでは 空きタスクを見る、ウェブページでは ボード タブ)、タスクをタップします。確認とその夜のチケットが届きます。初めての方は、まずチームが承認します。承認されたらメッセージでお知らせします。"
+
+msgid "Open Tasks and tap Cancel next to the task."
+msgstr "タスク を開き、タスクの横の キャンセル をタップします。"
+
+msgid "Changed your mind? Within %d minutes of taking a task, cancelling it never counts against you."
+msgstr "気が変わりましたか? タスクを取ってから %d 分以内のキャンセルは、評価に一切影響しません。"
+
+msgid "Cancelling closes %d minutes before the task starts; after that, tell an organizer."
+msgstr "キャンセルはタスク開始の %d 分前に締め切られます。それ以降は主催者に伝えてください。"
+
+msgid "How do I cancel a task?"
+msgstr "タスクをキャンセルするには?"
+
+msgid "What if I cancel late?"
+msgstr "遅れてキャンセルしたら?"
+
+msgid "Cancelling %1$d hours or more before has no effect. Later, it counts as a late cancellation in your standing (%2$d%%). Better: find someone to take your task. When they take it, it counts as Found a replacement (%3$d%%)."
+msgstr "%1$d 時間以上前のキャンセルは影響しません。それより後は直前キャンセルとして評価に数えます(%2$d%%)。おすすめは、タスクを引き継ぐ人を見つけることです。その人が引き継ぐと「代わりの人が見つかった」として数えます(%3$d%%)。"
+
+msgid "A task is full. Can I still get it?"
+msgstr "タスクが満員です。それでも入れますか?"
+
+msgid "Tap Take someone’s task and choose whose task you want. They are asked and decide; nothing changes until they say yes. If they do not answer in time, they keep the task."
+msgstr "誰かのタスクを引き継ぐ をタップし、誰のタスクがほしいか選びます。相手に確認が届き、相手が決めます。相手が承諾するまで何も変わりません。期限内に返事がなければ、タスクは相手のままです。"
+
+msgid "What happens if I do not show up?"
+msgstr "行けなかったらどうなりますか?"
+
+msgid "A no-show counts %d%% in your standing, the worst outcome. If you cannot come, cancel or find a replacement instead. If it was marked by mistake, tell an organizer or the bot."
+msgstr "欠席は評価で %d%% と数え、最も悪い結果です。来られないときは、キャンセルするか代わりの人を見つけてください。誤って記録された場合は、主催者かボットに伝えてください。"
+
+msgid "It comes from how your past tasks went, and recent tasks count more. You get a rating after %1$d finished tasks; %2$d%% or higher is good standing."
+msgstr "過去のタスクの結果から決まり、最近のタスクほど重く数えます。完了したタスクが %1$d 件になると評価が付きます。%2$d%% 以上が良好です。"
+
+msgid "Below that, you cannot sign up for new tasks until you talk to an organizer."
+msgstr "それを下回ると、主催者と話すまで新しいタスクに申し込めません。"
+
+msgid "How does standing work?"
+msgstr "評価の仕組みは?"
+
+msgid "How do I get free entry?"
+msgstr "無料で入場するには?"
+
+msgid "Every %d completed tasks earn 1 free-entry credit. To use one, open Tickets, tap Get a free-entry ticket and choose the night. Some nights (sold out, or special events) do not accept credits."
+msgstr "タスクを %d 件完了するごとに無料入場クレジットが 1 つ付きます。使うには チケット を開き、無料入場チケットを受け取る をタップして夜を選びます。完売の夜や特別なイベントなど、クレジットが使えない夜もあります。"
+
+msgid "Do I need a ticket for a night I work?"
+msgstr "自分が働く夜にもチケットは必要ですか?"
+
+msgid "Signing up gives you a working ticket for that night. It covers all your tasks that night; show it at the door. Its code never changes, so a screenshot works. It is personal and cannot be given away."
+msgstr "申し込むと、その夜のワーキングチケットが届きます。その夜のタスクすべてに使えます。入口で見せてください。コードは変わらないので、スクリーンショットでも大丈夫です。本人専用で、譲ることはできません。"
+
+msgid "Why is a credit pending?"
+msgstr "クレジットが保留中なのはなぜ?"
+
+msgid "Each extra task on the same night earns one more credit. It shows as pending and is added after the event, if you did the task. A cancelled or missed task gives nothing."
+msgstr "同じ夜の追加タスクごとにクレジットがもう 1 つ付きます。保留中と表示され、タスクを実際に行っていればイベント後に加算されます。キャンセルしたタスクや欠席したタスクには付きません。"
+
+msgid "Can I cancel a free-entry ticket?"
+msgstr "無料入場チケットはキャンセルできますか?"
+
+msgid "No, and the credit stays spent. But you can give the ticket to someone else: open Tickets and tap Give away. A ticket given to you cannot be given on."
+msgstr "できません。使ったクレジットも戻りません。ただし、チケットを他の人に譲ることはできます。チケット を開き、譲る をタップしてください。譲られたチケットをさらに譲ることはできません。"
+
+msgid "No, and the credit stays spent."
+msgstr "できません。使ったクレジットも戻りません。"
+
+msgid "I already have a ticket for that night. Can I still take a task?"
+msgstr "その夜のチケットはもう持っています。それでもタスクを取れますか?"
+
+msgid "Yes. Your ticket stays as it is. A bought ticket never turns into a credit."
+msgstr "はい。チケットはそのままです。購入したチケットがクレジットに変わることはありません。"
+
+msgid "You can give away a free-entry ticket you no longer need."
+msgstr "不要になった無料入場チケットは譲ることができます。"
+
+msgid "Where do I see my credits and tasks?"
+msgstr "クレジットやタスクはどこで見られますか?"
+
+msgid "In My info in the bot, and in the Me tab on the web page."
+msgstr "ボットの マイ情報 と、ウェブページの 自分 タブで見られます。"
+
+msgid "How do I choose which messages I get?"
+msgstr "受け取るメッセージを選ぶには?"
+
+msgid "Under Settings, choose notifications and switch off what you do not want. Sign-up confirmations and reminders always come."
+msgstr "設定 で通知を選び、不要なものをオフにします。申し込みの確認とリマインダーは必ず届きます。"
+
+msgid "How do I sign in on the web page?"
+msgstr "ウェブページにサインインするには?"
+
+msgid "Enter your email on the web page and open the sign-in link we send. In the bot, Settings also has a web sign-in link."
+msgstr "ウェブページでメールアドレスを入力し、届いたサインインリンクを開きます。ボットの 設定 にもウェブのサインインリンクがあります。"
+
+msgid "How do I change the language?"
+msgstr "言語を変えるには?"
+
+msgid "Under Settings: Change language. Messages to you then come in that language."
+msgstr "設定 で 言語を変更 を選びます。以後、メッセージはその言語で届きます。"
+
+msgid "How do I delete my data?"
+msgstr "データを削除するには?"
+
+msgid "Under Settings: Delete my data. It erases your account and history and cannot be undone. To stop only some messages, choose notifications instead."
+msgstr "設定 で データを削除 を選びます。アカウントと履歴が消え、元に戻せません。一部のメッセージだけ止めたい場合は、代わりに通知を選んでください。"
+
+msgid "Person %d"
+msgstr "メンバー %d"
+
+msgid "Take someone’s task"
+msgstr "誰かのタスクを引き受ける"
+
+msgid "No task here can be taken over."
+msgstr "ここには引き受けられるタスクがありません。"
+
+msgid "Whose task do you want to take? They decide."
+msgstr "誰のタスクを引き受けますか？決めるのは相手です。"
+
+msgid "Whose task?"
+msgstr "誰のタスク？"
+
+#: src/Telegram/MenuButtons.php
+msgid "Change name"
+msgstr "名前を変更"
+
+#: src/Telegram/MenuButtons.php
+msgid "Change email"
+msgstr "メールを変更"
+
+#: src/Telegram/MemberCommands.php
+msgid "Sign out of the web board on every browser and phone? Nothing is lost; you just sign in again."
+msgstr "すべてのブラウザとスマホでウェブからサインアウトしますか？何も失われません。もう一度サインインするだけです。"
+
+#: src/Telegram/MemberCommands.php
+msgid "A link goes to your email first; your data is deleted only when you open it."
+msgstr "まずメールにリンクが届きます。データはそのリンクを開いたときにだけ削除されます。"
+
+#: templates/public/signup.php
+msgid "Your Telegram is linked to this account."
+msgstr "あなたのTelegramはこのアカウントにリンクされています。"
+
+#: templates/public/signup.php
+msgid "The bot asks for your email and sends a link there; opening it links your Telegram to this account."
+msgstr "ボットがメールアドレスを尋ね、そこにリンクを送ります。それを開くと、あなたのTelegramがこのアカウントにリンクされます。"
+
+#: src/Support/OrganizerGuide.php:245
+msgid "As an organizer you can add anyone to any task of a night, also one for a role they do not hold (they then get the role), and an organizer to Organize: in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
+msgstr "主催者は、その夜のどのタスクにも誰でも追加できます。持っていない役割のタスクにも追加でき、その場合は役割が付与されます。運営には主催者を追加できます。方法: プライベートチャットで /assign タスク ; 名前（/unassign で外す）、/board の ➕ 誰かを追加、Crew アプリの管理タブ、または販売デスク。"
+
+#. translators: %s: a person's name.
+#: src/Support/RoleTaskService.php
+msgid "%s is not an organizer. Make them one with /people first."
+msgstr "%s さんは主催者ではありません。先に /people で主催者にしてください。"
+
+#: src/Support/RoleTaskService.php
+msgid "Only an organizer can go on an Organize task. Make them one first, with /people or on the People page."
+msgstr "運営タスクには主催者しか入れません。先に /people か「人」ページで主催者にしてください。"
+
+#: src/Telegram/RoleTaskBot.php
+msgid "Send the organizer's name. Only an organizer can go on an Organize task."
+msgstr "主催者の名前を送ってください。運営タスクには主催者しか入れません。"
+
+msgid "Something went wrong. Please try again."
+msgstr "問題が発生しました。もう一度お試しください。"
+
+msgid "Use /subscribe in a private chat with me."
+msgstr "/subscribe は私との個人チャットで使ってください。"
+
+msgid "Only organizers can use /subscribe."
+msgstr "/subscribe を使えるのは主催者だけです。"
+
+msgid "“%s” is not an email address."
+msgstr "「%s」はメールアドレスではありません。"
+
+msgid "A confirmation email went to %s. They are on the list once they open it."
+msgstr "%s に確認メールを送りました。開くとリストに追加されます。"
+
+msgid "%s is already on the newsletter."
+msgstr "%s はすでにニュースレターを受け取っています。"
+
+msgid "Add someone to the newsletter: /subscribe name@example.com\nAdd a language code to choose their language: %s."
+msgstr "ニュースレターに追加: /subscribe name@example.com\n言語コードを付けると言語を選べます: %s。"
+
+msgid "/subscribe email – add someone to the newsletter; they confirm by email"
+msgstr "/subscribe メール – ニュースレターに追加。本人がメールで確認"
+
+msgid "Preview of the next announcement"
+msgstr "次のお知らせのプレビュー"

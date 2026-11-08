@@ -67,7 +67,7 @@ final class AssistantActions
     public static function catalogue(array $audience): array
     {
         $list = [
-            self::entry('/help', 'list the commands this person can use'),
+            self::entry('/help', 'open the help menu: how this works, the commands this person can use, FAQ'),
             self::entry('/start', 'sign up: confirm the email address (for someone new)'),
             self::entry('/me', "the person's own tasks, credits and standing"),
             self::entry('/me history', "the person's past tasks"),
@@ -129,8 +129,10 @@ final class AssistantActions
             $list[] = self::entry('/door remove [date] <number>', 'take a guest off the guest list', true);
             $list[] = self::entry(
                 '/assign [date] <task> ; <person>',
-                'put a member on a task of the next event (or of [date]): any task but Organize, also one for a role'
-                    . ' the person does not hold (the bot warns and gives them the role). <task> is the task name'
+                'put a member on a task of the next event (or of [date]): any task; the Organize task only for'
+                    . ' someone who is an organizer (the bot checks, so propose it and let the bot answer); also a'
+                    . ' task for a role the person does not hold (the bot warns and gives them the role). <task> is'
+                    . ' the task name'
                     . ' (Host, Door, ...), <person> the name as the organizer wrote it, even partly or misspelled:'
                     . ' the bot finds the member, asks with buttons when several match, says when the task is full,'
                     . ' and asks the organizer to confirm before anything is written; the person then gets the'
@@ -139,8 +141,8 @@ final class AssistantActions
             );
             $list[] = self::entry(
                 '/unassign [date] <task> ; <person>',
-                'take a member off a task of the next event (or of [date]); same names as /assign; the bot asks the'
-                    . ' organizer to confirm first',
+                'take a member off a task of the next event (or of [date]): any task, Organize too; same names as'
+                    . ' /assign; the bot asks the organizer to confirm first',
                 false
             );
             $list[] = self::entry(
@@ -187,6 +189,12 @@ final class AssistantActions
                     . ' shows the earlier text and who set it); it is translated'
                     . ' so the mail carries it in every site language; <text> is the text itself, as the person'
                     . ' wants it sent (line breaks allowed)',
+                true
+            );
+            $list[] = self::entry(
+                '/subscribe <email> [language code]',
+                'add someone to the newsletter list; they get a confirmation email and are on the list once they'
+                    . ' open it. The language code (a site language, like fi or en) is optional',
                 true
             );
             $list[] = self::entry(
@@ -402,6 +410,21 @@ final class AssistantActions
                 return '' === $rest
                     ? self::accept($head, false, self::RUN_MESSAGE, $head)
                     : self::refuse(self::ERROR_INVALID);
+
+            case '/subscribe':
+                if (! $audience['organizer']) {
+                    return self::refuse(self::ERROR_NOT_PERMITTED);
+                }
+
+                $words = '' === $rest ? [] : explode(' ', $rest);
+
+                if ([] === $words || count($words) > 2 || ! is_email($words[0])) {
+                    return self::refuse(self::ERROR_INVALID);
+                }
+
+                $line = '/subscribe ' . implode(' ', $words);
+
+                return self::accept($line, true, self::RUN_MESSAGE, $line);
 
             case '/me':
                 $rest = strtolower($rest);

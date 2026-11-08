@@ -444,10 +444,14 @@ final class RoleTaskBot
 
         $this->telegram->answerCallbackQuery($callbackId);
         set_transient(self::AWAIT_PREFIX . $organizer->telegramUserId, ['task' => $taskId], 15 * MINUTE_IN_SECONDS);
+        $task = $this->tasks->find($taskId);
         $this->telegram->sendMessage(
             $chatId,
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            __("Send the person's name, and their email after it if they have one.\nExample: Alex Smith alex@example.com\nWith an email they get their ticket by email. They do not need to be a crew member.", 'eventcrew'),
+            null !== $task && $task->isOrganizersOnly()
+                // An Organize task takes only an organizer (RoleTaskService::addPerson()).
+                ? __("Send the organizer's name. Only an organizer can go on an Organize task.", 'eventcrew')
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                : __("Send the person's name, and their email after it if they have one.\nExample: Alex Smith alex@example.com\nWith an email they get their ticket by email. They do not need to be a crew member.", 'eventcrew'),
             MenuButtons::cancel()
         );
     }
@@ -477,6 +481,13 @@ final class RoleTaskBot
         );
 
         $this->telegram->answerCallbackQuery($callbackId);
-        $this->telegram->sendMessage($chatId, RoleTaskService::text($result['code'], $result['emailed']));
+        $this->telegram->sendMessage(
+            $chatId,
+            RoleTaskService::text(
+                $result['code'],
+                $result['emailed'],
+                $result['person']?->name() ?? (string) $pending['name']
+            )
+        );
     }
 }

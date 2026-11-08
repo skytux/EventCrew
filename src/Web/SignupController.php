@@ -18,10 +18,13 @@ use EventCrew\Support\EmailBody;
 use EventCrew\Support\JoinAnswers;
 use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageActions;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\TakeoverService;
 use EventCrew\Support\TicketTransferService;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\PageLanguage;
+use EventCrew\Support\Paging;
 use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\SignupService;
@@ -61,6 +64,15 @@ final class SignupController
     public const SALES_ACTION = 'eventcrew_web_sales';
     public const LANGUAGE_ACTION = 'eventcrew_web_language';
     public const PROFILE_ACTION = 'eventcrew_web_profile';
+
+    /** A full task's Take someone's task: asks one holder to hand theirs over. */
+    public const TAKEOVER_ACTION = 'eventcrew_web_takeover';
+
+    /** A free-entry ticket's Give away on the Tickets card: offers it to an email address. */
+    public const GIVE_ACTION = 'eventcrew_web_give';
+
+    /** Cancel offer on the Tickets card: the waiting offer ends, the ticket stays. */
+    public const CANCEL_OFFER_ACTION = 'eventcrew_web_cancel_offer';
     /** The Telegram button asks for a login code here. */
     public const TG_START_ACTION = 'eventcrew_web_tg_start';
 
@@ -120,9 +132,11 @@ final class SignupController
         // Optional too: without it the email-changed notice goes by email only.
         private readonly ?TelegramClient $telegram = null,
         // Optional too: without it a given-away ticket is not marked as such.
-        private readonly ?TicketTransferService $transfers = null
+        private readonly ?TicketTransferService $transfers = null,
+        // Optional too: without it a full task stays a disabled Full.
+        private readonly ?TakeoverService $takeovers = null
     ) {
-        $this->boardView = new SignupBoardView($tasks, $assignments, $standing, $tickets, $turnstile, $signup, $transfers);
+        $this->boardView = new SignupBoardView($tasks, $assignments, $standing, $tickets, $turnstile, $signup, $transfers, $takeovers);
     }
 
     /** The public stylesheet's handle, shared by the block and the shortcode. */
@@ -148,6 +162,9 @@ final class SignupController
             self::SALES_ACTION,
             self::LANGUAGE_ACTION,
             self::PROFILE_ACTION,
+            self::TAKEOVER_ACTION,
+            self::GIVE_ACTION,
+            self::CANCEL_OFFER_ACTION,
             self::TG_START_ACTION,
             self::TG_STATUS_ACTION,
             TelegramLogin::RETURN_ACTION,
@@ -365,7 +382,14 @@ final class SignupController
     {
         $person = $this->currentPerson();
 
-        return $this->boardView->build($person) + [
+        // Which page of Tasks and Past tasks the Me tab shows: plain GET
+        // links (Previous / Next), so paging works without JavaScript.
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only page numbers.
+        $tasksPage = Paging::parse($_GET[SignupBoardView::TASKS_PAGE_ARG] ?? '');
+        $pastPage = Paging::parse($_GET[SignupBoardView::PAST_PAGE_ARG] ?? '');
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+        return $this->boardView->build($person, $tasksPage, $pastPage) + [
             'login_action' => self::LOGIN_ACTION,
             'claim_action' => self::CLAIM_ACTION,
             'drop_action' => self::DROP_ACTION,
@@ -377,10 +401,30 @@ final class SignupController
             'sales_desk' => null !== $person && $this->canOpenSalesDesk($person),
             'language_action' => self::LANGUAGE_ACTION,
             'profile_action' => self::PROFILE_ACTION,
+            'takeover_action' => self::TAKEOVER_ACTION,
+            'give_action' => self::GIVE_ACTION,
+            'cancel_offer_action' => self::CANCEL_OFFER_ACTION,
             'language' => null === $person ? null : ($person->language ?? Language::ENGLISH),
             'language_choices' => SiteLanguages::choices(),
             'telegram_login' => null === $person ? $this->telegramLoginView() : null,
+            'telegram_link' => null === $person ? null : self::telegramLinkView($person),
         ];
+    }
+
+    /**
+     * Settings' Telegram card, the web's side of the bot's "Get a web
+     * sign-in link" (Owner 2026-11-08): with Telegram linked, a link that
+     * opens the bot on My info; without, the bot's sign-up link, where the
+     * bot asks for the email and the link it mails connects the Telegram
+     * account to this one (OnboardingService). Null when there is no bot.
+     *
+     * @return array{linked: bool, url: string}|null
+     */
+    public static function telegramLinkView(Person $person): ?array
+    {
+        $url = MessageActions::payloadUrl($person->hasTelegram() ? 'me' : 'onboard');
+
+        return '' === $url ? null : ['linked' => $person->hasTelegram(), 'url' => $url];
     }
 
     /**
@@ -1195,6 +1239,28 @@ final class SignupController
             $this->finish($redirect, 'prefs_saved', $isAjax);
         }
 
+        if (self::TAKEOVER_ACTION === $action) {
+            $assignmentId = isset($_POST['assignment_id']) ? absint(wp_unslash($_POST['assignment_id'])) : 0;
+            $result = $this->takeoverFor($person, $assignmentId);
+
+            // The answer names the holder and the deadline, so on an AJAX call
+            // it goes out as it is; a no-JS post gets the short fixed wording.
+            $this->finishText($redirect, $result['ok'] ? 'takeover_sent' : 'unavailable', $result['text'], $isAjax);
+        }
+
+        if (self::GIVE_ACTION === $action || self::CANCEL_OFFER_ACTION === $action) {
+            $redemptionId = isset($_POST['redemption_id']) ? absint(wp_unslash($_POST['redemption_id'])) : 0;
+            $email = isset($_POST['email']) ? sanitize_text_field(wp_unslash($_POST['email'])) : '';
+            $name = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
+            $result = self::GIVE_ACTION === $action
+                ? $this->giveTicket($person, $redemptionId, $email, $name)
+                : $this->cancelTicketOffer($person, $redemptionId);
+
+            // A refused offer leaves the page as it is, so the typed address
+            // and name stay in the form to fix ('changed' => false).
+            $this->finishText($redirect, $result['code'], $result['text'], $isAjax, $result['ok']);
+        }
+
         if (self::REDEEM_ACTION === $action) {
             $date = isset($_POST['ticket_date']) ? sanitize_text_field(wp_unslash($_POST['ticket_date'])) : '';
             $result = $this->tickets->redeem($person->id, $date, 'web');
@@ -1267,6 +1333,8 @@ final class SignupController
             'crew_only' => SignupService::crewOnlyText(),
             'credit_question' => __('Choose whether this task counts toward free-entry credit.', 'eventcrew'),
             'not_on' => __('You weren’t signed up for that one.', 'eventcrew'),
+            'takeover_sent' => __('Request sent.', 'eventcrew'),
+            'offer_cancelled' => __('Offer cancelled. Your ticket is yours again.', 'eventcrew'),
             'signout_locked' => SignupService::signoutLockedText(),
             'please_sign_in' => __('Please sign in first.', 'eventcrew'),
             'ticket_ticket_ready' => __('Your free-entry ticket is ready.', 'eventcrew'),
@@ -1300,6 +1368,11 @@ final class SignupController
         // The Admin tab's outcomes are worded by its own controller.
         if (! isset($map[$code]) && str_starts_with($code, 'admin_')) {
             return CrewAdminController::noticeText($code);
+        }
+
+        // Give away / Cancel offer outcomes share the bot's wording.
+        if (! isset($map[$code]) && str_starts_with($code, 'transfer_')) {
+            return TicketTransferService::message(substr($code, strlen('transfer_')));
         }
 
         // The sales desk refusals share SalesDeskGate's wording with the bot's sales desk button.
@@ -1344,6 +1417,91 @@ final class SignupController
         }
 
         $this->redirect($url, $notice);
+    }
+
+    /**
+     * finish() with a text of its own for the toast, for an outcome a fixed
+     * notice code cannot word (it names a person or a time). Without
+     * JavaScript the redirect carries $code, whose wording is shorter.
+     */
+    private function finishText(string $url, string $code, string $text, bool $ajax, ?bool $changed = null): never
+    {
+        if ($ajax) {
+            $answer = ['code' => $code, 'notice' => $text, 'board' => $this->renderBoard($url)];
+
+            if (null !== $changed) {
+                $answer['changed'] = $changed;
+            }
+
+            wp_send_json($answer);
+        }
+
+        $this->redirect($url, $code);
+    }
+
+    /**
+     * The crew page's Take someone's task (Owner 2026-11-08): asks the holder
+     * of one assignment to hand it over, with the bot's checks and wording
+     * (TakeoverService::requestFor()). The person is signed in; their email
+     * is verified by the sign-in itself.
+     *
+     * @return array{ok: bool, text: string}
+     */
+    public function takeoverFor(Person $person, int $assignmentId): array
+    {
+        if (null === $this->takeovers || 0 === $assignmentId) {
+            return ['ok' => false, 'text' => __('That task is no longer available.', 'eventcrew')];
+        }
+
+        return $this->takeovers->requestFor($assignmentId, $person);
+    }
+
+    /**
+     * Give away on the Tickets card (Owner 2026-11-08): the bot's offer to an
+     * email address, with its checks and texts (TicketTransferService). An
+     * address of a member gives the ticket to them at once.
+     *
+     * @return array{ok: bool, code: string, text: string}
+     */
+    public function giveTicket(Person $person, int $redemptionId, string $email, string $name): array
+    {
+        if (null === $this->transfers) {
+            return self::transferAnswer(TicketTransferService::DISABLED);
+        }
+
+        $result = $this->transfers->offerToEmail($redemptionId, $person->id, $email, $name);
+
+        if (TicketTransferService::OK !== $result['code'] || null === $result['transfer']) {
+            $code = TicketTransferService::OK === $result['code'] ? TicketTransferService::GONE : $result['code'];
+
+            return self::transferAnswer($code);
+        }
+
+        return ['ok' => true, 'code' => 'transfer_ok', 'text' => $this->transfers->sentText($result['transfer'])];
+    }
+
+    /**
+     * Cancel offer on the Tickets card: the bot's wording.
+     *
+     * @return array{ok: bool, code: string, text: string}
+     */
+    public function cancelTicketOffer(Person $person, int $redemptionId): array
+    {
+        $code = null === $this->transfers
+            ? TicketTransferService::GONE
+            : $this->transfers->cancelOffer($redemptionId, $person->id);
+
+        if (TicketTransferService::OK !== $code) {
+            return self::transferAnswer($code);
+        }
+
+        return ['ok' => true, 'code' => 'offer_cancelled', 'text' => self::noticeText('offer_cancelled')];
+    }
+
+    /** @return array{ok: bool, code: string, text: string} */
+    private static function transferAnswer(string $code): array
+    {
+        return ['ok' => false, 'code' => 'transfer_' . $code, 'text' => TicketTransferService::message($code)];
     }
 
     /**

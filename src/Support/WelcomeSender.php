@@ -222,6 +222,28 @@ final class WelcomeSender
         ];
     }
 
+    /**
+     * The welcome DM again, on request: the bot's Help menu, "How this
+     * works?" (Owner 2026-11-08), or with $organizer the short organizer
+     * guide DM. The same text, buttons and links as the welcome itself, in
+     * the person's language, with $extraRows (the Back row) at the bottom.
+     * Recorded nowhere: it does not count as the welcome. False when the
+     * person has no Telegram chat or the send failed.
+     *
+     * @param list<list<array<string, string>>> $extraRows
+     */
+    public function sendGuide(Person $person, bool $organizer = false, array $extraRows = []): bool
+    {
+        if (null === $person->telegramChatId) {
+            return false;
+        }
+
+        return Language::forPerson(
+            $person,
+            fn (): bool => $organizer ? $this->sendOrganizerDm($person, $extraRows) : $this->sendDm($person, $extraRows)
+        );
+    }
+
     public static function subject(): string
     {
         return __('Welcome to the crew: how tasks, tickets and credits work', 'eventcrew');
@@ -281,7 +303,7 @@ final class WelcomeSender
      * descriptions open in the bot, then the group; the web pages are links
      * in the text, with no visible address.
      */
-    private function sendDm(Person $person): bool
+    private function sendDm(Person $person, array $extraRows = []): bool
     {
         $board = '📋 ' . __('See open tasks', 'eventcrew');
         $day = [] === $this->openTasks() ? '' : $this->botBoardUrl();
@@ -321,7 +343,7 @@ final class WelcomeSender
         ];
         $text = EmailBody::forDm(DmBody::frame($person, self::tidy(MessageTemplates::body(self::KIND_DM, $context))), true);
 
-        return $this->sendHtmlDm($person, $text, $keyboard, $links);
+        return $this->sendHtmlDm($person, $text, [...$keyboard, ...$extraRows], $links);
     }
 
     /**
@@ -493,7 +515,7 @@ final class WelcomeSender
      * Admin menu on top, the Admin tab, wp-admin, and Help at the bottom (no
      * People button, Owner 2026-11-07); the bot's Sales desk as a link.
      */
-    private function sendOrganizerDm(Person $person): bool
+    private function sendOrganizerDm(Person $person, array $extraRows = []): bool
     {
         $keyboard = [[['text' => '🛠 ' . __('Admin', 'eventcrew'), 'callback_data' => MenuButtons::ADMIN]]];
         $admin = self::adminTabAction();
@@ -525,7 +547,7 @@ final class WelcomeSender
         return $this->sendHtmlDm(
             $person,
             EmailBody::forDm(DmBody::frame($person, MessageTemplates::body(self::KIND_ORG_DM, $context)), true),
-            $keyboard,
+            [...$keyboard, ...$extraRows],
             $links
         );
     }

@@ -179,4 +179,56 @@ final class GuestTicksBoardTest extends TelegramTestCase
             self::assertStringContainsString("🎈 Decorate · 1/2\nAnna", $board['text']);
         }
     }
+
+    public function testMembersDisplayGivesAKnownPersonTheTaskButNotTheGroup(): void
+    {
+        $this->decorate(['on_board' => false, 'members_display' => true]);
+        $this->db->occupants = [['task_id' => 1, 'display_name' => 'Anna Virtanen']];
+
+        $private = $this->renderer()->crewBoard('', false, $this->person('dj'));
+        self::assertContains('t:1', self::data($private));
+        self::assertStringContainsString("🎈 Decorate · 1/2\nAnna", $private['text']);
+        self::assertStringNotContainsString('crew only', $private['text']);
+
+        $group = $this->renderer()->crewBoard();
+        self::assertNotContains('t:1', self::data($group));
+        self::assertStringNotContainsString('Decorate', $group['text']);
+    }
+
+    public function testMembersDisplayWithGuestSignUpOffShowsANonHolderNoButton(): void
+    {
+        $this->decorate(['on_board' => false, 'members_display' => true, 'guest_signup' => false]);
+        $this->db->occupants = [['task_id' => 1, 'display_name' => 'Anna Virtanen']];
+
+        $board = $this->renderer()->crewBoard('', false, $this->person('dj'));
+
+        self::assertNotContains('t:1', self::data($board));
+        self::assertStringContainsString('🎈 Decorate · 1/2 · crew only', $board['text']);
+    }
+
+    public function testMembersDisplayWithAnonymousDisplayHidesTheNamesFromNonHolders(): void
+    {
+        $this->decorate(['on_board' => false, 'members_display' => true, 'anonymous' => true]);
+        $this->db->occupants = [['task_id' => 1, 'display_name' => 'Anna Virtanen']];
+
+        $board = $this->renderer()->crewBoard('', false, $this->person('dj'));
+
+        self::assertStringContainsString("🎈 Decorate · 1/2\n1 signed up", $board['text']);
+        self::assertStringNotContainsString('Anna', $board['text']);
+    }
+
+    public function testAnArchivedRoleIsOnNoBoard(): void
+    {
+        $this->decorate(['members_display' => true, 'archived' => true]);
+        $this->db->occupants = [['task_id' => 1, 'display_name' => 'Anna Virtanen']];
+
+        foreach ([null, $this->person('decorate'), $this->person('', true)] as $viewer) {
+            $board = null === $viewer
+                ? $this->renderer()->crewBoard()
+                : $this->renderer()->crewBoard('', false, $viewer);
+
+            self::assertNotContains('t:1', self::data($board));
+            self::assertStringNotContainsString('Anna', $board['text']);
+        }
+    }
 }

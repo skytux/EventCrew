@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Web;
 
 use Brain\Monkey\Functions;
+use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
+use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
+use EventCrew\Repositories\TakeoverRepository;
+use EventCrew\Repositories\TicketTransferRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\EmailTemplate;
@@ -21,7 +25,9 @@ use EventCrew\Support\Roles;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\SiteLanguages;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\TakeoverService;
 use EventCrew\Support\TelegramLogin;
+use EventCrew\Support\TicketTransferService;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\JoinAnswers;
 use EventCrew\Support\Turnstile;
@@ -32,6 +38,7 @@ use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Tests\Support\FakeEventNames;
+use EventCrew\Tests\Support\MeTabWpdb;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\SignupController;
 
@@ -117,7 +124,9 @@ final class SignupControllerTest extends TestCase
 
     private function controller(
         ?TelegramLogin $telegramLogin = null,
-        ?TelegramClient $telegram = null
+        ?TelegramClient $telegram = null,
+        ?TicketTransferService $transfers = null,
+        ?TakeoverService $takeovers = null
     ): SignupController
     {
         $people = new PersonRepository();
@@ -152,7 +161,38 @@ final class SignupControllerTest extends TestCase
             null,
             null,
             $telegramLogin,
-            $telegram
+            $telegram,
+            $transfers,
+            $takeovers
+        );
+    }
+
+    /** A real TakeoverService over the test's wpdb, for the board's Take someone's task. */
+    private function takeovers(): TakeoverService
+    {
+        $assignments = new AssignmentRepository();
+        $standing = new StandingCalculator($assignments, new RedemptionRepository(), new CreditGrantRepository());
+        $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
+        $telegram = new TelegramClient(new Logger(), new DohResolver(new Logger()));
+        $notifier = new ClaimNotifier(new TaskRepository(), $assignments, $mailer, $telegram, $standing);
+
+        return new TakeoverService(
+            new TakeoverRepository(),
+            $assignments,
+            new TaskRepository(),
+            new PersonRepository(),
+            $notifier,
+            new BoardService(
+                new TaskRepository(),
+                $assignments,
+                new PersonRepository(),
+                $telegram,
+                new Logger(),
+                $notifier,
+                new SignupService($assignments, $standing, new PersonRepository(), new TaskRepository())
+            ),
+            $telegram,
+            $mailer
         );
     }
 
@@ -464,7 +504,89 @@ final class SignupControllerTest extends TestCase
         self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card">.*?</section>~s', $html, $card));
         self::assertStringContainsString('class="eventcrew-card-body eventcrew-header-guide"', $card[0]);
         self::assertStringContainsString('href="https://docs.example/guide"', $card[0]);
-        self::assertSame(1, substr_count($html, 'Crew guide'));
+        // Once under the details, once in the Help tab (Owner 2026-11-08).
+        self::assertSame(2, substr_count($html, 'Crew guide'));
+    }
+
+    /**
+     * Owner 2026-11-08: the Help tab has the bot's Help menu parts and names:
+     * How this works?, Commands (with a bot to use them in) and FAQ as
+     * disclosures, with the crew guide linked from the top.
+     */
+    public function testTheHelpTabHasTheBotsHelpParts(): void
+    {
+        $this->stubPageRender();
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => match ($name) {
+                Roles::GUIDE_URL_OPTION => 'https://docs.example/guide',
+                'eventcrew_telegram_bot_username' => '@CrewBot',
+                default => $default,
+            }
+        );
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+
+        $person = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+        ];
+        $this->wpdb->nextRows[] = $person;               // pageLanguage: currentPerson
+        $this->wpdb->nextRows[] = $person;               // viewModel: currentPerson
+        $this->wpdb->nextResults[] = [$this->taskRow()]; // upcoming
+        $this->wpdb->nextResults[] = [];                 // occupancyFor
+        $this->wpdb->nextResults[] = [];                 // forPerson (occupiedTaskIds)
+        $this->wpdb->nextResults[] = [];                 // standing historyFor
+        $this->wpdb->nextVars[] = 0;                     // standing countFor
+
+        $html = $this->controller()->renderShortcode();
+
+        $start = strpos($html, 'data-eventcrew-panel="help"');
+        self::assertNotFalse($start);
+        $help = substr($html, $start);
+        self::assertSame(1, preg_match('~<p class="eventcrew-links eventcrew-help-orglink">(.*?)</p>~s', $help, $links));
+        self::assertStringContainsString('href="#eventcrew-help-guide">📖 How this works?</a>', $links[1]);
+        self::assertStringContainsString('href="#eventcrew-help-commands">⌨️ Commands</a>', $links[1]);
+        self::assertStringContainsString('href="#eventcrew-help-faq">💡 FAQ</a>', $links[1]);
+        self::assertStringContainsString('href="https://docs.example/guide"', $links[1]);
+        self::assertStringNotContainsString('Organizer guide', $help);
+
+        $guide = strpos($help, 'id="eventcrew-help-guide"');
+        $commands = strpos($help, 'id="eventcrew-help-commands"');
+        $faq = strpos($help, 'id="eventcrew-help-faq"');
+        self::assertNotFalse($guide);
+        self::assertGreaterThan($guide, $commands);
+        self::assertGreaterThan($commands, $faq);
+        self::assertStringContainsString('<li>/help – how this works, commands and FAQ</li>', $help);
+        self::assertStringContainsString('href="https://t.me/CrewBot"', $help);
+        self::assertStringContainsString('<summary>How do I sign up for a task?</summary>', $help);
+        self::assertSame(count(\EventCrew\Support\Faq::items()), substr_count($help, '<details class="eventcrew-faq-item">'));
+    }
+
+    public function testWithoutABotTheHelpTabHasNoCommands(): void
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+
+        $person = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+        ];
+        $this->wpdb->nextRows[] = $person;
+        $this->wpdb->nextRows[] = $person;
+        $this->wpdb->nextResults[] = [$this->taskRow()];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextVars[] = 0;
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertStringContainsString('id="eventcrew-help-guide"', $html);
+        self::assertStringContainsString('id="eventcrew-help-faq"', $html);
+        self::assertStringNotContainsString('eventcrew-help-commands', $html);
     }
 
     /** Owner 2026-11-08: 🎟 Tickets in the header card opens the Tickets card, named as in the bot. */
@@ -494,6 +616,224 @@ final class SignupControllerTest extends TestCase
         self::assertMatchesRegularExpression('~href="#eventcrew-my-tickets" data-eventcrew-goto="eventcrew-my-tickets">\s*🎟 Tickets~', $card[0]);
         self::assertLessThan(strpos($card[0], 'Crew guide'), strpos($card[0], '🎟 Tickets'));
         self::assertStringContainsString('id="eventcrew-my-tickets"', $html);
+    }
+
+    /**
+     * Owner 2026-11-08: the web uses the bot's words. The header card shows
+     * "Completed tasks: N" and "Free-entry credits: N"; the Tasks card is
+     * titled and emptied like the bot's Tasks, with a link to the board.
+     */
+    public function testSignedInTheMeTabUsesTheBotsWords(): void
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+
+        $person = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+        ];
+        $this->wpdb->nextRows[] = $person;
+        $this->wpdb->nextRows[] = $person;
+        $this->wpdb->nextResults[] = [$this->taskRow()];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextVars[] = 0;
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card">.*?</section>~s', $html, $card));
+        self::assertStringContainsString('Completed tasks: 0', $card[0]);
+        self::assertStringContainsString('Free-entry credits: 0', $card[0]);
+        self::assertStringNotContainsString('0 credits', $html);
+        self::assertStringContainsString('<h3 class="eventcrew-event-title">Tasks</h3>', $html);
+        self::assertStringNotContainsString('My tasks', $html);
+        self::assertMatchesRegularExpression('~No coming tasks\.\s*<a class="eventcrew-textlink" href="#eventcrew-panel-board" data-eventcrew-goto="eventcrew-panel-board">See open tasks</a>~', $html);
+    }
+
+    /**
+     * Owner 2026-11-08: each row of the Me tab's Tasks card has a Cancel text
+     * link, the board's drop action with the board's question, which reloads
+     * the page onto the card afterwards.
+     */
+    public function testTheTasksCardHasACancelLinkOnEachRow(): void
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+        $this->useMeTabWpdb();
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card" id="eventcrew-my-tasks">.*?</section>~s', $html, $card));
+        self::assertStringContainsString('data-eventcrew-reload="eventcrew-my-tasks"', $card[0]);
+        self::assertStringContainsString('value="' . SignupController::DROP_ACTION . '"', $card[0]);
+        self::assertStringContainsString('name="task_id" value="5"', $card[0]);
+        self::assertMatchesRegularExpression('~data-eventcrew-confirm="[^"]*Cancel[^"]+"~', $card[0]);
+        self::assertStringContainsString('<button type="submit" class="eventcrew-textlink">Cancel</button>', $card[0]);
+    }
+
+    /** The signed-in person 7 (Sam), on task 5 (2026-08-01), through MeTabWpdb. */
+    private function useMeTabWpdb(): MeTabWpdb
+    {
+        $db = new MeTabWpdb();
+        $db->people[7] = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+        ];
+        $db->tasks[] = $this->taskRow();
+        $db->assignments[] = [
+            'id' => 70, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up',
+            'signed_up_at' => '2026-07-01 10:00:00',
+        ];
+        $this->wpdb = $db;
+        $GLOBALS['wpdb'] = $db;
+
+        return $db;
+    }
+
+    /** Signed out, a full task offers Take someone's task, through the sign-in card. */
+    public function testSignedOutAFullTaskOffersTakeSomeonesTask(): void
+    {
+        $this->stubPageRender();
+        $this->wpdb->nextResults[] = [$this->taskRow()];
+        $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 2]];
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertStringContainsString(
+            '<a class="wp-element-button eventcrew-btn-go" href="#eventcrew-signin" data-eventcrew-signin-task="5">Take someone’s task</a>',
+            $html
+        );
+        self::assertStringNotContainsString('eventcrew-btn-full', $html);
+    }
+
+    /**
+     * Signed in, a full task the person is not on lists its holders as small
+     * Take someone's task forms (Owner 2026-11-08); the person's own full
+     * task keeps its Cancel.
+     */
+    public function testSignedInAFullTaskListsItsHoldersToTakeOver(): void
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+        $db = $this->useMeTabWpdb();
+        $db->people[8] = ['id' => 8, 'email' => 'a@example.com', 'display_name' => 'Anna Virtanen'];
+        $db->people[9] = ['id' => 9, 'email' => 'b@example.com', 'display_name' => 'Bo'];
+        $db->tasks[] = array_merge($this->taskRow(), ['id' => 6]);
+        $db->assignments[] = ['id' => 80, 'task_id' => 6, 'person_id' => 8, 'status' => 'signed_up', 'signed_up_at' => '2026-07-01 10:00:00'];
+        $db->assignments[] = ['id' => 90, 'task_id' => 6, 'person_id' => 9, 'status' => 'signed_up', 'signed_up_at' => '2026-07-02 10:00:00'];
+
+        $html = $this->controller(null, null, null, $this->takeovers())->renderShortcode();
+
+        self::assertSame(1, preg_match('~<li[^>]*id="eventcrew-task-6".*?</li>~s', $html, $row));
+        self::assertStringContainsString('Take someone’s task</summary>', $row[0]);
+        self::assertStringContainsString('value="' . SignupController::TAKEOVER_ACTION . '"', $row[0]);
+        self::assertStringContainsString('name="assignment_id" value="80"', $row[0]);
+        self::assertStringContainsString('<button type="submit" class="eventcrew-textlink">Anna</button>', $row[0]);
+        self::assertStringContainsString('<button type="submit" class="eventcrew-textlink">Bo</button>', $row[0]);
+        self::assertSame(1, preg_match('~<li[^>]*id="eventcrew-task-5".*?</li>~s', $html, $own));
+        self::assertStringNotContainsString(SignupController::TAKEOVER_ACTION, $own[0]);
+    }
+
+    /**
+     * The Tickets card gives a free-entry ticket away, or shows the offer
+     * waiting on it with Cancel offer (Owner 2026-11-08), as text links.
+     */
+    public function testTheTicketsCardOffersGiveAwayAndCancelOffer(): void
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+        $db = $this->useMeTabWpdb();
+        $db->redemptions[] = self::redemptionRow(10, '2026-08-01');
+        $db->redemptions[] = self::redemptionRow(11, '2026-08-02');
+        $db->transfers[] = [
+            'id' => 1, 'redemption_id' => 11, 'event_date' => '2026-08-02', 'giver_person_id' => 7,
+            'receiver_person_id' => null, 'name' => 'Dee', 'email' => 'dee@example.com', 'status' => 'pending',
+        ];
+
+        Functions\when('get_option')->alias(static fn (string $name, mixed $default = false): mixed => $default);
+        $html = $this->controller(null, null, $this->transfers())->renderShortcode();
+
+        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card" id="eventcrew-my-tickets">.*?</section>~s', $html, $card));
+        self::assertSame(1, substr_count($card[0], '<summary class="eventcrew-textlink">Give away</summary>'));
+        self::assertStringContainsString('value="' . SignupController::GIVE_ACTION . '"', $card[0]);
+        self::assertStringContainsString('name="redemption_id" value="10"', $card[0]);
+        self::assertStringContainsString('Waiting for Dee to accept', $card[0]);
+        self::assertStringContainsString('value="' . SignupController::CANCEL_OFFER_ACTION . '"', $card[0]);
+        self::assertStringContainsString('name="redemption_id" value="11"', $card[0]);
+        self::assertStringContainsString('<button type="submit" class="eventcrew-textlink">Cancel offer</button>', $card[0]);
+        self::assertSame(2, substr_count($card[0], 'data-eventcrew-reload="eventcrew-my-tickets"'));
+    }
+
+    /** Give away and Cancel offer answer with the bot's texts. */
+    public function testGiveAwayAndCancelOfferUseTheBotsTexts(): void
+    {
+        Functions\when('is_email')->alias(
+            static fn (string $email): string|false => false === filter_var($email, FILTER_VALIDATE_EMAIL) ? false : $email
+        );
+        $db = $this->useMeTabWpdb();
+        $db->redemptions[] = self::redemptionRow(10, '2026-08-01');
+        $sam = Person::fromRow($db->people[7]);
+        Functions\when('get_option')->alias(static fn (string $name, mixed $default = false): mixed => $default);
+        $controller = $this->controller(null, null, $this->transfers());
+
+        self::assertSame(
+            ['ok' => false, 'code' => 'transfer_bad_email', 'text' => TicketTransferService::message(TicketTransferService::BAD_EMAIL)],
+            $controller->giveTicket($sam, 10, 'not an address', 'Dee')
+        );
+        self::assertSame(
+            ['ok' => false, 'code' => 'transfer_gone', 'text' => 'This offer is no longer open.'],
+            $controller->cancelTicketOffer($sam, 10)
+        );
+        self::assertSame('This offer is no longer open.', SignupController::noticeText('transfer_gone'));
+        self::assertSame('Offer cancelled. Your ticket is yours again.', SignupController::noticeText('offer_cancelled'));
+
+        // Without the service nothing can be given.
+        self::assertSame(
+            ['ok' => false, 'code' => 'transfer_disabled', 'text' => 'Giving tickets away is turned off.'],
+            $this->controller()->giveTicket($sam, 10, 'dee@example.com', 'Dee')
+        );
+    }
+
+    /** @return array<string, mixed> */
+    private static function redemptionRow(int $id, string $date): array
+    {
+        return [
+            'id' => $id, 'person_id' => 7, 'redeemed_for' => $date, 'event_post_id' => null,
+            'event_label' => 'Party', 'redeemed_at' => '2026-07-10 10:00:00', 'note' => '',
+            'cancelled_at' => null, 'ticket_mailed_at' => null, 'transferred_to' => null,
+        ];
+    }
+
+    private function transfers(): TicketTransferService
+    {
+        return new TicketTransferService(
+            new TicketTransferRepository(),
+            new RedemptionRepository(),
+            new PersonRepository(),
+            new TaskRepository(),
+            new CheckinRepository()
+        );
+    }
+
+    /** Without a TakeoverService (or an assignment id) the web action says the task is gone. */
+    public function testTheWebTakeoverWithoutTheServiceSaysTheTaskIsGone(): void
+    {
+        $person = Person::fromRow(['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam']);
+
+        self::assertSame(
+            ['ok' => false, 'text' => 'That task is no longer available.'],
+            $this->controller()->takeoverFor($person, 70)
+        );
+        self::assertSame('Request sent.', SignupController::noticeText('takeover_sent'));
     }
 
     public function testSignedOutTheCrewGuideIsNotShown(): void
@@ -1916,6 +2256,26 @@ final class SignupControllerTest extends TestCase
         self::assertFalse($this->guestTickRows(['role_slugs' => 'decorate'])[5]['crew_only']);
     }
 
+    /**
+     * Members display (Owner 2026-11-08): a role off the guest board shows to
+     * anyone signed in, not to the page signed out. With Guest sign up off,
+     * a non-holder gets the row as crew only.
+     */
+    public function testMembersDisplayShowsTheTaskToAnyoneSignedIn(): void
+    {
+        $this->withDecorateTicks(['on_board' => false, 'members_display' => true]);
+        self::assertFalse($this->guestTickRows([])[5]['crew_only']);
+
+        $this->withDecorateTicks(['on_board' => false, 'members_display' => true, 'guest_signup' => false]);
+        self::assertTrue($this->guestTickRows([])[5]['crew_only']);
+        self::assertFalse($this->guestTickRows(['role_slugs' => 'decorate'])[5]['crew_only']);
+
+        unset($_COOKIE[WebSession::COOKIE]);                           // signed out
+        $this->wpdb->nextResults[] = [$this->taskRow()];               // upcoming
+        $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 2]]; // occupancyFor
+        self::assertSame([], $this->controller()->viewModel()['groups']);
+    }
+
     public function testClaimForMapsAGuestSignUpRefusalToCrewOnly(): void
     {
         $this->withDecorateTicks(['guest_signup' => false]);
@@ -1944,8 +2304,8 @@ final class SignupControllerTest extends TestCase
 
         self::assertStringContainsString('id="eventcrew-signin"', $html);
         self::assertStringContainsString('href="#eventcrew-signin" data-eventcrew-signin-task="5">Sign up</a>', $html);
-        // Task 6 is full: no way in, signed out or not.
-        self::assertStringNotContainsString('data-eventcrew-signin-task="6"', $html);
+        // Task 6 is full: Take someone's task, also through the sign-in card (Owner 2026-11-08).
+        self::assertStringContainsString('data-eventcrew-signin-task="6">Take someone’s task</a>', $html);
         self::assertStringContainsString('back.hash = "eventcrew-task-" + task;', $html);
     }
 

@@ -196,8 +196,13 @@ endif; ?>
                     <span class="eventcrew-blocked"><?php esc_html_e('Crew only', 'eventcrew'); ?></span>
                     <?php
                 elseif (null === $eventcrew_person && $eventcrew_full) :
+                    /*
+                     * A full task can still be taken over from someone on it
+                     * (Owner 2026-11-08); signed out, that starts at the
+                     * sign-in card, as Sign up does.
+                     */
                     ?>
-                    <button type="button" class="wp-element-button eventcrew-btn-full" disabled><?php esc_html_e('Full', 'eventcrew'); ?></button>
+                    <a class="wp-element-button eventcrew-btn-go" href="#eventcrew-signin" data-eventcrew-signin-task="<?php echo esc_attr((string) $eventcrew_task->id); ?>"><?php esc_html_e('Take someone’s task', 'eventcrew'); ?></a>
                     <?php
                 elseif (null === $eventcrew_person) :
                     /*
@@ -256,6 +261,29 @@ endif; ?>
                         <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_task->id); ?>">
                         <button type="submit" class="wp-element-button eventcrew-btn-stop"><?php esc_html_e('Cancel', 'eventcrew'); ?></button>
                     </form>
+                    <?php
+                elseif ($eventcrew_full && ! empty($eventcrew_row['holders'])) :
+                    /*
+                     * Take someone's task (Owner 2026-11-08): one small form
+                     * per person on it, as the bot lists them; the holder
+                     * decides (TakeoverService). Names are text links so the
+                     * row keeps one button.
+                     */
+                    ?>
+                    <details class="eventcrew-credit-ask">
+                        <summary class="wp-element-button eventcrew-btn-go"><?php esc_html_e('Take someone’s task', 'eventcrew'); ?></summary>
+                        <span class="eventcrew-muted"><?php esc_html_e('Whose task?', 'eventcrew'); ?></span>
+                        <?php foreach ($eventcrew_row['holders'] as $eventcrew_holder) : ?>
+                            <form class="eventcrew-action" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                                <?php
+                                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- builder escapes each field.
+                                echo $eventcrew_hidden((string) $view['takeover_action'], $eventcrew_csrf, $eventcrew_here);
+                                ?>
+                                <input type="hidden" name="assignment_id" value="<?php echo esc_attr((string) $eventcrew_holder['assignment_id']); ?>">
+                                <button type="submit" class="eventcrew-textlink"><?php echo esc_html($eventcrew_holder['name']); ?></button>
+                            </form>
+                        <?php endforeach; ?>
+                    </details>
                     <?php
                 elseif ($eventcrew_full) :
                     ?>

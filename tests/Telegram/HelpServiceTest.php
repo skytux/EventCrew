@@ -91,11 +91,13 @@ final class HelpServiceTest extends TelegramTestCase
         $this->wpdb->nextCols[] = ['2026-08-01'];                                                   // nearbyDates
         $this->wpdb->nextResults[] = [['id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'clean', 'capacity' => 3]];
 
-        $this->send('/help');
+        $this->tapMenu(MenuButtons::HELP_COMMANDS);
 
         $text = $this->lastText();
         self::assertStringStartsWith("Test Site bot – commands\n\nEveryone\n/board – the open tasks", $text);
         self::assertStringContainsString('/tasks – cancel, take over a task, past tasks', $text);
+        self::assertStringEndsWith('/help – how this works, commands and FAQ', $text);
+        self::assertSame([MenuButtons::HELP], $this->lastButtons());
         self::assertStringNotContainsString('Welcome crew', $text);
         self::assertStringNotContainsString('Organizers', $text);
     }
@@ -107,7 +109,7 @@ final class HelpServiceTest extends TelegramTestCase
         $this->wpdb->nextResults[] = [['id' => 6, 'task_date' => '2026-08-01', 'role_slug' => 'welcome', 'capacity' => 2]];
         $this->wpdb->nextRows[] = ['id' => 30, 'task_id' => 6, 'person_id' => 7, 'status' => 'signed_up']; // findFor
 
-        $this->send('/help');
+        $this->tapMenu(MenuButtons::HELP_COMMANDS);
 
         $text = $this->lastText();
         self::assertStringContainsString("Welcome crew  (date: 1.8. or 2026-08-01; default: next night)\n/roster [date]", $text);
@@ -124,7 +126,7 @@ final class HelpServiceTest extends TelegramTestCase
     {
         $this->person(true);
 
-        $this->send('/help');
+        $this->tapMenu(MenuButtons::HELP_COMMANDS);
 
         $text = $this->lastText();
         self::assertStringContainsString("\n\nWelcome crew  (date:", $text);
@@ -191,7 +193,7 @@ final class HelpServiceTest extends TelegramTestCase
     public function testInAPrivateChatHelpIsInTheAskersLanguage(): void
     {
         Language::run('fi', function (): void {
-            $this->help()->onHelp(555, 555, true);
+            $this->help()->onCommands(555, 555, true);
         });
 
         self::assertStringStartsWith("Test Site -botti – komennot\n\nKaikki\n", $this->lastText());
@@ -243,7 +245,7 @@ final class HelpServiceTest extends TelegramTestCase
         $this->person();
         $this->send('/settings');
         self::assertSame('⚙️ Settings', $this->lastText());
-        self::assertSame(['mn:notif', 'mn:lang', 'mn:web', 'mn:me'], $this->lastButtons());
+        self::assertSame(['mn:name', 'mn:email', 'mn:notif', 'mn:lang', 'mn:web', 'mn:signout', 'mn:delete', 'mn:me'], $this->lastButtons());
 
         $this->person();
         $this->send('/tickets');
@@ -282,15 +284,119 @@ final class HelpServiceTest extends TelegramTestCase
         self::assertSame('Only organizers can open this.', $this->lastText());
     }
 
-    public function testTheHelpButtonUnderMeSendsHelpWithAWayBack(): void
+    /** Owner 2026-11-08: /help and the Help button under /me open the Help menu. */
+    public function testHelpOpensTheHelpMenuWithAWayBack(): void
     {
         $this->person();
-        $this->wpdb->nextCols[] = []; // nearbyDates
-
         $this->tapMenu('mn:help');
 
-        self::assertStringStartsWith('Test Site bot – commands', $this->lastText());
-        self::assertSame(['mn:me'], $this->lastButtons());
+        self::assertSame('❓ Help', $this->lastText());
+        self::assertSame(['mn:hguide', 'mn:hcmd', 'mn:faq', 'mn:me'], $this->lastButtons());
+        $rows = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
+        self::assertSame(['📖 How this works?', '⌨️ Commands', '💡 FAQ', '⬅️ Back'], array_column(array_merge(...$rows), 'text'));
+
+        foreach ($rows as $row) {
+            self::assertCount(1, $row);
+        }
+
+        $this->person();
+        $this->send('/help');
+        self::assertSame('❓ Help', $this->lastText());
+    }
+
+    public function testAnOrganizersHelpMenuHasTheOrganizerGuideAndTheCrewGuideLink(): void
+    {
+        $this->options['eventcrew_guide_url'] = 'https://docs.example/guide';
+        $this->person(true);
+
+        $this->send('/help');
+
+        $buttons = array_merge(...$this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']);
+        self::assertSame(['mn:hguide', 'mn:hcmd', 'mn:faq', 'mn:horg', 'mn:me'], $this->lastButtons());
+        self::assertContains(['text' => '📋 Crew guide', 'url' => 'https://docs.example/guide'], $buttons);
+    }
+
+    public function testTheFaqIsOneHtmlMessageWithBackToHelp(): void
+    {
+        $this->tapMenu(MenuButtons::FAQ);
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame('HTML', $sent['parse_mode']);
+        self::assertStringStartsWith("<b>💡 FAQ</b>\n\n<b>❓ How do I sign up for a task?</b>\n", $sent['text']);
+        self::assertStringContainsString('<b>❓ How do I cancel a task?</b>', $sent['text']);
+        self::assertLessThan(4096, mb_strlen($sent['text']));
+        self::assertSame([MenuButtons::HELP], $this->lastButtons());
+    }
+
+    public function testEveryFaqPageFitsInOneMessageInEveryLanguage(): void
+    {
+        foreach (['en', 'fi', 'de', 'ru', 'ja'] as $language) {
+            $pages = Language::run($language, static fn (): array => HelpService::faqPages());
+
+            self::assertNotEmpty($pages[0]);
+
+            foreach ($pages as $page) {
+                self::assertLessThan(4000, \EventCrew\Telegram\MessagePages::textLength($page));
+            }
+        }
+    }
+
+    public function testALaterFaqPageIsReachedByItsButton(): void
+    {
+        $this->tapMenu('mn:faq:9');
+
+        // Past the last page: the last page, still with Back to Help.
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertStringStartsWith('<b>💡 FAQ', $sent['text']);
+        self::assertSame(MenuButtons::HELP, $this->lastBackTarget());
+    }
+
+    public function testHowThisWorksSendsTheWelcomeGuideAgainWithBackToHelp(): void
+    {
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+            'telegram_chat_id' => 555,
+        ];
+
+        $this->helpWithWelcome()->onGuide(555, 555);
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(555, $sent['chat_id']);
+        self::assertSame('HTML', $sent['parse_mode']);
+        self::assertStringContainsString('Welcome to the Test Site crew!', $sent['text']);
+        self::assertSame(MenuButtons::HELP, $this->lastBackTarget());
+    }
+
+    public function testTheOrganizerGuideIsRefusedToAMember(): void
+    {
+        $this->person();
+
+        $this->helpWithWelcome()->onGuide(555, 555, true, true);
+
+        self::assertSame('Only organizers can open this.', $this->lastText());
+    }
+
+    private function helpWithWelcome(): HelpService
+    {
+        return new HelpService(
+            new PersonRepository(),
+            new DoorAccess(new TaskRepository(), new AssignmentRepository()),
+            $this->client(),
+            $this->welcomeSender()
+        );
+    }
+
+    public function testHowThisWorksForSomeoneNotSetUpGetsTheNudge(): void
+    {
+        $this->wpdb->nextRows[] = null;
+
+        $this->tapMenu(MenuButtons::HELP_GUIDE);
+
+        self::assertStringContainsString('/start', $this->lastText());
     }
 
     /**
@@ -332,6 +438,25 @@ final class HelpServiceTest extends TelegramTestCase
         $this->tapMenu('mn:hist');
 
         self::assertSame('mn:mytasks', $this->lastBackTarget());
+    }
+
+    /** Owner 2026-11-08: ◀️ ▶️ send the page in the data, "mn:hist:2". */
+    public function testAPageTapOpensThatPageOfPastTasks(): void
+    {
+        Functions\when('current_time')->justReturn('2026-07-10');
+        $this->person();
+        $past = [];
+
+        for ($i = 1; $i <= 26; $i++) {
+            $past[] = ['id' => $i, 'task_id' => $i, 'person_id' => 7, 'status' => 'completed', 'task_date' => '2026-06-30'];
+        }
+
+        $this->wpdb->nextResults[] = $past;
+
+        $this->tapMenu('mn:hist:2');
+
+        self::assertSame(1, substr_count($this->lastText(), '• '));
+        self::assertSame(['mn:hist', 'mn:mytasks'], $this->lastButtons());
     }
 
     public function testWebSignInWithoutAPageGoesBackToSettings(): void

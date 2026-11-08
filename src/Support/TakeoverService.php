@@ -12,6 +12,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TakeoverRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Telegram\BoardRenderer;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
 
@@ -66,6 +67,89 @@ final class TakeoverService
             ['token' => SignedLink::sign(self::PURPOSE, $takeoverId)],
             rest_url('eventcrew/v1/takeover')
         );
+    }
+
+    /**
+     * The cover asks for the task behind one assignment, from any channel:
+     * the bot's rep:<id> button and the crew page's Take someone's task
+     * (Owner 2026-11-08). Runs the checks request() leaves to its caller,
+     * then request(). The caller has checked the cover's email is verified.
+     *
+     * @return array{ok: bool, text: string}
+     */
+    public function requestFor(int $assignmentId, Person $cover): array
+    {
+        $original = $this->assignments->find($assignmentId);
+        $task = null === $original ? null : $this->tasks->find($original->taskId);
+
+        // Someone without the role is never offered a restricted task, so it
+        // is worded like a task that is gone.
+        if (
+            null === $original || null === $task || ! $original->isOccupying() || $task->isPast()
+            || SignupService::blocksRestrictedSlot($task, $cover)
+            || BoardVisibility::blocksGuestSignup($task, $cover)
+        ) {
+            return ['ok' => false, 'text' => __('That task is no longer available.', 'eventcrew')];
+        }
+
+        if ($cover->id === $original->personId) {
+            return ['ok' => false, 'text' => __('That’s your own task.', 'eventcrew')];
+        }
+
+        $existing = $this->assignments->findFor($task->id, $cover->id);
+
+        // No overlap check: covering someone is exactly the case where a
+        // clash on paper is somebody's own business. Taking the same task
+        // twice is still stopped.
+        if (null !== $existing && $existing->isOccupying()) {
+            return ['ok' => false, 'text' => __('You’re already signed up for that one.', 'eventcrew')];
+        }
+
+        return $this->request($original, $task, $cover);
+    }
+
+    /**
+     * Whose places on a task the cover could ask to take over, for the
+     * board's Take someone's task on a full task (Owner 2026-11-08): one
+     * entry per holder, by first name, or "Person 2" where the role hides
+     * names from the cover (Anonymous display). Empty when the cover may not
+     * take the task, is on it already, or it is too late to ask.
+     *
+     * @return list<array{assignment_id: int, name: string}>
+     */
+    public function holdersFor(Task $task, Person $cover): array
+    {
+        if (
+            $task->isPast() || SignupService::blocksRestrictedSlot($task, $cover)
+            || BoardVisibility::blocksGuestSignup($task, $cover)
+            || null === TakeoverDeadline::deadline(TakeoverDeadline::now(), TakeoverDeadline::startOf($task))
+        ) {
+            return [];
+        }
+
+        $named = BoardVisibility::showsNames($task, $cover);
+        $holders = [];
+
+        foreach ($this->assignments->forTask($task->id) as $assignment) {
+            if (! $assignment->isOccupying()) {
+                continue;
+            }
+
+            if ($assignment->personId === $cover->id) {
+                return [];
+            }
+
+            $holder = $named ? $this->people->find($assignment->personId) : null;
+            $name = null === $holder ? '' : BoardRenderer::firstNames([$holder->name()])[0];
+
+            $holders[] = [
+                'assignment_id' => $assignment->id,
+                /* translators: %d: 1, 2, ... for each person on a task whose names are hidden */
+                'name' => '' !== $name ? $name : sprintf(__('Person %d', 'eventcrew'), count($holders) + 1),
+            ];
+        }
+
+        return $holders;
     }
 
     /**

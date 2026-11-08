@@ -418,10 +418,6 @@ msgstr "/door add [日期] 姓名 +N ; 备注 – 添加嘉宾（也可 edit、r
 msgid "/events – post the coming events in the group as picture cards; you see them first"
 msgstr "/events – 把即将举行的活动以图片卡片发到群里；你会先看到"
 
-#: src/Telegram/HelpService.php:235
-msgid "/help – this list"
-msgstr "/help – 本列表"
-
 #: src/Telegram/HelpService.php:231
 msgid "/me – your standing, credits and coming tasks"
 msgstr "/me – 你的信誉、积分和即将到来的任务"
@@ -1089,10 +1085,6 @@ msgstr "迟到"
 #: src/Support/Reputation.php:68
 msgid "Arrived late, did the task"
 msgstr "迟到，完成了任务"
-
-#: src/Support/OrganizerGuide.php:245
-msgid "As an organizer you can add anyone to any task of a night but Organize, also one for a role they do not hold (they then get the role): in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
-msgstr "作为组织者，你可以把任何人加到一晚除“组织”外的任何任务上，也可以加到对方没有的角色的任务上（对方会获得该角色）：在私聊中用 /assign 任务 ; 名字（/unassign 移除）或 /board 下的 ➕ 添加某人、在团队应用的“管理”标签中，或在售票台。"
 
 #: templates/admin/translations.php:213
 msgid "As written"
@@ -3681,10 +3673,6 @@ msgstr "大多数活动组织者不需要。只有公共机构、大规模系统
 #: src/Support/EventTaskMover.php:67
 msgid "Move the tasks too"
 msgstr "同时移动任务"
-
-#: templates/public/signup.php:435
-msgid "My tasks"
-msgstr "我的任务"
 
 #: src/Admin/PeopleListTable.php:47 src/Support/PrivacyExporter.php:136
 #: src/Support/PrivacyExporter.php:219 src/Support/PrivacyExporter.php:245
@@ -7112,10 +7100,6 @@ msgstr "附件的列与“设置 → 邮件”中的任何票务文件格式都�
 msgid "The coming events, as the newsletter writes them."
 msgstr "即将举行的活动，按通讯中的写法。"
 
-#: src/Telegram/CommandMenu.php:282
-msgid "The commands you can use"
-msgstr "你可以使用的命令"
-
 #: src/Admin/SettingsPage.php:1060
 msgid "The connection test failed: %s."
 msgstr "连接测试失败：%s。"
@@ -8830,10 +8814,6 @@ msgstr "此人完成的情况：其任务和信誉。单独占一行；不知道
 msgid "What we hold about you"
 msgstr "我们保存的关于你的信息"
 
-#: templates/public/signup.php:464
-msgid "What you’ve done"
-msgstr "你做过的事"
-
 #: templates/admin/diagnostics.php:124 templates/admin/people.php:294
 msgid "When"
 msgstr "时间"
@@ -9540,10 +9520,6 @@ msgstr "你的任务已转给 %s"
 msgid "Your tasks on this night:"
 msgstr "你这一晚的任务："
 
-#: src/Telegram/CommandMenu.php:284
-msgid "Your tasks, credits, ticket, settings"
-msgstr "你的任务、积分、票、设置"
-
 #: templates/admin/settings.php:1558
 msgid "Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one."
 msgstr "你的模板会保留创建时的设计。用下面的“重置模板”来采用当前的内置设计。"
@@ -9593,10 +9569,6 @@ msgstr "你已经报名了。"
 #: src/Telegram/BoardService.php:1212 src/Telegram/RoleTaskBot.php:395
 msgid "You’re in! See you there."
 msgstr "报名成功！到时见。"
-
-#: templates/public/signup.php:438
-msgid "You’re not signed up for anything yet — take a look at the board."
-msgstr "你还没有报名任何任务 — 去任务板看看吧。"
 
 #: src/Telegram/BoardService.php:1262 src/Telegram/RoleTaskBot.php:425
 msgid "You’re out. Thanks for the notice."
@@ -10836,8 +10808,12 @@ msgid "Guest display: people without this role see its tasks"
 msgstr "访客显示：没有此角色的人可以看到它的任务"
 
 #: templates/admin/settings.php templates/public/signup.php
-msgid "Guest sign up: people without this role can sign up (needs Guest display)"
-msgstr "访客报名：没有此角色的人可以报名（需要访客显示）"
+msgid "Members display: signed-in members see its tasks, even without the role"
+msgstr "成员显示：已登录的成员即使没有此角色也能看到它的任务"
+
+#: templates/admin/settings.php templates/public/signup.php
+msgid "Guest sign up: people without this role can sign up (needs Guest or Members display)"
+msgstr "访客报名：没有此角色的人可以报名（需要访客显示或成员显示）"
 
 #: templates/admin/settings.php templates/public/signup.php
 msgid "Anonymous display: hide the names from people without this role"
@@ -11017,9 +10993,6 @@ msgstr "没有找到叫“%s”的成员。还不是成员的人：/board 下的
 
 msgid "No task called “%1$s”. Tasks on %2$s: %3$s"
 msgstr "没有叫“%1$s”的任务。%2$s 的任务：%3$s"
-
-msgid "Organize tasks are for organizers only. Make someone an organizer with /people."
-msgstr "“组织”任务仅限组织者。用 /people 把某人设为组织者。"
 
 msgid "Put a member on a task: /assign task ; name\nExample: /assign Host ; Milla\nA date first picks another event: /assign 21.11. Host ; Milla"
 msgstr "把成员加到任务上：/assign 任务 ; 名字\n例如：/assign Host ; Milla\n前面加日期可选另一晚：/assign 21.11. Host ; Milla"
@@ -12501,3 +12474,215 @@ msgstr[0] "你的一项任务被标记为未完成，因此那晚额外任务的
 #: src/Support/StandingNotice.php
 msgid "A free-entry credit was taken back"
 msgstr "一个免费入场积分已被收回"
+
+msgid "How this works?"
+msgstr "如何使用?"
+
+msgid "FAQ"
+msgstr "常见问题"
+
+msgid "/help – how this works, commands and FAQ"
+msgstr "/help – 如何使用、命令和常见问题"
+
+msgid "How this works, commands and FAQ"
+msgstr "如何使用、命令和常见问题"
+
+msgid "Your standing, credits and coming tasks"
+msgstr "你的信誉、积分和即将进行的任务"
+
+msgid "In a private chat with the bot you can also use these commands, or just write what you need in your own words."
+msgstr "在与机器人的私聊中，你也可以使用这些命令，或者直接用自己的话写下你需要什么。"
+
+msgid "How do I sign up for a task?"
+msgstr "如何报名任务?"
+
+msgid "Open the board (See open tasks in the bot, or the Board tab on the web page) and tap the task. You get a confirmation and a ticket for that night. If you are new, the team first says OK; we message you when it comes."
+msgstr "打开任务板（机器人里的“查看空缺任务”，或网页上的“任务板”标签页），然后点任务。你会收到确认和当晚的票。如果你是新人，团队会先审核同意；通过后我们会发消息通知你。"
+
+msgid "Open Tasks and tap Cancel next to the task."
+msgstr "打开“任务”，点任务旁边的“取消”。"
+
+msgid "Changed your mind? Within %d minutes of taking a task, cancelling it never counts against you."
+msgstr "改主意了？接下任务后 %d 分钟内取消，永远不会对你不利。"
+
+msgid "Cancelling closes %d minutes before the task starts; after that, tell an organizer."
+msgstr "任务开始前 %d 分钟停止取消；之后请告诉组织者。"
+
+msgid "How do I cancel a task?"
+msgstr "如何取消任务？"
+
+msgid "What if I cancel late?"
+msgstr "如果我取消得晚怎么办？"
+
+msgid "Cancelling %1$d hours or more before has no effect. Later, it counts as a late cancellation in your standing (%2$d%%). Better: find someone to take your task. When they take it, it counts as Found a replacement (%3$d%%)."
+msgstr "提前 %1$d 小时或更早取消没有影响。更晚取消则在你的信誉中算作临时取消（%2$d%%）。更好的办法：找人接下你的任务。对方接下后，算作“找到了替代者”（%3$d%%）。"
+
+msgid "A task is full. Can I still get it?"
+msgstr "任务已满。我还能得到吗？"
+
+msgid "Tap Take someone’s task and choose whose task you want. They are asked and decide; nothing changes until they say yes. If they do not answer in time, they keep the task."
+msgstr "点“接下别人的任务”，选择你想要谁的任务。对方会收到询问并自行决定；对方同意之前什么都不会变。如果对方没有及时回复，任务仍归对方。"
+
+msgid "What happens if I do not show up?"
+msgstr "如果我没到场会怎样？"
+
+msgid "A no-show counts %d%% in your standing, the worst outcome. If you cannot come, cancel or find a replacement instead. If it was marked by mistake, tell an organizer or the bot."
+msgstr "缺席在你的信誉中算 %d%%，是最差的结果。如果来不了，请取消或找人替代。如果是误记，请告诉组织者或机器人。"
+
+msgid "It comes from how your past tasks went, and recent tasks count more. You get a rating after %1$d finished tasks; %2$d%% or higher is good standing."
+msgstr "它取决于你过去任务的情况，近期的任务权重更高。完成 %1$d 个任务后你会得到评分；%2$d%% 或以上为信誉良好。"
+
+msgid "Below that, you cannot sign up for new tasks until you talk to an organizer."
+msgstr "低于这个值，在与组织者沟通之前你不能报名新任务。"
+
+msgid "How does standing work?"
+msgstr "信誉是怎么算的？"
+
+msgid "How do I get free entry?"
+msgstr "如何获得免费入场？"
+
+msgid "Every %d completed tasks earn 1 free-entry credit. To use one, open Tickets, tap Get a free-entry ticket and choose the night. Some nights (sold out, or special events) do not accept credits."
+msgstr "每完成 %d 个任务获得 1 个免费入场积分。要使用它，打开“票”，点“领取免费入场券”并选择哪一晚。有些晚上（已售罄或特别活动）不接受积分。"
+
+msgid "Do I need a ticket for a night I work?"
+msgstr "我工作的那晚需要票吗？"
+
+msgid "Signing up gives you a working ticket for that night. It covers all your tasks that night; show it at the door. Its code never changes, so a screenshot works. It is personal and cannot be given away."
+msgstr "报名后你会得到当晚的工作票。它适用于你当晚的所有任务；请在门口出示。票码不会改变，所以截图也可以。它仅限本人使用，不能转让。"
+
+msgid "Why is a credit pending?"
+msgstr "为什么积分是待定状态？"
+
+msgid "Each extra task on the same night earns one more credit. It shows as pending and is added after the event, if you did the task. A cancelled or missed task gives nothing."
+msgstr "同一晚每多做一个任务就多得一个积分。它显示为待定，活动结束后如果你完成了任务就会加上。取消或缺席的任务不计积分。"
+
+msgid "Can I cancel a free-entry ticket?"
+msgstr "我可以取消免费入场券吗？"
+
+msgid "No, and the credit stays spent. But you can give the ticket to someone else: open Tickets and tap Give away. A ticket given to you cannot be given on."
+msgstr "不可以，用掉的积分也不会退回。但你可以把票给别人：打开“票”，点“转让”。别人转给你的票不能再转让。"
+
+msgid "No, and the credit stays spent."
+msgstr "不可以，用掉的积分也不会退回。"
+
+msgid "I already have a ticket for that night. Can I still take a task?"
+msgstr "我已经有那晚的票了。还能接任务吗？"
+
+msgid "Yes. Your ticket stays as it is. A bought ticket never turns into a credit."
+msgstr "可以。你的票保持不变。购买的票永远不会变成积分。"
+
+msgid "You can give away a free-entry ticket you no longer need."
+msgstr "不再需要的免费入场券可以转让给别人。"
+
+msgid "Where do I see my credits and tasks?"
+msgstr "在哪里查看我的积分和任务？"
+
+msgid "In My info in the bot, and in the Me tab on the web page."
+msgstr "在机器人的“我的信息”里，以及网页上的“我”标签页。"
+
+msgid "How do I choose which messages I get?"
+msgstr "如何选择接收哪些消息？"
+
+msgid "Under Settings, choose notifications and switch off what you do not want. Sign-up confirmations and reminders always come."
+msgstr "在“设置”中选择通知，关掉你不想要的。报名确认和提醒总会发送。"
+
+msgid "How do I sign in on the web page?"
+msgstr "如何在网页上登录？"
+
+msgid "Enter your email on the web page and open the sign-in link we send. In the bot, Settings also has a web sign-in link."
+msgstr "在网页上输入你的邮箱，然后打开我们发送的登录链接。机器人的“设置”里也有网页登录链接。"
+
+msgid "How do I change the language?"
+msgstr "如何更改语言？"
+
+msgid "Under Settings: Change language. Messages to you then come in that language."
+msgstr "在“设置”中：更改语言。之后发给你的消息都会使用该语言。"
+
+msgid "How do I delete my data?"
+msgstr "如何删除我的数据？"
+
+msgid "Under Settings: Delete my data. It erases your account and history and cannot be undone. To stop only some messages, choose notifications instead."
+msgstr "在“设置”中：删除我的数据。这会删除你的账户和记录，且无法撤销。如果只想停止部分消息，请改为选择通知。"
+
+msgid "Person %d"
+msgstr "成员 %d"
+
+msgid "Take someone’s task"
+msgstr "接手别人的任务"
+
+msgid "No task here can be taken over."
+msgstr "这里没有可以接手的任务。"
+
+msgid "Whose task do you want to take? They decide."
+msgstr "你想接手谁的任务？由对方决定。"
+
+msgid "Whose task?"
+msgstr "谁的任务？"
+
+#: src/Telegram/MenuButtons.php
+msgid "Change name"
+msgstr "更改名字"
+
+#: src/Telegram/MenuButtons.php
+msgid "Change email"
+msgstr "更改邮箱"
+
+#: src/Telegram/MemberCommands.php
+msgid "Sign out of the web board on every browser and phone? Nothing is lost; you just sign in again."
+msgstr "要在所有浏览器和手机上退出网页吗？不会丢失任何内容，只需重新登录。"
+
+#: src/Telegram/MemberCommands.php
+msgid "A link goes to your email first; your data is deleted only when you open it."
+msgstr "链接会先发到你的邮箱；只有打开它时才会删除你的数据。"
+
+#: templates/public/signup.php
+msgid "Your Telegram is linked to this account."
+msgstr "你的 Telegram 已关联到此账号。"
+
+#: templates/public/signup.php
+msgid "The bot asks for your email and sends a link there; opening it links your Telegram to this account."
+msgstr "机器人会询问你的邮箱并发送链接；打开链接即可将你的 Telegram 关联到此账号。"
+
+#: src/Support/OrganizerGuide.php:245
+msgid "As an organizer you can add anyone to any task of a night, also one for a role they do not hold (they then get the role), and an organizer to Organize: in a private chat with /assign task ; name (/unassign takes them off) or ➕ Add someone under /board, in the Crew app Admin tab, or at the sales desk."
+msgstr "作为组织者，你可以把任何人加到一晚的任何任务上，也可以加到对方没有的角色的任务上（对方会获得该角色），还可以把组织者加到“组织”上：在私聊中用 /assign 任务 ; 名字（/unassign 移除）或 /board 下的 ➕ 添加某人、在团队应用的“管理”标签中，或在售票台。"
+
+#. translators: %s: a person's name.
+#: src/Support/RoleTaskService.php
+msgid "%s is not an organizer. Make them one with /people first."
+msgstr "%s 不是组织者。请先用 /people 把对方设为组织者。"
+
+#: src/Support/RoleTaskService.php
+msgid "Only an organizer can go on an Organize task. Make them one first, with /people or on the People page."
+msgstr "只有组织者才能加入“组织”任务。请先用 /people 或在“人员”页面把对方设为组织者。"
+
+#: src/Telegram/RoleTaskBot.php
+msgid "Send the organizer's name. Only an organizer can go on an Organize task."
+msgstr "发送组织者的名字。只有组织者才能加入“组织”任务。"
+
+msgid "Something went wrong. Please try again."
+msgstr "出了点问题。请重试。"
+
+msgid "Use /subscribe in a private chat with me."
+msgstr "请在与我的私聊中使用 /subscribe。"
+
+msgid "Only organizers can use /subscribe."
+msgstr "只有组织者可以使用 /subscribe。"
+
+msgid "“%s” is not an email address."
+msgstr "“%s”不是电子邮件地址。"
+
+msgid "A confirmation email went to %s. They are on the list once they open it."
+msgstr "确认邮件已发送到 %s。对方打开后即加入名单。"
+
+msgid "%s is already on the newsletter."
+msgstr "%s 已在订阅电子报。"
+
+msgid "Add someone to the newsletter: /subscribe name@example.com\nAdd a language code to choose their language: %s."
+msgstr "将某人加入电子报：/subscribe name@example.com\n加上语言代码可选择其语言：%s。"
+
+msgid "/subscribe email – add someone to the newsletter; they confirm by email"
+msgstr "/subscribe 邮箱 – 将某人加入电子报；对方通过邮件确认"
+
+msgid "Preview of the next announcement"
+msgstr "下一封公告预览"

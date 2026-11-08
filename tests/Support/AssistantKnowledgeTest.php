@@ -159,6 +159,37 @@ final class AssistantKnowledgeTest extends TestCase
     }
 
     /**
+     * The tasks the helper may offer follow the board (BoardVisibility):
+     * the group gets the guest board's, a known person also those of the
+     * Members display roles, an organizer every role's, nobody an archived
+     * role's.
+     */
+    public function testTheOfferedTasksFollowTheBoard(): void
+    {
+        $this->options['eventcrew_roles'] = [
+            ['slug' => 'decorate', 'label' => 'Decorate'],
+            ['slug' => 'welcome', 'label' => 'Welcome', 'on_board' => false, 'members_display' => true],
+            ['slug' => 'clean', 'label' => 'Clean', 'on_board' => false],
+            ['slug' => 'bar', 'label' => 'Bar', 'archived' => true],
+        ];
+        Functions\when('current_time')->justReturn('2026-07-10');
+        $rows = [
+            $this->taskRow(1, 'decorate'),
+            $this->taskRow(2, 'welcome'),
+            $this->taskRow(3, 'clean'),
+            $this->taskRow(4, 'bar'),
+        ];
+        $knowledge = new AssistantKnowledge(new TaskRepository());
+
+        $this->wpdb->nextResults[] = $rows;
+        self::assertSame([1], $knowledge->offeredTaskIds());
+        $this->wpdb->nextResults[] = $rows;
+        self::assertSame([1, 2], $knowledge->offeredTaskIds(true));
+        $this->wpdb->nextResults[] = $rows;
+        self::assertSame([1, 2, 3], $knowledge->offeredTaskIds(true, true));
+    }
+
+    /**
      * An organizer holds no VJ role but can put anyone on a VJ task, so they
      * see every role and every role task, and are pointed to /assign.
      */

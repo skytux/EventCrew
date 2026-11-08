@@ -198,6 +198,7 @@ final class AssistantActionsTest extends TestCase
                 '/door edit [date] <number> [name] [+N] [; note]',
                 '/door remove [date] <number>',
                 '/newsletter <text>',
+                '/subscribe <email> [language code]',
                 '/newsletter reset',
                 '/followup <came|missed> <text>',
                 '/followup [came|missed] reset',
@@ -233,6 +234,23 @@ final class AssistantActionsTest extends TestCase
 
         self::assertTrue($dated['ok']);
         self::assertSame('/unassign 21.11. Host ; Milla Virtanen', $dated['payload']);
+    }
+
+    public function testAnOrganizerMayAssignAndUnassignOrganizeAndTheBotChecks(): void
+    {
+        foreach (['/assign Organize ; Heidi', '/unassign 21.11. Organize ; Heidi'] as $action) {
+            $result = self::check($action, self::organizer());
+
+            self::assertTrue($result['ok'], $action);
+            self::assertSame($action, $result['payload']);
+        }
+
+        $assign = array_values(array_filter(
+            AssistantActions::catalogue(self::organizer()),
+            static fn (array $entry): bool => str_starts_with($entry['usage'], '/assign')
+        ));
+        self::assertStringContainsString('the Organize task only for someone who is an organizer (the bot checks', $assign[0]['what']);
+        self::assertStringNotContainsString('but Organize', $assign[0]['what']);
     }
 
     public function testAssignIsForOrganizersOnlyAndNeedsATaskAndAName(): void

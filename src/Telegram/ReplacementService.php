@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace EventCrew\Telegram;
 
 use EventCrew\Models\Person;
+use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\BoardVisibility;
 use EventCrew\Support\Dates;
+use EventCrew\Support\Roles;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\TakeoverService;
 
@@ -26,6 +29,12 @@ final class ReplacementService
     use GroupBreadcrumb;
 
     private const AWAIT_PREFIX = 'eventcrew_tg_await_replace_target_';
+
+    /** The board's Take someone's task: rep:d:<Y-m-d>, the full tasks of that day. */
+    public const DAY_PREFIX = 'rep:d:';
+
+    /** A full task's Take someone's task: rep:t:<taskId>. */
+    public const TASK_PREFIX = 'rep:t:';
 
     public function __construct(
         private readonly AssignmentRepository $assignments,
@@ -95,15 +104,19 @@ final class ReplacementService
             foreach ($this->upcomingSlots($person->id) as $entry) {
                 $task = $entry['task'];
 
-                // Someone who may not take a restricted task (Organize, DJ, ...)
-                // is not offered it to cover either. The cover is only looked
-                // up when such a task is in the list.
-                if ($task->isRestricted()) {
+                // Someone who may not take a restricted task (Organize, DJ, ...),
+                // or a task whose role is closed to guests, is not offered it to
+                // cover either. The cover is only looked up when such a task is
+                // in the list.
+                if ($task->isRestricted() || ! Roles::guestSignup($task->roleSlug)) {
                     if (false === $cover) {
                         $cover = $this->people->findByTelegramUserId($telegramUserId);
                     }
 
-                    if (SignupService::blocksRestrictedSlot($task, $cover)) {
+                    if (
+                        SignupService::blocksRestrictedSlot($task, $cover)
+                        || BoardVisibility::blocksGuestSignup($task, $cover)
+                    ) {
                         continue;
                     }
                 }
@@ -140,7 +153,10 @@ final class ReplacementService
     }
 
     /**
-     * A task was picked (callback rep:<assignmentId>): ask the holder.
+     * A task was picked (callback rep:<assignmentId>): ask the holder. The
+     * board's Take someone's task sends rep:d:<date> (the full tasks of that
+     * day) and a full task's link rep:t:<taskId>: those list the holders
+     * first (listHolders()).
      *
      * @param array<string, mixed> $callbackQuery
      */
@@ -148,9 +164,7 @@ final class ReplacementService
     {
         $callbackId = (string) ($callbackQuery['id'] ?? '');
         $coverTelegramId = (int) ($callbackQuery['from']['id'] ?? 0);
-        $assignmentId = (int) preg_replace('/\D/', '', (string) ($callbackQuery['data'] ?? ''));
-
-        $original = $this->assignments->find($assignmentId);
+        $data = (string) ($callbackQuery['data'] ?? '');
         $cover = $this->people->findByTelegramUserId($coverTelegramId);
 
         if (null === $cover || ! $cover->isEmailVerified()) {
@@ -159,38 +173,20 @@ final class ReplacementService
             return;
         }
 
-        $task = null === $original ? null : $this->tasks->find($original->taskId);
-
-        if (null === $original || null === $task || ! $original->isOccupying() || $task->isPast()) {
-            $this->telegram->answerCallbackQuery(
-                $callbackId,
-                __('That task is no longer available.', 'eventcrew'),
-                true
-            );
+        if (1 === preg_match('/^' . preg_quote(self::DAY_PREFIX, '/') . '(\d{4}-\d{2}-\d{2})$/', $data, $m)) {
+            $this->listHolders($callbackQuery, $cover, $this->fullTasks($this->tasks->upcoming(), $m[1]));
 
             return;
         }
 
-        // Worded like a task that is gone: someone without the role is never offered it.
-        if (SignupService::blocksRestrictedSlot($task, $cover)) {
-            $this->telegram->answerCallbackQuery(
-                $callbackId,
-                __('That task is no longer available.', 'eventcrew'),
-                true
-            );
+        if (1 === preg_match('/^' . preg_quote(self::TASK_PREFIX, '/') . '(\d+)$/', $data, $m)) {
+            $task = $this->tasks->find((int) $m[1]);
+            $this->listHolders($callbackQuery, $cover, null === $task ? [] : $this->fullTasks([$task], $task->taskDate));
 
             return;
         }
 
-        $refusal = $this->refusalFor($cover, $original->personId, $task->id);
-
-        if (null !== $refusal) {
-            $this->telegram->answerCallbackQuery($callbackId, $refusal, true);
-
-            return;
-        }
-
-        $result = $this->takeovers->request($original, $task, $cover);
+        $result = $this->takeovers->requestFor((int) preg_replace('/\D/', '', $data), $cover);
 
         if (! $result['ok']) {
             $this->telegram->answerCallbackQuery($callbackId, $result['text'], true);
@@ -202,6 +198,97 @@ final class ReplacementService
         // goes in the chat, where the cover can read it again later.
         $this->telegram->answerCallbackQuery($callbackId, __('Request sent.', 'eventcrew'));
         $this->telegram->sendMessage($cover->telegramChatId ?? $coverTelegramId, $result['text']);
+    }
+
+    /**
+     * The 🔁 Take someone's task button under the board's task buttons, or
+     * '' when no task shown is full (Owner 2026-11-08: the board has no
+     * buttons for full tasks, so this one row stands in for them).
+     *
+     * @param array<int, Task> $tasks The tasks shown, all on $date.
+     * @param array<int, int>  $taken Places taken, by task id.
+     * @return array{text: string, callback_data: string}|null
+     */
+    public static function boardButton(array $tasks, array $taken, string $date): ?array
+    {
+        foreach ($tasks as $task) {
+            if (($taken[$task->id] ?? 0) >= $task->capacity) {
+                return ['text' => self::takeLabel(), 'callback_data' => self::DAY_PREFIX . $date];
+            }
+        }
+
+        return null;
+    }
+
+    /** The button for one full task, rep:t:<id>, e.g. under "That slot just filled up." */
+    public static function taskButton(int $taskId): array
+    {
+        return ['text' => self::takeLabel(), 'callback_data' => self::TASK_PREFIX . $taskId];
+    }
+
+    private static function takeLabel(): string
+    {
+        return '🔁 ' . __('Take someone’s task', 'eventcrew');
+    }
+
+    /**
+     * The full tasks among $tasks on $date.
+     *
+     * @param array<int, Task> $tasks
+     * @return list<Task>
+     */
+    private function fullTasks(array $tasks, string $date): array
+    {
+        $tasks = array_values(array_filter($tasks, static fn (Task $t): bool => $t->taskDate === $date));
+        $taken = $this->tasks->occupancyFor(array_map(static fn (Task $t): int => $t->id, $tasks));
+
+        return array_values(array_filter(
+            $tasks,
+            static fn (Task $t): bool => ($taken[$t->id] ?? 0) >= $t->capacity
+        ));
+    }
+
+    /**
+     * Lists, in the DM, whose places on the given full tasks the cover can
+     * ask for, one button each (rep:<assignmentId>, as captureTarget()'s);
+     * a tap asks that holder. Asked in the group, a breadcrumb points there.
+     *
+     * @param array<string, mixed> $callbackQuery
+     * @param list<Task> $tasks
+     */
+    private function listHolders(array $callbackQuery, Person $cover, array $tasks): void
+    {
+        $callbackId = (string) ($callbackQuery['id'] ?? '');
+        $coverTelegramId = (int) ($callbackQuery['from']['id'] ?? 0);
+        $chat = is_array($callbackQuery['message']['chat'] ?? null) ? $callbackQuery['message']['chat'] : [];
+        $buttons = [];
+
+        foreach ($tasks as $task) {
+            foreach ($this->takeovers->holdersFor($task, $cover) as $holder) {
+                $buttons[] = [[
+                    'text' => implode(' · ', array_filter([$holder['name'], $task->roleDisplay(), $task->timeRange()])),
+                    'callback_data' => 'rep:' . $holder['assignment_id'],
+                ]];
+            }
+        }
+
+        if ([] === $buttons) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('No task here can be taken over.', 'eventcrew'),
+                true
+            );
+
+            return;
+        }
+
+        $this->telegram->answerCallbackQuery($callbackId);
+        $this->telegram->sendMessage(
+            $cover->telegramChatId ?? $coverTelegramId,
+            __('Whose task do you want to take? They decide.', 'eventcrew'),
+            ['inline_keyboard' => $buttons]
+        );
+        $this->sentDmNote((int) ($chat['id'] ?? $coverTelegramId), 'private' === ($chat['type'] ?? 'private'));
     }
 
     /**
@@ -255,25 +342,6 @@ final class ReplacementService
         }
 
         $this->telegram->sendMessage((int) ($callbackQuery['from']['id'] ?? 0), $outcome);
-    }
-
-    private function refusalFor(Person $cover, int $originalPersonId, int $taskId): ?string
-    {
-        if ($cover->id === $originalPersonId) {
-            return __('That’s your own task.', 'eventcrew');
-        }
-
-        $existing = $this->assignments->findFor($taskId, $cover->id);
-
-        if (null !== $existing && $existing->isOccupying()) {
-            return __('You’re already signed up for that one.', 'eventcrew');
-        }
-
-        // No overlap check: covering someone is exactly the case where a
-        // clash on paper is somebody's own business, and it was refused here
-        // for the same reason it was refused on the board - which is no longer
-        // a reason. Taking the same task twice is still stopped, above.
-        return null;
     }
 
     /**

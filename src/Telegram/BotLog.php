@@ -44,7 +44,7 @@ final class BotLog
         'help', 'start', 'roster', 'door', 'people', 'me', 'board', 'newsletter', 'say', 'assign', 'unassign',
         'addtask', 'edittask', 'deletetask', 'maketasks', 'mailtasks', 'events',
         'mark', 'standing', 'newcomer', 'ticket', 'unticket', 'unban', 'freeentry', 'stop', 'newboard', 'sendtickets',
-        'tell', 'crew', 'name', 'email',
+        'tell', 'crew', 'name', 'email', 'subscribe',
     ];
 
     /** Menu button callback data, stored whole: it is a fixed word, not data. */

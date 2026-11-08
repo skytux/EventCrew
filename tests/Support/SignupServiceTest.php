@@ -222,6 +222,110 @@ final class SignupServiceTest extends TestCase
         self::assertTrue(BoardVisibility::showsNames($task, Person::fromRow(['id' => 9, 'email' => 'a@example.com', 'is_organizer' => 1])));
     }
 
+    /**
+     * Members display (Owner 2026-11-08): Decorate off the guest board, shown
+     * to every known person; Guest sign up as given.
+     */
+    private function withDecorateMembersDisplay(bool $guestSignup): void
+    {
+        $this->options['eventcrew_roles'] = [[
+            'slug' => 'decorate',
+            'label' => 'Decorate',
+            'on_board' => false,
+            'members_display' => true,
+            'guest_signup' => $guestSignup,
+        ]];
+        $this->options[SignupService::GATE_OPTION] = '0';
+    }
+
+    public function testMembersDisplayShowsTheTaskToEveryKnownPersonButNotTheGuestBoard(): void
+    {
+        $this->withDecorateMembersDisplay(true);
+        $task = Task::fromRow($this->taskRow('decorate'));
+        $member = Person::fromRow(['id' => 9, 'email' => 'a@example.com', 'role_slugs' => '["clean"]']);
+
+        self::assertTrue(Roles::membersDisplay('decorate'));
+        self::assertFalse(BoardVisibility::onGuestBoard($task));
+        self::assertTrue(BoardVisibility::onMembersBoard($task));
+        self::assertFalse(BoardVisibility::visibleTo($task, null));
+        self::assertTrue(BoardVisibility::visibleTo($task, $member));
+        self::assertFalse(BoardVisibility::blocksGuestSignup($task, $member));
+        self::assertFalse(BoardVisibility::crewOnly($task, $member));
+    }
+
+    public function testWithBothDisplaysOffOnlyTheRoleAndOrganizersSeeTheTask(): void
+    {
+        $this->options['eventcrew_roles'] = [['slug' => 'decorate', 'label' => 'Decorate', 'on_board' => false]];
+        $task = Task::fromRow($this->taskRow('decorate'));
+
+        self::assertFalse(BoardVisibility::onMembersBoard($task));
+        self::assertFalse(BoardVisibility::visibleTo($task, Person::fromRow(['id' => 9, 'email' => 'a@example.com'])));
+        self::assertTrue(BoardVisibility::visibleTo($task, Person::fromRow(['id' => 9, 'email' => 'a@example.com', 'role_slugs' => '["decorate"]'])));
+        self::assertTrue(BoardVisibility::visibleTo($task, Person::fromRow(['id' => 9, 'email' => 'a@example.com', 'is_organizer' => 1])));
+    }
+
+    public function testAnArchivedRoleIsShownToNobody(): void
+    {
+        $this->options['eventcrew_roles'] = [[
+            'slug' => 'decorate', 'label' => 'Decorate', 'members_display' => true, 'archived' => true,
+        ]];
+        $task = Task::fromRow($this->taskRow('decorate'));
+
+        self::assertFalse(BoardVisibility::onGuestBoard($task));
+        self::assertFalse(BoardVisibility::onMembersBoard($task));
+        self::assertFalse(BoardVisibility::visibleTo($task, null));
+        self::assertFalse(BoardVisibility::visibleTo($task, Person::fromRow(['id' => 9, 'email' => 'a@example.com', 'role_slugs' => '["decorate"]'])));
+        self::assertFalse(BoardVisibility::visibleTo($task, Person::fromRow(['id' => 9, 'email' => 'a@example.com', 'is_organizer' => 1])));
+    }
+
+    public function testMembersDisplayWithGuestSignUpOffRefusesSomeoneWithoutTheRole(): void
+    {
+        $this->withDecorateMembersDisplay(false);
+        $task = Task::fromRow($this->taskRow('decorate'));
+        $member = Person::fromRow(['id' => 9, 'email' => 'a@example.com']);
+
+        self::assertTrue(BoardVisibility::visibleTo($task, $member));
+        self::assertTrue(BoardVisibility::blocksGuestSignup($task, $member));
+        self::assertTrue(BoardVisibility::crewOnly($task, $member));
+
+        $this->wpdb->nextRows[] = $this->taskRow('decorate');      // tasks->find
+        $this->wpdb->nextRows[] = ['id' => 9, 'role_slugs' => '']; // people->find
+        self::assertSame(SignupService::CREW_ONLY, $this->service()->claim(9, 5));
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testMembersDisplayWithGuestSignUpOffLetsTheRoleAndOrganizersIn(): void
+    {
+        $this->withDecorateMembersDisplay(false);
+        $this->wpdb->nextRows[] = $this->taskRow('decorate');
+        $this->wpdb->nextRows[] = ['id' => 9, 'role_slugs' => '["decorate"]'];
+        self::assertSame('', $this->service()->refusalFor(9, 5));
+
+        $this->wpdb->nextRows[] = $this->taskRow('decorate');
+        $this->wpdb->nextRows[] = ['id' => 9, 'role_slugs' => '', 'is_organizer' => 1];
+        self::assertSame('', $this->service()->refusalFor(9, 5));
+    }
+
+    /**
+     * A restricted role shown by Members display: everyone sees it as crew
+     * only, and only its holders may take it, whatever Guest sign up says.
+     */
+    public function testARestrictedRoleShownToMembersStaysCrewOnly(): void
+    {
+        $this->withCrewLeaderRole();
+        $this->options['eventcrew_roles'][1]['members_display'] = true;
+        $this->options['eventcrew_roles'][1]['guest_signup'] = true;
+        $task = Task::fromRow($this->taskRow('leader'));
+        $member = Person::fromRow(['id' => 9, 'email' => 'a@example.com']);
+        $leader = Person::fromRow(['id' => 9, 'email' => 'a@example.com', 'role_slugs' => '["leader"]']);
+
+        self::assertFalse(BoardVisibility::visibleTo($task, null));
+        self::assertTrue(BoardVisibility::visibleTo($task, $member));
+        self::assertTrue(BoardVisibility::crewOnly($task, $member));
+        self::assertFalse(BoardVisibility::crewOnly($task, $leader));
+        self::assertTrue(SignupService::blocksRestrictedSlot($task, $member));
+    }
+
     public function testACrewLeaderTaskRefusesSomeoneWithoutTheRole(): void
     {
         $this->withCrewLeaderRole();

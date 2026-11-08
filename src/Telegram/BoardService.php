@@ -10,6 +10,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\BoardVisibility;
 use EventCrew\Support\CancelNote;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Dates;
@@ -901,8 +902,16 @@ final class BoardService
         $board = [['text' => __('See open tasks', 'eventcrew'), 'callback_data' => MenuButtons::BOARD]];
 
         // A restricted task is never a spot opened to the crew, and the board
-        // does not show it to everyone either.
-        if (null === $task || $task->hasStarted() || $task->isRestricted()) {
+        // does not show it to everyone either. Nor a task the reader's board
+        // would not show (BoardVisibility: an archived role, or one hidden
+        // from them); the person is only looked up off the guest board.
+        if (
+            null === $task
+            || $task->hasStarted()
+            || $task->isRestricted()
+            || (! BoardVisibility::onGuestBoard($task)
+                && ! BoardVisibility::visibleTo($task, $this->people->findByTelegramUserId($chatId)))
+        ) {
             $this->telegram->sendMessage(
                 $chatId,
                 __('That task is no longer available.', 'eventcrew'),
@@ -915,10 +924,12 @@ final class BoardService
         $free = $task->capacity - ($this->tasks->occupancyFor([$task->id])[$task->id] ?? 0);
 
         if ($free <= 0) {
+            // Full: the holders can still be asked to hand theirs over
+            // (Owner 2026-11-08).
             $this->telegram->sendMessage(
                 $chatId,
                 __('That slot just filled up.', 'eventcrew'),
-                ['inline_keyboard' => [$board]]
+                ['inline_keyboard' => [[ReplacementService::taskButton($task->id)], $board]]
             );
 
             return;

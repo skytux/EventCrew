@@ -38,6 +38,7 @@ use EventCrew\Repositories\TicketTransferRepository;
 use EventCrew\Support\AccessNotifier;
 use EventCrew\Support\AccessTextsMigration;
 use EventCrew\Support\AssistantKnowledge;
+use EventCrew\Support\AssistantStatus;
 use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\BuyerImport;
@@ -134,7 +135,9 @@ use EventCrew\Telegram\EventsCommand;
 use EventCrew\Telegram\FollowupCommand;
 use EventCrew\Telegram\OnboardingService;
 use EventCrew\Telegram\GiftService;
+use EventCrew\Telegram\NewsletterPreviewDm;
 use EventCrew\Telegram\NotificationSettingsService;
+use EventCrew\Telegram\SubscribeCommand;
 use EventCrew\Telegram\PermissionService;
 use EventCrew\Telegram\PrivateChatGate;
 use EventCrew\Telegram\RoleTaskBot;
@@ -552,7 +555,8 @@ final class Kernel
                 $container->get(Mailer::class),
                 $container->get(Logger::class),
                 $container->get(NewsletterWriter::class),
-                $container->get(NewsletterHistoryRepository::class)
+                $container->get(NewsletterHistoryRepository::class),
+                new NewsletterPreviewDm($container->get(TelegramClient::class))
             )
         );
 
@@ -688,6 +692,15 @@ final class Kernel
             EventsCommand::class,
             fn (Container $container) => new EventsCommand(
                 $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
+            SubscribeCommand::class,
+            fn (Container $container) => new SubscribeCommand(
+                $container->get(PersonRepository::class),
+                $container->get(NewsletterController::class),
                 $container->get(TelegramClient::class)
             )
         );
@@ -932,7 +945,8 @@ final class Kernel
                 $container->get(CrewAdminController::class),
                 $container->get(TelegramLogin::class),
                 $container->get(TelegramClient::class),
-                $container->get(TicketTransferService::class)
+                $container->get(TicketTransferService::class),
+                $container->get(TakeoverService::class)
             )
         );
 
@@ -1445,7 +1459,8 @@ final class Kernel
             NotificationSettingsService::class,
             fn (Container $container) => new NotificationSettingsService(
                 $container->get(PersonRepository::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(NewsletterSubscriberRepository::class)
             )
         );
 
@@ -1490,7 +1505,8 @@ final class Kernel
                 $container->get(AssignCommand::class),
                 $container->get(TaskCommand::class),
                 $container->get(ChatCommands::class),
-                transfer: $container->get(TransferBot::class)
+                transfer: $container->get(TransferBot::class),
+                subscribe: $container->get(SubscribeCommand::class)
             )
         );
 
@@ -1564,7 +1580,8 @@ final class Kernel
                 $container->get(TaskRepository::class),
                 $container->get(AssignmentRepository::class),
                 $container->get(SignupController::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(ManageController::class)
             )
         );
 
@@ -1619,7 +1636,28 @@ final class Kernel
 
         $this->container->singleton(
             AssistantKnowledge::class,
-            fn (Container $container) => new AssistantKnowledge($container->get(TaskRepository::class))
+            fn (Container $container) => new AssistantKnowledge(
+                $container->get(TaskRepository::class),
+                $container->get(AssistantStatus::class)
+            )
+        );
+
+        $this->container->singleton(
+            AssistantStatus::class,
+            fn (Container $container) => new AssistantStatus(
+                $container->get(TaskRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(NewsletterSubscriberRepository::class),
+                $container->get(NewsletterHistoryRepository::class),
+                $container->get(FollowupRepository::class),
+                $container->get(GuestRepository::class),
+                $container->get(RedemptionRepository::class),
+                $container->get(TicketBuyerRepository::class),
+                $container->get(FreeEntryGate::class),
+                $container->get(AssignmentRepository::class),
+                $container->get(StandingCalculator::class),
+                $container->get(TicketTransferService::class)
+            )
         );
 
         $this->container->singleton(
@@ -1675,7 +1713,8 @@ final class Kernel
             fn (Container $container) => new HelpService(
                 $container->get(PersonRepository::class),
                 $container->get(DoorAccess::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(WelcomeSender::class)
             )
         );
 

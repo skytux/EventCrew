@@ -184,7 +184,9 @@ final class SlotFreedNotice
 
             $recipients ??= $this->people->activeEmailRecipients();
             $finished = true;
-            $facts = ['free' => $free, 'other_rows' => $this->otherOpen($task)];
+            // The event's other open tasks, read once; each reader gets the
+            // ones their board shows (seenBy()).
+            $others = $this->openOthers($task);
 
             foreach ($recipients as $person) {
                 if (in_array($person->id, $entry['told'], true)) {
@@ -199,15 +201,19 @@ final class SlotFreedNotice
                 $entry['told'][] = $person->id;
 
                 // Skip the people who cancelled this slot, anyone blocked,
-                // and the guests a role with Guest sign up off would refuse:
-                // the notice's Sign up would not work for them.
+                // anyone whose board does not show the task, and the guests a
+                // role with Guest sign up off would refuse: the notice's Sign
+                // up would not work for them.
                 if (
                     in_array($person->id, $entry['cancellers'], true)
                     || $person->isBanned()
+                    || ! BoardVisibility::visibleTo($task, $person)
                     || BoardVisibility::blocksGuestSignup($task, $person)
                 ) {
                     continue;
                 }
+
+                $facts = ['free' => $free, 'other_rows' => self::seenBy($others, $person)];
 
                 if (Language::forPerson($person, fn (): bool => $this->tell($person, $task, $prefs, $facts))) {
                     $sent++;
@@ -227,12 +233,13 @@ final class SlotFreedNotice
     /**
      * How many places are still there to step into, 0 when none. A cancelled
      * organize slot frees nothing: it has no limit, and it is not something to
-     * announce to people who may not take it. A task already under way cannot
-     * be stepped into. A task full again needs nobody.
+     * announce to people who may not take it. Nor does a task of an archived
+     * role, which no board shows. A task already under way cannot be stepped
+     * into. A task full again needs nobody.
      */
     private function freePlaces(Task $task): int
     {
-        if ($task->isRestricted() || $task->hasStarted()) {
+        if ($task->isRestricted() || $task->hasStarted() || Roles::isArchived($task->roleSlug)) {
             return 0;
         }
 
@@ -266,13 +273,25 @@ final class SlotFreedNotice
 
     /**
      * The other open tasks of $task's event, for the short board under the
-     * notice: not $task, not restricted to a role, not under way, with a free
-     * place. At most MAX_OTHERS, in time order. Only tasks and counts: no
-     * names.
+     * notice to $person: not $task, not restricted to a role, not under way,
+     * with a free place, shown on $person's board (BoardVisibility::visibleTo();
+     * null: the guest board's) and not refused to them by Guest sign up off.
+     * At most MAX_OTHERS, in time order. Only tasks and counts: no names.
      *
      * @return list<array{task: Task, free: int}>
      */
-    public function otherOpen(Task $task): array
+    public function otherOpen(Task $task, ?Person $person = null): array
+    {
+        return self::seenBy($this->openOthers($task), $person);
+    }
+
+    /**
+     * Every other open task of $task's event, whoever reads it: otherOpen()
+     * before the reader's board and the MAX_OTHERS cap.
+     *
+     * @return list<array{task: Task, free: int}>
+     */
+    public function openOthers(Task $task): array
     {
         $tasks = null !== $task->eventPostId
             ? $this->tasks->forEvent($task->eventPostId)
@@ -298,13 +317,27 @@ final class SlotFreedNotice
             if ($free > 0) {
                 $rows[] = ['task' => $other, 'free' => $free];
             }
-
-            if (count($rows) >= self::MAX_OTHERS) {
-                break;
-            }
         }
 
         return $rows;
+    }
+
+    /**
+     * The rows $person's board shows and they may sign up for, at most
+     * MAX_OTHERS. null: the guest board's.
+     *
+     * @param list<array{task: Task, free: int}> $rows
+     * @return list<array{task: Task, free: int}>
+     */
+    public static function seenBy(array $rows, ?Person $person): array
+    {
+        $seen = array_values(array_filter(
+            $rows,
+            static fn (array $row): bool => BoardVisibility::visibleTo($row['task'], $person)
+                && ! BoardVisibility::blocksGuestSignup($row['task'], $person)
+        ));
+
+        return array_slice($seen, 0, self::MAX_OTHERS);
     }
 
     /**

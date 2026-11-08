@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Telegram;
 
+use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Telegram\NotificationSettingsService;
 
@@ -149,5 +150,95 @@ final class NotificationSettingsServiceTest extends TelegramTestCase
         $saved = json_decode((string) $this->wpdb->updates[0]['data']['notify_prefs'], true);
         self::assertFalse($saved['chat_forward']['email']);
         self::assertTrue($saved['chat_forward']['dm']);
+    }
+
+    private function withNewsletter(): NotificationSettingsService
+    {
+        return new NotificationSettingsService(new PersonRepository(), $this->client(), new NewsletterSubscriberRepository());
+    }
+
+    /** @return array<string, mixed> */
+    private static function verifiedPerson(): array
+    {
+        return [
+            'id' => 7,
+            'email' => 'm@example.test',
+            'display_name' => 'Milla Member',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+            'telegram_chat_id' => 999,
+            'language' => 'fi',
+        ];
+    }
+
+    public function testTheNewsletterRowShowsItIsOnInTheEmailColumn(): void
+    {
+        $this->wpdb->nextRows[] = self::verifiedPerson();
+        $this->wpdb->nextRows[] = ['id' => 3, 'email' => 'm@example.test', 'status' => 'confirmed'];
+
+        $this->withNewsletter()->start(555, 555);
+
+        $rows = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
+        array_pop($rows); // Back
+        $row = array_pop($rows);
+        self::assertSame('📰 Newsletter', $row[0]['text']);
+        self::assertSame('np:noop', $row[1]['callback_data']);
+        self::assertSame(['text' => '✅', 'callback_data' => 'np:newsletter'], $row[2]);
+    }
+
+    public function testWithoutTheSubscriberStoreThereIsNoNewsletterRow(): void
+    {
+        $this->wpdb->nextRows[] = self::verifiedPerson();
+
+        $this->service()->start(555, 555);
+
+        $texts = array_map(
+            static fn (array $row): string => $row[0]['text'],
+            $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
+        );
+        self::assertNotContains('📰 Newsletter', $texts);
+    }
+
+    public function testTurningTheNewsletterOnAddsTheVerifiedAddressAsConfirmed(): void
+    {
+        $this->wpdb->nextRows[] = self::verifiedPerson();
+        $this->wpdb->insert_id = 21;
+
+        $this->withNewsletter()->onToggle([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'data' => 'np:newsletter',
+            'message' => ['message_id' => 42, 'chat' => ['id' => 999]],
+        ]);
+
+        $rows = array_values(array_filter(
+            array_column($this->wpdb->inserts, 'data'),
+            static fn (array $data): bool => isset($data['email'])
+        ));
+        self::assertCount(1, $rows);
+        $row = $rows[0];
+        self::assertSame('m@example.test', $row['email']);
+        self::assertSame('confirmed', $row['status']);
+        self::assertSame('Milla', $row['name']);
+        self::assertSame('fi', $row['language']);
+        self::assertContains('editMessageText', $this->calledMethods());
+    }
+
+    public function testTurningTheNewsletterOffUnsubscribes(): void
+    {
+        $confirmed = ['id' => 3, 'email' => 'm@example.test', 'status' => 'confirmed', 'created_at' => '2026-07-01 10:00:00'];
+        $this->wpdb->nextRows[] = self::verifiedPerson();
+        $this->wpdb->nextRows[] = $confirmed; // subscribed()
+        $this->wpdb->nextRows[] = $confirmed; // findByEmail()
+        $this->wpdb->nextRows[] = $confirmed; // unsubscribe(): find()
+
+        $this->withNewsletter()->onToggle([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'data' => 'np:newsletter',
+            'message' => ['message_id' => 42, 'chat' => ['id' => 999]],
+        ]);
+
+        self::assertSame('unsubscribed', $this->wpdb->updates[0]['data']['status']);
     }
 }

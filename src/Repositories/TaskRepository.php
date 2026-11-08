@@ -7,6 +7,7 @@ namespace EventCrew\Repositories;
 use EventCrew\Database\Schema;
 use EventCrew\Models\Task;
 use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\BoardVisibility;
 use EventCrew\Support\Roles;
 
 /**
@@ -486,9 +487,18 @@ final class TaskRepository
         );
     }
 
+    /**
+     * Whether the guest board (the Telegram group's) has a task with a free
+     * place on $date: what BoardPush re-posts the board for. A task the guest
+     * board does not show (BoardVisibility: an archived role, Guest display
+     * off, restricted) does not count.
+     */
     public function hasOpenSlotsOn(string $date): bool
     {
-        $tasks = $this->forDate($date);
+        $tasks = array_values(array_filter(
+            $this->forDate($date),
+            static fn (Task $task): bool => BoardVisibility::onGuestBoard($task)
+        ));
 
         if ([] === $tasks) {
             return false;

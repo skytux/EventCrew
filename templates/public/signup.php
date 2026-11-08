@@ -36,6 +36,12 @@ $eventcrew_my_tickets = is_array($view['my_tickets'] ?? null)
 $eventcrew_my_upcoming = is_array($view['my_upcoming'] ?? null) ? $view['my_upcoming'] : [];
 /** @var array<int, array{when: string, label: string, status: string}> $eventcrew_my_history */
 $eventcrew_my_history = is_array($view['my_history'] ?? null) ? $view['my_history'] : [];
+// Each paged list's page and page count, by its query argument (signup-pager.php).
+/** @var array<string, array{page: int, pages: int}> $eventcrew_pages */
+$eventcrew_pages = [
+    \EventCrew\Web\SignupBoardView::TASKS_PAGE_ARG => is_array($view['my_upcoming_paging'] ?? null) ? $view['my_upcoming_paging'] : ['page' => 1, 'pages' => 1],
+    \EventCrew\Web\SignupBoardView::PAST_PAGE_ARG => is_array($view['my_history_paging'] ?? null) ? $view['my_history_paging'] : ['page' => 1, 'pages' => 1],
+];
 $eventcrew_manage_endpoint = (string) ($view['manage_endpoint'] ?? '');
 $eventcrew_manage_token = (string) ($view['manage_token'] ?? '');
 /*
@@ -467,8 +473,17 @@ if ($eventcrew_link_expired) {
                     <p class="eventcrew-standing">
                         <span><?php echo esc_html($eventcrew_standing->ratedSummary()); ?></span>
                         &middot;
-                        <span><?php echo esc_html(sprintf(/* translators: %d: number of free-entry credits */
-                            _n('%d credit', '%d credits', $eventcrew_standing->creditBalance, 'eventcrew'),
+                        <?php
+                        // The same counts and words as the bot's My info (Owner
+                        // 2026-11-08), so one translation serves both.
+                        ?>
+                        <span><?php echo esc_html(sprintf(/* translators: %d: completed tasks */
+                            __('Completed tasks: %d', 'eventcrew'),
+                            $eventcrew_standing->completedCount
+                        )); ?></span>
+                        &middot;
+                        <span><?php echo esc_html(sprintf(/* translators: %d: free-entry credits */
+                            __('Free-entry credits: %d', 'eventcrew'),
                             $eventcrew_standing->creditBalance
                         ) . \EventCrew\Support\ExtraTaskCredits::pendingSuffix((int) ($eventcrew_pending ?? 0))); ?></span>
                     </p>
@@ -573,12 +588,19 @@ if ($eventcrew_link_expired) {
                     </div>
                 </section>
             <?php endif; ?>
-            <section class="eventcrew-event eventcrew-me-card">
+            <section class="eventcrew-event eventcrew-me-card" id="eventcrew-my-tasks">
                 <header class="eventcrew-event-head">
-                    <h3 class="eventcrew-event-title"><?php esc_html_e('My tasks', 'eventcrew'); ?></h3>
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Tasks', 'eventcrew'); ?></h3>
                 </header>
+                <?php
+                // Card titles and the empty text follow the bot's Tasks and
+                // Past tasks (Owner 2026-11-08); the web keeps a link to the board.
+                ?>
                 <?php if ([] === $eventcrew_my_upcoming) : ?>
-                    <p class="eventcrew-muted eventcrew-card-body"><?php esc_html_e('You’re not signed up for anything yet — take a look at the board.', 'eventcrew'); ?></p>
+                    <p class="eventcrew-muted eventcrew-card-body">
+                        <?php esc_html_e('No coming tasks.', 'eventcrew'); ?>
+                        <a class="eventcrew-textlink" href="#eventcrew-panel-board" data-eventcrew-goto="eventcrew-panel-board"><?php esc_html_e('See open tasks', 'eventcrew'); ?></a>
+                    </p>
                 <?php else : ?>
                     <ul class="eventcrew-plain-list">
                         <?php foreach ($eventcrew_my_upcoming as $eventcrew_mine) : ?>
@@ -595,17 +617,47 @@ if ($eventcrew_link_expired) {
                                 <?php if (null !== ($eventcrew_mine['used'] ?? null)) : ?>
                                     <span class="eventcrew-used"><?php echo esc_html(\EventCrew\Support\TicketList::usedText((string) $eventcrew_mine['used'])); ?></span>
                                 <?php endif; ?>
+                                <?php
+                                /*
+                                 * Cancel here too, as a text link (Owner 2026-11-08):
+                                 * the board's drop action with the board's question.
+                                 * The page reloads after it, so this card and the
+                                 * Tickets card show the change.
+                                 */
+                                ?>
+                                <form class="eventcrew-action eventcrew-inline-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                                    data-eventcrew-confirm="<?php echo esc_attr((string) ($eventcrew_mine['cancel_ask'] ?? '')); ?>"
+                                    data-eventcrew-reload="eventcrew-my-tasks">
+                                    <input type="hidden" name="action" value="<?php echo esc_attr(\EventCrew\Web\SignupController::DROP_ACTION); ?>">
+                                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                                    <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_mine['task_id']); ?>">
+                                    <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Cancel', 'eventcrew'); ?></button>
+                                </form>
                             </li>
                         <?php endforeach; ?>
                     </ul>
+                    <?php
+                    $eventcrew_pager = ['arg' => \EventCrew\Web\SignupBoardView::TASKS_PAGE_ARG, 'anchor' => 'eventcrew-my-tasks'];
+                    require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-pager.php';
+                    ?>
                 <?php endif; ?>
             </section>
 
-            <?php if ([] !== $eventcrew_my_history) : ?>
-                <section class="eventcrew-event eventcrew-me-card">
-                    <header class="eventcrew-event-head">
-                        <h3 class="eventcrew-event-title"><?php esc_html_e('What you’ve done', 'eventcrew'); ?></h3>
-                    </header>
+            <?php
+            /*
+             * Every past task, a page at a time, and the card drawn even
+             * before the first one with the bot's words (Owner 2026-11-08:
+             * like Telegram's Past tasks).
+             */
+            ?>
+            <section class="eventcrew-event eventcrew-me-card" id="eventcrew-past-tasks">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Past tasks', 'eventcrew'); ?></h3>
+                </header>
+                <?php if ([] === $eventcrew_my_history) : ?>
+                    <p class="eventcrew-muted eventcrew-card-body"><?php echo esc_html(\EventCrew\Telegram\ProfileService::noPastTasksText()); ?></p>
+                <?php else : ?>
                     <ul class="eventcrew-plain-list">
                         <?php foreach ($eventcrew_my_history as $eventcrew_past) : ?>
                             <li>
@@ -620,8 +672,12 @@ if ($eventcrew_link_expired) {
                             </li>
                         <?php endforeach; ?>
                     </ul>
-                </section>
-            <?php endif; ?>
+                    <?php
+                    $eventcrew_pager = ['arg' => \EventCrew\Web\SignupBoardView::PAST_PAGE_ARG, 'anchor' => 'eventcrew-past-tasks'];
+                    require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-pager.php';
+                    ?>
+                <?php endif; ?>
+            </section>
 
             <section class="eventcrew-event eventcrew-me-card" id="eventcrew-my-tickets">
                 <header class="eventcrew-event-head">
@@ -664,6 +720,49 @@ if ($eventcrew_link_expired) {
                                             <span class="eventcrew-mine-when"><?php echo esc_html(\EventCrew\Web\SignupBoardView::humanDate((string) $eventcrew_ticket['when'])); ?></span>
                                             <?php if (null !== ($eventcrew_ticket['used'] ?? null)) : ?>
                                                 <span class="eventcrew-used"><?php echo esc_html(\EventCrew\Support\TicketList::usedText((string) $eventcrew_ticket['used'])); ?></span>
+                                            <?php endif; ?>
+                                            <?php
+                                            /*
+                                             * Give away / Cancel offer, as on the bot's Tickets
+                                             * screen (Owner 2026-11-08). Text links, so the card
+                                             * keeps one button; the form opens under the link.
+                                             */
+                                            $eventcrew_rid = (int) ($eventcrew_ticket['redemption_id'] ?? 0);
+                                            ?>
+                                            <?php if ('' !== (string) ($eventcrew_ticket['offer_to'] ?? '')) : ?>
+                                                <span class="eventcrew-mine-when">
+                                                    <?php
+                                                    /* translators: %s: the name of the person the ticket was offered to */
+                                                    echo esc_html(sprintf(__('Waiting for %s to accept', 'eventcrew'), (string) $eventcrew_ticket['offer_to']));
+                                                    ?>
+                                                </span>
+                                                <form class="eventcrew-action eventcrew-inline-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                                                    data-eventcrew-reload="eventcrew-my-tickets">
+                                                    <input type="hidden" name="action" value="<?php echo esc_attr((string) ($view['cancel_offer_action'] ?? '')); ?>">
+                                                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                                                    <input type="hidden" name="redemption_id" value="<?php echo esc_attr((string) $eventcrew_rid); ?>">
+                                                    <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Cancel offer', 'eventcrew'); ?></button>
+                                                </form>
+                                            <?php elseif (! empty($eventcrew_ticket['give'])) : ?>
+                                                <details class="eventcrew-give">
+                                                    <summary class="eventcrew-textlink"><?php esc_html_e('Give away', 'eventcrew'); ?></summary>
+                                                    <form class="eventcrew-action eventcrew-give-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                                                        data-eventcrew-reload="eventcrew-my-tickets">
+                                                        <input type="hidden" name="action" value="<?php echo esc_attr((string) ($view['give_action'] ?? '')); ?>">
+                                                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                                                        <input type="hidden" name="redemption_id" value="<?php echo esc_attr((string) $eventcrew_rid); ?>">
+                                                        <label for="eventcrew-give-email-<?php echo esc_attr((string) $eventcrew_rid); ?>"><?php esc_html_e('Email', 'eventcrew'); ?></label>
+                                                        <input type="email" class="wp-element-input" name="email" required autocomplete="off"
+                                                            id="eventcrew-give-email-<?php echo esc_attr((string) $eventcrew_rid); ?>">
+                                                        <label for="eventcrew-give-name-<?php echo esc_attr((string) $eventcrew_rid); ?>"><?php esc_html_e('Their name', 'eventcrew'); ?></label>
+                                                        <input type="text" class="wp-element-input" name="name" autocomplete="off"
+                                                            maxlength="<?php echo esc_attr((string) \EventCrew\Support\TicketTransferService::NAME_MAX); ?>"
+                                                            id="eventcrew-give-name-<?php echo esc_attr((string) $eventcrew_rid); ?>">
+                                                        <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Send the offer', 'eventcrew'); ?></button>
+                                                    </form>
+                                                </details>
                                             <?php endif; ?>
                                         </li>
                                     <?php endforeach; ?>
@@ -742,6 +841,56 @@ if ($eventcrew_link_expired) {
             <?php endif; ?>
 
             <?php
+            /*
+             * Language and Telegram, as under the bot's Settings (Owner
+             * 2026-11-08: Settings alike on both, in the same order - details,
+             * notifications, language, the other side, sign out everywhere,
+             * delete). Language posts to the header bar's own handler.
+             */
+            ?>
+            <?php if ('' !== (string) ($view['language_action'] ?? '') && count((array) ($view['language_choices'] ?? [])) > 1) : ?>
+                <section class="eventcrew-event eventcrew-me-card" id="eventcrew-settings-language">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Language', 'eventcrew'); ?></h3>
+                </header>
+                <form class="eventcrew-card-body eventcrew-language eventcrew-language-settings" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                    <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['language_action']); ?>">
+                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here . '#eventcrew-panel-settings'); ?>">
+                    <?php $eventcrew_lang_first = true; ?>
+                    <?php foreach ((array) ($view['language_choices'] ?? []) as $eventcrew_lang_code => $eventcrew_lang_name) : ?>
+                        <?php if (! $eventcrew_lang_first) : ?>
+                            <span aria-hidden="true">|</span>
+                        <?php endif; ?>
+                        <?php $eventcrew_lang_first = false; ?>
+                        <button type="submit" name="language"
+                            value="<?php echo esc_attr((string) $eventcrew_lang_code); ?>"
+                            lang="<?php echo esc_attr((string) $eventcrew_lang_code); ?>"
+                            aria-pressed="<?php echo $eventcrew_lang_code === ($view['language'] ?? '') ? 'true' : 'false'; ?>"><?php echo esc_html((string) $eventcrew_lang_name); ?></button>
+                    <?php endforeach; ?>
+                </form>
+                </section>
+            <?php endif; ?>
+
+            <?php $eventcrew_tg_link = is_array($view['telegram_link'] ?? null) ? $view['telegram_link'] : null; ?>
+            <?php if (null !== $eventcrew_tg_link) : ?>
+                <section class="eventcrew-event eventcrew-me-card" id="eventcrew-settings-telegram">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Telegram', 'eventcrew'); ?></h3>
+                </header>
+                <div class="eventcrew-card-body">
+                    <?php if (! empty($eventcrew_tg_link['linked'])) : ?>
+                        <p class="eventcrew-muted"><?php esc_html_e('Your Telegram is linked to this account.', 'eventcrew'); ?></p>
+                        <a class="eventcrew-textlink" href="<?php echo esc_url((string) $eventcrew_tg_link['url']); ?>" target="_blank" rel="noopener"><?php esc_html_e('Open in Telegram', 'eventcrew'); ?></a>
+                    <?php else : ?>
+                        <p class="eventcrew-muted"><?php esc_html_e('The bot asks for your email and sends a link there; opening it links your Telegram to this account.', 'eventcrew'); ?></p>
+                        <a class="eventcrew-textlink" href="<?php echo esc_url((string) $eventcrew_tg_link['url']); ?>" target="_blank" rel="noopener"><?php esc_html_e('Sign in with Telegram', 'eventcrew'); ?></a>
+                    <?php endif; ?>
+                </div>
+                </section>
+            <?php endif; ?>
+
+            <?php
             $eventcrew_revoke_action = (string) ($view['revoke_action'] ?? '');
 
             if ('' !== $eventcrew_revoke_action) :
@@ -786,24 +935,65 @@ if ($eventcrew_link_expired) {
 
         <?php
         /*
-         * Help: the welcome text for everyone. An organizer also gets the
-         * organizer guide lower down, with a link to it at the top. Both are
-         * the same text the welcome message and the organizer guide send.
+         * Help, with the same parts and names as the bot's Help menu (Owner
+         * 2026-11-08): How this works? (the welcome text), Commands (the bot's
+         * commands, only when there is a bot to use them in) and FAQ (Faq, one
+         * disclosure per question). An organizer also gets the organizer guide
+         * lower down. A row of text links at the top jumps to each part and
+         * opens the crew guide.
          */
+        $eventcrew_help_bot = \EventCrew\Support\TelegramLogin::botUsername();
+        $eventcrew_help_guide = \EventCrew\Support\RoleGuide::emailAction();
         ?>
         <section class="eventcrew-panel eventcrew-help" id="<?php echo esc_attr(\EventCrew\Support\HelpPage::PANEL_ANCHOR); ?>" data-eventcrew-panel="help" aria-labelledby="eventcrew-tab-help">
             <h2 class="eventcrew-panel-title"><?php esc_html_e('Help', 'eventcrew'); ?></h2>
 
-            <?php if ($eventcrew_person->isOrganizer) : ?>
-                <p class="eventcrew-links eventcrew-help-orglink">
-                    <a class="eventcrew-textlink" href="#<?php echo esc_attr(\EventCrew\Support\HelpPage::ORGANIZER_ANCHOR); ?>"><?php esc_html_e('🧭 Organizer guide ↓', 'eventcrew'); ?></a>
-                </p>
-            <?php endif; ?>
+            <p class="eventcrew-links eventcrew-help-orglink">
+                <a class="eventcrew-textlink" href="#eventcrew-help-guide"><?php echo esc_html('📖 ' . __('How this works?', 'eventcrew')); ?></a>
+                <?php if ('' !== $eventcrew_help_bot) : ?>
+                    · <a class="eventcrew-textlink" href="#eventcrew-help-commands"><?php echo esc_html('⌨️ ' . __('Commands', 'eventcrew')); ?></a>
+                <?php endif; ?>
+                · <a class="eventcrew-textlink" href="#eventcrew-help-faq"><?php echo esc_html('💡 ' . __('FAQ', 'eventcrew')); ?></a>
+                <?php if (null !== $eventcrew_help_guide) : ?>
+                    · <a class="eventcrew-textlink" href="<?php echo esc_url($eventcrew_help_guide['url']); ?>" target="_blank" rel="noopener"><?php echo esc_html($eventcrew_help_guide['label']); ?></a>
+                <?php endif; ?>
+                <?php if ($eventcrew_person->isOrganizer) : ?>
+                    · <a class="eventcrew-textlink" href="#<?php echo esc_attr(\EventCrew\Support\HelpPage::ORGANIZER_ANCHOR); ?>"><?php esc_html_e('🧭 Organizer guide ↓', 'eventcrew'); ?></a>
+                <?php endif; ?>
+            </p>
 
+            <h2 class="eventcrew-help-part" id="eventcrew-help-guide"><?php echo esc_html('📖 ' . __('How this works?', 'eventcrew')); ?></h2>
             <?php
             // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HelpPage escapes every piece of text.
             echo \EventCrew\Support\HelpPage::cards(\EventCrew\Support\WelcomeSender::helpText());
             ?>
+
+            <?php if ('' !== $eventcrew_help_bot) : ?>
+                <h2 class="eventcrew-help-part" id="eventcrew-help-commands"><?php echo esc_html('⌨️ ' . __('Commands', 'eventcrew')); ?></h2>
+                <section class="eventcrew-event eventcrew-help-card">
+                    <div class="eventcrew-card-body">
+                        <p><?php esc_html_e('In a private chat with the bot you can also use these commands, or just write what you need in your own words.', 'eventcrew'); ?></p>
+                        <ul class="eventcrew-help-list">
+                            <?php foreach (\EventCrew\Telegram\HelpService::everyoneLines() as $eventcrew_help_line) : ?>
+                                <li><?php echo esc_html($eventcrew_help_line); ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <p><a class="eventcrew-textlink" href="<?php echo esc_url('https://t.me/' . rawurlencode($eventcrew_help_bot)); ?>" target="_blank" rel="noopener"><?php esc_html_e('Open in Telegram', 'eventcrew'); ?></a></p>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <h2 class="eventcrew-help-part" id="eventcrew-help-faq"><?php echo esc_html('💡 ' . __('FAQ', 'eventcrew')); ?></h2>
+            <section class="eventcrew-event eventcrew-help-card eventcrew-faq">
+                <div class="eventcrew-card-body">
+                    <?php foreach (\EventCrew\Support\Faq::items() as $eventcrew_faq) : ?>
+                        <details class="eventcrew-faq-item">
+                            <summary><?php echo esc_html($eventcrew_faq['q']); ?></summary>
+                            <p><?php echo esc_html($eventcrew_faq['a']); ?></p>
+                        </details>
+                    <?php endforeach; ?>
+                </div>
+            </section>
 
             <?php if ($eventcrew_person->isOrganizer) : ?>
                 <div class="eventcrew-help-organizer" id="<?php echo esc_attr(\EventCrew\Support\HelpPage::ORGANIZER_ANCHOR); ?>">
@@ -1998,9 +2188,10 @@ if ($eventcrew_link_expired) {
                             <label><input type="checkbox" name="role_restricted" value="1"<?php echo $eventcrew_role_editing['restricted'] ? ' checked' : ''; ?>> <?php esc_html_e('Only people with this role', 'eventcrew'); ?></label>
                             <label><input type="checkbox" name="role_every_night" value="1"<?php echo $eventcrew_role_editing['every_night'] ? ' checked' : ''; ?>> <?php esc_html_e('Add to every night', 'eventcrew'); ?></label>
                             <label><input type="checkbox" name="role_sales_desk" value="1"<?php echo $eventcrew_role_editing['sales_desk'] ? ' checked' : ''; ?>> <?php esc_html_e('Opens the sales desk', 'eventcrew'); ?></label>
-                            <?php // Guest sign up greys out while Guest display is off (eventcrew.css). ?>
+                            <?php // Guest sign up greys out while Guest display and Members display are off (eventcrew.css). ?>
                             <label><input type="checkbox" name="role_on_board" value="1"<?php echo ($eventcrew_role_editing['on_board'] ?? true) ? ' checked' : ''; ?>> <?php esc_html_e('Guest display: people without this role see its tasks', 'eventcrew'); ?></label>
-                            <label class="eventcrew-needs-display"><input type="checkbox" name="role_guest_signup" value="1"<?php echo ($eventcrew_role_editing['guest_signup'] ?? true) ? ' checked' : ''; ?>> <?php esc_html_e('Guest sign up: people without this role can sign up (needs Guest display)', 'eventcrew'); ?></label>
+                            <label><input type="checkbox" name="role_members_display" value="1"<?php echo ($eventcrew_role_editing['members_display'] ?? false) ? ' checked' : ''; ?>> <?php esc_html_e('Members display: signed-in members see its tasks, even without the role', 'eventcrew'); ?></label>
+                            <label class="eventcrew-needs-display"><input type="checkbox" name="role_guest_signup" value="1"<?php echo ($eventcrew_role_editing['guest_signup'] ?? true) ? ' checked' : ''; ?>> <?php esc_html_e('Guest sign up: people without this role can sign up (needs Guest or Members display)', 'eventcrew'); ?></label>
                             <label><input type="checkbox" name="role_anonymous" value="1"<?php echo ($eventcrew_role_editing['anonymous'] ?? false) ? ' checked' : ''; ?>> <?php esc_html_e('Anonymous display: hide the names from people without this role', 'eventcrew'); ?></label>
                         </fieldset>
                         <p>
@@ -2662,6 +2853,15 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 4000);
     }
 
+    // A toast carried over a reload by a Me-tab form (data-eventcrew-reload).
+    try {
+        var carried = sessionStorage.getItem('eventcrew_toast');
+        if (carried) {
+            sessionStorage.removeItem('eventcrew_toast');
+            showToast(carried);
+        }
+    } catch (err) {}
+
     /*
      * Take the notice out of the address bar once it has been shown.
      *
@@ -3161,6 +3361,20 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
             }
             if (res && res.notice) {
                 showToast(res.notice);
+            }
+            /*
+             * A Me-tab form (Cancel, Give away, Take someone's task) changes
+             * cards the board swap does not redraw: reload onto its card, and
+             * carry the toast over the reload. res.changed === false means
+             * nothing happened (a typo in the email), so the form stays filled.
+             */
+            var reloadTo = form.getAttribute('data-eventcrew-reload');
+            if (reloadTo && res && false !== res.changed) {
+                try { sessionStorage.setItem('eventcrew_toast', res.notice || ''); } catch (err) {}
+                history.replaceState(null, '', window.location.pathname + window.location.search + '#' + reloadTo);
+                window.location.reload();
+
+                return;
             }
             /*
              * The sign-in link was actually sent: reveal the "check your inbox"

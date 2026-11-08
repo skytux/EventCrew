@@ -199,19 +199,7 @@ final class TransferPage
      */
     public function sentText(TicketTransfer $transfer): string
     {
-        if ($transfer->isIssued()) {
-            return sprintf(
-                /* translators: %s: the receiver's name */
-                __('Done. %s has your ticket now. Your own ticket no longer works.', 'eventcrew'),
-                $this->transfers->receiverName($transfer)
-            );
-        }
-
-        return sprintf(
-            /* translators: %s: the name of the person the ticket was offered to */
-            __('Sent. When %s accepts, the ticket moves to them. Until then your own ticket works.', 'eventcrew'),
-            $transfer->offeredTo()
-        );
+        return $this->transfers->sentText($transfer);
     }
 
     /** The first question: a member's name, or an email address. */

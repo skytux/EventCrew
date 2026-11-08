@@ -45,7 +45,8 @@ final class AssistantKnowledge
     private const EVENT_TEXT_CHARS = 600;
 
     public function __construct(
-        private readonly TaskRepository $tasks
+        private readonly TaskRepository $tasks,
+        private readonly ?AssistantStatus $status = null
     ) {
     }
 
@@ -70,15 +71,27 @@ final class AssistantKnowledge
      * since they are never on the board (Owner 2026-11-07: the helper told a
      * VJ there were no VJ tasks). An organizer ($organizer) sees every role
      * and every role task, since they can put anyone on any of them.
+     * $member: a known person in a private chat, whose board also shows the
+     * tasks of the roles ticked Members display (BoardVisibility); otherwise
+     * only the guest board's tasks are offered.
+     *
+     * The site's live state (AssistantStatus) goes in as "Current status" for
+     * an organizer, and $personId's own tasks, tickets and credits as "This
+     * person" (0 = none: a group chat or an unknown person).
      *
      * @param array<int, string> $roleSlugs
      * @return array{facts: string, tasks: array<int, int>}
      *     tasks: the ids of the board tasks listed, which are the only ones
      *     the helper may offer to sign someone up for with /join.
      */
-    public function build(array $roleSlugs = [], bool $organizer = false): array
+    public function build(
+        array $roleSlugs = [],
+        bool $organizer = false,
+        bool $member = false,
+        int $personId = 0
+    ): array
     {
-        [$taskText, $taskIds] = $this->tasksText();
+        [$taskText, $taskIds] = $this->tasksText($member, $organizer);
 
         $parts = [
             '## Today' . "\n" . $this->todayLine(),
@@ -115,10 +128,33 @@ final class AssistantKnowledge
             $parts[] = '## Site pages' . "\n" . $pages;
         }
 
+        $parts = [...$parts, ...$this->statusParts($organizer, $personId)];
+
         // Private-chat commands for organizers and members (ag-people).
         $parts[] = '## Private-chat commands' . "\n" . self::chatCommandsText($organizer);
 
         return ['facts' => implode("\n\n", $parts), 'tasks' => $taskIds];
+    }
+
+    /**
+     * "## Current status" (organizers) and "## This person", read fresh.
+     *
+     * @return list<string>
+     */
+    private function statusParts(bool $organizer, int $personId): array
+    {
+        $parts = [];
+        $person = null === $this->status ? '' : $this->status->personText($personId);
+
+        if ('' !== $person) {
+            $parts[] = '## This person' . "\n" . $person;
+        }
+
+        if ($organizer && null !== $this->status) {
+            $parts[] = '## Current status' . "\n" . $this->status->text();
+        }
+
+        return $parts;
     }
 
     /**
@@ -132,6 +168,7 @@ final class AssistantKnowledge
             '- /name new name and /email new address: change their own name or email. A new email changes'
                 . ' only after they open the link sent to it.',
             '- These work only in a private chat with the bot.',
+            '- The newsletter (the announcement email) is turned on or off in Settings → Notifications, last row.',
         ];
 
         if ($organizer) {
@@ -144,6 +181,8 @@ final class AssistantKnowledge
                     . ' /newboard, /sendtickets (or /sendtickets cancel).',
                 '- Organizers: /tell task ; message sends the message to everyone on that task, by Telegram'
                     . ' in their own language, or by email without Telegram; at most 5 an hour.',
+                '- Organizers: /subscribe email [fi|en|...] adds someone to the newsletter; they get a'
+                    . ' confirmation email and are on the list once they open it.',
                 '- A date first (/mark 14.11. Milla ; late) picks another night. Every change is confirmed'
                     . ' with a button first.',
             ];
@@ -157,9 +196,9 @@ final class AssistantKnowledge
      *
      * @return array<int, int>
      */
-    public function offeredTaskIds(): array
+    public function offeredTaskIds(bool $member = false, bool $organizer = false): array
     {
-        return array_map(static fn (Task $task): int => $task->id, $this->offeredTasks());
+        return array_map(static fn (Task $task): int => $task->id, $this->offeredTasks($member, $organizer));
     }
 
     /**
@@ -247,15 +286,23 @@ final class AssistantKnowledge
     }
 
     /**
-     * The tasks anyone may take: the ones on the board.
+     * The tasks anyone may take: the ones on the guest board, and for a
+     * member ($member) also those of the roles ticked Members display; an
+     * organizer ($organizer) sees every role's (BoardVisibility). Never an
+     * archived role's.
      *
      * @return array<int, Task>
      */
-    private function offeredTasks(): array
+    private function offeredTasks(bool $member = false, bool $organizer = false): array
     {
         return array_values(array_filter(
             $this->tasks->upcoming(self::TASK_LIMIT),
             static fn (Task $task): bool => ! $task->isRestricted() && ! $task->hasStarted()
+                && match (true) {
+                    $organizer => ! Roles::isArchived($task->roleSlug),
+                    $member => BoardVisibility::onMembersBoard($task),
+                    default => BoardVisibility::onGuestBoard($task),
+                }
         ));
     }
 
@@ -276,6 +323,7 @@ final class AssistantKnowledge
             $this->tasks->upcoming(self::TASK_LIMIT),
             static fn (Task $task): bool => $task->isRestricted()
                 && ! $task->hasStarted()
+                && ! Roles::isArchived($task->roleSlug)
                 && ($organizer || in_array($task->roleSlug, $roleSlugs, true))
         ));
 
@@ -294,7 +342,8 @@ final class AssistantKnowledge
                 'Every coming role task, of every role: this person is an organizer. They are not on the group'
                     . ' board. The organizer signs themselves up for one of their own roles with /board. To put'
                     . ' anyone on any task, also one for a role that person does not hold, give the action'
-                    . ' /assign <task> ; <person> (or /board, ➕ Add someone); /unassign takes someone off. To'
+                    . ' /assign <task> ; <person> (or /board, ➕ Add someone); Organize takes only someone who is'
+                    . ' an organizer, which the bot checks. /unassign takes someone off. To'
                     . ' change a task give /edittask <task> ; <field> <value>; /addtask, /deletetask, /maketasks'
                     . ' and /mailtasks add one, delete one, create a night\'s tasks and send the open-task email.',
             ];
@@ -319,9 +368,9 @@ final class AssistantKnowledge
     /**
      * @return array{0: string, 1: array<int, int>}
      */
-    private function tasksText(): array
+    private function tasksText(bool $member = false, bool $organizer = false): array
     {
-        $tasks = $this->offeredTasks();
+        $tasks = $this->offeredTasks($member, $organizer);
 
         if ([] === $tasks) {
             return ['No open tasks are listed.', []];

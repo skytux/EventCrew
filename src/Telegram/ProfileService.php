@@ -13,6 +13,7 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\Dates;
+use EventCrew\Support\Paging;
 use EventCrew\Support\StandingBar;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketList;
@@ -101,11 +102,13 @@ final class ProfileService
     /**
      * /tasks and the 📋 Tasks button under /me: the coming tasks, each with a
      * cancel button (the board has none for a full task), then Take over a
-     * task and Past tasks (Owner 2026-11-07).
+     * task and Past tasks (Owner 2026-11-07). Paging::PER_PAGE tasks to a
+     * page, with ◀️ ▶️ under the cancel buttons (Owner 2026-11-08).
      *
      * @param bool $isPrivate See onMe(); the answer is a DM either way.
+     * @param int $page From 1; past the last page shows the last.
      */
-    public function onMyTasks(int $telegramUserId, int $chatId, bool $isPrivate = true): void
+    public function onMyTasks(int $telegramUserId, int $chatId, bool $isPrivate = true, int $page = 1): void
     {
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
@@ -116,14 +119,28 @@ final class ProfileService
         }
 
         [$coming, $cancelRows] = $this->upcoming($person->id);
-        $lines = array_merge(['📋 ' . __('Tasks', 'eventcrew')], $this->comingBlock($coming));
+        // A line and its cancel row belong together, so both lists are cut
+        // at the same place: upcoming() gives a row only for a task that
+        // still exists, hence the pairing by key rather than by position.
+        $paged = Paging::slice(array_keys($coming), $page);
+        $pageLines = array_map(static fn (int $i): string => $coming[$i], $paged['items']);
+        $pageRows = array_values(array_filter(
+            array_map(static fn (int $i): ?array => $cancelRows[$i] ?? null, $paged['items'])
+        ));
+        $title = '📋 ' . __('Tasks', 'eventcrew')
+            . ($paged['pages'] > 1 ? MessagePages::note($paged['page'] - 1, $paged['pages']) : '');
+        $lines = array_merge([$title], $this->comingBlock($pageLines));
 
         $this->deliver(
             $telegramUserId,
             $chatId,
             $isPrivate,
             implode("\n", $lines),
-            ['inline_keyboard' => array_merge($cancelRows, MenuButtons::tasksRows())]
+            ['inline_keyboard' => array_merge(
+                $pageRows,
+                MenuButtons::pageRows(MenuButtons::MY_TASKS, $paged['page'], $paged['pages']),
+                MenuButtons::tasksRows()
+            )]
         );
     }
 
@@ -147,9 +164,13 @@ final class ProfileService
     }
 
     /**
+     * Past tasks, newest first, Paging::PER_PAGE to a page with ◀️ ▶️
+     * (Owner 2026-11-08).
+     *
      * @param bool $isPrivate See onMe(); the answer is a DM either way.
+     * @param int $page From 1; past the last page shows the last.
      */
-    public function onMyHistory(int $telegramUserId, int $chatId, bool $isPrivate = true): void
+    public function onMyHistory(int $telegramUserId, int $chatId, bool $isPrivate = true, int $page = 1): void
     {
         $person = $this->people->findByTelegramUserId($telegramUserId);
 
@@ -159,14 +180,35 @@ final class ProfileService
             return;
         }
 
-        $past = $this->pastLines($person->id);
+        $paged = Paging::slice($this->pastLines($person->id), $page);
+        // "page 2 of 3" closes a paged list: after "Your past tasks:" it would
+        // split the heading from its colon.
+        $foot = $paged['pages'] > 1
+            /* translators: 1: page number, 2: number of pages */
+            ? ['', sprintf(__('page %1$d of %2$d', 'eventcrew'), $paged['page'], $paged['pages'])]
+            : [];
 
-        $body = [] === $past
-            ? __('No past tasks yet — your history starts once you’ve worked one.', 'eventcrew')
-            : implode("\n", array_merge([__('Your past tasks:', 'eventcrew')], $past));
+        $body = [] === $paged['items']
+            ? self::noPastTasksText()
+            : implode("\n", array_merge([__('Your past tasks:', 'eventcrew')], $paged['items'], $foot));
 
         // Past tasks is a button under Tasks, so Back goes there.
-        $this->deliver($telegramUserId, $chatId, $isPrivate, $body, MenuButtons::back(MenuButtons::MY_TASKS));
+        $this->deliver(
+            $telegramUserId,
+            $chatId,
+            $isPrivate,
+            $body,
+            ['inline_keyboard' => array_merge(
+                MenuButtons::pageRows(MenuButtons::HISTORY, $paged['page'], $paged['pages']),
+                [MenuButtons::backRow(MenuButtons::MY_TASKS)]
+            )]
+        );
+    }
+
+    /** What Past tasks says before the first one; the web's Past tasks card says the same. */
+    public static function noPastTasksText(): string
+    {
+        return __('No past tasks yet — your history starts once you’ve worked one.', 'eventcrew');
     }
 
     /**
@@ -355,7 +397,7 @@ final class ProfileService
      * The person's coming tasks, soonest first: a line for each, and a cancel
      * button row for each task that still exists. The button sends
      * BoardService's leave tap (l:<id>), which asks "Cancel …?" with what it
-     * costs before anything changes.
+     * costs before anything changes. A row has its line's key.
      *
      * @return array{0: array<int, string>, 1: array<int, array<int, array{text: string, callback_data: string}>>}
      */
@@ -380,7 +422,8 @@ final class ProfileService
             $lines[] = $this->line($entry, $task, AssignmentStatus::SIGNED_UP !== $entry['assignment']->status);
 
             if (null !== $task) {
-                $rows[] = [[
+                // Keyed like its line, so a page of lines finds its rows.
+                $rows[count($lines) - 1] = [[
                     'text' => '✖️ ' . sprintf(
                         /* translators: 1: role, 2: day */
                         __('Cancel %1$s, %2$s', 'eventcrew'),

@@ -107,7 +107,7 @@ final class OpenTaskCall
     public function sendForNextOpenDate(): int
     {
         foreach ($this->upcomingDates() as $date) {
-            if ($this->tasks->hasOpenSlotsOn($date)) {
+            if ($this->hasOpenSlots($date)) {
                 return $this->sendForDate($date);
             }
         }
@@ -149,7 +149,7 @@ final class OpenTaskCall
                 continue;
             }
 
-            $due = $this->dueDatesFor($person->id, $leads, $now);
+            $due = $this->dueDatesFor($person, $leads, $now);
 
             if ([] === $due) {
                 continue;
@@ -179,8 +179,9 @@ final class OpenTaskCall
      *
      * @return array<string, array<int, string>> date => kinds
      */
-    private function dueDatesFor(int $personId, array $leads, string $now): array
+    private function dueDatesFor(Person $person, array $leads, string $now): array
     {
+        $personId = $person->id;
         $nowTime = strtotime($now);
         $furthest = max([0, ...array_values($leads)]);
         $due = [];
@@ -204,7 +205,7 @@ final class OpenTaskCall
                 break;
             }
 
-            if (! $this->hasOpenSlots($date)) {
+            if (! $this->hasOpenSlots($date, $person)) {
                 continue;
             }
 
@@ -252,7 +253,8 @@ final class OpenTaskCall
             return false;
         }
 
-        $digest = $this->digest(self::DIGEST_TASKS);
+        $digest = $this->digest(self::DIGEST_TASKS, $person);
+
         // The texts are the Messages page templates (MessageTemplates). One
         // See open tasks button, no Sign up per task (Owner 2026-11-07).
         $context = [
@@ -306,6 +308,12 @@ final class OpenTaskCall
                 break;
             }
 
+            // Nothing open on the date on their board (BoardVisibility): a
+            // role hidden from them, or closed to them by Guest sign up off.
+            if (! $this->hasOpenSlots($date, $person)) {
+                continue;
+            }
+
             if ($this->ledger->hasSent(self::KIND, $person->id, $date)) {
                 continue;
             }
@@ -330,9 +338,12 @@ final class OpenTaskCall
      * dates that triggered the send are the soonest open ones, so they head the
      * list naturally; the rest is what is behind them.
      *
+     * Only the tasks $person's board shows and they may sign up for
+     * (BoardVisibility).
+     *
      * @return array<string, array<int, array{0: Task, 1: int}>> date => open-task lines
      */
-    private function digest(int $limit): array
+    private function digest(int $limit, Person $person): array
     {
         $blocks = [];
         $counted = 0;
@@ -342,7 +353,7 @@ final class OpenTaskCall
                 break;
             }
 
-            $lines = $this->openTaskLines($date);
+            $lines = $this->openTaskLines($date, $person);
 
             if ([] === $lines) {
                 continue;
@@ -416,10 +427,13 @@ final class OpenTaskCall
         return $this->starts[$date] = (int) $at;
     }
 
-    /** A date has something worth calling about when it has an open line. */
-    private function hasOpenSlots(string $date): bool
+    /**
+     * A date has something worth calling about when it has an open line: for
+     * $person, one their board shows; without, one anybody's board shows.
+     */
+    private function hasOpenSlots(string $date, ?Person $person = null): bool
     {
-        return [] !== $this->openTaskLines($date);
+        return [] !== $this->openTaskLines($date, $person);
     }
 
     /**
@@ -430,14 +444,34 @@ final class OpenTaskCall
      * same two queries would run once per person per date - the difference
      * between a couple of queries and a couple of hundred on a decent crew.
      *
+     * With $person, only the lines their board shows and they may sign up
+     * for (BoardVisibility); the read itself is shared by everyone.
+     *
      * @return array<int, array{0: Task, 1: int}>
      */
-    private function openTaskLines(string $date): array
+    private function openTaskLines(string $date, ?Person $person = null): array
     {
-        if (isset($this->openLines[$date])) {
-            return $this->openLines[$date];
+        $lines = $this->openLines[$date] ??= $this->readOpenLines($date);
+
+        if (null === $person) {
+            return $lines;
         }
 
+        return array_values(array_filter(
+            $lines,
+            static fn (array $line): bool => BoardVisibility::visibleTo($line[0], $person)
+                && ! BoardVisibility::blocksGuestSignup($line[0], $person)
+        ));
+    }
+
+    /**
+     * Every open line on one date, whoever reads it: not restricted, not of an
+     * archived role, with a free place.
+     *
+     * @return array<int, array{0: Task, 1: int}>
+     */
+    private function readOpenLines(string $date): array
+    {
         $tasks = $this->tasks->forDate($date);
         $occupancy = $this->tasks->occupancyFor(array_map(static fn ($task): int => $task->id, $tasks));
         $lines = [];
@@ -447,7 +481,8 @@ final class OpenTaskCall
 
             // A restricted task (Organize, DJ, ...) has no limit and is only for
             // its role holders: it is never a place this call asks people to fill.
-            if ($task->isRestricted()) {
+            // An archived role's tasks are on no board.
+            if ($task->isRestricted() || Roles::isArchived($task->roleSlug)) {
                 continue;
             }
 
@@ -455,8 +490,6 @@ final class OpenTaskCall
                 $lines[] = [$task, $taken];
             }
         }
-
-        $this->openLines[$date] = $lines;
 
         return $lines;
     }

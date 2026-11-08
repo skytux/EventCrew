@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Support\RoleGuide;
+
 /**
  * The buttons that replace the bot's old one-purpose commands: under /me
  * (Tickets, Tasks, Settings, Help and, for organizers, Admin - each a screen
@@ -51,6 +53,26 @@ final class MenuButtons
     public const SETTINGS = 'mn:set';
     public const HELP = 'mn:help';
     public const ADMIN = 'mn:admin';
+
+    /**
+     * The screens under Help (Owner 2026-11-08): How this works? (the
+     * welcome guide), Commands (the command list), FAQ (paged as
+     * mn:faq:<page>) and, for organizers, the organizer guide.
+     */
+    public const HELP_GUIDE = 'mn:hguide';
+    public const HELP_COMMANDS = 'mn:hcmd';
+    public const FAQ = 'mn:faq';
+    public const HELP_ORGANIZER = 'mn:horg';
+
+    /**
+     * Under Settings (Owner 2026-11-08, as on the web): change name and
+     * email (the /name and /email flows), sign out of the web everywhere
+     * and delete my data, the last two asked first (MemberCommands).
+     */
+    public const NAME = 'mn:name';
+    public const EMAIL = 'mn:email';
+    public const SIGN_OUT = 'mn:signout';
+    public const DELETE = 'mn:delete';
     public const ROSTER = 'mn:roster';
     public const DOOR = 'mn:door';
 
@@ -75,6 +97,13 @@ final class MenuButtons
         'settings' => self::SETTINGS,
     ];
 
+    /**
+     * The screens that come in pages (Paging, 25 to a page): ◀️ and ▶️ send
+     * the screen's data, ":" and the page, from 1 - "mn:hist:2". Page 1 is
+     * the plain data, so the button that opens the screen opens page 1.
+     */
+    public const PAGED = [self::MY_TASKS, self::HISTORY];
+
     /** Followed by the night ("" = the next one), as typed after /door. */
     public const DOOR_LIST = 'mn:dl:';
     public const GUEST_LIST = 'mn:gl:';
@@ -83,6 +112,56 @@ final class MenuButtons
     public static function forVerb(string $verb): string
     {
         return self::VERBS[$verb] ?? '';
+    }
+
+    /**
+     * The data of page $page of screen $screen (one of PAGED).
+     */
+    public static function pageData(string $screen, int $page): string
+    {
+        return $page <= 1 ? $screen : $screen . ':' . $page;
+    }
+
+    /**
+     * The screen and page a paged tap asks for ("mn:hist:2" → ["mn:hist", 2]),
+     * or null when $data is not a page of a paged screen.
+     *
+     * @return array{0: string, 1: int}|null
+     */
+    public static function parsePage(string $data): ?array
+    {
+        foreach (self::PAGED as $screen) {
+            if ($data === $screen) {
+                return [$screen, 1];
+            }
+
+            if (1 === preg_match('/^' . preg_quote($screen, '/') . ':(\d{1,5})$/', $data, $m)) {
+                return [$screen, max(1, (int) $m[1])];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The ◀️ ▶️ row under page $page of $pages of $screen, side by side like
+     * MessagePages' row; none when everything fits on one page.
+     *
+     * @return array<int, array<int, array{text: string, callback_data: string}>>
+     */
+    public static function pageRows(string $screen, int $page, int $pages): array
+    {
+        $row = [];
+
+        if ($page > 1) {
+            $row[] = self::button('◀️', self::pageData($screen, $page - 1));
+        }
+
+        if ($page < $pages) {
+            $row[] = self::button('▶️', self::pageData($screen, $page + 1));
+        }
+
+        return [] === $row ? [] : [$row];
     }
 
     /**
@@ -138,18 +217,55 @@ final class MenuButtons
 
     /**
      * The buttons under the Settings screen. Web sign-in lives here now
-     * (Owner 2026-11-07: rarely needed).
+     * (Owner 2026-11-07: rarely needed). In the order of the web's Settings
+     * tab (Owner 2026-11-08: Settings alike on both): name and email,
+     * notifications, language, the other side (web sign-in here, Telegram
+     * there), sign out everywhere, delete my data.
      *
      * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
      */
     public static function settings(): array
     {
         return ['inline_keyboard' => [
+            [self::button('✏️ ' . __('Change name', 'eventcrew'), self::NAME)],
+            [self::button('📧 ' . __('Change email', 'eventcrew'), self::EMAIL)],
             [self::button('🔔 ' . __('Choose notifications', 'eventcrew'), self::NOTIFICATIONS)],
             [self::button('🌐 ' . __('Change language', 'eventcrew'), self::LANGUAGE)],
             [self::button('🔑 ' . __('Get a web sign-in link', 'eventcrew'), self::WEB)],
+            [self::button('🚪 ' . __('Sign out everywhere', 'eventcrew'), self::SIGN_OUT)],
+            [self::button('🗑 ' . __('Delete my data', 'eventcrew'), self::DELETE)],
             self::backRow(),
         ]];
+    }
+
+    /**
+     * The Help menu, one button to a row (Owner 2026-11-08): How this works?,
+     * Commands, FAQ, the organizer guide for an organizer, the crew guide as
+     * a link when one is set, and Back to My info.
+     *
+     * @return array{inline_keyboard: array<int, array<int, array<string, string>>>}
+     */
+    public static function help(bool $organizer = false): array
+    {
+        $rows = [
+            [self::button('📖 ' . __('How this works?', 'eventcrew'), self::HELP_GUIDE)],
+            [self::button('⌨️ ' . __('Commands', 'eventcrew'), self::HELP_COMMANDS)],
+            [self::button('💡 ' . __('FAQ', 'eventcrew'), self::FAQ)],
+        ];
+
+        if ($organizer) {
+            $rows[] = [self::button('🧭 ' . __('Organizer guide', 'eventcrew'), self::HELP_ORGANIZER)];
+        }
+
+        $guide = RoleGuide::emailAction();
+
+        if (null !== $guide) {
+            $rows[] = [['text' => $guide['label'], 'url' => $guide['url']]];
+        }
+
+        $rows[] = self::backRow();
+
+        return ['inline_keyboard' => $rows];
     }
 
     /**

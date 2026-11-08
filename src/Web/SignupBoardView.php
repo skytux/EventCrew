@@ -16,9 +16,11 @@ use EventCrew\Support\Dates;
 use EventCrew\Support\EventName;
 use EventCrew\Support\ExtraTaskCredits;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\Paging;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\TakeoverService;
 use EventCrew\Support\TicketList;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketTransferService;
@@ -43,8 +45,13 @@ use EventCrew\Telegram\TicketRedemptionService;
  */
 final class SignupBoardView
 {
-    /** How many finished tasks the profile lists. Enough to recognise, not a ledger. */
-    private const HISTORY_LIMIT = 5;
+    /**
+     * The query arguments that carry the page of the Tasks and Past tasks
+     * cards (Paging, Owner 2026-11-08), one per list so paging one keeps the
+     * other where it was.
+     */
+    public const TASKS_PAGE_ARG = 'tasks_page';
+    public const PAST_PAGE_ARG = 'past_page';
 
     public function __construct(
         private readonly TaskRepository $tasks,
@@ -55,14 +62,16 @@ final class SignupBoardView
         private readonly SignupService $signup,
         // Optional: with it a ticket given away reads "Given to …", as in
         // the bot's Tickets screen.
-        private readonly ?TicketTransferService $transfers = null
+        private readonly ?TicketTransferService $transfers = null,
+        // Optional: with it a full task offers Take someone's task.
+        private readonly ?TakeoverService $takeovers = null
     ) {
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function build(?Person $person): array
+    public function build(?Person $person, int $tasksPage = 1, int $pastPage = 1): array
     {
         $tasks = $this->tasks->upcoming();
         $occupancy = $this->tasks->occupancyFor(array_map(static fn (Task $t): int => $t->id, $tasks));
@@ -74,6 +83,11 @@ final class SignupBoardView
         $ticketDates = null !== $standing && $standing->creditBalance >= 1
             ? $this->tickets->eligibleDatesFor($person->id)
             : [];
+
+        // Paged inside the array below, so the queries keep the order they
+        // had before paging (the tests' scripted database relies on it).
+        $upcoming = [];
+        $history = [];
 
         return [
             'person' => $person,
@@ -93,19 +107,29 @@ final class SignupBoardView
                 ? ['upcoming' => [], 'past' => []]
                 // Every ticket, task tickets too, the same list as the bot's
                 // Tickets screen (Owner 2026-11-08: web and Telegram alike).
-                : (new TicketList(
+                : $this->withGiving((new TicketList(
                     $this->assignments,
                     $this->tasks,
                     new RedemptionRepository(),
                     new CheckinRepository(),
                     $this->transfers
-                ))->forPerson($person->id),
+                ))->forPerson($person->id), $person->id),
             // The person's own upcoming tasks, soonest first, so "when am I next
             // on?" is answered up front rather than by hunting the board.
-            'my_upcoming' => null === $person ? [] : $this->upcomingFor($person->id),
-            // What they have already done. Standing is built from exactly this,
-            // so showing it turns a score into something a person can check.
-            'my_history' => null === $person ? [] : $this->historyFor($person->id),
+            'my_upcoming' => ($upcoming = Paging::slice(
+                null === $person ? [] : $this->upcomingFor($person->id),
+                $tasksPage
+            ))['items'],
+            'my_upcoming_paging' => ['page' => $upcoming['page'], 'pages' => $upcoming['pages']],
+            // What they have already done, all of it like the bot's Past
+            // tasks (Owner 2026-11-08), a page at a time. Standing is built
+            // from exactly this, so showing it turns a score into something a
+            // person can check.
+            'my_history' => ($history = Paging::slice(
+                null === $person ? [] : $this->historyFor($person->id),
+                $pastPage
+            ))['items'],
+            'my_history_paging' => ['page' => $history['page'], 'pages' => $history['pages']],
             // Account management (pause emails / delete data) reuses the signed
             // /manage endpoint the emails link to - the profile just posts to it.
             'manage_endpoint' => rest_url('eventcrew/v1/manage'),
@@ -118,7 +142,7 @@ final class SignupBoardView
      * first. Each carries an add-to-calendar link and the task id, so the
      * profile can surface "what am I next on" with a one-tap calendar hold.
      *
-     * @return array<int, array{task_id: int, label: string, dj: string, when: string, calendar_url: string, ticket_url: string, used: ?string}>
+     * @return array<int, array{task_id: int, label: string, dj: string, when: string, calendar_url: string, ticket_url: string, cancel_ask: string, used: ?string}>
      */
     private function upcomingFor(int $personId): array
     {
@@ -149,6 +173,9 @@ final class SignupBoardView
                 'when' => '' === $time ? $day : $day . ' · ' . $time,
                 'calendar_url' => CalendarController::url($task->id),
                 'ticket_url' => TicketMail::workUrl($personId, $task->taskDate),
+                // Cancel sits on each row too, asking what the board's
+                // Cancel asks (Owner 2026-11-08).
+                'cancel_ask' => $this->cancelAsk($task, $personId),
             ];
         }
 
@@ -169,7 +196,10 @@ final class SignupBoardView
     }
 
     /**
-     * The person's finished tasks, most recent first, capped at a handful.
+     * The person's finished tasks, most recent first, every one of them (the
+     * card pages them, Paging), each with the status word the bot's Past
+     * tasks shows (AssignmentStatus::label(), which Assignment::statusLabel()
+     * also returns).
      *
      * Only outcomes that are actually settled: a task still to come is already
      * shown under "you're on next", and repeating it here as history would be
@@ -183,10 +213,6 @@ final class SignupBoardView
         $history = [];
 
         foreach ($this->assignments->historyFor($personId) as $entry) {
-            if (count($history) >= self::HISTORY_LIMIT) {
-                break;
-            }
-
             $date = (string) $entry['task_date'];
             $assignment = $entry['assignment'];
 
@@ -206,6 +232,27 @@ final class SignupBoardView
         }
 
         return $history;
+    }
+
+    /**
+     * The address of page $page of the list $arg names (TASKS_PAGE_ARG or
+     * PAST_PAGE_ARG), keeping the other list's page and ending in #$anchor,
+     * the card's id: the Me tab opens on it, and without JavaScript the page
+     * scrolls to it. Page 1 leaves its argument out.
+     *
+     * @param array<string, int> $pages Each list's current page, by argument.
+     */
+    public static function pageUrl(string $here, array $pages, string $arg, int $page, string $anchor): string
+    {
+        $pages[$arg] = $page;
+        $url = remove_query_arg(array_keys($pages), $here);
+        $keep = array_filter($pages, static fn (int $p): bool => $p > 1);
+
+        if ([] !== $keep) {
+            $url = add_query_arg(array_map('strval', $keep), $url);
+        }
+
+        return $url . '#' . $anchor;
     }
 
     /**
@@ -242,7 +289,7 @@ final class SignupBoardView
      * @param array<int, Task> $tasks
      * @param array<int, int> $occupancy
      * @param array<int, bool> $mine
-     * @return array<int, array{title: string, dj: string, image: string, tasks: array<int, array{task: Task, taken: int, mine: bool, blocked: string, role_only: bool, crew_only: bool, names: list<string>}>}>
+     * @return array<int, array{title: string, dj: string, image: string, tasks: array<int, array{task: Task, taken: int, mine: bool, blocked: string, role_only: bool, crew_only: bool, holders: list<array{assignment_id: int, name: string}>, names: list<string>}>}>
      */
     private function groupByEvent(array $tasks, array $occupancy, array $mine, ?Person $person): array
     {
@@ -264,8 +311,8 @@ final class SignupBoardView
 
         foreach ($tasks as $task) {
             // Signed out, the board shows what the Telegram group board shows.
-            // Signed in, also the tasks of the person's roles; organizers see
-            // every task (BoardVisibility).
+            // Signed in, also the tasks of the person's roles and of the roles
+            // ticked Members display; organizers see every task (BoardVisibility).
             if (! BoardVisibility::visibleTo($task, $person)) {
                 continue;
             }
@@ -290,14 +337,18 @@ final class SignupBoardView
                 'mine' => isset($mine[$task->id]),
                 // What Cancel asks first, with what it costs (the bot's
                 // words); '' when a cancel would not go through anyway.
-                'cancel_ask' => isset($mine[$task->id]) && null !== $person ? $this->cancelAsk($task, $person) : '',
+                'cancel_ask' => isset($mine[$task->id]) && null !== $person ? $this->cancelAsk($task, $person->id) : '',
                 'blocked' => $this->blockedReason($task, $person, $personRefusal),
                 // An organizer sees a restricted task of a role they do not
                 // hold, with a disabled "DJ only" button.
                 'role_only' => BoardVisibility::roleOnly($task, $person),
-                // A guest on a role with Guest sign up off sees the task and
-                // its places, with no Sign up (Owner 2026-11-07).
-                'crew_only' => BoardVisibility::blocksGuestSignup($task, $person),
+                // A guest on a role with Guest sign up off, or a member
+                // shown a restricted task by Members display, sees the task
+                // and its places, with no Sign up (Owner 2026-11-07).
+                'crew_only' => BoardVisibility::crewOnly($task, $person),
+                // Whose places the person could ask to take over, on a full
+                // task they are not on (Owner 2026-11-08); [] otherwise.
+                'holders' => $this->holders($task, $occupancy[$task->id] ?? 0, isset($mine[$task->id]), $person),
                 'names' => $named && BoardVisibility::showsNames($task, $person)
                     ? BoardRenderer::firstNames($occupants[$task->id] ?? [])
                     : [],
@@ -308,12 +359,65 @@ final class SignupBoardView
     }
 
     /**
+     * Marks the upcoming free-entry tickets that can be given away
+     * ('give' => true) or wait on an offer ('offer_to' => the name), as the
+     * bot's Tickets screen does (Owner 2026-11-08). Only a credit ticket has
+     * a redemption_id; TicketTransferService decides the rest. A waiting
+     * offer is shown even while giving is off, so it can still be cancelled.
+     *
+     * @param array{upcoming: list<array<string, mixed>>, past: list<array<string, mixed>>} $tickets
+     * @return array{upcoming: list<array<string, mixed>>, past: list<array<string, mixed>>}
+     */
+    private function withGiving(array $tickets, int $personId): array
+    {
+        if (null === $this->transfers) {
+            return $tickets;
+        }
+
+        foreach ($tickets['upcoming'] as $i => $ticket) {
+            $redemptionId = (int) ($ticket['redemption_id'] ?? 0);
+
+            if ($redemptionId <= 0) {
+                continue;
+            }
+
+            $offer = $this->transfers->pendingOffer($redemptionId);
+
+            if (null !== $offer) {
+                $tickets['upcoming'][$i]['offer_to'] = $offer->offeredTo();
+            } elseif (TicketTransferService::isOn()) {
+                $tickets['upcoming'][$i]['give'] = $this->transfers->canGive(
+                    $this->transfers->redemption($redemptionId),
+                    $personId
+                );
+            }
+        }
+
+        return $tickets;
+    }
+
+    /**
+     * The holders a full task's Take someone's task lists, for a signed-in
+     * person who is not on it (TakeoverService::holdersFor()).
+     *
+     * @return list<array{assignment_id: int, name: string}>
+     */
+    private function holders(Task $task, int $taken, bool $mine, ?Person $person): array
+    {
+        if (null === $this->takeovers || null === $person || $mine || $task->hasNoLimit() || $taken < $task->capacity) {
+            return [];
+        }
+
+        return $this->takeovers->holdersFor($task, $person);
+    }
+
+    /**
      * The question the Cancel button asks first, saying whether the cancel
      * would be late, or '' when there is nothing a cancel would record.
      */
-    private function cancelAsk(Task $task, Person $person): string
+    private function cancelAsk(Task $task, int $personId): string
     {
-        $outcome = $this->signup->dropOutcome($person->id, $task->id);
+        $outcome = $this->signup->dropOutcome($personId, $task->id);
 
         if (! in_array($outcome, [AssignmentStatus::CANCELLED, AssignmentStatus::LATE_CANCEL], true)) {
             return '';

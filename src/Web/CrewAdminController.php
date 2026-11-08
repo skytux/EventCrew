@@ -657,9 +657,17 @@ final class CrewAdminController
         foreach ($taskIds as $taskId) {
             $last = $this->roleTasks->addPerson($organizer, $taskId, $name, $email, $countsCredit, $personId);
 
-            if (null === $last['person'] && RoleTaskService::NOT_RESTRICTED !== $last['code']) {
+            $taskOnly = in_array(
+                $last['code'],
+                [RoleTaskService::NOT_RESTRICTED, RoleTaskService::NOT_ORGANIZER],
+                true
+            );
+
+            if (null === $last['person'] && ! $taskOnly) {
                 // Nobody to add (no name, bad email, member not found): no
-                // other task would go differently.
+                // other task would go differently. A task gone, or an
+                // Organize task for someone who is not an organizer, is about
+                // that task only.
                 return 'admin_add_' . $last['code'];
             }
 

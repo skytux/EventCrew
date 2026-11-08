@@ -464,6 +464,28 @@ final class TicketTransferService
     }
 
     /**
+     * What the giver sees after the offer email went out, or after a
+     * member's email address moved the ticket at once. Shared by the ticket
+     * page's give form and the crew page's Tickets card (Owner 2026-11-08).
+     */
+    public function sentText(TicketTransfer $transfer): string
+    {
+        if ($transfer->isIssued()) {
+            return sprintf(
+                /* translators: %s: the receiver's name */
+                __('Done. %s has your ticket now. Your own ticket no longer works.', 'eventcrew'),
+                $this->receiverName($transfer)
+            );
+        }
+
+        return sprintf(
+            /* translators: %s: the name of the person the ticket was offered to */
+            __('Sent. When %s accepts, the ticket moves to them. Until then your own ticket works.', 'eventcrew'),
+            $transfer->offeredTo()
+        );
+    }
+
+    /**
      * A typed name as a transfer keeps it: tags stripped, spaces collapsed,
      * at most NAME_MAX characters.
      */

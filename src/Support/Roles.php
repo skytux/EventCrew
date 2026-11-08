@@ -54,17 +54,23 @@ use EventCrew\Models\Task;
  *     on_board: bool,
  *     guest_signup: bool,
  *     anonymous: bool,
+ *     members_display: bool,
  *     title_contains: string,
  *     plus_ones: int,
  *     conditions: array{counts: array<string, int>, min_roles: int, times_each: int}
  * }
  *
  * A role can be restricted ("Only people with this role"): DJ, VJ, ceremony
- * leader and the like. Only a person given that role may see or take its
- * tasks, there is no limit on how many people take one, and such a task is
+ * leader and the like. Only a person given that role may take its tasks (and
+ * see them, unless Members display is on: then every signed-in member sees
+ * them, without a sign-up button), there is no limit on how many people take one, and such a task is
  * never counted as a place that needs filling - the same rules the reserved
  * Organize role has always had, with "is an organizer" replaced by "has this
  * role". A restricted role with every_night on gets one task on every night.
+ *
+ * The display ticks (on_board, members_display, guest_signup, anonymous)
+ * decide who else sees a role's tasks and may sign up; BoardVisibility
+ * explains them and applies them to every board and list.
  *
  * Two more settings ride on every role. sales_desk: people on that night's
  * task of this role may open the sales desk and get its link (Welcome ships
@@ -604,8 +610,9 @@ final class Roles
 
     /**
      * Guest sign up: whether people without this role may sign up for its
-     * tasks. Only means something while Guest display (onBoard()) is on; a
-     * task of an unknown role is open as before.
+     * tasks. Only means something while Guest display (onBoard()) or Members
+     * display (membersDisplay()) is on; a task of an unknown role is open as
+     * before.
      */
     public static function guestSignup(string $slug): bool
     {
@@ -619,6 +626,18 @@ final class Roles
     public static function anonymous(string $slug): bool
     {
         return self::find($slug)['anonymous'] ?? false;
+    }
+
+    /**
+     * Members display: whether every signed-in member (a known person: signed
+     * in on the web, or reading their own copy of the board or a list in a
+     * private chat) sees this role's tasks, also without the role. The
+     * Telegram group board and the web page signed out still follow Guest
+     * display only. Off unless switched on.
+     */
+    public static function membersDisplay(string $slug): bool
+    {
+        return self::find($slug)['members_display'] ?? false;
     }
 
     /**
@@ -706,6 +725,9 @@ final class Roles
             'guest_signup' => ! array_key_exists('guest_signup', $role) || ! empty($role['guest_signup']),
             // Off unless switched on: the boards showed names before.
             'anonymous' => ! empty($role['anonymous']),
+            // Off unless switched on: members without the role saw only the
+            // guest board's tasks before.
+            'members_display' => ! empty($role['members_display']),
             // Empty means every event, which is what a role stored before
             // this key existed was added to.
             'title_contains' => trim((string) ($role['title_contains'] ?? '')),
