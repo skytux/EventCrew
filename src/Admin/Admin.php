@@ -67,7 +67,8 @@ final class Admin
 
         add_action(
             'admin_post_' . MonthlyReport::TEST_ACTION,
-            [$this->container->get(MonthlyReport::class), 'sendTestFromAdmin']
+            // Built only when the test send is pressed.
+            fn () => $this->container->get(MonthlyReport::class)->sendTestFromAdmin()
         );
 
         add_action(
