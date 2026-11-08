@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.202
+Stable tag: 1.140.203
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.203 =
+* Ticket page about a quarter shorter: date and time, name and ticket kind, and the codes share lines; the issued time sits next to the clock; the repeated header line and the give-away rule sentence are gone.
 
 = 1.140.202 =
 * Crew app Admin tab: every card has the same layout as the Me cards: a title strip with an (i) for the explanation, compact rows, one button and text links; forms used now and then are folded.
@@ -1967,6 +1970,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.203 =
+No settings change.
 
 = 1.140.202 =
 No settings change.

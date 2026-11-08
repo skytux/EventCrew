@@ -1866,7 +1866,7 @@ msgstr ""
 
 #: src/Telegram/AssignCommand.php:374 src/Telegram/AssignCommand.php:418 src/Telegram/AssignCommand.php:720 src/Telegram/AssistantService.php:560
 #: src/Telegram/BuyerListReset.php:155 src/Telegram/CommandFlow.php:342 src/Telegram/EventsCommand.php:98 src/Telegram/MenuButtons.php:372
-#: src/Telegram/SayCommand.php:95 src/Telegram/TaskCommand.php:807 src/Telegram/TicketController.php:907 templates/admin/people.php:124
+#: src/Telegram/SayCommand.php:95 src/Telegram/TaskCommand.php:807 src/Telegram/TicketController.php:915 templates/admin/people.php:124
 #: templates/admin/tasks.php:293 templates/public/signup-board.php:263 templates/public/signup.php:767 templates/public/signup.php:1272
 #: templates/public/signup.php:2097
 msgid "Cancel"
@@ -2119,7 +2119,7 @@ msgstr ""
 msgid "Check-in undone: %s"
 msgstr ""
 
-#: src/Telegram/TicketController.php:991
+#: src/Telegram/TicketController.php:992
 #. translators: %s: the time the door checked the ticket in, like 21:05
 msgid "Checked in at %s"
 msgstr ""
@@ -2513,7 +2513,7 @@ msgctxt "date format"
 msgid "D j M H:i"
 msgstr ""
 
-#: src/Telegram/TicketController.php:830
+#: src/Telegram/TicketController.php:832
 msgid "DISABLED"
 msgstr ""
 
@@ -3281,7 +3281,7 @@ msgid "Found a replacement"
 msgstr ""
 
 #: src/Support/TicketList.php:122 src/Support/TicketList.php:123 src/Support/TicketList.php:156 src/Telegram/TicketController.php:427
-#: src/Telegram/TicketController.php:700 templates/admin/roster.php:132
+#: src/Telegram/TicketController.php:702 templates/admin/roster.php:132
 msgid "Free entry"
 msgstr ""
 
@@ -3458,7 +3458,7 @@ msgstr ""
 msgid "Give a one-time pass"
 msgstr ""
 
-#: src/Telegram/TicketController.php:910 src/Telegram/TransferBot.php:56 templates/public/signup.php:696
+#: src/Telegram/TicketController.php:918 src/Telegram/TransferBot.php:56 templates/public/signup.php:696
 msgid "Give away"
 msgstr ""
 
@@ -3507,7 +3507,7 @@ msgstr ""
 msgid "Give your ticket for %2$s to %1$s? It moves at once and your own ticket stops working."
 msgstr ""
 
-#: src/Support/DoorList.php:110 src/Support/TicketList.php:125 src/Telegram/TicketController.php:887
+#: src/Support/DoorList.php:110 src/Support/TicketList.php:125 src/Telegram/TicketController.php:896
 #. translators: %s: the name of the person the ticket was given to
 msgid "Given to %s"
 msgstr ""
@@ -3585,7 +3585,7 @@ msgstr ""
 msgid "Guest display: people without this role see its tasks"
 msgstr ""
 
-#: src/Telegram/MenuButtons.php:339 src/Telegram/TicketController.php:509 src/Web/CrewAdminController.php:190 templates/admin/roster.php:184
+#: src/Telegram/MenuButtons.php:339 src/Telegram/TicketController.php:511 src/Web/CrewAdminController.php:190 templates/admin/roster.php:184
 #: templates/public/signup.php:1712 templates/public/signup.php:1713
 msgid "Guest list"
 msgstr ""
@@ -3603,7 +3603,7 @@ msgstr ""
 msgid "Guest list — %s"
 msgstr ""
 
-#: src/Telegram/TicketController.php:506
+#: src/Telegram/TicketController.php:508
 #. translators: %d: how many people the guest may bring
 msgid "Guest list, +%d person"
 msgid_plural "Guest list, +%d people"
@@ -3643,7 +3643,7 @@ msgstr ""
 msgid "Guests added for %s"
 msgstr ""
 
-#: src/Telegram/TicketController.php:1182
+#: src/Telegram/TicketController.php:1185
 msgctxt "date format"
 msgid "H:i, D j M"
 msgstr ""
@@ -4160,7 +4160,7 @@ msgstr ""
 msgid "Installed"
 msgstr ""
 
-#: src/Telegram/TicketController.php:1162
+#: src/Telegram/TicketController.php:1165
 msgid "Issued %s"
 msgstr ""
 
@@ -7462,7 +7462,7 @@ msgstr ""
 msgid "Show"
 msgstr ""
 
-#: src/Telegram/TicketController.php:1095
+#: src/Telegram/TicketController.php:1096
 msgid "Show QR code"
 msgstr ""
 
@@ -7717,7 +7717,7 @@ msgstr ""
 msgid "Sorry text (missed)"
 msgstr ""
 
-#: src/Telegram/TicketController.php:947 src/Telegram/TicketController.php:1021
+#: src/Telegram/TicketController.php:948 src/Telegram/TicketController.php:1022
 msgid "Sorry, this ticket has expired"
 msgstr ""
 
@@ -9987,7 +9987,7 @@ msgstr ""
 msgid "This ticket is already offered to someone. Cancel that offer first."
 msgstr ""
 
-#: src/Telegram/TicketController.php:780 src/Telegram/TransferPage.php:100
+#: src/Telegram/TicketController.php:782 src/Telegram/TransferPage.php:100
 msgid "This ticket link is not valid."
 msgstr ""
 
@@ -10024,15 +10024,15 @@ msgstr ""
 msgid "Ticked: the sales desk can still add people, and shows a warning each time. Unticked: adding stops at the max."
 msgstr ""
 
-#: src/Telegram/TicketController.php:471 templates/public/door.php:259 templates/public/signup.php:684 templates/public/signup.php:750
+#: templates/public/door.php:259 templates/public/signup.php:684 templates/public/signup.php:750
 msgid "Ticket"
 msgstr ""
 
-#: src/Support/TicketMail.php:1969 src/Telegram/TicketController.php:1150
+#: src/Support/TicketMail.php:1969 src/Telegram/TicketController.php:1153
 msgid "Ticket %1$d of %2$d"
 msgstr ""
 
-#: src/Telegram/TicketController.php:1155
+#: src/Telegram/TicketController.php:1158
 #. translators: 1: this ticket's number, 2: how many tickets for the night, 3: when it was issued
 msgid "Ticket %1$d of %2$d · issued %3$s"
 msgstr ""
@@ -10137,7 +10137,7 @@ msgstr ""
 msgid "Ticket list not imported (email)"
 msgstr ""
 
-#: src/Telegram/TicketController.php:775 src/Telegram/TransferPage.php:99
+#: src/Telegram/TicketController.php:777 src/Telegram/TransferPage.php:99
 msgid "Ticket not found"
 msgstr ""
 
@@ -10547,7 +10547,7 @@ msgstr ""
 msgid "Using the WordPress Site Icon for the installed app."
 msgstr ""
 
-#: src/Telegram/TicketController.php:948
+#: src/Telegram/TicketController.php:949
 msgid "VALID"
 msgstr ""
 
@@ -10587,7 +10587,7 @@ msgstr ""
 msgid "Waiting"
 msgstr ""
 
-#: src/Telegram/ProfileService.php:299 src/Telegram/TicketController.php:905 src/Telegram/TransferPage.php:137 templates/public/signup.php:679
+#: src/Telegram/ProfileService.php:299 src/Telegram/TicketController.php:913 src/Telegram/TransferPage.php:137 templates/public/signup.php:679
 #. translators: %s: the name of the person the ticket was offered to
 msgid "Waiting for %s to accept"
 msgstr ""
@@ -11366,10 +11366,6 @@ msgid_plural "You can cancel without it affecting your standing up to %d hours b
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Telegram/TicketController.php:917
-msgid "You can give a free-entry ticket to someone else. A working ticket for your tasks is personal."
-msgstr ""
-
 #: src/Support/Faq.php:137
 msgid "You can give away a free-entry ticket you no longer need."
 msgstr ""
@@ -11552,7 +11548,7 @@ msgstr ""
 msgid "Your %s sign-in link"
 msgstr ""
 
-#: src/Telegram/TicketController.php:785
+#: src/Telegram/TicketController.php:787
 msgid "Your %s ticket"
 msgstr ""
 
@@ -11802,11 +11798,11 @@ msgstr ""
 msgid "You’re in! See you there."
 msgstr ""
 
-#: src/Telegram/TicketController.php:984
+#: src/Telegram/TicketController.php:985
 msgid "You’re in, welcome!"
 msgstr ""
 
-#: src/Telegram/TicketController.php:986
+#: src/Telegram/TicketController.php:987
 msgid "You’re in. Welcome, %s!"
 msgstr ""
 
