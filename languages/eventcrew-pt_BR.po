@@ -12430,3 +12430,15 @@ msgstr "Membros podem doar seu ingresso"
 #: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "Ativado, um membro pode doar um ingresso gratuito obtido com créditos a outro membro ou a um endereço de e-mail, pela página do ingresso ou pelo bot. Desativado, os links e botões Doar ficam ocultos e os antigos são recusados. Ingressos já doados continuam válidos."
+
+#: src/Support/TicketTransferService.php
+msgid "Write the name of the person who gets the ticket."
+msgstr "Escreva o nome da pessoa que recebe o ingresso."
+
+#: src/Telegram/TransferPage.php
+msgid "Their name"
+msgstr "Nome da pessoa"
+
+#: src/Telegram/TransferBot.php
+msgid "What is their name?"
+msgstr "Qual é o nome da pessoa?"

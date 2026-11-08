@@ -12450,3 +12450,15 @@ msgstr "I membri possono cedere il loro biglietto"
 #: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "Se attivo, un membro può cedere un biglietto gratuito ottenuto con i crediti a un altro membro o a un indirizzo email, dalla pagina del biglietto o dal bot. Se disattivo, i link e i pulsanti Cedi sono nascosti e quelli vecchi vengono rifiutati. I biglietti già ceduti restano validi."
+
+#: src/Support/TicketTransferService.php
+msgid "Write the name of the person who gets the ticket."
+msgstr "Scrivi il nome della persona che riceve il biglietto."
+
+#: src/Telegram/TransferPage.php
+msgid "Their name"
+msgstr "Il suo nome"
+
+#: src/Telegram/TransferBot.php
+msgid "What is their name?"
+msgstr "Come si chiama?"

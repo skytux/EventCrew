@@ -9980,3 +9980,15 @@ msgid "You have %d ticket for this night."
 msgid_plural "You have %d tickets for this night."
 msgstr[0] "Sinulla on %d lippu tälle illalle."
 msgstr[1] "Sinulla on %d lippua tälle illalle."
+
+#: src/Support/TicketTransferService.php
+msgid "Write the name of the person who gets the ticket."
+msgstr "Kirjoita lipun saajan nimi."
+
+#: src/Telegram/TransferPage.php
+msgid "Their name"
+msgstr "Saajan nimi"
+
+#: src/Telegram/TransferBot.php
+msgid "What is their name?"
+msgstr "Mikä on saajan nimi?"

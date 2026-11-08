@@ -12471,3 +12471,15 @@ msgstr "Les membres peuvent donner leur billet"
 #: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "Activé, un membre peut donner un billet gratuit obtenu avec des crédits à un autre membre ou à une adresse e-mail, depuis la page du billet ou le bot. Désactivé, les liens et boutons Donner sont masqués et les anciens sont refusés. Les billets déjà donnés restent valables."
+
+#: src/Support/TicketTransferService.php
+msgid "Write the name of the person who gets the ticket."
+msgstr "Écris le nom de la personne qui reçoit le billet."
+
+#: src/Telegram/TransferPage.php
+msgid "Their name"
+msgstr "Son nom"
+
+#: src/Telegram/TransferBot.php
+msgid "What is their name?"
+msgstr "Comment s’appelle cette personne ?"

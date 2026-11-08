@@ -12488,3 +12488,15 @@ msgstr "Członkowie mogą oddać swój bilet"
 #: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "Gdy włączone, członek może oddać darmowy bilet uzyskany za kredyty innemu członkowi lub na adres e-mail, ze strony biletu lub w bocie. Gdy wyłączone, linki i przyciski Oddaj są ukryte, a stare są odrzucane. Bilety już oddane pozostają ważne."
+
+#: src/Support/TicketTransferService.php
+msgid "Write the name of the person who gets the ticket."
+msgstr "Wpisz imię osoby, która dostanie bilet."
+
+#: src/Telegram/TransferPage.php
+msgid "Their name"
+msgstr "Imię tej osoby"
+
+#: src/Telegram/TransferBot.php
+msgid "What is their name?"
+msgstr "Jak ta osoba ma na imię?"

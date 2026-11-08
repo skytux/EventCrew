@@ -18,12 +18,13 @@ use WP_REST_Request;
  *
  * Give (/ticket/give?ticket=<credit ticket token>): the Give away link on a
  * credit ticket's page. It asks for a member's name or an email address,
- * then confirms; a member gets the ticket at once, an email address gets an
- * offer. While an offer waits, the same page offers to cancel it. The
+ * then confirms (for an email address, with the receiver's name); a member
+ * gets the ticket at once, an email address gets an offer. While an offer waits, the same page offers to cancel it. The
  * ticket's own signed link is the key, as it is for the ticket page.
  *
  * Accept (/ticket/accept?offer=<signed offer id>): the link in the offer
- * email. It asks the receiver's name and issues the ticket to it.
+ * email. It shows the receiver's name as the giver typed it, to correct if
+ * needed, and issues the ticket to it.
  */
 final class TransferPage
 {
@@ -132,9 +133,9 @@ final class TransferPage
             return $this->tickets->plainPage(
                 $title,
                 '<p>' . esc_html(TicketTransferService::isOn() ? sprintf(
-                    /* translators: %s: the email address the ticket was offered to */
+                    /* translators: %s: the name of the person the ticket was offered to */
                     __('Waiting for %s to accept', 'eventcrew'),
-                    $offer->email
+                    $offer->offeredTo()
                 ) : TicketTransferService::message(TicketTransferService::DISABLED)) . '</p>'
                 . $this->form($token, 'cancel', '', __('Cancel the offer', 'eventcrew'))
                 . $back
@@ -169,7 +170,14 @@ final class TransferPage
 
         if ('email' === $step) {
             $email = sanitize_email((string) $request->get_param('email'));
-            $result = $this->transfers->offerToEmail($redemptionId, $giver->id, $email);
+            $name = (string) $request->get_param('name');
+            $result = $this->transfers->offerToEmail($redemptionId, $giver->id, $email, $name);
+
+            if (TicketTransferService::NO_THEIR_NAME === $result['code']) {
+                $error = TicketTransferService::message($result['code']);
+
+                return $this->confirmEmail($title, $token, $email, $night, $back, $error);
+            }
 
             if (TicketTransferService::OK !== $result['code'] || null === $result['transfer']) {
                 return $this->askPage($title, $token, TicketTransferService::message($result['code']), $back);
@@ -200,9 +208,9 @@ final class TransferPage
         }
 
         return sprintf(
-            /* translators: %s: an email address */
+            /* translators: %s: the name of the person the ticket was offered to */
             __('Sent. When %s accepts, the ticket moves to them. Until then your own ticket works.', 'eventcrew'),
-            $transfer->email
+            $transfer->offeredTo()
         );
     }
 
@@ -247,12 +255,7 @@ final class TransferPage
                 return $this->confirmMember($title, $token, [$member], $night, $back);
             }
 
-            return $this->tickets->plainPage(
-                $title,
-                '<p>' . esc_html(self::confirmEmailText($email, $night)) . '</p>'
-                . $this->form($token, 'email', '<input type="hidden" name="email" value="' . esc_attr($email) . '">', __('Send the offer', 'eventcrew'))
-                . $back
-            );
+            return $this->confirmEmail($title, $token, $email, $night, $back);
         }
 
         $matches = self::matches($this->people, $who, $giver->id);
@@ -262,6 +265,35 @@ final class TransferPage
         }
 
         return $this->confirmMember($title, $token, $matches, $night, $back);
+    }
+
+    /**
+     * The confirm for an email address, with the receiver's name to fill in:
+     * it goes in the offer email and on the ticket.
+     */
+    private function confirmEmail(
+        string $title,
+        string $token,
+        string $email,
+        string $night,
+        string $back,
+        string $error = ''
+    ): string {
+        return $this->tickets->plainPage(
+            $title,
+            '<p>' . esc_html(self::confirmEmailText($email, $night)) . '</p>'
+            . ('' === $error ? '' : '<p><strong>' . esc_html($error) . '</strong></p>')
+            . $this->form(
+                $token,
+                'email',
+                '<input type="hidden" name="email" value="' . esc_attr($email) . '">'
+                . '<label>' . esc_html__('Their name', 'eventcrew') . '<br>'
+                . '<input type="text" name="name" required maxlength="' . (int) TicketTransferService::NAME_MAX
+                . '" autocomplete="off"></label>',
+                __('Send the offer', 'eventcrew')
+            )
+            . $back
+        );
     }
 
     /**
@@ -303,7 +335,7 @@ final class TransferPage
     public static function confirmEmailText(string $email, string $night): string
     {
         return sprintf(
-            /* translators: 1: an email address, 2: the night, like "Sat 14 Nov · Dance Night" */
+            /* translators: 1: an email address, or a name and an email address, 2: the night, like "Sat 14 Nov · Dance Night" */
             __('Offer your ticket for %2$s to %1$s? They must accept before the doors open. Until then your ticket works.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             $email,
             $night
@@ -387,9 +419,11 @@ final class TransferPage
         }
 
         $error = '';
+        $name = $transfer->name;
 
         if ('POST' === strtoupper((string) $request->get_method())) {
-            $result = $this->transfers->accept($transfer->id, (string) $request->get_param('name'));
+            $name = (string) $request->get_param('name');
+            $result = $this->transfers->accept($transfer->id, $name);
 
             if (TicketTransferService::OK === $result['code'] && null !== $result['transfer']) {
                 return $this->tickets->plainPage($title, $this->acceptedBody($result['transfer']));
@@ -418,7 +452,8 @@ final class TransferPage
             . ('' === $error ? '' : '<p><strong>' . esc_html($error) . '</strong></p>')
             . '<form class="t-form" method="post" action="' . esc_url(self::acceptUrl($transfer->id)) . '">'
             . '<label>' . esc_html__('Your name', 'eventcrew') . '<br>'
-            . '<input type="text" name="name" required maxlength="100" autocomplete="name"></label>'
+            . '<input type="text" name="name" value="' . esc_attr($name) . '" required maxlength="'
+            . (int) TicketTransferService::NAME_MAX . '" autocomplete="name"></label>'
             . '<button type="submit">' . esc_html__('Accept the ticket', 'eventcrew') . '</button></form>'
         );
     }

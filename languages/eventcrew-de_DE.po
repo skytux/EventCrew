@@ -12471,3 +12471,15 @@ msgstr "Mitglieder können ihre Karte verschenken"
 #: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "Wenn an, kann ein Mitglied eine mit Guthaben eingelöste Freikarte an ein anderes Mitglied oder an eine E-Mail-Adresse verschenken, über die Ticketseite oder den Bot. Wenn aus, werden die Verschenken-Links und -Buttons ausgeblendet und alte abgelehnt. Bereits verschenkte Karten bleiben gültig."
+
+#: src/Support/TicketTransferService.php
+msgid "Write the name of the person who gets the ticket."
+msgstr "Schreib den Namen der Person, die die Karte bekommt."
+
+#: src/Telegram/TransferPage.php
+msgid "Their name"
+msgstr "Name der Person"
+
+#: src/Telegram/TransferBot.php
+msgid "What is their name?"
+msgstr "Wie heißt die Person?"

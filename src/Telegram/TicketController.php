@@ -631,7 +631,7 @@ final class TicketController
         $offer = $this->transfers->pendingOffer($redemption->id);
 
         if (null !== $offer) {
-            return ['offer_to' => $offer->email, 'give_url' => TransferPage::giveUrl($token)];
+            return ['offer_to' => $offer->offeredTo(), 'give_url' => TransferPage::giveUrl($token)];
         }
 
         return $this->transfers->canGive($redemption, $redemption->personId)
@@ -765,7 +765,7 @@ final class TicketController
 
     /**
      * The line about giving a credit ticket away: "Given to Sam" on a ticket
-     * that moved, "Waiting for x@y to accept · Cancel" while an email offer
+     * that moved, "Waiting for Dee to accept · Cancel" while an email offer
      * waits, else a Give away link. A link, not a button (one button per
      * card).
      *
@@ -789,7 +789,7 @@ final class TicketController
 
         if (isset($ticket['offer_to'])) {
             return '<p class="t-give">' . esc_html(sprintf(
-                /* translators: %s: the email address the ticket was offered to */
+                /* translators: %s: the name of the person the ticket was offered to */
                 __('Waiting for %s to accept', 'eventcrew'),
                 (string) $ticket['offer_to']
             )) . ' · <a href="' . $url . '">' . esc_html__('Cancel', 'eventcrew') . '</a></p>';

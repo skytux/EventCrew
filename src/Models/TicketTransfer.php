@@ -82,6 +82,15 @@ final class TicketTransfer
         return null !== $this->receiverPersonId;
     }
 
+    /**
+     * Who an offer waits for: the name the giver typed, or the email
+     * address for an offer made before names were asked.
+     */
+    public function offeredTo(): string
+    {
+        return '' === $this->name ? $this->email : $this->name;
+    }
+
     private static function nullableString(mixed $value): ?string
     {
         return null === $value || '' === $value ? null : (string) $value;

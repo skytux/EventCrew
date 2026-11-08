@@ -12370,3 +12370,15 @@ msgstr "メンバーはチケットを譲渡できる"
 #: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "オンのとき、メンバーはクレジットで引き換えた無料チケットを、チケットページまたはボットから、ほかのメンバーやメールアドレスに譲渡できます。オフのとき、譲渡のリンクとボタンは非表示になり、古いものは拒否されます。すでに譲渡されたチケットは有効なままです。"
+
+#: src/Support/TicketTransferService.php
+msgid "Write the name of the person who gets the ticket."
+msgstr "チケットを受け取る人の名前を入力してください。"
+
+#: src/Telegram/TransferPage.php
+msgid "Their name"
+msgstr "受け取る人の名前"
+
+#: src/Telegram/TransferBot.php
+msgid "What is their name?"
+msgstr "受け取る人の名前は？"

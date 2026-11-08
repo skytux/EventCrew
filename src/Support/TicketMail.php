@@ -1074,8 +1074,13 @@ final class TicketMail
      * In the ticket email's languages (the receiver's are not known). Not
      * sent to a placeholder or invalid address, or for a night already past.
      */
-    public function sendTransferOffer(string $email, string $from, string $date, string $acceptUrl): bool
-    {
+    public function sendTransferOffer(
+        string $email,
+        string $from,
+        string $date,
+        string $acceptUrl,
+        string $name = ''
+    ): bool {
         if ('' === $email || Person::isPlaceholderEmail($email) || ! is_email($email)) {
             return false;
         }
@@ -1084,7 +1089,7 @@ final class TicketMail
             return false;
         }
 
-        $mail = $this->composeTransferOffer($from, $date, $acceptUrl);
+        $mail = $this->composeTransferOffer($from, $date, $acceptUrl, $name);
 
         return $this->mailer->toTicketHolder(
             $email,
@@ -1101,19 +1106,21 @@ final class TicketMail
 
     /**
      * The offer email: subject, HTML and plain text, in each language
-     * HybridPolicy picks for a ticket whose reader is not known.
+     * HybridPolicy picks for a ticket whose reader is not known. The
+     * greeting has the first word of $name, the receiver's name as the
+     * giver typed it.
      *
      * @return array{subject: string, html: string, text: string}
      */
-    public function composeTransferOffer(string $from, string $date, string $acceptUrl): array
+    public function composeTransferOffer(string $from, string $date, string $acceptUrl, string $name = ''): array
     {
         $short = self::shortDate($date);
         [$event, , $eventId] = $this->event($date);
-        $words = static function () use ($from, $event, $eventId, $short): array {
+        $words = static function () use ($from, $event, $eventId, $short, $name): array {
             $night = trim(self::eventIn($event, $eventId, EventName::lang()) . ' ' . $short);
 
             return [
-                'body' => __('Hi,', 'eventcrew') . "\n\n" . sprintf(
+                'body' => EmailBody::withGreeting($name, sprintf(
                     /* translators: 1: the giver's name, 2: the night, e.g. "Club night 14.11.2026" */
                     __('%1$s is giving you their free-entry ticket for %2$s.', 'eventcrew'),
                     $from,
@@ -1121,7 +1128,7 @@ final class TicketMail
                 ) . "\n\n" . __(
                     'Accept it and write your name, and we will email you the ticket. The offer ends when the doors open.',
                     'eventcrew'
-                ),
+                )),
                 'subject' => __('A free-entry ticket for you', 'eventcrew'),
                 'accept' => __('Accept the ticket', 'eventcrew'),
             ];

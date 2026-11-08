@@ -12936,3 +12936,15 @@ msgid "You have %d ticket for this night."
 msgid_plural "You have %d tickets for this night."
 msgstr[0] "Du har %d biljett för kvällen."
 msgstr[1] "Du har %d biljetter för kvällen."
+
+#: src/Support/TicketTransferService.php
+msgid "Write the name of the person who gets the ticket."
+msgstr "Skriv namnet på den som får biljetten."
+
+#: src/Telegram/TransferPage.php
+msgid "Their name"
+msgstr "Mottagarens namn"
+
+#: src/Telegram/TransferBot.php
+msgid "What is their name?"
+msgstr "Vad heter mottagaren?"

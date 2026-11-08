@@ -112,7 +112,7 @@ final class TicketTransferTest extends SalesDeskTestCase
     public function testAnOfferToAnEmailWaitsAndTheGiversTicketKeepsWorkingUntilAccepted(): void
     {
         $service = $this->service();
-        $result = $service->offerToEmail(10, 1, 'Dee@Example.com');
+        $result = $service->offerToEmail(10, 1, 'Dee@Example.com', 'Dee Doe');
 
         self::assertSame(TicketTransferService::OK, $result['code']);
         self::assertTrue($result['transfer']->isPending());
@@ -129,10 +129,51 @@ final class TicketTransferTest extends SalesDeskTestCase
         self::assertSame(1, $this->db->redemptions[10]['transferred_to']);
     }
 
+    public function testAnOfferToAnEmailNeedsTheReceiversName(): void
+    {
+        $result = $this->service()->offerToEmail(10, 1, 'dee@example.com', "  \t ");
+
+        self::assertSame(TicketTransferService::NO_THEIR_NAME, $result['code']);
+        self::assertSame([], $this->db->transfers);
+        self::assertSame(
+            'Write the name of the person who gets the ticket.',
+            TicketTransferService::message(TicketTransferService::NO_THEIR_NAME)
+        );
+    }
+
+    public function testTheOfferKeepsTheNameCleanedAndShort(): void
+    {
+        $this->service()->offerToEmail(10, 1, 'dee@example.com', '  Dee <i>Doe</i>  ' . str_repeat('x', 150));
+
+        $name = (string) $this->db->transfers[1]['name'];
+        self::assertStringStartsWith('Dee Doe x', $name);
+        self::assertSame(TicketTransferService::NAME_MAX, mb_strlen($name));
+    }
+
+    public function testTheOfferEmailGreetsTheReceiverByName(): void
+    {
+        Functions\when('get_the_title')->justReturn('');
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
+        $mail = new TicketMail(
+            new TicketBuyerRepository(),
+            new GuestRepository(),
+            new TaskRepository(),
+            new Mailer(new Logger(), new EmailTemplate(new Logger()))
+        );
+
+        $named = $mail->composeTransferOffer('Ann', self::NIGHT, 'https://site.test/accept', 'Dee Doe');
+        $unnamed = $mail->composeTransferOffer('Ann', self::NIGHT, 'https://site.test/accept');
+
+        self::assertStringContainsString('Hi Dee,', $named['text']);
+        self::assertStringContainsString('Hi,', $unnamed['text']);
+    }
+
     public function testAcceptingNeedsAName(): void
     {
         $service = $this->service();
-        $service->offerToEmail(10, 1, 'dee@example.com');
+        $service->offerToEmail(10, 1, 'dee@example.com', 'Dee Doe');
 
         self::assertSame(TicketTransferService::NO_NAME, $service->accept(1, '   ')['code']);
         self::assertSame('pending', $this->db->transfers[1]['status']);
@@ -140,7 +181,7 @@ final class TicketTransferTest extends SalesDeskTestCase
 
     public function testAnEmailThatBelongsToAMemberGivesItToThatMemberAtOnce(): void
     {
-        $result = $this->service()->offerToEmail(10, 1, 'bob@example.com');
+        $result = $this->service()->offerToEmail(10, 1, 'bob@example.com', 'Dee Doe');
 
         self::assertSame(TicketTransferService::OK, $result['code']);
         self::assertTrue($result['transfer']->isIssued());
@@ -149,7 +190,7 @@ final class TicketTransferTest extends SalesDeskTestCase
 
     public function testThePlaceholderAddressesAreRefused(): void
     {
-        $result = $this->service()->offerToEmail(10, 1, 'tg123@telegram.invalid');
+        $result = $this->service()->offerToEmail(10, 1, 'tg123@telegram.invalid', 'Dee Doe');
 
         self::assertSame(TicketTransferService::BAD_EMAIL, $result['code']);
         self::assertSame([], $this->db->transfers);
@@ -164,16 +205,16 @@ final class TicketTransferTest extends SalesDeskTestCase
         }
 
         foreach ([11, 12, 13] as $i => $id) {
-            self::assertSame(TicketTransferService::OK, $service->offerToEmail($id, 1, "x{$i}@example.com")['code']);
+            self::assertSame(TicketTransferService::OK, $service->offerToEmail($id, 1, "x{$i}@example.com", 'Dee Doe')['code']);
         }
 
-        self::assertSame(TicketTransferService::TOO_MANY, $service->offerToEmail(14, 1, 'x9@example.com')['code']);
+        self::assertSame(TicketTransferService::TOO_MANY, $service->offerToEmail(14, 1, 'x9@example.com', 'Dee Doe')['code']);
     }
 
     public function testTheGiverCancelsAWaitingOfferAndTheTicketIsTheirsAgain(): void
     {
         $service = $this->service();
-        $service->offerToEmail(10, 1, 'dee@example.com');
+        $service->offerToEmail(10, 1, 'dee@example.com', 'Dee Doe');
 
         self::assertSame(TicketTransferService::GONE, $service->cancelOffer(10, 2), 'only the giver cancels');
         self::assertSame(TicketTransferService::OK, $service->cancelOffer(10, 1));
@@ -196,7 +237,7 @@ final class TicketTransferTest extends SalesDeskTestCase
     public function testAnOfferLapsesAtDoorOpening(): void
     {
         $service = $this->service();
-        $service->offerToEmail(10, 1, 'dee@example.com');
+        $service->offerToEmail(10, 1, 'dee@example.com', 'Dee Doe');
         $this->at('17:00:00');
 
         self::assertNull($service->pendingOffer(10));
@@ -209,7 +250,7 @@ final class TicketTransferTest extends SalesDeskTestCase
     {
         $this->at('17:30:00');
 
-        self::assertSame(TicketTransferService::TOO_LATE, $this->service()->offerToEmail(10, 1, 'dee@example.com')['code']);
+        self::assertSame(TicketTransferService::TOO_LATE, $this->service()->offerToEmail(10, 1, 'dee@example.com', 'Dee Doe')['code']);
         self::assertSame(TicketTransferService::OK, $this->service()->giveToMember(10, 1, 2)['code']);
     }
 
@@ -221,7 +262,7 @@ final class TicketTransferTest extends SalesDeskTestCase
         // The receiver holds a transfer, not a credit ticket of their own.
         self::assertSame(TicketTransferService::NOT_GIVABLE, $service->giveToMember(10, 2, 3)['code']);
         self::assertSame(TicketTransferService::NOT_GIVABLE, $service->giveToMember(10, 1, 3)['code']);
-        self::assertSame(TicketTransferService::NOT_GIVABLE, $service->offerToEmail(10, 2, 'dee@example.com')['code']);
+        self::assertSame(TicketTransferService::NOT_GIVABLE, $service->offerToEmail(10, 2, 'dee@example.com', 'Dee Doe')['code']);
         self::assertCount(1, $this->db->transfers);
     }
 
@@ -327,7 +368,7 @@ final class TicketTransferTest extends SalesDeskTestCase
 
     public function testWhileAnOfferWaitsTheGiversCodeStillWorksAndTheOfferHasNoCode(): void
     {
-        $this->service()->offerToEmail(10, 1, 'dee@example.com');
+        $this->service()->offerToEmail(10, 1, 'dee@example.com', 'Dee Doe');
         $desk = $this->desk();
 
         self::assertSame(DoorDesk::SCAN_DISABLED, $desk->scan(self::NIGHT, TicketMail::transferCode(1))['code']);
@@ -378,7 +419,7 @@ final class TicketTransferTest extends SalesDeskTestCase
 
     public function testErasingTheAddressBlanksTheGivenTicketAndEndsAWaitingOffer(): void
     {
-        $this->service()->offerToEmail(10, 1, 'dee@example.com');
+        $this->service()->offerToEmail(10, 1, 'dee@example.com', 'Dee Doe');
         $people = new PersonRepository();
         $eraser = new PrivacyEraser(
             $people,
@@ -403,7 +444,7 @@ final class TicketTransferTest extends SalesDeskTestCase
 
     public function testRetentionDropsOldAddresses(): void
     {
-        $this->service()->offerToEmail(10, 1, 'dee@example.com');
+        $this->service()->offerToEmail(10, 1, 'dee@example.com', 'Dee Doe');
 
         self::assertSame(1, (new TicketTransferRepository())->anonymizeEmailsBefore('2026-08-01'));
         self::assertNull($this->db->transfers[1]['email']);
@@ -461,13 +502,20 @@ final class TicketTransferTest extends SalesDeskTestCase
 
         $this->tap($bot, 'g:10');
         $bot->capture(501, 501, 'dee@example.com');
+        self::assertSame('What is their name?', $this->lastText());
+        self::assertTrue($bot->isAwaiting(501));
+
+        $bot->capture(501, 501, '  Dee   Doe ');
         self::assertStringStartsWith('Offer your ticket for', $this->lastText());
+        self::assertStringContainsString('to Dee Doe (dee@example.com)?', $this->lastText());
 
         $this->tap($bot, 'y');
         self::assertSame(
-            'Sent. When dee@example.com accepts, the ticket moves to them. Until then your own ticket works.',
+            'Sent. When Dee Doe accepts, the ticket moves to them. Until then your own ticket works.',
             $this->lastText()
         );
+        self::assertSame('Dee Doe', $this->db->transfers[1]['name']);
+        self::assertSame('dee@example.com', $this->db->transfers[1]['email']);
         self::assertSame('gv:x:10', $this->sent()[count($this->sent()) - 1]['body']['reply_markup']['inline_keyboard'][0][0]['callback_data']);
 
         $this->tap($bot, 'g:10');
@@ -495,10 +543,36 @@ final class TicketTransferTest extends SalesDeskTestCase
 
         $this->tap($bot, 'g:10');
         $bot->capture(501, 501, 'dee@example.com');
+        $bot->capture(501, 501, 'Dee Doe');
         $this->tap($bot, 'n');
 
         self::assertSame('Kept. The ticket stays with you.', $this->lastText());
         self::assertSame([], $this->db->transfers);
+    }
+
+    public function testTheBotAsksForTheNameAgainWhenItIsEmpty(): void
+    {
+        $bot = new TransferBot($this->service(), new PersonRepository(), $this->client());
+
+        $this->tap($bot, 'g:10');
+        $bot->capture(501, 501, 'dee@example.com');
+        $bot->capture(501, 501, '<b></b>');
+
+        self::assertSame('Write the name of the person who gets the ticket.', $this->lastText());
+        self::assertTrue($bot->isAwaiting(501));
+
+        $bot->capture(501, 501, 'Dee');
+        self::assertStringContainsString('to Dee (dee@example.com)?', $this->lastText());
+    }
+
+    public function testTheBotDoesNotAskTheNameOfAMember(): void
+    {
+        $bot = new TransferBot($this->service(), new PersonRepository(), $this->client());
+
+        $this->tap($bot, 'g:10');
+        $bot->capture(501, 501, 'bob@example.com');
+
+        self::assertStringContainsString('to Bob?', $this->lastText());
     }
 
     public function testSomeoneElseCannotGiveAnnsTicketFromTheBot(): void
@@ -551,9 +625,65 @@ final class TicketTransferTest extends SalesDeskTestCase
         self::assertSame(2, $this->db->transfers[1]['receiver_person_id']);
     }
 
+    public function testTheGivePageAsksTheNameWithAnEmailAddress(): void
+    {
+        $token = SignedLink::sign('credit_ticket', 10);
+
+        $find = $this->page()->giveHtml($this->request('POST', ['ticket' => $token, 'step' => 'find', 'who' => 'dee@example.com']));
+        $empty = $this->page()->giveHtml($this->request('POST', [
+            'ticket' => $token, 'step' => 'email', 'email' => 'dee@example.com', 'name' => ' ',
+        ]));
+
+        self::assertStringContainsString('Offer your ticket for', $find);
+        self::assertStringContainsString('Their name', $find);
+        self::assertStringContainsString('name="name"', $find);
+        self::assertStringContainsString('Write the name of the person who gets the ticket.', $empty);
+        self::assertStringContainsString('Their name', $empty);
+        self::assertSame([], $this->db->transfers);
+
+        $sent = $this->page()->giveHtml($this->request('POST', [
+            'ticket' => $token, 'step' => 'email', 'email' => 'dee@example.com', 'name' => 'Dee Doe',
+        ]));
+        $again = $this->page()->giveHtml($this->request('GET', ['ticket' => $token]));
+
+        self::assertStringContainsString('Sent. When Dee Doe accepts', $sent);
+        self::assertSame('Dee Doe', $this->db->transfers[1]['name']);
+        self::assertStringContainsString('Waiting for Dee Doe to accept', $again);
+    }
+
+    public function testTheWaitingLineNamesTheReceiver(): void
+    {
+        $this->service()->offerToEmail(10, 1, 'dee@example.com', 'Dee Doe');
+
+        $credit = $this->controller()->ticketFor(SignedLink::sign('credit_ticket', 10));
+        $give = $this->profileGive();
+
+        self::assertSame('Dee Doe', $credit['offer_to'] ?? null);
+        self::assertSame(['⏳ Waiting for Dee Doe to accept'], $give['lines']);
+    }
+
+    public function testTheAcceptPageShowsTheGivenNameAndTheReceiverCanCorrectIt(): void
+    {
+        $this->service()->offerToEmail(10, 1, 'dee@example.com', 'Dee Do');
+        $offer = SignedLink::sign(TicketTransferService::ACCEPT_PURPOSE, 1);
+
+        $form = $this->page()->acceptHtml($this->request('GET', ['offer' => $offer]));
+        $empty = $this->page()->acceptHtml($this->request('POST', ['offer' => $offer, 'name' => '']));
+
+        self::assertStringContainsString('value="Dee Do"', $form);
+        self::assertStringContainsString('Please write your name.', $empty);
+        self::assertStringContainsString('value=""', $empty);
+        self::assertSame('pending', $this->db->transfers[1]['status']);
+
+        $this->page()->acceptHtml($this->request('POST', ['offer' => $offer, 'name' => 'Dee Doe']));
+
+        self::assertSame('Dee Doe', $this->db->transfers[1]['name']);
+        self::assertSame('issued', $this->db->transfers[1]['status']);
+    }
+
     public function testTheAcceptPageAsksForTheNameThenIssuesTheTicket(): void
     {
-        $this->service()->offerToEmail(10, 1, 'dee@example.com');
+        $this->service()->offerToEmail(10, 1, 'dee@example.com', 'Dee Doe');
         $offer = SignedLink::sign(TicketTransferService::ACCEPT_PURPOSE, 1);
 
         $form = $this->page()->acceptHtml($this->request('GET', ['offer' => $offer]));
@@ -567,7 +697,7 @@ final class TicketTransferTest extends SalesDeskTestCase
 
     public function testTheAcceptPageOfACancelledOfferSaysItIsGone(): void
     {
-        $this->service()->offerToEmail(10, 1, 'dee@example.com');
+        $this->service()->offerToEmail(10, 1, 'dee@example.com', 'Dee Doe');
         $this->service()->cancelOffer(10, 1);
 
         $page = $this->page()->acceptHtml($this->request('GET', [
@@ -651,7 +781,7 @@ final class TicketTransferTest extends SalesDeskTestCase
 
     public function testWithGivingOffAWaitingOfferIsNotShownAndCannotBeAccepted(): void
     {
-        $this->service()->offerToEmail(10, 1, 'dee@example.com');
+        $this->service()->offerToEmail(10, 1, 'dee@example.com', 'Dee Doe');
         $this->givingOff();
         $offer = SignedLink::sign(TicketTransferService::ACCEPT_PURPOSE, 1);
 
@@ -690,7 +820,7 @@ final class TicketTransferTest extends SalesDeskTestCase
         self::assertSame(TicketTransferService::DISABLED, $service->refusal($service->redemption(10), 1));
         self::assertFalse($service->canGive($service->redemption(10), 1));
         self::assertSame(TicketTransferService::DISABLED, $service->giveToMember(10, 1, 2)['code']);
-        self::assertSame(TicketTransferService::DISABLED, $service->offerToEmail(10, 1, 'dee@example.com')['code']);
+        self::assertSame(TicketTransferService::DISABLED, $service->offerToEmail(10, 1, 'dee@example.com', 'Dee Doe')['code']);
         self::assertSame([], $this->db->transfers);
         self::assertNull($this->db->redemptions[10]['cancelled_at']);
     }

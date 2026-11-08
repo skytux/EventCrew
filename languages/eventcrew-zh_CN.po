@@ -12370,3 +12370,15 @@ msgstr "成员可以赠送自己的门票"
 #: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "开启时，成员可以在门票页面或机器人中，把用积分兑换的免费门票赠送给其他成员或某个电子邮件地址。关闭时，赠送链接和按钮会隐藏，旧的也会被拒绝。已经赠送的门票仍然有效。"
+
+#: src/Support/TicketTransferService.php
+msgid "Write the name of the person who gets the ticket."
+msgstr "请填写接收这张票的人的姓名。"
+
+#: src/Telegram/TransferPage.php
+msgid "Their name"
+msgstr "对方的姓名"
+
+#: src/Telegram/TransferBot.php
+msgid "What is their name?"
+msgstr "对方叫什么名字？"

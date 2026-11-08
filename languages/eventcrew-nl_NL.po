@@ -12450,3 +12450,15 @@ msgstr "Leden kunnen hun ticket weggeven"
 #: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "Aan: een lid kan een met credits verkregen gratis ticket weggeven aan een ander lid of aan een e-mailadres, via de ticketpagina of de bot. Uit: de links en knoppen Weggeven zijn verborgen en oude worden geweigerd. Al weggegeven tickets blijven geldig."
+
+#: src/Support/TicketTransferService.php
+msgid "Write the name of the person who gets the ticket."
+msgstr "Schrijf de naam van wie het ticket krijgt."
+
+#: src/Telegram/TransferPage.php
+msgid "Their name"
+msgstr "Hun naam"
+
+#: src/Telegram/TransferBot.php
+msgid "What is their name?"
+msgstr "Hoe heet die persoon?"

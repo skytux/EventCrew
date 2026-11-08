@@ -252,9 +252,9 @@ final class ProfileService
             $buttons[] = TransferBot::cancelRow($redemptionId, (string) $ticket['when']);
 
             return ['⏳ ' . sprintf(
-                /* translators: %s: the email address the ticket was offered to */
+                /* translators: %s: the name of the person the ticket was offered to */
                 __('Waiting for %s to accept', 'eventcrew'),
-                $offer->email
+                $offer->offeredTo()
             )];
         }
 

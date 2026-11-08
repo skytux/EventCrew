@@ -42,6 +42,10 @@ final class TicketTransferService
     public const GONE = 'gone';
     public const NO_NAME = 'no_name';
     public const DISABLED = 'disabled';
+    public const NO_THEIR_NAME = 'no_their_name';
+
+    /** The longest name a transfer keeps. */
+    public const NAME_MAX = 100;
 
     /**
      * The setting "Members can give away their ticket" (Settings, Ticket
@@ -213,14 +217,16 @@ final class TicketTransferService
     }
 
     /**
-     * Offers the ticket to an email address. The address must be real (not
-     * a placeholder), the night's doors not yet open, and the giver may have
-     * at most MAX_EMAIL_OFFERS offers waiting. An address that belongs to a
-     * member gives the ticket to that member at once instead.
+     * Offers the ticket to an email address, for the person named $name.
+     * The address must be real (not a placeholder), the name not empty, the
+     * night's doors not yet open, and the giver may have at most
+     * MAX_EMAIL_OFFERS offers waiting. An address that belongs to a member
+     * gives the ticket to that member at once instead, and the name is not
+     * needed.
      *
      * @return array{code: string, transfer: ?TicketTransfer}
      */
-    public function offerToEmail(int $redemptionId, int $giverPersonId, string $email): array
+    public function offerToEmail(int $redemptionId, int $giverPersonId, string $email, string $name): array
     {
         $email = strtolower(trim($email));
         $redemption = $this->redemptions->find($redemptionId);
@@ -238,6 +244,12 @@ final class TicketTransferService
 
         if (null !== $member) {
             return $this->giveToMember($redemptionId, $giverPersonId, $member->id);
+        }
+
+        $name = self::cleanName($name);
+
+        if ('' === $name) {
+            return ['code' => self::NO_THEIR_NAME, 'transfer' => null];
         }
 
         $date = (string) $redemption->redeemedFor;
@@ -261,7 +273,7 @@ final class TicketTransferService
             'event_post_id' => $redemption->eventPostId,
             'giver_person_id' => $giverPersonId,
             'receiver_person_id' => null,
-            'name' => '',
+            'name' => $name,
             'email' => $email,
             'language' => null,
             'status' => TicketTransfer::STATUS_PENDING,
@@ -271,7 +283,13 @@ final class TicketTransferService
             return ['code' => self::GONE, 'transfer' => null];
         }
 
-        $this->ticketMail?->sendTransferOffer($email, $this->nameOf($giverPersonId), $date, self::acceptUrl($id));
+        $this->ticketMail?->sendTransferOffer(
+            $email,
+            $this->nameOf($giverPersonId),
+            $date,
+            self::acceptUrl($id),
+            $name
+        );
 
         return ['code' => self::OK, 'transfer' => $this->transfers->find($id)];
     }
@@ -307,7 +325,8 @@ final class TicketTransferService
     }
 
     /**
-     * The receiver accepts an offer from the emailed link, with their name.
+     * The receiver accepts an offer from the emailed link, with their name
+     * (the giver's, or as they corrected it).
      * The ticket moves now: the giver's ticket is cancelled, the receiver is
      * emailed their own, and the giver is told. Refused while the setting
      * is off: the offer waits and the giver's ticket keeps working.
@@ -320,13 +339,12 @@ final class TicketTransferService
             return ['code' => self::DISABLED, 'transfer' => null];
         }
 
-        $name = trim(preg_replace('/\s+/u', ' ', $name) ?? '');
+        $name = self::cleanName($name);
 
         if ('' === $name) {
             return ['code' => self::NO_NAME, 'transfer' => null];
         }
 
-        $name = mb_substr($name, 0, 100);
         $offer = $this->transfers->find($transferId);
 
         if (null === $offer || ! $offer->isPending() || null === $this->pendingOffer($offer->redemptionId)) {
@@ -445,6 +463,17 @@ final class TicketTransferService
         return null === $receiver ? $transfer->name : $receiver->name();
     }
 
+    /**
+     * A typed name as a transfer keeps it: tags stripped, spaces collapsed,
+     * at most NAME_MAX characters.
+     */
+    public static function cleanName(string $name): string
+    {
+        $name = trim(preg_replace('/\s+/u', ' ', sanitize_text_field($name)) ?? '');
+
+        return trim(mb_substr($name, 0, self::NAME_MAX));
+    }
+
     /** The name of the person behind $personId, '' when not found. */
     public function nameOf(int $personId): string
     {
@@ -497,6 +526,7 @@ final class TicketTransferService
             self::TOO_MANY => __('You already have 3 offers waiting. Cancel one first.', 'eventcrew'),
             self::TOO_LATE => __('The doors are already open. Give the ticket to a member instead.', 'eventcrew'),
             self::NO_NAME => __('Please write your name.', 'eventcrew'),
+            self::NO_THEIR_NAME => __('Write the name of the person who gets the ticket.', 'eventcrew'),
             self::GONE => __('This offer is no longer open.', 'eventcrew'),
             self::DISABLED => __('Giving tickets away is turned off.', 'eventcrew'),
             default => __('This ticket cannot be given away.', 'eventcrew'),

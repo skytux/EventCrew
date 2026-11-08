@@ -14,7 +14,8 @@ use EventCrew\Support\TicketTransferService;
  *
  * The button sits on the credit ticket DM and under /me tickets. A tap asks
  * for a member's name or an email address; a name gets up to five matching
- * members as buttons, then a ✅ / ✖️ confirm. A member gets the ticket at
+ * members as buttons, an email address of someone who is not a member gets
+ * a short "What is their name?", then a ✅ / ✖️ confirm. A member gets the ticket at
  * once; an email address gets an offer to accept (TicketTransferService).
  * While an offer waits, ✖️ Cancel offer takes it back.
  *
@@ -26,7 +27,11 @@ final class TransferBot
     /** Callback data prefix: gv:g:<redemption>, gv:p:<person>, gv:y, gv:n, gv:x:<redemption>. */
     public const PREFIX = 'gv:';
 
-    /** Holds the ticket being given while the bot waits for a name or an email address. */
+    /**
+     * Holds the ticket being given while the bot waits for a name or an email
+     * address: the credit ticket id, or ['rid' => id, 'email' => address]
+     * while it waits for the name of the person at that address.
+     */
     private const AWAIT_PREFIX = 'eventcrew_tg_await_give_';
 
     /** Holds the ticket and the chosen receiver between the pick and the ✅. */
@@ -146,14 +151,17 @@ final class TransferBot
     }
 
     /**
-     * The reply to "Who gets your ticket?": an email address goes straight to
-     * the confirm; a name gets the matching members as buttons.
+     * The reply to "Who gets your ticket?": a member's email address goes
+     * straight to the confirm, another address to "What is their name?"; a
+     * name gets the matching members as buttons. The reply to "What is their
+     * name?" goes to the confirm.
      *
      * @param array<int, array<string, mixed>> $entities Telegram message entities.
      */
     public function capture(int $telegramUserId, int $chatId, string $text, array $entities = []): void
     {
-        $redemptionId = (int) get_transient(self::AWAIT_PREFIX . $telegramUserId);
+        $waiting = get_transient(self::AWAIT_PREFIX . $telegramUserId);
+        $redemptionId = is_array($waiting) ? (int) ($waiting['rid'] ?? 0) : (int) $waiting;
         delete_transient(self::AWAIT_PREFIX . $telegramUserId);
         $giver = $this->people->findByTelegramUserId($telegramUserId);
         $redemption = $this->transfers->redemption($redemptionId);
@@ -173,6 +181,12 @@ final class TransferBot
 
         $night = $this->transfers->nightLabel((string) $redemption->redeemedFor);
         $text = trim($text);
+
+        if (is_array($waiting) && '' !== (string) ($waiting['email'] ?? '')) {
+            $this->captureName($telegramUserId, $chatId, $redemptionId, (string) $waiting['email'], $text, $night);
+
+            return;
+        }
 
         if (str_contains($text, '@') && ! str_starts_with($text, '@')) {
             $email = strtolower($text);
@@ -197,7 +211,8 @@ final class TransferBot
                 return;
             }
 
-            $this->askConfirm($telegramUserId, $chatId, ['rid' => $redemptionId, 'email' => $email], TransferPage::confirmEmailText($email, $night));
+            self::awaitName($telegramUserId, $redemptionId, $email);
+            $this->telegram->sendMessage($chatId, self::nameText(), MenuButtons::cancel());
 
             return;
         }
@@ -227,6 +242,52 @@ final class TransferBot
         );
     }
 
+    /** "What is their name?": asked after the email address of someone who is not a member. */
+    public static function nameText(): string
+    {
+        return __('What is their name?', 'eventcrew');
+    }
+
+    /** The reply to "What is their name?": the confirm, or the question again when it is empty. */
+    private function captureName(
+        int $telegramUserId,
+        int $chatId,
+        int $redemptionId,
+        string $email,
+        string $text,
+        string $night
+    ): void {
+        $name = TicketTransferService::cleanName($text);
+
+        if ('' === $name) {
+            self::awaitName($telegramUserId, $redemptionId, $email);
+            $this->telegram->sendMessage(
+                $chatId,
+                TicketTransferService::message(TicketTransferService::NO_THEIR_NAME),
+                MenuButtons::cancel()
+            );
+
+            return;
+        }
+
+        $this->askConfirm(
+            $telegramUserId,
+            $chatId,
+            ['rid' => $redemptionId, 'email' => $email, 'name' => $name],
+            TransferPage::confirmEmailText($name . ' (' . $email . ')', $night)
+        );
+    }
+
+    /** Waits for the name of the person at $email. */
+    private static function awaitName(int $telegramUserId, int $redemptionId, string $email): void
+    {
+        set_transient(
+            self::AWAIT_PREFIX . $telegramUserId,
+            ['rid' => $redemptionId, 'email' => $email],
+            15 * MINUTE_IN_SECONDS
+        );
+    }
+
     /** A member button: the ✅ / ✖️ confirm. */
     private function pick(Person $giver, int $chatId, int $personId): void
     {
@@ -249,7 +310,7 @@ final class TransferBot
     }
 
     /**
-     * @param array{rid: int, person?: int, email?: string} $state
+     * @param array{rid: int, person?: int, email?: string, name?: string} $state
      */
     private function askConfirm(int $telegramUserId, int $chatId, array $state, string $question): void
     {
@@ -273,8 +334,9 @@ final class TransferBot
         }
 
         $redemptionId = (int) $state['rid'];
+        $name = (string) ($state['name'] ?? '');
         $result = empty($state['person'])
-            ? $this->transfers->offerToEmail($redemptionId, $giver->id, (string) $state['email'])
+            ? $this->transfers->offerToEmail($redemptionId, $giver->id, (string) $state['email'], $name)
             : $this->transfers->giveToMember($redemptionId, $giver->id, (int) $state['person']);
         $transfer = $result['transfer'];
 
@@ -306,9 +368,9 @@ final class TransferBot
         }
 
         return sprintf(
-            /* translators: %s: an email address */
+            /* translators: %s: the name of the person the ticket was offered to */
             __('Sent. When %s accepts, the ticket moves to them. Until then your own ticket works.', 'eventcrew'),
-            $transfer->email
+            $transfer->offeredTo()
         );
     }
 
