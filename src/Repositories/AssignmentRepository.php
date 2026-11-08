@@ -606,6 +606,35 @@ final class AssignmentRepository
     }
 
     /**
+     * The ids of a person's completed tasks (completed or arrived late) on
+     * one night that count toward credit, lowest first: what the credit for
+     * extra tasks on the same night is added for (ExtraTaskCredits). A task
+     * marked "does not count toward free-entry credit" is left out.
+     *
+     * @return array<int, int>
+     */
+    public function creditedIdsOn(int $personId, string $date): array
+    {
+        global $wpdb;
+
+        $statuses = AssignmentStatus::credited();
+        $statusPlaceholders = implode(',', array_fill(0, count($statuses), '%s'));
+
+        $ids = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT a.id FROM {$this->table()} a
+                INNER JOIN {$this->tasksTable()} s ON s.id = a.task_id
+                WHERE a.person_id = %d AND s.task_date = %s AND s.deleted_at IS NULL
+                  AND a.counts_credit = 1 AND a.status IN ({$statusPlaceholders})
+                ORDER BY a.id ASC",
+                array_merge([$personId, $date], $statuses)
+            )
+        );
+
+        return array_map('intval', is_array($ids) ? $ids : []);
+    }
+
+    /**
      * Assignments an admin marked no-show or late-cancel at least as long ago
      * as $cutoff, that have not yet had a standing notice recorded in the
      * ledger under $kind. The NOT EXISTS guard is what lets the caller take a

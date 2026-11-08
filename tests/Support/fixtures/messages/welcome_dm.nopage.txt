@@ -28,6 +28,20 @@ When you sign up for a task, you get a free ticket for that night. Show it at th
 
 You earn 1 free-entry credit for every 2 tasks you complete. You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits.
 
+<b>⚖️ Tickets and credits</b>
+
+🎫 Your working ticket covers all your tasks on a night. It is personal: it can't be given away. Its code stays the same, so a screenshot or a saved QR code keeps working.
+
+🎟️ A free-entry ticket can't be cancelled, but you can give it to someone else.
+
+💳 A bought ticket never turns into a credit.
+
+🔁 Taking a task on a night you already have a ticket for changes nothing about that ticket.
+
+➕ Each extra task on the same night earns one more credit. It shows as pending and is added after the event, if you did the task.
+
+🔹 Free-entry credits and tickets have no cash value. They can't be refunded, sold or paid out in any form; they can only be used to get a ticket for an eligible event.
+
 <b>📈 Standing</b>
 
 Your standing comes from how your past tasks went:

@@ -16,6 +16,7 @@
  * @var float $reputation_threshold Score at or above which a rated member is in good standing.
  * @var array<int, array{status: string, label: string, percent: int}> $reputation_weights Per-outcome score weights.
  * @var int $tasks_per_credit Completed tasks a member works to earn one free-entry credit.
+ * @var bool $extra_task_credit Whether an extra task on the same night earns a free-entry credit.
  * @var int $min_rated_tasks Finished tasks before a member is rated rather than "New".
  * @var int $reputation_half_life Days for an outcome to count half as much toward the score.
  * @var bool $reputation_gate Whether at-risk members are stopped from signing up.
@@ -920,6 +921,16 @@ if (! defined('ABSPATH')) {
                     <p class="description">
                         <?php esc_html_e('Completed tasks a member works to earn one free-entry credit. Default 2.', 'eventcrew'); ?>
                     </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Extra tasks', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="extra_task_credit" value="1" <?php checked($extra_task_credit); ?>>
+                        <?php esc_html_e('Credit for extra tasks on the same night', 'eventcrew'); ?>
+                    </label>
+                    <p class="description"><?php esc_html_e('When on, every task a member does on a night after their first one earns one more free-entry credit, on top of the credits for completed tasks. It shows as pending until the after-event run adds it, and only for tasks marked completed or arrived late. A cancelled or no-show task gives nothing.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></p>
                 </td>
             </tr>
             <tr>

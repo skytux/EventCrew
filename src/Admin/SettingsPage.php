@@ -29,6 +29,7 @@ use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\EventTimes;
 use EventCrew\Support\TicketTransferService;
+use EventCrew\Support\ExtraTaskCredits;
 use EventCrew\Support\EventVenue;
 use EventCrew\Support\VenueReader;
 use EventCrew\Support\Organization;
@@ -156,6 +157,7 @@ final class SettingsPage
                 ),
                 'reputation_weights' => $this->reputationWeightRows(),
                 'tasks_per_credit' => $reputation->tasksPerCredit(),
+                'extra_task_credit' => ExtraTaskCredits::isOn(),
                 'min_rated_tasks' => $reputation->minRatedTasks(),
                 'reputation_half_life' => $reputation->halfLifeDays(),
                 'reputation_gate' => (bool) get_option(SignupService::GATE_OPTION, true),
@@ -687,6 +689,8 @@ final class SettingsPage
             ? max(1, (int) $_POST['tasks_per_credit'])
             : Credits::TASKS_PER_CREDIT;
         update_option(ReputationSettings::TASKS_PER_CREDIT_OPTION, $tasksPerCredit);
+
+        ExtraTaskCredits::save(isset($_POST['extra_task_credit']));
 
         $minRatedTasks = isset($_POST['min_rated_tasks'])
             ? max(1, (int) $_POST['min_rated_tasks'])

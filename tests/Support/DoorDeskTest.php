@@ -664,7 +664,8 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(['crew', ''], array_column($members, 'kind'));
     }
 
-    public function testWorkingTonightWithAFreeEntryTicketCancelsItAndLogsWhy(): void
+    /** Taking a task at the door with a free-entry ticket for tonight: nothing is converted. */
+    public function testWorkingTonightWithAFreeEntryTicketKeepsIt(): void
     {
         $this->wpdb->nextRows[] = $this->personRow(8);                              // people->find
         $this->wpdb->nextRows[] = $this->taskRow(5, 'decorate', '10:00', '11:00');  // tasks->find
@@ -676,25 +677,17 @@ final class DoorDeskTest extends SalesDeskTestCase
         $this->wpdb->nextRows[] = $this->assignmentRow(30, 5, 8, 'signed_up');
         $this->wpdb->nextResults[] = [                                              // redemptions->forDate
             ['id' => 44, 'person_id' => 8, 'redeemed_for' => self::NIGHT],
-            ['id' => 45, 'person_id' => 9, 'redeemed_for' => self::NIGHT],
         ];
 
-        $desk = $this->desk();
-
-        self::assertSame(DoorDesk::WORK_SWAPPED, $desk->workTonight(self::NIGHT, 1, 8, 5));
-        // The ticket is cancelled, never deleted: its link shows DISABLED.
-        self::assertSame([], $this->wpdb->deletes);
-        self::assertNotEmpty(array_filter(
+        self::assertSame(DoorDesk::WORK_OK, $this->desk()->workTonight(self::NIGHT, 1, 8, 5));
+        self::assertSame([], array_filter(
             $this->wpdb->queries,
             static fn (string $sql): bool => str_contains($sql, 'SET cancelled_at')
-                && str_contains($sql, 'WHERE id = 44 AND cancelled_at IS NULL')
         ));
-        $grant = end($this->wpdb->inserts)['data'];
-        self::assertSame(8, $grant['person_id']);
-        self::assertSame(0, $grant['credits']);
-        self::assertSame('Ticket exchanged against taking a task', $grant['note']);
-        self::assertSame(1, $grant['granted_by_person_id']);
-        self::assertStringContainsString('credit is given back', $desk->workTonightText(DoorDesk::WORK_SWAPPED));
+        self::assertSame([], array_filter(
+            array_column($this->wpdb->inserts, 'table'),
+            static fn (string $table): bool => str_contains($table, 'credit_grants')
+        ));
     }
 
     public function testOpenTasksListsTonightsTasksWithAFreePlace(): void
@@ -1196,6 +1189,40 @@ final class DoorDeskTest extends SalesDeskTestCase
         self::assertSame(DoorDesk::SCAN_OK, $scan['code']);
         self::assertSame('crew:8', $scan['key']);
         self::assertSame([], $this->wpdb->inserts);
+    }
+
+    /** The working ticket's EC-W code and its link scan to the person's crew row. */
+    public function testScanningAWorkingTicketFindsTheirCrewRow(): void
+    {
+        foreach ([TicketMail::workCode(8, self::NIGHT), TicketMail::workUrl(8, self::NIGHT)] as $text) {
+            $this->wpdb->nextRows[] = $this->personRow(8);                                  // the name
+            $this->wpdb->nextResults[] = [$this->assignmentRow(30, 5, 8, 'signed_up')];     // holdsTaskOn
+            $this->queueCrewEntrants();
+
+            $scan = $this->desk()->scan(self::NIGHT, $text);
+
+            self::assertSame(DoorDesk::SCAN_OK, $scan['code'], $text);
+            self::assertSame('crew:8', $scan['key']);
+        }
+
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    /** A working ticket with no task left that night, or for another night, gets nobody in. */
+    public function testAWorkingTicketWithNoTaskLeftIsDisabled(): void
+    {
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->wpdb->nextResults[] = [$this->assignmentRow(30, 5, 8, 'cancelled')];
+
+        self::assertSame(DoorDesk::SCAN_DISABLED, $this->desk()->scan(self::NIGHT, TicketMail::workCode(8, self::NIGHT))['code']);
+
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $other = $this->desk()->scan(self::NIGHT, TicketMail::workCode(8, '2030-01-05'));
+        self::assertSame(DoorDesk::SCAN_OTHER_NIGHT, $other['code']);
+        self::assertSame('2030-01-05', $other['date']);
+
+        $forged = substr(TicketMail::workCode(8, self::NIGHT), 0, -1) . 'x';
+        self::assertSame(DoorDesk::SCAN_NOT_OURS, $this->desk()->scan(self::NIGHT, $forged)['code']);
     }
 
     /** The short EC-F code in a credit's ticket email scans to the credit row. */

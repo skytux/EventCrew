@@ -71,6 +71,14 @@ Tehtävään ilmoittautuminen antaa jäsenelle vapaalipun sille illalle. Lippu o
 
 Jäsenet saavat 1 vapaalipun jokaisesta 2 tehdystä tehtävästä ja käyttävät sen: /me, 🎟 Liput, 🎟 Hae vapaalippu (tai /tickets), tai verkkosivulla. Sinä annat vapaalippuja komennolla /people, People-sivulla tai myyntipisteessä. Jokainen lahja kirjataan People-sivun vapaalippulokiin, ja jäsenelle kerrotaan siitä.
 
+- 🎫 Yksi työlippu per henkilö per ilta, kaikille hänen tehtävilleen. Miksi: yksi sisäänpääsy per henkilö, ja ovella näkyvät kaikki hänen tehtävänsä kerralla.
+- 🔒 Työlipun koodi ei koskaan muutu. Miksi: kuvakaappaukset ja tallennetut QR-koodit toimivat yhä.
+- 🎟️ Jäsenet eivät voi perua vapaalippua; järjestäjät voivat yhä (/unticket). Miksi: yksi selkeä sääntö, eikä kukaan voi saada vapaalippua takaisin muuttamalla suunnitelmiaan viime hetkellä.
+- 💳 Ostettu lippu ei koskaan muutu vapaalipuksi, eikä tehtävän ottaminen sille illalle muuta mitään. Miksi: se on maksettu, eikä vapaalipuilla ole rahallista arvoa.
+- ➕ Lisätehtävä samana iltana tuo yhden vapaalipun lisää. Se odottaa, kunnes tapahtuman jälkeinen ajo lisää sen tehtävälle, joka on merkitty tehdyksi tai myöhässä saapuneeksi. Miksi: vapaalippu vain oikeasti tehdystä työstä.
+
+Vapaalipuilla ja lipuilla ei ole rahallista arvoa. Niitä ei voi hyvittää, myydä eikä maksaa ulos missään muodossa; niillä voi vain saada lipun tapahtumaan, johon ne käyvät.
+
 Luotettavuus lasketaan joka kerta uudelleen siitä, miten jäsenen aiemmat tehtävät menivät; tuoreet tehtävät painavat enemmän. Jäsen saa arvion 3 tehdyn tehtävän jälkeen. 60% tai enemmän on hyvä luotettavuus. Painot ja rajat ovat kohdassa Asetukset > Luotettavuus.
 
 Ilmoittautumisraja on päällä: jäsen, jonka luotettavuus on alle 60%, ei voi ilmoittautua uusiin tehtäviin. /people voi antaa hänelle kertaluvan.

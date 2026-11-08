@@ -609,6 +609,21 @@ final class SettingsPageTest extends TelegramTestCase
         self::assertStringContainsString('Members can give away their ticket', $template);
     }
 
+    public function testTheExtraTaskCreditSwitchSavesAndIsOnByDefault(): void
+    {
+        self::assertTrue(\EventCrew\Support\ExtraTaskCredits::isOn());
+
+        $this->saveUntil([], \EventCrew\Support\ExtraTaskCredits::OPTION);
+        self::assertSame('0', $this->options[\EventCrew\Support\ExtraTaskCredits::OPTION]);
+
+        $this->saveUntil(['extra_task_credit' => '1'], \EventCrew\Support\ExtraTaskCredits::OPTION);
+        self::assertSame('1', $this->options[\EventCrew\Support\ExtraTaskCredits::OPTION]);
+
+        $template = (string) file_get_contents(dirname(__DIR__, 2) . '/templates/admin/settings.php');
+        self::assertStringContainsString('name="extra_task_credit"', $template);
+        self::assertStringContainsString('Credit for extra tasks on the same night', $template);
+    }
+
     public function testTheTelegramSignInSwitchSaves(): void
     {
         $this->saveTelegramSection(['telegram_web_login' => '1']);

@@ -6127,10 +6127,6 @@ msgstr "すべての端末からサインアウトしました。あなたとし
 msgid "Signed up"
 msgstr "申し込み済み"
 
-#: src/Support/DoorDesk.php:1125
-msgid "Signed up and checked in. Their free-entry ticket is cancelled and the credit is given back."
-msgstr "申し込んでチェックインしました。無料入場チケットはキャンセルされ、クレジットは返されました。"
-
 #: src/Support/DoorDesk.php:1123
 msgid "Signed up and checked in. They are on the crew list now."
 msgstr "申し込んでチェックインしました。クルーリストに載りました。"
@@ -6335,10 +6331,6 @@ msgstr "チケットはキャンセルされました"
 #: src/Support/TicketMail.php:1123
 msgid "TICKET MOVED"
 msgstr "チケットは移動されました"
-
-#: templates/public/door.php:61
-msgid "Take a task instead"
-msgstr "代わりにタスクを担当する"
 
 #: templates/public/door.php:216
 msgid "Take one person off the count without a name"
@@ -8266,10 +8258,6 @@ msgstr "チケットのメールは %s に送られます。それまではキ�
 #: src/Support/TicketMail.php:582
 msgid "Ticket emails: %1$d sent · %2$d failed · %3$d not sent"
 msgstr "チケットのメール: 送信 %1$d · 失敗 %2$d · 未送信 %3$d"
-
-#: src/Support/DoorDesk.php:1109
-msgid "Ticket exchanged against taking a task"
-msgstr "タスクの担当と引き換えたチケット"
 
 #: templates/admin/settings.php:2337
 msgid "Ticket file formats"
@@ -12382,3 +12370,134 @@ msgstr "受け取る人の名前は？"
 #: templates/public/signup.php
 msgid "Sign in first to take a task."
 msgstr "タスクを担当するには、先にサインインしてください。"
+
+#. translators: %d: pending free-entry credits for extra tasks on the same night
+#: src/Support/ExtraTaskCredits.php
+msgid "(+%d pending)"
+msgstr "(+%d 保留中)"
+
+#: src/Support/TicketRules.php
+msgid "A bought ticket never becomes a credit, and taking a task on that night changes nothing. Why: it was paid for, and credits have no cash value."
+msgstr "購入したチケットがクレジットになることはなく、その夜にタスクを引き受けても何も変わりません。理由：代金が支払われており、クレジットには金銭的価値がないためです。"
+
+#: src/Support/TicketRules.php
+msgid "A bought ticket never turns into a credit."
+msgstr "購入したチケットがクレジットになることはありません。"
+
+#: src/Support/StandingNotice.php
+msgid "A free-entry credit for your extra task"
+msgstr "追加タスクの無料入場クレジット"
+
+#: src/Support/TicketRules.php
+msgid "A free-entry ticket can't be cancelled, but you can give it to someone else."
+msgstr "無料入場チケットはキャンセルできませんが、他の人に譲ることはできます。"
+
+#: src/Support/TicketRules.php src/Telegram/TicketRedemptionService.php
+msgid "A free-entry ticket can’t be cancelled."
+msgstr "無料入場チケットはキャンセルできません。"
+
+#: src/Telegram/TicketRedemptionService.php
+msgid "A free-entry ticket can’t be cancelled. You can give it to someone else."
+msgstr "無料入場チケットはキャンセルできません。他の人に譲ることはできます。"
+
+#: src/Support/TicketRules.php
+msgid "An extra task on the same night earns one more credit, pending until the after-event run adds it for a task marked completed or arrived late. Why: credit only for work actually done."
+msgstr "同じ夜の追加タスクごとにクレジットが1つ増えます。完了または遅刻到着と記録されたタスクについて、イベント後の処理で追加されるまで保留になります。理由：実際に行った作業にだけクレジットを付けるためです。"
+
+#: templates/admin/settings.php
+msgid "Credit for extra tasks on the same night"
+msgstr "同じ夜の追加タスクにクレジット"
+
+#: src/Support/TicketRules.php
+msgid "Each extra task on the same night earns one more credit. It shows as pending and is added after the event, if you did the task."
+msgstr "同じ夜の追加タスクごとにクレジットが1つ増えます。保留中と表示され、タスクを行った場合はイベント後に追加されます。"
+
+#. translators: %s: the date of the night
+#: src/Support/ExtraTaskCredits.php
+msgid "Extra task on %s"
+msgstr "%s の追加タスク"
+
+#: templates/admin/settings.php
+msgid "Extra tasks"
+msgstr "追加タスク"
+
+#: src/Support/TicketRules.php
+msgid "Free-entry credits and tickets have no cash value. They can't be refunded, sold or paid out in any form; they can only be used to get a ticket for an eligible event."
+msgstr "無料入場クレジットとチケットには金銭的価値がありません。いかなる形でも返金、販売、換金はできず、対象のイベントのチケットを得るためにのみ使えます。"
+
+#: src/Support/TicketRules.php
+msgid "Members can't cancel a free-entry ticket; organizers still can (/unticket). Why: one simple rule, and nobody can win a credit back by changing plans late."
+msgstr "メンバーは無料入場チケットをキャンセルできませんが、主催者はできます（/unticket）。理由：ルールを一つにし、直前の予定変更でクレジットを取り戻せないようにするためです。"
+
+#: src/Support/TicketRules.php
+msgid "One working ticket per person per night, for all their tasks. Why: one entry per person, and the door sees all their tasks at once."
+msgstr "1人1晩につき作業チケットは1枚で、その人のすべてのタスクに有効です。理由：入場は1人1回で、入口でその人のタスクをまとめて確認できるためです。"
+
+#: src/Support/TicketRules.php
+msgid "Taking a task on a night you already have a ticket for changes nothing about that ticket."
+msgstr "すでにチケットを持っている夜にタスクを引き受けても、そのチケットは何も変わりません。"
+
+#: src/Support/ExtraTaskCredits.php
+msgid "The pending free-entry credit for an extra task that night is gone."
+msgstr "その夜の追加タスクの保留中の無料入場クレジットはなくなりました。"
+
+#: src/Support/MessageTemplates.php
+msgid "The rules for tickets and credits, one line each: the working ticket, free-entry and bought tickets, extra tasks on the same night (when on in Settings) and that credits have no cash value."
+msgstr "チケットとクレジットのルール（各1行）：作業チケット、無料入場チケットと購入チケット、同じ夜の追加タスク（設定で有効な場合）、クレジットに金銭的価値がないこと。"
+
+#: src/Support/TicketRules.php
+msgid "The working ticket's code never changes. Why: screenshots and saved QR codes keep working."
+msgstr "作業チケットのコードは変わりません。理由：スクリーンショットや保存したQRコードがそのまま使えるためです。"
+
+#. translators: %d: pending free-entry credits for extra tasks on that night
+#: src/Support/ExtraTaskCredits.php
+msgid "This is an extra task on the same night: %d free-entry credit is pending. It is added after the event if you do the task."
+msgid_plural "These are extra tasks on the same night: %d free-entry credits are pending. They are added after the event for the tasks you do."
+msgstr[0] "同じ夜の追加タスクです：無料入場クレジット%d個が保留中です。タスクを行えばイベント後に追加されます。"
+
+#: src/Support/TicketMail.php src/Telegram/TicketController.php
+msgid "Ticket %1$d of %2$d"
+msgstr "チケット %1$d/%2$d"
+
+#. translators: 1: this ticket's number, 2: how many tickets for the night, 3: when it was issued
+#: src/Telegram/TicketController.php
+msgid "Ticket %1$d of %2$d · issued %3$s"
+msgstr "チケット %1$d/%2$d · 発行 %3$s"
+
+#: src/Support/WelcomeSender.php
+msgid "Tickets and credits"
+msgstr "チケットとクレジット"
+
+#: templates/admin/settings.php
+msgid "When on, every task a member does on a night after their first one earns one more free-entry credit, on top of the credits for completed tasks. It shows as pending until the after-event run adds it, and only for tasks marked completed or arrived late. A cancelled or no-show task gives nothing."
+msgstr "有効にすると、メンバーがその夜の最初のタスクの後に行う各タスクで、完了タスクのクレジットとは別に無料入場クレジットが1つ増えます。イベント後の処理で追加されるまで保留中と表示され、完了または遅刻到着と記録されたタスクにのみ付きます。キャンセルや無断欠席のタスクには何も付きません。"
+
+#: src/Telegram/TicketController.php
+msgid "You can give a free-entry ticket to someone else. A working ticket for your tasks is personal."
+msgstr "無料入場チケットは他の人に譲れます。タスクの作業チケットは本人専用です。"
+
+#. translators: %d: how many tickets the person has for the night, always 2 or more
+#: src/Support/TicketMail.php
+msgid "You have %d ticket for this night."
+msgid_plural "You have %d tickets for this night."
+msgstr[0] "この夜のチケットは%d枚です。"
+
+#. translators: %d: free-entry credits just added for extra tasks
+#: src/Support/ExtraTaskCredits.php
+msgid "Your extra task that night earned %d more free-entry credit."
+msgid_plural "Your extra tasks that night earned %d more free-entry credits."
+msgstr[0] "その夜の追加タスクで、無料入場クレジットが%d個増えました。"
+
+#: src/Support/TicketRules.php
+msgid "Your working ticket covers all your tasks on a night. It is personal: it can't be given away. Its code stays the same, so a screenshot or a saved QR code keeps working."
+msgstr "作業チケットは、その夜のあなたのすべてのタスクに有効です。本人専用で、他の人に譲ることはできません。コードは変わらないので、スクリーンショットや保存したQRコードもそのまま使えます。"
+
+#. translators: %d: free-entry credits taken back
+#: src/Support/ExtraTaskCredits.php
+msgid "A task of yours was marked as not done, so %d free-entry credit for an extra task that night was taken back."
+msgid_plural "A task of yours was marked as not done, so %d free-entry credits for extra tasks that night were taken back."
+msgstr[0] "あなたのタスクの1つが未実施とされたため、その夜の追加タスクの無料入場クレジット%d個が取り消されました。"
+
+#: src/Support/StandingNotice.php
+msgid "A free-entry credit was taken back"
+msgstr "無料入場クレジットが取り消されました"

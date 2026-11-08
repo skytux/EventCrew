@@ -1,10 +1,10 @@
 <?php
 
 /**
- * The links at the top of the crew page: the crew's Telegram group (the main button,
- * filled) and the crew guide (a text link beside it). Signed out
- * there is no group link, so only the guide shows; signed in, the guide sits
- * under the person's details in the header card instead. Nothing is drawn
+ * The links at the top of the crew page: the crew's Telegram group (the main
+ * button, filled) and, when $eventcrew_links_guide is set, the crew guide (a
+ * text link beside it). The crew page passes no guide here: signed in it sits
+ * under the person's details, signed out it is not shown. Nothing is drawn
  * when neither is shown.
  *
  * @var string $eventcrew_group_link The Telegram group link, or '' to leave it out.

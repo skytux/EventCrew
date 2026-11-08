@@ -33,7 +33,8 @@ final class ClaimNotifier
         private readonly StandingCalculator $standing,
         private readonly ?TicketMail $ticketMail = null,
         private readonly ?PersonRepository $people = null,
-        private readonly ?SlotFreedNotice $slots = null
+        private readonly ?SlotFreedNotice $slots = null,
+        private readonly ?ExtraTaskCredits $extra = null
     ) {
     }
 
@@ -111,11 +112,16 @@ final class ClaimNotifier
         }
 
         $about = RoleGuide::aboutLine($task);
+        // A second task on the same night: the pending credit it makes, under
+        // the standing (ExtraTaskCredits).
+        $pendingLine = ExtraTaskCredits::pendingAddedLine(
+            (int) $this->extra?->pendingOn($person->id, $task->taskDate)
+        );
         // The texts are the Messages page templates (MessageTemplates).
         $context = [
             'person' => $person,
             'task' => $task,
-            'standing' => $this->standingLine($person),
+            'standing' => $this->standingLine($person) . ('' === $pendingLine ? '' : "\n\n" . $pendingLine),
             'free_cancel' => self::freeCancelLine(),
             'about' => '' === $about ? '' : "\n\n" . $about,
             'assignment_id' => $assignment->id,
@@ -243,6 +249,12 @@ final class ClaimNotifier
             ? $lateNote . ' ' . CancelNote::undo()
             : __('Thanks for the notice.', 'eventcrew') . ' ' . CancelNote::early($task);
 
+        // Another task is still held that night: this one was an extra, and
+        // its pending credit is gone (ExtraTaskCredits).
+        if ($this->pendingRemoved($person, $task)) {
+            $note .= ' ' . ExtraTaskCredits::pendingRemovedLine();
+        }
+
         // The texts are the Messages page templates (MessageTemplates).
         $context = [
             'person' => $person,
@@ -296,11 +308,24 @@ final class ClaimNotifier
                         /* translators: %s: the task, like "Decorate · Sat 25 Jul 21:00–23:00". */
                         __('An organizer took you off %s.', 'eventcrew'),
                         trim($task->roleLabel() . ' · ' . Dates::dayLabel($task->taskDate) . ' ' . $task->timeRange())
-                    ),
+                    ) . ($this->pendingRemoved($person, $task) ? ' ' . ExtraTaskCredits::pendingRemovedLine() : ''),
                     true
                 )
             );
         });
+    }
+
+    /**
+     * Whether taking $task away from the person took a pending credit for an
+     * extra task with it: the setting is on and they still hold another
+     * task that night.
+     */
+    private function pendingRemoved(Person $person, Task $task): bool
+    {
+        return null !== $this->extra
+            && ExtraTaskCredits::isOn()
+            && $task->taskDate >= ExtraTaskCredits::since()
+            && $this->assignments->holdsTaskOn($person->id, $task->taskDate);
     }
 
     /**

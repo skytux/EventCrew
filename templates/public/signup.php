@@ -19,6 +19,7 @@ if (! defined('ABSPATH')) {
 $eventcrew_person = $view['person'];
 /** @var \EventCrew\Support\Standing|null $eventcrew_standing */
 $eventcrew_standing = $view['standing'];
+$eventcrew_pending = (int) ($view['pending_credits'] ?? 0);
 $eventcrew_csrf = (string) $view['csrf'];
 $eventcrew_turnstile_site_key = (string) $view['turnstile_site_key'];
 /** @var array<string, string> $eventcrew_ticket_dates date => label a credit can be spent on */
@@ -113,11 +114,11 @@ if ($eventcrew_link_expired) {
     <?php endif; ?>
 
     <?php
-    // The Telegram group and crew guide buttons, at the top of the page so
-    // they show above every tab. Signed out there is no group link; signed
-    // in, the guide moves under the person's details in the header card.
+    // The Telegram group button, at the top of the page so it shows above
+    // every tab, signed in only. The crew guide sits under the person's
+    // details in the header card; signed out it is not shown (Lou 2026-11-08).
     $eventcrew_group_link = null === $eventcrew_person ? '' : (string) ($view['telegram_group_link'] ?? '');
-    $eventcrew_links_guide = null === $eventcrew_person;
+    $eventcrew_links_guide = false;
     require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-links.php';
     ?>
 
@@ -469,7 +470,7 @@ if ($eventcrew_link_expired) {
                         <span><?php echo esc_html(sprintf(/* translators: %d: number of free-entry credits */
                             _n('%d credit', '%d credits', $eventcrew_standing->creditBalance, 'eventcrew'),
                             $eventcrew_standing->creditBalance
-                        )); ?></span>
+                        ) . \EventCrew\Support\ExtraTaskCredits::pendingSuffix((int) ($eventcrew_pending ?? 0))); ?></span>
                     </p>
                     <?php
                     /*
@@ -516,8 +517,7 @@ if ($eventcrew_link_expired) {
             <?php
             // 🎟 Tickets, then the crew guide, under the person's details
             // (Owner 2026-11-08). Named as in the bot's /me; it opens the Me
-            // tab at the Tickets card. Signed out, the guide is the link at
-            // the top of the page.
+            // tab at the Tickets card. Signed out there is no guide link.
             $eventcrew_header_guide = \EventCrew\Support\RoleGuide::emailAction();
             ?>
             <div class="eventcrew-card-body eventcrew-header-guide">
@@ -1073,7 +1073,7 @@ if ($eventcrew_link_expired) {
                             <?php endif; ?>
                             <li><?php esc_html_e('Standing', 'eventcrew'); ?>:
                                 <span<?php echo $eventcrew_editing['at_risk'] ? ' class="eventcrew-admin-at-risk"' : ''; ?>><?php echo esc_html($eventcrew_editing['standing']); ?></span></li>
-                            <li><?php esc_html_e('Free-entry credits', 'eventcrew'); ?>: <?php echo esc_html((string) $eventcrew_editing['credits']); ?></li>
+                            <li><?php esc_html_e('Free-entry credits', 'eventcrew'); ?>: <?php echo esc_html((string) $eventcrew_editing['credits'] . \EventCrew\Support\ExtraTaskCredits::pendingSuffix((int) ($eventcrew_editing['pending'] ?? 0))); ?></li>
                         </ul>
                         <p class="eventcrew-muted eventcrew-admin-hint"><?php esc_html_e('Verifying an email and choosing which alerts to receive are both things only the person themselves can do, so neither can be set from this screen.', 'eventcrew'); ?></p>
                     </div>

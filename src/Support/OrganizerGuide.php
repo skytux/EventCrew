@@ -226,6 +226,9 @@ final class OrganizerGuide
                 __('Members earn 1 free-entry credit per %d completed tasks and spend it with /me, 🎟 Tickets, 🎟 Get a free-entry ticket (or /tickets), or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 $settings->tasksPerCredit()
             ),
+            // The ticket and credit rules, each with why (TicketRules).
+            implode("\n", TicketRules::organizerLines()),
+            TicketRules::policyLine(),
             sprintf(
                 /* translators: 1: tasks before a rating, 2: good-standing percentage */
                 __('Standing is worked out again each time from how a member\'s past tasks went; recent tasks count more. A member gets a rating after %1$d finished tasks. %2$d%% or higher is good standing. Settings > Reputation holds the weights and limits.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.

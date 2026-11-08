@@ -19,7 +19,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '35';
+    public const DB_VERSION = '36';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -29,6 +29,9 @@ final class Schema
      * tables; the newsletter page says the history starts on that day.
      */
     public const NEWSLETTER_HISTORY_SINCE_OPTION = 'eventcrew_newsletter_history_since';
+
+    /** The first night the credit for extra tasks counts (ExtraTaskCredits). */
+    public const EXTRA_TASK_CREDIT_SINCE_OPTION = 'eventcrew_extra_task_credit_since';
 
     public const PEOPLE = 'eventcrew_people';
     public const TASKS = 'eventcrew_tasks';
@@ -128,6 +131,11 @@ final class Schema
         // transferred_to. dbDelta adds both; nothing to copy.
 
         // Schema 35: the door notes table. dbDelta adds it; nothing to copy.
+
+        // Schema 36: the credit_grants columns source and assignment_id. The
+        // credit for extra tasks on the same night counts from the day they
+        // appear, never for nights before (no migration of old nights).
+        add_option(self::EXTRA_TASK_CREDIT_SINCE_OPTION, (string) current_time('Y-m-d'), '', false);
 
         update_option(self::VERSION_OPTION, self::DB_VERSION);
     }
@@ -670,7 +678,9 @@ final class Schema
             // A manual credit an organizer hands someone - a bonus outside the
             // earn-one-per-two-completed rule (a spontaneous cleaner after a
             // paid event, say). credits is normally 1 but is a count so a larger
-            // grant is one row. The balance in Support\Credits adds the sum of
+            // grant is one row. source 'extra_task' with assignment_id marks
+            // the credit for an extra task on the same night
+            // (ExtraTaskCredits); the unique key lets one task give it once. The balance in Support\Credits adds the sum of
             // these to earned-minus-redeemed; there is no stored running total.
             "CREATE TABLE {$creditGrants} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -680,8 +690,11 @@ final class Schema
                 granted_by bigint(20) unsigned DEFAULT NULL,
                 granted_by_person_id bigint(20) unsigned DEFAULT NULL,
                 granted_at datetime NOT NULL,
+                source varchar(32) NOT NULL DEFAULT '',
+                assignment_id bigint(20) unsigned DEFAULT NULL,
                 PRIMARY KEY  (id),
-                KEY person_id (person_id)
+                KEY person_id (person_id),
+                UNIQUE KEY assignment_id (assignment_id)
             ) ENGINE=InnoDB {$charsetCollate};",
 
             // Only the hash is stored, never the token itself, so a database

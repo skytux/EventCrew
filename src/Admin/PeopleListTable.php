@@ -9,6 +9,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\Standing;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\ExtraTaskCredits;
 use WP_List_Table;
 
 /**
@@ -219,7 +220,10 @@ final class PeopleListTable extends WP_List_Table
      */
     public function column_credits($item): string
     {
-        return esc_html((string) $this->standingFor($item)->creditBalance);
+        return esc_html(
+            (string) $this->standingFor($item)->creditBalance
+            . ExtraTaskCredits::pendingSuffix((new ExtraTaskCredits())->pendingFor($item->id))
+        );
     }
 
     /**

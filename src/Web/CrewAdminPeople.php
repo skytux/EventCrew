@@ -12,6 +12,7 @@ use EventCrew\Support\Dates;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Support\ExtraTaskCredits;
 
 /**
  * The People screen of the crew page's Admin tab, made to match the wp-admin
@@ -258,6 +259,8 @@ final class CrewAdminPeople
             'standing' => $standing->ratedSummary(),
             'at_risk' => $standing->isAtRisk(),
             'credits' => $standing->creditBalance,
+            // Credits for extra tasks on the same night, not yet added.
+            'pending' => (new ExtraTaskCredits())->pendingFor($person->id),
             'given' => $given,
             'spent' => $spent,
         ];

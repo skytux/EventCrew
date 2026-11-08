@@ -208,7 +208,7 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
                                 </tr>
                                 <tr>
                                     <td><?php esc_html_e('Free-entry credits', 'eventcrew'); ?></td>
-                                    <td><?php echo esc_html((string) $editing_standing->creditBalance); ?></td>
+                                    <td><?php echo esc_html((string) $editing_standing->creditBalance . \EventCrew\Support\ExtraTaskCredits::pendingSuffix((new \EventCrew\Support\ExtraTaskCredits())->pendingFor($editing->id))); ?></td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>

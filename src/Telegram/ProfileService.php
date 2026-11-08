@@ -17,6 +17,7 @@ use EventCrew\Support\StandingBar;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketList;
 use EventCrew\Support\TicketTransferService;
+use EventCrew\Support\ExtraTaskCredits;
 
 /**
  * /me (My info), /tasks, /tickets, /settings and /me history: a person's own
@@ -82,7 +83,7 @@ final class ProfileService
                 /* translators: %d: free-entry credits */
                 __('Free-entry credits: %d', 'eventcrew'),
                 $standing->creditBalance
-            ),
+            ) . ExtraTaskCredits::pendingSuffix((new ExtraTaskCredits())->pendingFor($person->id)),
             '',
         ];
 

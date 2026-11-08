@@ -907,6 +907,32 @@ final class TicketMailTest extends TestCase
         self::assertSame(31, SignedLink::verify('ticket', (string) $query['token']));
     }
 
+    /**
+     * The working ticket: one code per person per night, the same whatever
+     * the tasks; it verifies only unchanged and is not any other kind of code.
+     */
+    public function testTheWorkingTicketHasItsOwnStableCodeAndLink(): void
+    {
+        $code = TicketMail::workCode(8, '2026-11-14');
+
+        self::assertMatchesRegularExpression('/^EC-W8-20261114-[0-9a-f]{16}$/', $code);
+        self::assertSame(['person_id' => 8, 'date' => '2026-11-14'], TicketMail::workCodeParts(' ' . $code . ' '));
+        self::assertNull(TicketMail::workCodeParts('EC-W9-20261114-' . substr($code, -16)));
+        self::assertNull(TicketMail::workCodeParts('EC-W8-20261115-' . substr($code, -16)));
+        self::assertNull(TicketMail::crewIdFromCode($code));
+
+        $ticket = new CrewTicket(CrewTicket::KIND_CREW, 31, '2026-11-14', 'Mia Crew', 'mia@example.test', personId: 8);
+        $other = new CrewTicket(CrewTicket::KIND_CREW, 32, '2026-11-14', 'Mia Crew', 'mia@example.test', personId: 8);
+        self::assertSame($code, TicketMail::qrData($ticket));
+        self::assertSame(TicketMail::qrData($ticket), TicketMail::qrData($other));
+        self::assertSame(TicketMail::workUrl(8, '2026-11-14'), TicketMail::crewUrl($ticket));
+
+        $token = TicketMail::workToken(8, '2026-11-14');
+        self::assertSame(['person_id' => 8, 'date' => '2026-11-14'], TicketMail::workTokenParts($token));
+        self::assertNull(TicketMail::workTokenParts(SignedLink::sign('ticket', 31)));
+        self::assertNull(SignedLink::verify('ticket', $token));
+    }
+
     /** @return array<string, mixed> */
     private function crewTaskRow(int $id, string $role, string $startsAt): array
     {
@@ -936,7 +962,7 @@ final class TicketMailTest extends TestCase
 
         $body = $this->mails[0]['body'];
         self::assertStringContainsString('Your tasks on this night:', $body);
-        self::assertStringContainsString('token=' . SignedLink::sign('ticket', 31), $body);
+        self::assertStringContainsString('token=' . TicketMail::workToken(8, '2026-11-14'), $body);
         self::assertStringNotContainsString('token=' . SignedLink::sign('ticket', 32), $body);
         // Earliest first: the 18:00 task before the 22:00 one.
         self::assertSame(2, substr_count($body, '<li '), 'one list item per task, in the person\'s language');
@@ -968,7 +994,7 @@ final class TicketMailTest extends TestCase
         $this->wpdb->nextRows[] = $this->crewTaskRow(6, 'decorate', '2026-11-14 18:00:00');
         self::assertTrue($mail->crewTasksChanged($this->person(), '2026-11-14'));
         self::assertSame('Your ticket – 14.11.2026', $this->mails[0]['subject']);
-        self::assertStringContainsString('token=' . SignedLink::sign('ticket', 31), $this->mails[0]['body']);
+        self::assertStringContainsString('token=' . TicketMail::workToken(8, '2026-11-14'), $this->mails[0]['body']);
         self::assertStringContainsString('18:00', $this->mails[0]['body']);
 
         // No task left: the cancel email with the red band.
@@ -1005,13 +1031,13 @@ final class TicketMailTest extends TestCase
         $body = $this->mails[0]['body'];
         self::assertStringContainsString('Crew ticket', $body);
         self::assertStringContainsString('Free-entry ticket', $body);
-        self::assertStringContainsString('token=' . SignedLink::sign('ticket', 31), $body);
+        self::assertStringContainsString('token=' . TicketMail::workToken(8, '2026-11-14'), $body);
         self::assertStringContainsString('token=' . SignedLink::sign('credit_ticket', 12), $body);
         self::assertStringContainsString(ShortCode::forPerson(8, '2026-11-14'), $body);
         self::assertStringContainsString(ShortCode::forCredit(8, '2026-11-14'), $body);
         $qr = new TicketQr();
 
-        foreach ([TicketMail::crewCode(31), TicketMail::creditCode(12)] as $data) {
+        foreach ([TicketMail::workCode(8, '2026-11-14'), TicketMail::creditCode(12)] as $data) {
             self::assertSame(1, substr_count($body, $qr->table($data, $qr->fitCell($data, 150, '', 4))));
         }
 
@@ -1087,7 +1113,7 @@ final class TicketMailTest extends TestCase
 
         $area = $this->ticketMail()->signupTickets($this->person(), 31, '2026-11-14');
         $qr = new TicketQr();
-        $data = TicketMail::crewCode(31);
+        $data = TicketMail::workCode(8, '2026-11-14');
 
         self::assertStringContainsString('Crew ticket', $area['html']);
         self::assertStringContainsString('bar, 22:00', $area['html']);
@@ -1096,7 +1122,7 @@ final class TicketMailTest extends TestCase
         // One ticket: no count line, no number.
         self::assertStringNotContainsString('You have', $area['html'] . $area['text']);
         self::assertStringNotContainsString('Ticket 1 of', $area['html'] . $area['text']);
-        self::assertStringContainsString('token=' . SignedLink::sign('ticket', 31), $area['text']);
+        self::assertStringContainsString('token=' . TicketMail::workToken(8, '2026-11-14'), $area['text']);
         self::assertSame(
             ['html' => '', 'text' => ''],
             $this->ticketMail()->signupTickets($this->person('person-8@crew.invalid'), 31, '2026-11-14')

@@ -44,7 +44,6 @@ final class DoorDesk
 
     /** workTonight() answers. */
     public const WORK_OK = 'ok';
-    public const WORK_SWAPPED = 'swapped';
     public const WORK_FULL = 'full';
     public const WORK_UNAVAILABLE = 'unavailable';
     public const WORK_CREDIT_QUESTION = 'credit_question';
@@ -423,7 +422,7 @@ final class DoorDesk
      * signed ticket link (or its bare token) of a sign-up or of a spent
      * free-entry credit, or a guest's emailed ticket: the short signed code in
      * its QR, or its ticket page link. A crew member's or a desk buyer's
-     * emailed ticket holds a short signed code too (TicketMail::crewCode(),
+     * emailed ticket holds a short signed code too (TicketMail::workCode(), crewCode(),
      * creditCode(), deskBuyerCode()). On SCAN_OK, key is the row on tonight's list
      * ("crew:8", "credit:8"), for the page to show with its +1 counter and
      * "Mark arrived" button; nothing is marked here. The other answers carry
@@ -439,6 +438,14 @@ final class DoorDesk
 
         if (null !== $parts) {
             return $this->scanGuest($date, $parts['id'], $parts['rev']);
+        }
+
+        // A working ticket (TicketMail::workCode()): the person's ticket for
+        // all their tasks on one night.
+        $work = TicketMail::workCodeParts($text);
+
+        if (null !== $work) {
+            return $this->scanWork($date, $work['person_id'], $work['date']);
         }
 
         // A crew member's emailed ticket: a sign-up or a spent credit. Either
@@ -472,6 +479,12 @@ final class DoorDesk
         $token = self::tokenFrom($text);
 
         if ('' !== $token) {
+            $work = TicketMail::workTokenParts($token);
+
+            if (null !== $work) {
+                return $this->scanWork($date, $work['person_id'], $work['date']);
+            }
+
             $assignmentId = SignedLink::verify('ticket', $token);
 
             if (null !== $assignmentId) {
@@ -723,6 +736,27 @@ final class DoorDesk
         }
 
         return $this->scanPerson($date, $assignment->personId, $name, CheckinRepository::KIND_CREW);
+    }
+
+    /**
+     * A working ticket: the person's row on the crew list for $workDate.
+     * Valid while they hold a task that night.
+     *
+     * @return array{code: string, key: string, name: string, date: string, at: string}
+     */
+    private function scanWork(string $date, int $personId, string $workDate): array
+    {
+        $name = $this->nameOf($personId);
+
+        if ($workDate !== $date) {
+            return self::scanAnswer(self::SCAN_OTHER_NIGHT, '', $name, $workDate);
+        }
+
+        if (! $this->assignments->holdsTaskOn($personId, $date)) {
+            return self::scanAnswer(self::SCAN_DISABLED, '', $name, $date);
+        }
+
+        return $this->scanPerson($date, $personId, $name, CheckinRepository::KIND_CREW);
     }
 
     /**
@@ -1330,9 +1364,9 @@ final class DoorDesk
      * limit still holds. A restricted task needs its role, unless the person
      * at the desk is an organizer. Answers a WORK_* code.
      *
-     * Someone who already spent a credit on tonight is counted once, as crew:
-     * their ticket is cancelled, which gives the credit back, and the grant
-     * log gets a line saying why (WORK_SWAPPED).
+     * Someone who already holds a free-entry or bought ticket for tonight
+     * keeps it: nothing is turned back into a credit. They get the working
+     * ticket as well.
      */
     public function workTonight(
         string $date,
@@ -1386,37 +1420,7 @@ final class DoorDesk
             $this->notifier?->confirmSignup($person, $taskId);
         }
 
-        return $this->returnTicket($date, $personId, $doorPersonId) ? self::WORK_SWAPPED : self::WORK_OK;
-    }
-
-    /**
-     * Cancels $personId's free-entry ticket for $date, if they hold one, and
-     * logs why. Cancelling the redemption is what gives the credit back; its
-     * ticket link stays and shows DISABLED.
-     */
-    private function returnTicket(string $date, int $personId, int $doorPersonId): bool
-    {
-        $returned = false;
-
-        foreach ($this->redemptions->forDate($date) as $redemption) {
-            if ($redemption->personId !== $personId) {
-                continue;
-            }
-
-            // Also emails "Your ticket is cancelled" when the ticket was emailed.
-            $this->tickets->cancelRedemption($redemption->id);
-            $returned = true;
-        }
-
-        if ($returned) {
-            $this->grants->recordNote(
-                $personId,
-                __('Ticket exchanged against taking a task', 'eventcrew'),
-                0 === $doorPersonId ? null : $doorPersonId
-            );
-        }
-
-        return $returned;
+        return self::WORK_OK;
     }
 
     /**
@@ -1426,8 +1430,6 @@ final class DoorDesk
     {
         return match ($code) {
             self::WORK_OK => __('Signed up and checked in. They are on the crew list now.', 'eventcrew'),
-            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            self::WORK_SWAPPED => __('Signed up and checked in. Their free-entry ticket is cancelled and the credit is given back.', 'eventcrew'),
             self::WORK_FULL => __('That task has just filled up. Pick another one.', 'eventcrew'),
             self::WORK_CREDIT_QUESTION => __('Choose whether this task counts toward free-entry credit.', 'eventcrew'),
             default => __('They could not be signed up for that task.', 'eventcrew'),

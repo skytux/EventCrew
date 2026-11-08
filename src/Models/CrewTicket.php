@@ -12,8 +12,10 @@ namespace EventCrew\Models;
  * when the email is sent.
  *
  * $tasks are the tasks the person holds on the night, listed in a KIND_CREW
- * email. A person with several tasks on one night has one ticket: $id is the
- * sign-up whose ticket was emailed first, so its code stays the same.
+ * email. A person with several tasks on one night has one working ticket:
+ * its code and link are made from $personId and $eventDate
+ * (TicketMail::workCode(), workUrl()), so they stay the same as tasks come
+ * and go. $id is a sign-up of the night, used only when $personId is 0.
  *
  * $language is the language the person reads: their stored language, or
  * English when they have not chosen one (HybridPolicy::personLanguage()).

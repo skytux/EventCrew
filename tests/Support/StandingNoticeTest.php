@@ -13,6 +13,7 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\ExtraTaskCredits;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\SignupService;
@@ -52,6 +53,7 @@ final class StandingNoticeTest extends TestCase
                 TelegramClient::TOKEN_OPTION => 'BOT:TOKEN',
                 'eventcrew_link_secret' => 'test-secret',
                 Signature::OPTION => '' !== $this->signature ? $this->signature : false,
+                ExtraTaskCredits::OPTION => '1',
                 default => false,
             }
         );
@@ -75,7 +77,7 @@ final class StandingNoticeTest extends TestCase
         });
     }
 
-    private function service(): StandingNotice
+    private function service(bool $extra = false): StandingNotice
     {
         $ledger = new NotificationsRepository();
 
@@ -86,7 +88,8 @@ final class StandingNoticeTest extends TestCase
             $ledger,
             new TelegramClient(new Logger(), new DohResolver(new Logger())),
             new Mailer(new Logger(), new EmailTemplate(new Logger())),
-            new StandingCalculator(new AssignmentRepository(), new RedemptionRepository(), new CreditGrantRepository())
+            new StandingCalculator(new AssignmentRepository(), new RedemptionRepository(), new CreditGrantRepository()),
+            $extra ? new ExtraTaskCredits() : null
         );
     }
 
@@ -428,5 +431,199 @@ final class StandingNoticeTest extends TestCase
         ));
         self::assertStringContainsString("a.status IN ('completed','arrived_late')", $thanksQuery);
         self::assertStringContainsString('a.status_changed_at >= ', $thanksQuery);
+    }
+
+    /**
+     * A thank-you on a night with two completed tasks: the credit for the
+     * second is added (one row, keyed by its assignment) and told in the
+     * thank-you, above the credits.
+     */
+    public function testTheThankYouAddsTheCreditForAnExtraTaskThatNight(): void
+    {
+        $this->queueThanksForTwoTasks();
+        // recordExtraTask: the row went in.
+        $this->wpdb->nextQueryResults[] = 1;
+
+        self::assertSame(1, $this->service(true)->sendDue(25));
+
+        $dm = (string) $this->sends[0]['text'];
+        self::assertStringContainsString('Your extra task that night earned 1 more free-entry credit.', $dm);
+        self::assertStringContainsString('Your extra task that night earned 1 more free-entry credit.', $this->mails[0]);
+
+        $inserts = array_values(array_filter(
+            $this->wpdb->queries,
+            static fn (string $q): bool => str_contains($q, 'INSERT IGNORE INTO wp_eventcrew_credit_grants')
+        ));
+        // Only the second task of the night; the first is the ordinary one.
+        self::assertCount(1, $inserts);
+        self::assertStringContainsString("'extra_task', 12)", $inserts[0]);
+    }
+
+    /**
+     * The credit was already added (a second run, or the late sweep before):
+     * the unique key adds nothing and the thank-you says nothing about it.
+     */
+    public function testAnExtraTaskCreditIsAddedOnlyOnce(): void
+    {
+        $this->queueThanksForTwoTasks();
+        // recordExtraTask: INSERT IGNORE hit the unique key.
+        $this->wpdb->nextQueryResults[] = 0;
+
+        self::assertSame(1, $this->service(true)->sendDue(25));
+
+        self::assertStringNotContainsString('extra task', (string) $this->sends[0]['text']);
+    }
+
+    /**
+     * A task marked completed after the night's thank-you went out: the late
+     * sweep adds its credit and sends a short note on both channels.
+     */
+    public function testALateMarkedExtraTaskGetsItsCreditWithAShortNote(): void
+    {
+        // Marks against: none. Thank-yous: none.
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        // extraTasksToAdd: one night.
+        $this->wpdb->nextResults[] = [['person_id' => 7, 'task_date' => '2026-07-17']];
+        // creditedIdsOn, then the row went in.
+        $this->wpdb->nextCols[] = [11, 12];
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_chat_id' => 4242,
+        ];
+
+        self::assertSame(1, $this->service(true)->sendDue(25));
+
+        self::assertStringContainsString(
+            'Your extra task that night earned 1 more free-entry credit.',
+            (string) $this->sends[0]['text']
+        );
+        self::assertCount(1, $this->mails);
+        self::assertStringContainsString('Hi Sam,', $this->mails[0]);
+        $sweep = implode("\n", array_filter(
+            $this->wpdb->queries,
+            static fn (string $q): bool => str_contains($q, 'SELECT DISTINCT a.person_id, s.task_date')
+        ));
+        // Only after the night's thank-you, and only tasks with no credit row.
+        self::assertStringContainsString("n.kind = 'task_thanks'", $sweep);
+        self::assertStringContainsString('NOT EXISTS (SELECT 1 FROM wp_eventcrew_credit_grants g', $sweep);
+    }
+
+    /**
+     * A task changed from completed to no-show after its extra-task credit
+     * was added: the credit is taken back and the person told at once.
+     */
+    public function testANoShowAfterTheCreditTakesItBackAndTellsThePerson(): void
+    {
+        // assignments->find(12), tasks->find(5).
+        $this->wpdb->nextRows[] = ['id' => 12, 'task_id' => 5, 'person_id' => 7, 'status' => 'no_show'];
+        $this->wpdb->nextRows[] = [
+            'id' => 5,
+            'task_date' => '2026-07-17',
+            'role_slug' => 'decorate',
+            'capacity' => 2,
+            'event_label' => 'Party',
+        ];
+        // extraTaskAssignmentsOn: 12 had the credit; creditedIdsOn: only 11 left.
+        $this->wpdb->nextCols[] = [12];
+        $this->wpdb->nextCols[] = [11];
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_chat_id' => 4242,
+        ];
+
+        $this->service(true)->onStatusChanged(12, 'no_show');
+
+        self::assertSame(12, $this->wpdb->deletes[0]['where']['assignment_id']);
+        self::assertStringContainsString(
+            'A task of yours was marked as not done, so 1 free-entry credit for an extra task that night was taken back.',
+            (string) $this->sends[0]['text']
+        );
+        self::assertCount(1, $this->mails);
+    }
+
+    public function testMarkingATaskCompletedTakesNothingBack(): void
+    {
+        $this->service(true)->onStatusChanged(12, 'completed');
+        $this->service(true)->onStatusChanged(12, 'arrived_late');
+
+        self::assertSame([], $this->wpdb->queries);
+        self::assertSame([], $this->sends);
+    }
+
+    public function testNoCreditToTakeBackSendsNothing(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 12, 'task_id' => 5, 'person_id' => 7, 'status' => 'no_show'];
+        $this->wpdb->nextRows[] = ['id' => 5, 'task_date' => '2026-07-17', 'role_slug' => 'decorate', 'capacity' => 2];
+        $this->wpdb->nextCols[] = [];
+
+        $this->service(true)->onStatusChanged(12, 'no_show');
+
+        self::assertSame([], $this->wpdb->deletes);
+        self::assertSame([], $this->sends);
+        self::assertSame([], $this->mails);
+    }
+
+    /** Without the setting, a night with two completed tasks adds nothing. */
+    public function testNoExtraTaskCreditWhenTheSettingIsOff(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name): mixed => match ($name) {
+                TelegramClient::TOKEN_OPTION => 'BOT:TOKEN',
+                ExtraTaskCredits::OPTION => '0',
+                default => false,
+            }
+        );
+        $this->queueThanksForTwoTasks(false);
+
+        self::assertSame(1, $this->service(true)->sendDue(25));
+
+        self::assertStringNotContainsString('extra task', (string) $this->sends[0]['text']);
+        foreach ($this->wpdb->queries as $query) {
+            self::assertStringNotContainsString('INSERT IGNORE INTO wp_eventcrew_credit_grants', $query);
+        }
+    }
+
+    private function queueThanksForTwoTasks(bool $credited = true): void
+    {
+        $row = static fn (int $id, string $date): array => [
+            'id' => $id,
+            'task_id' => 5,
+            'person_id' => 7,
+            'status' => 'completed',
+            'status_changed_at' => $date . ' 23:00:00',
+            'task_date' => $date,
+        ];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [$row(12, '2026-07-17')];
+        $this->wpdb->nextRows[] = [
+            'id' => 5,
+            'task_date' => '2026-07-17',
+            'role_slug' => 'decorate',
+            'capacity' => 2,
+            'event_label' => 'Party',
+        ];
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_chat_id' => 4242,
+        ];
+
+        if ($credited) {
+            // creditedIdsOn: both of the night's tasks.
+            $this->wpdb->nextCols[] = [11, 12];
+        }
+
+        // historyFor.
+        $this->wpdb->nextResults[] = [$row(12, '2026-07-17'), $row(11, '2026-07-17')];
     }
 }

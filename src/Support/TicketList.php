@@ -55,6 +55,9 @@ final class TicketList
         $upcoming = [];
         $past = [];
 
+        // One working ticket per night, for all the tasks held that night.
+        $nights = [];
+
         foreach ($withTasks ? $this->assignments->forPerson($personId) : [] as $assignment) {
             // A ticket exists for a slot they hold or held; a cancelled/replaced
             // slot never became one.
@@ -68,14 +71,24 @@ final class TicketList
                 continue;
             }
 
+            $nights[$task->taskDate][] = $task;
+        }
+
+        foreach ($nights as $date => $tasks) {
+            $date = (string) $date;
+            usort(
+                $tasks,
+                static fn ($a, $b): int => [(string) $a->startsAt, $a->id] <=> [(string) $b->startsAt, $b->id]
+            );
             $item = [
-                'label' => $task->roleLabel() . ' · ' . $task->eventName(),
-                'when' => $task->taskDate,
-                'url' => self::taskTicketUrl($assignment->id),
+                'label' => implode(', ', array_map(static fn ($task): string => $task->roleLabel(), $tasks))
+                    . ' · ' . $tasks[0]->eventName(),
+                'when' => $date,
+                'url' => TicketMail::workUrl($personId, $date),
                 'kinds' => CheckinRepository::TASK_TICKET_KINDS,
             ];
 
-            $task->taskDate >= $today ? $upcoming[] = $item : $past[] = $item;
+            $date >= $today ? $upcoming[] = $item : $past[] = $item;
         }
 
         foreach ($this->redemptions->forPerson($personId) as $redemption) {
@@ -148,7 +161,10 @@ final class TicketList
         AssignmentStatus::NO_SHOW,
     ];
 
-    /** The signed ticket link for one sign-up (assignment). */
+    /**
+     * The signed ticket link for one sign-up (assignment): an older link,
+     * which leads to the person's working ticket for that night.
+     */
     public static function taskTicketUrl(int $assignmentId): string
     {
         return self::url('ticket', $assignmentId);

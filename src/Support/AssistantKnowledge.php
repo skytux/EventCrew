@@ -240,6 +240,8 @@ final class AssistantKnowledge
             '- Every %d completed tasks earn one free-entry credit.',
             Credits::TASKS_PER_CREDIT
         );
+        // The ticket and credit rules, in the same English as the rest.
+        array_push($lines, ...TicketRules::assistantFacts());
 
         return implode("\n", $lines);
     }

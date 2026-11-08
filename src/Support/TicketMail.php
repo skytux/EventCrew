@@ -53,8 +53,8 @@ use EventCrew\Web\SignupBoardView;
  *
  * Crew get the same email, sent at once rather than by cron: a sign-up for a
  * task (sendCrewTicket()) and a free-entry credit spent on a night
- * (sendCreditTicket()). Its QR holds a short signed code of its own (crewCode(),
- * creditCode()), which the door desk checks the person in by. A buyer added at
+ * (sendCreditTicket()). Its QR holds a short signed code of its own (workCode()
+ * for the working ticket, creditCode()), which the door desk checks the person in by. A buyer added at
  * the sales desk with an email address gets a code (deskBuyerCode()) and the
  * cron email like an imported buyer.
  *
@@ -658,7 +658,15 @@ final class TicketMail
                 return self::transferCode($row->id);
             }
 
-            return $row->isCredit() ? self::creditCode($row->id) : self::crewCode($row->id);
+            if ($row->isCredit()) {
+                return self::creditCode($row->id);
+            }
+
+            // The working ticket's own code; a preview, which names nobody,
+            // keeps the sign-up's code.
+            return $row->personId > 0 && '' !== $row->eventDate
+                ? self::workCode($row->personId, $row->eventDate)
+                : self::crewCode($row->id);
         }
 
         return $row instanceof Guest ? self::guestCode($row->id, $row->ticketRev) : $row->ticketCode;
@@ -721,6 +729,72 @@ final class TicketMail
     public static function crewIdFromCode(string $text): ?int
     {
         return self::idFromShortCode('C', 'ticket', $text);
+    }
+
+    /**
+     * "EC-W12-20260720-0123456789abcdef": the working ticket's code, one per
+     * crew member per night, for all their tasks that night. It is made from
+     * the person and the night alone, so it is the same from their first
+     * task on and stays the same as tasks are added or taken away: nothing
+     * is stored. The older "EC-C" codes (crewCode()) still work and lead to
+     * the same ticket.
+     */
+    public static function workCode(int $personId, string $date): string
+    {
+        $day = str_replace('-', '', $date);
+
+        return 'EC-W' . $personId . '-' . $day . '-' . SignedLink::shortSignature('work_ticket|' . $day, $personId);
+    }
+
+    /**
+     * The person id and night (Y-m-d) in a workCode(), or null when $text is
+     * not one or its signature does not verify.
+     *
+     * @return array{person_id: int, date: string}|null
+     */
+    public static function workCodeParts(string $text): ?array
+    {
+        if (1 !== preg_match('/^EC-W([1-9]\d{0,18})-(\d{4})(\d{2})(\d{2})-([0-9a-f]{16})$/', trim($text), $match)) {
+            return null;
+        }
+
+        $personId = (int) $match[1];
+        $day = $match[2] . $match[3] . $match[4];
+
+        if (! hash_equals(SignedLink::shortSignature('work_ticket|' . $day, $personId), $match[5])) {
+            return null;
+        }
+
+        return ['person_id' => $personId, 'date' => $match[2] . '-' . $match[3] . '-' . $match[4]];
+    }
+
+    /** The working ticket's link token: the person and the night, signed. */
+    public static function workToken(int $personId, string $date): string
+    {
+        return SignedLink::signPayload('work_ticket', $personId . '|' . $date);
+    }
+
+    /**
+     * The person id and night in a workToken(), or null when the token is
+     * not one.
+     *
+     * @return array{person_id: int, date: string}|null
+     */
+    public static function workTokenParts(string $token): ?array
+    {
+        $payload = SignedLink::verifyPayload('work_ticket', $token);
+
+        if (null === $payload || 1 !== preg_match('/^([1-9]\d{0,18})\|(\d{4}-\d{2}-\d{2})$/', $payload, $match)) {
+            return null;
+        }
+
+        return ['person_id' => (int) $match[1], 'date' => $match[2]];
+    }
+
+    /** The working ticket's page: the person's ticket for all their tasks on $date. */
+    public static function workUrl(int $personId, string $date): string
+    {
+        return add_query_arg(['token' => self::workToken($personId, $date)], rest_url(self::PAGE_ROUTE));
     }
 
     /**
@@ -820,13 +894,18 @@ final class TicketMail
     }
 
     /**
-     * The link in a crew ticket email: the sign-up's or the credit's existing
-     * ticket page, the same link the task email and the bot give.
+     * The link in a crew ticket email: the working ticket's page (workUrl()),
+     * or the credit's ticket page, the same link the task email and the bot
+     * give. A preview, which names nobody, links the sign-up's page.
      */
     public static function crewUrl(CrewTicket $ticket): string
     {
         if ($ticket->isTransfer()) {
             return self::transferUrl($ticket->id);
+        }
+
+        if (! $ticket->isCredit() && $ticket->personId > 0 && '' !== $ticket->eventDate) {
+            return self::workUrl($ticket->personId, $ticket->eventDate);
         }
 
         return add_query_arg(

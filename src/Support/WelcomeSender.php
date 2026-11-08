@@ -728,6 +728,8 @@ final class WelcomeSender
                 __('You earn 1 free-entry credit for every %1$d tasks you complete. %2$s You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 ['%1$d' => '{tasks_per_credit}', '%2$s' => '{credit_help}']
             ),
+            '## ⚖️ ' . __('Tickets and credits', 'eventcrew'),
+            '{ticket_rules}',
             '## 📈 ' . __('Standing', 'eventcrew'),
             __('Your standing comes from how your past tasks went:', 'eventcrew'),
             '{outcomes}',
@@ -761,6 +763,7 @@ final class WelcomeSender
             'rated_tasks' => (string) $settings->minRatedTasks(),
             'good_standing' => (string) $threshold,
             'gate_rule' => self::gateRule($threshold),
+            'ticket_rules' => implode("\n", TicketRules::memberLines()),
         ];
     }
 

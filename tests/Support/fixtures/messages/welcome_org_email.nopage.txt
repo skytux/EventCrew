@@ -71,6 +71,14 @@ Signing up for a task gives the member a free ticket for that night. The ticket 
 
 Members earn 1 free-entry credit per 2 completed tasks and spend it with /me, 🎟 Tickets, 🎟 Get a free-entry ticket (or /tickets), or on the web page. You give credits with /people, on the People page, or at the sales desk. Each gift is written in the credit log on the People page, and the member is told.
 
+- 🎫 One working ticket per person per night, for all their tasks. Why: one entry per person, and the door sees all their tasks at once.
+- 🔒 The working ticket's code never changes. Why: screenshots and saved QR codes keep working.
+- 🎟️ Members can't cancel a free-entry ticket; organizers still can (/unticket). Why: one simple rule, and nobody can win a credit back by changing plans late.
+- 💳 A bought ticket never becomes a credit, and taking a task on that night changes nothing. Why: it was paid for, and credits have no cash value.
+- ➕ An extra task on the same night earns one more credit, pending until the after-event run adds it for a task marked completed or arrived late. Why: credit only for work actually done.
+
+Free-entry credits and tickets have no cash value. They can't be refunded, sold or paid out in any form; they can only be used to get a ticket for an eligible event.
+
 Standing is worked out again each time from how a member's past tasks went; recent tasks count more. A member gets a rating after 3 finished tasks. 60% or higher is good standing. Settings > Reputation holds the weights and limits.
 
 🔑 Roles and permissions

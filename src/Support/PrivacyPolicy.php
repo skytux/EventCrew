@@ -465,6 +465,8 @@ final class PrivacyPolicy
                 'Every task you signed up for, when you signed up, and how it turned out: completed, covered by someone else, cancelled late, or not turned up to. Free-entry credits you have earned, been given or spent, and the events they were spent on.',
                 'eventcrew'
             ),
+            // No cash value (TicketRules, also in the crew help).
+            TicketRules::policyLine(),
             __(
                 'Which notifications you have chosen to receive and on which channel, a record of which scheduled notices we have already sent you so we do not send them twice, and any note an organizer has added to your record.',
                 'eventcrew'

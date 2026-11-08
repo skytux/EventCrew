@@ -295,7 +295,7 @@ final class DoorController
                     : null;
                 $code = $this->desk->workTonight($date, $doorPersonId, $personId, $task, $countsCredit);
                 $this->json([
-                    'ok' => in_array($code, [DoorDesk::WORK_OK, DoorDesk::WORK_SWAPPED], true),
+                    'ok' => DoorDesk::WORK_OK === $code,
                     'message' => $this->desk->workTonightText($code),
                     'state' => $this->desk->state($date),
                 ]);

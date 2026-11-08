@@ -455,14 +455,24 @@ final class MessageTemplates
         return array_values(array_filter($actions));
     }
 
-    /** The task's ticket: a signed link, the same in the email and the DM. */
+    /**
+     * The person's working ticket for the task's night (TicketMail::workUrl()),
+     * the same in the email and the DM; the sign-up's own link when the
+     * person or task is not known.
+     */
     private static function ticketAction(array $c, Mailer $m): MessageAction
     {
+        $person = $c['person'] ?? null;
+        $task = $c['task'] ?? null;
+
         return new MessageAction(
             'ticket',
             __('Show your ticket', 'eventcrew'),
             __('🎟 Show your ticket', 'eventcrew'),
-            static fn (): string => $m->ticketUrl((int) ($c['assignment_id'] ?? 0))
+            static fn (): string => $person instanceof Person && $person->id > 0
+                && $task instanceof Task && '' !== $task->taskDate
+                ? TicketMail::workUrl($person->id, $task->taskDate)
+                : $m->ticketUrl((int) ($c['assignment_id'] ?? 0))
         );
     }
 
@@ -1530,8 +1540,12 @@ final class MessageTemplates
 
                 $perCredit = max(1, (new ReputationSettings())->tasksPerCredit());
                 $left = $perCredit - $standing->completedCount % $perCredit;
+                // Credits for extra tasks that night, added with this thank-you.
+                $added = (int) ($c['extra_added'] ?? 0);
 
-                return self::balanceLine($standing->creditBalance) . ' ' . sprintf(
+                $prefix = $added > 0 ? ExtraTaskCredits::addedLine($added) . ' ' : '';
+
+                return $prefix . self::balanceLine($standing->creditBalance) . ' ' . sprintf(
                     /* translators: %d: completed tasks still needed for the next free-entry credit */
                     _n(
                         '%d more completed task earns the next one.',
@@ -2859,6 +2873,10 @@ final class MessageTemplates
             'gate_rule' => self::placeholder(
                 __('A space, then the sentence that people below good standing cannot sign up for new tasks. Empty when that rule is off in Settings.', 'eventcrew'),
                 $setting('gate_rule')
+            ),
+            'ticket_rules' => self::placeholder(
+                __('The rules for tickets and credits, one line each: the working ticket, free-entry and bought tickets, extra tasks on the same night (when on in Settings) and that credits have no cash value.', 'eventcrew'),
+                $setting('ticket_rules')
             ),
             'open_tasks' => self::placeholder(
                 __('The next open tasks by date (at most 3 dates and 8 tasks), and the line about how to sign up. When there are none, a line that says so.', 'eventcrew'),

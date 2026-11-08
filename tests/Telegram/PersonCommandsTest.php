@@ -127,6 +127,18 @@ final class PersonCommandsTest extends TelegramTestCase
         self::assertSame([], $this->transients);
     }
 
+    /** A member can't cancel a free-entry ticket: /unticket tells them the rule. */
+    public function testAMemberWhoTriesUnticketIsToldTicketsCantBeCancelled(): void
+    {
+        $this->wpdb->nextRows[] = $this->person(7, 'Milla Virtanen', ['telegram_user_id' => 555]);
+
+        $this->command()->onCommand(555, 555, '/unticket Milla', true, PersonCommands::UNTICKET);
+
+        self::assertSame('A free-entry ticket can’t be cancelled. You can give it to someone else.', $this->lastText());
+        self::assertSame([], $this->transients);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
     public function testATapFromSomeoneWhoIsNoLongerAnOrganizerWritesNothing(): void
     {
         $this->transients[PersonCommands::STATE_PREFIX . 'aaaaaaaaaaaaaaaa'] = [

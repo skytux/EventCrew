@@ -52,6 +52,13 @@ final class TicketControllerTest extends TestCase
             'starts_at' => '2026-08-01 20:00:00', 'ends_at' => null,
         ];
         $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+        // The night's tasks: forPersonOn, then tasks->find of the one held.
+        $this->wpdb->nextResults[] = [['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up']];
+        $this->wpdb->nextRows[] = [
+            'id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'decorate',
+            'capacity' => 2, 'event_post_id' => null, 'event_label' => 'Party',
+            'starts_at' => '2026-08-01 20:00:00', 'ends_at' => null,
+        ];
 
         $ticket = $this->controller()->ticketFor(SignedLink::sign('ticket', 9));
 
@@ -557,6 +564,15 @@ final class TicketControllerTest extends TestCase
             'capacity' => 2, 'event_post_id' => null, 'event_label' => 'Party',
         ];
         $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+
+        if ('signed_up' === $status) {
+            // The night's tasks: forPersonOn, then tasks->find of the one held.
+            $this->wpdb->nextResults[] = [['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => $status]];
+            $this->wpdb->nextRows[] = [
+                'id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'decorate',
+                'capacity' => 2, 'event_post_id' => null, 'event_label' => 'Party',
+            ];
+        }
     }
 
     public function testACrewTicketCheckedInAtTheDoorShowsTheGoldenBand(): void
@@ -693,11 +709,49 @@ final class TicketControllerTest extends TestCase
             ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled'],
             ['id' => 10, 'task_id' => 6, 'person_id' => 7, 'status' => 'signed_up'],
         ];
+        $this->wpdb->nextRows[] = [
+            'id' => 6, 'task_date' => '2026-08-01', 'role_slug' => 'bar',
+            'capacity' => 2, 'event_post_id' => null, 'event_label' => 'Party',
+        ];
 
         $ticket = $this->controller()->ticketFor(SignedLink::sign('ticket', 9));
 
         self::assertTrue($ticket['valid']);
+        // The old link leads to the working ticket: the task held now is shown.
+        self::assertSame('bar', $ticket['role']);
         self::assertStringContainsString("s.task_date = '2026-08-01'", implode("\n", $this->wpdb->queries));
+    }
+
+    /** The working ticket's own link: every task held that night, earliest first, never a give link. */
+    public function testAWorkingTicketListsTheNightsTasks(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
+        $this->wpdb->nextResults[] = [
+            ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up', 'signed_up_at' => '2026-07-02 10:00:00'],
+            ['id' => 10, 'task_id' => 6, 'person_id' => 7, 'status' => 'signed_up', 'signed_up_at' => '2026-07-01 10:00:00'],
+            ['id' => 11, 'task_id' => 4, 'person_id' => 7, 'status' => 'cancelled', 'signed_up_at' => '2026-07-03 10:00:00'],
+        ];
+        $this->wpdb->nextRows[] = [
+            'id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'bar', 'capacity' => 2,
+            'event_post_id' => null, 'event_label' => 'Party', 'starts_at' => '2026-08-01 22:00:00', 'ends_at' => null,
+        ];
+        $this->wpdb->nextRows[] = [
+            'id' => 6, 'task_date' => '2026-08-01', 'role_slug' => 'decorate', 'capacity' => 2,
+            'event_post_id' => null, 'event_label' => 'Party', 'starts_at' => '2026-08-01 18:00:00', 'ends_at' => null,
+        ];
+
+        $token = TicketMail::workToken(7, '2026-08-01');
+        $ticket = $this->controller()->ticketFor($token);
+
+        self::assertNotNull($ticket);
+        self::assertTrue($ticket['valid']);
+        self::assertSame("🎈 Decorate · 18:00\nbar · 22:00", $ticket['role']);
+        self::assertSame('2026-07-01 10:00:00', $ticket['issued']);
+        self::assertSame(['date' => '2026-08-01', 'kinds' => \EventCrew\Repositories\CheckinRepository::TASK_TICKET_KINDS, 'ref' => 7], $this->controller()->doorEntry($token));
+
+        $html = $this->controller()->renderPage($ticket);
+        self::assertStringContainsString('🎈 Decorate · 18:00<br>bar · 22:00', $html);
+        self::assertStringNotContainsString('Give away', $html);
     }
 
     public function testRenderPageShowsNotFoundForANullTicket(): void

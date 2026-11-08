@@ -6168,10 +6168,6 @@ msgstr "Überall ausgeloggt. Jeder andere Browser und jedes Handy, das als du ei
 msgid "Signed up"
 msgstr "Eingetragen"
 
-#: src/Support/DoorDesk.php:1125
-msgid "Signed up and checked in. Their free-entry ticket is cancelled and the credit is given back."
-msgstr "Eingetragen und eingecheckt. Die Freikarte ist storniert und der Credit zurückgegeben."
-
 #: src/Support/DoorDesk.php:1123
 msgid "Signed up and checked in. They are on the crew list now."
 msgstr "Eingetragen und eingecheckt. Die Person steht jetzt auf der Crew-Liste."
@@ -6376,10 +6372,6 @@ msgstr "TICKET STORNIERT"
 #: src/Support/TicketMail.php:1123
 msgid "TICKET MOVED"
 msgstr "TICKET VERSCHOBEN"
-
-#: templates/public/door.php:61
-msgid "Take a task instead"
-msgstr "Stattdessen eine Aufgabe nehmen"
 
 #: templates/public/door.php:216
 msgid "Take one person off the count without a name"
@@ -8313,10 +8305,6 @@ msgstr "Die Ticket-E-Mails gehen um %s raus. Bis dahin kannst du sie abbrechen."
 #: src/Support/TicketMail.php:582
 msgid "Ticket emails: %1$d sent · %2$d failed · %3$d not sent"
 msgstr "Ticket-E-Mails: %1$d verschickt · %2$d fehlgeschlagen · %3$d nicht verschickt"
-
-#: src/Support/DoorDesk.php:1109
-msgid "Ticket exchanged against taking a task"
-msgstr "Ticket gegen eine übernommene Aufgabe getauscht"
 
 #: templates/admin/settings.php:2337
 msgid "Ticket file formats"
@@ -12483,3 +12471,138 @@ msgstr "Wie heißt die Person?"
 #: templates/public/signup.php
 msgid "Sign in first to take a task."
 msgstr "Log dich zuerst ein, um eine Aufgabe zu nehmen."
+
+#. translators: %d: pending free-entry credits for extra tasks on the same night
+#: src/Support/ExtraTaskCredits.php
+msgid "(+%d pending)"
+msgstr "(+%d ausstehend)"
+
+#: src/Support/TicketRules.php
+msgid "A bought ticket never becomes a credit, and taking a task on that night changes nothing. Why: it was paid for, and credits have no cash value."
+msgstr "Eine gekaufte Karte wird nie zu einem Credit, und eine Aufgabe an diesem Abend ändert nichts daran. Warum: Sie wurde bezahlt, und Credits haben keinen Geldwert."
+
+#: src/Support/TicketRules.php
+msgid "A bought ticket never turns into a credit."
+msgstr "Eine gekaufte Karte wird nie zu einem Credit."
+
+#: src/Support/StandingNotice.php
+msgid "A free-entry credit for your extra task"
+msgstr "Ein Freikarten-Credit für deine zusätzliche Aufgabe"
+
+#: src/Support/TicketRules.php
+msgid "A free-entry ticket can't be cancelled, but you can give it to someone else."
+msgstr "Eine Freikarte kann nicht storniert werden, aber du kannst sie jemand anderem schenken."
+
+#: src/Support/TicketRules.php src/Telegram/TicketRedemptionService.php
+msgid "A free-entry ticket can’t be cancelled."
+msgstr "Eine Freikarte kann nicht storniert werden."
+
+#: src/Telegram/TicketRedemptionService.php
+msgid "A free-entry ticket can’t be cancelled. You can give it to someone else."
+msgstr "Eine Freikarte kann nicht storniert werden. Du kannst sie jemand anderem schenken."
+
+#: src/Support/TicketRules.php
+msgid "An extra task on the same night earns one more credit, pending until the after-event run adds it for a task marked completed or arrived late. Why: credit only for work actually done."
+msgstr "Eine zusätzliche Aufgabe am selben Abend bringt einen weiteren Credit. Er bleibt ausstehend, bis der Lauf nach der Veranstaltung ihn für eine als erledigt oder verspätet angekommen markierte Aufgabe gutschreibt. Warum: Credits nur für tatsächlich geleistete Arbeit."
+
+#: templates/admin/settings.php
+msgid "Credit for extra tasks on the same night"
+msgstr "Credit für zusätzliche Aufgaben am selben Abend"
+
+#: src/Support/TicketRules.php
+msgid "Each extra task on the same night earns one more credit. It shows as pending and is added after the event, if you did the task."
+msgstr "Jede zusätzliche Aufgabe am selben Abend bringt einen weiteren Credit. Er wird als ausstehend angezeigt und nach der Veranstaltung gutgeschrieben, wenn du die Aufgabe erledigt hast."
+
+#. translators: %s: the date of the night
+#: src/Support/ExtraTaskCredits.php
+msgid "Extra task on %s"
+msgstr "Zusätzliche Aufgabe am %s"
+
+#: templates/admin/settings.php
+msgid "Extra tasks"
+msgstr "Zusätzliche Aufgaben"
+
+#: src/Support/TicketRules.php
+msgid "Free-entry credits and tickets have no cash value. They can't be refunded, sold or paid out in any form; they can only be used to get a ticket for an eligible event."
+msgstr "Freikarten-Credits und Karten haben keinen Geldwert. Sie können in keiner Form erstattet, verkauft oder ausgezahlt werden; sie können nur für eine Karte für eine berechtigte Veranstaltung eingelöst werden."
+
+#: src/Support/TicketRules.php
+msgid "Members can't cancel a free-entry ticket; organizers still can (/unticket). Why: one simple rule, and nobody can win a credit back by changing plans late."
+msgstr "Mitglieder können eine Freikarte nicht stornieren; Organisatoren schon (/unticket). Warum: eine einfache Regel, und niemand kann durch kurzfristige Planänderungen einen Credit zurückgewinnen."
+
+#: src/Support/TicketRules.php
+msgid "One working ticket per person per night, for all their tasks. Why: one entry per person, and the door sees all their tasks at once."
+msgstr "Eine Arbeitskarte pro Person und Abend, für alle ihre Aufgaben. Warum: ein Eintritt pro Person, und die Tür sieht alle ihre Aufgaben auf einmal."
+
+#: src/Support/TicketRules.php
+msgid "Taking a task on a night you already have a ticket for changes nothing about that ticket."
+msgstr "Eine Aufgabe an einem Abend, für den du schon eine Karte hast, ändert nichts an dieser Karte."
+
+#: src/Support/ExtraTaskCredits.php
+msgid "The pending free-entry credit for an extra task that night is gone."
+msgstr "Der ausstehende Freikarten-Credit für eine zusätzliche Aufgabe an diesem Abend ist weg."
+
+#: src/Support/MessageTemplates.php
+msgid "The rules for tickets and credits, one line each: the working ticket, free-entry and bought tickets, extra tasks on the same night (when on in Settings) and that credits have no cash value."
+msgstr "Die Regeln für Karten und Credits, je eine Zeile: die Arbeitskarte, Freikarten und gekaufte Karten, zusätzliche Aufgaben am selben Abend (wenn in den Einstellungen an) und dass Credits keinen Geldwert haben."
+
+#: src/Support/TicketRules.php
+msgid "The working ticket's code never changes. Why: screenshots and saved QR codes keep working."
+msgstr "Der Code der Arbeitskarte ändert sich nie. Warum: Screenshots und gespeicherte QR-Codes funktionieren weiter."
+
+#. translators: %d: pending free-entry credits for extra tasks on that night
+#: src/Support/ExtraTaskCredits.php
+msgid "This is an extra task on the same night: %d free-entry credit is pending. It is added after the event if you do the task."
+msgid_plural "These are extra tasks on the same night: %d free-entry credits are pending. They are added after the event for the tasks you do."
+msgstr[0] "Das ist eine zusätzliche Aufgabe am selben Abend: %d Freikarten-Credit ist ausstehend. Er wird nach der Veranstaltung gutgeschrieben, wenn du die Aufgabe erledigst."
+msgstr[1] "Das sind zusätzliche Aufgaben am selben Abend: %d Freikarten-Credits sind ausstehend. Sie werden nach der Veranstaltung für die erledigten Aufgaben gutgeschrieben."
+
+#: src/Support/TicketMail.php src/Telegram/TicketController.php
+msgid "Ticket %1$d of %2$d"
+msgstr "Karte %1$d von %2$d"
+
+#. translators: 1: this ticket's number, 2: how many tickets for the night, 3: when it was issued
+#: src/Telegram/TicketController.php
+msgid "Ticket %1$d of %2$d · issued %3$s"
+msgstr "Karte %1$d von %2$d · ausgestellt %3$s"
+
+#: src/Support/WelcomeSender.php
+msgid "Tickets and credits"
+msgstr "Karten und Credits"
+
+#: templates/admin/settings.php
+msgid "When on, every task a member does on a night after their first one earns one more free-entry credit, on top of the credits for completed tasks. It shows as pending until the after-event run adds it, and only for tasks marked completed or arrived late. A cancelled or no-show task gives nothing."
+msgstr "Wenn an, bringt jede Aufgabe, die ein Mitglied an einem Abend nach seiner ersten erledigt, einen weiteren Freikarten-Credit, zusätzlich zu den Credits für erledigte Aufgaben. Er wird als ausstehend angezeigt, bis der Lauf nach der Veranstaltung ihn gutschreibt, und nur für Aufgaben, die als erledigt oder verspätet angekommen markiert sind. Eine stornierte oder nicht angetretene Aufgabe bringt nichts."
+
+#: src/Telegram/TicketController.php
+msgid "You can give a free-entry ticket to someone else. A working ticket for your tasks is personal."
+msgstr "Du kannst eine Freikarte jemand anderem schenken. Eine Arbeitskarte für deine Aufgaben ist persönlich."
+
+#. translators: %d: how many tickets the person has for the night, always 2 or more
+#: src/Support/TicketMail.php
+msgid "You have %d ticket for this night."
+msgid_plural "You have %d tickets for this night."
+msgstr[0] "Du hast %d Karte für diesen Abend."
+msgstr[1] "Du hast %d Karten für diesen Abend."
+
+#. translators: %d: free-entry credits just added for extra tasks
+#: src/Support/ExtraTaskCredits.php
+msgid "Your extra task that night earned %d more free-entry credit."
+msgid_plural "Your extra tasks that night earned %d more free-entry credits."
+msgstr[0] "Deine zusätzliche Aufgabe an diesem Abend hat dir %d weiteren Freikarten-Credit gebracht."
+msgstr[1] "Deine zusätzlichen Aufgaben an diesem Abend haben dir %d weitere Freikarten-Credits gebracht."
+
+#: src/Support/TicketRules.php
+msgid "Your working ticket covers all your tasks on a night. It is personal: it can't be given away. Its code stays the same, so a screenshot or a saved QR code keeps working."
+msgstr "Deine Arbeitskarte gilt für alle deine Aufgaben an einem Abend. Sie ist persönlich: Sie kann nicht verschenkt werden. Ihr Code bleibt gleich, also funktioniert ein Screenshot oder ein gespeicherter QR-Code weiter."
+
+#. translators: %d: free-entry credits taken back
+#: src/Support/ExtraTaskCredits.php
+msgid "A task of yours was marked as not done, so %d free-entry credit for an extra task that night was taken back."
+msgid_plural "A task of yours was marked as not done, so %d free-entry credits for extra tasks that night were taken back."
+msgstr[0] "Eine deiner Aufgaben wurde als nicht erledigt markiert, daher wurde %d Freieintritt-Guthaben für eine Zusatzaufgabe an dem Abend zurückgenommen."
+msgstr[1] "Eine deiner Aufgaben wurde als nicht erledigt markiert, daher wurden %d Freieintritt-Guthaben für Zusatzaufgaben an dem Abend zurückgenommen."
+
+#: src/Support/StandingNotice.php
+msgid "A free-entry credit was taken back"
+msgstr "Ein Freieintritt-Guthaben wurde zurückgenommen"

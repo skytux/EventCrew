@@ -49,8 +49,41 @@ final class StandingNotice
         private readonly NotificationsRepository $ledger,
         private readonly TelegramClient $telegram,
         private readonly Mailer $mailer,
-        private readonly ?StandingCalculator $standing = null
+        private readonly ?StandingCalculator $standing = null,
+        private readonly ?ExtraTaskCredits $extra = null
     ) {
+    }
+
+    public function boot(): void
+    {
+        add_action('eventcrew/assignment_status_changed', [$this, 'onStatusChanged'], 10, 2);
+    }
+
+    /**
+     * The eventcrew/assignment_status_changed listener: a task changed away
+     * from completed (to no-show, say) after its extra-task credit was added
+     * takes that credit back, and the person is told at once (Lou
+     * 2026-11-08).
+     */
+    public function onStatusChanged(int $assignmentId, string $status): void
+    {
+        if (null === $this->extra || in_array($status, AssignmentStatus::credited(), true)) {
+            return;
+        }
+
+        $assignment = $this->assignments->find($assignmentId);
+        $task = null === $assignment ? null : $this->tasks->find($assignment->taskId);
+
+        if (null === $assignment || null === $task) {
+            return;
+        }
+
+        $removed = $this->extra->revoke($assignment->personId, $task->taskDate);
+        $person = $removed > 0 ? $this->people->find($assignment->personId) : null;
+
+        if (null !== $person) {
+            $this->creditNote($person, $removed, true);
+        }
     }
 
     /**
@@ -75,7 +108,24 @@ final class StandingNotice
             $this->hoursAgo(self::DELAY_HOURS + self::THANKS_WINDOW_HOURS)
         );
 
-        return $sent + $this->sendFor($thanks, self::THANKS_KIND);
+        $sent += $this->sendFor($thanks, self::THANKS_KIND);
+
+        if ($sent >= $limit || null === $this->extra) {
+            return $sent;
+        }
+
+        // A task marked completed after the night's thank-you went out: its
+        // credit for an extra task is added now, with a short note.
+        foreach ($this->extra->releaseLate($cutoff, self::THANKS_KIND, $limit - $sent) as $night) {
+            $person = $this->people->find($night['person_id']);
+
+            if (null !== $person) {
+                $this->creditNote($person, $night['added']);
+                ++$sent;
+            }
+        }
+
+        return $sent;
     }
 
     /**
@@ -98,7 +148,13 @@ final class StandingNotice
                 continue;
             }
 
-            $this->notify($person, $task, $assignment);
+            // The night is over and the task done: the credits for extra
+            // tasks on the same night are added now, told in the thank-you.
+            $added = self::THANKS_KIND === $ledgerKind && null !== $this->extra
+                ? $this->extra->release($person->id, $entry['task_date'])
+                : 0;
+
+            $this->notify($person, $task, $assignment, $added);
             $this->ledger->recordSent($ledgerKind, $person->id, $entry['task_date'], $task->eventPostId);
             ++$sent;
         }
@@ -106,12 +162,43 @@ final class StandingNotice
         return $sent;
     }
 
-    private function notify(Person $person, Task $task, Assignment $assignment): void
+    private function notify(Person $person, Task $task, Assignment $assignment, int $added = 0): void
     {
-        Language::forPerson($person, fn () => $this->notifyInLanguage($person, $task, $assignment));
+        Language::forPerson($person, fn () => $this->notifyInLanguage($person, $task, $assignment, $added));
     }
 
-    private function notifyInLanguage(Person $person, Task $task, Assignment $assignment): void
+    /**
+     * The short note when credits for extra tasks were added on their own,
+     * after the thank-you, or taken back ($removed): on both channels, under
+     * the standing toggle.
+     */
+    private function creditNote(Person $person, int $count, bool $removed = false): void
+    {
+        Language::forPerson($person, function () use ($person, $count, $removed): void {
+            $standing = $this->standing?->for($person->id);
+            $text = ($removed ? ExtraTaskCredits::removedLine($count) : ExtraTaskCredits::addedLine($count))
+                . (null === $standing ? '' : "\n\n" . $standing->line());
+            $prefs = new NotificationPreferences();
+
+            if ($prefs->dmAllowed($person, NotificationPreferences::STANDING)) {
+                $this->telegram->sendMessage($person->telegramChatId, DmBody::frame($person, $text));
+            }
+
+            if ($prefs->emailAllowed($person, NotificationPreferences::STANDING)) {
+                $this->mailer->toPerson(
+                    $person->id,
+                    $person->email,
+                    $removed
+                        ? __('A free-entry credit was taken back', 'eventcrew')
+                        : __('A free-entry credit for your extra task', 'eventcrew'),
+                    /* translators: %s: the person's name */
+                    sprintf(__('Hi %s,', 'eventcrew'), $person->name()) . "\n\n" . $text
+                );
+            }
+        });
+    }
+
+    private function notifyInLanguage(Person $person, Task $task, Assignment $assignment, int $added = 0): void
     {
         $isNoShow = AssignmentStatus::NO_SHOW === $assignment->status;
         $kind = match ($assignment->status) {
@@ -133,6 +220,8 @@ final class StandingNotice
             'standing_before' => $before,
             'standing_after' => $after,
             'free_cancel' => ClaimNotifier::freeCancelLine(),
+            // Credits for extra tasks that night, added just now.
+            'extra_added' => $added,
         ];
 
         if ($prefs->dmAllowed($person, NotificationPreferences::STANDING)) {

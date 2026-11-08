@@ -24,6 +24,8 @@ use EventCrew\Support\SignedLink;
 use EventCrew\Support\SiteTexts;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketTransferService;
+use EventCrew\Models\Person;
+use EventCrew\Models\Task;
 use EventCrew\Models\TicketTransfer;
 use EventCrew\Web\SignupBoardView;
 use WP_REST_Request;
@@ -201,6 +203,16 @@ final class TicketController
      */
     public function doorEntry(string $token): ?array
     {
+        $work = TicketMail::workTokenParts($token);
+
+        if (null !== $work) {
+            return [
+                'date' => $work['date'],
+                'kinds' => CheckinRepository::TASK_TICKET_KINDS,
+                'ref' => $work['person_id'],
+            ];
+        }
+
         $assignmentId = SignedLink::verify('ticket', $token);
 
         if (null !== $assignmentId) {
@@ -291,18 +303,17 @@ final class TicketController
      */
     public function moreTickets(string $token): array
     {
-        $assignmentId = SignedLink::verify('ticket', $token);
-        $assignment = null === $assignmentId ? null : $this->assignments->find($assignmentId);
-        $task = null === $assignment ? null : $this->tasks->find($assignment->taskId);
+        $night = $this->workNight($token);
 
-        if (null === $assignment || null === $task) {
+        if (null === $night) {
             return [];
         }
 
+        [$personId, $date] = $night;
         $more = [];
         $redemptions = array_filter(
-            $this->redemptions->forPerson($assignment->personId),
-            static fn ($redemption): bool => $task->taskDate === (string) $redemption->redeemedFor
+            $this->redemptions->forPerson($personId),
+            static fn ($redemption): bool => $date === (string) $redemption->redeemedFor
                 && ! $redemption->isCancelled()
         );
         usort($redemptions, static fn ($a, $b): int => $a->id <=> $b->id);
@@ -317,8 +328,8 @@ final class TicketController
         }
 
         // The tickets given to them for the night.
-        foreach (null === $this->transfers ? [] : $this->transfers->heldBy($assignment->personId) as $transfer) {
-            $given = $task->taskDate === $transfer->eventDate ? SignedLink::sign('xfer_ticket', $transfer->id) : '';
+        foreach (null === $this->transfers ? [] : $this->transfers->heldBy($personId) as $transfer) {
+            $given = $date === $transfer->eventDate ? SignedLink::sign('xfer_ticket', $transfer->id) : '';
             $ticket = '' === $given ? null : $this->transferTicket($given);
 
             if (null !== $ticket) {
@@ -327,6 +338,28 @@ final class TicketController
         }
 
         return $more;
+    }
+
+    /**
+     * The person id and night a working ticket's link names: its own link
+     * (TicketMail::workToken()) or an older sign-up's link, which leads to
+     * the same ticket. Null for any other link.
+     *
+     * @return array{0: int, 1: string}|null
+     */
+    private function workNight(string $token): ?array
+    {
+        $work = TicketMail::workTokenParts($token);
+
+        if (null !== $work) {
+            return [$work['person_id'], $work['date']];
+        }
+
+        $assignmentId = SignedLink::verify('ticket', $token);
+        $assignment = null === $assignmentId ? null : $this->assignments->find($assignmentId);
+        $task = null === $assignment ? null : $this->tasks->find($assignment->taskId);
+
+        return null === $assignment || null === $task ? null : [$assignment->personId, $task->taskDate];
     }
 
     /**
@@ -349,7 +382,8 @@ final class TicketController
      */
     public function ticketFor(string $token): ?array
     {
-        return $this->assignmentTicket($token)
+        return $this->workTicket($token)
+            ?? $this->assignmentTicket($token)
             ?? $this->creditTicket($token)
             ?? $this->transferTicket($token)
             ?? $this->guestTicket($token)
@@ -537,22 +571,90 @@ final class TicketController
             return null;
         }
 
+        // An older sign-up's link: the person's working ticket for the night.
+        return $this->nightTicket($person, $task->taskDate, $task);
+    }
+
+    /**
+     * The working ticket's own link (TicketMail::workToken()).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function workTicket(string $token): ?array
+    {
+        $work = TicketMail::workTokenParts($token);
+        $person = null === $work ? null : $this->people->find($work['person_id']);
+
+        return null === $work || null === $person ? null : $this->nightTicket($person, $work['date']);
+    }
+
+    /**
+     * The working ticket: one per crew member per night, for all the tasks
+     * they hold that night, each task on its own row with its time. Valid
+     * while they hold a task that night, as at the door. Null when they never
+     * had a task that night. It can't be given away. $fallback is the task an
+     * older sign-up's link names, shown when no task is held any more.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function nightTicket(Person $person, string $date, ?Task $fallback = null): ?array
+    {
+        $held = [];
+        $issued = '';
+        $any = null !== $fallback;
+
+        foreach ($this->assignments->forPersonOn($person->id, $date) as $assignment) {
+            $any = true;
+
+            if ('' === $issued || ('' !== $assignment->signedUpAt && $assignment->signedUpAt < $issued)) {
+                $issued = $assignment->signedUpAt;
+            }
+
+            $task = $assignment->isOccupying() ? $this->tasks->find($assignment->taskId) : null;
+
+            if (null !== $task) {
+                $held[] = $task;
+            }
+        }
+
+        if (! $any) {
+            return null;
+        }
+
+        usort(
+            $held,
+            static fn (Task $a, Task $b): int => [(string) $a->startsAt, $a->id] <=> [(string) $b->startsAt, $b->id]
+        );
+        $shown = [] === $held ? (null === $fallback ? [] : [$fallback]) : $held;
+        $first = $shown[0] ?? $this->tasks->forDate($date)[0] ?? null;
+        $rows = array_map(
+            static fn (Task $task): string => Language::forPerson($person, static fn (): string => $task->roleDisplay())
+                . ('' === $task->timeRange() ? '' : ' · ' . $task->timeRange()),
+            $shown
+        );
+
+        if (1 === count($shown)) {
+            $role = Language::forPerson($person, static fn (): string => $shown[0]->roleDisplay());
+            $time = $shown[0]->timeRange();
+        } else {
+            $role = implode("\n", $rows);
+            $time = '';
+        }
+
         return [
-            // One ticket per person per night: valid while they hold any
-            // task that night, as at the door (DoorDesk::scanAssignment()).
-            'valid' => $assignment->isOccupying()
-                || $this->assignments->holdsTaskOn($assignment->personId, $task->taskDate),
+            'valid' => [] !== $held,
             'name' => $person->name(),
-            'event' => $task->eventName(),
-            'event_id' => $task->eventPostId,
-            'date' => $task->taskDate,
-            'role' => Language::forPerson($person, static fn (): string => $task->roleDisplay()),
-            'time' => $task->timeRange(),
-            'issued' => $assignment->signedUpAt,
+            'event' => null === $first ? (string) get_bloginfo('name') : $first->eventName(),
+            'event_id' => $first?->eventPostId,
+            'date' => $date,
+            'role' => $role,
+            'time' => $time,
+            'issued' => $issued,
             'language' => $person->language,
-            'image' => SignupBoardView::eventImage($task->eventPostId),
-            'used' => $this->checkins->inAt($task->taskDate, CheckinRepository::TASK_TICKET_KINDS, $person->id),
-            'short' => ShortCode::forPerson($person->id, $task->taskDate),
+            'image' => SignupBoardView::eventImage($first?->eventPostId),
+            'used' => $this->checkins->inAt($date, CheckinRepository::TASK_TICKET_KINDS, $person->id),
+            'short' => ShortCode::forPerson($person->id, $date),
+            'work' => true,
         ];
     }
 
@@ -734,7 +836,11 @@ final class TicketController
             '<p class="t-name">%s</p><p class="t-task">%s</p>',
             esc_html($ticket['name']),
             // The role and the time, each on its own row (Owner, 2026-11-06).
-            implode('<br>', array_map('esc_html', array_filter([$ticket['role'], $ticket['time']], 'strlen')))
+            // A working ticket for several tasks has one row per task.
+            implode('<br>', array_map(
+                'esc_html',
+                array_filter(array_merge(explode("\n", (string) $ticket['role']), [$ticket['time']]), 'strlen')
+            ))
         );
 
         $watermark = ltrim($this->watermarkStyle(), ';');
@@ -782,7 +888,11 @@ final class TicketController
         }
 
         if (! isset($ticket['give_url'])) {
-            return '';
+            // A working ticket can't be given away: one quiet line says so,
+            // only while members can give tickets away.
+            return ! empty($ticket['work']) && TicketTransferService::isOn()
+                ? '<p class="t-give t-small">' . esc_html(self::personalLine()) . '</p>'
+                : '';
         }
 
         $url = esc_url((string) $ticket['give_url']);
@@ -796,6 +906,13 @@ final class TicketController
         }
 
         return '<p class="t-give"><a href="' . $url . '">🎁 ' . esc_html__('Give away', 'eventcrew') . '</a></p>';
+    }
+
+    /** The ticket page's line under a working ticket, in the current language. */
+    public static function personalLine(): string
+    {
+        // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        return __('You can give a free-entry ticket to someone else. A working ticket for your tasks is personal.', 'eventcrew');
     }
 
     /**

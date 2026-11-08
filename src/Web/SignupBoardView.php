@@ -14,11 +14,13 @@ use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\BoardVisibility;
 use EventCrew\Support\Dates;
 use EventCrew\Support\EventName;
+use EventCrew\Support\ExtraTaskCredits;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketList;
+use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketTransferService;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
@@ -76,6 +78,8 @@ final class SignupBoardView
         return [
             'person' => $person,
             'standing' => $standing,
+            // Credits for extra tasks on the same night, not yet added.
+            'pending_credits' => null === $person ? 0 : (new ExtraTaskCredits())->pendingFor($person->id),
             'csrf' => null === $person ? '' : WebSession::csrfToken($person->id),
             'groups' => $this->groupByEvent($tasks, $occupancy, $mine, $person),
             // Signed out, the sign-in card wears the banner the Telegram
@@ -144,7 +148,7 @@ final class SignupBoardView
                 'dj' => $event['dj'],
                 'when' => '' === $time ? $day : $day . ' · ' . $time,
                 'calendar_url' => CalendarController::url($task->id),
-                'ticket_url' => TicketList::taskTicketUrl($assignment->id),
+                'ticket_url' => TicketMail::workUrl($personId, $task->taskDate),
             ];
         }
 

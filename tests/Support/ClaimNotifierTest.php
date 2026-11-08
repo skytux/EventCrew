@@ -17,6 +17,7 @@ use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\ExtraTaskCredits;
 use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
@@ -165,11 +166,11 @@ final class ClaimNotifierTest extends TestCase
         self::assertStringNotContainsString('Your ticket', $this->mails[0]['subject']);
         $body = $this->mails[0]['body'];
         $qr = new TicketQr();
-        $data = TicketMail::crewCode(9);
+        $data = TicketMail::workCode(7, (string) $this->taskRow()['task_date']);
         self::assertSame(1, substr_count($body, $qr->table($data, $qr->fitCell($data, 150, '', 4))));
         self::assertStringContainsString('Crew ticket', $body);
         self::assertStringContainsString(ShortCode::forPerson(7, (string) $this->taskRow()['task_date']), $body);
-        self::assertStringContainsString('token=' . SignedLink::sign('ticket', 9), $body);
+        self::assertStringContainsString('token=' . TicketMail::workToken(7, (string) $this->taskRow()['task_date']), $body);
         self::assertStringNotContainsString(Mailer::TICKETS_MARK, $body);
         self::assertStringNotContainsString('{tickets}', $body);
         // The ticket comes after the sign-up text, and the email stays light
@@ -340,8 +341,11 @@ final class ClaimNotifierTest extends TestCase
         self::assertStringContainsString('Your ticket', $this->mails[1]['subject']);
         self::assertStringNotContainsString('cancelled', $this->mails[1]['subject']);
         self::assertStringContainsString('Your tasks on this night:', $this->mails[1]['body']);
-        // The code is the first ticket's (assignment 9), so the QR they have keeps working.
-        self::assertStringContainsString('token=' . SignedLink::sign('ticket', 9), $this->mails[1]['body']);
+        // The working ticket's code stays the same, so the QR they have keeps working.
+        self::assertStringContainsString(
+            'token=' . TicketMail::workToken(7, (string) $this->taskRow()['task_date']),
+            $this->mails[1]['body']
+        );
     }
 
     public function testCancellingASignupWhoseTicketWasNotEmailedSendsNoCancelEmail(): void
@@ -608,7 +612,7 @@ final class ClaimNotifierTest extends TestCase
                 . ' and you accept. You can cancel without it affecting your standing up to 48 hours before the task.'
                 . "\n\n"
                 . 'Show your ticket: https://site.test/wp-json/eventcrew/v1/ticket?token='
-                . SignedLink::sign('ticket', 9) . "\n"
+                . TicketMail::workToken(7, '2026-08-01') . "\n"
                 . 'Add to calendar: https://site.test/wp-json/eventcrew/v1/calendar?token='
                 . SignedLink::sign('calendar', 5) . "\n"
                 . '📋 Crew guide: https://docs.example/guide'
@@ -1044,5 +1048,87 @@ final class ClaimNotifierTest extends TestCase
         self::assertCount(1, $this->mails);
         // The "a spot opened" call waited for the window too.
         self::assertSame(['eventcrew/slot_freed'], $freed);
+    }
+
+    private function notifierWithExtraCredits(): ClaimNotifier
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => ExtraTaskCredits::OPTION === $name ? '1' : false
+        );
+
+        return new ClaimNotifier(
+            new TaskRepository(),
+            new AssignmentRepository(),
+            new Mailer(new Logger(), new EmailTemplate(new Logger())),
+            new TelegramClient(new Logger(), new DohResolver(new Logger())),
+            new StandingCalculator(new AssignmentRepository(), new RedemptionRepository(), new CreditGrantRepository()),
+            null,
+            null,
+            null,
+            new ExtraTaskCredits()
+        );
+    }
+
+    /** A second task on the same night: the sign-up says a credit is pending. */
+    public function testASecondTaskOnTheSameNightSaysACreditIsPending(): void
+    {
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+        // pendingExtraTasks for the night: one.
+        $this->wpdb->nextVars[] = '1';
+
+        $this->notifierWithExtraCredits()->confirmSignup($this->person(), 5);
+
+        self::assertStringContainsString(
+            'This is an extra task on the same night: 1 free-entry credit is pending. '
+            . 'It is added after the event if you do the task.',
+            $this->mails[0]['body']
+        );
+        $pendingQuery = implode("\n", array_filter(
+            $this->wpdb->queries,
+            static fn (string $q): bool => str_contains($q, 'GREATEST(0, n.held - 1 - n.added)')
+        ));
+        self::assertStringContainsString("s.task_date >= '2026-08-01' AND s.task_date <= '2026-08-01'", $pendingQuery);
+    }
+
+    /** One task that night: nothing pending, no line. */
+    public function testAFirstTaskOnANightSaysNothingAboutPendingCredits(): void
+    {
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+        $this->wpdb->nextVars[] = '0';
+
+        $this->notifierWithExtraCredits()->confirmSignup($this->person(), 5);
+
+        self::assertStringNotContainsString('pending', $this->mails[0]['body']);
+    }
+
+    /** Cancelling one of two tasks that night: the pending credit is gone. */
+    public function testCancellingAnExtraTaskSaysItsPendingCreditIsGone(): void
+    {
+        $this->wpdb->nextRows[] = $this->taskRow();
+        // holdsTaskOn: another task is still held that night.
+        $this->wpdb->nextResults[] = [
+            ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled'],
+            ['id' => 10, 'task_id' => 6, 'person_id' => 7, 'status' => 'signed_up'],
+        ];
+
+        $this->notifierWithExtraCredits()->confirmCancellation($this->person(), 5, 'cancelled');
+
+        self::assertStringContainsString(
+            'The pending free-entry credit for an extra task that night is gone.',
+            $this->mails[0]['body']
+        );
+    }
+
+    /** Cancelling the only task that night: nothing was pending. */
+    public function testCancellingTheOnlyTaskSaysNothingAboutPendingCredits(): void
+    {
+        $this->wpdb->nextRows[] = $this->taskRow();
+        $this->wpdb->nextResults[] = [['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'cancelled']];
+
+        $this->notifierWithExtraCredits()->confirmCancellation($this->person(), 5, 'cancelled');
+
+        self::assertStringNotContainsString('pending', $this->mails[0]['body']);
     }
 }

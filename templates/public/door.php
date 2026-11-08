@@ -66,7 +66,6 @@ $eventcrew_text = [
     'choose' => __('Choose', 'eventcrew'),
     /* translators: %s: the list name, "Crew working" or "Free-entry credit" */
     'onList' => __('Already on tonight’s list: %s', 'eventcrew'),
-    'swap' => __('Take a task instead', 'eventcrew'),
     'addTask' => __('Add a task', 'eventcrew'),
     /* translators: %d: how many free-entry credits the member has */
     'useCredit' => __('Use a credit (%d left)', 'eventcrew'),
@@ -873,12 +872,12 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
                 li.appendChild(who);
                 list.appendChild(li);
 
-                // Already in tonight's lists: shown so the door knows. Crew
-                // can take another task; a free-entry credit holder can take
-                // a task, which gives their credit back.
+                // Already in tonight's lists: shown so the door knows. Either
+                // can take a task; a free-entry ticket is kept, never turned
+                // back into a credit.
                 if (member.list) {
                     who.appendChild(node('div', 'ec-detail', text.onList.replace('%s', member.list)));
-                    pick.textContent = 'credit' === member.kind ? text.swap : text.addTask;
+                    pick.textContent = text.addTask;
                     pick.addEventListener('click', function () { chosen = member; showTasks(); });
                     li.appendChild(pick);
 

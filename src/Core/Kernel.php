@@ -63,6 +63,7 @@ use EventCrew\Support\EventDetailsText;
 use EventCrew\Support\VenueReader;
 use EventCrew\Support\EventMeshSyncListener;
 use EventCrew\Support\EventTaskMover;
+use EventCrew\Support\ExtraTaskCredits;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\CreditGrantNotifier;
@@ -330,6 +331,9 @@ final class Kernel
         // Takeover requests: closed when the holder's place goes away, and
         // answered from an email link that logged-out people open.
         $this->container->get(TakeoverService::class)->boot();
+        // An extra-task credit is taken back when its task is changed away
+        // from completed.
+        $this->container->get(StandingNotice::class)->boot();
         $this->container->get(TakeoverController::class)->boot();
 
         // The public signup page: its shortcode, block and admin-ajax handlers
@@ -704,6 +708,14 @@ final class Kernel
         );
 
         $this->container->singleton(
+            ExtraTaskCredits::class,
+            fn (Container $container) => new ExtraTaskCredits(
+                $container->get(AssignmentRepository::class),
+                $container->get(CreditGrantRepository::class)
+            )
+        );
+
+        $this->container->singleton(
             StandingCalculator::class,
             fn (Container $container) => new StandingCalculator(
                 $container->get(AssignmentRepository::class),
@@ -773,7 +785,8 @@ final class Kernel
                 $container->get(StandingCalculator::class),
                 $container->get(TicketMail::class),
                 $container->get(PersonRepository::class),
-                $container->get(SlotFreedNotice::class)
+                $container->get(SlotFreedNotice::class),
+                $container->get(ExtraTaskCredits::class)
             )
         );
 
@@ -814,7 +827,8 @@ final class Kernel
                 $container->get(NotificationsRepository::class),
                 $container->get(TelegramClient::class),
                 $container->get(Mailer::class),
-                $container->get(StandingCalculator::class)
+                $container->get(StandingCalculator::class),
+                $container->get(ExtraTaskCredits::class)
             )
         );
 

@@ -496,7 +496,7 @@ final class SignupControllerTest extends TestCase
         self::assertStringContainsString('id="eventcrew-my-tickets"', $html);
     }
 
-    public function testSignedOutTheCrewGuideStaysAtTheTop(): void
+    public function testSignedOutTheCrewGuideIsNotShown(): void
     {
         $this->stubPageRender();
         $this->setGuideUrl();
@@ -505,9 +505,9 @@ final class SignupControllerTest extends TestCase
 
         $html = $this->controller()->renderShortcode();
 
-        self::assertSame(1, preg_match('~<p class="eventcrew-links">.*?</p>~s', $html, $links));
-        self::assertStringContainsString('href="https://docs.example/guide"', $links[0]);
-        self::assertLessThan(strpos($html, 'id="eventcrew-signin"'), strpos($html, 'Crew guide'));
+        self::assertStringNotContainsString('Crew guide', $html);
+        self::assertStringNotContainsString('https://docs.example/guide', $html);
+        self::assertStringNotContainsString('class="eventcrew-links"', $html);
         self::assertStringNotContainsString('eventcrew-header-guide', $html);
     }
 

@@ -28,6 +28,20 @@ Kun ilmoittaudut tehtävään, saat sille illalle ilmaisen lipun. Näytä se ove
 
 Saat 1 vapaalipun jokaisesta 2 tekemästäsi tehtävästä. Saat silloin lipun valitsemallesi illalle. Joinakin iltoina (loppuunmyydyt tai erikoistapahtumat) vapaalippuja ei voi käyttää.
 
+<b>⚖️ Liput ja vapaaliput</b>
+
+🎫 Työlippusi kattaa kaikki tehtäväsi samana iltana. Se on henkilökohtainen: sitä ei voi antaa pois. Sen koodi pysyy samana, joten kuvakaappaus tai tallennettu QR-koodi toimii yhä.
+
+🎟️ Vapaalippua ei voi perua, mutta voit antaa sen jollekulle toiselle.
+
+💳 Ostettu lippu ei koskaan muutu vapaalipuksi.
+
+🔁 Tehtävän ottaminen illalle, jolle sinulla on jo lippu, ei muuta sitä lippua mitenkään.
+
+➕ Jokainen lisätehtävä samana iltana tuo yhden vapaalipun lisää. Se näkyy odottavana ja lisätään tapahtuman jälkeen, jos teit tehtävän.
+
+🔹 Vapaalipuilla ja lipuilla ei ole rahallista arvoa. Niitä ei voi hyvittää, myydä eikä maksaa ulos missään muodossa; niillä voi vain saada lipun tapahtumaan, johon ne käyvät.
+
 <b>📈 Luotettavuus</b>
 
 Luotettavuutesi perustuu siihen, miten menneet tehtäväsi sujuivat:

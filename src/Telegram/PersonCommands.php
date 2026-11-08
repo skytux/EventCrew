@@ -19,6 +19,7 @@ use EventCrew\Support\NewcomerApproval;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Web\CrewAdminPeople;
 use EventCrew\Web\CrewAdminRoster;
+use EventCrew\Support\ExtraTaskCredits;
 
 /**
  * Organizer commands about one person, in a private chat:
@@ -104,7 +105,19 @@ final class PersonCommands
 
     public function onCommand(int $chatId, int $fromId, string $text, bool $isPrivate, string $command): void
     {
-        if (! $this->flow->inPrivate($chatId, $isPrivate, '/' . $command) || null === $this->flow->organizerOrSay($chatId, $fromId, '/' . $command)) {
+        if (! $this->flow->inPrivate($chatId, $isPrivate, '/' . $command)) {
+            return;
+        }
+
+        // A member can't cancel a free-entry ticket: /unticket is the
+        // organizers' tool, and a member who tries it is told the rule.
+        if (self::UNTICKET === $command && null === $this->flow->organizer($fromId)) {
+            $this->flow->telegram()->sendMessage($chatId, TicketRedemptionService::noCancelText());
+
+            return;
+        }
+
+        if (self::UNTICKET !== $command && null === $this->flow->organizerOrSay($chatId, $fromId, '/' . $command)) {
             return;
         }
 
@@ -422,7 +435,8 @@ final class PersonCommands
             implode(' · ', [
                 $standing->ratedSummary(),
                 /* translators: %d: number of free-entry credits. */
-                sprintf(_n('%d credit', '%d credits', $standing->creditBalance, 'eventcrew'), $standing->creditBalance),
+                sprintf(_n('%d credit', '%d credits', $standing->creditBalance, 'eventcrew'), $standing->creditBalance)
+                    . ExtraTaskCredits::pendingSuffix((new ExtraTaskCredits())->pendingFor($person->id)),
                 /* translators: %d: number of tasks done. */
                 sprintf(_n('%d task done', '%d tasks done', $standing->completedCount, 'eventcrew'), $standing->completedCount),
             ]),

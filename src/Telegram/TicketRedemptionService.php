@@ -518,9 +518,22 @@ final class TicketRedemptionService
     }
 
     /**
+     * What a member is told when they try to cancel their free-entry ticket,
+     * in the current language. Members can't cancel one; while giving away is
+     * on, they can give it to someone else. Organizers keep their tools.
+     */
+    public static function noCancelText(): string
+    {
+        return TicketTransferService::isOn()
+            ? __('A free-entry ticket can’t be cancelled. You can give it to someone else.', 'eventcrew')
+            : __('A free-entry ticket can’t be cancelled.', 'eventcrew');
+    }
+
+    /**
      * Cancels a redemption (the credit goes back to the person) and, when its
      * ticket was emailed, emails the person that the ticket is cancelled. The
-     * one place an organizer or the door desk undoes a spent credit.
+     * one place an organizer undoes a spent credit; members can't
+     * (noCancelText()).
      *
      * A ticket that was given away is the receiver's now: cancelling it
      * cancels the receiver's ticket (TicketTransferService::cancelIssued())

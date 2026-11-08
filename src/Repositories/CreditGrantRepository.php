@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Repositories;
 
 use EventCrew\Database\Schema;
+use EventCrew\Support\AssignmentStatus;
 
 /**
  * All reads and writes of the credit-grants table - one row per bonus credit an
@@ -16,6 +17,9 @@ use EventCrew\Database\Schema;
  */
 final class CreditGrantRepository
 {
+    /** The source of a credit for an extra task on the same night. */
+    public const SOURCE_EXTRA_TASK = 'extra_task';
+
     private function table(): string
     {
         return Schema::table(Schema::CREDIT_GRANTS);
@@ -87,6 +91,133 @@ final class CreditGrantRepository
     }
 
     /**
+     * The credit for an extra task on the same night (ExtraTaskCredits): one
+     * row per task, source 'extra_task'. INSERT IGNORE on the unique
+     * assignment_id key, so a second run for the same task adds nothing.
+     * Returns whether a row was added.
+     */
+    public function recordExtraTask(int $personId, int $assignmentId, string $note): bool
+    {
+        global $wpdb;
+
+        $result = $wpdb->query(
+            $wpdb->prepare(
+                // phpcs:ignore Generic.Files.LineLength.TooLong -- single SQL statement; wrapping it just adds noise.
+                "INSERT IGNORE INTO {$this->table()} (person_id, credits, note, granted_by, granted_by_person_id, granted_at, source, assignment_id) VALUES (%d, 1, %s, NULL, NULL, %s, %s, %d)",
+                $personId,
+                $note,
+                (string) current_time('mysql'),
+                self::SOURCE_EXTRA_TASK,
+                $assignmentId
+            )
+        );
+
+        return is_int($result) && $result > 0;
+    }
+
+    /**
+     * The pending credits for extra tasks: for each of the person's nights
+     * from $from (to $to when given), the tasks they hold that night minus
+     * one, minus the extra-task credits already added for that night. One
+     * number, summed over the nights. Only tasks that count toward credit.
+     */
+    public function pendingExtraTasks(int $personId, string $from, ?string $to = null): int
+    {
+        global $wpdb;
+
+        $assignments = Schema::table(Schema::ASSIGNMENTS);
+        $tasks = Schema::table(Schema::TASKS);
+        $statuses = AssignmentStatus::occupying();
+        $placeholders = implode(',', array_fill(0, count($statuses), '%s'));
+        $toClause = null === $to ? '' : 'AND s.task_date <= %s';
+
+        $sql = "SELECT COALESCE(SUM(GREATEST(0, n.held - 1 - n.added)), 0) FROM (
+                SELECT COUNT(*) AS held, (
+                    SELECT COUNT(*) FROM {$this->table()} g
+                    INNER JOIN {$assignments} a2 ON a2.id = g.assignment_id
+                    INNER JOIN {$tasks} s2 ON s2.id = a2.task_id
+                    WHERE g.person_id = a.person_id AND g.source = %s AND s2.task_date = s.task_date
+                ) AS added
+                FROM {$assignments} a
+                INNER JOIN {$tasks} s ON s.id = a.task_id
+                WHERE a.person_id = %d AND s.deleted_at IS NULL AND a.counts_credit = 1
+                  AND a.status IN ({$placeholders})
+                  AND s.task_date >= %s {$toClause}
+                GROUP BY s.task_date
+                HAVING held > 1
+            ) n";
+
+        $params = array_merge(
+            [self::SOURCE_EXTRA_TASK, $personId],
+            $statuses,
+            [$from],
+            null === $to ? [] : [$to]
+        );
+
+        // Assembled from table-name constants and generated placeholders, then
+        // bound through prepare(); the sniff cannot follow a query in a variable.
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        return max(0, (int) $wpdb->get_var($wpdb->prepare($sql, ...$params)));
+    }
+
+    /**
+     * Nights whose extra-task credits are still to add after their thank-you
+     * went out: a completed task marked at least a day ago ($cutoff), not the
+     * first completed task of the person's night, with no credit row yet,
+     * and the thank-you ($thanksKind) for that night already in the ledger.
+     * A task marked completed after the thank-you is caught here.
+     *
+     * @return array<int, array{person_id: int, task_date: string}>
+     */
+    public function extraTasksToAdd(string $from, string $cutoff, string $thanksKind, int $limit): array
+    {
+        global $wpdb;
+
+        $assignments = Schema::table(Schema::ASSIGNMENTS);
+        $tasks = Schema::table(Schema::TASKS);
+        $notifications = Schema::table(Schema::NOTIFICATIONS);
+        $statuses = AssignmentStatus::credited();
+        $placeholders = implode(',', array_fill(0, count($statuses), '%s'));
+
+        $sql = "SELECT DISTINCT a.person_id, s.task_date
+            FROM {$assignments} a
+            INNER JOIN {$tasks} s ON s.id = a.task_id
+            WHERE a.status IN ({$placeholders})
+              AND a.counts_credit = 1
+              AND s.deleted_at IS NULL
+              AND s.task_date >= %s
+              AND a.status_changed_at IS NOT NULL
+              AND a.status_changed_at <= %s
+              AND NOT EXISTS (SELECT 1 FROM {$this->table()} g WHERE g.assignment_id = a.id)
+              AND EXISTS (
+                SELECT 1 FROM {$notifications} n
+                WHERE n.kind = %s AND n.person_id = a.person_id AND n.task_date = s.task_date
+              )
+              AND a.id > (
+                SELECT MIN(a2.id) FROM {$assignments} a2
+                INNER JOIN {$tasks} s2 ON s2.id = a2.task_id
+                WHERE a2.person_id = a.person_id AND s2.task_date = s.task_date
+                  AND s2.deleted_at IS NULL AND a2.counts_credit = 1 AND a2.status IN ({$placeholders})
+              )
+            LIMIT %d";
+
+        $params = array_merge($statuses, [$from, $cutoff, $thanksKind], $statuses, [max(1, $limit)]);
+
+        // Assembled from table-name constants and generated placeholders, then
+        // bound through prepare(); the sniff cannot follow a query in a variable.
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $rows = $wpdb->get_results($wpdb->prepare($sql, ...$params), ARRAY_A);
+
+        return array_map(
+            static fn (array $row): array => [
+                'person_id' => (int) $row['person_id'],
+                'task_date' => (string) $row['task_date'],
+            ],
+            is_array($rows) ? $rows : []
+        );
+    }
+
+    /**
      * The most recent grants across everyone, newest first - the credit-grant
      * audit log the People screen shows. Raw rows; the caller resolves the person
      * and granter names for display.
@@ -154,6 +285,56 @@ final class CreditGrantRepository
             ],
             is_array($rows) ? $rows : []
         );
+    }
+
+    /**
+     * The assignment ids that have an extra-task credit, among the person's
+     * tasks on one night.
+     *
+     * @return array<int, int>
+     */
+    public function extraTaskAssignmentsOn(int $personId, string $date): array
+    {
+        global $wpdb;
+
+        $assignments = Schema::table(Schema::ASSIGNMENTS);
+        $tasks = Schema::table(Schema::TASKS);
+
+        $ids = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT g.assignment_id FROM {$this->table()} g
+                INNER JOIN {$assignments} a ON a.id = g.assignment_id
+                INNER JOIN {$tasks} s ON s.id = a.task_id
+                WHERE g.person_id = %d AND g.source = %s AND s.task_date = %s
+                ORDER BY g.assignment_id ASC",
+                $personId,
+                self::SOURCE_EXTRA_TASK,
+                $date
+            )
+        );
+
+        return array_map('intval', is_array($ids) ? $ids : []);
+    }
+
+    /**
+     * Takes back the extra-task credit added for one assignment. True when
+     * there was one.
+     */
+    public function deleteExtraTask(int $personId, int $assignmentId): bool
+    {
+        global $wpdb;
+
+        $result = $wpdb->delete(
+            $this->table(),
+            [
+                'person_id' => $personId,
+                'source' => self::SOURCE_EXTRA_TASK,
+                'assignment_id' => $assignmentId,
+            ],
+            ['%d', '%s', '%d']
+        );
+
+        return is_int($result) && $result > 0;
     }
 
     public function deleteForPerson(int $personId): void
