@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.201
+Stable tag: 1.140.202
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.202 =
+* Crew app Admin tab: every card has the same layout as the Me cards: a title strip with an (i) for the explanation, compact rows, one button and text links; forms used now and then are folded.
 
 = 1.140.201 =
 * New setting (on by default): Allow several free-entry tickets per night. A member can spend one more credit for each extra ticket on the same night; each ticket has its own door row and QR.
@@ -1964,6 +1967,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.202 =
+No settings change.
 
 = 1.140.201 =
 No settings change.
