@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.183
+Stable tag: 1.140.184
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.184 =
+* Welcome email: one See open tasks button, with Open in Telegram, the Telegram group and Help as small links under it; the organizer welcome keeps Admin tab and wp-admin as buttons.
+* Thank-you email: the DJ text under the coming event's picture is shown in every language of the email, and is written ahead of time for the event it shows.
 
 = 1.140.183 =
 * A member can give their free-entry ticket to another member or, by email, to someone outside the crew, from the bot or the ticket page; the receiver gets a new ticket and the giver's stops working.
@@ -1875,6 +1879,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.184 =
+No settings change.
 
 = 1.140.183 =
 No settings change.
