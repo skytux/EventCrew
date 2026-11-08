@@ -3092,7 +3092,7 @@ msgstr ""
 msgid "First reminder (hours before)"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:869
+#: src/Telegram/AssistantService.php:871
 msgid "First sign up with /start."
 msgstr ""
 
@@ -3821,7 +3821,7 @@ msgstr ""
 msgid "I am not in the crew group yet."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:868
+#: src/Telegram/AssistantService.php:870
 msgid "I cannot do that for you. /help lists what you can do."
 msgstr ""
 
@@ -3841,7 +3841,7 @@ msgstr ""
 msgid "I couldn’t find anyone by that name. Try their exact name or @mention them."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:867
+#: src/Telegram/AssistantService.php:869
 msgid "I do not know that. /help lists the commands, or ask an organizer."
 msgstr ""
 
@@ -3850,7 +3850,7 @@ msgstr ""
 msgid "I emailed you a transcript of my private chat with %s."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:870
+#: src/Telegram/AssistantService.php:872
 msgid "I have passed this chat on to the organizers."
 msgstr ""
 
@@ -6391,7 +6391,7 @@ msgstr ""
 msgid "Retention period"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:871
+#: src/Telegram/AssistantService.php:873
 msgid "Right now I only understand commands: /help"
 msgstr ""
 
