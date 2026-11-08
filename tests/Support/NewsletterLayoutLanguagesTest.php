@@ -291,4 +291,49 @@ Hi Anna!", NewsletterLayout::greeting('Anna')['text']);
         self::assertStringContainsString('Tervetuloa!', $german);
         self::assertStringNotContainsString('Welcome', $german);
     }
+
+    /**
+     * The post-event email's card gets one description under its picture:
+     * the DJ or host text when it has one in any language, else the text
+     * written for it (Owner, 2026-11-08).
+     *
+     * @param array<string, string> $about
+     * @return array<string, mixed>
+     */
+    private static function describedCard(array $about): array
+    {
+        return $about + [
+            'text_fi' => 'Tanssimme koko yön.',
+            'text_en' => 'We dance all night.',
+        ] + self::card(1, '2026-07-27', 'Summer Dance');
+    }
+
+    public function testADjTextHidesTheWrittenText(): void
+    {
+        $this->siteLanguages(['fi', 'en']);
+        // Only the English DJ text, as while its translation is missing.
+        $card = self::describedCard(['about_en' => 'DJ Kai plays warm beats.']);
+
+        $html = NewsletterLayout::html([$card], [], null, '#7a3cff', '');
+        $text = NewsletterLayout::text([$card], [], null, '');
+
+        foreach ([$html, $text] as $out) {
+            self::assertStringContainsString('DJ Kai plays warm beats.', $out);
+            self::assertStringNotContainsString('Tanssimme koko yön.', $out);
+            self::assertStringNotContainsString('We dance all night.', $out);
+        }
+    }
+
+    public function testWithoutADjTextTheWrittenTextIsShown(): void
+    {
+        $this->siteLanguages(['fi', 'en']);
+        $card = self::describedCard(['about_en' => '', 'about_fi' => ' ']);
+
+        $html = NewsletterLayout::html([$card], [], null, '#7a3cff', '');
+        $text = NewsletterLayout::text([$card], [], null, '');
+
+        self::assertStringContainsString('FI</span>&nbsp; Tanssimme koko yön.</p>', $html);
+        self::assertStringContainsString('EN</span>&nbsp; We dance all night.</p>', $html);
+        self::assertStringContainsString("FI: Tanssimme koko yön.\nEN: We dance all night.", $text);
+    }
 }

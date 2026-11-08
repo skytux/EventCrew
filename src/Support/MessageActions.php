@@ -53,6 +53,10 @@ final class MessageActions
         $rows = [];
 
         foreach ($actions as $action) {
+            if (! $action->dm) {
+                continue;
+            }
+
             $data = '' !== $action->callback ? $action->callback : MenuButtons::forVerb($action->verb);
 
             if ('' !== $data) {
@@ -87,7 +91,8 @@ final class MessageActions
      * The email's actions for Mailer::toPerson(): each web link as a button,
      * then each bot verb as an "Open in Telegram" link (style 'telegram',
      * drawn as a line of links under the buttons, EmailBody), once per verb
-     * (or own start payload), when the bot is set up.
+     * (or own start payload), when the bot is set up; then the web links
+     * of style EmailBody::STYLE_LINK as small links.
      *
      * @param list<MessageAction> $actions
      * @return list<array{label: string, url: string, style?: string}>
@@ -96,11 +101,14 @@ final class MessageActions
     {
         $buttons = [];
         $links = [];
+        $small = [];
 
         foreach ($actions as $action) {
             $url = $action->webUrl();
 
-            if ('' !== $url) {
+            if ('' !== $url && EmailBody::STYLE_LINK === $action->emailStyle) {
+                $small[] = ['label' => $action->label, 'url' => $url, 'style' => EmailBody::STYLE_LINK];
+            } elseif ('' !== $url) {
                 $buttons[] = ['label' => $action->label, 'url' => $url];
             }
 
@@ -116,7 +124,7 @@ final class MessageActions
             }
         }
 
-        return [...$buttons, ...array_values($links)];
+        return [...$buttons, ...array_values($links), ...$small];
     }
 
     /**

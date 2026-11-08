@@ -47,7 +47,7 @@ final class AccessTextsMigrationTest extends TelegramTestCase
         );
         self::assertArrayNotHasKey(MessageTemplates::OPTION_PREFIX . 'access_pass', $this->options);
         self::assertSame(
-            ['open_tasks', 'organizer_line', 'join_answers'],
+            ['open_tasks', 'organizer_line', 'join_answers', 'organizer_access'],
             $this->options[AccessTextsMigration::OPTION]
         );
 
@@ -70,7 +70,7 @@ final class AccessTextsMigrationTest extends TelegramTestCase
             'lang' => 'en',
             'texts' => ['sv' => 'Välkommen.', 'en' => ''],
         ]];
-        $this->options[AccessTextsMigration::OPTION] = ['open_tasks'];
+        $this->options[AccessTextsMigration::OPTION] = ['open_tasks', 'join_answers', 'organizer_access'];
 
         AccessTextsMigration::migrate();
 
@@ -82,7 +82,7 @@ final class AccessTextsMigrationTest extends TelegramTestCase
             ],
             $this->options[$option][MessageTemplates::BODY]
         );
-        self::assertStringEndsWith(
+        self::assertStringContainsString(
             MessageTemplates::adminTabLine(),
             MessageTemplates::find(AccessTextsMigration::ORGANIZER_KIND)->defaultBody()
         );
@@ -105,7 +105,7 @@ final class AccessTextsMigrationTest extends TelegramTestCase
             'source' => "New: {member}.\n{join_answers}",
             'texts' => [],
         ]];
-        $this->options[AccessTextsMigration::OPTION] = ['open_tasks', 'organizer_line'];
+        $this->options[AccessTextsMigration::OPTION] = ['open_tasks', 'organizer_line', 'organizer_access'];
 
         AccessTextsMigration::migrate();
 
@@ -119,9 +119,56 @@ final class AccessTextsMigrationTest extends TelegramTestCase
         );
         self::assertSame("New: {member}.\n{join_answers}", $this->options[$dm][MessageTemplates::BODY]['source']);
         self::assertSame(
-            ['open_tasks', 'organizer_line', 'join_answers'],
+            ['open_tasks', 'organizer_line', 'organizer_access', 'join_answers'],
             $this->options[AccessTextsMigration::OPTION]
         );
+    }
+
+    /**
+     * A stored organizer message, email and DM, gets the lines on the bot's
+     * organizer commands, the organizer help and wp-admin, each after an
+     * empty line, in each language that has them; a line the text mentions
+     * already is not added again, and an empty text stays empty.
+     */
+    public function testTheOrganizerMessageGetsTheNewLinesOnce(): void
+    {
+        $email = MessageTemplates::OPTION_PREFIX . 'access_organizer';
+        $dm = MessageTemplates::OPTION_PREFIX . 'access_organizer_dm';
+        $this->options[$email] = [MessageTemplates::BODY => [
+            'source' => 'Welcome, organizer.',
+            'lang' => 'en',
+            'texts' => ['fi' => 'Tervetuloa, järjestäjä.', 'en' => ''],
+        ]];
+        $this->options[$dm] = [MessageTemplates::BODY => [
+            'source' => "Welcome. Ask Kim for wp-admin.\n\n",
+            'texts' => [],
+        ]];
+        $this->options[AccessTextsMigration::OPTION] = ['open_tasks', 'organizer_line', 'join_answers'];
+
+        AccessTextsMigration::migrate();
+
+        $lines = MessageTemplates::organizerAccessLines();
+        self::assertSame(
+            "Welcome, organizer.\n\n" . implode("\n\n", $lines),
+            $this->options[$email][MessageTemplates::BODY]['source']
+        );
+        self::assertSame('', $this->options[$email][MessageTemplates::BODY]['texts']['en']);
+        $fi = $this->options[$email][MessageTemplates::BODY]['texts']['fi'];
+        self::assertStringStartsWith("Tervetuloa, järjestäjä.\n\n🤖 Yksityisessä keskustelussa botin kanssa", $fi);
+        self::assertStringEndsWith('Jos tarvitset niitä, pyydä: {contact}.', $fi);
+        self::assertSame(
+            "Welcome. Ask Kim for wp-admin.\n\n" . $lines['bot'] . "\n\n" . $lines['help'],
+            $this->options[$dm][MessageTemplates::BODY]['source']
+        );
+        self::assertSame(
+            ['open_tasks', 'organizer_line', 'join_answers', 'organizer_access'],
+            $this->options[AccessTextsMigration::OPTION]
+        );
+
+        // The built-in texts have the lines already.
+        foreach (AccessTextsMigration::ORGANIZER_ACCESS_KINDS as $id) {
+            self::assertStringEndsWith($lines['wp_admin'], MessageTemplates::find($id)->defaultBody(), $id);
+        }
     }
 
     public function testTheBuiltInNewcomerRequestHasTheJoinAnswers(): void

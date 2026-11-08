@@ -1038,8 +1038,9 @@ final class FollowupMailTest extends TestCase
         $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
 
         self::assertStringContainsString('Example Hall<br>Main Street 1, Helsinki</p>', $mail['html']);
-        self::assertStringContainsString('FI</span>&nbsp; Ovet sulkeutuvat 19:00</p>', $mail['html']);
-        self::assertStringContainsString('EN</span>&nbsp; Doors close 19:00</p>', $mail['html']);
+        // Doors open at the event's start (21:00) when the model read no time.
+        self::assertStringContainsString('FI</span>&nbsp; Ovet aukeavat 21:00<br>Ovet sulkeutuvat 19:00</p>', $mail['html']);
+        self::assertStringContainsString('EN</span>&nbsp; Doors open 21:00<br>Doors close 19:00</p>', $mail['html']);
 
         $this->options[NewsletterWriter::ENABLED_OPTION] = '0';
         $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 7);
@@ -1071,7 +1072,11 @@ final class FollowupMailTest extends TestCase
         self::assertMatchesRegularExpression('~>FI</span>&nbsp; Saat sähköpostin~', $mail['html'], 'the invitation');
         self::assertMatchesRegularExpression('~>EN</span>&nbsp; Get an email~', $mail['html']);
         self::assertStringContainsString('Tilaa tiedote<br>Join the announcement', $mail['html'], 'the button, one language per row');
-        self::assertSame(4, substr_count($mail['html'], '</span>&nbsp; '), 'two texts and two invitations');
+        self::assertSame(
+            6,
+            substr_count($mail['html'], '</span>&nbsp; '),
+            "two texts, two invitations and the card's two blocks of door times"
+        );
         self::assertStringNotContainsString('<span', $mail['text']);
     }
 
@@ -1533,7 +1538,7 @@ final class FollowupMailTest extends TestCase
         $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1);
 
         self::assertStringNotContainsString('cellist', $mail['html'] . $mail['text']);
-        self::assertStringNotContainsString('EN: ', $mail['text']);
+        self::assertStringContainsString("Ecstatic Dance 1\nFI: Ovet aukeavat 21:00\nEN: Doors open 21:00\n", $mail['text']);
         self::assertStringContainsString("went home with you.\n\nThe next evenings are already on their way.", $mail['text']);
         self::assertStringNotContainsString('<div style="margin:0 0 14px"></div>', $mail['html']);
     }

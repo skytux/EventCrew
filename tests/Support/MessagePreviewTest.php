@@ -16,6 +16,7 @@ use EventCrew\Support\FollowupMail;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MessageAction;
 use EventCrew\Support\MessageActions;
 use EventCrew\Support\MessagePreview;
 use EventCrew\Support\MessageTemplate;
@@ -143,11 +144,13 @@ final class MessagePreviewTest extends TestCase
             $actions = $template->actions($context, $mailer);
             self::assertNotSame([], $actions, $id);
 
-            // Every action is drawn on both channels: in the DM as a button,
-            // in the email as a web button or an "Open in Telegram" link.
+            // Every action is drawn on both channels: in the DM as a button
+            // (but one for the email alone), in the email as a web button or
+            // a small link.
             $dm = array_map(static fn (array $row): string => $row[0]['text'], MessageActions::keyboard($actions));
             $email = array_unique(array_column(MessageActions::email($actions), 'label'));
-            self::assertCount(count($actions), $dm, $id . ': every action is a DM button');
+            $inDm = array_filter($actions, static fn (MessageAction $action): bool => $action->dm);
+            self::assertCount(count($inDm), $dm, $id . ': every action is a DM button');
 
             foreach ($actions as $action) {
                 self::assertContains($action->label, $email, $id . ': ' . $action->id . ' is in the email');

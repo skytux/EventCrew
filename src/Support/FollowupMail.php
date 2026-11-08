@@ -44,7 +44,9 @@ use EventCrew\Web\NewsletterController;
  * preview and every recipient get the same; without them the card shows the
  * text and the practical information the announcement wrote for the event
  * ahead of time (Newsletter::writtenTexts()), when there are some, else no
- * text. Nothing is written while an email is put together. A newly written text
+ * text. The card shows the written text only when it has no DJ or host text
+ * in any language (NewsletterLayout, Owner, 2026-11-08): one description under
+ * the picture. Nothing is written while an email is put together. A newly written text
  * sends no second preview: the preview goes out once per night.
  * Then, while the announcement is switched on, an invitation to join it.
  * Its button (?eventcrew_join=<token>) carries a signed link to this one
@@ -1308,7 +1310,8 @@ final class FollowupMail
      * language (text_fi, text_en, text_sv …), and its practical information. Without a text or practical
      * information of its own, a card takes what the next events announcement
      * wrote and found for the event (Newsletter::writtenTexts()). A card
-     * never shows the description.
+     * never shows the description, and shows the written text only when it
+     * has no DJ or host text (withAbout(), NewsletterLayout).
      *
      * @param array<int, array<string, mixed>> $cards
      * @return array<int, array<string, mixed>>

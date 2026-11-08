@@ -28,12 +28,15 @@ namespace EventCrew\Support;
  *      group board's DJ or host text is about): that text right under the
  *      picture, with its EN label in an email in several languages.
  *    - A card given text_fi and text_en (the post-event email's first
- *      event): that text, Finnish then English, each with its FI / EN
- *      label, aligned left. Other cards show no description and no text
- *      written for the event (Owner, 2026-11-03).
+ *      event) and no DJ or host text in any language: that text, Finnish
+ *      then English, each with its FI / EN label, aligned left. A card
+ *      with a DJ or host text shows only that one (Owner, 2026-11-08).
+ *      Other cards show no description and no text written for the event
+ *      (Owner, 2026-11-03).
  *    - Aligned left, the practical information the language model found in
  *      the description (NewsletterWriter), each line only when known: the venue
- *      and the street address; an empty line; then the door times as one
+ *      and the street address; an empty line; then the door times (doors
+ *      open at the event's start time when the model read none) as one
  *      block of Finnish lines with a small FI label and one block of English
  *      lines with a small EN label.
  *    - A "Buy a ticket" button with the price that opens the ticket shop, or
@@ -251,7 +254,8 @@ final class NewsletterLayout
 
     /**
      * One card as plain text: the date, the title, the DJ line, the DJ or
-     * host text (about_en) and the card's own text when it has them, the
+     * host text (about_en) when it has one, else the card's own text when it
+     * has one, the
      * practical information, then the ticket and music links.
      *
      * @param array<string, mixed> $card
@@ -261,7 +265,7 @@ final class NewsletterLayout
     private static function cardText(array $card, array $words, array $langs): string
     {
         $about = self::bilingualText(self::about($card, $langs));
-        $text = self::bilingualText(self::inLanguage(self::byLanguage($card, 'text_'), $langs));
+        $text = self::bilingualText(self::written($card, $langs));
         $practical = self::practicalLines($card, $words);
         $times = self::bilingualText(self::inLanguage(
             array_map(static fn (array $lines): string => implode("\n", $lines), $practical['times']),
@@ -392,8 +396,9 @@ final class NewsletterLayout
         $body .= self::bilingual(self::about($card, $langs), '0 0 14px');
 
         // A text written for this card alone (the post-event email's first
-        // event); the newsletter's cards have none.
-        $body .= self::bilingual(self::inLanguage(self::byLanguage($card, 'text_'), $langs), '0 0 14px');
+        // event), only when the card has no DJ or host text; the
+        // newsletter's cards have none.
+        $body .= self::bilingual(self::written($card, $langs), '0 0 14px');
 
         $practical = self::practicalLines($card, $words);
 
@@ -657,7 +662,9 @@ final class NewsletterLayout
      * is left out. While the doors close setting is on, the doors close time
      * is the one the ticket shows (EventTimes::doorsClose()), not the one the
      * language model read from the event text (Q332); when the ticket has
-     * none (no start time), the model's time is kept.
+     * none (no start time), the model's time is kept. When the model read no
+     * doors open time, the doors open when the event starts
+     * (EventTimes::start()); with no start time either, the line is left out.
      *
      * @param array<string, mixed> $card
      * @param array<string, array<string, string>> $words
@@ -667,10 +674,21 @@ final class NewsletterLayout
     {
         $info = NewsletterWriter::practicalOf($card['practical'] ?? null);
 
-        $doors = EventTimes::doorsOn() ? EventTimes::doorsClose((int) ($card['id'] ?? 0)) : '';
+        $postId = (int) ($card['id'] ?? 0);
+        $doors = EventTimes::doorsOn() ? EventTimes::doorsClose($postId) : '';
 
         if ('' !== $doors) {
             $info = ['doors_close' => $doors] + ($info ?? array_fill_keys(NewsletterWriter::PRACTICAL_KEYS, ''));
+        }
+
+        // Doors open when the event starts, unless the event text says
+        // otherwise (Owner, 2026-11-08).
+        if ('' === ($info['doors_open'] ?? '')) {
+            $start = EventTimes::start($postId);
+
+            if ('' !== $start) {
+                $info = ['doors_open' => $start] + ($info ?? array_fill_keys(NewsletterWriter::PRACTICAL_KEYS, ''));
+            }
         }
 
         $lines = ['plain' => [], 'times' => array_fill_keys(array_keys($words), [])];
@@ -896,6 +914,25 @@ final class NewsletterLayout
     private static function about(array $card, array $langs): array
     {
         return self::inLanguage(self::byLanguage($card, 'about_'), $langs);
+    }
+
+    /**
+     * A card's text written for it alone (text_fi, text_en, …,
+     * FollowupMail::withWritten()) like about(), but only when the card has
+     * no DJ or host text in any language: the picture gets one description,
+     * and the DJ's wins (Owner, 2026-11-08).
+     *
+     * @param array<string, mixed> $card
+     * @param list<string> $langs
+     * @return array<string, string>
+     */
+    private static function written(array $card, array $langs): array
+    {
+        if ([] !== array_filter(self::byLanguage($card, 'about_'), static fn (string $text): bool => '' !== $text)) {
+            return [];
+        }
+
+        return self::inLanguage(self::byLanguage($card, 'text_'), $langs);
     }
 
     /**

@@ -7603,14 +7603,14 @@ msgstr "Lähetetään bottia käyttävälle henkilölle, kun järjestäjä antaa
 msgid "You were made an organizer (email)"
 msgstr "Sinusta tehtiin järjestäjä (sähköposti)"
 
-msgid "Sent to a person when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off emails about permission changes. The greeting is added above the text, and a button to the Admin tab of the crew page under it."
-msgstr "Lähetetään henkilölle, kun järjestäjä tekee hänestä järjestäjän: botin komennolla /people tai wp-adminin Ihmiset-sivulla. Ei lähetetä, kun järjestäjän oikeudet otetaan pois, eikä henkilölle, joka on kytkenyt pois sähköpostit oikeuksien muutoksista. Tervehdys lisätään tekstin yläpuolelle ja painike crew-sivun Ylläpito-välilehdelle sen alle."
+msgid "Sent to a person when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off emails about permission changes. The greeting is added above the text; under it a button to the Admin tab of the crew page, and small links to the organizer help and to the bot."
+msgstr "Lähetetään henkilölle, kun järjestäjä tekee hänestä järjestäjän: botin komennolla /people tai wp-adminin Ihmiset-sivulla. Ei lähetetä, kun järjestäjän oikeudet otetaan pois, eikä henkilölle, joka on kytkenyt pois sähköpostit oikeuksien muutoksista. Tervehdys lisätään tekstin yläpuolelle; sen alle painike crew-sivun Ylläpito-välilehdelle sekä pienet linkit järjestäjän ohjeeseen ja bottiin."
 
 msgid "You were made an organizer (Telegram)"
 msgstr "Sinusta tehtiin järjestäjä (Telegram)"
 
-msgid "Sent to a person who uses the bot when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off Telegram messages about permission changes."
-msgstr "Lähetetään bottia käyttävälle henkilölle, kun järjestäjä tekee hänestä järjestäjän: botin komennolla /people tai wp-adminin Ihmiset-sivulla. Ei lähetetä, kun järjestäjän oikeudet otetaan pois, eikä henkilölle, joka on kytkenyt pois Telegram-viestit oikeuksien muutoksista."
+msgid "Sent to a person who uses the bot when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off Telegram messages about permission changes. Under it, buttons to the Admin tab of the crew page and to the organizer help."
+msgstr "Lähetetään bottia käyttävälle henkilölle, kun järjestäjä tekee hänestä järjestäjän: botin komennolla /people tai wp-adminin Ihmiset-sivulla. Ei lähetetä, kun järjestäjän oikeudet otetaan pois, eikä henkilölle, joka on kytkenyt pois Telegram-viestit oikeuksien muutoksista. Sen alla painikkeet crew-sivun Ylläpito-välilehdelle ja järjestäjän ohjeeseen."
 
 msgid "AI"
 msgstr "Tekoäly"
@@ -9352,9 +9352,6 @@ msgstr "Sinulla on nyt rooli %s. Sen tehtävät ovat avoinna sinulle Crew-sovell
 msgid "You are now an organizer of %s"
 msgstr "Olet nyt järjestäjä: %s"
 
-msgid "You are now an organizer."
-msgstr "Olet nyt järjestäjä."
-
 #. translators: 1: the person's name, 2: their email
 #, php-format
 msgid "%1$s (%2$s) signed in for the first time and wants to join the crew. Press OK or No in the Admin tab of the Crew app."
@@ -9874,3 +9871,21 @@ msgstr "Nimesi"
 #. translators: %s: the name of the person who gave the ticket away
 msgid "from %s"
 msgstr "antaja %s"
+
+msgid "Organizer help"
+msgstr "Järjestäjän ohje"
+
+msgid "In a private chat with the bot you now also have the organizer commands (/people, /roster, /door …). They are all under the menu button, or just write what you need."
+msgstr "Yksityisessä keskustelussa botin kanssa sinulla on nyt myös järjestäjän komennot (/people, /roster, /door …). Ne kaikki löytyvät valikkopainikkeesta, tai kirjoita vain, mitä tarvitset."
+
+msgid "The organizer help (link below) explains how everything works."
+msgstr "Järjestäjän ohje (linkki alla) kertoo, miten kaikki toimii."
+
+msgid "wp-admin access (settings, roles, messages) isn’t given automatically. If you need it, ask %s."
+msgstr "wp-admin-oikeuksia (asetukset, roolit, viestit) ei anneta automaattisesti. Jos tarvitset niitä, pyydä: %s."
+
+msgid "an organizer who has it"
+msgstr "järjestäjältä, jolla ne ovat"
+
+msgid "Whom to ask for wp-admin access: the official contact email (Settings > Privacy), or “an organizer who has it” when none is set."
+msgstr "Keneltä pyytää wp-admin-oikeuksia: virallinen yhteyssähköposti (Asetukset > Tietosuoja) tai ”järjestäjältä, jolla ne ovat”, jos sitä ei ole asetettu."

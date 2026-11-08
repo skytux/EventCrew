@@ -12,7 +12,9 @@ use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\PrivacyPolicy;
 use EventCrew\Support\Roles;
+use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\MenuButtons;
 
 /**
@@ -182,25 +184,54 @@ final class AccessNotifierTest extends TelegramTestCase
 
         $this->notifier()->organizerGiven(8);
 
-        self::assertSame(
-            "💌 Test Site\n\nHi Sam,\n\n⭐ You’re now an organizer of Test Site. The Crew app has an Admin tab"
-                . ' for you, where you manage tasks and people.',
-            $this->dm()
-        );
+        $lines = "⭐ You’re now an organizer of Test Site.\n\n🧰 The Crew app has an Admin tab for you, where you"
+            . " manage tasks and people.\n\n🤖 In a private chat with the bot you now also have the organizer"
+            . ' commands (/people, /roster, /door …). They are all under the menu button, or just write what you'
+            . " need.\n\n📖 The organizer help (link below) explains how everything works.\n\n⚙️ wp-admin access"
+            . ' (settings, roles, messages) isn’t given automatically. If you need it, ask an organizer who has it.';
+        self::assertSame("💌 Test Site\n\nHi Sam,\n\n" . $lines, $this->dm());
+        // The Admin tab and the organizer help; the commands are under the
+        // bot's menu button (Owner 2026-11-08).
         self::assertSame(
             [
                 [['text' => '🛠️ Open the Admin tab', 'url' => 'https://site.test/crew/#eventcrew-panel-admin']],
-                [['text' => '👥 People', 'callback_data' => MenuButtons::PEOPLE]],
-                [['text' => '💳 Sales desk', 'callback_data' => MenuButtons::SALES]],
+                [['text' => '📖 Organizer help', 'url' => 'https://site.test/crew/#eventcrew-help-organizer']],
             ],
             $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']
         );
         self::assertSame(
-            "You are now an organizer of Test Site\n---\nHi Sam,\n\nYou are now an organizer. The Crew app has an"
-                . ' Admin tab for you, where you manage tasks and people.'
-                . "\n\n🛠️ Open the Admin tab: https://site.test/crew/#eventcrew-panel-admin",
+            "You are now an organizer of Test Site\n---\nHi Sam,\n\n" . $lines
+                . "\n\n🛠️ Open the Admin tab: https://site.test/crew/#eventcrew-panel-admin"
+                . "\n📖 Organizer help: https://site.test/crew/#eventcrew-help-organizer",
             $this->mailText()
         );
+    }
+
+    /**
+     * With the official contact set, the wp-admin line names it; with the bot
+     * set up, the email has a small Open in Telegram link to the bot's chat,
+     * which the DM (that chat) does not.
+     */
+    public function testTheOrganizerMessageNamesTheContactAndLinksTheBot(): void
+    {
+        $this->options[PrivacyPolicy::CONTACT_OPTION] = 'board@crew.test';
+        $this->options[BoardService::USERNAME_OPTION] = 'crew_bot';
+        $this->options[EmailTemplate::HTML_OPTION] = true;
+        $this->sam();
+
+        $this->notifier()->organizerGiven(8);
+
+        self::assertStringEndsWith(
+            'If you need it, ask board@crew.test.',
+            $this->lastCallTo('sendMessage')['text']
+        );
+        self::assertCount(2, $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard']);
+        $html = $this->mails[0]['body'];
+        self::assertStringContainsString('If you need it, ask board@crew.test.', $html);
+        self::assertStringContainsString('href="https://t.me/crew_bot?start=me"', $html);
+        self::assertStringContainsString('>Open in Telegram</a>', $html);
+        self::assertStringContainsString('>📖 Organizer help</a>', $html);
+        self::assertSame(1, substr_count($html, 'Open the Admin tab'));
     }
 
     /** A person with no Telegram chat gets the same email, and no DM. */

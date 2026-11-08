@@ -27,6 +27,10 @@ use Closure;
  * - verb: a bot verb (MenuButtons::VERBS), '' for none.
  * - start: the email's "Open in Telegram" link payload when it is not a bot
  *   verb ('' = the verb's), like task-12 (MessageActions::isPayload()).
+ * - emailStyle: '' draws the web link as a button in the email;
+ *   EmailBody::STYLE_LINK as a small link on the line under the buttons.
+ * - dm: false for an action the email alone offers (a link to the bot's
+ *   own chat means nothing inside it).
  */
 final class MessageAction
 {
@@ -40,7 +44,9 @@ final class MessageAction
         public readonly ?Closure $url = null,
         public readonly string $callback = '',
         public readonly string $verb = '',
-        public readonly string $start = ''
+        public readonly string $start = '',
+        public readonly string $emailStyle = '',
+        public readonly bool $dm = true
     ) {
     }
 

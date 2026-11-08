@@ -8,8 +8,10 @@ namespace EventCrew\Support;
  * One-time changes to the stored texts (the Messages page) of the messages
  * that tell a person what they were given: a role, a pass, the team's OK,
  * organizer rights; and of the organizers' "wants to join" notice, which
- * gets the newcomer's answers ({join_answers}). A built-in text has the
- * change already; a stored one gets it once.
+ * gets the newcomer's answers ({join_answers}). The organizer message also
+ * gets the lines on the bot's organizer commands, the organizer help and
+ * wp-admin (2026-11-08). A built-in text has the change already; a stored
+ * one gets it once.
  *
  * Each step runs once and is remembered by name in OPTION, so a later
  * release can add a step without running the earlier ones again. Runs on
@@ -38,6 +40,19 @@ final class AccessTextsMigration
 
     /** The organizer DM, which gets the line on what the Admin tab is for. */
     public const ORGANIZER_KIND = 'access_organizer_dm';
+
+    /**
+     * The organizer message, email and DM, which get the lines on the bot's
+     * organizer commands, the organizer help and wp-admin
+     * (MessageTemplates::organizerAccessLines()).
+     */
+    public const ORGANIZER_ACCESS_KINDS = ['access_organizer', 'access_organizer_dm'];
+
+    /**
+     * What shows that a text mentions a line already, in any language: line
+     * key => marker. The help line has no such word, so it is matched whole.
+     */
+    private const ORGANIZER_MARKERS = ['bot' => '/people', 'wp_admin' => 'wp-admin'];
 
     /** Runs the steps not done yet. Called on every boot; cheap once done. */
     public static function migrate(): void
@@ -68,6 +83,11 @@ final class AccessTextsMigration
                             ? $text
                             : self::append($text, $gap . '{join_answers}')
                     );
+                }
+            },
+            'organizer_access' => static function (): void {
+                foreach (self::ORGANIZER_ACCESS_KINDS as $id) {
+                    self::appendToStored($id, self::withOrganizerLines(...));
                 }
             },
         ];
@@ -112,6 +132,33 @@ final class AccessTextsMigration
 
         $stored[MessageTemplates::BODY] = $body;
         update_option($option, $stored);
+    }
+
+    /**
+     * $text with each organizer line it does not mention yet at its end, each
+     * after an empty line, in $lang. A language with no translation of a line
+     * does not get that line; an empty text stays empty.
+     */
+    private static function withOrganizerLines(string $text, string $lang): string
+    {
+        if ('' === trim($text)) {
+            return $text;
+        }
+
+        $english = Language::run(Language::ENGLISH, static fn (): array => MessageTemplates::organizerAccessLines());
+        $lines = Language::run($lang, static fn (): array => MessageTemplates::organizerAccessLines());
+
+        foreach ($lines as $key => $line) {
+            $marker = self::ORGANIZER_MARKERS[$key] ?? $line;
+
+            if (str_contains($text, $marker) || (Language::ENGLISH !== $lang && $line === $english[$key])) {
+                continue;
+            }
+
+            $text = rtrim($text) . "\n\n" . $line;
+        }
+
+        return $text;
     }
 
     /** $text with $tail at its end when it lacks it; an empty text stays empty. */

@@ -5777,8 +5777,8 @@ msgid "Sent to a person when an organizer gives them a role: with /people in the
 msgstr "Отправляется человеку, когда организатор даёт ему роль: через /people в боте, на вкладке «Админ» страницы команды (в том числе добавив его на задачу этой роли) или на странице «Люди» в wp-admin. Не отправляется, когда роль забирают, или человеку, который выключил письма об изменении прав. Над текстом добавляется приветствие, а под ним — кнопка «Посмотреть открытые задачи» на страницу команды."
 
 #: src/Support/MessageTemplates.php:1917
-msgid "Sent to a person when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off emails about permission changes. The greeting is added above the text, and a button to the Admin tab of the crew page under it."
-msgstr "Отправляется человеку, когда организатор делает его организатором: через /people в боте или на странице «Люди» в wp-admin. Не отправляется, когда права организатора забирают, или человеку, который выключил письма об изменении прав. Над текстом добавляется приветствие, а под ним — кнопка на вкладку «Админ» страницы команды."
+msgid "Sent to a person when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off emails about permission changes. The greeting is added above the text; under it a button to the Admin tab of the crew page, and small links to the organizer help and to the bot."
+msgstr "Отправляется человеку, когда организатор делает его организатором: через /people в боте или на странице «Люди» в wp-admin. Не отправляется, когда права организатора забирают, или человеку, который выключил письма об изменении прав. Над текстом добавляется приветствие, а под ним — кнопка на вкладку «Админ» страницы команды и маленькие ссылки на помощь для организаторов и на бота."
 
 #: src/Support/MessageTemplates.php:2725
 msgid "Sent to a person when someone asks to take over their task. The email has a button to answer."
@@ -5801,8 +5801,8 @@ msgid "Sent to a person who uses the bot when an organizer gives them a role: wi
 msgstr "Отправляется человеку, который пользуется ботом, когда организатор даёт ему роль: через /people в боте, на вкладке «Админ» страницы команды (в том числе добавив его на задачу этой роли) или на странице «Люди» в wp-admin. Не отправляется, когда роль забирают, или человеку, который выключил сообщения Telegram об изменении прав."
 
 #: src/Support/MessageTemplates.php:1929
-msgid "Sent to a person who uses the bot when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off Telegram messages about permission changes."
-msgstr "Отправляется человеку, который пользуется ботом, когда организатор делает его организатором: через /people в боте или на странице «Люди» в wp-admin. Не отправляется, когда права организатора забирают, или человеку, который выключил сообщения Telegram об изменении прав."
+msgid "Sent to a person who uses the bot when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off Telegram messages about permission changes. Under it, buttons to the Admin tab of the crew page and to the organizer help."
+msgstr "Отправляется человеку, который пользуется ботом, когда организатор делает его организатором: через /people в боте или на странице «Люди» в wp-admin. Не отправляется, когда права организатора забирают, или человеку, который выключил сообщения Telegram об изменении прав. Под ним — кнопки на вкладку «Админ» страницы команды и на помощь для организаторов."
 
 #: src/Support/MessageTemplates.php:2738
 msgid "Sent to a person who uses the bot when someone asks to take over their task. The message has two buttons to answer."
@@ -11516,10 +11516,6 @@ msgstr[2] "Всего они приводят сопровождающих: %d."
 msgid "You are now an organizer of %s"
 msgstr "Теперь ты организатор %s"
 
-#: src/Support/MessageTemplates.php:1923
-msgid "You are now an organizer."
-msgstr "Теперь ты организатор."
-
 #. translators: %s: role name, such as DJ
 #: src/Support/MessageTemplates.php:1859
 msgid "You now have the role %s. Its tasks are open to you in the Crew app, and you can sign up for them."
@@ -12390,3 +12386,21 @@ msgstr "Твоё имя"
 #. translators: %s: the name of the person who gave the ticket away
 msgid "from %s"
 msgstr "от %s"
+
+msgid "Organizer help"
+msgstr "Помощь для организаторов"
+
+msgid "In a private chat with the bot you now also have the organizer commands (/people, /roster, /door …). They are all under the menu button, or just write what you need."
+msgstr "В личном чате с ботом у тебя теперь есть и команды организатора (/people, /roster, /door …). Все они под кнопкой меню, или просто напиши, что тебе нужно."
+
+msgid "The organizer help (link below) explains how everything works."
+msgstr "Помощь для организаторов (ссылка ниже) объясняет, как всё устроено."
+
+msgid "wp-admin access (settings, roles, messages) isn’t given automatically. If you need it, ask %s."
+msgstr "Доступ к wp-admin (настройки, роли, сообщения) не выдаётся автоматически. Если он нужен, обратись к %s."
+
+msgid "an organizer who has it"
+msgstr "организатору, у которого он есть"
+
+msgid "Whom to ask for wp-admin access: the official contact email (Settings > Privacy), or “an organizer who has it” when none is set."
+msgstr "К кому обращаться за доступом к wp-admin: официальный контактный email (Настройки > Конфиденциальность) или «организатору, у которого он есть», если он не указан."

@@ -14,7 +14,8 @@ use EventCrew\Tests\TestCase;
 /**
  * Q332: the newsletter's "Doors close" line is the time the ticket shows
  * ({doors_close}) while the doors close setting is on, and the time the
- * language model read from the event text while it is off.
+ * language model read from the event text while it is off. Its "Doors
+ * open" line is the time the model read, else the event's start time.
  */
 final class NewsletterDoorsCloseTest extends TestCase
 {
@@ -98,6 +99,43 @@ final class NewsletterDoorsCloseTest extends TestCase
         $this->events[41]['meta'][EventTimes::DOORS_META] = '22:15';
 
         self::assertStringContainsString('Doors close 22:15', $this->text(self::card(41, '19:00')));
+    }
+
+    public function testWithNoDoorsOpenTimeTheDoorsOpenAtTheStart(): void
+    {
+        $card = self::card(41, '19:00');
+        $card['practical']['doors_open'] = '';
+
+        $text = $this->text($card);
+
+        self::assertStringContainsString("Doors open 21:00\nDoors close 19:00", $text);
+    }
+
+    public function testWithNoPracticalInformationTheDoorsOpenAtTheStart(): void
+    {
+        $card = self::card(41, '');
+        unset($card['practical']);
+
+        $text = $this->text($card);
+
+        self::assertStringContainsString('Doors open 21:00', $text);
+        self::assertStringNotContainsString('Doors close', $text);
+    }
+
+    public function testTheModelsDoorsOpenTimeWinsOverTheStart(): void
+    {
+        $text = $this->text(self::card(41, '19:00'));
+
+        self::assertStringContainsString('Doors open 20:30', $text);
+        self::assertStringNotContainsString('Doors open 21:00', $text);
+    }
+
+    public function testAnEventWithNoStartTimeAndNoDoorsOpenTimeHasNoLine(): void
+    {
+        $card = self::card(42, '19:00');
+        $card['practical']['doors_open'] = '';
+
+        self::assertStringNotContainsString('Doors open', $this->text($card));
     }
 
     public function testAnEventWithNoStartTimeKeepsTheModelsTime(): void

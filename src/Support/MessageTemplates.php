@@ -219,10 +219,13 @@ final class MessageTemplates
             'access_role access_role_dm access_pass access_pass_dm newcomer_ok newcomer_ok_dm' =>
                 static fn (array $c, Mailer $m): array => [self::boardAction($m)],
             // The organizer guide draws its own buttons and links (WelcomeSender, Owner 2026-11-07).
+            // A new organizer: the Admin tab as the one button; the
+            // organizer help, and in the email the bot's chat, as small
+            // links (Owner 2026-11-08).
             'access_organizer access_organizer_dm' => static fn (): array => self::present([
                 self::adminAction(),
-                new MessageAction('people', '👥 ' . __('People', 'eventcrew'), '', null, '', 'people'),
-                self::newDeskLinkAction(),
+                self::organizerHelpAction(),
+                self::botChatAction(),
             ]),
             // Organizer notices: give the role from that person's role
             // buttons in the bot (who-<id>) or the Admin tab; the night's
@@ -323,6 +326,99 @@ final class MessageTemplates
     public static function adminTabLine(): string
     {
         return __('The Crew app has an Admin tab for you, where you manage tasks and people.', 'eventcrew');
+    }
+
+    /**
+     * The organizer help: the Help tab of the crew page at its organizer
+     * part, else the crew guide; null when neither is set. A small link in
+     * the email, a button in the DM.
+     */
+    private static function organizerHelpAction(): ?MessageAction
+    {
+        $url = HelpPage::url(HelpPage::ORGANIZER_ANCHOR);
+        $url = '' !== $url ? $url : Roles::guideUrl();
+
+        return '' === $url
+            ? null
+            : new MessageAction(
+                'help',
+                '📖 ' . __('Organizer help', 'eventcrew'),
+                '',
+                static fn (): string => $url,
+                emailStyle: EmailBody::STYLE_LINK
+            );
+    }
+
+    /**
+     * The email's small "Open in Telegram" link to the bot's private chat
+     * (start=me: the person's summary, with the Admin button for an
+     * organizer); null when the bot is not set up. Not in the DM, which is
+     * that chat.
+     */
+    private static function botChatAction(): ?MessageAction
+    {
+        $url = MessageActions::payloadUrl('me');
+
+        return '' === $url
+            ? null
+            : new MessageAction(
+                'bot',
+                __('Open in Telegram', 'eventcrew'),
+                '',
+                static fn (): string => $url,
+                emailStyle: EmailBody::STYLE_LINK,
+                dm: false
+            );
+    }
+
+    /**
+     * The built-in text of the organizer message (access_organizer and
+     * access_organizer_dm), one thought per line: the news, the Admin tab,
+     * the organizer commands in the bot, the organizer help, and whom to ask
+     * for wp-admin ({contact}).
+     */
+    public static function organizerAccessTemplate(): string
+    {
+        return implode("\n\n", [
+            self::tag(
+                /* translators: %s: the organization's name */
+                __('⭐ You’re now an organizer of %s.', 'eventcrew'),
+                ['%s' => Organization::TAG]
+            ),
+            '🧰 ' . self::adminTabLine(),
+            ...self::organizerAccessLines(),
+        ]);
+    }
+
+    /**
+     * The lines added to the organizer message in 2026-11 (the bot's
+     * organizer commands, the organizer help, wp-admin on request), in the
+     * current language; AccessTextsMigration adds them to a stored text.
+     *
+     * @return array{bot: string, help: string, wp_admin: string}
+     */
+    public static function organizerAccessLines(): array
+    {
+        return [
+            'bot' => '🤖 ' . __('In a private chat with the bot you now also have the organizer commands (/people, /roster, /door …). They are all under the menu button, or just write what you need.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            'help' => '📖 ' . __('The organizer help (link below) explains how everything works.', 'eventcrew'),
+            'wp_admin' => '⚙️ ' . self::tag(
+                /* translators: %s: whom to ask: the official contact email, or "an organizer who has it" */
+                __('wp-admin access (settings, roles, messages) isn’t given automatically. If you need it, ask %s.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                ['%s' => '{contact}']
+            ),
+        ];
+    }
+
+    /**
+     * {contact}: the official contact email (Settings > Privacy), or "an
+     * organizer who has it" when none is set.
+     */
+    public static function organizerContact(): string
+    {
+        $contact = PrivacyPolicy::contact();
+
+        return '' !== $contact ? $contact : __('an organizer who has it', 'eventcrew');
     }
 
     /** The crew's Telegram group, or null when its link is not known. */
@@ -2124,6 +2220,10 @@ final class MessageTemplates
             __('The name of the role, like DJ.', 'eventcrew'),
             static fn (array $c): string => (string) ($c['role'] ?? '')
         )] + $openTasks;
+        $contact = ['contact' => self::placeholder(
+            __('Whom to ask for wp-admin access: the official contact email (Settings > Privacy), or “an organizer who has it” when none is set.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            static fn (): string => self::organizerContact()
+        )];
 
         // phpcs:disable Generic.Files.LineLength.TooLong -- single gettext literals; splitting them breaks extraction.
         return [
@@ -2229,25 +2329,23 @@ final class MessageTemplates
                 'access_organizer',
                 __('You were made an organizer (email)', 'eventcrew'),
                 $email,
-                __('Sent to a person when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off emails about permission changes. The greeting is added above the text, and a button to the Admin tab of the crew page under it.', 'eventcrew'),
+                __('Sent to a person when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off emails about permission changes. The greeting is added above the text; under it a button to the Admin tab of the crew page, and small links to the organizer help and to the bot.', 'eventcrew'),
                 static fn (): string => self::tag(
                     /* translators: %s: the organization's name */
                     __('You are now an organizer of %s', 'eventcrew'),
                     ['%s' => Organization::TAG]
                 ),
-                static fn (): string => __('You are now an organizer.', 'eventcrew') . ' ' . self::adminTabLine()
+                static fn (): string => self::organizerAccessTemplate(),
+                $contact
             ),
             new MessageTemplate(
                 'access_organizer_dm',
                 __('You were made an organizer (Telegram)', 'eventcrew'),
                 $telegram,
-                __('Sent to a person who uses the bot when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off Telegram messages about permission changes.', 'eventcrew'),
+                __('Sent to a person who uses the bot when an organizer makes them an organizer: with /people in the bot, or on the wp-admin People page. Not sent when organizer rights are taken away, or to a person who turned off Telegram messages about permission changes. Under it, buttons to the Admin tab of the crew page and to the organizer help.', 'eventcrew'),
                 null,
-                static fn (): string => self::tag(
-                    /* translators: %s: the organization's name */
-                    __('⭐ You’re now an organizer of %s.', 'eventcrew'),
-                    ['%s' => Organization::TAG]
-                ) . ' ' . self::adminTabLine()
+                static fn (): string => self::organizerAccessTemplate(),
+                $contact
             ),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong
