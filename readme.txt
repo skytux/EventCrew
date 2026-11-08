@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.189
+Stable tag: 1.140.190
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,12 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.190 =
+* The crew page opens with the website's banner (its cover picture and logo, linking to the website).
+* The sign-in card shows the Telegram board's banner picture instead of the next event's picture.
+* Signed in, the Crew guide link sits under the person's details.
+* A guest who taps Sign up is brought back to the sign-in card, which glows once, and sees "Sign in first to take a task."
 
 = 1.140.189 =
 * Giving a ticket to an email address now asks the receiver's name too, on the web and in the bot. The name shows in the waiting line and the offer email, and the accept page comes filled in with it.
@@ -1903,6 +1909,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.190 =
+No settings change.
 
 = 1.140.189 =
 No settings change.
