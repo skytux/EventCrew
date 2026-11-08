@@ -607,7 +607,8 @@ final class TicketController
      * What a credit ticket's page says about giving it away: 'given_to'
      * once it moved to someone, 'offer_to' and 'cancel_url' while an email
      * offer waits, 'give_url' while it can be given. Nothing when the
-     * feature is off.
+     * feature is off; with the setting off (TicketTransferService::isOn())
+     * only 'given_to', since a ticket already given stays given.
      *
      * @return array<string, string>
      */
@@ -621,6 +622,10 @@ final class TicketController
             $moved = $this->transfers->movedTo($redemption);
 
             return null === $moved ? [] : ['given_to' => $this->transfers->receiverName($moved)];
+        }
+
+        if (! TicketTransferService::isOn()) {
+            return [];
         }
 
         $offer = $this->transfers->pendingOffer($redemption->id);
@@ -680,9 +685,14 @@ final class TicketController
         }
 
         $cards = [];
+        $all = array_values(array_merge([$ticket], $more));
+        $count = count($all);
 
-        foreach (array_values(array_merge([$ticket], $more)) as $i => $one) {
-            $cards[] = '<section class="t">' . $this->card($title, $one, 0 === $i ? '' : '-' . ($i + 1)) . '</section>';
+        // Each card is numbered on its issued line: "Ticket 2 of 3".
+        foreach ($all as $i => $one) {
+            $cards[] = '<section class="t">'
+                . $this->card($title, $one, 0 === $i ? '' : '-' . ($i + 1), $i + 1, $count)
+                . '</section>';
         }
 
         return $this->document($title, implode('', $cards), true);
@@ -692,10 +702,12 @@ final class TicketController
      * The inside of one ticket card. $suffix ('' for the first card, "-2",
      * "-3" for the next) goes on each element id, so every card's scripts
      * find their own band, QR code and clock; the QR library loads once.
+     * $number of $count numbers the card on its issued line when the page
+     * has more than one card.
      *
      * @param array<string, mixed> $ticket
      */
-    private function card(string $title, array $ticket, string $suffix = ''): string
+    private function card(string $title, array $ticket, string $suffix = '', int $number = 1, int $count = 1): string
     {
         $eventId = null === ($ticket['event_id'] ?? null) ? null : (int) $ticket['event_id'];
         $used = $ticket['used'] ?? null;
@@ -739,7 +751,12 @@ final class TicketController
             . '<div class="t-body"' . ('' === $watermark ? '' : ' style="' . $watermark . '"') . '>'
             . $body . $band . $this->qrBlock((string) ($ticket['qr'] ?? ''), $suffix)
             . $this->shortBlock((string) ($ticket['short'] ?? '')) . $this->codeBlock((string) ($ticket['code'] ?? ''))
-            . $this->noteBlock($eventId) . $this->giveBlock($ticket) . $this->antiFraudBlock((string) $ticket['issued'], $suffix)
+            . $this->noteBlock($eventId) . $this->giveBlock($ticket) . $this->antiFraudBlock(
+                (string) $ticket['issued'],
+                $suffix,
+                $number,
+                $count
+            )
             . ($ticket['valid'] && null === $used
                 ? $this->liveScript((string) ($ticket['poll'] ?? ''), $closesIn, $first, $suffix)
                 : '')
@@ -1002,28 +1019,36 @@ final class TicketController
     /**
      * The issued time (static) and a live ticking clock (script) that a
      * screenshot cannot fake, so door staff can tell a real, freshly-loaded
-     * ticket from a saved image or an old copy.
+     * ticket from a saved image or an old copy. With more than one card on
+     * the page ($count), the issued line also numbers the card: "Ticket 2
+     * of 3 · issued ...", small, so it is there for whoever looks.
      */
-    private function antiFraudBlock(string $issued, string $suffix = ''): string
+    private function antiFraudBlock(string $issued, string $suffix = '', int $number = 1, int $count = 1): string
     {
-        $issuedLine = '' === $issued
-            ? ''
-            : sprintf(
-                '<p class="t-small">%s</p>',
-                esc_html(sprintf(
-                    /* translators: %s: the date and time the ticket was issued */
-                    __('Issued %s', 'eventcrew'),
-                    $this->formatIssued($issued)
-                ))
+        if ('' === $issued) {
+            $line = $count > 1
+                /* translators: 1: this ticket's number, 2: how many tickets the person has for the night */
+                ? sprintf(__('Ticket %1$d of %2$d', 'eventcrew'), $number, $count)
+                : '';
+        } elseif ($count > 1) {
+            $line = sprintf(
+                /* translators: 1: this ticket's number, 2: how many tickets for the night, 3: when it was issued */
+                __('Ticket %1$d of %2$d · issued %3$s', 'eventcrew'),
+                $number,
+                $count,
+                $this->formatIssued($issued)
             );
+        } else {
+            /* translators: %s: the date and time the ticket was issued */
+            $line = sprintf(__('Issued %s', 'eventcrew'), $this->formatIssued($issued));
+        }
+
+        $issuedLine = '' === $line ? '' : '<p class="t-small">' . esc_html($line) . '</p>';
 
         // The clock is written and ticked entirely client-side (no network), so
         // it moves every second on a live page and freezes in a screenshot.
         return $issuedLine
             . '<p class="t-clock" id="ec-clock' . $suffix . '">—</p>'
-            . '<p class="t-small">'
-            . esc_html__('The clock above must match the time now. A frozen clock is a screenshot.', 'eventcrew')
-            . '</p>'
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained clock script; wrapping adds stray whitespace.
             . '<script>(function(){var e=document.getElementById("ec-clock' . $suffix . '");function t(){var d=new Date();e.textContent=d.toLocaleTimeString();}t();setInterval(t,1000);})();</script>';
     }
@@ -1193,7 +1218,7 @@ final class TicketController
             . '.t-band.is-in::before,.t-band.is-new::after,.t-fx{display:none}.t-stars i{opacity:.8;transform:none}}'
             // The code's square is always laid out, hidden until the tap, and
             // the button covers it: showing the code moves nothing.
-            . '.t-qr-wrap{position:relative;width:15em;max-width:100%;margin:0 auto 1em}'
+            . '.t-qr-wrap{position:relative;width:12.5em;max-width:100%;margin:0 auto 1em}'
             . '.t-qr{position:relative;aspect-ratio:1/1}'
             . '.t-qr[hidden]{display:block;visibility:hidden}'
             . '.t-qr-show{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;'

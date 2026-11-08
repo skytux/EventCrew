@@ -242,7 +242,7 @@ final class ProfileService
     {
         $redemptionId = (int) ($ticket['redemption_id'] ?? 0);
 
-        if (null === $this->transfers || $redemptionId <= 0) {
+        if (null === $this->transfers || $redemptionId <= 0 || ! TicketTransferService::isOn()) {
             return [];
         }
 

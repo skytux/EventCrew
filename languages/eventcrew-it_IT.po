@@ -12434,3 +12434,19 @@ msgstr "Se entri con un biglietto che qualcuno ti ha dato, o come +1 di qualcuno
 
 msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
 msgstr "Nomi ed email annotati dallo staff all’ingresso per chi è entrato con un biglietto ceduto o come +1. Solo chi ha chiesto la newsletter riceve un’email: un link per confermarla."
+
+#: src/Support/TicketTransferService.php
+msgid "Giving tickets away is turned off."
+msgstr "La cessione dei biglietti è disattivata."
+
+#: templates/admin/settings.php
+msgid "Giving tickets away"
+msgstr "Cedere i biglietti"
+
+#: templates/admin/settings.php
+msgid "Members can give away their ticket"
+msgstr "I membri possono cedere il loro biglietto"
+
+#: templates/admin/settings.php
+msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
+msgstr "Se attivo, un membro può cedere un biglietto gratuito ottenuto con i crediti a un altro membro o a un indirizzo email, dalla pagina del biglietto o dal bot. Se disattivo, i link e i pulsanti Cedi sono nascosti e quelli vecchi vengono rifiutati. I biglietti già ceduti restano validi."

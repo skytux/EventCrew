@@ -6,18 +6,22 @@ namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
+use EventCrew\Repositories\TicketTransferRepository;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
+use EventCrew\Support\TicketTransferService;
 use EventCrew\Telegram\TicketRedemptionService;
+use EventCrew\Telegram\TransferBot;
 use EventCrew\Tests\Support\AiTextOptions;
 use EventCrew\Tests\Support\FakeEventNames;
 
@@ -140,6 +144,53 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         // ...and in an email carrying the same link.
         self::assertNotEmpty($mails);
         self::assertStringContainsString($result['url'], $mails[0]['body']);
+    }
+
+    /**
+     * The ticket DM carries the 🎁 Give away row while members can give
+     * tickets away, and only the ticket button when that setting is off.
+     */
+    public function testTheTicketDmOffersGiveAwayOnlyWhileGivingIsOn(): void
+    {
+        Functions\when('wp_mail')->justReturn(true);
+        $service = new TicketRedemptionService(
+            new PersonRepository(),
+            new TaskRepository(),
+            new RedemptionRepository(),
+            $this->standing(),
+            new FreeEntryGate(),
+            $this->client(),
+            new Mailer(new Logger(), new EmailTemplate(new Logger())),
+            null,
+            new TicketTransferService(
+                new TicketTransferRepository(),
+                new RedemptionRepository(),
+                new PersonRepository(),
+                new TaskRepository(),
+                new CheckinRepository()
+            )
+        );
+        $keyboards = [];
+
+        foreach (['1', '0'] as $on) {
+            $this->options[TicketTransferService::OPTION] = $on;
+            $this->wpdb->nextCols[] = ['2026-08-01'];
+            $this->wpdb->nextResults[] = [];
+            $this->queueBalanceAndEvent(2);
+            $this->wpdb->nextQueryResults[] = 1;
+            $this->wpdb->nextRows[] = [
+                'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+                'email_verified_at' => '2026-07-01 00:00:00', 'telegram_chat_id' => 999,
+            ];
+
+            $service->redeem(7, '2026-08-01');
+            $keyboards[] = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
+        }
+
+        self::assertCount(2, $keyboards[0]);
+        self::assertStringStartsWith(TransferBot::PREFIX . 'g:', (string) $keyboards[0][1][0]['callback_data']);
+        self::assertCount(1, $keyboards[1]);
+        self::assertArrayHasKey('url', $keyboards[1][0][0]);
     }
 
     /** MessageAiText: the event's AI text when there is one, else the template's text. */

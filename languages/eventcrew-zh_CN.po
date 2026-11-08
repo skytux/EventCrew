@@ -12354,3 +12354,19 @@ msgstr "如果你凭别人转给你的门票入场，或作为别人的 +1 入�
 
 msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
 msgstr "门口团队为凭转让门票或作为 +1 入场的人记录的名字和邮箱。只有要求订阅新闻通讯的人会收到邮件：一个确认链接。"
+
+#: src/Support/TicketTransferService.php
+msgid "Giving tickets away is turned off."
+msgstr "赠送门票已关闭。"
+
+#: templates/admin/settings.php
+msgid "Giving tickets away"
+msgstr "赠送门票"
+
+#: templates/admin/settings.php
+msgid "Members can give away their ticket"
+msgstr "成员可以赠送自己的门票"
+
+#: templates/admin/settings.php
+msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
+msgstr "开启时，成员可以在门票页面或机器人中，把用积分兑换的免费门票赠送给其他成员或某个电子邮件地址。关闭时，赠送链接和按钮会隐藏，旧的也会被拒绝。已经赠送的门票仍然有效。"

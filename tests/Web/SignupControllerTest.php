@@ -31,12 +31,14 @@ use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Tests\Support\FakeEventNames;
+use EventCrew\Tests\Telegram\FakeEvents;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\SignupController;
 
 final class SignupControllerTest extends TestCase
 {
     use FakeEventNames;
+    use FakeEvents;
 
     /** @var array<int, string> */
     private array $mails = [];
@@ -270,6 +272,53 @@ final class SignupControllerTest extends TestCase
 
         self::assertStringContainsString('<header class="eventcrew-event-head">', $html);
         self::assertStringNotContainsString('has-image', $html);
+    }
+
+    /**
+     * Signed out, the sign-in card wears the picture the Telegram board posts
+     * as its next-event card (BoardRenderer::nextCardPhoto()): the EventMesh
+     * event's picture, not the post's featured image.
+     */
+    public function testSignedOutTheSignInCardShowsTheNextEventsBoardPicture(): void
+    {
+        $this->fakeEvents();
+        $this->event(42, '2026-08-01', 'Party', ['_eventmesh_image_url' => 'https://cdn.example.test/party.jpg']);
+        $this->stubPageRender();
+        Functions\when('get_the_post_thumbnail_url')->justReturn(false);
+
+        $row = $this->taskRow();
+        $row['event_post_id'] = 42;
+        $this->wpdb->nextResults[] = [$row]; // upcoming
+        $this->wpdb->nextResults[] = [];     // occupancyFor
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertStringContainsString(
+            'class="eventcrew-event eventcrew-me-card eventcrew-signin-card has-image" id="eventcrew-signin"'
+            . ' style="--eventcrew-event-image: url(&quot;https://cdn.example.test/party.jpg&quot;)"',
+            $html
+        );
+    }
+
+    public function testWithoutAPictureTheSignInCardIsPlain(): void
+    {
+        $this->fakeEvents();
+        $this->event(42, '2026-08-01', 'Party');
+        $this->stubPageRender();
+        Functions\when('get_the_post_thumbnail_url')->justReturn(false);
+
+        $row = $this->taskRow();
+        $row['event_post_id'] = 42;
+        $this->wpdb->nextResults[] = [$row];
+        $this->wpdb->nextResults[] = [];
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertStringContainsString(
+            '<section class="eventcrew-event eventcrew-me-card eventcrew-signin-card" id="eventcrew-signin">',
+            $html
+        );
+        self::assertStringNotContainsString('--eventcrew-event-image', $html);
     }
 
     /** With EventMesh's clean name the card header shows it, and the DJ line on its own line. */

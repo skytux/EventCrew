@@ -36,9 +36,13 @@
     /* currentColor, not --eventcrew-ink: a border has to read against the text
        actually on the page, which is the one thing always known. */
     --eventcrew-line: color-mix(in srgb, currentColor 18%, transparent);
-    /* Sign up keeps its own deep green: "go" is a meaning, not a brand, and a
-       crew whose accent happens to be red would otherwise get a red Sign up. */
-    --eventcrew-go: #1b5e20;
+    /* Sign up keeps its own green: "go" is a meaning, not a brand, and a
+       crew whose accent happens to be red would otherwise get a red Sign up.
+       The pips' bright green under near-black text (6.5:1), not the old deep
+       #1b5e20 under white, which read as a heavy dark slab on a dark page. */
+    --eventcrew-go: #22c55e;
+    --eventcrew-go-hover: #4ade80;
+    --eventcrew-on-go: #052e16;
     --eventcrew-stop: #8e1616;
     /*
      * There was a --eventcrew-stop-ink here: the stop red mixed toward the
@@ -669,16 +673,28 @@
  * colour a theme should not get to reassign.
  */
 /*
- * One width for all three, so "Sign up", "Cancel" and "Full" line up down the
- * right edge instead of each row's button starting wherever its own word
- * happens to end.
+ * One box for all three, so "Sign up", "Cancel" and "Full" line up down the
+ * right edge and every row is the same height.
+ *
+ * Signed out, Sign up is an <a>, not a <button>, and that is where it went
+ * wrong before: an <a> is content-box, so min-height 44px plus the vertical
+ * padding made it about 61px tall and min-width 7.5em plus the side padding
+ * made it wider than Full beside it, which grew its row. And an <a> does not
+ * centre its text vertically the way a <button> does, so the word sat at the
+ * top of the extra height. border-box and a centring inline-flex make the
+ * link, the buttons and the <summary> one 44px box; no vertical padding, so
+ * the theme's 1rem button padding cannot come back through it. A transparent
+ * 1px border gives Sign up and Cancel the same outer size as Full's outline.
  */
 .eventcrew-signup .eventcrew-btn-go,
 .eventcrew-signup .eventcrew-btn-stop,
 .eventcrew-signup .eventcrew-btn-full {
-    border: 0; border-radius: var(--eventcrew-radius); cursor: pointer;
-    padding: .5em 1em; font: inherit; font-size: .85em; font-weight: 600; line-height: 1.4;
-    min-height: 44px; min-width: 7.5em; text-align: center;
+    box-sizing: border-box;
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; min-width: 7.5em; margin: 0; padding: 0 1em;
+    border: 1px solid transparent; border-radius: var(--eventcrew-radius); cursor: pointer;
+    font: inherit; font-size: .85em; font-weight: 600; line-height: 1.2;
+    text-align: center; text-decoration: none;
 }
 .eventcrew-signup form.eventcrew-action button[disabled] { opacity: .6; cursor: default; }
 /* A role task: Sign up opens "Count toward free-entry credit?" with Yes / No. */
@@ -698,8 +714,11 @@
 .eventcrew-signup .eventcrew-credit-ask[open] summary { display: none; }
 .eventcrew-signup .eventcrew-credit-ask form { display: inline-block; margin: .25em .25em 0 0; }
 .eventcrew-signup .eventcrew-credit-ask form .eventcrew-btn-go { min-width: 4em; }
-.eventcrew-signup .eventcrew-btn-go { background: var(--eventcrew-go); color: var(--eventcrew-on-accent); }
-.eventcrew-signup .eventcrew-btn-go:hover { filter: brightness(.92); color: var(--eventcrew-on-accent); }
+.eventcrew-signup .eventcrew-btn-go { background: var(--eventcrew-go); color: var(--eventcrew-on-go); }
+.eventcrew-signup .eventcrew-btn-go:hover,
+.eventcrew-signup .eventcrew-btn-go:focus-visible { background: var(--eventcrew-go-hover); color: var(--eventcrew-on-go); }
+/* A green ring outside the button: reads on the dark page (6.5:1) and on a light one. */
+.eventcrew-signup .eventcrew-btn-go:focus-visible { outline: 2px solid var(--eventcrew-go); outline-offset: 2px; }
 .eventcrew-signup .eventcrew-btn-stop { background: var(--eventcrew-stop); color: #fff; }
 .eventcrew-signup .eventcrew-btn-stop:hover { filter: brightness(.9); color: #fff; }
 .eventcrew-signup .eventcrew-btn-full {
@@ -879,6 +898,30 @@
 }
 .eventcrew-signup .eventcrew-join-more label { display: flex; flex-direction: column; gap: .3em; font-size: .9em; max-width: 100%; }
 .eventcrew-signup .eventcrew-join-more input { box-sizing: border-box; width: 6em; height: 2.4em; padding-inline: .6em; }
+
+/*
+ * Signed out, the sign-in card wears the next event's picture, the one the
+ * Telegram board posts as its photo message (BoardRenderer::nextCardPhoto()).
+ * A dark layer over it keeps the white heading, question and notes at AA
+ * whatever the photo: at least 55% black, so even a white pixel under it is no
+ * lighter than #737373. The dark colour under the picture stands in until it
+ * loads or when it fails. The picture is a background, so it moves nothing.
+ */
+.eventcrew-signup .eventcrew-signin-card.has-image {
+    background:
+        linear-gradient(to bottom, rgba(0, 0, 0, .55), rgba(0, 0, 0, .8)),
+        var(--eventcrew-event-image) center 25% / cover no-repeat,
+        #1d1630;
+    color: #fff;
+}
+.eventcrew-signup .eventcrew-signin-card.has-image .eventcrew-event-head { background: rgba(0, 0, 0, .25); }
+.eventcrew-signup .eventcrew-signin-card.has-image .eventcrew-event-title,
+.eventcrew-signup .eventcrew-signin-card.has-image .eventcrew-card-body > p,
+.eventcrew-signup .eventcrew-signin-card.has-image .eventcrew-signin-choice-prompt,
+.eventcrew-signup .eventcrew-signin-card.has-image .eventcrew-hint {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
+}
+.eventcrew-signup .eventcrew-signin-card.has-image .eventcrew-hint { opacity: 1; }
 
 /*
  * The sign-in choice: the Email button and the Telegram button side by side,

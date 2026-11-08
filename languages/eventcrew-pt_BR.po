@@ -12414,3 +12414,19 @@ msgstr "Se você entrar com um ingresso que alguém te deu, ou como +1 de algué
 
 msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
 msgstr "Nomes e e-mails que a equipe da porta anotou para quem entrou com um ingresso repassado ou como +1. Só quem pediu a newsletter recebe um e-mail: um link para confirmá-la."
+
+#: src/Support/TicketTransferService.php
+msgid "Giving tickets away is turned off."
+msgstr "Doar ingressos está desativado."
+
+#: templates/admin/settings.php
+msgid "Giving tickets away"
+msgstr "Doar ingressos"
+
+#: templates/admin/settings.php
+msgid "Members can give away their ticket"
+msgstr "Membros podem doar seu ingresso"
+
+#: templates/admin/settings.php
+msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
+msgstr "Ativado, um membro pode doar um ingresso gratuito obtido com créditos a outro membro ou a um endereço de e-mail, pela página do ingresso ou pelo bot. Desativado, os links e botões Doar ficam ocultos e os antigos são recusados. Ingressos já doados continuam válidos."

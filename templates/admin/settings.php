@@ -20,6 +20,7 @@
  * @var int $reputation_half_life Days for an outcome to count half as much toward the score.
  * @var bool $reputation_gate Whether at-risk members are stopped from signing up.
  * @var bool $board_push_enabled Whether the board is auto-re-posted to the group before open events.
+ * @var bool $ticket_giving Whether members can give their free-entry ticket away.
  * @var int $board_push_lead_week Hours before an open event the first board re-post goes out.
  * @var int $board_push_lead_soon Hours before an open event the second board re-post goes out.
  * @var int $notify_hour Hour of day (0-23) the scheduled notification window opens.
@@ -1198,6 +1199,16 @@ if (! defined('ABSPATH')) {
                         autocomplete="off"
                         spellcheck="false">
                     <p class="description"><?php esc_html_e('The URL of an image, such as your site’s background picture, shown faintly behind the ticket. Leave it blank for a plain white ticket.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Giving tickets away', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="ticket_giving" value="1" <?php checked($ticket_giving); ?>>
+                        <?php esc_html_e('Members can give away their ticket', 'eventcrew'); ?>
+                    </label>
+                    <p class="description"><?php esc_html_e('When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal. ?></p>
                 </td>
             </tr>
             <tr>

@@ -1090,10 +1090,6 @@ msgstr "Holvi-ostajaa ei voitu lisätä. Yritä uudelleen."
 msgid "The QR code could not be drawn. Use Copy link instead."
 msgstr "QR-koodia ei voitu piirtää. Käytä sen sijaan Kopioi linkki -painiketta."
 
-#: src/Telegram/TicketController.php:233
-msgid "The clock above must match the time now. A frozen clock is a screenshot."
-msgstr "Yllä olevan kellon pitää näyttää nykyinen aika. Pysähtynyt kello tarkoittaa kuvakaappausta."
-
 #: templates/public/door.php:191
 msgid "With an email, the buyer gets their ticket by email in about 10 minutes."
 msgstr "Kun sähköposti on annettu, ostaja saa lipun sähköpostiin noin 10 minuutissa."
@@ -9957,3 +9953,30 @@ msgstr "Jos tulet sisään lipulla, jonka joku antoi sinulle, tai jonkun +1:nä,
 
 msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
 msgstr "Nimet ja sähköpostit, jotka ovitiimi merkitsi lahjoitetulla lipulla tai +1:nä tulleille. Vain uutiskirjettä pyytäneet saavat sähköpostin: linkin sen vahvistamiseen."
+
+#: src/Support/TicketTransferService.php
+msgid "Giving tickets away is turned off."
+msgstr "Lippujen antaminen pois on poissa käytöstä."
+
+#: templates/admin/settings.php
+msgid "Giving tickets away"
+msgstr "Lippujen antaminen pois"
+
+#: templates/admin/settings.php
+msgid "Members can give away their ticket"
+msgstr "Jäsenet voivat antaa lippunsa pois"
+
+#: templates/admin/settings.php
+msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
+msgstr "Kun päällä, jäsen voi antaa vapaalipulla saamansa lipun toiselle jäsenelle tai sähköpostiosoitteeseen lippusivulta tai botissa. Kun pois päältä, Anna pois -linkit ja -painikkeet piilotetaan, eivätkä vanhat toimi. Jo annetut liput pysyvät voimassa."
+
+msgid "Ticket %1$d of %2$d"
+msgstr "Lippu %1$d/%2$d"
+
+msgid "Ticket %1$d of %2$d · issued %3$s"
+msgstr "Lippu %1$d/%2$d · myönnetty %3$s"
+
+msgid "You have %d ticket for this night."
+msgid_plural "You have %d tickets for this night."
+msgstr[0] "Sinulla on %d lippu tälle illalle."
+msgstr[1] "Sinulla on %d lippua tälle illalle."

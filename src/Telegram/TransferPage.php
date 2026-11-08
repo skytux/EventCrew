@@ -127,13 +127,15 @@ final class TransferPage
                 return $this->tickets->plainPage($title, '<p>' . esc_html($text) . '</p>' . $back);
             }
 
+            // With the setting off the offer cannot be accepted; the giver
+            // may still cancel it.
             return $this->tickets->plainPage(
                 $title,
-                '<p>' . esc_html(sprintf(
+                '<p>' . esc_html(TicketTransferService::isOn() ? sprintf(
                     /* translators: %s: the email address the ticket was offered to */
                     __('Waiting for %s to accept', 'eventcrew'),
                     $offer->email
-                )) . '</p>'
+                ) : TicketTransferService::message(TicketTransferService::DISABLED)) . '</p>'
                 . $this->form($token, 'cancel', '', __('Cancel the offer', 'eventcrew'))
                 . $back
             );
@@ -372,6 +374,15 @@ final class TransferPage
             return $this->tickets->plainPage(
                 $title,
                 '<p>' . esc_html(TicketTransferService::message(TicketTransferService::GONE)) . '</p>'
+            );
+        }
+
+        // The setting is off: the offer cannot be accepted (a ticket already
+        // accepted is shown above, as always).
+        if (! TicketTransferService::isOn()) {
+            return $this->tickets->plainPage(
+                $title,
+                '<p>' . esc_html(TicketTransferService::message(TicketTransferService::DISABLED)) . '</p>'
             );
         }
 

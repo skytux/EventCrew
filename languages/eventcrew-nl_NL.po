@@ -12434,3 +12434,19 @@ msgstr "Als je binnenkomt met een ticket dat iemand je gaf, of als iemands +1, k
 
 msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
 msgstr "Namen en e-mailadressen die het deurteam noteerde voor mensen die binnenkwamen met een doorgegeven ticket of als +1. Alleen wie om de nieuwsbrief vroeg, krijgt een e-mail: een link om die te bevestigen."
+
+#: src/Support/TicketTransferService.php
+msgid "Giving tickets away is turned off."
+msgstr "Tickets weggeven staat uit."
+
+#: templates/admin/settings.php
+msgid "Giving tickets away"
+msgstr "Tickets weggeven"
+
+#: templates/admin/settings.php
+msgid "Members can give away their ticket"
+msgstr "Leden kunnen hun ticket weggeven"
+
+#: templates/admin/settings.php
+msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
+msgstr "Aan: een lid kan een met credits verkregen gratis ticket weggeven aan een ander lid of aan een e-mailadres, via de ticketpagina of de bot. Uit: de links en knoppen Weggeven zijn verborgen en oude worden geweigerd. Al weggegeven tickets blijven geldig."

@@ -123,7 +123,16 @@ if ($eventcrew_link_expired) {
         // Signed out there are only two things - sign in, and look at the board
         // - so there is nothing to tab between and no tab strip is drawn.
         ?>
-        <section class="eventcrew-event eventcrew-me-card eventcrew-signin-card" id="eventcrew-signin">
+        <?php
+        // The next event's picture behind the card, as on the Telegram
+        // board's card (BoardRenderer::nextCardPhoto()); none: the plain card.
+        $eventcrew_signin_image = (string) ($view['signin_image'] ?? '');
+        ?>
+        <section class="eventcrew-event eventcrew-me-card eventcrew-signin-card<?php echo '' !== $eventcrew_signin_image ? ' has-image' : ''; ?>" id="eventcrew-signin"<?php
+        if ('' !== $eventcrew_signin_image) {
+            printf(' style="%s"', esc_attr('--eventcrew-event-image: url("' . esc_url($eventcrew_signin_image) . '")'));
+        }
+        ?>>
             <header class="eventcrew-event-head">
                 <h2 class="eventcrew-event-title"><?php esc_html_e('Sign in or sign up', 'eventcrew'); ?></h2>
             </header>

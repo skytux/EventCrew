@@ -12354,3 +12354,19 @@ msgstr "誰かから譲られたチケットで、または誰かの+1として�
 
 msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
 msgstr "譲られたチケットや+1で入場した人について、入口チームが記録した名前とメールアドレス。ニュースレターを希望した人だけに、確認用リンクのメールが届きます。"
+
+#: src/Support/TicketTransferService.php
+msgid "Giving tickets away is turned off."
+msgstr "チケットの譲渡はオフになっています。"
+
+#: templates/admin/settings.php
+msgid "Giving tickets away"
+msgstr "チケットの譲渡"
+
+#: templates/admin/settings.php
+msgid "Members can give away their ticket"
+msgstr "メンバーはチケットを譲渡できる"
+
+#: templates/admin/settings.php
+msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
+msgstr "オンのとき、メンバーはクレジットで引き換えた無料チケットを、チケットページまたはボットから、ほかのメンバーやメールアドレスに譲渡できます。オフのとき、譲渡のリンクとボタンは非表示になり、古いものは拒否されます。すでに譲渡されたチケットは有効なままです。"

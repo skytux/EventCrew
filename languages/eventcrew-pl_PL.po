@@ -12472,3 +12472,19 @@ msgstr "Jeśli wchodzisz na bilet, który ktoś ci dał, albo jako czyjś +1, ek
 
 msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
 msgstr "Imiona i e-maile zanotowane przez ekipę przy wejściu dla osób, które weszły na przekazany bilet albo jako +1. E-mail dostają tylko ci, którzy poprosili o newsletter: link do potwierdzenia."
+
+#: src/Support/TicketTransferService.php
+msgid "Giving tickets away is turned off."
+msgstr "Oddawanie biletów jest wyłączone."
+
+#: templates/admin/settings.php
+msgid "Giving tickets away"
+msgstr "Oddawanie biletów"
+
+#: templates/admin/settings.php
+msgid "Members can give away their ticket"
+msgstr "Członkowie mogą oddać swój bilet"
+
+#: templates/admin/settings.php
+msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
+msgstr "Gdy włączone, członek może oddać darmowy bilet uzyskany za kredyty innemu członkowi lub na adres e-mail, ze strony biletu lub w bocie. Gdy wyłączone, linki i przyciski Oddaj są ukryte, a stare są odrzucane. Bilety już oddane pozostają ważne."

@@ -41,6 +41,15 @@ final class TicketTransferService
     public const TOO_LATE = 'too_late';
     public const GONE = 'gone';
     public const NO_NAME = 'no_name';
+    public const DISABLED = 'disabled';
+
+    /**
+     * The setting "Members can give away their ticket" (Settings, Ticket
+     * page): '1' or '0', on when unset. Off, nothing offers giving a ticket
+     * away and every give or accept is refused; tickets already given stay
+     * valid.
+     */
+    public const OPTION = 'eventcrew_ticket_giving';
 
     /** Most pending offers to email addresses one person may have at a time. */
     public const MAX_EMAIL_OFFERS = 3;
@@ -63,6 +72,18 @@ final class TicketTransferService
     ) {
     }
 
+    /** Whether members may give their tickets away now (the OPTION setting). */
+    public static function isOn(): bool
+    {
+        return (bool) get_option(self::OPTION, true);
+    }
+
+    /** Saves the OPTION setting. */
+    public static function save(bool $on): void
+    {
+        update_option(self::OPTION, $on ? '1' : '0');
+    }
+
     /**
      * When the doors open on $date, as a local "Y-m-d H:i:s": the night's
      * start (SalesDeskGate::startOf()), else 17:00. A pending offer lapses
@@ -78,10 +99,15 @@ final class TicketTransferService
     /**
      * Why this person cannot give this ticket now, or '' when they can: it
      * must be their own credit ticket, not cancelled or given, for tonight or
-     * later, not used at the door, with no offer waiting.
+     * later, not used at the door, with no offer waiting. Nothing can be
+     * given while the setting is off.
      */
     public function refusal(?Redemption $redemption, int $giverPersonId): string
     {
+        if (! self::isOn()) {
+            return self::DISABLED;
+        }
+
         if (null === $redemption || $redemption->personId !== $giverPersonId || $giverPersonId <= 0) {
             return self::NOT_GIVABLE;
         }
@@ -283,12 +309,17 @@ final class TicketTransferService
     /**
      * The receiver accepts an offer from the emailed link, with their name.
      * The ticket moves now: the giver's ticket is cancelled, the receiver is
-     * emailed their own, and the giver is told.
+     * emailed their own, and the giver is told. Refused while the setting
+     * is off: the offer waits and the giver's ticket keeps working.
      *
      * @return array{code: string, transfer: ?TicketTransfer}
      */
     public function accept(int $transferId, string $name): array
     {
+        if (! self::isOn()) {
+            return ['code' => self::DISABLED, 'transfer' => null];
+        }
+
         $name = trim(preg_replace('/\s+/u', ' ', $name) ?? '');
 
         if ('' === $name) {
@@ -467,6 +498,7 @@ final class TicketTransferService
             self::TOO_LATE => __('The doors are already open. Give the ticket to a member instead.', 'eventcrew'),
             self::NO_NAME => __('Please write your name.', 'eventcrew'),
             self::GONE => __('This offer is no longer open.', 'eventcrew'),
+            self::DISABLED => __('Giving tickets away is turned off.', 'eventcrew'),
             default => __('This ticket cannot be given away.', 'eventcrew'),
         };
         // phpcs:enable Generic.Files.LineLength.TooLong

@@ -73,6 +73,9 @@ final class SignupBoardView
             'standing' => $standing,
             'csrf' => null === $person ? '' : WebSession::csrfToken($person->id),
             'groups' => $this->groupByEvent($tasks, $occupancy, $mine, $person),
+            // Signed out, the sign-in card wears the picture the Telegram
+            // board's next-event card posts; '' when there is none.
+            'signin_image' => null === $person ? BoardRenderer::nextCardPhoto($tasks) : '',
             'telegram_group_link' => BoardService::groupLink(),
             'turnstile_site_key' => $this->turnstile->siteKey(),
             'ticket_dates' => $ticketDates,

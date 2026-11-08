@@ -12434,3 +12434,19 @@ msgstr "Si entras con una entrada que alguien te cedió, o como +1 de alguien, e
 
 msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
 msgstr "Nombres y correos que el equipo de la puerta anotó para quienes entraron con una entrada cedida o como +1. Solo quienes pidieron el boletín reciben un correo: un enlace para confirmarlo."
+
+#: src/Support/TicketTransferService.php
+msgid "Giving tickets away is turned off."
+msgstr "Regalar entradas está desactivado."
+
+#: templates/admin/settings.php
+msgid "Giving tickets away"
+msgstr "Regalar entradas"
+
+#: templates/admin/settings.php
+msgid "Members can give away their ticket"
+msgstr "Los miembros pueden regalar su entrada"
+
+#: templates/admin/settings.php
+msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
+msgstr "Si está activado, un miembro puede regalar una entrada gratuita canjeada con créditos a otro miembro o a una dirección de correo, desde la página de la entrada o el bot. Si está desactivado, los enlaces y botones Regalar se ocultan y los antiguos se rechazan. Las entradas ya regaladas siguen siendo válidas."

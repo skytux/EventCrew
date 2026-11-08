@@ -405,17 +405,40 @@ final class BoardRenderer
     /**
      * The event nextCard() shows and its day (Y-m-d), or null.
      *
-     * @return array{event: int, date: string}|null
+     * @return array{event: int, date: string, photo: string}|null
      */
     public function nextCardTarget(): ?array
     {
-        $tasks = $this->boardTasks();
+        return self::cardTarget($this->boardTasks());
+    }
 
+    /**
+     * The picture of the board's next-event card for $upcoming (as
+     * TaskRepository::upcoming() returns them), or '' when there is none:
+     * the same picture the group gets as its photo message. The crew page
+     * shows it behind its sign-in card, from the tasks it has already read.
+     *
+     * @param array<int, Task> $upcoming
+     */
+    public static function nextCardPhoto(array $upcoming): string
+    {
+        return self::cardTarget(self::onGuestBoard($upcoming))['photo'] ?? '';
+    }
+
+    /**
+     * The first event with a picture on the first day of $tasks, its day and
+     * its picture, or null.
+     *
+     * @param array<int, Task> $tasks
+     * @return array{event: int, date: string, photo: string}|null
+     */
+    private static function cardTarget(array $tasks): ?array
+    {
         if ([] === $tasks) {
             return null;
         }
 
-        $date = $this->dates($tasks)[0];
+        $date = self::dates($tasks)[0];
         $seen = [];
 
         foreach ($tasks as $task) {
@@ -427,7 +450,7 @@ final class BoardRenderer
             $card = EventCard::forEvent($task->eventPostId, '');
 
             if (null !== $card && '' !== $card['photo']) {
-                return ['event' => $task->eventPostId, 'date' => $date];
+                return ['event' => $task->eventPostId, 'date' => $date, 'photo' => $card['photo']];
             }
         }
 
@@ -546,8 +569,17 @@ final class BoardRenderer
         // 2026-11-07): the people holding its role take it on
         // the crew page or in their private copy of the board. The web page
         // shows the same tasks when signed out (BoardVisibility).
+        return self::onGuestBoard($this->tasks->upcoming());
+    }
+
+    /**
+     * @param array<int, Task> $tasks
+     * @return list<Task> Those of $tasks on the group's board.
+     */
+    private static function onGuestBoard(array $tasks): array
+    {
         return array_values(array_filter(
-            $this->tasks->upcoming(),
+            $tasks,
             static fn (Task $task): bool => BoardVisibility::onGuestBoard($task)
         ));
     }
@@ -556,7 +588,7 @@ final class BoardRenderer
      * @param array<int, Task> $tasks
      * @return array<int, string> Every day of $tasks, Y-m-d, ascending.
      */
-    private function dates(array $tasks): array
+    private static function dates(array $tasks): array
     {
         $dates = array_values(array_unique(array_map(static fn (Task $t): string => $t->taskDate, $tasks)));
         sort($dates);

@@ -963,9 +963,11 @@ final class TicketMail
             return ['html' => '', 'text' => ''];
         }
 
-        $say = static fn (string $key): string => self::areaWords()[$key] ?? '';
+        $tickets = $this->nightTickets($person, $date, $assignmentId);
+        $words = self::areaWords(count($tickets));
+        $say = static fn (string $key): string => $words[$key] ?? '';
 
-        return $this->area($this->nightTickets($person, $date, $assignmentId), $say, true);
+        return $this->area($tickets, $say, true);
     }
 
     /**
@@ -1444,7 +1446,7 @@ final class TicketMail
 
         if ($others) {
             $languages = HybridPolicy::languagesFor(HybridPolicy::TICKET_CANCELLED, $language);
-            $words = HybridPolicy::inEach($languages, static fn (): array => self::areaWords());
+            $words = HybridPolicy::inEach($languages, static fn (): array => self::areaWords(count($remaining)));
             $say = static fn (string $key): string => HybridPolicy::join(HybridPolicy::field($words, $key), "\n");
             $area = $this->area($remaining, $say, true);
             $mail['corner'] = $area['html'];
@@ -1606,7 +1608,8 @@ final class TicketMail
                     $date,
                     $lang,
                     $deleted,
-                    $eventId
+                    $eventId,
+                    $row instanceof CrewTicket ? count($night) : 1
                 )
             );
         }
@@ -1790,7 +1793,8 @@ final class TicketMail
         string $date,
         string $lang,
         ?Task $deleted = null,
-        ?int $eventId = null
+        ?int $eventId = null,
+        int $count = 1
     ): array {
         if (null !== $deleted) {
             $reason = self::deletedSentence($deleted);
@@ -1849,7 +1853,7 @@ final class TicketMail
             $body = $paragraphs[1] ?? '';
         }
 
-        return array_merge(self::areaWords(), [
+        return array_merge(self::areaWords($count), [
             'greeting' => $greeting,
             'body' => $body,
             'text' => trim($greeting . "\n\n" . $body),
@@ -1860,14 +1864,23 @@ final class TicketMail
     }
 
     /**
-     * The words of the ticket area (area()), in the current language.
+     * The words of the ticket area (area()), in the current language, for
+     * an area of $count tickets. 'number' keeps its two placeholders (this
+     * ticket's number, the count) for area() to fill per ticket.
      *
      * @return array{crew: string, credit: string, transfer: string, open: string, short: string,
-     *     offline: string, offline_all: string}
+     *     offline: string, offline_all: string, count: string, number: string}
      */
-    private static function areaWords(): array
+    private static function areaWords(int $count = 1): array
     {
         return [
+            'count' => sprintf(
+                /* translators: %d: how many tickets the person has for the night, always 2 or more */
+                _n('You have %d ticket for this night.', 'You have %d tickets for this night.', $count, 'eventcrew'),
+                $count
+            ),
+            /* translators: 1: this ticket's number, 2: how many tickets the person has for the night */
+            'number' => __('Ticket %1$d of %2$d', 'eventcrew'),
             'crew' => __('Crew ticket', 'eventcrew'),
             'credit' => __('Free-entry ticket', 'eventcrew'),
             'transfer' => __('Transferred ticket', 'eventcrew'),
@@ -1884,9 +1897,11 @@ final class TicketMail
      * "Free-entry ticket") when $labels, the crew ticket's tasks for the night,
      * its QR code and short code. With more than one ticket each block has its
      * own "Open my ticket" link; the offline hint is said once, under the
-     * last. $say gives each word (areaWords()'s keys) in the email's
-     * languages. Also the same as plain text: label, link and short code per
-     * ticket.
+     * last. With more than one ticket, a small line on top says how many
+     * there are and each block is numbered ("Ticket 2 of 3") under its
+     * label. $say gives each word (areaWords()'s keys) in the email's
+     * languages. Also the same as plain text: label, number, link and short
+     * code per ticket.
      *
      * @param list<CrewTicket>         $tickets
      * @param callable(string): string $say
@@ -1899,8 +1914,19 @@ final class TicketMail
         $count = count($tickets);
         $last = $count - 1;
 
+        if ($count > 1) {
+            $html .= sprintf(
+                '<p style="margin:0 0 8px;font-family:%1$s;font-size:13px;line-height:1.5;color:%2$s">%3$s</p>',
+                EmailBody::FONT,
+                self::MUTED_COLOR,
+                str_replace("\n", '<br>', esc_html($say('count')))
+            );
+            $text[] = str_replace("\n", ' / ', $say('count'));
+        }
+
         foreach (array_values($tickets) as $i => $ticket) {
             $label = $labels ? $say($ticket->isTransfer() ? 'transfer' : ($ticket->isCredit() ? 'credit' : 'crew')) : '';
+            $number = $count > 1 ? str_replace("\n", ' / ', sprintf($say('number'), $i + 1, $count)) : '';
             $url = self::crewUrl($ticket);
             $short = self::shortCodeOf($ticket);
             $tasks = array_map(
@@ -1935,10 +1961,20 @@ final class TicketMail
             $offline = $i === $last
                 ? str_replace("\n", '<br>', esc_html($say($count > 1 ? 'offline_all' : 'offline')))
                 : '';
-            $html .= $this->ticketCorner(self::qrData($ticket), trim($ticket->name), '', $offline, $short, $label, $extra);
+            $html .= $this->ticketCorner(
+                self::qrData($ticket),
+                trim($ticket->name),
+                '',
+                $offline,
+                $short,
+                $label,
+                $extra,
+                $number
+            );
 
             $text[] = implode("\n", array_filter([
                 str_replace("\n", ' / ', $label),
+                $number,
                 implode("\n", $tasks),
                 str_replace("\n", ' / ', $say('open')) . ': ' . $url,
                 '' === $short ? '' : str_replace("\n", ' / ', $say('short')) . ': ' . $short,
@@ -2008,8 +2044,9 @@ final class TicketMail
      * HTML); on the right the small QR code in a white box, no logo, with
      * the short code ($short, ShortCode) right under it, as on the ticket
      * page and the door app's row. $label, when given, is the ticket's kind
-     * ("Crew ticket") small and in capitals above the name; $extra is HTML
-     * under the name (the ticket area's task lines and link).
+     * ("Crew ticket") small and in capitals above the name; $number
+     * ("Ticket 2 of 3"), when given, small and grey right under it; $extra
+     * is HTML under the name (the ticket area's task lines and link).
      */
     private function ticketCorner(
         string $data,
@@ -2018,7 +2055,8 @@ final class TicketMail
         string $offline,
         string $short = '',
         string $label = '',
-        string $extra = ''
+        string $extra = '',
+        string $number = ''
     ): string {
         $qr = $this->qr->table($data, $this->qr->fitCell($data, self::QR_WIDTH, '', 4));
 
@@ -2031,6 +2069,12 @@ final class TicketMail
                 EmailBody::FONT,
                 self::GOLD_COLOR,
                 str_replace("\n", '<br>', esc_html($label))
+            ))
+            . ('' === $number ? '' : sprintf(
+                '<p style="margin:0 0 4px;font-family:%1$s;font-size:12px;line-height:1.4;color:%2$s">%3$s</p>',
+                EmailBody::FONT,
+                self::MUTED_COLOR,
+                esc_html($number)
             ))
             . ('' === $holder ? '' : sprintf(
                 '<p style="margin:0 0 4px;font-family:%1$s;font-size:18px;font-weight:700;line-height:1.3;'

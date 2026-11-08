@@ -594,6 +594,21 @@ final class SettingsPageTest extends TelegramTestCase
         self::assertSame('Kim, kim@example.com', $this->options[\EventCrew\Support\WelcomeSender::MAINTAINER_OPTION]);
     }
 
+    public function testTheGivingTicketsAwaySwitchSavesAndIsOnByDefault(): void
+    {
+        self::assertTrue(\EventCrew\Support\TicketTransferService::isOn());
+
+        $this->saveUntil([], \EventCrew\Support\TicketTransferService::OPTION);
+        self::assertSame('0', $this->options[\EventCrew\Support\TicketTransferService::OPTION]);
+
+        $this->saveUntil(['ticket_giving' => '1'], \EventCrew\Support\TicketTransferService::OPTION);
+        self::assertSame('1', $this->options[\EventCrew\Support\TicketTransferService::OPTION]);
+
+        $template = (string) file_get_contents(dirname(__DIR__, 2) . '/templates/admin/settings.php');
+        self::assertStringContainsString('name="ticket_giving"', $template);
+        self::assertStringContainsString('Members can give away their ticket', $template);
+    }
+
     public function testTheTelegramSignInSwitchSaves(): void
     {
         $this->saveTelegramSection(['telegram_web_login' => '1']);

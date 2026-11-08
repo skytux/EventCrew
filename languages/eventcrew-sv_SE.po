@@ -7519,12 +7519,6 @@ msgstr ""
 msgid "The chosen signup page is missing or not published."
 msgstr "Den valda anmälningssidan saknas eller är inte publicerad."
 
-#: src/Telegram/TicketController.php:498
-msgid ""
-"The clock above must match the time now. A frozen clock is a screenshot."
-msgstr ""
-"Klockan ovan måste visa aktuell tid. En klocka som står still är en skärmbild."
-
 #: templates/admin/settings.php:1247
 msgid ""
 "The club, association or person answerable for these records. Required."
@@ -12915,3 +12909,30 @@ msgstr "Om du kommer in på en biljett som någon gav dig, eller som någons +1,
 
 msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
 msgstr "Namn och e-postadresser som dörrteamet antecknade för dem som kom in på en bortgiven biljett eller som +1. Bara de som bad om nyhetsbrevet får ett mejl: en länk för att bekräfta det."
+
+#: src/Support/TicketTransferService.php
+msgid "Giving tickets away is turned off."
+msgstr "Att ge bort biljetter är avstängt."
+
+#: templates/admin/settings.php
+msgid "Giving tickets away"
+msgstr "Ge bort biljetter"
+
+#: templates/admin/settings.php
+msgid "Members can give away their ticket"
+msgstr "Medlemmar kan ge bort sin biljett"
+
+#: templates/admin/settings.php
+msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
+msgstr "När det är på kan en medlem ge bort en fribiljett till en annan medlem eller till en e-postadress, från biljettsidan eller boten. När det är av döljs länkarna och knapparna Ge bort, och gamla nekas. Biljetter som redan getts bort gäller fortfarande."
+
+msgid "Ticket %1$d of %2$d"
+msgstr "Biljett %1$d av %2$d"
+
+msgid "Ticket %1$d of %2$d · issued %3$s"
+msgstr "Biljett %1$d av %2$d · utfärdad %3$s"
+
+msgid "You have %d ticket for this night."
+msgid_plural "You have %d tickets for this night."
+msgstr[0] "Du har %d biljett för kvällen."
+msgstr[1] "Du har %d biljetter för kvällen."

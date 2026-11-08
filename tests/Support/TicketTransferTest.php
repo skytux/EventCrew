@@ -28,6 +28,7 @@ use EventCrew\Support\PrivacyEraser;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketTransferService;
+use EventCrew\Telegram\ProfileService;
 use EventCrew\Telegram\TicketController;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Telegram\TransferBot;
@@ -574,5 +575,187 @@ final class TicketTransferTest extends SalesDeskTestCase
         ]));
 
         self::assertStringContainsString('This offer is no longer open.', $page);
+    }
+
+    /** The setting "Members can give away their ticket" turned off. */
+    private function givingOff(): void
+    {
+        $this->options[TicketTransferService::OPTION] = '0';
+    }
+
+    private function controller(?TicketTransferService $service = null): TicketController
+    {
+        return new TicketController(
+            new AssignmentRepository(),
+            new TaskRepository(),
+            new PersonRepository(),
+            new RedemptionRepository(),
+            transfers: $service ?? $this->service()
+        );
+    }
+
+    /**
+     * The /me tickets give-away part for Ann's ticket 10: its buttons and lines.
+     *
+     * @return array{buttons: array<int, mixed>, lines: list<string>}
+     */
+    private function profileGive(): array
+    {
+        $profile = new ProfileService(
+            new PersonRepository(),
+            new AssignmentRepository(),
+            new TaskRepository(),
+            $this->standing(),
+            $this->client(),
+            $this->service()
+        );
+        $method = new \ReflectionMethod($profile, 'giveAway');
+        $buttons = [];
+        $lines = $method->invokeArgs($profile, [['redemption_id' => 10, 'when' => 'Mon 20 Jul'], 1, &$buttons]);
+
+        return ['buttons' => $buttons, 'lines' => $lines];
+    }
+
+    public function testTheSettingIsOnUnlessTurnedOff(): void
+    {
+        self::assertTrue(TicketTransferService::isOn());
+
+        TicketTransferService::save(false);
+        self::assertSame('0', $this->options[TicketTransferService::OPTION]);
+        self::assertFalse(TicketTransferService::isOn());
+
+        TicketTransferService::save(true);
+        self::assertTrue(TicketTransferService::isOn());
+    }
+
+    public function testWithGivingOnTheBotOffersGiveAwayUnderTheTicket(): void
+    {
+        $give = $this->profileGive();
+
+        self::assertSame('gv:g:10', $give['buttons'][0][0]['callback_data'] ?? null);
+        self::assertSame([], $give['lines']);
+    }
+
+    public function testWithGivingOffNoPlaceOffersGiveAway(): void
+    {
+        $this->givingOff();
+
+        $credit = $this->controller()->ticketFor(SignedLink::sign('credit_ticket', 10));
+        $give = $this->profileGive();
+
+        self::assertNotNull($credit);
+        self::assertArrayNotHasKey('give_url', $credit);
+        self::assertSame([], $give['buttons']);
+        self::assertSame([], $give['lines']);
+    }
+
+    public function testWithGivingOffAWaitingOfferIsNotShownAndCannotBeAccepted(): void
+    {
+        $this->service()->offerToEmail(10, 1, 'dee@example.com');
+        $this->givingOff();
+        $offer = SignedLink::sign(TicketTransferService::ACCEPT_PURPOSE, 1);
+
+        $credit = $this->controller()->ticketFor(SignedLink::sign('credit_ticket', 10));
+        $give = $this->profileGive();
+        $form = $this->page()->acceptHtml($this->request('GET', ['offer' => $offer]));
+        $post = $this->page()->acceptHtml($this->request('POST', ['offer' => $offer, 'name' => 'Dee']));
+        $accept = $this->service()->accept(1, 'Dee');
+
+        self::assertArrayNotHasKey('offer_to', $credit);
+        self::assertArrayNotHasKey('give_url', $credit);
+        self::assertSame([], $give['buttons']);
+        self::assertSame([], $give['lines']);
+        self::assertStringContainsString('Giving tickets away is turned off.', $form);
+        self::assertStringNotContainsString('Your name', $form);
+        self::assertStringContainsString('Giving tickets away is turned off.', $post);
+        self::assertSame(TicketTransferService::DISABLED, $accept['code']);
+        self::assertSame('pending', $this->db->transfers[1]['status']);
+        self::assertNull($this->db->redemptions[10]['transferred_to'] ?? null);
+        self::assertNotSame(DoorDesk::SCAN_DISABLED, $this->desk()->scan(self::NIGHT, TicketMail::creditCode(10))['code']);
+
+        // The giver's old give link still cancels the offer.
+        $token = SignedLink::sign('credit_ticket', 10);
+        $page = $this->page()->giveHtml($this->request('GET', ['ticket' => $token]));
+        self::assertStringContainsString('Giving tickets away is turned off.', $page);
+        self::assertStringNotContainsString('Waiting for', $page);
+        $this->page()->giveHtml($this->request('POST', ['ticket' => $token, 'step' => 'cancel']));
+        self::assertSame('cancelled', $this->db->transfers[1]['status']);
+    }
+
+    public function testWithGivingOffTheServiceRefusesEveryGive(): void
+    {
+        $this->givingOff();
+        $service = $this->service();
+
+        self::assertSame(TicketTransferService::DISABLED, $service->refusal($service->redemption(10), 1));
+        self::assertFalse($service->canGive($service->redemption(10), 1));
+        self::assertSame(TicketTransferService::DISABLED, $service->giveToMember(10, 1, 2)['code']);
+        self::assertSame(TicketTransferService::DISABLED, $service->offerToEmail(10, 1, 'dee@example.com')['code']);
+        self::assertSame([], $this->db->transfers);
+        self::assertNull($this->db->redemptions[10]['cancelled_at']);
+    }
+
+    public function testWithGivingOffAnOldBotButtonIsRefused(): void
+    {
+        $this->givingOff();
+        $bot = new TransferBot($this->service(), new PersonRepository(), $this->client());
+
+        $this->tap($bot, 'g:10');
+
+        self::assertSame('Giving tickets away is turned off.', $this->lastText());
+        self::assertFalse($bot->isAwaiting(501));
+    }
+
+    public function testTurningGivingOffMidwayStopsTheBotsGive(): void
+    {
+        $bot = new TransferBot($this->service(), new PersonRepository(), $this->client());
+
+        $this->tap($bot, 'g:10');
+        $bot->capture(501, 501, 'bo');
+        $this->givingOff();
+        $this->tap($bot, 'p:2');
+        self::assertSame('Giving tickets away is turned off.', $this->lastText());
+
+        $this->options[TicketTransferService::OPTION] = '1';
+        $this->tap($bot, 'g:10');
+        $this->givingOff();
+        $bot->capture(501, 501, 'dee@example.com');
+        self::assertSame('Giving tickets away is turned off.', $this->lastText());
+
+        $this->tap($bot, 'y');
+        self::assertSame('Giving tickets away is turned off.', $this->lastText());
+        self::assertSame([], $this->db->transfers);
+    }
+
+    public function testWithGivingOffTheGivePageRefuses(): void
+    {
+        $this->givingOff();
+        $token = SignedLink::sign('credit_ticket', 10);
+
+        $ask = $this->page()->giveHtml($this->request('GET', ['ticket' => $token]));
+        $done = $this->page()->giveHtml($this->request('POST', ['ticket' => $token, 'step' => 'member', 'person' => 2]));
+        $mail = $this->page()->giveHtml($this->request('POST', ['ticket' => $token, 'step' => 'email', 'email' => 'dee@example.com']));
+
+        self::assertStringContainsString('Giving tickets away is turned off.', $ask);
+        self::assertStringNotContainsString('Who gets your ticket?', $ask);
+        self::assertStringContainsString('Giving tickets away is turned off.', $done);
+        self::assertStringContainsString('Giving tickets away is turned off.', $mail);
+        self::assertSame([], $this->db->transfers);
+    }
+
+    public function testWithGivingOffATicketAlreadyGivenStaysValid(): void
+    {
+        $service = $this->service();
+        $service->giveToMember(10, 1, 2);
+        $this->givingOff();
+
+        $old = $this->controller($service)->ticketFor(SignedLink::sign('credit_ticket', 10));
+        $new = $this->controller($service)->ticketFor(SignedLink::sign('xfer_ticket', 1));
+        $scan = $this->desk()->scan(self::NIGHT, TicketMail::transferCode(1));
+
+        self::assertSame('Bob', $old['given_to'] ?? null);
+        self::assertTrue($new['valid']);
+        self::assertSame(DoorDesk::SCAN_OK, $scan['code']);
+        self::assertSame('Bob', $scan['name']);
     }
 }

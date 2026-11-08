@@ -28,6 +28,7 @@ use EventCrew\Support\NewsletterSchedule;
 use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\EventTimes;
+use EventCrew\Support\TicketTransferService;
 use EventCrew\Support\EventVenue;
 use EventCrew\Support\VenueReader;
 use EventCrew\Support\Organization;
@@ -220,6 +221,7 @@ final class SettingsPage
                 'hybrid' => self::hybridView(),
                 'organization_name' => Organization::stored(),
                 'ticket_background' => (string) get_option(TicketController::BACKGROUND_OPTION, ''),
+                'ticket_giving' => TicketTransferService::isOn(),
                 'ticket_note' => SiteTexts::value('ticket_note'),
                 'doors_close_on' => EventTimes::doorsOn(),
                 'doors_close_minutes' => EventTimes::doorsMinutes(),
@@ -869,6 +871,8 @@ final class SettingsPage
             TicketController::BACKGROUND_OPTION,
             isset($_POST['ticket_background']) ? esc_url_raw(wp_unslash($_POST['ticket_background'])) : ''
         );
+
+        TicketTransferService::save(isset($_POST['ticket_giving']));
 
         $appPageId = isset($_POST['app_page_id']) ? max(0, (int) $_POST['app_page_id']) : 0;
         update_option(PwaController::PAGE_OPTION, $appPageId);

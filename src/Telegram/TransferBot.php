@@ -97,8 +97,22 @@ final class TransferBot
             return;
         }
 
-        $this->telegram->answerCallbackQuery($callbackId);
         [$action, $id] = array_pad(explode(':', $data, 2), 2, '0');
+
+        // An old 🎁 Give away button, or a give half done when the setting
+        // was turned off: refused. Cancelling a waiting offer still works.
+        if (in_array($action, ['g', 'p', 'y'], true) && ! TicketTransferService::isOn()) {
+            $this->cancelPending($telegramUserId);
+            $this->telegram->answerCallbackQuery($callbackId);
+            $this->telegram->sendMessage(
+                $telegramUserId,
+                TicketTransferService::message(TicketTransferService::DISABLED)
+            );
+
+            return;
+        }
+
+        $this->telegram->answerCallbackQuery($callbackId);
 
         match ($action) {
             'g' => $this->start($giver, $telegramUserId, (int) $id),
@@ -146,6 +160,13 @@ final class TransferBot
 
         if (null === $giver || null === $redemption) {
             $this->telegram->sendMessage($chatId, self::expired());
+
+            return;
+        }
+
+        if (! TicketTransferService::isOn()) {
+            delete_transient(self::STATE_PREFIX . $telegramUserId);
+            $this->telegram->sendMessage($chatId, TicketTransferService::message(TicketTransferService::DISABLED));
 
             return;
         }

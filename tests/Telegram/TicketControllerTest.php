@@ -211,7 +211,10 @@ final class TicketControllerTest extends TestCase
         $html = $this->controller()->renderPage($ticket);
 
         self::assertStringContainsString('id="ec-clock"', $html);
-        self::assertStringContainsString('Issued', $html);
+        self::assertStringContainsString('Issued 20:00, Fri 24 Jul', $html);
+        // The clock stays; the line explaining it is gone (Owner, 2026-11-08).
+        self::assertStringNotContainsString('frozen clock', $html);
+        self::assertStringNotContainsString('Ticket 1 of', $html);
     }
 
     public function testRenderPageShowsTheTicketBackground(): void
@@ -429,10 +432,49 @@ final class TicketControllerTest extends TestCase
         self::assertSame(1, substr_count($html, 'qrcode.js'));
         self::assertStringContainsString('id="ec-qr-2"', $html);
 
-        // One ticket alone is drawn as before.
+        // Each card is numbered on its issued line (Owner, 2026-11-08).
+        self::assertStringContainsString('<p class="t-small">Ticket 1 of 2 · issued 20:00, Fri 24 Jul</p>', $html);
+        self::assertStringContainsString('<p class="t-small">Ticket 2 of 2 · issued 20:00, Fri 24 Jul</p>', $html);
+        self::assertStringNotContainsString('Issued ', $html);
+
+        // One ticket alone is drawn as before, not numbered.
         $single = $this->controller()->renderPage($crew);
         self::assertStringContainsString('<main class="t">', $single);
         self::assertStringNotContainsString('<section', $single);
+        self::assertStringContainsString('<p class="t-small">Issued 20:00, Fri 24 Jul</p>', $single);
+        self::assertStringNotContainsString(' of 1', $single);
+    }
+
+    /**
+     * Three cards: each says which of the three it is, in order, also when
+     * one has no issued time.
+     */
+    public function testEveryCardSaysWhichTicketOfTheNightItIs(): void
+    {
+        Functions\when('get_site_icon_url')->justReturn('');
+        $third = ['issued' => ''] + $this->sampleTicket();
+
+        $html = $this->controller()->renderPage($this->sampleTicket(), [$this->sampleTicket(), $third]);
+
+        $first = strpos($html, 'Ticket 1 of 3 · issued');
+        $second = strpos($html, 'Ticket 2 of 3 · issued');
+        $last = strpos($html, '<p class="t-small">Ticket 3 of 3</p>');
+        self::assertIsInt($first);
+        self::assertIsInt($second);
+        self::assertIsInt($last);
+        self::assertTrue($first < $second && $second < $last);
+    }
+
+    /**
+     * The QR code's square is 12.5em (200px): smaller than before, still
+     * well above what a phone camera needs at error correction level H.
+     */
+    public function testTheQrCodeSquareIsTwelveAndAHalfEm(): void
+    {
+        $html = $this->controller()->renderPage($this->sampleTicket());
+
+        self::assertStringContainsString('.t-qr-wrap{position:relative;width:12.5em;', $html);
+        self::assertStringContainsString('qrcode(0,"H")', $html);
     }
 
     /**

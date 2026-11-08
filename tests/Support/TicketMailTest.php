@@ -1016,6 +1016,40 @@ final class TicketMailTest extends TestCase
         }
 
         self::assertStringContainsString('No internet? Show these QR codes at the door.', $body);
+
+        // How many tickets, once, and each one numbered (Owner, 2026-11-08).
+        self::assertSame(1, substr_count($body, 'You have 2 tickets for this night.'));
+        $first = strpos($body, 'Ticket 1 of 2');
+        $second = strpos($body, 'Ticket 2 of 2');
+        self::assertIsInt($first);
+        self::assertIsInt($second);
+        self::assertTrue($first < strpos($body, ShortCode::forPerson(8, '2026-11-14')));
+        self::assertTrue($first < $second);
+    }
+
+    /**
+     * The sign-up email's ticket area with a crew and a free-entry ticket:
+     * the count line on top and "Ticket x of 2" under each label, in the
+     * HTML and in the plain text.
+     */
+    public function testSignupTicketsCountAndNumberTheNightsTickets(): void
+    {
+        $signup = ['id' => 31, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up'];
+        $this->wpdb->nextResults[] = [$signup]; // tasksOn
+        $this->wpdb->nextRows[] = $this->crewTaskRow(5, 'bar', '2026-11-14 22:00:00');
+        $this->wpdb->nextResults[] = [$signup]; // emailedTicketId
+        $this->wpdb->nextResults[] = [['id' => 12, 'person_id' => 8, 'redeemed_for' => '2026-11-14']];
+
+        $area = $this->ticketMail()->signupTickets($this->person(), 31, '2026-11-14');
+
+        self::assertStringContainsString('You have 2 tickets for this night.', $area['html']);
+        self::assertStringContainsString('>Ticket 1 of 2</p>', $area['html']);
+        self::assertStringContainsString('>Ticket 2 of 2</p>', $area['html']);
+        self::assertStringStartsWith(
+            "You have 2 tickets for this night.\n\nCrew ticket\nTicket 1 of 2\n",
+            $area['text']
+        );
+        self::assertStringContainsString("Free-entry ticket\nTicket 2 of 2\n", $area['text']);
     }
 
     /**
@@ -1059,6 +1093,9 @@ final class TicketMailTest extends TestCase
         self::assertStringContainsString('bar, 22:00', $area['html']);
         self::assertSame(1, substr_count($area['html'], $qr->table($data, $qr->fitCell($data, 150, '', 4))));
         self::assertStringNotContainsString('Open my ticket', $area['html']);
+        // One ticket: no count line, no number.
+        self::assertStringNotContainsString('You have', $area['html'] . $area['text']);
+        self::assertStringNotContainsString('Ticket 1 of', $area['html'] . $area['text']);
         self::assertStringContainsString('token=' . SignedLink::sign('ticket', 31), $area['text']);
         self::assertSame(
             ['html' => '', 'text' => ''],

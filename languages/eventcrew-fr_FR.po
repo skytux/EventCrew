@@ -12455,3 +12455,19 @@ msgstr "Si tu entres avec un billet que quelqu’un t’a donné, ou comme +1 de
 
 msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
 msgstr "Noms et e-mails notés par l’équipe de l’entrée pour les personnes entrées avec un billet transféré ou comme +1. Seules celles qui ont demandé la newsletter reçoivent un e-mail : un lien pour la confirmer."
+
+#: src/Support/TicketTransferService.php
+msgid "Giving tickets away is turned off."
+msgstr "Le don de billets est désactivé."
+
+#: templates/admin/settings.php
+msgid "Giving tickets away"
+msgstr "Donner des billets"
+
+#: templates/admin/settings.php
+msgid "Members can give away their ticket"
+msgstr "Les membres peuvent donner leur billet"
+
+#: templates/admin/settings.php
+msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
+msgstr "Activé, un membre peut donner un billet gratuit obtenu avec des crédits à un autre membre ou à une adresse e-mail, depuis la page du billet ou le bot. Désactivé, les liens et boutons Donner sont masqués et les anciens sont refusés. Les billets déjà donnés restent valables."

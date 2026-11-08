@@ -485,7 +485,9 @@ final class TicketRedemptionService
                 ['inline_keyboard' => array_merge(
                     [[['text' => __('🎟 Show your ticket', 'eventcrew'), 'url' => $url]]],
                     // Giving the ticket away (TransferBot), when that is on.
-                    null === $this->transfers ? [] : [TransferBot::giveRow($redemptionId)]
+                    null === $this->transfers || ! TicketTransferService::isOn()
+                        ? []
+                        : [TransferBot::giveRow($redemptionId)]
                 )]
             );
         }
