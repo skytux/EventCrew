@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.190
+Stable tag: 1.140.191
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.191 =
+* The banner at the top of the crew page is the site logo alone: no picture behind it and no dark box around it.
 
 = 1.140.190 =
 * The crew page opens with the website's banner (its cover picture and logo, linking to the website).
@@ -1909,6 +1912,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.191 =
+No settings change.
 
 = 1.140.190 =
 No settings change.
