@@ -40,8 +40,13 @@ use EventCrew\Support\OrganizerGuide;
  * answers are kept the same way, in a separate record per person and group.
  *
  * In a private chat the model may also set "forward" (feedback, unhappy,
- * very happy, wants a human): ChatForwarder then emails that chat to the
- * organizers, and the answer tells the person so.
+ * very happy, wants a human), but only with the person's consent: the
+ * prompt tells the model to first ask in its answer whether the person
+ * wants this chat sent to the organizers, and to set "forward" only when the
+ * person's next message says yes to that question (the question is in
+ * CONVERSATION as the newest Bot line). ChatForwarder then emails that chat,
+ * the question and the yes included, to the organizers, and the answer
+ * tells the person so.
  *
  * The model is asked after the webhook has answered Telegram (on shutdown,
  * after fastcgi_finish_request() or litespeed_finish_request() where the
@@ -389,8 +394,10 @@ final class AssistantService
     }
 
     /**
-     * When the model marked the message to forward, sends the chat to the
-     * organizers and adds to $reply that it did. $reply unchanged when
+     * When the model marked the message to forward (which the prompt allows
+     * only after the person said yes to the bot asking whether to send this
+     * chat to the organizers), sends the chat to the organizers and adds to
+     * $reply that it did. $reply unchanged when
      * nothing was sent (no forward, switched off, not verified, or already
      * sent this hour).
      */
@@ -686,6 +693,13 @@ final class AssistantService
                     . ' when they ask to talk to a human or an organizer. Otherwise "forward" is null. When'
                     . ' "forward" is not null, "action" is null. Do not say in "reply" that the chat is sent:'
                     . ' the bot adds that itself.';
+                $lines[] = '- The chat is sent only when the person agrees. When one of these four kinds fits and'
+                    . ' you have not asked yet, "forward" stays null and "reply" answers the message and then asks'
+                    . ' whether they want this chat sent to the organizers. Set "forward" to the kind only when your'
+                    . ' previous message (the newest Bot line in CONVERSATION) asked that question and the person\'s'
+                    . ' new message clearly says yes to it. When they say no, do not answer the question, or it is'
+                    . ' unclear, "forward" is null, and you do not ask again in this conversation unless the person'
+                    . ' brings it up again. This is the same for all four kinds, "human" too.';
             }
         } else {
             $lines[] = '- This is the crew\'s group chat. "aimed" is true only when the message is written to the'

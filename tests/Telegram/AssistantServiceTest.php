@@ -1246,6 +1246,79 @@ final class AssistantServiceTest extends TelegramTestCase
         self::assertStringNotContainsString('forward', $this->systemPrompt(1));
     }
 
+    public function testThePromptAsksForConsentBeforeForwarding(): void
+    {
+        $this->reply(true, true, 'Hello!');
+
+        $this->ask(self::privateMessage('hi'));
+
+        $prompt = $this->systemPrompt(0);
+        self::assertStringContainsString('The chat is sent only when the person agrees.', $prompt);
+        self::assertStringContainsString(
+            'asks whether they want this chat sent to the organizers',
+            $prompt
+        );
+        self::assertStringContainsString(
+            'Set "forward" to the kind only when your previous message (the newest Bot line in CONVERSATION)'
+            . ' asked that question and the person\'s new message clearly says yes to it.',
+            $prompt
+        );
+        self::assertStringContainsString('you do not ask again in this conversation', $prompt);
+        self::assertStringContainsString('the same for all four kinds, "human" too.', $prompt);
+    }
+
+    public function testTheChatIsSentOnlyAfterThePersonSaysYesAndTheTranscriptHasTheQuestionAndTheYes(): void
+    {
+        $this->forwardWorld();
+        $question = 'I am sorry to hear that. Do you want me to send this chat to the organizers?';
+        $this->forwardReply($question, null);
+        $this->forwardReply('Thank you, I will.', 'unhappy');
+
+        $this->ask(self::privateMessage('the cleaning last week was badly organised'));
+
+        // Asking is not sending.
+        self::assertSame([], $this->mails);
+        self::assertSame([$question], $this->textsTo(555));
+
+        $this->ask(self::privateMessage('yes please'));
+
+        // The model sees its own question as the newest Bot line before the yes.
+        $history = $this->systemPrompt(1);
+        self::assertStringContainsString('Person: the cleaning last week was badly organised', $history);
+        self::assertStringEndsWith('Bot: ' . $question, $history, 'The question is the last line of CONVERSATION.');
+        $body = json_decode((string) $this->llmCalls[1]['args']['body'], true);
+        self::assertSame('yes please', $body['messages'][1]['content']);
+
+        self::assertSame(['lee@example.com', 'kim@example.com'], array_column($this->mails, 'to'));
+        $texts = $this->textsTo(555);
+        self::assertStringContainsString('I have passed this chat on to the organizers.', $texts[1]);
+
+        $body = $this->mails[0]['body'];
+        $complaint = strpos($body, 'the cleaning last week was badly organised');
+        $asked = strpos($body, 'Do you want me to send this chat to the organizers?');
+        $yes = strpos($body, 'yes please');
+        $answer = strpos($body, 'Thank you, I will.');
+        self::assertNotFalse($complaint);
+        self::assertNotFalse($asked);
+        self::assertNotFalse($yes);
+        self::assertNotFalse($answer);
+        self::assertTrue($complaint < $asked && $asked < $yes && $yes < $answer, 'Question and yes are in order.');
+    }
+
+    public function testWhenThePersonSaysNoNothingIsSent(): void
+    {
+        $this->forwardWorld();
+        $this->forwardReply('Sorry about that. Do you want me to send this chat to the organizers?', null);
+        $this->forwardReply('Okay, I will not send it.', null);
+
+        $this->ask(self::privateMessage('the music was too loud'));
+        $this->ask(self::privateMessage('no thanks'));
+
+        self::assertSame([], $this->mails);
+        self::assertSame([], $this->transientsStartingWith(ChatForwarder::LIMIT_PREFIX));
+        self::assertSame('Okay, I will not send it.', $this->textsTo(555)[1]);
+    }
+
     public function testAnUnhappyPersonsChatIsEmailedToEveryOrganizerAndThePersonIsTold(): void
     {
         $this->forwardWorld();

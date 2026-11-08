@@ -18,11 +18,15 @@ use EventCrew\Support\NotificationPreferences;
 /**
  * Sends a private chat with the bot's language-model helper to the
  * organizers, when the model says the person gives feedback, is unhappy, is
- * very happy or asks for a human (AssistantService, "forward").
+ * very happy or asks for a human (AssistantService, "forward"). The model is
+ * told to set "forward" only after it asked the person whether to send this
+ * chat to the organizers and the person said yes; this class does not check
+ * that consent itself.
  *
  * Every organizer gets the chat of the last 24 hours (ConversationLog), plus
  * the bot's answer to the newest message, by email to their confirmed
- * address, and a short Telegram message saying so.
+ * address, and a short Telegram message saying so. The bot's question and
+ * the person's yes are in that chat.
  *
  * Each organizer chooses in their notification settings (CHAT_FORWARD row)
  * whether the email and the Telegram message come; the Telegram message
