@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.186
+Stable tag: 1.140.187
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.187 =
+* The plugin author is skytux. Example names, addresses and places in the code, tests and docs are made-up examples.
+* The sign-up confirmation and reminder emails show the event picture and the DJ text under the Show your ticket button.
+* The door desk can note an optional name and email for a given-away ticket or a +1 guest; organizers see them on the Roster page, and the emails are cleared 60 days after the event. An unticked box lets them ask for the newsletter; they confirm it by email.
 
 = 1.140.186 =
 * Announcement: one opening paragraph that builds on the first event's DJ text (it waits up to 3 hours for that text), a picture alt text with DJ, event, date, time and place, only Doors close under the picture, and the crew part with its buttons before the sign-off.
@@ -1889,6 +1894,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.187 =
+No settings change.
 
 = 1.140.186 =
 No settings change.
