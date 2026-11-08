@@ -1149,16 +1149,16 @@ final class MessageTemplates
             'import_guests' => $greet + ['buttons' => [__('Open the Roster page', 'eventcrew')]],
             'import_tickets_dm' => ['buttons' => ['🗑 ' . __('Reset the list', 'eventcrew'), __('Open the Roster page', 'eventcrew'), __('Door list', 'eventcrew')]],
             'import_guests_dm' => ['buttons' => [__('Open the Roster page', 'eventcrew')]],
-            // What WelcomeSender draws: at most three buttons (wp-admin on top
-            // for organizers), then the links (Owner 2026-11-07).
+            // What WelcomeSender draws: the buttons, then the small links
+            // (Owner 2026-11-08).
             'welcome_email' => [
                 'tidy' => true,
                 'buttons' => static fn (): array => [
                     '📋 ' . __('See open tasks', 'eventcrew'),
-                    WelcomeSender::groupLabel(),
-                    '📖 ' . __('Help', 'eventcrew'),
-                    __('See open tasks', 'eventcrew'),
-                    RoleGuide::label(),
+                    ['label' => __('Open in Telegram', 'eventcrew'), 'style' => EmailBody::STYLE_LINK],
+                    ['label' => WelcomeSender::groupLabel(), 'style' => EmailBody::STYLE_LINK],
+                    ['label' => '📖 ' . __('Help', 'eventcrew'), 'style' => EmailBody::STYLE_LINK],
+                    ['label' => RoleGuide::label(), 'style' => EmailBody::STYLE_LINK],
                 ],
                 'context' => $welcomeOpenTasks,
             ],
@@ -1177,11 +1177,11 @@ final class MessageTemplates
             'welcome_org_email' => [
                 'buttons' => static fn (): array => [
                     DoorLinkSender::adminButtonLabel(),
-                    '📖 ' . __('Help', 'eventcrew'),
-                    WelcomeSender::groupLabel(),
                     '🧰 ' . __('Open EventCrew in wp-admin', 'eventcrew'),
-                    '👥 ' . __('People', 'eventcrew'),
-                    '💳 ' . __('Sales desk', 'eventcrew'),
+                    ['label' => '📖 ' . __('Help', 'eventcrew'), 'style' => EmailBody::STYLE_LINK],
+                    ['label' => WelcomeSender::groupLabel(), 'style' => EmailBody::STYLE_LINK],
+                    ['label' => '👥 ' . __('People', 'eventcrew'), 'style' => EmailBody::STYLE_TELEGRAM],
+                    ['label' => '💳 ' . __('Sales desk', 'eventcrew'), 'style' => EmailBody::STYLE_TELEGRAM],
                 ],
                 'context' => static fn (): array => ['guide' => OrganizerGuide::full(false)],
             ],

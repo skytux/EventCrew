@@ -4499,6 +4499,9 @@ msgstr "Сначала открой личный чат с ботом и наж�
 msgid "Open in Telegram:"
 msgstr "Открыть в Telegram:"
 
+msgid "Open in Telegram"
+msgstr "Открыть в Telegram"
+
 #: src/Support/TicketMail.php:1466
 msgid "Open my ticket"
 msgstr "Открыть мой билет"

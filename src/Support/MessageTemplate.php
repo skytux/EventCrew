@@ -48,8 +48,9 @@ use Closure;
  *   - dm_format: true when the sender passes the DM text through
  *     EmailBody::forDm().
  *   - buttons: the labels of the email's buttons or the DM's buttons, in
- *     order, or a closure that makes them from the sample context. In a
- *     preview they lead nowhere.
+ *     order, or a closure that makes them from the sample context. An email
+ *     entry may be ['label' => ..., 'style' => EmailBody::STYLE_LINK or
+ *     STYLE_TELEGRAM] for a small link. In a preview they lead nowhere.
  *   - context: a closure giving the sample values this kind needs on top of
  *     the shared sample context (MessagePreview::sampleContext()).
  * - actions: what the message offers to do (MessageAction), declared once
@@ -83,7 +84,7 @@ final class MessageTemplate
      * @param Closure(array<string, mixed>): string $body
      * @param array{
      *     send?: string, greeting?: bool, frame?: string, dm_format?: bool,
-     *     buttons?: list<string>|Closure(array<string, mixed>): list<string>,
+     *     buttons?: list<string|array{label: string, style: string}>|Closure(array<string, mixed>): list<string|array{label: string, style: string}>,
      *     context?: Closure(): array<string, mixed>
      * } $preview
      * @param (Closure(array<string, mixed>, Mailer): list<MessageAction>)|null $actions

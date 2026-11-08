@@ -882,11 +882,12 @@ final class NewsletterLayout
     }
 
     /**
-     * A card's text about its DJ or host (about_en, about_fi, …) for
-     * bilingual() and bilingualText(): in an email in several languages each
+     * A card's text about its DJ or host (about_en, about_fi, …,
+     * FollowupMail::withAbout()) for bilingual() and bilingualText(), like
+     * its other texts (inLanguage()): in an email in several languages each
      * of $langs that has one, with its label; in a one-language email that
-     * language's text alone, with no label, and never another language's
-     * instead (the text is written in English only, EventDescription).
+     * language's text with no label, or, while its translation is missing,
+     * the first other site language's text.
      *
      * @param array<string, mixed> $card
      * @param list<string> $langs
@@ -894,19 +895,7 @@ final class NewsletterLayout
      */
     private static function about(array $card, array $langs): array
     {
-        $texts = self::byLanguage($card, 'about_');
-
-        if (1 === count($langs)) {
-            return ['' => $texts[$langs[0]] ?? ''];
-        }
-
-        $labelled = [];
-
-        foreach ($langs as $language) {
-            $labelled[HybridPolicy::tag($language)] = $texts[$language] ?? '';
-        }
-
-        return $labelled;
+        return self::inLanguage(self::byLanguage($card, 'about_'), $langs);
     }
 
     /**

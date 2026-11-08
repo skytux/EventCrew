@@ -138,8 +138,8 @@ Tekoälypalvelua ei ole nyt asetettu, joten sille ei lähetetä mitään.
 - 🔹 Diagnostiikka: tietokannan, botin, ajastettujen lähetysten, ilmoittautumissivun ja sähköpostin tarkistus.
 
 🛠️ Avaa Ylläpito-välilehti: https://site.test/crew/#eventcrew-panel-admin
-📖 Ohje: https://site.test/crew/#eventcrew-help-organizer
 🧰 Avaa EventCrew wp-adminissa: https://site.test/wp-admin/admin.php?page=eventcrew
+📖 Ohje: https://site.test/crew/#eventcrew-help-organizer
 
 —
 Hallitse tiliäsi tai lopeta nämä sähköpostit: https://site.test/crew/?eventcrew_login=TOKEN

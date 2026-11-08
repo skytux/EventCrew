@@ -218,10 +218,14 @@ final class MessagePreview
         $buttons = $preview['buttons'] ?? [];
         $buttons = array_values($buttons instanceof \Closure ? $buttons($context) : $buttons);
         $mailer = new Mailer($this->logger, new EmailTemplate($this->logger, true), true);
+        // An entry is a label (a button) or an action with its style (a
+        // small link, EmailBody::STYLE_LINK or STYLE_TELEGRAM).
         $emailActions = array_map(
-            static fn (string $label): array => ['label' => $label, 'url' => Mailer::PREVIEW_LINK],
+            static fn (string|array $button): array => ['url' => Mailer::PREVIEW_LINK]
+                + (is_array($button) ? $button : ['label' => $button]),
             $buttons
         );
+        $buttons = array_column($emailActions, 'label');
 
         if ($template->hasActions()) {
             // The same actions the sender draws: the DM's keyboard, or the

@@ -138,8 +138,8 @@ No AI service is set up at the moment, so nothing is sent to one.
 - 🔹 Diagnostics: a check of the database, bot, scheduled sends, sign-up page and mail.
 
 🛠️ Open the Admin tab: https://site.test/crew/#eventcrew-panel-admin
-📖 Help: https://site.test/crew/#eventcrew-help-organizer
 🧰 Open EventCrew in wp-admin: https://site.test/wp-admin/admin.php?page=eventcrew
+📖 Help: https://site.test/crew/#eventcrew-help-organizer
 
 —
 Manage your account or stop these emails: https://site.test/crew/?eventcrew_login=TOKEN

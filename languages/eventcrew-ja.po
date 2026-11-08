@@ -4455,6 +4455,9 @@ msgstr "まずボットとの個人チャットを開いて「開始」をタッ
 msgid "Open in Telegram:"
 msgstr "Telegram で開く:"
 
+msgid "Open in Telegram"
+msgstr "Telegram で開く"
+
 #: src/Support/TicketMail.php:1466
 msgid "Open my ticket"
 msgstr "チケットを開く"

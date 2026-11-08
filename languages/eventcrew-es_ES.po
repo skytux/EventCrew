@@ -4495,6 +4495,9 @@ msgstr "Abre un chat privado con el bot y pulsa Iniciar primero; luego vuelve a 
 msgid "Open in Telegram:"
 msgstr "Abrir en Telegram:"
 
+msgid "Open in Telegram"
+msgstr "Abrir en Telegram"
+
 #: src/Support/TicketMail.php:1466
 msgid "Open my ticket"
 msgstr "Abrir mi entrada"

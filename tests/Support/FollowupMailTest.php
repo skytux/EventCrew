@@ -1538,6 +1538,66 @@ final class FollowupMailTest extends TestCase
         self::assertStringNotContainsString('<div style="margin:0 0 14px"></div>', $mail['html']);
     }
 
+    /**
+     * The DJ text is under the picture in every language of the email: in a
+     * two-language email the Finnish translation with FI and the English
+     * text with EN; in a Finnish-only email the Finnish text with no tag,
+     * and the English text while the Finnish translation is missing.
+     */
+    public function testTheDjTextIsInEveryLanguageOfTheEmail(): void
+    {
+        $this->describedNight('Free dance in the hall.');
+        $this->sampleEvents();
+        $english = 'DJ Kai plays warm organic beats.';
+        $finnish = 'DJ Kai soittaa lämpimiä orgaanisia biittejä.';
+        $this->options[BoardDjText::OPTION] = [1 => [
+            'hash' => md5(BoardDjText::source(1)),
+            'text' => $english,
+            'texts' => ['fi' => $finnish],
+            'text_hash' => md5($english),
+        ]];
+
+        $both = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
+        self::assertStringContainsString("FI: {$finnish}
+EN: {$english}", $both);
+
+        $this->options[\EventCrew\Support\HybridPolicy::OPTION] = [\EventCrew\Support\HybridPolicy::FOLLOWUP => false];
+        $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1);
+        self::assertStringContainsString("\nEcstatic Dance 1\n{$finnish}\n", $mail['text']);
+        self::assertStringNotContainsString($english, $mail['text']);
+        self::assertSame(1, substr_count($mail['html'], $finnish));
+
+        unset($this->options[BoardDjText::OPTION][1]['texts']['fi']);
+        $fallback = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1)['text'];
+        self::assertStringContainsString("\nEcstatic Dance 1\n{$english}\n", $fallback);
+    }
+
+    /**
+     * A coming event without a DJ text is queued for the background run
+     * (BoardDjText::schedule()) from the day before the night and while the
+     * email is put together; the model is never asked then.
+     */
+    public function testAMissingDjTextIsAskedForInTheBackground(): void
+    {
+        $this->cardNight();
+        $this->model([]);
+        $this->options[SiteLanguages::OPTION] = ['fi', 'en'];
+
+        // The day before the night, before the preview.
+        $this->followup()->run($this->at('2026-11-13 08:00'));
+        self::assertSame([BoardDjText::HOOK], $this->scheduled);
+        self::assertSame([1], $this->options[BoardDjText::QUEUE_OPTION]);
+        self::assertSame([], $this->mails);
+
+        $this->scheduled = [];
+        unset($this->options[BoardDjText::QUEUE_OPTION]);
+        $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1);
+        self::assertSame([BoardDjText::HOOK], $this->scheduled);
+        self::assertSame([1], $this->options[BoardDjText::QUEUE_OPTION]);
+
+        self::assertSame([], $this->requests, 'nothing is written while the email is put together');
+    }
+
     /** The one-time text goes out with the next night's emails, and is removed once they are all sent. */
     public function testTheOneTimeTextIsUsedForTheNextSendOnly(): void
     {

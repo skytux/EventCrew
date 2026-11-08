@@ -15,24 +15,36 @@ use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\TranslatedText;
 
 /**
- * The short text about the DJ or host under the next event's picture on the
- * group board (BoardService::CARDS_OPTION): 2 sentences in English, written
- * by the language model (LlmClient) from the event's DJs (EventMesh's
- * NewsletterWriter::DJ_FILTER, with their descriptions) and the event's
- * description.
+ * The short text about the DJ or host of an event: under the next event's
+ * picture on the group board (BoardService::CARDS_OPTION), under the coming
+ * event's picture in the post-event email (FollowupMail::withAbout()) and in
+ * the messages' {event_description} (EventDescription): 2 sentences in
+ * English, written by the language model (LlmClient) from the event's DJs
+ * (EventMesh's NewsletterWriter::DJ_FILTER, with their descriptions) and the
+ * event's description.
  *
- * The model is never asked while the board is built or a Telegram update is
- * answered. When the board finds no text for its card, it calls schedule(),
- * which asks WP-Cron for one single run of HOOK; run() then writes the text
- * for the board's next event in the background and refreshes the board, so
- * the caption gets the text. Until then the caption has only the name, date
- * and price lines.
+ * The model is never asked while the board is built, a mail is put together
+ * or a Telegram update is answered. Whoever finds no text (or a missing
+ * translation) for an event calls schedule($postId): the board for its next
+ * event, the post-event email for the coming event it shows, every hour from
+ * the day before the night (FollowupMail::runLocked()) and whenever it is
+ * composed. schedule() puts the event id in QUEUE_OPTION (at most KEEP
+ * ids) and asks WP-Cron for one single run of HOOK. run() then, in the
+ * background, goes
+ * through the board's next event (while the board's cards are on) and the
+ * queued events, and for each one that is due writes its text, or else
+ * translates it; at most PER_RUN events per run, and another run is asked
+ * for when more are due. A newly written text for the board's next event
+ * refreshes the board, so the caption gets the text. Until then the caption
+ * has only the name, date and price lines. An event leaves the queue once it
+ * has its text in every site language, or has nothing to write from.
  *
  * Texts are kept in OPTION by event id, with a hash of what the model was
  * given (source()). A text whose source changed since (other DJs, a new
  * description) is not shown and is written again. A failed request stores no
- * text; TRIED_OPTION only keeps the same source from being asked again
- * within RETRY_AFTER.
+ * text; TRIED_OPTION (per event id) only keeps the same source from being
+ * asked again within RETRY_AFTER, so a failing event never holds up the
+ * others.
  *
  * Languages. Right after the English text is written, in the same
  * background run, it is translated into every other site language with the
@@ -52,8 +64,14 @@ final class BoardDjText
     /** The texts: [event id => ['hash' => md5 of source(), 'text' => the text]]. */
     public const OPTION = 'eventcrew_board_dj_texts';
 
-    /** The last source asked for: ['key' => "<event id>:<hash>", 'at' => time]. */
+    /** The last source asked for, per event: [event id => ['hash' => md5 of source(), 'at' => time]]. */
     public const TRIED_OPTION = 'eventcrew_board_dj_text_tried';
+
+    /** The events a text or translation was asked for: a list of event ids, at most KEEP. */
+    public const QUEUE_OPTION = 'eventcrew_board_dj_text_queue';
+
+    /** How many events one run asks the model about. */
+    public const PER_RUN = 3;
 
     /** How many events' texts are kept. */
     public const KEEP = 10;
@@ -171,39 +189,28 @@ final class BoardDjText
     }
 
     /**
-     * Asks WP-Cron for one run that writes the text for $postId, or its
-     * missing translations, unless the model is not set up, there is nothing
-     * to write from or to translate, the same source (or translation)
-     * failed less than RETRY_AFTER ago, or a run is already waiting.
+     * Queues $postId and asks WP-Cron for one run that writes its text, or
+     * its missing translations, unless the model is not set up, there is
+     * nothing to write from or to translate, or the same source (or
+     * translation) failed less than RETRY_AFTER ago. One waiting run serves
+     * every queued event. Never asks the model itself.
      */
     public static function schedule(int $postId): void
     {
-        if (! AssistantSettings::isConfigured() || ! function_exists('wp_schedule_single_event')) {
-            return;
-        }
-
-        if ('' !== self::stored($postId)) {
-            if (self::translationDue($postId) && false === wp_next_scheduled(self::HOOK)) {
-                wp_schedule_single_event(time(), self::HOOK);
-            }
-
-            return;
-        }
-
-        $source = self::source($postId);
-
-        if ('' === $source) {
-            return;
-        }
-
-        $tried = get_option(self::TRIED_OPTION, []);
-
         if (
-            is_array($tried)
-            && ($tried['key'] ?? '') === $postId . ':' . md5($source)
-            && time() - (int) ($tried['at'] ?? 0) < self::RETRY_AFTER
+            $postId <= 0
+            || ! AssistantSettings::isConfigured()
+            || ! function_exists('wp_schedule_single_event')
+            || ! self::due($postId)
         ) {
             return;
+        }
+
+        $queue = self::queue();
+
+        if (! in_array($postId, $queue, true)) {
+            $queue[] = $postId;
+            update_option(self::QUEUE_OPTION, array_slice($queue, -self::KEEP), false);
         }
 
         if (false === wp_next_scheduled(self::HOOK)) {
@@ -212,34 +219,112 @@ final class BoardDjText
     }
 
     /**
-     * The WP-Cron run: writes the text for the board's next event when it is
-     * missing, then refreshes the board so the caption shows it. Does nothing
+     * The WP-Cron run: for the board's next event (while the board's cards
+     * are on) and each queued event (schedule()), writes the text when it is
+     * missing, else the translations when they are due; at most PER_RUN
+     * events, then another run is asked for. A new text for the board's next
+     * event refreshes the board so the caption shows it. Does nothing
      * outside a background run (WP-Cron or WP-CLI).
      */
     public function run(): void
     {
-        if (! self::inBackground() || ! BoardService::cardsOn()) {
+        if (! self::inBackground()) {
             return;
         }
 
-        $postId = $this->board->nextCardEvent();
+        $next = BoardService::cardsOn() ? $this->board->nextCardEvent() : null;
+        $queue = self::queue();
+        $asked = 0;
+        $more = false;
 
-        if (null === $postId) {
-            return;
-        }
-
-        if ('' !== self::stored($postId)) {
-            // The English text is there; only its translations may be missing.
-            if (self::translationDue($postId)) {
-                $this->translate($postId);
+        foreach (array_unique(array_merge(null === $next ? [] : [$next], $queue)) as $postId) {
+            if (! self::due($postId)) {
+                continue;
             }
 
-            return;
+            if ($asked >= self::PER_RUN) {
+                $more = true;
+                break;
+            }
+
+            $asked++;
+
+            if ('' !== self::stored($postId)) {
+                // The English text is there; only its translations are missing.
+                $this->translate($postId);
+            } elseif ($this->write($postId) && $postId === $next) {
+                $this->board->refresh();
+            }
         }
 
-        if ($this->write($postId)) {
-            $this->board->refresh();
+        $left = array_values(array_filter($queue, [self::class, 'pending']));
+
+        if ($left !== $queue) {
+            update_option(self::QUEUE_OPTION, $left, false);
         }
+
+        if ($more && false === wp_next_scheduled(self::HOOK)) {
+            wp_schedule_single_event(time(), self::HOOK);
+        }
+    }
+
+    /**
+     * Whether a run should ask the model about $postId now: its text is
+     * missing, there is something to write from and the same source was not
+     * tried within RETRY_AFTER; or its text is there and a translation is due.
+     */
+    private static function due(int $postId): bool
+    {
+        if ('' !== self::stored($postId)) {
+            return self::translationDue($postId);
+        }
+
+        $source = self::source($postId);
+
+        if ('' === $source) {
+            return false;
+        }
+
+        $tried = self::tried()[$postId] ?? null;
+
+        return ! (
+            is_array($tried)
+            && ($tried['hash'] ?? '') === md5($source)
+            && time() - (int) ($tried['at'] ?? 0) < self::RETRY_AFTER
+        );
+    }
+
+    /**
+     * Whether queued $postId still waits for something: it has something to
+     * write from, and its text or a translation of it is missing.
+     */
+    private static function pending(int $postId): bool
+    {
+        if ('' !== self::stored($postId)) {
+            return [] !== self::untranslated($postId);
+        }
+
+        return '' !== self::source($postId);
+    }
+
+    /** @return list<int> The queued event ids (QUEUE_OPTION). */
+    private static function queue(): array
+    {
+        $queue = get_option(self::QUEUE_OPTION, []);
+
+        if (! is_array($queue)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('intval', $queue), static fn (int $id): bool => $id > 0));
+    }
+
+    /** @return array<int, mixed> TRIED_OPTION by event id; an entry of the old one-key form is dropped. */
+    private static function tried(): array
+    {
+        $tried = get_option(self::TRIED_OPTION, []);
+
+        return is_array($tried) ? array_filter($tried, 'is_int', ARRAY_FILTER_USE_KEY) : [];
     }
 
     /**
@@ -340,7 +425,10 @@ final class BoardDjText
         }
 
         $hash = md5($source);
-        update_option(self::TRIED_OPTION, ['key' => $postId . ':' . $hash, 'at' => time()], false);
+        $tried = self::tried();
+        unset($tried[$postId]);
+        $tried[$postId] = ['hash' => $hash, 'at' => time()];
+        update_option(self::TRIED_OPTION, array_slice($tried, -self::KEEP, null, true), false);
 
         try {
             $answer = $this->llm->chat(

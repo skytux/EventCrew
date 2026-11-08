@@ -4455,6 +4455,9 @@ msgstr "请先与机器人开启私聊并点“开始”，然后再点一次任
 msgid "Open in Telegram:"
 msgstr "在 Telegram 中打开："
 
+msgid "Open in Telegram"
+msgstr "在 Telegram 中打开"
+
 #: src/Support/TicketMail.php:1466
 msgid "Open my ticket"
 msgstr "打开我的票"

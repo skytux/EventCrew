@@ -532,11 +532,11 @@ final class WelcomeSenderTest extends SalesDeskTestCase
     }
 
     /**
-     * At most three buttons, then links that do not repeat a button (Owner
-     * 2026-11-07). A member gets See open tasks, the group and Help; the bot's
-     * board is an "Open in Telegram" link and the guide a plain link.
+     * One button and a line of small links that do not repeat it (Owner
+     * 2026-11-08): See open tasks on the web board, then Open in Telegram
+     * (the bot's board) · the group · Help · the guide.
      */
-    public function testTheMemberEmailHasThreeButtonsAndLinksThatDoNotRepeatThem(): void
+    public function testTheMemberEmailHasOneButtonAndALineOfLinks(): void
     {
         $this->options['eventcrew_email_html'] = '1';
         $this->options[\EventCrew\Telegram\BoardService::USERNAME_OPTION] = 'crewbot';
@@ -548,11 +548,17 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         $body = $this->mails[0]['body'];
         $buttons = self::buttonUrls($body);
 
-        self::assertSame(
-            ['https://site.test/crew/#eventcrew-panel-board', 'https://t.me/+crew', 'https://site.test/crew/#eventcrew-panel-help'],
-            $buttons
+        self::assertSame(['https://site.test/crew/#eventcrew-panel-board'], $buttons);
+        self::assertSame(1, preg_match_all('~See open tasks</a>~', $body));
+        self::assertStringNotContainsString('Open in Telegram:', $body);
+
+        // The links share one line, in this order.
+        self::assertMatchesRegularExpression(
+            '~<p[^>]*><a href="https://t\.me/crewbot\?start=board-20260720"[^>]*>Open in Telegram</a> · '
+                . '<a href="https://t\.me/\+crew"[^>]*>💬 Telegram group</a> · '
+                . '<a href="https://site\.test/crew/#eventcrew-panel-help"[^>]*>📖 Help</a>~u',
+            $body
         );
-        self::assertStringContainsString('https://t.me/crewbot?start=board-20260720', $body);
 
         preg_match_all('~<a href="([^"]+)"~', $body, $all);
         $links = array_diff($all[1], $buttons);
@@ -560,7 +566,11 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         self::assertSame([], array_intersect($links, $buttons));
     }
 
-    /** An organizer's member welcome email has the same three buttons; wp-admin is in the organizer email. */
+    /**
+     * An organizer's member welcome email has the same one button; the
+     * organizer email has the Admin tab and wp-admin as buttons, Help and the
+     * group as small links (Owner 2026-11-08).
+     */
     public function testAnOrganizersMemberWelcomeEmailHasNoWpAdminButton(): void
     {
         $this->options['eventcrew_email_html'] = '1';
@@ -569,20 +579,18 @@ final class WelcomeSenderTest extends SalesDeskTestCase
 
         $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(1, true)));
 
-        self::assertCount(3, self::buttonUrls($this->mails[0]['body']));
-        self::assertNotContains(
-            'https://site.test/wp-admin/admin.php?page=eventcrew',
-            self::buttonUrls($this->mails[0]['body'])
-        );
-        // The organizer guide: the Admin tab, Help, the group, then wp-admin.
+        self::assertSame(['https://site.test/crew/#eventcrew-panel-board'], self::buttonUrls($this->mails[0]['body']));
         self::assertSame(
             [
                 'https://site.test/crew/#eventcrew-panel-admin',
-                'https://site.test/crew/#eventcrew-help-organizer',
-                'https://t.me/+crew',
                 'https://site.test/wp-admin/admin.php?page=eventcrew',
             ],
             self::buttonUrls($this->mails[1]['body'])
+        );
+        self::assertMatchesRegularExpression(
+            '~<a href="https://site\.test/crew/#eventcrew-help-organizer"[^>]*>📖 Help</a> · '
+                . '<a href="https://t\.me/\+crew"[^>]*>💬 Telegram group</a>~u',
+            $this->mails[1]['body']
         );
         self::assertStringNotContainsString('Open EventCrew in wp-admin:', $this->mails[1]['body']);
     }

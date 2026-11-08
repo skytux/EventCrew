@@ -228,17 +228,15 @@ final class WelcomeSender
     }
 
     /**
-     * Same channel (Owner 2026-11-07): web buttons, then the bot's board as an
-     * "Open in Telegram" link. At most three buttons and three links, and no link repeats a button.
+     * Same channel (Owner 2026-11-07): one button, See open tasks on the web
+     * board, then one line of small links (Owner 2026-11-08): Open in Telegram
+     * (the bot's board), the group, Help and the role guide. No link repeats
+     * the button.
      */
     private function sendEmail(Person $person): bool
     {
         $board = $this->webBoardAction();
-        $buttons = array_values(array_filter([
-            $board,
-            self::groupAction(),
-            self::helpAction(HelpPage::PANEL_ANCHOR),
-        ]));
+        $buttons = array_values(array_filter([$board]));
 
         // No wp-admin here: organizers get it in their own welcome email
         // (Owner 2026-11-07).
@@ -246,14 +244,22 @@ final class WelcomeSender
         $bot = $this->botBoardUrl();
 
         if ('' !== $bot) {
-            $links[] = ['label' => __('See open tasks', 'eventcrew'), 'url' => $bot, 'style' => EmailBody::STYLE_TELEGRAM];
+            $links[] = ['label' => __('Open in Telegram', 'eventcrew'), 'url' => $bot];
         }
 
+        $links[] = self::groupAction();
+        $links[] = self::helpAction(HelpPage::PANEL_ANCHOR);
+        $links = array_values(array_filter($links));
         $guide = Roles::guideUrl();
 
-        if ('' !== $guide && ! in_array($guide, array_column($buttons, 'url'), true)) {
-            $links[] = ['label' => RoleGuide::label(), 'url' => $guide, 'style' => EmailBody::STYLE_LINK];
+        if ('' !== $guide && ! in_array($guide, array_column([...$buttons, ...$links], 'url'), true)) {
+            $links[] = ['label' => RoleGuide::label(), 'url' => $guide];
         }
+
+        $links = array_map(
+            static fn (array $link): array => $link + ['style' => EmailBody::STYLE_LINK],
+            $links
+        );
 
         // The texts are the Messages page templates (MessageTemplates).
         $context = [
@@ -391,17 +397,20 @@ final class WelcomeSender
 
     /**
      * The organizer guide by email, with the same rules as the welcome (Owner
-     * 2026-11-07, Q368): Admin tab, Help and the group, plus wp-admin, as
-     * buttons; People and Sales desk as "Open in Telegram" links.
+     * 2026-11-07, Q368): the Admin tab and wp-admin as buttons, Help and the
+     * group as small links (Owner 2026-11-08); People and Sales desk as "Open
+     * in Telegram" links.
      */
     private function sendOrganizerEmail(Person $person): bool
     {
-        $actions = array_values(array_filter([
-            self::adminTabAction(),
-            self::helpAction(HelpPage::ORGANIZER_ANCHOR),
-            self::groupAction(),
-        ]));
+        $actions = array_values(array_filter([self::adminTabAction()]));
         $actions[] = self::wpAdminAction();
+
+        foreach ([self::helpAction(HelpPage::ORGANIZER_ANCHOR), self::groupAction()] as $link) {
+            if (null !== $link) {
+                $actions[] = $link + ['style' => EmailBody::STYLE_LINK];
+            }
+        }
 
         foreach (self::organizerBotLinks() as $verb => $label) {
             $url = MessageActions::startUrl($verb);

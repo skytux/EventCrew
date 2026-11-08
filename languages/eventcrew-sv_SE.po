@@ -4678,6 +4678,9 @@ msgstr ""
 msgid "Open in Telegram:"
 msgstr "Öppna i Telegram:"
 
+msgid "Open in Telegram"
+msgstr "Öppna i Telegram"
+
 #: src/Support/TicketMail.php:1459
 msgid "Open my ticket"
 msgstr "Öppna min biljett"

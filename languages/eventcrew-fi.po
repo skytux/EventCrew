@@ -8050,6 +8050,9 @@ msgstr "Mallitapahtuma"
 msgid "Open in Telegram:"
 msgstr "Avaa Telegramissa:"
 
+msgid "Open in Telegram"
+msgstr "Avaa Telegramissa"
+
 #. translators: %s: an action, such as "Show your ticket". The line is followed by a t.me link.
 msgid "%s in Telegram"
 msgstr "%s Telegramissa"

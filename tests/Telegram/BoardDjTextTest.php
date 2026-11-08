@@ -389,4 +389,101 @@ final class BoardDjTextTest extends TelegramTestCase
         self::assertSame([BoardDjText::HOOK], $this->scheduled);
         self::assertSame(['sendMessage'], $this->calledMethods());
     }
+
+    /** A later event (not the board's next) with a DJ, so it has something to write from. */
+    private function laterParty(int $id, string $date): void
+    {
+        $this->event($id, $date, 'Party ' . $id, ['_eventmesh_image_url' => self::IMAGE]);
+        $this->djs[$id] = [['name' => 'DJ Ben ' . $id, 'description' => 'Ben plays lindy hop.']];
+    }
+
+    /**
+     * schedule() queues an event that is not the board's next one (the
+     * post-event email's coming event), once, and asks for one run.
+     */
+    public function testScheduleQueuesAnEventThatIsNotTheBoardsNext(): void
+    {
+        $this->laterParty(200, '2026-08-15');
+
+        BoardDjText::schedule(200);
+        BoardDjText::schedule(200);
+
+        self::assertSame([200], $this->options[BoardDjText::QUEUE_OPTION]);
+        self::assertSame([BoardDjText::HOOK, BoardDjText::HOOK], $this->scheduled);
+        self::assertSame([], $this->requests, 'scheduling never asks the model');
+    }
+
+    /**
+     * The run writes a queued event's text and its translation, also with
+     * the board's cards off, and the event leaves the queue; the board is
+     * not touched for it.
+     */
+    public function testTheRunWritesAQueuedEventsText(): void
+    {
+        $this->laterParty(200, '2026-08-15');
+        $this->options[BoardService::CARDS_OPTION] = false;
+        BoardDjText::schedule(200);
+        $this->answers[] = self::answer('DJ Ben plays lindy hop. Expect fast feet.');
+        $this->answers[] = self::translation('DJ Ben soittaa lindy hopia. Luvassa nopeita jalkoja.');
+
+        $this->writer()->run();
+
+        self::assertCount(2, $this->requests);
+        self::assertStringContainsString('- DJ Ben 200: Ben plays lindy hop.', $this->requests[0]['messages'][1]['content']);
+        self::assertSame('DJ Ben plays lindy hop. Expect fast feet.', BoardDjText::stored(200));
+        self::assertSame('DJ Ben soittaa lindy hopia. Luvassa nopeita jalkoja.', BoardDjText::stored(200, 'fi'));
+        self::assertSame([], $this->options[BoardDjText::QUEUE_OPTION]);
+        self::assertSame([], $this->telegramCalls);
+    }
+
+    /**
+     * A queued event whose request fails is tried again only after
+     * RETRY_AFTER and stays queued; it holds up neither the board's next
+     * event nor the other queued events. At most PER_RUN events are asked
+     * about per run; another run is asked for the rest.
+     */
+    public function testAFailingQueuedEventHoldsUpNoOtherAndARunHasALimit(): void
+    {
+        $this->party();
+        $this->laterParty(200, '2026-08-15');
+        $this->laterParty(300, '2026-08-22');
+        $this->laterParty(400, '2026-08-29');
+        $this->options[BoardDjText::QUEUE_OPTION] = [200, 300, 400];
+        $this->answers = [
+            self::answer('DJ Anna plays swing and blues. She is based in Helsinki.'),
+            self::translation('DJ Anna soittaa swingiä ja bluesia. Hän asuu Helsingissä.'),
+            500,
+            self::answer('DJ Ben plays lindy hop. Expect fast feet.'),
+            self::translation('DJ Ben soittaa lindy hopia. Luvassa nopeita jalkoja.'),
+        ];
+        $this->queueTasks(1); // the run: which event is next
+        $this->queueTasks(1); // the refresh: the text board
+        $this->wpdb->nextResults[] = []; // and who is signed up
+
+        $this->writer()->run();
+
+        self::assertCount(5, $this->requests, 'the next event, 200 (failed), 300; 400 waits');
+        self::assertNotSame('', BoardDjText::stored(100));
+        self::assertSame('', BoardDjText::stored(200));
+        self::assertSame('DJ Ben plays lindy hop. Expect fast feet.', BoardDjText::stored(300));
+        self::assertSame('', BoardDjText::stored(400));
+        self::assertSame([200, 400], $this->options[BoardDjText::QUEUE_OPTION]);
+        self::assertSame([BoardDjText::HOOK], $this->scheduled, 'another run for 400');
+        self::assertSame([100, 200, 300], array_keys($this->options[BoardDjText::TRIED_OPTION]));
+
+        // The next run: 400 only; 200 waits for RETRY_AFTER.
+        $this->options[BoardService::CARDS_OPTION] = false;
+        $this->answers = [self::answer('DJ Ben plays lindy hop. Bring water.'), self::translation('DJ Ben soittaa.')];
+        $this->writer()->run();
+        self::assertCount(7, $this->requests);
+        self::assertSame('DJ Ben plays lindy hop. Bring water.', BoardDjText::stored(400));
+        self::assertSame([200], $this->options[BoardDjText::QUEUE_OPTION]);
+
+        // An hour later 200 is asked again.
+        $this->options[BoardDjText::TRIED_OPTION][200]['at'] = time() - 3601;
+        $this->answers = [self::answer('DJ Ben plays lindy hop. At last.'), self::translation('DJ Ben soittaa vihdoin.')];
+        $this->writer()->run();
+        self::assertSame('DJ Ben plays lindy hop. At last.', BoardDjText::stored(200));
+        self::assertSame([], $this->options[BoardDjText::QUEUE_OPTION]);
+    }
 }

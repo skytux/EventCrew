@@ -8,6 +8,7 @@ use EventCrew\Repositories\FollowupRepository;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Telegram\BoardDjText;
 use EventCrew\Web\NewsletterController;
 
 /**
@@ -32,7 +33,10 @@ use EventCrew\Web\NewsletterController;
  * Under the text are the coming events the way the next events announcement
  * shows them (Newsletter::content()): its heading, the next one as a card
  * with its picture and the rest as short lines with small pictures under
- * "Later". The card never shows the event's description. It shows a short
+ * "Later". The card never shows the event's description. Right under its
+ * picture is the event's short DJ or host text in the email's languages
+ * (BoardDjText, withAbout()), written and translated in the background from
+ * the day before the night (scheduleTexts()). It also shows a short
  * text the language model wrote for this email only (two sentences in the
  * style of the event's DJ, in English and in Finnish) and the event's
  * practical information. Both are written once per night in a background
@@ -1011,6 +1015,14 @@ final class FollowupMail
                 continue;
             }
 
+            // Every hour until the night starts going out, from the day
+            // before it (the first day it is looked at): the coming event's
+            // DJ or host text and its translations are written in the
+            // background, ready for the preview and the send.
+            if (! isset($state['started'][$date])) {
+                $this->scheduleTexts($date);
+            }
+
             if (! isset($state['previewed'][$date]) && $at >= self::previewAt($date)->getTimestamp() && $at < $sendAt) {
                 // A one-time text whose translation failed is tried again,
                 // so the preview shows what each language really gets.
@@ -1428,11 +1440,16 @@ final class FollowupMail
     }
 
     /**
-     * $cards with the group board's short text about each card's DJ or host
-     * (EventDescription::short(), English only) as about_en, for the card
-     * whose event the text was written for; NewsletterLayout shows it right
-     * under that card's picture. A card without such a text gets nothing.
-     * The text is never in the paragraphs above the events (Owner, 2026-11-07).
+     * $cards with the short text about each card's DJ or host
+     * (EventDescription::short()) in every site language that has one, as
+     * about_en, about_fi …; NewsletterLayout shows it right under that
+     * card's picture, in the email's languages (a one-language email falls
+     * back to another language's text, like the card's other texts). A card
+     * without such a text gets nothing. The text is never in the paragraphs
+     * above the events (Owner, 2026-11-07).
+     *
+     * A card whose text or a translation of it is missing asks for it in the
+     * background (BoardDjText::schedule()); nothing is written here.
      *
      * @param array<int, array<string, mixed>> $cards
      * @return array<int, array<string, mixed>>
@@ -1440,14 +1457,42 @@ final class FollowupMail
     private static function withAbout(array $cards): array
     {
         foreach ($cards as $index => $card) {
-            $about = EventDescription::short((int) ($card['id'] ?? 0), Language::ENGLISH);
+            $id = (int) ($card['id'] ?? 0);
+            $missing = false;
 
-            if ('' !== $about) {
-                $cards[$index]['about_' . Language::ENGLISH] = $about;
+            foreach (HybridPolicy::siteLanguages() as $lang) {
+                $about = EventDescription::short($id, $lang);
+
+                if ('' !== $about) {
+                    $cards[$index]['about_' . $lang] = $about;
+                } else {
+                    $missing = true;
+                }
+            }
+
+            if ($missing && $id > 0) {
+                BoardDjText::schedule($id);
             }
         }
 
         return $cards;
+    }
+
+    /**
+     * Asks, in the background, for the DJ or host text (and its
+     * translations) of each coming event $date's email shows with its
+     * picture, so they are there by the preview and the send
+     * (BoardDjText::schedule(); it does nothing for an event that has them).
+     */
+    private function scheduleTexts(string $date): void
+    {
+        foreach (array_slice(array_values($this->comingEvents($date)), 0, self::EVENTS) as $card) {
+            $id = (int) ($card['id'] ?? 0);
+
+            if ($id > 0) {
+                BoardDjText::schedule($id);
+            }
+        }
     }
 
     /**
