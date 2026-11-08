@@ -1650,7 +1650,7 @@ msgstr ""
 msgid "Board reminders"
 msgstr ""
 
-#: src/Support/MessagePreview.php:200 src/Telegram/ChatForwarder.php:161 templates/admin/settings.php:2743
+#: src/Support/MessagePreview.php:200 src/Telegram/ChatForwarder.php:165 templates/admin/settings.php:2743
 msgid "Bot"
 msgstr ""
 
@@ -1752,7 +1752,7 @@ msgstr ""
 msgid "Can I cancel a free-entry ticket?"
 msgstr ""
 
-#: src/Telegram/AssignCommand.php:374 src/Telegram/AssignCommand.php:418 src/Telegram/AssignCommand.php:720 src/Telegram/AssistantService.php:550
+#: src/Telegram/AssignCommand.php:374 src/Telegram/AssignCommand.php:418 src/Telegram/AssignCommand.php:720 src/Telegram/AssistantService.php:557
 #: src/Telegram/BuyerListReset.php:155 src/Telegram/CommandFlow.php:342 src/Telegram/EventsCommand.php:98 src/Telegram/MenuButtons.php:372
 #: src/Telegram/SayCommand.php:95 src/Telegram/TaskCommand.php:807 src/Telegram/TicketController.php:905 templates/admin/people.php:124
 #: templates/admin/tasks.php:293 templates/public/signup-board.php:263 templates/public/signup.php:635 templates/public/signup.php:1243
@@ -1831,7 +1831,7 @@ msgstr ""
 msgid "Cancelled under %d h before"
 msgstr ""
 
-#: src/Telegram/AssignCommand.php:228 src/Telegram/AssistantService.php:196 src/Telegram/AssistantService.php:197 src/Telegram/BuyerListReset.php:105
+#: src/Telegram/AssignCommand.php:228 src/Telegram/AssistantService.php:201 src/Telegram/AssistantService.php:202 src/Telegram/BuyerListReset.php:105
 #: src/Telegram/CommandFlow.php:199 src/Telegram/EventsCommand.php:145 src/Telegram/SayCommand.php:145 src/Telegram/TaskCommand.php:146
 msgid "Cancelled."
 msgstr ""
@@ -2111,7 +2111,7 @@ msgstr ""
 msgid "Conditions: the completed tasks someone needs before the organizers hear about them. Set a number for any of the named roles, or a number of different roles each done a number of times, or both. Meeting them lets nobody sign up. The organizers get a Telegram message and an email the first time someone meets them, and the first time someone is given the role. The People page, Role conditions tab, and the bot’s /people show who meets them."
 msgstr ""
 
-#: src/Support/NewsletterConfirmMail.php:48 src/Telegram/AssistantService.php:549 src/Telegram/EventsCommand.php:97 src/Telegram/SayCommand.php:94
+#: src/Support/NewsletterConfirmMail.php:48 src/Telegram/AssistantService.php:556 src/Telegram/EventsCommand.php:97 src/Telegram/SayCommand.php:94
 msgid "Confirm"
 msgstr ""
 
@@ -3092,7 +3092,7 @@ msgstr ""
 msgid "First reminder (hours before)"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:855
+#: src/Telegram/AssistantService.php:869
 msgid "First sign up with /start."
 msgstr ""
 
@@ -3821,7 +3821,7 @@ msgstr ""
 msgid "I am not in the crew group yet."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:854
+#: src/Telegram/AssistantService.php:868
 msgid "I cannot do that for you. /help lists what you can do."
 msgstr ""
 
@@ -3841,7 +3841,7 @@ msgstr ""
 msgid "I couldn’t find anyone by that name. Try their exact name or @mention them."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:853
+#: src/Telegram/AssistantService.php:867
 msgid "I do not know that. /help lists the commands, or ask an organizer."
 msgstr ""
 
@@ -3850,7 +3850,7 @@ msgstr ""
 msgid "I emailed you a transcript of my private chat with %s."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:856
+#: src/Telegram/AssistantService.php:870
 msgid "I have passed this chat on to the organizers."
 msgstr ""
 
@@ -6391,7 +6391,7 @@ msgstr ""
 msgid "Retention period"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:857
+#: src/Telegram/AssistantService.php:871
 msgid "Right now I only understand commands: /help"
 msgstr ""
 
@@ -8180,7 +8180,7 @@ msgstr ""
 msgid "That button no longer works. Send /people again."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:216
+#: src/Telegram/AssistantService.php:221
 msgid "That can no longer be done. /help lists what you can do."
 msgstr ""
 
@@ -8241,7 +8241,7 @@ msgstr ""
 msgid "That event is no longer available."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:102
+#: src/Telegram/AssistantService.php:107
 msgid "That is all I can answer this hour. Commands still work: /help"
 msgstr ""
 
@@ -9731,7 +9731,7 @@ msgstr ""
 msgid "This preview has expired. Please send /events again."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:185
+#: src/Telegram/AssistantService.php:190
 msgid "This question has expired. Please write again."
 msgstr ""
 
