@@ -13,6 +13,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\BuyerImport;
+use EventCrew\Support\DoorDesk;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FreeEntryGate;
@@ -50,7 +51,8 @@ final class RosterPage
         private readonly TicketBuyerRepository $ticketBuyers,
         private readonly BuyerImport $buyerImport,
         private readonly ?TicketMail $ticketMail = null,
-        private readonly ?FollowupMail $followup = null
+        private readonly ?FollowupMail $followup = null,
+        private readonly ?DoorDesk $desk = null
     ) {
     }
 
@@ -84,6 +86,8 @@ final class RosterPage
                     $this->ticketBuyers->forDate($selected),
                     static fn (TicketBuyer $buyer): bool => ! $buyer->isDoorSale()
                 )),
+                // Names and emails noted at the door for given-away tickets and +1s.
+                'door_notes' => '' === $selected || null === $this->desk ? [] : $this->desk->notesList($selected),
                 'import_mailbox' => MailedListImport::mailbox(),
                 'ticket_mail_buyers' => '' === $selected || null === $this->ticketMail ? '' : TicketMail::statusLine(
                     $this->ticketMail->counts($selected, TicketMail::KIND_BUYERS)

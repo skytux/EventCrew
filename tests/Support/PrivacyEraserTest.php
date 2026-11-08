@@ -7,6 +7,7 @@ namespace EventCrew\Tests\Support;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\DoorNoteRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
@@ -168,5 +169,38 @@ final class PrivacyEraserTest extends TestCase
             $this->wpdb->queries
         );
         self::assertSame([], $this->wpdb->deletes);
+    }
+
+    public function testDoorNotesUnderTheAddressAreDeleted(): void
+    {
+        $people = new PersonRepository();
+        $eraser = new PrivacyEraser(
+            $people,
+            new PersonEraser(
+                $people,
+                new AssignmentRepository(),
+                new RedemptionRepository(),
+                new CreditGrantRepository(),
+                new AuthTokenRepository(),
+                new NotificationsRepository()
+            ),
+            doorNotes: new DoorNoteRepository()
+        );
+        $this->wpdb->nextRows[] = null;
+        $this->wpdb->nextQueryResults[] = 0; // no ticket buyer rows
+        $this->wpdb->nextQueryResults[] = 0; // no guest rows
+        $this->wpdb->nextQueryResults[] = 2; // two door notes
+
+        $result = $eraser->erase('aino@example.org');
+
+        self::assertTrue($result['items_removed']);
+        self::assertSame(
+            ['The names and email addresses the door crew noted under this address were deleted.'],
+            $result['messages']
+        );
+        self::assertContains(
+            "DELETE FROM wp_eventcrew_door_notes WHERE email = 'aino@example.org'",
+            $this->wpdb->queries
+        );
     }
 }

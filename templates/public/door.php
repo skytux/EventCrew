@@ -16,6 +16,14 @@
  * tasks. A member who has no record yet can be added there with a name and an
  * email.
  *
+ * A checked-in given-away ticket, and a checked-in row with +1s, has a
+ * "Name and email" link. It opens a small popup where the door crew may note
+ * the name and email of who came in on the ticket, or of each +1. Both are
+ * optional. Under the email, an unticked box "Send them the newsletter":
+ * ticked (they asked for it at the door), the address gets the newsletter's
+ * usual confirmation email; unticked, or with no email, nothing is sent
+ * (DoorDesk::addNote).
+ *
  * The "+1" and "−1" buttons at the top count people in without a name, such
  * as the organizers themselves. That count is part of the "checked in" total.
  *
@@ -97,6 +105,11 @@ $eventcrew_text = [
     'ticketCount' => __('%d tickets with this code. Mark them arrived one at a time.', 'eventcrew'),
     'ticketIn' => __('checked in', 'eventcrew'),
     'ticketOut' => __('not checked in yet', 'eventcrew'),
+    'noteLink' => __('Name and email', 'eventcrew'),
+    'noteReceiver' => __('Who came in on this ticket?', 'eventcrew'),
+    'notePlus' => __('Who came with them?', 'eventcrew'),
+    'emailOnly' => __('(email only)', 'eventcrew'),
+    'remove' => __('Remove', 'eventcrew'),
 ];
 ?><!doctype html>
 <html lang="<?php echo esc_attr(get_bloginfo('language')); ?>">
@@ -146,6 +159,11 @@ li.ec-loading{justify-content:center;border-bottom:0;padding:16px 0}
 .ec-msg:empty{display:none}
 .ec-msg[hidden]{display:none}
 .ec-link{min-height:0;padding:0;border:0;background:none;color:var(--err);font:inherit;text-decoration:underline;cursor:pointer}
+.ec-textlink{min-height:0;min-width:0;padding:0;border:0;background:none;color:var(--accent);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
+#ec-note-list li{justify-content:space-between}
+dialog label.ec-check{display:flex;gap:8px;align-items:flex-start}
+dialog label.ec-check input{margin-top:3px}
+dialog label.ec-check.ec-off{color:var(--muted)}
 .ec-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .ec-anon{display:flex;align-items:center;gap:8px;margin-top:6px}
 .ec-anon-label{color:var(--muted);margin-right:auto}
@@ -311,6 +329,27 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         <h3><?php esc_html_e('Which task?', 'eventcrew'); ?></h3>
         <ul id="ec-tasks"></ul>
     </div>
+</dialog>
+<dialog id="ec-note" aria-labelledby="ec-note-title">
+    <div class="ec-dialog-head">
+        <h2 id="ec-note-title"></h2>
+        <button type="button" id="ec-note-close"><?php esc_html_e('Close', 'eventcrew'); ?></button>
+    </div>
+    <p class="ec-muted" id="ec-note-entry"></p>
+    <p class="ec-msg" id="ec-note-msg" role="status"></p>
+    <ul id="ec-note-list"></ul>
+    <form id="ec-note-form">
+        <label><?php esc_html_e('Name (optional)', 'eventcrew'); ?>
+            <input type="text" id="ec-note-name" maxlength="191" autocomplete="off"></label>
+        <label><?php esc_html_e('Email (optional)', 'eventcrew'); ?>
+            <input type="email" id="ec-note-email" maxlength="191" autocomplete="off"></label>
+        <label class="ec-check ec-off" id="ec-note-nl-label"><input type="checkbox" id="ec-note-nl" disabled>
+            <span><?php esc_html_e('Send them the newsletter (they confirm by email)', 'eventcrew'); ?></span></label>
+        <p class="ec-muted"><?php esc_html_e('Both are optional. Only organizers see the email.', 'eventcrew'); ?></p>
+        <div class="ec-stack">
+            <button type="submit" class="ec-primary" id="ec-note-save"><?php esc_html_e('Save', 'eventcrew'); ?></button>
+        </div>
+    </form>
 </dialog>
 <dialog id="ec-other" aria-labelledby="ec-other-title">
     <div class="ec-dialog-head">
@@ -515,6 +554,8 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 
         if (el('ec-add').open) {
             target = 'ec-add-msg';
+        } else if (el('ec-note').open) {
+            target = 'ec-note-msg';
         } else if (el('ec-scan').open) {
             // Only failures reach say() while the scan popup is open.
             scanMessage(message, true);
@@ -561,6 +602,10 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             rows.forEach(function (row) { list.appendChild(rowNode(row)); });
             holder.appendChild(list);
         });
+
+        if (el('ec-note').open) {
+            drawNote();
+        }
     }
 
     function rowNode(row) {
@@ -583,6 +628,15 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         // screen when a row is ticked by hand.
         if (row.short) { who.firstChild.appendChild(node('span', 'ec-short', row.short)); }
         if (row.detail) { who.appendChild(node('div', 'ec-detail', row.detail)); }
+
+        // Who came in on a given-away ticket, or with the +1s: an optional
+        // name and email, noted once the row is in.
+        if (canNote(row)) {
+            var noteLink = node('button', 'ec-textlink', text.noteLink + noteCount(row));
+            noteLink.type = 'button';
+            noteLink.addEventListener('click', function () { openNote(row); });
+            who.appendChild(noteLink);
+        }
 
         // A row whose max is 0 has no guest count at all: free-entry credit
         // rows, and crew whose tasks tonight allow no +1.
@@ -610,6 +664,87 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
         li.appendChild(toggle);
 
         return li;
+    }
+
+    function canNote(row) {
+        return !!row && row.in && ('transfer' === row.kind || row.plus > 0);
+    }
+
+    // " (1/2)" after the link of a row with two +1s and one noted.
+    function noteCount(row) {
+        var noted = (row.noted || []).length;
+
+        if ('transfer' === row.kind) {
+            return noted > 0 ? ' ✓' : '';
+        }
+
+        return noted > 0 ? ' (' + noted + '/' + row.plus + ')' : '';
+    }
+
+    // The note popup: the row it is for, by key, so a redraw finds it again.
+    var noteKey = '';
+
+    function openNote(row) {
+        noteKey = row.key;
+        el('ec-note-name').value = '';
+        el('ec-note-email').value = '';
+        noteNewsletterBox();
+        el('ec-note-msg').textContent = '';
+        el('ec-note').showModal();
+        drawNote();
+
+        if (!el('ec-note-form').hidden) {
+            el('ec-note-name').focus();
+        }
+    }
+
+    // The newsletter box means something only with an email: it stays
+    // disabled and unticked while the email field is empty.
+    function noteNewsletterBox() {
+        var box = el('ec-note-nl');
+        var hasEmail = '' !== el('ec-note-email').value.trim();
+
+        box.disabled = !hasEmail;
+
+        if (!hasEmail) {
+            box.checked = false;
+        }
+
+        el('ec-note-nl-label').classList.toggle('ec-off', !hasEmail);
+    }
+
+    function drawNote() {
+        var row = findRow(noteKey);
+        var list = el('ec-note-list');
+        var noted = row ? row.noted || [] : [];
+
+        list.textContent = '';
+
+        if (!canNote(row)) {
+            // Marked out, or the +1s taken off, on another phone.
+            el('ec-note').close();
+            return;
+        }
+
+        el('ec-note-title').textContent = 'transfer' === row.kind ? text.noteReceiver : text.notePlus;
+        el('ec-note-entry').textContent = row.name;
+
+        noted.forEach(function (note) {
+            var li = node('li');
+            var remove = node('button', 'ec-textlink', text.remove);
+
+            remove.type = 'button';
+            remove.addEventListener('click', function () {
+                post('noteRemove', { kind: row.kind, ref: row.ref, note: note.id }).then(apply, failed);
+            });
+            li.appendChild(node('span', '', note.name || text.emailOnly));
+            li.appendChild(remove);
+            list.appendChild(li);
+        });
+
+        // A given-away ticket has one person; saving again replaces them.
+        // +1s can be noted until each has a name.
+        el('ec-note-form').hidden = 'transfer' !== row.kind && noted.length >= row.plus;
     }
 
     function setPlus(row, value) {
@@ -1003,6 +1138,43 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     el('ec-qr-copy').addEventListener('click', copyLink);
 
     el('ec-filter').addEventListener('input', draw);
+
+    el('ec-note-close').addEventListener('click', function () { el('ec-note').close(); });
+    el('ec-note').addEventListener('click', function (event) {
+        if (event.target === el('ec-note')) {
+            el('ec-note').close();
+        }
+    });
+    el('ec-note-email').addEventListener('input', noteNewsletterBox);
+    el('ec-note-form').addEventListener('submit', function (event) {
+        var row = findRow(noteKey);
+
+        event.preventDefault();
+
+        if (!row) {
+            return;
+        }
+
+        post('note', {
+            kind: row.kind,
+            ref: row.ref,
+            name: el('ec-note-name').value.trim(),
+            email: el('ec-note-email').value.trim(),
+            newsletter: el('ec-note-nl').checked && '' !== el('ec-note-email').value.trim() ? '1' : '0'
+        }).then(function (data) {
+            apply(data);
+
+            if (data && data.ok) {
+                el('ec-note-name').value = '';
+                el('ec-note-email').value = '';
+                noteNewsletterBox();
+            }
+
+            if (el('ec-note').open) {
+                el('ec-note-msg').textContent = data && data.message ? data.message : text.failed;
+            }
+        }, failed);
+    });
 
     el('ec-add-open').addEventListener('click', openAdd);
     el('ec-add-close').addEventListener('click', function () { el('ec-add').close(); });

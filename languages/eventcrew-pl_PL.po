@@ -12405,3 +12405,70 @@ msgstr "organizatora, który go ma"
 
 msgid "Whom to ask for wp-admin access: the official contact email (Settings > Privacy), or “an organizer who has it” when none is set."
 msgstr "Kogo prosić o dostęp do wp-admin: oficjalny e-mail kontaktowy (Ustawienia > Prywatność) albo „organizatora, który go ma”, gdy żaden nie jest ustawiony."
+
+msgid "Give a name or an email."
+msgstr "Podaj imię lub e-mail."
+
+msgid "Check them in first."
+msgstr "Najpierw oznacz wejście tej osoby."
+
+msgid "Every +1 already has a name."
+msgstr "Każdy +1 ma już imię."
+
+msgid "Given-away ticket"
+msgstr "Przekazany bilet"
+
+msgid "+1 guest"
+msgstr "Gość +1"
+
+msgid "EventCrew door notes"
+msgstr "Notatki z wejścia EventCrew"
+
+msgid "Came in on"
+msgstr "Wszedł na"
+
+msgid "The names and email addresses the door crew noted under this address were deleted."
+msgstr "Imiona i adresy e-mail zanotowane przez ekipę przy wejściu pod tym adresem zostały usunięte."
+
+#, php-format
+msgid "An email address noted at the door is deleted %d days after the event too."
+msgstr "Adres e-mail zanotowany przy wejściu też jest usuwany %d dni po wydarzeniu."
+
+msgid "Noted at the door"
+msgstr "Zanotowane przy wejściu"
+
+msgid "Name and email"
+msgstr "Imię i e-mail"
+
+msgid "Who came in on this ticket?"
+msgstr "Kto wszedł na ten bilet?"
+
+msgid "Who came with them?"
+msgstr "Kto przyszedł razem?"
+
+msgid "(email only)"
+msgstr "(tylko e-mail)"
+
+msgid "Both are optional. Only organizers see the email."
+msgstr "Oba są opcjonalne. E-mail widzą tylko organizatorzy."
+
+msgid "Saved. They get an email to confirm the newsletter."
+msgstr "Zapisano. Ta osoba dostanie e-mail, żeby potwierdzić newsletter."
+
+msgid "Saved. They already get the newsletter."
+msgstr "Zapisano. Ta osoba już dostaje newsletter."
+
+msgid "Asked for the newsletter at the door"
+msgstr "Poprosił o newsletter przy wejściu"
+
+msgid "Asked"
+msgstr "Poprosił"
+
+msgid "Send them the newsletter (they confirm by email)"
+msgstr "Wyślij newsletter (potwierdzenie e-mailem)"
+
+msgid "If you come in on a ticket someone gave you, or as someone's +1, the door crew may note your name and email address, if you agree to give them. If you also ask for our next events announcement there, we send you one email with a link to confirm it; otherwise we send nothing to that address."
+msgstr "Jeśli wchodzisz na bilet, który ktoś ci dał, albo jako czyjś +1, ekipa przy wejściu może zanotować twoje imię i adres e-mail, jeśli zgodzisz się je podać. Jeśli poprosisz tam też o ogłoszenie następnych wydarzeń, wyślemy ci jeden e-mail z linkiem do potwierdzenia; w przeciwnym razie nic nie wysyłamy na ten adres."
+
+msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
+msgstr "Imiona i e-maile zanotowane przez ekipę przy wejściu dla osób, które weszły na przekazany bilet albo jako +1. E-mail dostają tylko ci, którzy poprosili o newsletter: link do potwierdzenia."

@@ -12388,3 +12388,70 @@ msgstr "einen Organisator, der ihn hat"
 
 msgid "Whom to ask for wp-admin access: the official contact email (Settings > Privacy), or “an organizer who has it” when none is set."
 msgstr "Wen man um Zugang zu wp-admin bittet: die offizielle Kontakt-E-Mail (Einstellungen > Datenschutz), oder „einen Organisator, der ihn hat“, wenn keine eingetragen ist."
+
+msgid "Give a name or an email."
+msgstr "Gib einen Namen oder eine E-Mail-Adresse an."
+
+msgid "Check them in first."
+msgstr "Checke die Person zuerst ein."
+
+msgid "Every +1 already has a name."
+msgstr "Jede +1 hat schon einen Namen."
+
+msgid "Given-away ticket"
+msgstr "Weitergegebenes Ticket"
+
+msgid "+1 guest"
+msgstr "+1-Gast"
+
+msgid "EventCrew door notes"
+msgstr "EventCrew Notizen vom Einlass"
+
+msgid "Came in on"
+msgstr "Kam rein mit"
+
+msgid "The names and email addresses the door crew noted under this address were deleted."
+msgstr "Die Namen und E-Mail-Adressen, die das Einlass-Team unter dieser Adresse notiert hat, wurden gelöscht."
+
+#, php-format
+msgid "An email address noted at the door is deleted %d days after the event too."
+msgstr "Eine am Einlass notierte E-Mail-Adresse wird ebenfalls %d Tage nach der Veranstaltung gelöscht."
+
+msgid "Noted at the door"
+msgstr "Am Einlass notiert"
+
+msgid "Name and email"
+msgstr "Name und E-Mail"
+
+msgid "Who came in on this ticket?"
+msgstr "Wer kam mit diesem Ticket rein?"
+
+msgid "Who came with them?"
+msgstr "Wer kam mit?"
+
+msgid "(email only)"
+msgstr "(nur E-Mail)"
+
+msgid "Both are optional. Only organizers see the email."
+msgstr "Beides ist optional. Nur das Orga-Team sieht die E-Mail-Adresse."
+
+msgid "Saved. They get an email to confirm the newsletter."
+msgstr "Gespeichert. Die Person bekommt eine E-Mail, um den Newsletter zu bestätigen."
+
+msgid "Saved. They already get the newsletter."
+msgstr "Gespeichert. Die Person bekommt den Newsletter schon."
+
+msgid "Asked for the newsletter at the door"
+msgstr "Am Einlass um den Newsletter gebeten"
+
+msgid "Asked"
+msgstr "Gebeten"
+
+msgid "Send them the newsletter (they confirm by email)"
+msgstr "Newsletter schicken (Bestätigung per E-Mail)"
+
+msgid "If you come in on a ticket someone gave you, or as someone's +1, the door crew may note your name and email address, if you agree to give them. If you also ask for our next events announcement there, we send you one email with a link to confirm it; otherwise we send nothing to that address."
+msgstr "Wenn du mit einem Ticket reinkommst, das dir jemand gegeben hat, oder als +1 von jemandem, kann das Einlass-Team deinen Namen und deine E-Mail-Adresse notieren, wenn du sie angeben willst. Wenn du dort auch um die nächste Event-Ankündigung bittest, schicken wir dir eine E-Mail mit einem Link zum Bestätigen; sonst schicken wir nichts an diese Adresse."
+
+msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
+msgstr "Namen und E-Mail-Adressen, die das Einlass-Team für Leute notiert hat, die mit einem weitergegebenen Ticket oder als +1 reinkamen. Nur wer um den Newsletter gebeten hat, bekommt eine E-Mail: einen Link zum Bestätigen."

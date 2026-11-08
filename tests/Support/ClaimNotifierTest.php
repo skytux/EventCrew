@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Support;
 
+use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
@@ -20,6 +21,7 @@ use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\Roles;
 use EventCrew\Support\SecondThoughts;
 use EventCrew\Support\ShortCode;
@@ -29,8 +31,10 @@ use EventCrew\Support\SlotFreedNotice;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
+use EventCrew\Telegram\BoardDjText;
 use EventCrew\Telegram\DohResolver;
 use EventCrew\Telegram\TelegramClient;
+use EventCrew\Tests\Telegram\FakeEvents;
 use EventCrew\Tests\TestCase;
 use stdClass;
 
@@ -40,6 +44,8 @@ use stdClass;
  */
 final class ClaimNotifierTest extends TestCase
 {
+    use FakeEvents;
+
     /** @var array<int, array{to: string, body: string}> */
     private array $mails = [];
 
@@ -176,6 +182,102 @@ final class ClaimNotifierTest extends TestCase
         ));
         self::assertSame(['id' => 9], $marked[0]['where']);
         self::assertArrayHasKey('ticket_mailed_at', $marked[0]['data']);
+    }
+
+    /**
+     * The sign-up task's event: post 55, "Ecstatic Dance" on 1.8.2026 at
+     * 21:00 with its picture ($image), venue and DJ, and the short DJ text
+     * in English. HTML emails are on unless $html is false: then the email
+     * is its plain-text part alone.
+     */
+    private function pictureEvent(string $image = 'https://site.test/dance.jpg', bool $html = true): void
+    {
+        $this->fakeEvents();
+        $this->event(55, '2026-08-01', 'Ecstatic Dance', [
+            '_eventmesh_image_url' => $image,
+            '_eventmesh_venue_name' => 'Example Hall Helsinki',
+        ]);
+        Functions\when('get_the_post_thumbnail_url')->justReturn('');
+        Filters\expectApplied(NewsletterWriter::DJ_FILTER)->zeroOrMoreTimes()->andReturnUsing(
+            static fn (mixed $value, int $postId): array => 55 === $postId
+                ? [['name' => 'Esimerkki', 'description' => 'Plays ecstatic journeys.']]
+                : []
+        );
+        $text = 'Esimerkki takes you on a journey.';
+        $options = [
+            EmailTemplate::HTML_OPTION => $html ? '1' : '0',
+            BoardDjText::OPTION => [55 => [
+                'hash' => md5(BoardDjText::source(55)),
+                'text' => $text,
+                'texts' => [],
+                'text_hash' => md5($text),
+            ]],
+        ];
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => $options[$name] ?? $default
+        );
+        $this->wpdb->nextRows[] = ['event_post_id' => 55, 'event_label' => 'Ecstatic Dance'] + $this->taskRow();
+        $this->wpdb->nextRows[] = ['id' => 9, 'task_id' => 5, 'person_id' => 7, 'status' => 'signed_up'];
+    }
+
+    /**
+     * Owner, 2026-11-08: the sign-up email, which carries the ticket, shows
+     * the event's picture right under its "Show your ticket" button, with the
+     * alt text that says who plays, what, when and where, and the DJ text
+     * under it, as the ticket email does; the other buttons follow. The
+     * plain text has the DJ text right after the ticket link.
+     */
+    public function testTheSignupEmailShowsTheEventPictureUnderTheTicketButton(): void
+    {
+        $this->pictureEvent();
+
+        $this->notifierWithTicketMail()->confirmSignup($this->person(), 5);
+
+        self::assertCount(1, $this->mails);
+        $body = $this->mails[0]['body'];
+        $button = (int) strpos($body, 'Show your ticket</a>');
+        $picture = (int) strpos($body, '<img src="https://site.test/dance.jpg"');
+        $dj = (int) strpos($body, 'Esimerkki takes you on a journey.</p>');
+
+        self::assertGreaterThan(0, $button);
+        self::assertSame(1, substr_count($body, 'dance.jpg'));
+        // Nothing between the button and the picture but the button's own end.
+        self::assertSame(
+            '</td></tr></table><div style="margin:0 0 24px"><div style="margin:26px 0 0">',
+            substr($body, $button + 20, $picture - $button - 20)
+        );
+        self::assertStringContainsString(
+            'alt="Esimerkki · Ecstatic Dance · Sat 1.8.2026 21:00 · Example Hall Helsinki"',
+            $body
+        );
+        self::assertGreaterThan($picture, $dj);
+        self::assertGreaterThan($dj, (int) strpos($body, 'Add to calendar</a>'));
+        self::assertGreaterThan($dj, (int) strpos($body, 'Crew ticket'));
+
+        $this->pictureEvent(html: false);
+        $this->notifierWithTicketMail()->confirmSignup($this->person(), 5);
+        $text = $this->mails[1]['body'];
+        self::assertStringNotContainsString('dance.jpg', $text);
+        self::assertMatchesRegularExpression(
+            '~Show your ticket: \S+\n\nEsimerkki takes you on a journey\.\n\nAdd to calendar: ~u',
+            $text
+        );
+    }
+
+    /** An event with no picture: no picture block in the sign-up email, no DJ text. */
+    public function testWithoutAPictureTheSignupEmailHasNoPictureBlock(): void
+    {
+        $this->pictureEvent('');
+
+        $this->notifierWithTicketMail()->confirmSignup($this->person(), 5);
+
+        self::assertCount(1, $this->mails);
+        self::assertStringNotContainsString('<img src="https://site.test', $this->mails[0]['body']);
+        self::assertStringNotContainsString('Esimerkki takes you', $this->mails[0]['body']);
+
+        $this->pictureEvent('', false);
+        $this->notifierWithTicketMail()->confirmSignup($this->person(), 5);
+        self::assertStringNotContainsString('Esimerkki takes you', $this->mails[1]['body']);
     }
 
     /**

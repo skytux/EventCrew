@@ -6,6 +6,7 @@ namespace EventCrew\Support;
 
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\DoorNoteRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\TicketTransferRepository;
 use EventCrew\Models\TicketTransfer;
@@ -41,7 +42,8 @@ final class PrivacyExporter
         private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository(),
         private readonly GuestRepository $guests = new GuestRepository(),
         private readonly NewsletterSubscriberRepository $subscribers = new NewsletterSubscriberRepository(),
-        private readonly ?TicketTransferRepository $transfers = null
+        private readonly ?TicketTransferRepository $transfers = null,
+        private readonly ?DoorNoteRepository $doorNotes = null
     ) {
     }
 
@@ -110,6 +112,12 @@ final class PrivacyExporter
 
         // Free-entry tickets given to this address or to this member.
         foreach ($this->givenTickets($email, $person?->id ?? 0) as $item) {
+            $data[] = $item;
+        }
+
+        // Names and addresses the door crew noted for someone who came in on
+        // a given-away ticket or as a +1.
+        foreach ($this->doorNotes($email) as $item) {
             $data[] = $item;
         }
 
@@ -270,6 +278,45 @@ final class PrivacyExporter
                     ['name' => __('Name', 'eventcrew'), 'value' => $transfer->name],
                     ['name' => __('Email', 'eventcrew'), 'value' => $transfer->email],
                     ['name' => __('Status', 'eventcrew'), 'value' => $transfer->status],
+                ],
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Door notes under this email address: one item per note.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function doorNotes(string $email): array
+    {
+        if (null === $this->doorNotes) {
+            return [];
+        }
+
+        $items = [];
+
+        foreach ($this->doorNotes->rowsForEmail($email) as $index => $row) {
+            $items[] = [
+                'group_id' => self::GROUP . '-door-notes',
+                'group_label' => __('EventCrew door notes', 'eventcrew'),
+                'item_id' => self::GROUP . '-door-note-' . $index,
+                'data' => [
+                    ['name' => __('Event date', 'eventcrew'), 'value' => $row['event_date']],
+                    ['name' => __('Name', 'eventcrew'), 'value' => $row['name']],
+                    ['name' => __('Email', 'eventcrew'), 'value' => $row['email']],
+                    [
+                        'name' => __('Came in on', 'eventcrew'),
+                        'value' => DoorNoteRepository::ROLE_RECEIVER === $row['role']
+                            ? __('Given-away ticket', 'eventcrew')
+                            : __('+1 guest', 'eventcrew'),
+                    ],
+                    [
+                        'name' => __('Asked for the newsletter at the door', 'eventcrew'),
+                        'value' => $row['newsletter'] ? __('Yes', 'eventcrew') : __('No', 'eventcrew'),
+                    ],
                 ],
             ];
         }

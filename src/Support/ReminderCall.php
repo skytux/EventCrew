@@ -145,7 +145,12 @@ final class ReminderCall
             // The ticket again, a day out: the reminder is the message people
             // still have open when they arrive at the door. The same actions
             // as the DM, with the bot's as "Open in Telegram" links.
-            MessageActions::email(MessageActions::of('reminder', $context, $this->mailer))
+            MessageActions::email(MessageActions::of('reminder', $context, $this->mailer)),
+            null,
+            null,
+            // Right under the ticket button: the event's picture and its DJ
+            // text, as in the ticket email (Owner, 2026-11-08).
+            EventPicture::forTask($task, $person)
         );
     }
 

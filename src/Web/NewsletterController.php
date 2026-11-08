@@ -81,6 +81,15 @@ final class NewsletterController
     /** After the subscribe button in a thank-you email (FollowupMail::joinClick()). */
     public const RESULT_JOINED = 'joined';
 
+    /** inviteFromDoor(): a confirmation email went out (or one is still on its way). */
+    public const DOOR_SENT = 'sent';
+
+    /** inviteFromDoor(): the address already gets the newsletter; nothing changed or sent. */
+    public const DOOR_ALREADY = 'already';
+
+    /** inviteFromDoor(): the address could not be used or stored. */
+    public const DOOR_FAILED = 'failed';
+
     /** The second step's form action, field, and the query argument of its token. */
     public const NAME_ACTION = 'eventcrew_newsletter_name';
     public const NAME_FIELD = 'eventcrew_name';
@@ -999,6 +1008,49 @@ final class NewsletterController
         }
 
         return self::RESULT_SENT;
+    }
+
+    /**
+     * Signs up an address the door crew noted for someone who asked for the
+     * newsletter at the door. The same double opt-in as join(): the row is
+     * pending and the person gets the usual confirmation email, so they still
+     * confirm themselves. No captcha, since the door crew is signed in. A
+     * confirmed address is left as it is and gets no email; a pending one
+     * gets a new confirmation only when the last is more than an hour old.
+     * Answers a DOOR_* code.
+     */
+    public function inviteFromDoor(string $email, string $language = ''): string
+    {
+        $email = NewsletterSubscriberRepository::normalize($email);
+
+        if ('' === $email || ! is_email($email) || strlen($email) > NewsletterSubscriberRepository::MAX_EMAIL_LENGTH) {
+            return self::DOOR_FAILED;
+        }
+
+        $existing = $this->subscribers->findByEmail($email);
+
+        if (null !== $existing) {
+            if (NewsletterSubscriberRepository::STATUS_CONFIRMED === $existing['status']) {
+                return self::DOOR_ALREADY;
+            }
+
+            if (
+                NewsletterSubscriberRepository::STATUS_PENDING === $existing['status']
+                && self::secondsSince($existing['created_at']) < self::RESEND_AFTER_SECONDS
+            ) {
+                return self::DOOR_SENT;
+            }
+        }
+
+        $id = $this->subscribers->addPending($email, $language);
+
+        if ($id <= 0) {
+            return self::DOOR_FAILED;
+        }
+
+        $this->sendConfirmation($email, $id, $language);
+
+        return self::DOOR_SENT;
     }
 
     public function handle(WP_REST_Request $request): void

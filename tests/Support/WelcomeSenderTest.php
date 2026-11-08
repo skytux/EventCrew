@@ -530,7 +530,7 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         $this->welcomeSender()->sendTest(Person::fromRow($this->memberRow(2)));
 
         self::assertStringContainsString('contact the maintainer, Kim, kim@example.com, or', $this->mails[0]['body']);
-        self::assertStringNotContainsString('maintainer', $this->mails[0]['body']);
+        self::assertStringNotContainsString('maintainer@example.org', $this->mails[0]['body']);
     }
 
     /**

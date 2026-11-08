@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Repositories\DoorNoteRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\TicketTransferRepository;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
@@ -47,7 +48,8 @@ final class RetentionPurge
         private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository(),
         private readonly GuestRepository $guests = new GuestRepository(),
         private readonly NewsletterSubscriberRepository $subscribers = new NewsletterSubscriberRepository(),
-        private readonly ?TicketTransferRepository $transfers = null
+        private readonly ?TicketTransferRepository $transfers = null,
+        private readonly ?DoorNoteRepository $doorNotes = null
     ) {
     }
 
@@ -65,9 +67,11 @@ final class RetentionPurge
             return 0;
         }
 
-        // Free-entry tickets given to an email address are guest data too.
+        // Free-entry tickets given to an email address, and the addresses
+        // noted at the door, are guest data too.
         return $this->guests->anonymizeEmailsBefore($cutoff)
-            + (null === $this->transfers ? 0 : $this->transfers->anonymizeEmailsBefore($cutoff));
+            + (null === $this->transfers ? 0 : $this->transfers->anonymizeEmailsBefore($cutoff))
+            + (null === $this->doorNotes ? 0 : $this->doorNotes->anonymizeEmailsBefore($cutoff));
     }
 
     /**

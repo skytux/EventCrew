@@ -280,6 +280,8 @@ final class SlotFreedNoticeTest extends TestCase
     /** MessageAiText: the event's AI text when there is one, else the template's text. */
     public function testTheEmailUsesTheEventsAiTextWhenThereIsOne(): void
     {
+        // The event has no picture (stubbed here so the test does not depend on the run order).
+        Functions\when('get_the_post_thumbnail_url')->justReturn('');
         $recipients = [$this->person(8, 'bo@example.com')];
 
         foreach ([['slot_freed' => ['en' => 'AI: {role} is free.', 'fi' => 'AI FI']], []] as $texts) {

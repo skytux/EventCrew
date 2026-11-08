@@ -10,6 +10,7 @@
  * @var array{entrants: array<int, array{name: string, detail: string, standing: \EventCrew\Support\Standing, redemption_id: ?int}>, candidates: array<int, array{person_id: int, name: string, credit_balance: int}>} $door
  * @var array<int, \EventCrew\Models\Guest> $guests The shown date's guest list, in the order added.
  * @var array<int, \EventCrew\Models\TicketBuyer> $ticket_buyers The shown date's imported Holvi buyers, by name.
+ * @var array<int, array{name: string, email: string, newsletter: bool, came: string}> $door_notes Names and emails the door crew noted for given-away tickets and +1s.
  * @var string $import_mailbox The address organizers can mail a ticket file or a guest list to; '' when none is set.
  * @var string $ticket_mail_buyers "Ticket emails: 38 sent · 2 failed · 2 not sent" for the buyers; '' when none can be emailed.
  * @var string $ticket_mail_guests The same for guests with an email address; '' when there are none.
@@ -253,6 +254,33 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                     <input type="hidden" name="ticket_kind" value="guests">
                     <button type="submit" class="button"><?php esc_html_e('Send the rest now', 'eventcrew'); ?></button>
                 </form>
+            <?php endif; ?>
+
+            <?php if ([] !== ($door_notes ?? [])) : ?>
+                <h2><?php esc_html_e('Noted at the door', 'eventcrew'); ?></h2>
+                <p class="description">
+                    <?php esc_html_e('Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it.', 'eventcrew'); ?>
+                </p>
+                <table class="widefat striped eventcrew-stack" style="max-width:820px;margin-bottom:2em">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e('Name', 'eventcrew'); ?></th>
+                            <th><?php esc_html_e('Email', 'eventcrew'); ?></th>
+                            <th><?php esc_html_e('Came in on', 'eventcrew'); ?></th>
+                            <th><?php esc_html_e('Newsletter', 'eventcrew'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($door_notes as $eventcrew_note) : ?>
+                            <tr>
+                                <td data-label="<?php esc_attr_e('Name', 'eventcrew'); ?>"><?php echo esc_html($eventcrew_note['name']); ?></td>
+                                <td data-label="<?php esc_attr_e('Email', 'eventcrew'); ?>"><?php echo esc_html($eventcrew_note['email']); ?></td>
+                                <td data-label="<?php esc_attr_e('Came in on', 'eventcrew'); ?>"><?php echo esc_html($eventcrew_note['came']); ?></td>
+                                <td data-label="<?php esc_attr_e('Newsletter', 'eventcrew'); ?>"><?php echo esc_html($eventcrew_note['newsletter'] ? __('Asked', 'eventcrew') : '—'); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             <?php endif; ?>
 
             <h2><?php esc_html_e('Holvi ticket buyers', 'eventcrew'); ?></h2>

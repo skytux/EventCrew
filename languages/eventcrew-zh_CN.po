@@ -12287,3 +12287,70 @@ msgstr "已有该权限的组织者"
 
 msgid "Whom to ask for wp-admin access: the official contact email (Settings > Privacy), or “an organizer who has it” when none is set."
 msgstr "向谁申请 wp-admin 访问权限：官方联系邮箱（设置 > 隐私），未设置时为“已有该权限的组织者”。"
+
+msgid "Give a name or an email."
+msgstr "请写出名字或邮箱。"
+
+msgid "Check them in first."
+msgstr "请先为此人签到。"
+
+msgid "Every +1 already has a name."
+msgstr "每位 +1 都已有名字。"
+
+msgid "Given-away ticket"
+msgstr "转让的门票"
+
+msgid "+1 guest"
+msgstr "+1 嘉宾"
+
+msgid "EventCrew door notes"
+msgstr "EventCrew 门口记录"
+
+msgid "Came in on"
+msgstr "入场方式"
+
+msgid "The names and email addresses the door crew noted under this address were deleted."
+msgstr "门口团队以此地址记录的名字和邮箱已删除。"
+
+#, php-format
+msgid "An email address noted at the door is deleted %d days after the event too."
+msgstr "门口记录的邮箱也会在活动结束 %d 天后删除。"
+
+msgid "Noted at the door"
+msgstr "门口记录"
+
+msgid "Name and email"
+msgstr "名字和邮箱"
+
+msgid "Who came in on this ticket?"
+msgstr "谁凭这张票入场？"
+
+msgid "Who came with them?"
+msgstr "谁和他们一起来？"
+
+msgid "(email only)"
+msgstr "（仅邮箱）"
+
+msgid "Both are optional. Only organizers see the email."
+msgstr "两项都可不填。只有组织者能看到邮箱。"
+
+msgid "Saved. They get an email to confirm the newsletter."
+msgstr "已保存。对方会收到一封确认新闻通讯的邮件。"
+
+msgid "Saved. They already get the newsletter."
+msgstr "已保存。对方已在接收新闻通讯。"
+
+msgid "Asked for the newsletter at the door"
+msgstr "在门口要求订阅新闻通讯"
+
+msgid "Asked"
+msgstr "已要求"
+
+msgid "Send them the newsletter (they confirm by email)"
+msgstr "给对方发送新闻通讯（通过邮件确认）"
+
+msgid "If you come in on a ticket someone gave you, or as someone's +1, the door crew may note your name and email address, if you agree to give them. If you also ask for our next events announcement there, we send you one email with a link to confirm it; otherwise we send nothing to that address."
+msgstr "如果你凭别人转给你的门票入场，或作为别人的 +1 入场，在你同意的情况下，门口团队可能会记录你的名字和邮箱。如果你在门口还要求订阅下一次活动公告，我们会给你发一封带确认链接的邮件；否则不会向该地址发送任何内容。"
+
+msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
+msgstr "门口团队为凭转让门票或作为 +1 入场的人记录的名字和邮箱。只有要求订阅新闻通讯的人会收到邮件：一个确认链接。"

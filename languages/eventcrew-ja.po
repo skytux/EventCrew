@@ -12287,3 +12287,70 @@ msgstr "それを持っている主催者"
 
 msgid "Whom to ask for wp-admin access: the official contact email (Settings > Privacy), or “an organizer who has it” when none is set."
 msgstr "wp-admin へのアクセスを頼む相手: 公式の連絡先メール (設定 > プライバシー)。設定されていないときは「それを持っている主催者」。"
+
+msgid "Give a name or an email."
+msgstr "名前かメールアドレスを書いてください。"
+
+msgid "Check them in first."
+msgstr "先にチェックインしてください。"
+
+msgid "Every +1 already has a name."
+msgstr "すべての+1に名前があります。"
+
+msgid "Given-away ticket"
+msgstr "譲られたチケット"
+
+msgid "+1 guest"
+msgstr "+1ゲスト"
+
+msgid "EventCrew door notes"
+msgstr "EventCrew 入口メモ"
+
+msgid "Came in on"
+msgstr "入場方法"
+
+msgid "The names and email addresses the door crew noted under this address were deleted."
+msgstr "このアドレスで入口チームが記録した名前とメールアドレスを削除しました。"
+
+#, php-format
+msgid "An email address noted at the door is deleted %d days after the event too."
+msgstr "入口で記録したメールアドレスも、イベントの%d日後に削除されます。"
+
+msgid "Noted at the door"
+msgstr "入口で記録"
+
+msgid "Name and email"
+msgstr "名前とメール"
+
+msgid "Who came in on this ticket?"
+msgstr "このチケットで入場したのは誰？"
+
+msgid "Who came with them?"
+msgstr "一緒に来たのは誰？"
+
+msgid "(email only)"
+msgstr "（メールのみ）"
+
+msgid "Both are optional. Only organizers see the email."
+msgstr "どちらも任意です。メールは主催者だけが見られます。"
+
+msgid "Saved. They get an email to confirm the newsletter."
+msgstr "保存しました。ニュースレターを確認するメールが届きます。"
+
+msgid "Saved. They already get the newsletter."
+msgstr "保存しました。すでにニュースレターを受け取っています。"
+
+msgid "Asked for the newsletter at the door"
+msgstr "入口でニュースレターを希望"
+
+msgid "Asked"
+msgstr "希望"
+
+msgid "Send them the newsletter (they confirm by email)"
+msgstr "ニュースレターを送る（メールで本人が確認）"
+
+msgid "If you come in on a ticket someone gave you, or as someone's +1, the door crew may note your name and email address, if you agree to give them. If you also ask for our next events announcement there, we send you one email with a link to confirm it; otherwise we send nothing to that address."
+msgstr "誰かから譲られたチケットで、または誰かの+1として入場する場合、同意すれば入口チームがあなたの名前とメールアドレスを記録することがあります。そこで次回イベントのお知らせも希望した場合は、確認用リンクを記載したメールを1通送ります。それ以外は、そのアドレスには何も送りません。"
+
+msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
+msgstr "譲られたチケットや+1で入場した人について、入口チームが記録した名前とメールアドレス。ニュースレターを希望した人だけに、確認用リンクのメールが届きます。"

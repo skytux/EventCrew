@@ -77,9 +77,14 @@ final class Mailer
      * line, so the ticket is never lost. Without $tickets the mark's line
      * is dropped.
      *
+     * $picture (EventPicture::forTask()), the event's picture and its DJ
+     * text, goes right under the first button, the ticket button of the
+     * sign-up email and the reminder, as in the ticket email.
+     *
      * @param array<int, array{label: string, url: string}> $actions Buttons,
      *        most important first; the first is drawn as the primary one.
      * @param array{html: string, text: string}|null $tickets
+     * @param array{html: string, text: string}|null $picture
      */
     public function toPerson(
         int $personId,
@@ -88,7 +93,8 @@ final class Mailer
         string $body,
         array $actions = [],
         ?EmailHero $hero = null,
-        ?array $tickets = null
+        ?array $tickets = null,
+        ?array $picture = null
     ): bool {
         // A person added without an email (or erased) has a ".invalid"
         // placeholder address, which can never receive mail. Nothing is sent.
@@ -101,28 +107,34 @@ final class Mailer
         $before = rtrim($parts[0]);
         $after = ltrim(str_replace(self::TICKETS_MARK, '', $parts[1] ?? ''));
 
+        $accent = EmailTemplate::accent();
+        $pictureHtml = null === $picture ? '' : $picture['html'];
+        $pictureText = null === $picture || '' === $pictureHtml ? '' : $picture['text'];
+        $light = false;
+
         if (null === $tickets || '' === $tickets['html']) {
             $body = rtrim($before . ('' === $after ? '' : "\n\n" . $after));
-            $text = EmailBody::toText($body, $actions);
-            $content = null;
+            $text = EmailBody::toText($body, $actions, $pictureText);
+            $content = '' === $pictureHtml ? null : EmailBody::toHtml($body, $actions, $accent, '', $pictureHtml);
         } else {
-            $accent = EmailTemplate::accent();
             // The buttons go after the text they belong to: under the ticket
             // area when the text goes on after it, else above it.
             $content = '' === $after
-                ? EmailBody::toHtml($before, $actions, $accent) . $tickets['html']
-                : EmailBody::toHtml($before, [], $accent) . $tickets['html'] . EmailBody::toHtml($after, $actions, $accent);
+                ? EmailBody::toHtml($before, $actions, $accent, '', $pictureHtml) . $tickets['html']
+                : EmailBody::toHtml($before, [], $accent) . $tickets['html']
+                    . EmailBody::toHtml($after, $actions, $accent, '', $pictureHtml);
+            $light = true;
             // An area with no text part (the event's picture) adds nothing to it.
             $middle = '' === $tickets['text'] ? '' : "\n\n" . $tickets['text'];
             $text = '' === $after
-                ? EmailBody::toText($before, $actions) . $middle
-                : EmailBody::toText($before) . $middle . "\n\n" . EmailBody::toText($after, $actions);
+                ? EmailBody::toText($before, $actions, $pictureText) . $middle
+                : EmailBody::toText($before) . $middle . "\n\n" . EmailBody::toText($after, $actions, $pictureText);
         }
 
         $text .= $this->signatureText() . "\n\n" . $this->footerText($manageUrl);
 
         $sent = EmailTemplate::enabled()
-            ? $this->sendHtml($to, $subject, $body, $actions, $manageUrl, $text, $hero, $content)
+            ? $this->sendHtml($to, $subject, $body, $actions, $manageUrl, $text, $hero, $content, $light)
             : $this->mail($to, $subject, $text, [], $text);
 
         if (! $sent) {
@@ -515,17 +527,18 @@ final class Mailer
         string $manageUrl,
         string $text,
         ?EmailHero $hero = null,
-        ?string $content = null
+        ?string $content = null,
+        ?bool $light = null
     ): bool {
         $accent = EmailTemplate::accent();
-        // $content, the body already drawn with a ticket area, keeps the
-        // email light in dark mode too, as the ticket email does, so the QR
-        // codes stay dark on white.
+        // $content, the body already drawn with a ticket area ($light), keeps
+        // the email light in dark mode too, as the ticket email does, so the
+        // QR codes stay dark on white.
         $html = $this->template->render(
             $subject,
             (null === $hero ? '' : $hero->html($accent)) . ($content ?? EmailBody::toHtml($body, $actions, $accent)),
             EmailBody::footerHtml($this->footerLabel(), $manageUrl),
-            null !== $content
+            $light ?? null !== $content
         );
 
         // The plain-text half of the multipart message. PHPMailer only offers

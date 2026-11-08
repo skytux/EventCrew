@@ -81,17 +81,31 @@ final class EmailBody
      *        filled, the rest outlined.
      * @param string $tag 'FI' or 'EN': the language tag (langTag()) at the
      *        start of the first paragraph; '' for none.
+     * @param string $afterFirst HTML that goes right under the first button
+     *        (the event's picture under the ticket button,
+     *        EventPicture::block()), or under the text when there is none.
      */
     public static function toHtml(
         string $text,
         array $actions = [],
         string $accent = '#4a6cf7',
-        string $tag = ''
+        string $tag = '',
+        string $afterFirst = ''
     ): string {
         $html = self::blocks($text, $tag);
+        $buttons = self::buttons($actions, $accent);
 
-        foreach (self::buttons($actions, $accent) as $button) {
+        if ([] === $buttons) {
+            $html .= $afterFirst;
+        }
+
+        foreach ($buttons as $i => $button) {
             $html .= $button;
+
+            if (0 === $i && '' !== $afterFirst) {
+                // The next button keeps a gap from the text above it.
+                $html .= count($buttons) > 1 ? '<div style="margin:0 0 24px">' . $afterFirst . '</div>' : $afterFirst;
+            }
         }
 
         return $html . self::telegramLinks($actions) . self::plainLinks($actions);
@@ -190,25 +204,40 @@ final class EmailBody
      * alternative says the same thing: each button becomes a "Label: url" line,
      * which is what these bodies looked like before buttons existed.
      *
+     * $afterFirst (plain text) goes right under the first button's line, as
+     * in toHtml(), set apart by empty lines.
+     *
      * @param array<int, array{label: string, url: string}> $actions
      */
-    public static function toText(string $text, array $actions = []): string
+    public static function toText(string $text, array $actions = [], string $afterFirst = ''): string
     {
         $text = self::plainHeadings($text);
         $lines = [];
+        $afterFirst = trim($afterFirst);
+        $placed = '' === $afterFirst;
 
         foreach ($actions as $action) {
             if ('' === $action['url']) {
                 continue;
             }
 
-            $lines[] = self::STYLE_TELEGRAM === ($action['style'] ?? '')
+            $telegram = self::STYLE_TELEGRAM === ($action['style'] ?? '');
+            $lines[] = $telegram
                 /* translators: %s: an action, such as "Show your ticket". The line is followed by a t.me link. */
                 ? sprintf(__('%s in Telegram', 'eventcrew'), $action['label']) . ': ' . $action['url']
                 : $action['label'] . ': ' . $action['url'];
+
+            if (! $placed && ! $telegram && self::STYLE_LINK !== ($action['style'] ?? '')) {
+                $lines[] = "\n" . $afterFirst . "\n";
+                $placed = true;
+            }
         }
 
-        return [] === $lines ? $text : $text . "\n\n" . implode("\n", $lines);
+        if (! $placed) {
+            $text .= "\n\n" . $afterFirst;
+        }
+
+        return [] === $lines ? $text : rtrim($text . "\n\n" . implode("\n", $lines));
     }
 
     /**

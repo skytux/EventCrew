@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Support;
 
+use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
@@ -11,8 +12,11 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\ReminderCall;
 use EventCrew\Support\Roles;
+use EventCrew\Telegram\BoardDjText;
+use EventCrew\Tests\Telegram\FakeEvents;
 use EventCrew\Tests\Telegram\TelegramTestCase;
 
 /**
@@ -22,6 +26,7 @@ use EventCrew\Tests\Telegram\TelegramTestCase;
 final class ReminderCallTest extends TelegramTestCase
 {
     use AiTextOptions;
+    use FakeEvents;
 
     /** @var array<int, array{to: string, subject: string}> */
     private array $mails = [];
@@ -33,6 +38,7 @@ final class ReminderCallTest extends TelegramTestCase
         $this->mails = [];
 
         Functions\when('get_the_title')->justReturn('');
+        Functions\when('get_the_post_thumbnail_url')->justReturn('');
         Functions\when('rest_url')->alias(static fn (string $path = ''): string => 'https://example.test/wp-json/' . $path);
         Functions\when('add_query_arg')->alias(
             static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
@@ -256,6 +262,68 @@ final class ReminderCallTest extends TelegramTestCase
         self::assertCount(2, $rows);
         self::assertStringContainsString('eventcrew/v1/ticket?token=', $rows[0][0]['url']);
         self::assertSame('lc:5', $rows[1][0]['callback_data']);
+    }
+
+    /**
+     * Owner, 2026-11-08: the reminder carries the ticket button, so the
+     * event's picture and its DJ text go right under it, as in the ticket
+     * email; the plain text has the DJ text after the ticket link.
+     */
+    public function testTheReminderShowsTheEventPictureUnderTheTicketButton(): void
+    {
+        $bodies = [];
+        Functions\when('wp_mail')->alias(function (string $to, string $subject, string $body) use (&$bodies): bool {
+            $bodies[] = $body;
+
+            return true;
+        });
+        $this->fakeEvents();
+        $this->event(42, '2026-07-21', 'Ecstatic Dance', [
+            '_eventmesh_image_url' => 'https://site.test/dance.jpg',
+            '_eventmesh_venue_name' => 'Example Hall Helsinki',
+        ]);
+        Functions\when('get_the_post_thumbnail_url')->justReturn('');
+        Filters\expectApplied(NewsletterWriter::DJ_FILTER)->zeroOrMoreTimes()->andReturnUsing(
+            static fn (mixed $value, int $postId): array => 42 === $postId
+                ? [['name' => 'Esimerkki', 'description' => 'Plays ecstatic journeys.']]
+                : []
+        );
+        $text = 'Esimerkki takes you on a journey.';
+        $this->options[BoardDjText::OPTION] = [42 => [
+            'hash' => md5(BoardDjText::source(42)),
+            'text' => $text,
+            'texts' => [],
+            'text_hash' => md5($text),
+        ]];
+        $task = ['event_post_id' => 42, 'event_label' => 'Ecstatic Dance'] + $this->taskRow(5);
+        $this->wpdb->nextResults[] = [$task];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(3)];
+        $this->wpdb->nextRows[] = $this->personRow();
+
+        $this->call()->run(25);
+
+        $html = $bodies[0];
+        $button = (int) strpos($html, 'Show your ticket</a>');
+        $picture = (int) strpos($html, '<img src="https://site.test/dance.jpg"');
+        self::assertGreaterThan(0, $button);
+        self::assertGreaterThan($button, $picture);
+        self::assertSame(
+            '</td></tr></table><div style="margin:26px 0 0">',
+            substr($html, $button + 20, $picture - $button - 20)
+        );
+        self::assertStringContainsString('alt="Esimerkki · Ecstatic Dance · Tue 21.7.2026 21:00 · Example Hall Helsinki"', $html);
+        self::assertGreaterThan($picture, (int) strpos($html, 'Esimerkki takes you on a journey.</p>'));
+
+        // The plain-text email: the DJ text right after the ticket link.
+        $this->options[EmailTemplate::HTML_OPTION] = '0';
+        $this->wpdb->nextResults[] = [$task];
+        $this->wpdb->nextResults[] = [$this->assignmentRow(4)];
+        $this->wpdb->nextRows[] = $this->personRow();
+
+        $this->call()->run(25);
+
+        self::assertStringNotContainsString('dance.jpg', $bodies[1]);
+        self::assertMatchesRegularExpression('~Show your ticket: \S+\n\nEsimerkki takes you on a journey\.\n\n~u', $bodies[1]);
     }
 
     /** MessageAiText: the event's AI text when there is one, else the template's text. */

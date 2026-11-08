@@ -1577,7 +1577,7 @@ final class TicketMail
      * language HybridPolicy picks, each with its greeting on its own line in
      * italics, the ticket note,
      * the "Open my ticket" button, right under it the event's picture and its
-     * short DJ or host text (pictureBlock()), and the "See you on the
+     * short DJ or host text (EventPicture::block()), and the "See you on the
      * dancefloor" line. The corner (ticketCorner()): the holder's name, a buyer's code, the
      * offline hint and the small QR code in the bottom-right corner. For a
      * crew member with more than one ticket that night ($night, every ticket
@@ -1656,7 +1656,7 @@ final class TicketMail
 
         // Right under the "Open my ticket" button: the event's picture and
         // the short DJ or host text under it (Owner, 2026-11-08).
-        $picture = $this->pictureBlock($eventId, array_keys($parts), $event);
+        $picture = EventPicture::block($eventId, array_keys($parts), $event);
 
         // The heading: the event, the date and the time (when the event has
         // one), each on its own row (Owner, 2026-11-06).
@@ -1719,47 +1719,6 @@ final class TicketMail
             'html' => $html,
             'corner' => $this->ticketCorner(self::qrData($row), $holder, $code, $offline, $short),
             'text' => $text,
-        ];
-    }
-
-    /**
-     * What goes right under the ticket email's "Open my ticket" button: the
-     * picture of event $eventId (EventPicture), its alt text in the email's
-     * first language, and under it the short DJ or host text in each of
-     * $langs (EventPicture::djTexts()), each with its language tag when they
-     * differ. No picture: only the text. No event: nothing. The plain-text
-     * part gets the text alone, followed by an empty line.
-     *
-     * @param list<string> $langs
-     * @return array{html: string, text: string}
-     */
-    private function pictureBlock(?int $eventId, array $langs, string $event): array
-    {
-        if (null === $eventId || $eventId <= 0) {
-            return ['html' => '', 'text' => ''];
-        }
-
-        $url = EventPicture::url($eventId);
-        $html = '' === $url
-            ? ''
-            : EventPicture::html($url, EventPicture::alt($eventId, $langs[0] ?? Language::ENGLISH, $event), '26px 0 0');
-        $texts = EventPicture::djTexts($eventId, $langs);
-        $tags = HybridPolicy::tags($texts);
-
-        foreach ($texts as $lang => $text) {
-            $html .= sprintf(
-                '<p style="margin:14px 0 0;font-family:%1$s;font-size:15px;line-height:1.6;color:%2$s;'
-                    . 'text-align:center">%3$s%4$s</p>',
-                EmailBody::FONT,
-                self::TEXT_COLOR,
-                '' === $tags[$lang] ? '' : EmailBody::langTag($tags[$lang]),
-                esc_html($text)
-            );
-        }
-
-        return [
-            'html' => $html,
-            'text' => [] === $texts ? '' : implode("\n\n", $texts) . "\n\n",
         ];
     }
 

@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\DoorNoteRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
@@ -456,5 +457,35 @@ final class RetentionPurgeTest extends TestCase
 
         self::assertSame(0, $this->purgeBuyersInto($db));
         self::assertSame($after, $this->buyerRows($db));
+    }
+
+    public function testDoorNoteEmailsGoAfterTheSamePeriodAsGuests(): void
+    {
+        $this->withOptions([PrivacyPolicy::PURGE_OPTION => '0']);
+        $people = new PersonRepository();
+        $purge = new RetentionPurge(
+            $people,
+            new PersonEraser(
+                $people,
+                new AssignmentRepository(),
+                new RedemptionRepository(),
+                new CreditGrantRepository(),
+                new AuthTokenRepository(),
+                new NotificationsRepository()
+            ),
+            doorNotes: new DoorNoteRepository()
+        );
+        $this->wpdb->nextQueryResults[] = 2; // guests
+        $this->wpdb->nextQueryResults[] = 1; // door notes with no name, deleted
+        $this->wpdb->nextQueryResults[] = 3; // door notes left with a name
+
+        self::assertSame(6, $purge->purgeGuestEmails());
+
+        $sql = implode("\n", $this->wpdb->queries);
+        self::assertStringContainsString("DELETE FROM wp_eventcrew_door_notes WHERE event_date < '2026-05-21' AND name = ''", $sql);
+        self::assertStringContainsString(
+            "UPDATE wp_eventcrew_door_notes SET email = NULL WHERE event_date < '2026-05-21' AND email IS NOT NULL",
+            $sql
+        );
     }
 }

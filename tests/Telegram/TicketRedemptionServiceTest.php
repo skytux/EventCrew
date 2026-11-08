@@ -378,11 +378,11 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
 
         $long = TicketRedemptionService::buttonText(
             'Ecstatic Dance',
-            'Esimerkki, Aino Testinen, Bo Kokeilu & Somebody Else',
+            'Esimerkki, Aino Testinen, Bo Kokeilu & Somebody Else Again',
             'Sat 14 Nov'
         );
         self::assertSame(TicketRedemptionService::BUTTON_MAX, mb_strlen($long));
-        self::assertStringStartsWith('Ecstatic Dance · Esimerkki, Milla', $long);
+        self::assertStringStartsWith('Ecstatic Dance · Esimerkki, Aino', $long);
         self::assertStringEndsWith('… · Sat 14 Nov', $long);
 
         self::assertSame(

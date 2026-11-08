@@ -1053,4 +1053,32 @@ final class NewsletterControllerTest extends TestCase
         self::assertSame(1, substr_count($bar, 'class="cf-turnstile"'));
         self::assertSame(1, substr_count($bar, Turnstile::SCRIPT_URL));
     }
+
+    public function testADoorInviteSendsTheUsualConfirmationAndNoCaptchaIsAsked(): void
+    {
+        $result = $this->controller()->inviteFromDoor('aino@example.org');
+
+        self::assertSame(NewsletterController::DOOR_SENT, $result);
+        self::assertSame('pending', $this->wpdb->inserts[0]['data']['status']);
+        self::assertCount(1, $this->mails);
+        self::assertSame('aino@example.org', $this->mails[0]['to']);
+        self::assertStringContainsString('do=confirm', $this->mails[0]['body']);
+    }
+
+    public function testADoorInviteForAConfirmedAddressChangesAndSendsNothing(): void
+    {
+        $this->wpdb->nextRows[] = self::row(5, NewsletterSubscriberRepository::STATUS_CONFIRMED);
+
+        self::assertSame(NewsletterController::DOOR_ALREADY, $this->controller()->inviteFromDoor('fan@example.test'));
+        self::assertSame([], $this->mails);
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testADoorInviteWithABadAddressDoesNothing(): void
+    {
+        self::assertSame(NewsletterController::DOOR_FAILED, $this->controller()->inviteFromDoor('not-an-email'));
+        self::assertSame([], $this->mails);
+        self::assertSame([], $this->wpdb->queries);
+    }
 }

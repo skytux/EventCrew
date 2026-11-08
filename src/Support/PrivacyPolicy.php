@@ -755,6 +755,10 @@ final class PrivacyPolicy
                 'eventcrew'
             ),
             __(
+                'If you come in on a ticket someone gave you, or as someone\'s +1, the door crew may note your name and email address, if you agree to give them. If you also ask for our next events announcement there, we send you one email with a link to confirm it; otherwise we send nothing to that address.',
+                'eventcrew'
+            ),
+            __(
                 'If you join our next events announcement, we store your email address, whether you have confirmed it or left the announcement, the date you signed up and the date you confirmed. We also store the name you want us to greet you with, if you give one, and the language your browser prefers (Finnish or English). You can change the name and the language, or leave, with the link at the end of every announcement. When you leave, the name is deleted.',
                 'eventcrew'
             ),
@@ -845,6 +849,14 @@ final class PrivacyPolicy
                 /* translators: %d: number of days */
                 __(
                     'A guest\'s email address is deleted %d days after the event too. The guest\'s name stays on that night\'s guest list.',
+                    'eventcrew'
+                ),
+                self::BUYER_EMAIL_DAYS
+            ),
+            sprintf(
+                /* translators: %d: number of days */
+                __(
+                    'An email address noted at the door is deleted %d days after the event too.',
                     'eventcrew'
                 ),
                 self::BUYER_EMAIL_DAYS

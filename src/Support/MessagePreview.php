@@ -393,7 +393,21 @@ final class MessagePreview
             return;
         }
 
-        $mailer->toPerson($person->id, $to, $subject, $body, $actions, EmailHero::for($template->id, $context), $picture);
+        // The emails with a ticket button show the event's picture under it.
+        $ticketPicture = in_array($template->id, ['signup_confirmed', 'reminder'], true)
+            ? EventPicture::forTask($task, $person)
+            : null;
+
+        $mailer->toPerson(
+            $person->id,
+            $to,
+            $subject,
+            $body,
+            $actions,
+            EmailHero::for($template->id, $context),
+            $picture,
+            $ticketPicture
+        );
     }
 
     /**

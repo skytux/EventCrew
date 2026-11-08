@@ -7,6 +7,7 @@ namespace EventCrew\Tests\Support;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\DoorNoteRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -197,6 +198,47 @@ final class PrivacyExporterTest extends TestCase
         self::assertSame(
             "SELECT * FROM wp_eventcrew_newsletter_subscribers WHERE email = 'fan@example.test'",
             $this->wpdb->lastQuery()
+        );
+    }
+
+    public function testANameAndEmailNotedAtTheDoorAreExported(): void
+    {
+        $this->wpdb->nextRows[] = null;  // no crew record
+        $this->wpdb->nextResults[] = []; // no ticket buyer rows
+        $this->wpdb->nextResults[] = []; // no guest rows
+        $this->wpdb->nextResults[] = [
+            [
+                'event_date' => '2026-08-01',
+                'role' => 'plus',
+                'name' => 'Aino Testinen',
+                'email' => 'aino@example.org',
+                'newsletter' => 1,
+                'created_at' => '2026-08-01 22:10:00',
+            ],
+        ];
+
+        $exporter = new PrivacyExporter(
+            new PersonRepository(),
+            new AssignmentRepository(),
+            new TaskRepository(),
+            new RedemptionRepository(),
+            new CreditGrantRepository(),
+            doorNotes: new DoorNoteRepository()
+        );
+        $result = $exporter->export('aino@example.org');
+
+        self::assertCount(1, $result['data']);
+        self::assertSame('eventcrew-door-notes', $result['data'][0]['group_id']);
+
+        $values = array_column($result['data'][0]['data'], 'value', 'name');
+        self::assertSame('2026-08-01', $values['Event date']);
+        self::assertSame('Aino Testinen', $values['Name']);
+        self::assertSame('aino@example.org', $values['Email']);
+        self::assertSame('+1 guest', $values['Came in on']);
+        self::assertSame('Yes', $values['Asked for the newsletter at the door']);
+        self::assertContains(
+            "SELECT event_date, role, name, email, newsletter, created_at FROM wp_eventcrew_door_notes\n                WHERE email = 'aino@example.org' ORDER BY event_date ASC, id ASC",
+            $this->wpdb->queries
         );
     }
 }

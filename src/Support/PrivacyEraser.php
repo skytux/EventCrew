@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Repositories\DoorNoteRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\TicketTransferRepository;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
@@ -33,7 +34,8 @@ final class PrivacyEraser
         private readonly TicketBuyerRepository $buyers = new TicketBuyerRepository(),
         private readonly GuestRepository $guests = new GuestRepository(),
         private readonly NewsletterSubscriberRepository $subscribers = new NewsletterSubscriberRepository(),
-        private readonly ?TicketTransferRepository $transfers = null
+        private readonly ?TicketTransferRepository $transfers = null,
+        private readonly ?DoorNoteRepository $doorNotes = null
     ) {
     }
 
@@ -119,6 +121,14 @@ final class PrivacyEraser
         if (null !== $this->transfers && $this->transfers->eraseEmail($email) > 0) {
             $messages[] = __(
                 'The name and email address were erased from the free-entry tickets given to this address. The tickets stay on the door list with no name.',
+                'eventcrew'
+            );
+        }
+
+        // Door notes are only a name and an address, so they go entirely.
+        if (null !== $this->doorNotes && $this->doorNotes->eraseEmail($email) > 0) {
+            $messages[] = __(
+                'The names and email addresses the door crew noted under this address were deleted.',
                 'eventcrew'
             );
         }

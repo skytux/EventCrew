@@ -46,6 +46,8 @@ final class DoorController
     public const SCAN_ACTION = 'eventcrew_door_scan';
     public const TICKET_CODE_ACTION = 'eventcrew_door_ticket_code';
     public const CANCEL_SEND_ACTION = 'eventcrew_door_cancel_send';
+    public const NOTE_ACTION = 'eventcrew_door_note';
+    public const NOTE_REMOVE_ACTION = 'eventcrew_door_note_remove';
 
     /** The actions that can add people, with DoorQuota::adding()'s name for each. */
     private const QUOTA_ACTIONS = [
@@ -92,6 +94,8 @@ final class DoorController
             self::SCAN_ACTION,
             self::TICKET_CODE_ACTION,
             self::CANCEL_SEND_ACTION,
+            self::NOTE_ACTION,
+            self::NOTE_REMOVE_ACTION,
         ];
 
         foreach ($actions as $action) {
@@ -253,6 +257,29 @@ final class DoorController
                     'message' => $this->desk->guestText($code),
                     'state' => $this->desk->state($date),
                 ]);
+                // No break: json() exits.
+
+            case self::NOTE_ACTION:
+                // The optional name and email of someone who came in on a
+                // given-away ticket or as a +1. Plain text, as for the guest:
+                // a mistyped address is refused, not stored as "no email".
+                // Neither is ever logged. newsletter is the box "they asked for
+                // the newsletter", unticked by default; it means nothing
+                // without an email.
+                $email = isset($_POST['email']) ? sanitize_text_field(wp_unslash($_POST['email'])) : '';
+                $newsletter = isset($_POST['newsletter']) && '1' === sanitize_key(wp_unslash($_POST['newsletter']));
+                $code = $this->desk->addNote($date, $doorPersonId, $kind, $ref, $name, $email, $newsletter);
+                $this->json([
+                    'ok' => DoorDesk::noteSaved($code),
+                    'message' => $this->desk->noteText($code),
+                    'state' => $this->desk->state($date),
+                ]);
+                // No break: json() exits.
+
+            case self::NOTE_REMOVE_ACTION:
+                $note = isset($_POST['note']) ? (int) $_POST['note'] : 0;
+                $ok = $this->desk->removeNote($date, $kind, $ref, $note);
+                $this->json(['ok' => $ok, 'state' => $this->desk->state($date)], $ok ? 200 : 404);
                 // No break: json() exits.
 
             case self::TASKS_ACTION:
@@ -429,6 +456,8 @@ final class DoorController
                 'scan' => self::SCAN_ACTION,
                 'ticketCode' => self::TICKET_CODE_ACTION,
                 'cancelSend' => self::CANCEL_SEND_ACTION,
+                'note' => self::NOTE_ACTION,
+                'noteRemove' => self::NOTE_REMOVE_ACTION,
             ],
             // The QR decoder for phones without BarcodeDetector, loaded only
             // when Scan is tapped.

@@ -144,7 +144,10 @@ final class ClaimNotifier
             MessageActions::email(MessageActions::of('signup_confirmed', $context, $this->mailer)),
             // The "Thank you" hero at the top of the HTML email.
             EmailHero::for('signup_confirmed', $context),
-            $tickets
+            $tickets,
+            // Right under the ticket button: the event's picture and its DJ
+            // text, as in the ticket email (Owner, 2026-11-08).
+            EventPicture::forTask($task, $person)
         );
 
         // The ticket went out in this email: later changes to the night's

@@ -518,7 +518,7 @@ final class TicketMailTest extends TestCase
 
         $mail = $this->ticketMail()->compose($ticket);
 
-        self::assertStringContainsString('alt="Esimerkki · Ecstatic Dance · Sat 14.11.2026 21:00 · Helsinki', $mail['html']);
+        self::assertStringContainsString('alt="Esimerkki · Ecstatic Dance · Sat 14.11.2026 21:00 · Example Hall Helsinki', $mail['html']);
         self::assertStringContainsString('Esimerkki takes you on a journey.</p>', $mail['html']);
 
         $this->wpdb->nextResults[] = [['id' => 3, 'task_date' => '2026-11-14', 'event_post_id' => 55, 'event_label' => 'Ecstatic Dance']];

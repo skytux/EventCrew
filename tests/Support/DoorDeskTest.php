@@ -9,8 +9,10 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\DoorNoteRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
@@ -19,14 +21,19 @@ use EventCrew\Support\DoorDesk;
 use EventCrew\Support\DoorSession;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FreeEntryGate;
+use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MarkedBy;
+use EventCrew\Support\Newsletter;
+use EventCrew\Support\NewsletterText;
 use EventCrew\Support\Roles;
 use EventCrew\Support\ShortCode;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\TicketMail;
+use EventCrew\Support\Turnstile;
 use EventCrew\Telegram\TicketRedemptionService;
+use EventCrew\Web\NewsletterController;
 
 /**
  * The door page's logic: logging a device in, the session it buys, the
@@ -46,8 +53,12 @@ final class DoorDeskTest extends SalesDeskTestCase
         Functions\when('sanitize_email')->returnArg(1);
     }
 
-    private function desk(?ClaimNotifier $notifier = null, ?TicketMail $ticketMail = null): DoorDesk
-    {
+    private function desk(
+        ?ClaimNotifier $notifier = null,
+        ?TicketMail $ticketMail = null,
+        ?DoorNoteRepository $notes = null,
+        ?NewsletterController $newsletter = null
+    ): DoorDesk {
         return new DoorDesk(
             new TaskRepository(),
             new AssignmentRepository(),
@@ -70,7 +81,9 @@ final class DoorDeskTest extends SalesDeskTestCase
             $this->salesDeskGate(),
             new CreditGrantRepository(),
             $notifier,
-            $ticketMail
+            $ticketMail,
+            notes: $notes,
+            newsletter: $newsletter
         );
     }
 
@@ -1630,5 +1643,236 @@ final class DoorDeskTest extends SalesDeskTestCase
         ];
 
         self::assertSame(['return text.split("/").pop();', ''], DoorDesk::ticketDecoders());
+    }
+
+    public function testANameAndEmailAreNotedForTheGuestsPlusOne(): void
+    {
+        $this->wpdb->nextResults[] = [['kind' => 'guest', 'ref_id' => 4, 'plus_ones' => 1]]; // checkins
+        $this->wpdb->nextResults[] = [$this->guestRow(4, 'Ann')];                             // findRow
+        $this->wpdb->nextResults[] = [];                                                       // notes
+
+        $code = $this->desk(notes: new DoorNoteRepository())
+            ->addNote(self::NIGHT, 1, CheckinRepository::KIND_GUEST, 4, '  Aino Testinen ', ' aino@example.org ');
+
+        self::assertSame(DoorDesk::NOTE_OK, $code);
+        self::assertSame('wp_eventcrew_door_notes', $this->wpdb->inserts[0]['table']);
+        $data = $this->wpdb->inserts[0]['data'];
+        self::assertSame('plus', $data['role']);
+        self::assertSame('Aino Testinen', $data['name']);
+        self::assertSame('aino@example.org', $data['email']);
+        self::assertSame('guest', $data['kind']);
+        self::assertSame(4, $data['ref_id']);
+    }
+
+    public function testANameAloneIsEnoughAndTheEmailIsStoredAsNone(): void
+    {
+        $this->wpdb->nextResults[] = [['kind' => 'guest', 'ref_id' => 4, 'plus_ones' => 1]];
+        $this->wpdb->nextResults[] = [$this->guestRow(4, 'Ann')];
+        $this->wpdb->nextResults[] = [];
+
+        self::assertSame(
+            DoorDesk::NOTE_OK,
+            $this->desk(notes: new DoorNoteRepository())
+                ->addNote(self::NIGHT, 1, CheckinRepository::KIND_GUEST, 4, 'Aino Testinen', '')
+        );
+        self::assertNull($this->wpdb->inserts[0]['data']['email']);
+    }
+
+    public function testANoteWithNothingInItOrABadEmailWritesNothing(): void
+    {
+        $desk = $this->desk(notes: new DoorNoteRepository());
+
+        self::assertSame(DoorDesk::NOTE_EMPTY, $desk->addNote(self::NIGHT, 1, 'guest', 4, '  ', ' '));
+        self::assertSame(DoorDesk::NOTE_BAD_EMAIL, $desk->addNote(self::NIGHT, 1, 'guest', 4, 'Aino', 'not-an-email'));
+        self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->queries);
+    }
+
+    public function testNoNoteBeforeTheGuestIsInOrForAGuestWithNoPlusOne(): void
+    {
+        $desk = $this->desk(notes: new DoorNoteRepository());
+
+        $this->wpdb->nextResults[] = [];                                                       // not checked in
+        self::assertSame(DoorDesk::NOTE_NOT_IN, $desk->addNote(self::NIGHT, 1, 'guest', 4, 'Aino', ''));
+
+        $this->wpdb->nextResults[] = [['kind' => 'guest', 'ref_id' => 4, 'plus_ones' => 0]]; // in, alone
+        $this->wpdb->nextResults[] = [$this->guestRow(4, 'Ann')];
+        $this->wpdb->nextResults[] = [];
+        self::assertSame(DoorDesk::NOTE_NOT_IN, $desk->addNote(self::NIGHT, 1, 'guest', 4, 'Aino', ''));
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testNoMoreNotesThanPlusOnes(): void
+    {
+        $this->wpdb->nextResults[] = [['kind' => 'guest', 'ref_id' => 4, 'plus_ones' => 1]];
+        $this->wpdb->nextResults[] = [$this->guestRow(4, 'Ann')];
+        $this->wpdb->nextResults[] = [
+            ['id' => 3, 'kind' => 'guest', 'ref_id' => 4, 'role' => 'plus', 'name' => 'Aino Testinen', 'email' => null],
+        ];
+
+        self::assertSame(
+            DoorDesk::NOTE_FULL,
+            $this->desk(notes: new DoorNoteRepository())->addNote(self::NIGHT, 1, 'guest', 4, 'Bo', '')
+        );
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testWithoutTheNotesTableANoteFailsAndCheckInIsUntouched(): void
+    {
+        self::assertSame(DoorDesk::NOTE_FAILED, $this->desk()->addNote(self::NIGHT, 1, 'guest', 4, 'Aino', ''));
+        self::assertSame('Give a name or an email.', $this->desk()->noteText(DoorDesk::NOTE_EMPTY));
+    }
+
+    public function testRemovingANoteDeletesOnlyThatEntrysRow(): void
+    {
+        self::assertTrue($this->desk(notes: new DoorNoteRepository())->removeNote(self::NIGHT, 'guest', 4, 3));
+        self::assertSame(
+            ['id' => 3, 'event_date' => self::NIGHT, 'kind' => 'guest', 'ref_id' => 4],
+            $this->wpdb->deletes[0]['where']
+        );
+        self::assertFalse($this->desk()->removeNote(self::NIGHT, 'guest', 4, 3));
+    }
+
+    public function testTheStateListsNotedNamesButNotTheEmail(): void
+    {
+        $this->wpdb->nextResults[] = [['kind' => 'guest', 'ref_id' => 4, 'plus_ones' => 1]]; // checkins
+        $this->wpdb->nextResults[] = [                                                       // notes
+            ['id' => 3, 'kind' => 'guest', 'ref_id' => 4, 'role' => 'plus', 'name' => 'Aino Testinen', 'email' => 'aino@example.org'],
+        ];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [$this->guestRow(4, 'Ann')];
+        $this->wpdb->nextResults[] = [];
+
+        $state = $this->desk(notes: new DoorNoteRepository())->state(self::NIGHT);
+        $row = $state['sections'][2]['rows'][0];
+
+        self::assertSame([['id' => 3, 'name' => 'Aino Testinen', 'has_email' => true]], $row['noted']);
+        self::assertStringNotContainsString('aino@example.org', (string) json_encode($state));
+    }
+
+    public function testTheAdminListShowsTheNotedNameEmailAndWhoTheyCameWith(): void
+    {
+        $note = ['id' => 3, 'kind' => 'guest', 'ref_id' => 4, 'role' => 'plus', 'name' => 'Aino Testinen', 'email' => 'aino@example.org'];
+        $this->wpdb->nextResults[] = [$note];                                                 // notesList: notes
+        $this->wpdb->nextResults[] = [['kind' => 'guest', 'ref_id' => 4, 'plus_ones' => 1]]; // state: checkins
+        $this->wpdb->nextResults[] = [$note];                                                 // state: notes
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [$this->guestRow(4, 'Ann')];
+        $this->wpdb->nextResults[] = [];
+
+        self::assertSame(
+            [['name' => 'Aino Testinen', 'email' => 'aino@example.org', 'newsletter' => false, 'came' => '+1 guest · Ann']],
+            $this->desk(notes: new DoorNoteRepository())->notesList(self::NIGHT)
+        );
+    }
+
+    /** @var list<string> Who wp_mail() was called for, in the newsletter tests. */
+    private array $mailedTo = [];
+
+    private function newsletter(): NewsletterController
+    {
+        $this->mailedTo = [];
+        Functions\when('wp_mail')->alias(function (string $to): bool {
+            $this->mailedTo[] = $to;
+
+            return true;
+        });
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
+        $logger = new Logger();
+        $mailer = new Mailer($logger, new EmailTemplate($logger));
+
+        return new NewsletterController(
+            new NewsletterSubscriberRepository(),
+            $mailer,
+            new Newsletter(
+                new NewsletterSubscriberRepository(),
+                new PersonRepository(),
+                new NewsletterText(new LlmClient($logger), $logger),
+                $mailer,
+                $logger
+            ),
+            new Turnstile($logger)
+        );
+    }
+
+    /** A checked-in guest with one +1 and no notes yet, for addNote(). */
+    private function queueNoteTarget(): void
+    {
+        $this->wpdb->nextResults[] = [['kind' => 'guest', 'ref_id' => 4, 'plus_ones' => 1]]; // checkins
+        $this->wpdb->nextResults[] = [$this->guestRow(4, 'Ann')];                             // findRow
+        $this->wpdb->nextResults[] = [];                                                       // notes
+    }
+
+    public function testATickedNewsletterBoxSendsTheConfirmationAndRecordsTheRequest(): void
+    {
+        $newsletter = $this->newsletter();
+        $this->queueNoteTarget();
+
+        $code = $this->desk(notes: new DoorNoteRepository(), newsletter: $newsletter)
+            ->addNote(self::NIGHT, 1, 'guest', 4, 'Aino Testinen', 'aino@example.org', true);
+
+        self::assertSame(DoorDesk::NOTE_INVITED, $code);
+        self::assertTrue(DoorDesk::noteSaved($code));
+        self::assertSame(1, $this->wpdb->inserts[0]['data']['newsletter']);
+        self::assertSame('pending', $this->wpdb->inserts[1]['data']['status']);
+        self::assertSame(['aino@example.org'], $this->mailedTo);
+    }
+
+    public function testAnUntickedBoxSendsNothingAndSubscribesNobody(): void
+    {
+        $newsletter = $this->newsletter();
+        $this->queueNoteTarget();
+
+        $code = $this->desk(notes: new DoorNoteRepository(), newsletter: $newsletter)
+            ->addNote(self::NIGHT, 1, 'guest', 4, 'Aino Testinen', 'aino@example.org', false);
+
+        self::assertSame(DoorDesk::NOTE_OK, $code);
+        self::assertSame(0, $this->wpdb->inserts[0]['data']['newsletter']);
+        self::assertCount(1, $this->wpdb->inserts);
+        self::assertSame([], $this->mailedTo);
+        self::assertStringNotContainsString('newsletter_subscribers', implode("\n", $this->wpdb->queries));
+    }
+
+    public function testATickedBoxWithoutAnEmailMeansNothing(): void
+    {
+        $newsletter = $this->newsletter();
+        $this->queueNoteTarget();
+
+        $code = $this->desk(notes: new DoorNoteRepository(), newsletter: $newsletter)
+            ->addNote(self::NIGHT, 1, 'guest', 4, 'Aino Testinen', '', true);
+
+        self::assertSame(DoorDesk::NOTE_OK, $code);
+        self::assertSame(0, $this->wpdb->inserts[0]['data']['newsletter']);
+        self::assertCount(1, $this->wpdb->inserts);
+        self::assertSame([], $this->mailedTo);
+    }
+
+    public function testAnAddressAlreadySubscribedIsLeftAloneAndGetsNoEmail(): void
+    {
+        $newsletter = $this->newsletter();
+        $this->queueNoteTarget();
+        $this->wpdb->nextRows[] = [
+            'id' => 5,
+            'email' => 'aino@example.org',
+            'status' => 'confirmed',
+            'created_at' => '2026-07-01 10:00:00',
+            'confirmed_at' => '2026-07-01 10:05:00',
+            'name' => '',
+            'language' => '',
+        ];
+
+        $code = $this->desk(notes: new DoorNoteRepository(), newsletter: $newsletter)
+            ->addNote(self::NIGHT, 1, 'guest', 4, 'Aino Testinen', 'aino@example.org', true);
+
+        self::assertSame(DoorDesk::NOTE_SUBSCRIBED, $code);
+        self::assertSame('Saved. They already get the newsletter.', $this->desk()->noteText($code));
+        self::assertSame(1, $this->wpdb->inserts[0]['data']['newsletter']);
+        self::assertCount(1, $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame([], $this->mailedTo);
     }
 }

@@ -859,6 +859,8 @@ final class BoardServiceTest extends TelegramTestCase
 
     public function testSignupSendsAConfirmationEmailWithATicketLink(): void
     {
+        // The event has no picture: no picture under the ticket button.
+        Functions\when('get_the_post_thumbnail_url')->justReturn('');
         $this->options[BoardService::BOARD_OPTION] = ['chat_id' => 100, 'message_id' => 5];
         // The second thoughts window off: the email goes at once.
         $this->options[SecondThoughts::OPTION] = 0;

@@ -12848,3 +12848,70 @@ msgid ""
 "Whom to ask for wp-admin access: the official contact email (Settings > Privacy), or “an organizer who has it” when none is set."
 msgstr ""
 "Vem man frågar om åtkomst till wp-admin: den officiella kontaktadressen (Inställningar > Integritet), eller ”en arrangör som har den” när ingen är angiven."
+
+msgid "Give a name or an email."
+msgstr "Ange ett namn eller en e-postadress."
+
+msgid "Check them in first."
+msgstr "Checka in personen först."
+
+msgid "Every +1 already has a name."
+msgstr "Varje +1 har redan ett namn."
+
+msgid "Given-away ticket"
+msgstr "Bortgiven biljett"
+
+msgid "+1 guest"
+msgstr "+1-gäst"
+
+msgid "EventCrew door notes"
+msgstr "EventCrew dörranteckningar"
+
+msgid "Came in on"
+msgstr "Kom in på"
+
+msgid "The names and email addresses the door crew noted under this address were deleted."
+msgstr "Namnen och e-postadresserna som dörrteamet antecknade under den här adressen raderades."
+
+#, php-format
+msgid "An email address noted at the door is deleted %d days after the event too."
+msgstr "En e-postadress som antecknats vid dörren raderas också %d dagar efter evenemanget."
+
+msgid "Noted at the door"
+msgstr "Antecknat vid dörren"
+
+msgid "Name and email"
+msgstr "Namn och e-post"
+
+msgid "Who came in on this ticket?"
+msgstr "Vem kom in på den här biljetten?"
+
+msgid "Who came with them?"
+msgstr "Vem kom med dem?"
+
+msgid "(email only)"
+msgstr "(bara e-post)"
+
+msgid "Both are optional. Only organizers see the email."
+msgstr "Båda är valfria. Bara arrangörerna ser e-postadressen."
+
+msgid "Saved. They get an email to confirm the newsletter."
+msgstr "Sparat. Personen får ett mejl för att bekräfta nyhetsbrevet."
+
+msgid "Saved. They already get the newsletter."
+msgstr "Sparat. Personen får redan nyhetsbrevet."
+
+msgid "Asked for the newsletter at the door"
+msgstr "Bad om nyhetsbrevet vid dörren"
+
+msgid "Asked"
+msgstr "Bad om det"
+
+msgid "Send them the newsletter (they confirm by email)"
+msgstr "Skicka nyhetsbrevet (de bekräftar via mejl)"
+
+msgid "If you come in on a ticket someone gave you, or as someone's +1, the door crew may note your name and email address, if you agree to give them. If you also ask for our next events announcement there, we send you one email with a link to confirm it; otherwise we send nothing to that address."
+msgstr "Om du kommer in på en biljett som någon gav dig, eller som någons +1, kan dörrteamet anteckna ditt namn och din e-postadress, om du går med på att ge dem. Om du där också ber om utskicket om kommande evenemang skickar vi dig ett mejl med en länk för att bekräfta det; annars skickar vi ingenting till den adressen."
+
+msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
+msgstr "Namn och e-postadresser som dörrteamet antecknade för dem som kom in på en bortgiven biljett eller som +1. Bara de som bad om nyhetsbrevet får ett mejl: en länk för att bekräfta det."

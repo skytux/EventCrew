@@ -23,6 +23,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\DoorNoteRepository;
 use EventCrew\Repositories\FollowupRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\NewsletterHistoryRepository;
@@ -1025,6 +1026,11 @@ final class Kernel
         );
 
         $this->container->singleton(
+            DoorNoteRepository::class,
+            fn () => new DoorNoteRepository()
+        );
+
+        $this->container->singleton(
             TicketTransferService::class,
             fn (Container $container) => new TicketTransferService(
                 $container->get(TicketTransferRepository::class),
@@ -1106,7 +1112,9 @@ final class Kernel
                 $container->get(CreditGrantRepository::class),
                 $container->get(ClaimNotifier::class),
                 $container->get(TicketMail::class),
-                transfers: $container->get(TicketTransferRepository::class)
+                transfers: $container->get(TicketTransferRepository::class),
+                notes: $container->get(DoorNoteRepository::class),
+                newsletter: $container->get(NewsletterController::class)
             )
         );
 
@@ -1190,7 +1198,8 @@ final class Kernel
                 $container->get(TicketBuyerRepository::class),
                 $container->get(GuestRepository::class),
                 $container->get(NewsletterSubscriberRepository::class),
-                transfers: $container->get(TicketTransferRepository::class)
+                transfers: $container->get(TicketTransferRepository::class),
+                doorNotes: $container->get(DoorNoteRepository::class)
             )
         );
 
@@ -1205,7 +1214,8 @@ final class Kernel
                 $container->get(TicketBuyerRepository::class),
                 $container->get(GuestRepository::class),
                 $container->get(NewsletterSubscriberRepository::class),
-                transfers: $container->get(TicketTransferRepository::class)
+                transfers: $container->get(TicketTransferRepository::class),
+                doorNotes: $container->get(DoorNoteRepository::class)
             )
         );
 
@@ -1217,7 +1227,8 @@ final class Kernel
                 $container->get(TicketBuyerRepository::class),
                 $container->get(GuestRepository::class),
                 $container->get(NewsletterSubscriberRepository::class),
-                transfers: $container->get(TicketTransferRepository::class)
+                transfers: $container->get(TicketTransferRepository::class),
+                doorNotes: $container->get(DoorNoteRepository::class)
             )
         );
 
@@ -1829,7 +1840,8 @@ final class Kernel
                 $container->get(TicketBuyerRepository::class),
                 $container->get(BuyerImport::class),
                 $container->get(TicketMail::class),
-                $container->get(FollowupMail::class)
+                $container->get(FollowupMail::class),
+                $container->get(DoorDesk::class)
             )
         );
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Models\Person;
+use EventCrew\Models\Task;
 use EventCrew\Telegram\BoardDjText;
 use EventCrew\Web\SignupBoardView;
 
@@ -73,6 +75,68 @@ final class EventPicture
             esc_attr($margin),
             esc_url($url),
             esc_attr($alt)
+        );
+    }
+
+    /**
+     * The block that goes right under an email's ticket button: the picture
+     * of event $eventId, its alt text (alt()) in the first of $langs, and
+     * under it the short DJ or host text in each of $langs (djTexts()), each
+     * with its language tag when they differ. No picture: only the text. No
+     * event: nothing. The plain-text part gets the text alone, followed by an
+     * empty line. $event is the event's name to use when EventMesh gives none.
+     *
+     * @param list<string> $langs
+     * @return array{html: string, text: string}
+     */
+    public static function block(?int $eventId, array $langs, string $event = ''): array
+    {
+        if (null === $eventId || $eventId <= 0) {
+            return ['html' => '', 'text' => ''];
+        }
+
+        $url = self::url($eventId);
+        $html = '' === $url
+            ? ''
+            : self::html($url, self::alt($eventId, $langs[0] ?? Language::ENGLISH, $event), '26px 0 0');
+        $texts = self::djTexts($eventId, $langs);
+        $tags = HybridPolicy::tags($texts);
+
+        foreach ($texts as $lang => $text) {
+            $html .= sprintf(
+                '<p style="margin:14px 0 0;font-family:%1$s;font-size:15px;line-height:1.6;color:%2$s;'
+                    . 'text-align:center">%3$s%4$s</p>',
+                EmailBody::FONT,
+                EmailBody::TEXT_COLOR,
+                '' === $tags[$lang] ? '' : EmailBody::langTag($tags[$lang]),
+                esc_html($text)
+            );
+        }
+
+        return [
+            'html' => $html,
+            'text' => [] === $texts ? '' : implode("\n\n", $texts) . "\n\n",
+        ];
+    }
+
+    /**
+     * block() for an email about $task to $person, whose ticket button it
+     * goes under (the sign-up email, the reminder): in the ticket email's
+     * languages for them (HybridPolicy::TICKET). Nothing when the task's
+     * event has no picture.
+     *
+     * @return array{html: string, text: string}
+     */
+    public static function forTask(Task $task, Person $person): array
+    {
+        if ('' === self::url($task->eventPostId)) {
+            return ['html' => '', 'text' => ''];
+        }
+
+        return self::block(
+            $task->eventPostId,
+            HybridPolicy::languagesFor(HybridPolicy::TICKET, HybridPolicy::personLanguage($person)),
+            $task->eventName()
         );
     }
 

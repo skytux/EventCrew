@@ -19,7 +19,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '34';
+    public const DB_VERSION = '35';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -46,6 +46,7 @@ final class Schema
     public const NEWSLETTER_CHANGES = 'eventcrew_newsletter_changes';
     public const NEWSLETTER_SENDS = 'eventcrew_newsletter_sends';
     public const TICKET_TRANSFERS = 'eventcrew_ticket_transfers';
+    public const DOOR_NOTES = 'eventcrew_door_notes';
 
     /**
      * @return array<int, string>
@@ -69,6 +70,7 @@ final class Schema
             self::NEWSLETTER_CHANGES,
             self::NEWSLETTER_SENDS,
             self::TICKET_TRANSFERS,
+            self::DOOR_NOTES,
         ];
     }
 
@@ -124,6 +126,8 @@ final class Schema
 
         // Schema 34: the ticket transfers table and the redemptions column
         // transferred_to. dbDelta adds both; nothing to copy.
+
+        // Schema 35: the door notes table. dbDelta adds it; nothing to copy.
 
         update_option(self::VERSION_OPTION, self::DB_VERSION);
     }
@@ -436,6 +440,7 @@ final class Schema
         $newsletterChanges = self::table(self::NEWSLETTER_CHANGES);
         $newsletterSends = self::table(self::NEWSLETTER_SENDS);
         $ticketTransfers = self::table(self::TICKET_TRANSFERS);
+        $doorNotes = self::table(self::DOOR_NOTES);
 
         return [
             // anonymized_at is the retention purge's high-water mark. Without it
@@ -632,6 +637,33 @@ final class Schema
                 KEY event_date (event_date),
                 KEY giver_person_id (giver_person_id),
                 KEY receiver_person_id (receiver_person_id),
+                KEY email (email)
+            ) ENGINE=InnoDB {$charsetCollate};",
+
+            // The name and email the door crew noted for someone who came in on
+            // a given-away ticket or as a +1 (schema 35). Both are optional;
+            // a row has at least one. kind and ref_id name the entry on that
+            // night's door list, as in the check-ins table; role is 'receiver'
+            // (who came in on a given-away ticket, one per ticket) or 'plus'
+            // (one of the entry's +1s, up to its plus-ones). newsletter is 1
+            // when the person asked the door crew for the newsletter: that
+            // address gets the usual confirmation email (double opt-in) and
+            // nothing else is sent from here. The email is emptied after
+            // the night with the guests' addresses (RetentionPurge), and
+            // erased on request by address (PrivacyEraser).
+            "CREATE TABLE {$doorNotes} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                event_date date NOT NULL,
+                kind varchar(10) NOT NULL,
+                ref_id bigint(20) unsigned NOT NULL,
+                role varchar(10) NOT NULL DEFAULT 'plus',
+                name varchar(191) NOT NULL DEFAULT '',
+                email varchar(191) DEFAULT NULL,
+                newsletter tinyint(1) unsigned NOT NULL DEFAULT 0,
+                added_by bigint(20) unsigned DEFAULT NULL,
+                created_at datetime NOT NULL,
+                PRIMARY KEY  (id),
+                KEY entry (event_date,kind,ref_id),
                 KEY email (email)
             ) ENGINE=InnoDB {$charsetCollate};",
 

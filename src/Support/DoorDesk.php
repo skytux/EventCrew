@@ -11,6 +11,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\DoorNoteRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
@@ -18,6 +19,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Repositories\TicketTransferRepository;
 use EventCrew\Telegram\TicketRedemptionService;
+use EventCrew\Web\NewsletterController;
 
 /**
  * The door page's logic: who is on tonight's list, who has come in, and what
@@ -58,6 +60,28 @@ final class DoorDesk
     public const GUEST_BAD_EMAIL = 'bad_email';
     public const GUEST_FAILED = 'failed';
 
+    /** addNote() answers. */
+    public const NOTE_OK = 'ok';
+    public const NOTE_EMPTY = 'empty';
+    public const NOTE_BAD_EMAIL = 'bad_email';
+    public const NOTE_NOT_IN = 'not_in';
+    public const NOTE_FULL = 'full';
+    public const NOTE_FAILED = 'failed';
+    /** addNote(): saved, and the newsletter's confirmation email went out. */
+    public const NOTE_INVITED = 'invited';
+    /** addNote(): saved; the address already gets the newsletter. */
+    public const NOTE_SUBSCRIBED = 'subscribed';
+
+    /** Longest name a door note keeps, the column's width. */
+    private const NOTE_NAME_MAX = 191;
+
+    /**
+     * Tonight's door notes, keyed "kind:ref", read by state() for section().
+     *
+     * @var array<string, array<int, array{id: int, role: string, name: string, email: string}>>
+     */
+    private array $noted = [];
+
     /** scan() answers. */
     public const SCAN_OK = 'ok';
     public const SCAN_OTHER_NIGHT = 'other_night';
@@ -91,7 +115,9 @@ final class DoorDesk
         private readonly CreditGrantRepository $grants,
         private readonly ?ClaimNotifier $notifier = null,
         private readonly ?TicketMail $ticketMail = null,
-        private readonly ?TicketTransferRepository $transfers = null
+        private readonly ?TicketTransferRepository $transfers = null,
+        private readonly ?DoorNoteRepository $notes = null,
+        private readonly ?NewsletterController $newsletter = null
     ) {
     }
 
@@ -215,6 +241,7 @@ final class DoorDesk
     public function state(string $date): array
     {
         $checkins = $this->checkins->forDate($date);
+        $this->noted = null === $this->notes ? [] : $this->notes->forDate($date);
         [$crew, $credit] = $this->entrants($date);
         $guests = $this->guestRows($date);
         [$holvi, $door] = $this->ticketRows($date);
@@ -949,6 +976,204 @@ final class DoorDesk
     }
 
     /**
+     * Notes the name and email of someone who came in with a checked-in
+     * entry: who came in on a given-away ticket (a transfer row: one note,
+     * a second save replaces it), or one of the entry's +1s (as many notes
+     * as the entry's plus-ones). Both are optional, but a note needs one of
+     * them. Nothing is sent to the address unless $newsletter is set (the
+     * person asked for the newsletter at the door, the box under the email):
+     * then the address goes to the newsletter's own double opt-in, which
+     * sends the usual confirmation email, and the note records the request.
+     * Without an email the box means nothing. Answers a NOTE_* code.
+     */
+    public function addNote(
+        string $date,
+        int $doorPersonId,
+        string $kind,
+        int $refId,
+        string $name,
+        string $email,
+        bool $newsletter = false
+    ): string {
+        $name = mb_substr(trim($name), 0, self::NOTE_NAME_MAX);
+        $email = trim($email);
+
+        if (null === $this->notes) {
+            return self::NOTE_FAILED;
+        }
+
+        if ('' === $name && '' === $email) {
+            return self::NOTE_EMPTY;
+        }
+
+        if ('' !== $email) {
+            if (! is_email($email)) {
+                return self::NOTE_BAD_EMAIL;
+            }
+
+            $email = sanitize_email($email);
+        }
+
+        $rowKey = $kind . ':' . $refId;
+        $checkin = $this->checkins->forDate($date)[$rowKey] ?? null;
+
+        if (null === $checkin || null === $this->findRow($date, $kind, $refId)) {
+            return self::NOTE_NOT_IN;
+        }
+
+        $existing = $this->notes->forDate($date)[$rowKey] ?? [];
+
+        if (CheckinRepository::KIND_TRANSFER === $kind) {
+            foreach ($existing as $note) {
+                if (DoorNoteRepository::ROLE_RECEIVER === $note['role']) {
+                    // A request already recorded for this address stays recorded.
+                    $asked = $newsletter || ($note['newsletter'] && $note['email'] === $email);
+
+                    return $this->notes->change($note['id'], $name, $email, $asked)
+                        ? $this->inviteFromNote($email, $newsletter)
+                        : self::NOTE_FAILED;
+                }
+            }
+
+            $id = $this->notes->add(
+                $date,
+                $kind,
+                $refId,
+                DoorNoteRepository::ROLE_RECEIVER,
+                $name,
+                $email,
+                $doorPersonId,
+                $newsletter
+            );
+
+            return $id > 0 ? $this->inviteFromNote($email, $newsletter) : self::NOTE_FAILED;
+        }
+
+        if ($checkin['plus'] <= 0) {
+            return self::NOTE_NOT_IN;
+        }
+
+        $plusNotes = array_filter(
+            $existing,
+            static fn (array $note): bool => DoorNoteRepository::ROLE_PLUS === $note['role']
+        );
+
+        if (count($plusNotes) >= $checkin['plus']) {
+            return self::NOTE_FULL;
+        }
+
+        $id = $this->notes->add(
+            $date,
+            $kind,
+            $refId,
+            DoorNoteRepository::ROLE_PLUS,
+            $name,
+            $email,
+            $doorPersonId,
+            $newsletter
+        );
+
+        return $id > 0 ? $this->inviteFromNote($email, $newsletter) : self::NOTE_FAILED;
+    }
+
+    /**
+     * After a note is saved: when they asked for the newsletter and gave an
+     * email, hands the address to the newsletter's double opt-in. Never
+     * called with the box unticked, so nothing is sent then.
+     */
+    private function inviteFromNote(string $email, bool $newsletter): string
+    {
+        if (! $newsletter || '' === $email || null === $this->newsletter) {
+            return self::NOTE_OK;
+        }
+
+        return match ($this->newsletter->inviteFromDoor($email)) {
+            NewsletterController::DOOR_SENT => self::NOTE_INVITED,
+            NewsletterController::DOOR_ALREADY => self::NOTE_SUBSCRIBED,
+            default => self::NOTE_OK,
+        };
+    }
+
+    /** Whether an addNote() answer means the note was saved. */
+    public static function noteSaved(string $code): bool
+    {
+        return in_array($code, [self::NOTE_OK, self::NOTE_INVITED, self::NOTE_SUBSCRIBED], true);
+    }
+
+    /**
+     * Deletes one door note of the entry $kind:$refId on $date, for a name
+     * noted by mistake.
+     */
+    public function removeNote(string $date, string $kind, int $refId, int $noteId): bool
+    {
+        return null !== $this->notes && $noteId > 0 && $this->notes->delete($noteId, $date, $kind, $refId);
+    }
+
+    /** What the desk says for an addNote() answer. */
+    public function noteText(string $code): string
+    {
+        return match ($code) {
+            self::NOTE_OK => __('Saved.', 'eventcrew'),
+            self::NOTE_INVITED => __('Saved. They get an email to confirm the newsletter.', 'eventcrew'),
+            self::NOTE_SUBSCRIBED => __('Saved. They already get the newsletter.', 'eventcrew'),
+            self::NOTE_EMPTY => __('Give a name or an email.', 'eventcrew'),
+            self::NOTE_BAD_EMAIL => __('That email address is not valid. Correct it or leave it empty.', 'eventcrew'),
+            self::NOTE_NOT_IN => __('Check them in first.', 'eventcrew'),
+            self::NOTE_FULL => __('Every +1 already has a name.', 'eventcrew'),
+            default => __('That did not go through. Check the connection and try again.', 'eventcrew'),
+        };
+    }
+
+    /**
+     * Every door note of $date for the admin roster: name, email, and what
+     * the person came in on ("+1 guest · Aino Testinen", "Given-away ticket ·
+     * from Aino Testinen"). An entry no longer on the night's list shows only
+     * its role.
+     *
+     * @return array<int, array{name: string, email: string, newsletter: bool, came: string}>
+     */
+    public function notesList(string $date): array
+    {
+        if (null === $this->notes) {
+            return [];
+        }
+
+        $notes = $this->notes->forDate($date);
+
+        if ([] === $notes) {
+            return [];
+        }
+
+        $entries = [];
+
+        foreach ($this->state($date)['sections'] as $section) {
+            foreach ($section['rows'] as $row) {
+                $entries[$row['key']] = CheckinRepository::KIND_TRANSFER === $row['kind'] ? $row['detail'] : $row['name'];
+            }
+        }
+
+        $list = [];
+
+        foreach ($notes as $rowKey => $entryNotes) {
+            foreach ($entryNotes as $note) {
+                $role = DoorNoteRepository::ROLE_RECEIVER === $note['role']
+                    ? __('Given-away ticket', 'eventcrew')
+                    : __('+1 guest', 'eventcrew');
+                $entry = $entries[$rowKey] ?? '';
+
+                $list[] = [
+                    'name' => $note['name'],
+                    'email' => $note['email'],
+                    'newsletter' => $note['newsletter'],
+                    'came' => '' === $entry ? $role : $role . ' · ' . $entry,
+                ];
+            }
+        }
+
+        return $list;
+    }
+
+    /**
      * Members matching $query by name or email, with their credit balance -
      * the "Add" member search. A member with no credit is listed too: they can
      * still work tonight. A member already on tonight's crew or credit list is
@@ -1393,7 +1618,8 @@ final class DoorDesk
     }
 
     /**
-     * Adds each row's check-in to it. A checked-in row shows the plus-ones
+     * Adds each row's check-in to it, and its door notes (state() reads
+     * them into $noted first). A checked-in row shows the plus-ones
      * written at the door, which may differ from the list's default, and
      * the time it was marked in.
      *
@@ -1426,6 +1652,17 @@ final class DoorDesk
                 'max' => $row['max'],
                 'in' => $in,
                 'at' => $in ? self::inTime($checkins[$rowKey]['at']) : '',
+                // The names noted at the door for this entry (addNote()), for
+                // the desk's "Name and email" link. The email itself stays off
+                // the desk: has_email only says there is one.
+                'noted' => array_map(
+                    static fn (array $note): array => [
+                        'id' => $note['id'],
+                        'name' => $note['name'],
+                        'has_email' => '' !== $note['email'],
+                    ],
+                    $this->noted[$rowKey] ?? []
+                ),
             ];
         }
 

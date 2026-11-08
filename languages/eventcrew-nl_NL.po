@@ -12367,3 +12367,70 @@ msgstr "een organisator die het heeft"
 
 msgid "Whom to ask for wp-admin access: the official contact email (Settings > Privacy), or “an organizer who has it” when none is set."
 msgstr "Aan wie je toegang tot wp-admin vraagt: het officiële contactadres (Instellingen > Privacy), of „een organisator die het heeft” als er geen is ingesteld."
+
+msgid "Give a name or an email."
+msgstr "Geef een naam of een e-mailadres."
+
+msgid "Check them in first."
+msgstr "Check deze persoon eerst in."
+
+msgid "Every +1 already has a name."
+msgstr "Elke +1 heeft al een naam."
+
+msgid "Given-away ticket"
+msgstr "Doorgegeven ticket"
+
+msgid "+1 guest"
+msgstr "+1-gast"
+
+msgid "EventCrew door notes"
+msgstr "EventCrew notities bij de deur"
+
+msgid "Came in on"
+msgstr "Binnengekomen met"
+
+msgid "The names and email addresses the door crew noted under this address were deleted."
+msgstr "De namen en e-mailadressen die het deurteam onder dit adres noteerde, zijn verwijderd."
+
+#, php-format
+msgid "An email address noted at the door is deleted %d days after the event too."
+msgstr "Een bij de deur genoteerd e-mailadres wordt ook %d dagen na het evenement verwijderd."
+
+msgid "Noted at the door"
+msgstr "Genoteerd bij de deur"
+
+msgid "Name and email"
+msgstr "Naam en e-mail"
+
+msgid "Who came in on this ticket?"
+msgstr "Wie kwam binnen met dit ticket?"
+
+msgid "Who came with them?"
+msgstr "Wie kwam er mee?"
+
+msgid "(email only)"
+msgstr "(alleen e-mail)"
+
+msgid "Both are optional. Only organizers see the email."
+msgstr "Beide zijn optioneel. Alleen de organisatie ziet het e-mailadres."
+
+msgid "Saved. They get an email to confirm the newsletter."
+msgstr "Opgeslagen. Deze persoon krijgt een e-mail om de nieuwsbrief te bevestigen."
+
+msgid "Saved. They already get the newsletter."
+msgstr "Opgeslagen. Deze persoon krijgt de nieuwsbrief al."
+
+msgid "Asked for the newsletter at the door"
+msgstr "Vroeg bij de deur om de nieuwsbrief"
+
+msgid "Asked"
+msgstr "Gevraagd"
+
+msgid "Send them the newsletter (they confirm by email)"
+msgstr "Stuur de nieuwsbrief (bevestigen via e-mail)"
+
+msgid "If you come in on a ticket someone gave you, or as someone's +1, the door crew may note your name and email address, if you agree to give them. If you also ask for our next events announcement there, we send you one email with a link to confirm it; otherwise we send nothing to that address."
+msgstr "Als je binnenkomt met een ticket dat iemand je gaf, of als iemands +1, kan het deurteam je naam en e-mailadres noteren, als je ze wilt geven. Als je daar ook om de aankondiging van de volgende evenementen vraagt, sturen we je één e-mail met een link om die te bevestigen; anders sturen we niets naar dat adres."
+
+msgid "Names and emails the door crew noted for people who came in on a given-away ticket or as a +1. Only those who asked for the newsletter get an email: a link to confirm it."
+msgstr "Namen en e-mailadressen die het deurteam noteerde voor mensen die binnenkwamen met een doorgegeven ticket of als +1. Alleen wie om de nieuwsbrief vroeg, krijgt een e-mail: een link om die te bevestigen."

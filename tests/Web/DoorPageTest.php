@@ -289,4 +289,20 @@ final class DoorPageTest extends TestCase
         self::assertStringContainsString("-1 !== row.short.toLowerCase().indexOf(code)", $html);
         self::assertStringContainsString("[scanRow.short, scanRow.detail].filter(Boolean).join(' · ')", $html);
     }
+
+    public function testTheNoteFormHasTwoOptionalFieldsAndOneButton(): void
+    {
+        $html = $this->page();
+        $start = (int) strpos($html, '<dialog id="ec-note"');
+        $dialog = substr($html, $start, (int) strpos($html, '</dialog>', $start) - $start);
+
+        self::assertStringContainsString('<input type="text" id="ec-note-name" maxlength="191"', $dialog);
+        self::assertStringContainsString('<input type="email" id="ec-note-email" maxlength="191"', $dialog);
+        self::assertStringNotContainsString('required', $dialog);
+        self::assertSame(1, substr_count($dialog, 'type="submit"'));
+        // The newsletter box: unticked and disabled until an email is typed.
+        self::assertStringContainsString('<input type="checkbox" id="ec-note-nl" disabled>', $dialog);
+        self::assertStringNotContainsString('checked', $dialog);
+        self::assertStringContainsString('Both are optional. Only organizers see the email.', $dialog);
+    }
 }
