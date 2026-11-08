@@ -10053,10 +10053,6 @@ msgstr "Liput ja vapaaliput"
 msgid "When on, every task a member does on a night after their first one earns one more free-entry credit, on top of the credits for completed tasks. It shows as pending until the after-event run adds it, and only for tasks marked completed or arrived late. A cancelled or no-show task gives nothing."
 msgstr "Kun päällä, jokainen tehtävä, jonka jäsen tekee illan ensimmäisen tehtävänsä jälkeen, tuo yhden vapaalipun lisää tehtyjen tehtävien vapaalippujen lisäksi. Se näkyy odottavana, kunnes tapahtuman jälkeinen ajo lisää sen, ja vain tehtäville, jotka on merkitty tehdyiksi tai myöhässä saapuneiksi. Peruttu tai väliin jätetty tehtävä ei tuo mitään."
 
-#: src/Telegram/TicketController.php
-msgid "You can give a free-entry ticket to someone else. A working ticket for your tasks is personal."
-msgstr "Voit antaa vapaalipun jollekulle toiselle. Tehtäviesi työlippu on henkilökohtainen."
-
 #. translators: %d: free-entry credits just added for extra tasks
 #: src/Support/ExtraTaskCredits.php
 msgid "Your extra task that night earned %d more free-entry credit."

@@ -12526,10 +12526,6 @@ msgstr "Biglietti e crediti"
 msgid "When on, every task a member does on a night after their first one earns one more free-entry credit, on top of the credits for completed tasks. It shows as pending until the after-event run adds it, and only for tasks marked completed or arrived late. A cancelled or no-show task gives nothing."
 msgstr "Se attivo, ogni compito che un membro svolge in una sera dopo il primo dà un credito d’ingresso gratuito in più, oltre ai crediti per i compiti completati. Appare in attesa finché l’elaborazione dopo l’evento non lo aggiunge, e solo per compiti segnati come completati o arrivato in ritardo. Un compito annullato o un’assenza non dà nulla."
 
-#: src/Telegram/TicketController.php
-msgid "You can give a free-entry ticket to someone else. A working ticket for your tasks is personal."
-msgstr "Puoi regalare un biglietto d’ingresso gratuito a qualcun altro. Un biglietto di lavoro per i tuoi compiti è personale."
-
 #. translators: %d: how many tickets the person has for the night, always 2 or more
 #: src/Support/TicketMail.php
 msgid "You have %d ticket for this night."

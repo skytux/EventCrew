@@ -468,7 +468,9 @@ final class TicketController
             return null;
         }
 
-        $role = static fn (): string => __('Ticket', 'eventcrew');
+        // No line under the name: "Ticket" says nothing the page does not
+        // (Owner 2026-11-08: a shorter ticket).
+        $role = static fn (): string => '';
 
         // Holvi gives every ticket its own code, so this row is the ticket.
         return $this->emailedTicket($buyer->eventDate, $buyer->name, $role) + [
@@ -785,7 +787,7 @@ final class TicketController
         $title = sprintf(__('Your %s ticket', 'eventcrew'), Organization::name());
 
         if ([] === $more) {
-            return $this->document($title, $this->card($title, $ticket));
+            return $this->document($title, $this->card($ticket));
         }
 
         $cards = [];
@@ -795,7 +797,7 @@ final class TicketController
         // Each card is numbered on its issued line: "Ticket 2 of 3".
         foreach ($all as $i => $one) {
             $cards[] = '<section class="t">'
-                . $this->card($title, $one, 0 === $i ? '' : '-' . ($i + 1), $i + 1, $count)
+                . $this->card($one, 0 === $i ? '' : '-' . ($i + 1), $i + 1, $count)
                 . '</section>';
         }
 
@@ -811,7 +813,7 @@ final class TicketController
      *
      * @param array<string, mixed> $ticket
      */
-    private function card(string $title, array $ticket, string $suffix = '', int $number = 1, int $count = 1): string
+    private function card(array $ticket, string $suffix = '', int $number = 1, int $count = 1): string
     {
         $eventId = null === ($ticket['event_id'] ?? null) ? null : (int) $ticket['event_id'];
         $used = $ticket['used'] ?? null;
@@ -834,23 +836,31 @@ final class TicketController
             $band = $this->openBand(null !== $closesIn && $closesIn <= 0, $first, $suffix);
         }
 
-        $body = sprintf(
-            '<p class="t-name">%s</p><p class="t-task">%s</p>',
-            esc_html($ticket['name']),
-            // The role and the time, each on its own row (Owner, 2026-11-06).
-            // A working ticket for several tasks has one row per task.
-            implode('<br>', array_map(
-                'esc_html',
-                array_filter(array_merge(explode("\n", (string) $ticket['role']), [$ticket['time']]), 'strlen')
+        // The name and the ticket's kind on one line ("Sam · Free entry",
+        // "Sam · Bar · 19:00–22:00"), wrapping under it on a narrow phone. A
+        // working ticket for several tasks has one row per task, under the
+        // name (Owner 2026-11-08: a shorter ticket).
+        $rows = array_values(array_filter(explode("\n", (string) $ticket['role']), 'strlen'));
+
+        if (1 === count($rows) && '' !== $ticket['time']) {
+            $rows = [$rows[0] . ' · ' . $ticket['time']];
+        } elseif ([] === $rows && '' !== $ticket['time']) {
+            $rows = [$ticket['time']];
+        }
+
+        $body = '<p class="t-who"><span class="t-name">' . esc_html($ticket['name']) . '</span>'
+            . ([] === $rows ? '' : sprintf(
+                '<span class="t-task%s">%s</span>',
+                count($rows) > 1 ? ' t-rows' : '',
+                implode('<br>', array_map('esc_html', $rows))
             ))
-        );
+            . '</p>';
 
         $watermark = ltrim($this->watermarkStyle(), ';');
         // The event's clean name in the page's language (EventName).
         $event = null === $eventId ? $ticket['event'] : EventName::name($eventId, EventName::lang(), $ticket['event']);
 
         return $this->headBlock(
-            $title,
             $event,
             $ticket['date'],
             EventTimes::start($eventId),
@@ -858,13 +868,12 @@ final class TicketController
         )
             . '<div class="t-body"' . ('' === $watermark ? '' : ' style="' . $watermark . '"') . '>'
             . $body . $band . $this->qrBlock((string) ($ticket['qr'] ?? ''), $suffix)
-            . $this->shortBlock((string) ($ticket['short'] ?? '')) . $this->codeBlock((string) ($ticket['code'] ?? ''))
-            . $this->noteBlock($eventId) . $this->giveBlock($ticket) . $this->antiFraudBlock(
-                (string) $ticket['issued'],
-                $suffix,
-                $number,
-                $count
-            )
+            . $this->codesBlock((string) ($ticket['short'] ?? ''), (string) ($ticket['code'] ?? ''))
+            // What the door looks at stays together: the code, then the
+            // issued time and the ticking clock; the note and the Give away
+            // link come last.
+            . $this->antiFraudBlock((string) $ticket['issued'], $suffix, $number, $count)
+            . $this->noteBlock($eventId) . $this->giveBlock($ticket)
             . ($ticket['valid'] && null === $used
                 ? $this->liveScript((string) ($ticket['poll'] ?? ''), $closesIn, $first, $suffix)
                 : '')
@@ -890,11 +899,10 @@ final class TicketController
         }
 
         if (! isset($ticket['give_url'])) {
-            // A working ticket can't be given away: one quiet line says so,
-            // only while members can give tickets away.
-            return ! empty($ticket['work']) && TicketTransferService::isOn()
-                ? '<p class="t-give t-small">' . esc_html(self::personalLine()) . '</p>'
-                : '';
+            // Nothing on a ticket that can't be given away: the door does
+            // not need the line that said a working ticket is personal
+            // (Owner 2026-11-08: a shorter ticket; the rules page says it).
+            return '';
         }
 
         $url = esc_url((string) $ticket['give_url']);
@@ -908,13 +916,6 @@ final class TicketController
         }
 
         return '<p class="t-give"><a href="' . $url . '">🎁 ' . esc_html__('Give away', 'eventcrew') . '</a></p>';
-    }
-
-    /** The ticket page's line under a working ticket, in the current language. */
-    public static function personalLine(): string
-    {
-        // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-        return __('You can give a free-entry ticket to someone else. A working ticket for your tasks is personal.', 'eventcrew');
     }
 
     /**
@@ -1033,13 +1034,14 @@ final class TicketController
      * The card's header, like an event card on the crew board: the event's
      * picture behind it under a dark layer (faces sit about a third of the way
      * down the posters, hence centre 25%), the event name large, and the date
-     * written out with the event's start time ($start, '' when not known).
+     * written out with the event's start time ($start, '' when not known) on
+     * one line. The page's title ("Your ... ticket") is the tab's title only.
      * Without a picture the header is plain dark.
      *
      * The picture URL goes through esc_url() inside &quot; quotes, as in
      * watermarkStyle().
      */
-    private function headBlock(string $title, string $event, string $date, string $start, string $image): string
+    private function headBlock(string $event, string $date, string $start, string $image): string
     {
         $style = '' === $image
             ? ''
@@ -1047,14 +1049,13 @@ final class TicketController
                 . esc_url($image) . '&quot;)"';
 
         return sprintf(
-            '<header class="t-head%1$s"%2$s><p class="t-kicker">%3$s</p>'
-                . '<h1 class="t-event">%4$s</h1><p class="t-date">%5$s</p></header>',
+            '<header class="t-head%1$s"%2$s><h1 class="t-event">%3$s</h1><p class="t-date">%4$s</p></header>',
             '' === $image ? '' : ' has-image',
             $style,
-            esc_html($title),
             esc_html($event),
-            // The date and the start time, each on its own row (Owner, 2026-11-06).
-            esc_html(Dates::longDayLabel($date)) . ('' === $start ? '' : '<br>' . esc_html($start))
+            // The date and the start time on one line (Owner 2026-11-08: a
+            // shorter ticket).
+            esc_html(Dates::longDayLabel($date) . ('' === $start ? '' : ' · ' . $start))
         );
     }
 
@@ -1102,17 +1103,19 @@ final class TicketController
     /**
      * The short code (ShortCode) written large right under the QR code, the
      * same as on the ticket's row in the door app, so the door crew can check
-     * a row they tick by hand. '' when there is none.
+     * a row they tick by hand, and a ticket buyer's ticket code ($code) small
+     * on the same line. '' when there is neither.
      */
-    private function shortBlock(string $short): string
+    private function codesBlock(string $short, string $code): string
     {
-        return '' === $short ? '' : '<p class="t-short">' . esc_html($short) . '</p>';
-    }
+        if ('' === $short && '' === $code) {
+            return '';
+        }
 
-    /** The ticket code written out under the short code, or '' when there is none. */
-    private function codeBlock(string $code): string
-    {
-        return '' === $code ? '' : '<p class="t-code">' . esc_html($code) . '</p>';
+        return '<p class="t-codes">'
+            . ('' === $short ? '' : '<span class="t-short">' . esc_html($short) . '</span>')
+            . ('' === $code ? '' : '<span class="t-code">' . esc_html($code) . '</span>')
+            . '</p>';
     }
 
     /**
@@ -1132,7 +1135,7 @@ final class TicketController
             return '';
         }
 
-        return '<p style="white-space:pre-line">' . esc_html($note) . '</p>';
+        return '<p class="t-note">' . esc_html($note) . '</p>';
     }
 
     /**
@@ -1162,12 +1165,12 @@ final class TicketController
             $line = sprintf(__('Issued %s', 'eventcrew'), $this->formatIssued($issued));
         }
 
-        $issuedLine = '' === $line ? '' : '<p class="t-small">' . esc_html($line) . '</p>';
-
         // The clock is written and ticked entirely client-side (no network), so
-        // it moves every second on a live page and freezes in a screenshot.
-        return $issuedLine
-            . '<p class="t-clock" id="ec-clock' . $suffix . '">—</p>'
+        // it moves every second on a live page and freezes in a screenshot. It
+        // shares a line with the issued time (Owner 2026-11-08: a shorter ticket).
+        return '<p class="t-proof">'
+            . ('' === $line ? '' : '<span class="t-small">' . esc_html($line) . '</span>')
+            . '<span class="t-clock" id="ec-clock' . $suffix . '">—</span></p>'
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained clock script; wrapping adds stray whitespace.
             . '<script>(function(){var e=document.getElementById("ec-clock' . $suffix . '");function t(){var d=new Date();e.textContent=d.toLocaleTimeString();}t();setInterval(t,1000);})();</script>';
     }
@@ -1192,21 +1195,23 @@ final class TicketController
     private function document(string $title, string $inner, bool $stack = false): string
     {
         $css = 'html{background:#e8e6e3}'
-            . 'body{margin:0;padding:1.5em 1em;font-family:system-ui,sans-serif;color:#1d1d1f;text-align:center}'
+            . 'body{margin:0;padding:1em;font-family:system-ui,sans-serif;color:#1d1d1f;text-align:center}'
             . '.t{position:relative;isolation:isolate;max-width:26em;margin:0 auto;background:#fff;border-radius:16px;'
             . 'overflow:hidden;'
             . 'box-shadow:0 2px 12px rgba(0,0,0,.18)}'
-            . '.t-head{background:#2b2b30 center 25%/cover no-repeat;color:#fff;padding:1.2em;'
+            . '.t-head{background:#2b2b30 center 25%/cover no-repeat;color:#fff;padding:.9em 1em;'
             . 'display:flex;flex-direction:column;justify-content:flex-end}'
-            . '.t-head.has-image{min-height:9em}'
+            . '.t-head.has-image{min-height:6.5em}'
             . '.t-head p,.t-head h1{margin:0;text-shadow:0 1px 3px rgba(0,0,0,.6)}'
-            . '.t-kicker{font-size:.75em;text-transform:uppercase;letter-spacing:.08em;opacity:.85}'
-            . '.t-event{font-size:1.5em;line-height:1.2;margin:.2em 0}'
+            . '.t-event{font-size:1.35em;line-height:1.2;margin:0 0 .15em}'
             . '.t-date{font-size:.95em}'
-            . '.t-body{padding:1.2em}'
-            . '.t-name{font-size:1.9em;font-weight:700;line-height:1.15;margin:0 0 .2em}'
-            . '.t-task{margin:0 0 1em;opacity:.8}'
-            . '.t-band{margin:0 -1.2em 1em;padding:.45em;color:#fff;font-weight:700;letter-spacing:.15em}'
+            . '.t-body{padding:.9em 1em 1em}'
+            // The name and the ticket's kind share a line when they fit.
+            . '.t-who{display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;column-gap:.5em;'
+            . 'margin:0 0 .7em}'
+            . '.t-name{font-size:1.6em;font-weight:700;line-height:1.15}'
+            . '.t-task{opacity:.8}.t-task.t-rows{flex-basis:100%;margin-top:.15em}'
+            . '.t-band{margin:0 -1em .8em;padding:.45em;color:#fff;font-weight:700;letter-spacing:.15em}'
             . '.t-band.is-valid{background:#1a7f37}.t-band.is-disabled{background:#b32d2e}'
             . '.t-band.is-expired{background:#000;letter-spacing:.04em}'
             // The live band never changes height (Owner 2026-11-07: the page
@@ -1214,8 +1219,10 @@ final class TicketController
             // band's padding, and VALID or expired shares one grid cell with
             // the gold band's words, hidden (.t-ghost), so it is already as
             // tall as the gold band. The stars sit in that cell too.
-            . '[id^="ec-band"]{display:grid;align-items:center;padding:.7em .45em}[id^="ec-band"]>*{grid-area:1/1}'
-            . '.t-in{display:block;letter-spacing:.04em}.t-ghost{visibility:hidden}'
+            . '[id^="ec-band"]{display:grid;align-items:center;padding:.55em .45em}[id^="ec-band"]>*{grid-area:1/1}'
+            // The welcome and the check-in time share a line when they fit.
+            . '.t-in{display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;column-gap:.5em;'
+            . 'letter-spacing:.04em}.t-ghost{visibility:hidden}'
             // Gold with dark brown text (over 6:1 on the darkest gold). It all
             // stays inside the card (Owner 2026-11-07: it went out of the
             // frame): every glow is inset, nothing full-width scales above 1,
@@ -1240,7 +1247,7 @@ final class TicketController
             // Each ends on the
             // state its loop starts from. Less motion: plain gold and a gold
             // edge, nothing moves.
-            . '.t-band.is-in{position:relative;overflow:hidden;isolation:isolate;padding:.7em .45em;color:#3b2500;'
+            . '.t-band.is-in{position:relative;overflow:hidden;isolation:isolate;padding:.55em .45em;color:#3b2500;'
             . 'letter-spacing:.04em;'
             . 'background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 45%,rgba(150,85,0,.18)),'
             . 'linear-gradient(90deg,#d9a21f,#f7cf55 16%,#fff6cf 30%,#f9d462 44%,#e2ab2a 58%,#ffeaa0 74%,#efbf3c 88%,'
@@ -1253,8 +1260,8 @@ final class TicketController
             . 'background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.6) 50%,rgba(255,255,255,0));'
             . 'transform:translateX(-150%) skewX(-20deg);animation:t-sheen 6s ease-in-out infinite}'
             . '.t-in-text,.t-at{display:block;position:relative;z-index:1}'
-            . '.t-in-text{font-size:1.25em;text-shadow:0 0 .3em rgba(255,250,225,.95),0 0 .8em rgba(255,230,140,.8)}'
-            . '.t-at{font-size:.8em;font-weight:600;letter-spacing:normal;margin-top:.15em}'
+            . '.t-in-text{font-size:1.15em;text-shadow:0 0 .3em rgba(255,250,225,.95),0 0 .8em rgba(255,230,140,.8)}'
+            . '.t-at{font-size:.8em;font-weight:600;letter-spacing:normal}'
             . '.t-stars i{position:absolute;z-index:1;font-style:normal;color:#fff;line-height:1;opacity:.3;'
             . 'transform:scale(.5);text-shadow:0 0 3px #b07000,0 0 8px #fff;'
             . 'animation:t-twinkle 2.6s ease-in-out calc(var(--d,0s)*-6) infinite}'
@@ -1337,7 +1344,7 @@ final class TicketController
             . '.t-band.is-in::before,.t-band.is-new::after,.t-fx{display:none}.t-stars i{opacity:.8;transform:none}}'
             // The code's square is always laid out, hidden until the tap, and
             // the button covers it: showing the code moves nothing.
-            . '.t-qr-wrap{position:relative;width:12.5em;max-width:100%;margin:0 auto 1em}'
+            . '.t-qr-wrap{position:relative;width:12.5em;max-width:100%;margin:0 auto .3em}'
             . '.t-qr{position:relative;aspect-ratio:1/1}'
             . '.t-qr[hidden]{display:block;visibility:hidden}'
             . '.t-qr-show{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;'
@@ -1351,21 +1358,26 @@ final class TicketController
             . '.t-qr-logo{display:none;position:absolute;left:50%;top:50%;width:20%;height:20%;'
             . 'transform:translate(-50%,-50%);object-fit:contain;background:#fff;padding:3%;border-radius:8px}'
             . '.t-qr svg+.t-qr-logo{display:block}'
-            . '.t-short{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.8em;font-weight:700;'
-            . 'letter-spacing:.25em;margin:-.4em 0 .6em;padding-left:.25em}'
+            // The short code, a buyer's ticket code beside it, then the issued
+            // time beside the ticking clock: each pair shares a line.
+            . '.t-codes,.t-proof{display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;'
+            . 'column-gap:.8em;margin:0 0 .4em}'
+            . '.t-short{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.7em;font-weight:700;'
+            . 'letter-spacing:.25em;padding-left:.25em}'
             . '.t-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1em;font-weight:600;'
-            . 'letter-spacing:.06em;opacity:.75;margin:-.4em 0 1em}'
-            . '.t-short+.t-code{margin-top:0}'
-            . '.t-clock{font-size:2em;font-variant-numeric:tabular-nums;margin:.3em 0}'
+            . 'letter-spacing:.06em;opacity:.75}'
+            . '.t-proof{margin-bottom:.6em}'
+            . '.t-clock{font-size:1.5em;font-variant-numeric:tabular-nums}'
             . '.t-small{opacity:.7;font-size:.82em}'
-            . '.t-give{margin:0 0 1em}.t-give a{color:#0a58ca}'
+            . '.t-note{white-space:pre-line;font-size:.92em;margin:0 0 .6em}'
+            . '.t-give{margin:0}.t-give a{color:#0a58ca}'
             . '.t-form{text-align:left}.t-form label{display:block;margin:.6em 0}'
             . '.t-form input[type=text],.t-form input[type=email]{width:100%;box-sizing:border-box;padding:.6em;'
             . 'font-size:1em;border:1px solid #888;border-radius:8px}'
             . '.t-form button{margin-top:.8em;padding:.7em 1.4em;font-size:1em;border:0;border-radius:8px;'
             . 'background:#1d1d1f;color:#fff;cursor:pointer}.t-form .t-link{background:none;color:#0a58ca;padding:0;'
             . 'text-decoration:underline}'
-            . '.t-stack{max-width:26em;margin:0 auto}.t-stack>.t+.t{margin-top:1.5em}';
+            . '.t-stack{max-width:26em;margin:0 auto}.t-stack>.t+.t{margin-top:1em}';
 
         return sprintf(
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one literal HTML document; wrapping it just adds stray whitespace.

@@ -12547,10 +12547,6 @@ msgstr "Karten und Credits"
 msgid "When on, every task a member does on a night after their first one earns one more free-entry credit, on top of the credits for completed tasks. It shows as pending until the after-event run adds it, and only for tasks marked completed or arrived late. A cancelled or no-show task gives nothing."
 msgstr "Wenn an, bringt jede Aufgabe, die ein Mitglied an einem Abend nach seiner ersten erledigt, einen weiteren Freikarten-Credit, zusätzlich zu den Credits für erledigte Aufgaben. Er wird als ausstehend angezeigt, bis der Lauf nach der Veranstaltung ihn gutschreibt, und nur für Aufgaben, die als erledigt oder verspätet angekommen markiert sind. Eine stornierte oder nicht angetretene Aufgabe bringt nichts."
 
-#: src/Telegram/TicketController.php
-msgid "You can give a free-entry ticket to someone else. A working ticket for your tasks is personal."
-msgstr "Du kannst eine Freikarte jemand anderem schenken. Eine Arbeitskarte für deine Aufgaben ist persönlich."
-
 #. translators: %d: how many tickets the person has for the night, always 2 or more
 #: src/Support/TicketMail.php
 msgid "You have %d ticket for this night."

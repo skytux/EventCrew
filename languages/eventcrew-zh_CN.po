@@ -12445,10 +12445,6 @@ msgstr "门票和积分"
 msgid "When on, every task a member does on a night after their first one earns one more free-entry credit, on top of the credits for completed tasks. It shows as pending until the after-event run adds it, and only for tasks marked completed or arrived late. A cancelled or no-show task gives nothing."
 msgstr "开启后，成员在一晚完成第一个任务之后的每个任务都会多得一个免费入场积分，另计于完成任务所得的积分。在活动后的处理添加之前显示为待定，且只适用于标记为已完成或迟到的任务。取消或未到场的任务什么也不给。"
 
-#: src/Telegram/TicketController.php
-msgid "You can give a free-entry ticket to someone else. A working ticket for your tasks is personal."
-msgstr "你可以把免费入场券转让给别人。你任务的工作票只限本人使用。"
-
 #. translators: %d: how many tickets the person has for the night, always 2 or more
 #: src/Support/TicketMail.php
 msgid "You have %d ticket for this night."

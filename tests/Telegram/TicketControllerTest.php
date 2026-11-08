@@ -154,6 +154,8 @@ final class TicketControllerTest extends TestCase
         self::assertSame('AB12CD', $ticket['qr']);
         self::assertSame('AB12CD', $ticket['code']);
         self::assertSame('Test Site', $ticket['event']);
+        // No "Ticket" line under the name (Owner 2026-11-08: a shorter ticket).
+        self::assertSame('', $ticket['role']);
     }
 
     /** Once the ticket code is deleted (RetentionPurge, erasure) the link dies. */
@@ -251,7 +253,7 @@ final class TicketControllerTest extends TestCase
 
         self::assertStringNotContainsString('url(', $html);
         self::assertStringNotContainsString('linear-gradient(rgba', $html);
-        self::assertStringContainsString('<div class="t-body"><p class="t-name">Sam</p>', $html);
+        self::assertStringContainsString('<div class="t-body"><p class="t-who"><span class="t-name">Sam</span>', $html);
     }
 
     public function testRenderPageShowsTheEventPictureInTheHeader(): void
@@ -270,7 +272,7 @@ final class TicketControllerTest extends TestCase
     {
         $html = $this->controller()->renderPage($this->sampleTicket());
 
-        self::assertStringContainsString('<header class="t-head"><p class="t-kicker">', $html);
+        self::assertStringContainsString('<header class="t-head"><h1 class="t-event">', $html);
     }
 
     public function testRenderPageNamesTheOrganizationInTheHeaderAndTheNote(): void
@@ -286,8 +288,9 @@ final class TicketControllerTest extends TestCase
 
         $html = $this->controller()->renderPage($this->sampleTicket());
 
-        self::assertStringContainsString('<p class="t-kicker">Your Ecstatic Dance Helsinki ticket</p>', $html);
+        // The page's title names it; the card does not repeat it (Owner 2026-11-08: a shorter ticket).
         self::assertStringContainsString('<title>Your Ecstatic Dance Helsinki ticket', $html);
+        self::assertStringNotContainsString('t-kicker', $html);
         self::assertStringContainsString('Welcome to Ecstatic Dance Helsinki.', $html);
         self::assertStringNotContainsString('EventCrew', $html);
     }
@@ -325,23 +328,41 @@ final class TicketControllerTest extends TestCase
 
         $html = $this->controller()->renderPage($ticket);
 
-        self::assertStringContainsString('<p class="t-date">Saturday 1 August 2026<br>19:00</p>', $html);
+        // The date and the start time on one line (Owner 2026-11-08: a shorter ticket).
+        self::assertStringContainsString('<p class="t-date">Saturday 1 August 2026 · 19:00</p>', $html);
     }
 
-    /** The task and its time are on rows of their own (Owner, 2026-11-06). */
-    public function testRenderPagePutsTheTaskAndItsTimeOnRowsOfTheirOwn(): void
+    /**
+     * The name, the task and its time share one line when they fit (Owner
+     * 2026-11-08: a shorter ticket); several tasks get a row each under the
+     * name; nothing follows the name when there is no kind.
+     */
+    public function testRenderPagePutsTheNameAndTheTicketsKindOnOneLine(): void
     {
         $ticket = $this->sampleTicket();
         $ticket['role'] = 'Bar';
         $ticket['time'] = '19:00–22:00';
 
         self::assertStringContainsString(
-            '<p class="t-task">Bar<br>19:00–22:00</p>',
+            '<p class="t-who"><span class="t-name">Sam</span><span class="t-task">Bar · 19:00–22:00</span></p>',
             $this->controller()->renderPage($ticket)
         );
         self::assertStringContainsString(
-            '<p class="t-task">Free entry</p>',
+            '<span class="t-task">Free entry</span>',
             $this->controller()->renderPage($this->sampleTicket())
+        );
+
+        $ticket['role'] = "Bar · 19:00\nDoor · 22:00";
+        $ticket['time'] = '';
+        self::assertStringContainsString(
+            '<span class="t-task t-rows">Bar · 19:00<br>Door · 22:00</span>',
+            $this->controller()->renderPage($ticket)
+        );
+
+        $ticket['role'] = '';
+        self::assertStringContainsString(
+            '<p class="t-who"><span class="t-name">Sam</span></p>',
+            $this->controller()->renderPage($ticket)
         );
     }
 
@@ -440,15 +461,24 @@ final class TicketControllerTest extends TestCase
         self::assertStringContainsString('id="ec-qr-2"', $html);
 
         // Each card is numbered on its issued line (Owner, 2026-11-08).
-        self::assertStringContainsString('<p class="t-small">Ticket 1 of 2 · issued 20:00, Fri 24 Jul</p>', $html);
-        self::assertStringContainsString('<p class="t-small">Ticket 2 of 2 · issued 20:00, Fri 24 Jul</p>', $html);
+        foreach ([1, 2] as $n) {
+            self::assertStringContainsString(
+                '<span class="t-small">Ticket ' . $n . ' of 2 · issued 20:00, Fri 24 Jul</span>',
+                $html
+            );
+        }
         self::assertStringNotContainsString('Issued ', $html);
 
         // One ticket alone is drawn as before, not numbered.
         $single = $this->controller()->renderPage($crew);
         self::assertStringContainsString('<main class="t">', $single);
         self::assertStringNotContainsString('<section', $single);
-        self::assertStringContainsString('<p class="t-small">Issued 20:00, Fri 24 Jul</p>', $single);
+        // The issued time shares a line with the clock (Owner 2026-11-08: a shorter ticket).
+        self::assertStringContainsString(
+            '<p class="t-proof"><span class="t-small">Issued 20:00, Fri 24 Jul</span>'
+            . '<span class="t-clock" id="ec-clock">',
+            $single
+        );
         self::assertStringNotContainsString(' of 1', $single);
     }
 
@@ -465,7 +495,7 @@ final class TicketControllerTest extends TestCase
 
         $first = strpos($html, 'Ticket 1 of 3 · issued');
         $second = strpos($html, 'Ticket 2 of 3 · issued');
-        $last = strpos($html, '<p class="t-small">Ticket 3 of 3</p>');
+        $last = strpos($html, '<span class="t-small">Ticket 3 of 3</span>');
         self::assertIsInt($first);
         self::assertIsInt($second);
         self::assertIsInt($last);
@@ -541,7 +571,7 @@ final class TicketControllerTest extends TestCase
         $html = $this->controller()->renderPage($this->sampleTicket());
 
         self::assertStringContainsString(
-            "<p style=\"white-space:pre-line\">Door code: 7302\nSome street 1 &lt;b&gt;</p>",
+            "<p class=\"t-note\">Door code: 7302\nSome street 1 &lt;b&gt;</p>",
             $html
         );
     }
@@ -552,7 +582,7 @@ final class TicketControllerTest extends TestCase
 
         $html = $this->controller()->renderPage($this->sampleTicket());
 
-        self::assertStringNotContainsString('pre-line', $html);
+        self::assertStringNotContainsString('<p class="t-note">', $html);
     }
 
     /** The rostered-slot ticket of Sam (person 7) for 1 August. */
@@ -795,8 +825,12 @@ final class TicketControllerTest extends TestCase
 
         $html = $this->controller()->renderPage($ticket);
 
-        self::assertStringContainsString('<p class="t-short">K7M4X</p>', $html);
-        self::assertLessThan(strpos($html, 't-code">AB12CD'), strpos($html, 't-short">K7M4X'));
+        // The buyer's code on the short code's line (Owner 2026-11-08: a shorter ticket).
+        self::assertStringContainsString(
+            '<p class="t-codes"><span class="t-short">K7M4X</span><span class="t-code">AB12CD</span></p>',
+            $html
+        );
+        self::assertLessThan(strpos($html, '<p class="t-codes">'), strpos($html, 'id="ec-qr"'));
     }
 
     /**
@@ -1077,13 +1111,18 @@ final class TicketControllerTest extends TestCase
             $html
         );
         self::assertStringContainsString(
-            '[id^="ec-band"]{display:grid;align-items:center;padding:.7em .45em}[id^="ec-band"]>*{grid-area:1/1}',
+            '[id^="ec-band"]{display:grid;align-items:center;padding:.55em .45em}[id^="ec-band"]>*{grid-area:1/1}',
             $html
         );
-        self::assertStringContainsString('.t-in{display:block;letter-spacing:.04em}.t-ghost{visibility:hidden}', $html);
+        // The welcome and the time share a line when they fit (Owner 2026-11-08: a shorter ticket).
+        self::assertStringContainsString(
+            '.t-in{display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;column-gap:.5em;'
+            . 'letter-spacing:.04em}.t-ghost{visibility:hidden}',
+            $html
+        );
         // The gold band itself has the same padding.
         self::assertStringContainsString(
-            '.t-band.is-in{position:relative;overflow:hidden;isolation:isolate;padding:.7em .45em;',
+            '.t-band.is-in{position:relative;overflow:hidden;isolation:isolate;padding:.55em .45em;',
             $html
         );
         self::assertStringContainsString(
