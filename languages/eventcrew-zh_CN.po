@@ -2057,10 +2057,6 @@ msgstr "%s 开门"
 msgid "Each organizer gets the last 24 hours of that chat by email, and a short Telegram message. At most once per person per hour, and only for people with a confirmed email."
 msgstr "每位组织者会通过邮件收到该聊天最近 24 小时的记录，并收到一条简短的 Telegram 消息。每人每小时最多一次，且只针对邮箱已确认的人。"
 
-#: templates/public/signup.php:510
-msgid "Each task’s ticket is on its row under My tasks. A free-entry credit you spend shows here."
-msgstr "每个任务的票在“我的任务”下对应的行里。你使用的免费入场积分显示在这里。"
-
 #: src/Telegram/BoardService.php:1489
 msgid "Early enough: it does not affect your standing."
 msgstr "取消得够早：不影响你的信誉。"

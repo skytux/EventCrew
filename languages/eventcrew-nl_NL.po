@@ -2072,10 +2072,6 @@ msgstr "Deuren open %s"
 msgid "Each organizer gets the last 24 hours of that chat by email, and a short Telegram message. At most once per person per hour, and only for people with a confirmed email."
 msgstr "Elke organisator krijgt de laatste 24 uur van die chat per e-mail, en een kort Telegram-bericht. Hoogstens één keer per persoon per uur, en alleen voor mensen met een bevestigd e-mailadres."
 
-#: templates/public/signup.php:510
-msgid "Each task’s ticket is on its row under My tasks. A free-entry credit you spend shows here."
-msgstr "Het ticket van elke taak staat op de eigen rij onder Mijn taken. Een credit voor gratis toegang die je uitgeeft, staat hier."
-
 #: src/Telegram/BoardService.php:1489
 msgid "Early enough: it does not affect your standing."
 msgstr "Vroeg genoeg: het raakt je status niet."

@@ -2125,12 +2125,6 @@ msgid ""
 msgstr ""
 "Varje arrangör får de senaste 24 timmarna av chatten per e-post, och ett kort Telegram-meddelande. Högst en gång per person och timme, och bara för personer med bekräftad e-post."
 
-#: templates/public/signup.php:509
-msgid ""
-"Each task’s ticket is on its row under My tasks. A free-entry credit you spend shows here."
-msgstr ""
-"Varje uppgifts biljett finns på dess rad under Mina uppgifter. En fribiljett du använder visas här."
-
 #: src/Admin/PeopleListTable.php:126 src/Admin/TasksListTable.php:128 templates/public/signup.php:1708
 msgid "Edit"
 msgstr "Redigera"

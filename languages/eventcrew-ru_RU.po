@@ -2087,10 +2087,6 @@ msgstr "Вход открывается в %s"
 msgid "Each organizer gets the last 24 hours of that chat by email, and a short Telegram message. At most once per person per hour, and only for people with a confirmed email."
 msgstr "Каждый организатор получает последние 24 часа этого чата по email и короткое сообщение в Telegram. Не чаще раза в час на человека и только для людей с подтверждённым email."
 
-#: templates/public/signup.php:510
-msgid "Each task’s ticket is on its row under My tasks. A free-entry credit you spend shows here."
-msgstr "Билет каждой задачи — в её строке в разделе «Мои задачи». Здесь видно потраченный балл за бесплатный вход."
-
 #: src/Telegram/BoardService.php:1489
 msgid "Early enough: it does not affect your standing."
 msgstr "Достаточно рано: это не влияет на твой статус."

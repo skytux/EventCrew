@@ -816,6 +816,11 @@
 .eventcrew-signup .eventcrew-header-card .eventcrew-disclosure { margin-bottom: 0; }
 /* The crew guide under the person's details: one card body, so no second gap. */
 .eventcrew-signup .eventcrew-header-card .eventcrew-card-body + .eventcrew-header-guide { padding-top: 0; }
+/* 🎟 Tickets: the one button in the header card, the guide link under it. */
+.eventcrew-signup .eventcrew-header-guide p { margin: 0 0 .5em; }
+.eventcrew-signup .eventcrew-header-guide p:last-child { margin-bottom: 0; }
+/* The Tickets card clears the top of the screen when 🎟 Tickets scrolls to it. */
+.eventcrew-signup #eventcrew-my-tickets { scroll-margin-top: 1em; }
 .eventcrew-signup .eventcrew-disclosure { margin: .3em 0 .8em; font-size: .9em; }
 .eventcrew-signup .eventcrew-disclosure summary { cursor: pointer; opacity: .8; padding: .3em 0; }
 .eventcrew-signup .eventcrew-score-help table { border-collapse: collapse; margin: .4em 0; }

@@ -514,19 +514,26 @@ if ($eventcrew_link_expired) {
                 </div>
             <?php endif; ?>
             <?php
-            // The crew guide, under the person's details (Owner 2026-11-08):
-            // signed out it is the link at the top of the page instead.
+            // 🎟 Tickets, then the crew guide, under the person's details
+            // (Owner 2026-11-08). Named as in the bot's /me; it opens the Me
+            // tab at the Tickets card. Signed out, the guide is the link at
+            // the top of the page.
             $eventcrew_header_guide = \EventCrew\Support\RoleGuide::emailAction();
             ?>
-            <?php if (null !== $eventcrew_header_guide) : ?>
-                <div class="eventcrew-card-body eventcrew-header-guide">
+            <div class="eventcrew-card-body eventcrew-header-guide">
+                <p>
+                    <a class="wp-element-button eventcrew-my-tickets-btn" href="#eventcrew-my-tickets" data-eventcrew-goto="eventcrew-my-tickets">
+                        🎟 <?php esc_html_e('Tickets', 'eventcrew'); ?>
+                    </a>
+                </p>
+                <?php if (null !== $eventcrew_header_guide) : ?>
                     <p>
                         <a class="eventcrew-textlink" href="<?php echo esc_url($eventcrew_header_guide['url']); ?>" target="_blank" rel="noopener">
                             <?php echo esc_html($eventcrew_header_guide['label']); ?>
                         </a>
                     </p>
-                </div>
-            <?php endif; ?>
+                <?php endif; ?>
+            </div>
         </section>
 
         <section class="eventcrew-panel" id="eventcrew-panel-board" data-eventcrew-panel="board" aria-labelledby="eventcrew-tab-board">
@@ -616,7 +623,7 @@ if ($eventcrew_link_expired) {
                 </section>
             <?php endif; ?>
 
-            <section class="eventcrew-event eventcrew-me-card">
+            <section class="eventcrew-event eventcrew-me-card" id="eventcrew-my-tickets">
                 <header class="eventcrew-event-head">
                     <h3 class="eventcrew-event-title"><?php esc_html_e('Tickets', 'eventcrew'); ?></h3>
                 </header>
@@ -643,7 +650,7 @@ if ($eventcrew_link_expired) {
                     <?php endif; ?>
 
                     <?php if ([] === $eventcrew_my_tickets['upcoming'] && [] === $eventcrew_my_tickets['past']) : ?>
-                        <p class="eventcrew-muted"><?php esc_html_e('Each task’s ticket is on its row under My tasks. A free-entry credit you spend shows here.', 'eventcrew'); ?></p>
+                        <p class="eventcrew-muted"><?php esc_html_e('No tickets yet — sign up for a task or spend a credit.', 'eventcrew'); ?></p>
                     <?php else : ?>
                         <?php foreach (['upcoming' => __('Upcoming', 'eventcrew'), 'past' => __('Past', 'eventcrew')] as $eventcrew_group => $eventcrew_group_label) : ?>
                             <?php if ([] !== $eventcrew_my_tickets[$eventcrew_group]) : ?>
@@ -2434,6 +2441,18 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
 
         return 'board';
     }
+
+    // A link to a card on another tab, such as 🎟 Tickets in the header
+    // card: its tab opens, then the page scrolls to the card.
+    root.addEventListener('click', function (e) {
+        var link = e.target.closest ? e.target.closest('[data-eventcrew-goto]') : null;
+        var target = link ? document.getElementById(link.getAttribute('data-eventcrew-goto')) : null;
+        var holder = target && target.closest('[data-eventcrew-panel]');
+        if (!holder) { return; }
+        e.preventDefault();
+        show(holder.getAttribute('data-eventcrew-panel'), false);
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
     root.classList.add('is-tabbed');
     show(initialKey(), false);

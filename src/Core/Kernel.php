@@ -917,7 +917,8 @@ final class Kernel
                 $container->get(DoorLinkSender::class),
                 $container->get(CrewAdminController::class),
                 $container->get(TelegramLogin::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(TicketTransferService::class)
             )
         );
 

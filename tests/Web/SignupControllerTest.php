@@ -467,6 +467,35 @@ final class SignupControllerTest extends TestCase
         self::assertSame(1, substr_count($html, 'Crew guide'));
     }
 
+    /** Owner 2026-11-08: 🎟 Tickets in the header card opens the Tickets card, named as in the bot. */
+    public function testSignedInTheHeaderCardHasTicketsLeadingToTheTicketsCard(): void
+    {
+        $this->stubPageRender();
+        $this->setGuideUrl();
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+
+        $person = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+        ];
+        $this->wpdb->nextRows[] = $person;
+        $this->wpdb->nextRows[] = $person;
+        $this->wpdb->nextResults[] = [$this->taskRow()];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextVars[] = 0;
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card">.*?</section>~s', $html, $card));
+        self::assertMatchesRegularExpression('~href="#eventcrew-my-tickets" data-eventcrew-goto="eventcrew-my-tickets">\s*🎟 Tickets~', $card[0]);
+        self::assertLessThan(strpos($card[0], 'Crew guide'), strpos($card[0], '🎟 Tickets'));
+        self::assertStringContainsString('id="eventcrew-my-tickets"', $html);
+    }
+
     public function testSignedOutTheCrewGuideStaysAtTheTop(): void
     {
         $this->stubPageRender();

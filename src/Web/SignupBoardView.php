@@ -19,6 +19,7 @@ use EventCrew\Support\SignedLink;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketList;
+use EventCrew\Support\TicketTransferService;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
 use EventCrew\Telegram\BoardBanner;
@@ -49,7 +50,10 @@ final class SignupBoardView
         private readonly StandingCalculator $standing,
         private readonly TicketRedemptionService $tickets,
         private readonly Turnstile $turnstile,
-        private readonly SignupService $signup
+        private readonly SignupService $signup,
+        // Optional: with it a ticket given away reads "Given to …", as in
+        // the bot's Tickets screen.
+        private readonly ?TicketTransferService $transfers = null
     ) {
     }
 
@@ -83,9 +87,15 @@ final class SignupBoardView
             'notify_matrix' => null === $person ? [] : (new NotificationPreferences())->matrix($person),
             'my_tickets' => null === $person
                 ? ['upcoming' => [], 'past' => []]
-                // Free-entry tickets only: a task's ticket is on its row under
-                // My tasks, and listing it here too showed every task twice.
-                : (new TicketList($this->assignments, $this->tasks, new RedemptionRepository()))->forPerson($person->id, false),
+                // Every ticket, task tickets too, the same list as the bot's
+                // Tickets screen (Owner 2026-11-08: web and Telegram alike).
+                : (new TicketList(
+                    $this->assignments,
+                    $this->tasks,
+                    new RedemptionRepository(),
+                    new CheckinRepository(),
+                    $this->transfers
+                ))->forPerson($person->id),
             // The person's own upcoming tasks, soonest first, so "when am I next
             // on?" is answered up front rather than by hunting the board.
             'my_upcoming' => null === $person ? [] : $this->upcomingFor($person->id),

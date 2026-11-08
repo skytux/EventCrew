@@ -688,10 +688,6 @@ msgstr "Tehtäviä ei ole vielä aikataulussa."
 msgid "No tickets yet — sign up for a task or spend a credit."
 msgstr "Ei vielä lippuja — ilmoittaudu tehtävään tai käytä vapaalippu."
 
-#: templates/public/signup.php:364
-msgid "Each task’s ticket is on its row under My tasks. A free-entry credit you spend shows here."
-msgstr "Kunkin tehtävän lippu on sen rivillä kohdassa Omat tehtäväni. Käyttämäsi vapaalippu näkyy tässä."
-
 #: src/Telegram/TicketRedemptionService.php:85
 msgid "No upcoming events to spend a credit on right now — check back when the next one is on the board."
 msgstr "Juuri nyt ei ole tulevia tapahtumia, joihin vapaalipun voisi käyttää — katso uudelleen, kun seuraava on taululla."

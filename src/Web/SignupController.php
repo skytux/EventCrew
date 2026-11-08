@@ -19,6 +19,7 @@ use EventCrew\Support\JoinAnswers;
 use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\TicketTransferService;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\PageLanguage;
 use EventCrew\Support\PrivacyPolicy;
@@ -117,9 +118,11 @@ final class SignupController
         // Optional too: without it the page offers only the email sign-in.
         private readonly ?TelegramLogin $telegramLogin = null,
         // Optional too: without it the email-changed notice goes by email only.
-        private readonly ?TelegramClient $telegram = null
+        private readonly ?TelegramClient $telegram = null,
+        // Optional too: without it a given-away ticket is not marked as such.
+        private readonly ?TicketTransferService $transfers = null
     ) {
-        $this->boardView = new SignupBoardView($tasks, $assignments, $standing, $tickets, $turnstile, $signup);
+        $this->boardView = new SignupBoardView($tasks, $assignments, $standing, $tickets, $turnstile, $signup, $transfers);
     }
 
     /** The public stylesheet's handle, shared by the block and the shortcode. */

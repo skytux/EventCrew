@@ -2057,10 +2057,6 @@ msgstr "%s 開場"
 msgid "Each organizer gets the last 24 hours of that chat by email, and a short Telegram message. At most once per person per hour, and only for people with a confirmed email."
 msgstr "各主催者に、そのチャットの直近 24 時間分がメールで、短いメッセージが Telegram で届きます。1 人につき 1 時間に最大 1 回で、メールを確認済みの人のみが対象です。"
 
-#: templates/public/signup.php:510
-msgid "Each task’s ticket is on its row under My tasks. A free-entry credit you spend shows here."
-msgstr "各タスクのチケットは「マイタスク」のその行にあります。使った無料入場クレジットはここに表示されます。"
-
 #: src/Telegram/BoardService.php:1489
 msgid "Early enough: it does not affect your standing."
 msgstr "十分前なので、評価には影響しません。"
