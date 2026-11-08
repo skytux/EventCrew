@@ -437,7 +437,7 @@ msgstr ""
 msgid "%s is now an organizer."
 msgstr ""
 
-#: templates/public/signup-board.php:249
+#: templates/public/signup-board.php:250
 msgid "%s only"
 msgstr ""
 
@@ -1542,7 +1542,7 @@ msgstr ""
 msgid "Available tags:"
 msgstr ""
 
-#: templates/public/signup-board.php:221
+#: templates/public/signup-board.php:222
 msgid "Awaiting approval"
 msgstr ""
 
@@ -1755,7 +1755,7 @@ msgstr ""
 #: src/Telegram/AssignCommand.php:374 src/Telegram/AssignCommand.php:418 src/Telegram/AssignCommand.php:720 src/Telegram/AssistantService.php:550
 #: src/Telegram/BuyerListReset.php:155 src/Telegram/CommandFlow.php:342 src/Telegram/EventsCommand.php:98 src/Telegram/MenuButtons.php:372
 #: src/Telegram/SayCommand.php:95 src/Telegram/TaskCommand.php:807 src/Telegram/TicketController.php:905 templates/admin/people.php:124
-#: templates/admin/tasks.php:293 templates/public/signup-board.php:262 templates/public/signup.php:635 templates/public/signup.php:1243
+#: templates/admin/tasks.php:293 templates/public/signup-board.php:263 templates/public/signup.php:635 templates/public/signup.php:1243
 #: templates/public/signup.php:1952
 msgid "Cancel"
 msgstr ""
@@ -2210,7 +2210,7 @@ msgid "Count one person in without a name"
 msgstr ""
 
 #: src/Telegram/AssignCommand.php:421 src/Telegram/RoleTaskBot.php:144 src/Telegram/RoleTaskBot.php:366 templates/public/door.php:77
-#: templates/public/signup-board.php:301 templates/public/signup.php:1481
+#: templates/public/signup-board.php:286 templates/public/signup.php:1481
 msgid "Count toward free-entry credit?"
 msgstr ""
 
@@ -2358,7 +2358,7 @@ msgstr ""
 msgid "Crew members with a verified email address get the next events announcement and can unsubscribe at any time from the link in each email."
 msgstr ""
 
-#: templates/public/signup-board.php:196
+#: templates/public/signup-board.php:198
 msgid "Crew only"
 msgstr ""
 
@@ -3256,7 +3256,7 @@ msgstr ""
 msgid "From this many minutes before a task starts, and after the start, crew members can no longer sign themselves out of it. Organizers can still take them off. Tasks without a start time are never locked. 0 turns this off. Default 5."
 msgstr ""
 
-#: templates/public/signup-board.php:290
+#: templates/public/signup-board.php:275
 msgid "Full"
 msgstr ""
 
@@ -4758,7 +4758,7 @@ msgstr ""
 
 #: src/Support/MessageTemplates.php:1253 src/Support/NewcomerApproval.php:129 src/Support/PrivacyExporter.php:158 src/Support/PrivacyExporter.php:318
 #: src/Telegram/OnboardingService.php:349 src/Telegram/RoleTaskBot.php:332 templates/admin/people.php:150 templates/public/door.php:79
-#: templates/public/signup-board.php:302 templates/public/signup.php:255 templates/public/signup.php:1131 templates/public/signup.php:1260
+#: templates/public/signup-board.php:287 templates/public/signup.php:255 templates/public/signup.php:1131 templates/public/signup.php:1260
 #: templates/public/signup.php:1485
 msgid "No"
 msgstr ""
@@ -5351,7 +5351,7 @@ msgstr ""
 msgid "On by default. While locked, adding the bot to another group — or running /board there — will not move the board, so no one can hijack it into a different chat. To move the board on purpose (for example, going live): untick this, save, add the bot to the new group (or run /board in it), then tick it again and save."
 msgstr ""
 
-#: templates/public/signup-board.php:239
+#: templates/public/signup-board.php:240
 msgid "On hold — talk to an organizer"
 msgstr ""
 
@@ -7365,8 +7365,8 @@ msgstr ""
 msgid "Sign out of the web board on every browser and phone? Nothing is lost; you just sign in again."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:546 templates/public/door.php:75 templates/public/signup-board.php:214 templates/public/signup-board.php:300
-#: templates/public/signup-board.php:323
+#: src/Support/MessageTemplates.php:546 templates/public/door.php:75 templates/public/signup-board.php:215 templates/public/signup-board.php:285
+#: templates/public/signup-board.php:308
 msgid "Sign up"
 msgstr ""
 
@@ -7709,7 +7709,7 @@ msgstr ""
 msgid "Take over a task"
 msgstr ""
 
-#: src/Telegram/ReplacementService.php:231 templates/public/signup-board.php:205 templates/public/signup-board.php:274
+#: src/Telegram/ReplacementService.php:231 templates/public/signup-board.php:326 templates/public/signup-board.php:332
 msgid "Take someone’s task"
 msgstr ""
 
@@ -7781,7 +7781,7 @@ msgstr ""
 msgid "Taking or cancelling a task shows at once everywhere. The messages and tickets it causes wait this many minutes, and then only what is still true is sent. A cancel within these minutes after taking the task is never a late cancellation. The wait runs on WP-Cron, so it can be a few minutes longer. 0 turns this off. Default 5."
 msgstr ""
 
-#: templates/public/signup-board.php:228
+#: templates/public/signup-board.php:229
 msgid "Talk to the team at an event"
 msgstr ""
 
@@ -10852,7 +10852,7 @@ msgstr ""
 msgid "Whose task do you want to take? They decide."
 msgstr ""
 
-#: templates/public/signup-board.php:275
+#: templates/public/signup-board.php:333
 msgid "Whose task?"
 msgstr ""
 
@@ -11012,7 +11012,7 @@ msgid "Written in Finnish, then translated into the other site languages."
 msgstr ""
 
 #: src/Support/PrivacyExporter.php:157 src/Support/PrivacyExporter.php:318 src/Telegram/OnboardingService.php:348 src/Telegram/RoleTaskBot.php:331
-#: templates/admin/people.php:149 templates/public/door.php:78 templates/public/signup-board.php:302 templates/public/signup.php:254
+#: templates/admin/people.php:149 templates/public/door.php:78 templates/public/signup-board.php:287 templates/public/signup.php:254
 #: templates/public/signup.php:1260 templates/public/signup.php:1262 templates/public/signup.php:1484
 msgid "Yes"
 msgstr ""
