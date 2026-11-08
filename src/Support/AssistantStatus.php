@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Models\Person;
 use EventCrew\Models\Task;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CheckinRepository;
@@ -26,7 +27,8 @@ use EventCrew\Repositories\TicketBuyerRepository;
  *   announcement email (newsletter), the post-event email, the ticket
  *   emails, the next NIGHTS nights (tasks, Organize, free-entry tickets,
  *   guest list, ticket sales, free entry open or closed, stop flags), the
- *   organizers and the newcomers waiting.
+ *   recent cancellations (who, which task, when, by whom, open or
+ *   re-filled), the organizers and the newcomers waiting.
  * - personText(): the "This person" section: one person's own coming tasks,
  *   tickets, completed tasks and free-entry credits, for that person only.
  *
@@ -41,6 +43,12 @@ final class AssistantStatus
 
     /** How many past tasks of one person are listed. */
     private const PAST_TASKS = 5;
+
+    /** How many days back cancellations are listed (plus any for a coming task). */
+    public const CANCEL_DAYS = 14;
+
+    /** How many cancellations are listed at most. */
+    public const CANCEL_LIMIT = 15;
 
     public function __construct(
         private readonly TaskRepository $tasks,
@@ -76,6 +84,7 @@ final class AssistantStatus
             $parts[] = implode("\n", $this->nightLines((string) $date, $newsletter));
         }
 
+        $parts[] = implode("\n", $this->cancellationLines($today, $now));
         $parts[] = implode("\n", $this->peopleLines());
 
         return implode("\n", array_filter($parts, static fn (string $part): bool => '' !== $part));
@@ -451,6 +460,121 @@ final class AssistantStatus
         );
 
         return $lines;
+    }
+
+    /**
+     * The newest cancellations: a person dropping their own task, an
+     * organizer taking them off, or a deleted task cancelling its sign-ups.
+     * Read from the assignments table, where each one stays as a
+     * `cancelled` or `late_cancel` row with the time and who changed it.
+     * The last CANCEL_DAYS days, plus any for a coming task, newest first, at
+     * most CANCEL_LIMIT lines. A coming task that still exists says whether
+     * its places are filled again.
+     *
+     * @return list<string>
+     */
+    public function cancellationLines(string $today, string $now): array
+    {
+        $nowTime = strtotime($now . ' UTC');
+        $since = false === $nowTime
+            ? $today . ' 00:00:00'
+            : gmdate('Y-m-d H:i:s', $nowTime - self::CANCEL_DAYS * DAY_IN_SECONDS);
+        $rows = $this->assignments->recentCancellations($since, $today, self::CANCEL_LIMIT + 1);
+        $more = count($rows) > self::CANCEL_LIMIT;
+        $rows = array_slice($rows, 0, self::CANCEL_LIMIT);
+
+        if ([] === $rows) {
+            return [sprintf(
+                'Cancellations (the last %d days, and any for a coming task): none.',
+                self::CANCEL_DAYS
+            )];
+        }
+
+        $tasks = [];
+
+        foreach ($rows as $row) {
+            $task = ['id' => (int) $row['task_id']];
+
+            foreach ($row as $key => $value) {
+                if (str_starts_with((string) $key, 'task_') && 'task_id' !== $key) {
+                    $task[substr((string) $key, 5)] = $value;
+                }
+            }
+
+            $tasks[(int) $row['id']] = Task::fromRow($task);
+        }
+
+        $open = array_filter(
+            $rows,
+            static fn (array $row): bool => empty($row['task_deleted_at'])
+                && (string) $row['task_task_date'] >= $today
+        );
+        $taken = $this->tasks->occupancyFor(array_map(static fn (array $row): int => (int) $row['task_id'], $open));
+
+        $lines = [sprintf(
+            'Cancellations (the last %d days, and any for a coming task; newest first%s):',
+            self::CANCEL_DAYS,
+            $more ? sprintf(', only the latest %d', self::CANCEL_LIMIT) : ''
+        )];
+
+        foreach ($rows as $row) {
+            $task = $tasks[(int) $row['id']];
+            $name = Person::fromRow([
+                'display_name' => $row['display_name'] ?? '',
+                'email' => $row['email'] ?? '',
+            ])->name();
+            $name = '' !== $name ? $name : 'someone';
+            $time = $task->timeRange();
+            $what = $task->roleLabel() . ' ' . self::day($task->taskDate) . ('' !== $time ? ' ' . $time : '')
+                . ' (' . $task->eventName() . ')';
+            $deletedAt = (string) ($row['task_deleted_at'] ?? '');
+            $changedAt = (string) ($row['status_changed_at'] ?? '');
+            $changedBy = (int) ($row['changed_by'] ?? 0);
+
+            $how = match (true) {
+                '' !== $deletedAt && $changedAt >= $deletedAt => 'the task was deleted, which cancelled '
+                    . $name . '\'s place',
+                $changedBy > 0 && MarkedBy::PERSON === ($row['changed_by_kind'] ?? null)
+                    && $changedBy !== (int) $row['person_id'] => $name . ' was taken off by '
+                    . self::changerName($row),
+                $changedBy > 0 && MarkedBy::WP_USER === ($row['changed_by_kind'] ?? null)
+                    => $name . ' was taken off in wp-admin',
+                default => $name . ' cancelled',
+            };
+
+            $line = '- ' . self::moment($changedAt) . ': ' . $how . ': ' . $what
+                . (AssignmentStatus::LATE_CANCEL === ($row['status'] ?? '') ? ', a late cancellation' : '');
+
+            if ('' !== $deletedAt) {
+                $line .= $changedAt >= $deletedAt ? '' : '. The task was deleted later';
+            } elseif ($task->taskDate >= $today) {
+                $count = $taken[$task->id] ?? 0;
+                $line .= match (true) {
+                    $task->hasNoLimit() => sprintf('. Now %d signed up (no limit)', $count),
+                    $count >= $task->capacity => sprintf('. Filled again: %d/%d', $count, $task->capacity),
+                    default => sprintf('. Still open: %d/%d signed up', $count, $task->capacity),
+                };
+            }
+
+            $lines[] = $line . '.';
+        }
+
+        return $lines;
+    }
+
+    /**
+     * The name of whoever took a person off (an EventCrew person), or "an organizer".
+     *
+     * @param array<string, mixed> $row
+     */
+    private static function changerName(array $row): string
+    {
+        $name = Person::fromRow([
+            'display_name' => $row['changer_display_name'] ?? '',
+            'email' => $row['changer_email'] ?? '',
+        ])->name();
+
+        return '' !== $name ? $name : 'an organizer';
     }
 
     /** @return list<string> */

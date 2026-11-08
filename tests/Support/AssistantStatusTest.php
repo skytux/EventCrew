@@ -323,6 +323,7 @@ final class AssistantStatusTest extends TestCase
         $this->night();
         $this->results = [
             [['DISTINCT task_date'], ['2026-08-01']],
+            [['late_cancel'], []],
             [['a.*, s.task_date'], [
                 ['id' => 3, 'task_id' => 2, 'person_id' => 9, 'status' => 'signed_up', 'task_date' => '2026-08-01'],
             ]],
@@ -366,5 +367,143 @@ final class AssistantStatusTest extends TestCase
             $text
         );
         self::assertSame('', $this->service()->personText(0));
+    }
+
+    /**
+     * One cancelled sign-up as recentCancellations() gives it.
+     *
+     * @param array<string, mixed> $extra
+     * @return array<string, mixed>
+     */
+    private static function cancelRow(int $id, string $name, string $at, array $extra = []): array
+    {
+        return [
+            'id' => $id,
+            'task_id' => 20 + $id,
+            'person_id' => 100 + $id,
+            'status' => 'cancelled',
+            'status_changed_at' => $at,
+            'changed_by' => null,
+            'changed_by_kind' => null,
+            'display_name' => $name,
+            'email' => strtolower($name) . '@example.test',
+            'task_task_date' => '2026-08-01',
+            'task_starts_at' => '2026-08-01 20:00:00',
+            'task_ends_at' => '2026-08-01 23:00:00',
+            'task_role_slug' => 'bar',
+            'task_capacity' => 3,
+            'task_event_post_id' => null,
+            'task_event_label' => 'Party',
+            'task_deleted_at' => null,
+            'changer_display_name' => null,
+            'changer_email' => null,
+            ...$extra,
+        ];
+    }
+
+    /** @param list<array<string, mixed>> $rows */
+    private function cancellations(array $rows): string
+    {
+        $this->results[] = [['eventcrew_assignments', 'late_cancel', 'status_changed_at >='], $rows];
+        $this->results[] = [
+            ['COUNT(*) AS taken'],
+            [['task_id' => 21, 'taken' => 3], ['task_id' => 22, 'taken' => 1]],
+        ];
+
+        return implode("\n", $this->service()->cancellationLines('2026-07-30', '2026-07-30 12:00:00'));
+    }
+
+    public function testCancellationsSayWhoWhichTaskWhenByWhomAndWhetherFilledAgain(): void
+    {
+        $text = $this->cancellations([
+            self::cancelRow(1, 'Anna', '2026-07-29 18:05:00', ['status' => 'late_cancel']),
+            self::cancelRow(2, 'Ben', '2026-07-28 10:00:00', [
+                'changed_by' => 7,
+                'changed_by_kind' => 'person',
+                'changer_display_name' => 'Lou',
+            ]),
+            self::cancelRow(3, 'Cleo', '2026-07-27 09:00:00', [
+                'task_deleted_at' => '2026-07-27 09:00:00',
+            ]),
+            self::cancelRow(4, 'Dan', '2026-07-20 09:00:00', [
+                'task_task_date' => '2026-07-25',
+                'task_starts_at' => '2026-07-25 20:00:00',
+                'task_ends_at' => '2026-07-25 23:00:00',
+                'changed_by' => 2,
+                'changed_by_kind' => 'wp_user',
+            ]),
+        ]);
+
+        self::assertStringContainsString(
+            '- 2026-07-29 (Wednesday) 18:05: Anna cancelled: bar 2026-08-01 (Saturday) 20:00–23:00 (Party),'
+                . ' a late cancellation. Filled again: 3/3.',
+            $text
+        );
+        self::assertStringContainsString(
+            '- 2026-07-28 (Tuesday) 10:00: Ben was taken off by Lou: bar 2026-08-01 (Saturday) 20:00–23:00'
+                . ' (Party). Still open: 1/3 signed up.',
+            $text
+        );
+        self::assertStringContainsString(
+            '- 2026-07-27 (Monday) 09:00: the task was deleted, which cancelled Cleo\'s place: bar',
+            $text
+        );
+        self::assertStringContainsString(
+            '- 2026-07-20 (Monday) 09:00: Dan was taken off in wp-admin: bar 2026-07-25 (Saturday)'
+                . ' 20:00–23:00 (Party).',
+            $text
+        );
+        self::assertStringNotContainsString('@', $text);
+
+        $query = (string) current(array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_contains($sql, 'late_cancel')
+        ));
+        self::assertStringContainsString("status_changed_at >= '2026-07-16 12:00:00'", $query);
+        self::assertStringContainsString("task_date >= '2026-07-30'", $query);
+        self::assertStringContainsString('LIMIT ' . (AssistantStatus::CANCEL_LIMIT + 1), $query);
+    }
+
+    public function testNoCancellationsSaysNone(): void
+    {
+        self::assertSame(
+            'Cancellations (the last 14 days, and any for a coming task): none.',
+            $this->cancellations([])
+        );
+    }
+
+    public function testCancellationsAreCappedAndSaySoWhenThereAreMore(): void
+    {
+        $rows = [];
+
+        for ($i = 1; $i <= AssistantStatus::CANCEL_LIMIT + 1; $i++) {
+            $rows[] = self::cancelRow($i, 'Person' . $i, '2026-07-29 10:00:00');
+        }
+
+        $text = $this->cancellations($rows);
+        $lines = explode("\n", $text);
+
+        self::assertCount(AssistantStatus::CANCEL_LIMIT + 1, $lines);
+        self::assertStringContainsString('only the latest ' . AssistantStatus::CANCEL_LIMIT, $lines[0]);
+        self::assertStringContainsString('Person' . AssistantStatus::CANCEL_LIMIT . ' cancelled', $text);
+        self::assertStringNotContainsString('Person' . (AssistantStatus::CANCEL_LIMIT + 1) . ' ', $text);
+    }
+
+    public function testOnlyAnOrganizersFactsCarryTheCancellations(): void
+    {
+        $this->results[] = [
+            ['eventcrew_assignments', 'late_cancel', 'status_changed_at >='],
+            [self::cancelRow(1, 'Anna', '2026-07-29 18:05:00')],
+        ];
+
+        $facts = $this->facts(false, 0);
+
+        self::assertStringNotContainsString('Cancellations', $facts);
+        self::assertStringNotContainsString('Anna', $facts);
+
+        $facts = $this->facts(true);
+
+        self::assertStringContainsString('Cancellations (the last 14 days', $facts);
+        self::assertStringContainsString('Anna cancelled: bar 2026-08-01 (Saturday)', $facts);
     }
 }

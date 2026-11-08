@@ -749,6 +749,56 @@ final class AssignmentRepository
     }
 
 
+    /**
+     * The newest cancellations, for the organizers' "Current status" facts of
+     * the bot's helper: rows now `cancelled` or `late_cancel` whose status
+     * changed at or after $since, or whose task is on or after $today. Newest
+     * first, at most $limit rows (ask for one more to know there are more).
+     *
+     * Each row carries the assignment's own columns, the task's columns
+     * (prefixed task_, deleted ones included, with task_deleted_at), the
+     * person's display_name and email (for Person::name()), and the name and
+     * email of the person who changed it (changer_*) when that was an
+     * EventCrew person. A person who signed up again is no longer cancelled,
+     * so they are not here.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function recentCancellations(string $since, string $today, int $limit): array
+    {
+        global $wpdb;
+
+        $people = Schema::table(Schema::PEOPLE);
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT a.id, a.task_id, a.person_id, a.status, a.status_changed_at, a.changed_by,
+                    a.changed_by_kind, p.display_name, p.email,
+                    s.task_date AS task_task_date, s.starts_at AS task_starts_at, s.ends_at AS task_ends_at,
+                    s.role_slug AS task_role_slug, s.capacity AS task_capacity,
+                    s.event_post_id AS task_event_post_id, s.event_label AS task_event_label,
+                    s.deleted_at AS task_deleted_at,
+                    c.display_name AS changer_display_name, c.email AS changer_email
+                FROM {$this->table()} a
+                INNER JOIN {$this->tasksTable()} s ON s.id = a.task_id
+                LEFT JOIN {$people} p ON p.id = a.person_id
+                LEFT JOIN {$people} c ON a.changed_by_kind = %s AND c.id = a.changed_by
+                WHERE a.status IN (%s, %s) AND a.status_changed_at IS NOT NULL
+                  AND (a.status_changed_at >= %s OR s.task_date >= %s)
+                ORDER BY a.status_changed_at DESC, a.id DESC
+                LIMIT %d",
+                MarkedBy::PERSON,
+                AssignmentStatus::CANCELLED,
+                AssignmentStatus::LATE_CANCEL,
+                $since,
+                $today,
+                max(1, $limit)
+            ),
+            ARRAY_A
+        );
+
+        return array_values(is_array($rows) ? $rows : []);
+    }
+
     public function deleteForPerson(int $personId): void
     {
         global $wpdb;

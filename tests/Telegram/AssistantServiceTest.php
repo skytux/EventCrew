@@ -6,12 +6,20 @@ namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\FollowupRepository;
+use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\NewsletterHistoryRepository;
+use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\AssistantKnowledge;
 use EventCrew\Support\AssistantSettings;
+use EventCrew\Support\AssistantStatus;
 use EventCrew\Support\DoorAccess;
 use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\HelpPage;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
@@ -44,6 +52,9 @@ final class AssistantServiceTest extends TelegramTestCase
 
     /** @var array<int, array<string, mixed>> Updates an action ran. */
     private array $ran = [];
+
+    /** Whether the helper's facts include the live status (AssistantStatus). */
+    private bool $withStatus = false;
 
     protected function setUp(): void
     {
@@ -127,7 +138,18 @@ final class AssistantServiceTest extends TelegramTestCase
         return new AssistantService(
             $this->client(),
             new LlmClient(new Logger()),
-            new AssistantKnowledge(new TaskRepository()),
+            new AssistantKnowledge(new TaskRepository(), $this->withStatus ? new AssistantStatus(
+                new TaskRepository(),
+                new PersonRepository(),
+                new NewsletterSubscriberRepository(),
+                new NewsletterHistoryRepository(),
+                new FollowupRepository(),
+                new GuestRepository(),
+                new RedemptionRepository(),
+                new TicketBuyerRepository(),
+                new FreeEntryGate(),
+                new AssignmentRepository()
+            ) : null),
             $this->help(),
             new Logger(),
             false,
@@ -450,6 +472,44 @@ final class AssistantServiceTest extends TelegramTestCase
 
         self::assertStringNotContainsString('ORGANIZER GUIDE', $this->systemPrompt(0));
         self::assertStringNotContainsString('free host', $this->systemPrompt(0));
+    }
+
+    /**
+     * Whether a message from Sam ran the cancellations query or got them in the system prompt.
+     *
+     * @param array<string, mixed> $message
+     */
+    private function promptHasCancellations(bool $organizer, array $message): bool
+    {
+        $this->withStatus = true;
+        $this->person($organizer);
+        $this->reply(true, true, 'Here.');
+
+        $this->ask($message);
+
+        $queried = [] !== array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_contains($sql, 'late_cancel')
+        );
+
+        return $queried || str_contains($this->systemPrompt(0), 'Cancellations (');
+    }
+
+    public function testAnOrganizerInAPrivateChatGetsTheRecentCancellations(): void
+    {
+        self::assertTrue($this->promptHasCancellations(true, self::privateMessage('who cancelled lately?')));
+        self::assertStringContainsString('Cancellations (the last 14 days', $this->systemPrompt(0));
+        self::assertStringContainsString('"who cancelled lately?" directly from it', $this->systemPrompt(0));
+    }
+
+    public function testSomeoneWhoIsNotAnOrganizerGetsNoCancellations(): void
+    {
+        self::assertFalse($this->promptHasCancellations(false, self::privateMessage('who cancelled lately?')));
+    }
+
+    public function testAnOrganizerInTheGroupGetsNoCancellations(): void
+    {
+        self::assertFalse($this->promptHasCancellations(true, self::groupMessage('@crewbot who cancelled lately?')));
     }
 
     public function testTheFactsGiveTheOfficialEmailAddressFromThePrivacyContact(): void

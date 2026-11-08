@@ -652,8 +652,10 @@ final class AssistantService
             $lines[] = '- For an organizer, "Current status" in the FACTS is live, read just now: the announcement'
                 . ' email (newsletter), the post-event email, the ticket emails, the coming nights (tasks, who is on'
                 . ' Organize, free-entry tickets, guest list, ticket holders, free entry open or closed, stopped'
-                . ' emails) and the organizers. Answer status questions such as "has the announcement gone out?"'
-                . ' directly from it, with the times it gives.';
+                . ' emails), the recent cancellations (who, which task, when, whether the task is filled again)'
+                . ' and the organizers. Answer status questions such as "has the announcement gone out?" or'
+                . ' "who cancelled lately?" directly from it, with the names and times it gives. Do not send the'
+                . ' organizer to the bot log, the task list or wp-admin for cancellations.';
             $lines[] = '- An organizer can also manage tasks in a private chat: /addtask, /edittask (time, places,'
                 . ' notes, plus-ones), /deletetask, /maketasks (a night\'s tasks from the roles) and /mailtasks'
                 . ' (the open-task email now). When they ask for one of these, give that command with the task'
