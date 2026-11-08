@@ -92,8 +92,7 @@ final class AssistantKnowledge
         bool $member = false,
         int $personId = 0,
         string $question = ''
-    ): array
-    {
+    ): array {
         [$taskText, $taskIds] = $this->tasksText($member, $organizer);
 
         $parts = [
