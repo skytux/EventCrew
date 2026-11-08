@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.198
+Stable tag: 1.140.199
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.199 =
+* New EventCrew > History page: who did what and when (sign-ups, cancellations, take-overs, task list changes, door check-ins, credits and tickets, people, settings names), filtered by person, night and kind, kept for one year; the past year is filled in from existing records.
+* Bot: organizers in a private chat can ask what happened, for a person or a night, from the history.
 
 = 1.140.198 =
 * Crew app, Me tab: cards in the order Get a ticket, Tickets, Tasks, Past tickets, Past tasks; each entry shows the date, event, DJ names and what it is, with small text links for its actions.
@@ -1952,6 +1956,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.199 =
+No settings change.
 
 = 1.140.198 =
 No settings change.
