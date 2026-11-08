@@ -31,6 +31,8 @@ use Closure;
  *   EmailBody::STYLE_LINK as a small link on the line under the buttons.
  * - dm: false for an action the email alone offers (a link to the bot's
  *   own chat means nothing inside it).
+ * - mail: the message kind it belongs to (MessageTemplate::actions() sets
+ *   it), the email key of its click count (EmailClicks).
  */
 final class MessageAction
 {
@@ -46,8 +48,26 @@ final class MessageAction
         public readonly string $verb = '',
         public readonly string $start = '',
         public readonly string $emailStyle = '',
-        public readonly bool $dm = true
+        public readonly bool $dm = true,
+        public readonly string $mail = ''
     ) {
+    }
+
+    /** The same action, counted as a button of the message kind $mail. */
+    public function withMail(string $mail): self
+    {
+        return new self(
+            $this->id,
+            $this->label,
+            $this->dmLabel,
+            $this->url,
+            $this->callback,
+            $this->verb,
+            $this->start,
+            $this->emailStyle,
+            $this->dm,
+            $mail
+        );
     }
 
     public function dmText(): string

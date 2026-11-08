@@ -1194,6 +1194,7 @@ final class TicketMail
     public function composeTransferOffer(string $from, string $date, string $acceptUrl, string $name = ''): array
     {
         $short = self::shortDate($date);
+        $acceptUrl = EmailClicks::wrap($acceptUrl, 'ticket_offer', 'accept');
         [$event, , $eventId] = $this->event($date);
         $words = static function () use ($from, $event, $eventId, $short, $name): array {
             $night = trim(self::eventIn($event, $eventId, EventName::lang()) . ' ' . $short);
@@ -1710,6 +1711,10 @@ final class TicketMail
         } else {
             $url = $row instanceof Guest ? self::guestUrl($row->id, $row->ticketRev) : self::buyerUrl($row);
         }
+
+        // Not a counting link (EmailClicks): the ticket is opened again and
+        // again at the door, where a detour through the front page would
+        // only slow it down and the count would mean little.
 
         // Only a ticket buyer's code is written out: it is the code the buyer
         // knows from Holvi. A guest's or a crew member's code is in the QR only.

@@ -42,6 +42,7 @@ use EventCrew\Support\SecureUrl;
 use EventCrew\Support\Roles;
 use EventCrew\Support\Scheduler;
 use EventCrew\Support\SendWindow;
+use EventCrew\Support\MonthlyReport;
 use EventCrew\Support\SeveralTickets;
 use EventCrew\Support\SecondThoughts;
 use EventCrew\Support\SignupService;
@@ -169,6 +170,7 @@ final class SettingsPage
                 'tasks_per_credit' => $reputation->tasksPerCredit(),
                 'extra_task_credit' => ExtraTaskCredits::isOn(),
                 'several_tickets' => SeveralTickets::isOn(),
+                'monthly_report' => MonthlyReport::isOn(),
                 'min_rated_tasks' => $reputation->minRatedTasks(),
                 'reputation_half_life' => $reputation->halfLifeDays(),
                 'reputation_gate' => (bool) get_option(SignupService::GATE_OPTION, true),
@@ -803,6 +805,7 @@ final class SettingsPage
         }
         update_option(Newsletter::ENABLED_OPTION, isset($_POST['newsletter_enabled']) ? '1' : '0');
         FollowupMail::setEnabled(isset($_POST['followup_enabled']));
+        MonthlyReport::save(isset($_POST['monthly_report']));
         update_option(
             Newsletter::DAYS_OPTION,
             isset($_POST['newsletter_days'])

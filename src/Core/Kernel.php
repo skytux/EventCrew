@@ -28,6 +28,7 @@ use EventCrew\Repositories\DoorNoteRepository;
 use EventCrew\Repositories\FollowupRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\HistoryRepository;
+use EventCrew\Repositories\MonthlyReportRepository;
 use EventCrew\Repositories\NewsletterHistoryRepository;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\NotificationsRepository;
@@ -45,6 +46,7 @@ use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\BoardPush;
 use EventCrew\Support\BuyerImport;
 use EventCrew\Support\ClaimNotifier;
+use EventCrew\Support\CampaignVisits;
 use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\DoorAccess;
@@ -53,6 +55,7 @@ use EventCrew\Support\DoorHandoff;
 use EventCrew\Support\DoorNewMember;
 use EventCrew\Support\DoorLinkSender;
 use EventCrew\Support\DoorList;
+use EventCrew\Support\EmailClicks;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupText;
@@ -75,6 +78,7 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\MessagePreview;
 use EventCrew\Support\MessageAiText;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\MonthlyReport;
 use EventCrew\Support\NewcomerApproval;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterCrew;
@@ -243,6 +247,11 @@ final class Kernel
         // Empties the page cache once after each update, so no visitor gets a
         // page built by the old version.
         PageCacheFlush::boot();
+
+        // The counts behind the monthly report's email button clicks and
+        // campaign link visits: no cookies, counts only.
+        EmailClicks::boot();
+        CampaignVisits::boot();
 
         $admin = $this->container->get(Admin::class);
         $admin->boot();
@@ -914,7 +923,18 @@ final class Kernel
                 $container->get(FollowupMail::class),
                 $container->get(TakeoverService::class),
                 $container->get(SlotFreedNotice::class),
-                $container->get(NewcomerApproval::class)
+                $container->get(NewcomerApproval::class),
+                $container->get(MonthlyReport::class)
+            )
+        );
+
+        $this->container->singleton(
+            MonthlyReport::class,
+            fn (Container $container) => new MonthlyReport(
+                new MonthlyReportRepository(),
+                $container->get(PersonRepository::class),
+                $container->get(Mailer::class),
+                $container->get(TaskRepository::class)
             )
         );
 

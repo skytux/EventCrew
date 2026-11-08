@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
 use EventCrew\Support\EmailBody;
+use EventCrew\Support\EmailClicks;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
@@ -72,8 +73,12 @@ final class EmailTemplateTest extends TestCase
         self::assertStringContainsString('You&#039;re on the door.', $body);
 
         // Both actions are white buttons, and only the first has the gold glow.
-        self::assertStringContainsString('href="https://site.test/ticket"', $body);
-        self::assertStringContainsString('href="https://site.test/calendar"', $body);
+        // Each goes through a counting link (EmailClicks) back to its own page.
+        preg_match_all('/href="https:\/\/site\.test\/\?ecl=([^"]+)"/', $body, $links);
+        self::assertSame(
+            ['https://site.test/ticket', 'https://site.test/calendar'],
+            array_map(static fn (string $token): string => (string) EmailClicks::resolve($token)['url'], $links[1])
+        );
         self::assertSame(2, substr_count($body, '<td bgcolor="#ffffff" style="border-radius:28px;background:#ffffff'));
         self::assertSame(1, substr_count($body, 'box-shadow:0 0 18px rgba(255,190,120,.55)'));
     }
@@ -120,7 +125,7 @@ final class EmailTemplateTest extends TestCase
         // No wrapper, and the action comes back as the labelled line these
         // bodies carried before buttons existed.
         self::assertStringNotContainsString('<!DOCTYPE html>', $body);
-        self::assertStringContainsString('Show your ticket: https://site.test/ticket', $body);
+        self::assertMatchesRegularExpression('/Show your ticket: https:\/\/site\.test\/\?ecl=\S+/', $body);
     }
 
     public function testAnEditedWrapperWithoutTheContentTagFallsBackToTheDefault(): void

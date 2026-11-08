@@ -34,6 +34,7 @@
  * @var string $maintainer_contact Whom to contact when the bot cannot be reached ('' = the default).
  * @var bool $newsletter_enabled Whether the newsletter goes out.
  * @var bool $followup_enabled Whether the post-event email goes out the day after each event.
+ * @var bool $monthly_report Whether organizers get the monthly report email.
  * @var int $newsletter_days Days before an event the newsletter goes out.
  * @var string $newsletter_preview_mode NewsletterSchedule::PREVIEW_AFTER_PREVIOUS or PREVIEW_BEFORE_EVENT.
  * @var int $newsletter_preview_hours Hours after the previous event ends that the preview goes.
@@ -1755,6 +1756,27 @@ if (! defined('ABSPATH')) {
                     </p>
                     <p class="description">
                         <?php esc_html_e('Every link in it carries utm_source=eventcrew, utm_medium=email and utm_campaign=thanks-YYYY-MM-DD or missed-YYYY-MM-DD, so your shop’s and your site’s statistics can tell which sales came from these emails. The Roster page shows how many people opened a link.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        <h2><?php esc_html_e('Monthly report', 'eventcrew'); ?></h2>
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><?php esc_html_e('Send the monthly report', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="monthly_report" value="1" <?php checked($monthly_report); ?>>
+                        <?php esc_html_e('On', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('On the 1st of each month, every organizer gets last month’s numbers by email.', 'eventcrew'); ?>
+                        <?php $eventcrew_report_action = \EventCrew\Support\MonthlyReport::TEST_ACTION; ?>
+                        <a href="<?php echo esc_url(wp_nonce_url(
+                            admin_url('admin-post.php?action=' . $eventcrew_report_action),
+                            $eventcrew_report_action
+                        )); ?>"><?php esc_html_e('Send a test report to me', 'eventcrew'); ?></a>
                     </p>
                 </td>
             </tr>

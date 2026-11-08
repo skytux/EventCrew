@@ -1537,6 +1537,10 @@ msgstr ""
 msgid "Checking you’re human…"
 msgstr "Kollar att du är människa…"
 
+#: src/Support/Turnstile.php:102
+msgid "Checking…"
+msgstr "Kontrollerar…"
+
 #: templates/public/door.php:58
 msgid "Choose"
 msgstr "Välj"
@@ -13441,3 +13445,93 @@ msgstr "När på kan en medlem använda fler fribiljetter på en kväll där hen
 #: templates/public/signup.php
 msgid "Search"
 msgstr "Sök"
+
+#: src/Support/MonthlyReport.php
+#. translators: the month, like 10/2026
+msgid "Monthly report %s"
+msgstr "Månadsrapport %s"
+
+#: src/Support/MonthlyReport.php
+#. translators: 1: the month, like 10/2026, 2: the month before, like 9/2026
+msgid "EventCrew numbers for %1$s. In brackets: %2$s."
+msgstr "EventCrew-siffror för %1$s. Inom parentes: %2$s."
+
+#: src/Support/MonthlyReport.php
+msgid "New people"
+msgstr "Nya personer"
+
+#: src/Support/MonthlyReport.php
+msgid "Used the bot"
+msgstr "Använde boten"
+
+#: src/Support/MonthlyReport.php
+msgid "Active on the web page"
+msgstr "Aktiv på webbsidan"
+
+#: src/Support/MonthlyReport.php
+msgid "Sign-ups"
+msgstr "Anmälningar"
+
+#: src/Support/MonthlyReport.php
+msgid "No-shows"
+msgstr "Uteblivna"
+
+#: src/Support/MonthlyReport.php
+msgid "Free entries used"
+msgstr "Använda fribiljetter"
+
+#: src/Support/MonthlyReport.php
+msgid "Email button clicks"
+msgstr "Klick på e-postknappar"
+
+#: src/Support/MonthlyReport.php
+msgid "Visits from campaign links"
+msgstr "Besök via kampanjlänkar"
+
+#: src/Support/MonthlyReport.php
+msgid "Page views (Burst)"
+msgstr "Sidvisningar (Burst)"
+
+#: src/Support/MonthlyReport.php
+msgid "Visitors (Burst)"
+msgstr "Besökare (Burst)"
+
+#: src/Support/MonthlyReport.php
+msgid "Ticket buyers"
+msgstr "Biljettköpare"
+
+#: src/Support/MonthlyReport.php
+msgid "Ticket buyers per event"
+msgstr "Biljettköpare per evenemang"
+
+#: src/Support/MonthlyReport.php
+msgid "Active → signed up → completed"
+msgstr "Aktiv → anmäld → klar"
+
+#: src/Support/MonthlyReport.php
+msgid "% = share of the row above"
+msgstr "% = andel av raden ovan"
+
+#: src/Support/MonthlyReport.php
+msgid "No ticket buyers."
+msgstr "Inga biljettköpare."
+
+#: src/Support/MonthlyReport.php
+msgid "Active"
+msgstr "Aktiv"
+
+#: templates/admin/settings.php
+msgid "Monthly report"
+msgstr "Månadsrapport"
+
+#: templates/admin/settings.php
+msgid "Send the monthly report"
+msgstr "Skicka månadsrapporten"
+
+#: templates/admin/settings.php
+msgid "On the 1st of each month, every organizer gets last month’s numbers by email."
+msgstr "Den 1:a varje månad får varje arrangör förra månadens siffror per mejl."
+
+#: templates/admin/settings.php
+msgid "Send a test report to me"
+msgstr "Skicka en testrapport till mig"

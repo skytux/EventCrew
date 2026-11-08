@@ -92,10 +92,12 @@ final class MessageActions
      * then each bot verb as an "Open in Telegram" link (style 'telegram',
      * drawn as a line of links under the buttons, EmailBody), once per verb
      * (or own start payload), when the bot is set up; then the web links
-     * of style EmailBody::STYLE_LINK as small links.
+     * of style EmailBody::STYLE_LINK as small links. Each web link carries
+     * its message kind and action id as 'mail' and 'button', the keys of
+     * its click count (EmailClicks, wrapped by the Mailer).
      *
      * @param list<MessageAction> $actions
-     * @return list<array{label: string, url: string, style?: string}>
+     * @return list<array{label: string, url: string, style?: string, mail?: string, button?: string}>
      */
     public static function email(array $actions): array
     {
@@ -105,11 +107,12 @@ final class MessageActions
 
         foreach ($actions as $action) {
             $url = $action->webUrl();
+            $keys = '' === $action->mail ? [] : ['mail' => $action->mail, 'button' => $action->id];
 
             if ('' !== $url && EmailBody::STYLE_LINK === $action->emailStyle) {
-                $small[] = ['label' => $action->label, 'url' => $url, 'style' => EmailBody::STYLE_LINK];
+                $small[] = ['label' => $action->label, 'url' => $url, 'style' => EmailBody::STYLE_LINK] + $keys;
             } elseif ('' !== $url) {
-                $buttons[] = ['label' => $action->label, 'url' => $url];
+                $buttons[] = ['label' => $action->label, 'url' => $url] + $keys;
             }
 
             $key = '' !== $action->start ? $action->start : $action->verb;
@@ -120,7 +123,7 @@ final class MessageActions
                     'label' => $action->label,
                     'url' => $start,
                     'style' => EmailBody::STYLE_TELEGRAM,
-                ];
+                ] + ('' === $action->mail ? [] : ['mail' => $action->mail]);
             }
         }
 

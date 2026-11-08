@@ -51,7 +51,8 @@ final class Scheduler
         private readonly ?FollowupMail $followup = null,
         private readonly ?TakeoverService $takeovers = null,
         private readonly ?SlotFreedNotice $slotFreed = null,
-        private readonly ?NewcomerApproval $newcomers = null
+        private readonly ?NewcomerApproval $newcomers = null,
+        private readonly ?MonthlyReport $monthlyReport = null
     ) {
     }
 
@@ -140,6 +141,10 @@ final class Scheduler
             // day before a night, the emails themselves from 12:00 the day
             // after. Does nothing while switched off.
             $this->followup?->run();
+
+            // The organizers' monthly report: last month's numbers, once,
+            // from the 1st. Does nothing while switched off.
+            $this->monthlyReport?->run();
         }
 
         // Not gated: editing the pinned board in place sends nobody a

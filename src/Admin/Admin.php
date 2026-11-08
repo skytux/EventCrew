@@ -9,6 +9,7 @@ use EventCrew\MailImport\MailImporter;
 use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\HybridPolicy;
+use EventCrew\Support\MonthlyReport;
 use EventCrew\Support\Scheduler;
 
 /**
@@ -62,6 +63,11 @@ final class Admin
         add_action(
             'admin_post_eventcrew_send_test_email',
             [$this->container->get(SettingsPage::class), 'sendTestEmail']
+        );
+
+        add_action(
+            'admin_post_' . MonthlyReport::TEST_ACTION,
+            [$this->container->get(MonthlyReport::class), 'sendTestFromAdmin']
         );
 
         add_action(

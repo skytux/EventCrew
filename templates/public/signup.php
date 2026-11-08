@@ -326,7 +326,10 @@ if ($eventcrew_link_expired) {
                     <?php endif; ?>
                 </p>
                 <?php if ('' !== $eventcrew_turnstile_site_key) : ?>
-                    <script src="<?php echo esc_url(\EventCrew\Support\Turnstile::SCRIPT_URL); ?>" async defer></script>
+                    <?php
+                    // Cloudflare's script loads when the form is first used, not with the page.
+                    echo \EventCrew\Support\Turnstile::loaderScript(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed inline script, strings JSON-escaped.
+                    ?>
                 <?php endif; ?>
             </form>
             <p id="eventcrew-signin-sent" class="eventcrew-muted eventcrew-hint" hidden><?php esc_html_e('Check your inbox for the sign-in link — and your spam folder if it’s not there. Press the button again to resend.', 'eventcrew'); ?></p>
@@ -3111,26 +3114,25 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
     var ajaxUrl = <?php echo wp_json_encode($eventcrew_ajax); ?>;
 
     /*
-     * The sign-in button waits for the spam check.
+     * The sign-in button and the spam check.
      *
-     * Turnstile renders and solves asynchronously and writes its token into a
-     * hidden field. Pressing before that lands submits an empty token, which is
-     * refused outright - so the press did nothing, and only a second one, by
-     * which point the widget had finished, actually sent the link. Rather than
-     * let someone spend a press finding that out, the button says what it is
-     * waiting for and only becomes live once there is a token to send.
+     * Cloudflare's script is not loaded with the page: Turnstile::loaderScript()
+     * adds it when the visitor first touches, focuses or types in the form, and
+     * the widget then solves in the background. A press that comes before the
+     * token is held by that loader (the button says "Checking…") and the form
+     * is sent again the moment the token is there, so this script only ever
+     * sees a submit with a token - or, when the challenge script is blocked
+     * (ad blockers do that), one without, which it refuses here with a notice
+     * rather than sending.
      *
-     * The safety valve is the timeout below. Ad blockers and privacy extensions
-     * do block the challenge script outright, and a button that stays disabled
-     * for ever is a form nobody can sign in through at all. After GIVE_UP the
-     * button goes live regardless; the press then reaches the server, which
-     * refuses it and says why. A wasted press beats a dead page.
+     * So the button is never disabled just for want of a token: a button that
+     * went dead the instant a press started loading the script could swallow
+     * that very press.
      *
      * None of this runs without the widget, and none of it runs with JavaScript
      * off - the button ships enabled and the form posts normally.
      */
     var CHALLENGE_STEP = 200;
-    var CHALLENGE_GIVE_UP = 15000;
     /*
      * How long to wait for a token once somebody has pressed.
      *
@@ -3274,13 +3276,10 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
      * Replaces the current token and hands the new one to `done`, or '' if none
      * arrived in time.
      *
-     * REFRESH_WAIT, not CHALLENGE_GIVE_UP: the fifteen seconds are the safety
-     * valve for the button on page load, where waiting costs nothing because
-     * nobody is watching yet. Here somebody has just pressed and is watching,
-     * and a challenge that has not answered in a few seconds is not going to.
-     * Waiting the full fifteen twice - once before sending, once on the retry -
-     * is what turned a refusal into half a minute of nothing followed by a
-     * toast.
+     * REFRESH_WAIT is short on purpose: somebody has just pressed and is
+     * watching, and a challenge that has not answered in a few seconds is not
+     * going to. Long waits, once before sending and once on the retry, are
+     * what turned a refusal into half a minute of nothing followed by a toast.
      *
      * Resetting only when there is something to replace: a widget that has not
      * produced a token yet may be mid-solve or waiting to be clicked, and
@@ -3324,20 +3323,17 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
     /*
      * The one ticker that owns the sign-in button's state.
      *
-     * Two things gate it and they have to agree on who wins: the resend
-     * cooldown, and whether the spam check has produced a token. The cooldown
-     * takes precedence, because a countdown that flickered back to "Checking
-     * you're human..." every time the widget re-armed would say nothing useful
-     * about either.
+     * Only the resend cooldown gates it now; the spam check no longer does
+     * (see the note at the top). It still watches the token, so its age is
+     * known when the next press comes. While the loader holds a press for
+     * its token (data-ts-wait on the form) the button is the loader's.
      *
      * It runs whenever there is a button, not only when there is a challenge -
      * an install with no Turnstile keys has no widget to wait for but still
      * has a cooldown to show.
      */
-    var starved = 0;
-
     function tickSigninButton() {
-        if (!signinButton || submitting) {
+        if (!signinButton || submitting || signinForm.hasAttribute('data-ts-wait')) {
             return;
         }
 
@@ -3355,21 +3351,8 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
             return;
         }
 
-        var token = challengeToken(signinForm);
-        noteToken(token);
-
-        if (token) {
-            starved = 0;
-            setSigninLive(true);
-
-            return;
-        }
-
-        starved += CHALLENGE_STEP;
-
-        // Past the timeout the button stays live and empty-handed rather
-        // than dead; see the note above.
-        setSigninLive(starved >= CHALLENGE_GIVE_UP);
+        noteToken(challengeToken(signinForm));
+        setSigninLive(true);
     }
 
     /** Sets the button's state, touching the DOM only when it changes. */
@@ -3384,10 +3367,6 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
     }
 
     if (signinButton) {
-        if (hasChallenge(signinForm)) {
-            setSigninLive(false);
-        }
-
         setInterval(tickSigninButton, CHALLENGE_STEP);
     }
 

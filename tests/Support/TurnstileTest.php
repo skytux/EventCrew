@@ -39,6 +39,37 @@ final class TurnstileTest extends TestCase
         Functions\when('wp_remote_post')->justReturn(['body' => '']);
     }
 
+    /**
+     * The loader is an inline script with no src: it adds api.js (explicit
+     * render, with the ready callback) on the first use of a form, holds a
+     * submit until the token is there, and has no "&" or "<" in it, which
+     * WordPress would mangle inside a block's HTML.
+     */
+    public function testTheLoaderAddsCloudflaresScriptOnlyWhenAFormIsUsed(): void
+    {
+        Functions\when('wp_json_encode')->alias(static fn (mixed $data): string => (string) json_encode($data));
+
+        $html = Turnstile::loaderScript();
+
+        self::assertStringStartsWith('<script>', $html);
+        self::assertStringEndsWith('</script>', $html);
+        self::assertStringNotContainsString(' src=', $html);
+
+        $js = substr($html, strlen('<script>'), -strlen('</script>'));
+        self::assertStringNotContainsString('&', $js);
+        self::assertStringNotContainsString('<', $js);
+        self::assertStringContainsString('turnstile\/v0\/api.js?render=explicit\\u0026onload=eventcrewTsReady', $js);
+        self::assertStringContainsString('window.' . Turnstile::READY_CALLBACK . '=function()', $js);
+        self::assertStringContainsString('["focusin","pointerdown","touchstart","keydown"]', $js);
+        // A submit without a token waits ("Checking…") and is sent again once it is there.
+        self::assertStringContainsString('"Checking\\u2026"', $js);
+        self::assertStringContainsString('e.preventDefault();e.stopImmediatePropagation();', $js);
+        self::assertStringContainsString('f.requestSubmit(b)', $js);
+        // Printed twice on a page, only the first copy runs.
+        self::assertStringStartsWith('(function(){if(window.eventcrewTs){return;}', $js);
+        self::assertSame($html, Turnstile::loaderScript());
+    }
+
     public function testDisabledGateWavesEveryoneThrough(): void
     {
         $this->withKeys(false);

@@ -286,10 +286,13 @@ final class NewsletterController
         . 'var bf=b.querySelector("form");'
         . 'if(bf&&!bf.querySelector(".cf-turnstile")'
         . '&&document.querySelector(".eventcrew-newsletter form .cf-turnstile")){'
+        // The check is in the full form, so using the bar starts Cloudflare's script too.
+        . 'bf.addEventListener("focusin",function(){if(window.eventcrewTs){eventcrewTs.load();}});'
         . 'bf.addEventListener("submit",function(e){'
         . 'if(bf.hasAttribute("data-go")){bf.removeAttribute("data-go");return;}'
         . 'var ff=document.querySelector(".eventcrew-newsletter form");'
         . 'if(!ff||!ff.querySelector("input[type=email]")){return;}e.preventDefault();'
+        . 'if(window.eventcrewTs){eventcrewTs.load();}'
         . 'if(b.contains(document.activeElement)){document.activeElement.blur();}'
         . 'var bt=bf.querySelector("button[type=submit]"),n=0,done=false,own=null,'
         . 'ajax=!!(window.eventcrewNlAjax&&window.fetch&&window.FormData&&window.DOMParser&&bf.requestSubmit),'
@@ -313,10 +316,12 @@ final class NewsletterController
         . 'if(token()){here(token(),false);return;}'
         // No token yet: the bar starts its own check (shown in the bar only if Cloudflare wants a click),
         // and takes whichever token comes first; after 2 minutes it sends, and the server answers.
-        . 'if(window.turnstile&&fc.getAttribute("data-sitekey")){own=document.createElement("div");'
-        . 'own.className="eventcrew-nl-bar-check";bf.appendChild(own);'
+        // Cloudflare's script loads on demand (Turnstile::loaderScript()), so the check starts once it is in.
+        . 'function mine(){if(done||own||!window.turnstile||!fc.getAttribute("data-sitekey")){return;}'
+        . 'own=document.createElement("div");own.className="eventcrew-nl-bar-check";bf.appendChild(own);'
         . 'try{turnstile.render(own,{sitekey:fc.getAttribute("data-sitekey"),appearance:"interaction-only",'
         . 'response_field:false,callback:function(v){here(v,true);}});}catch(x){}}'
+        . 'if(window.eventcrewTs){eventcrewTs.load(mine);}else{mine();}'
         . '(function wait(){if(done){return;}if(token()){here(token(),false);}'
         . 'else if(n++>600){here("",true);}else{setTimeout(wait,200);}})();});}'
         . 'window.addEventListener("resize",show);show();})();';
@@ -324,7 +329,7 @@ final class NewsletterController
     /** Set when the full form was rendered on this page. */
     private bool $formShown = false;
 
-    /** Set when the Turnstile script tag was printed on this page. */
+    /** Set when the Turnstile loader script was printed on this page. */
     private bool $captchaScriptAdded = false;
 
     /** Set when the full form printed its email field (and so its own check). */
@@ -813,8 +818,10 @@ final class NewsletterController
     }
 
     /**
-     * The Turnstile widget when it is set up; its script is added once per
-     * page. It shows only when Cloudflare asks the visitor to act.
+     * The Turnstile widget when it is set up, with (once per page) the small
+     * loader that fetches Cloudflare's script only when the visitor starts
+     * using a form (Turnstile::loaderScript()). It shows only when Cloudflare
+     * asks the visitor to act.
      */
     private function captcha(bool $inBar): string
     {
@@ -829,8 +836,7 @@ final class NewsletterController
 
         if (! $this->captchaScriptAdded) {
             $this->captchaScriptAdded = true;
-            // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- the widget script loads only where the form is.
-            $html .= '<script src="' . esc_url(Turnstile::SCRIPT_URL) . '" async defer></script>';
+            $html .= Turnstile::loaderScript();
         }
 
         return $html;

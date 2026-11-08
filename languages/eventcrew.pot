@@ -2128,6 +2128,10 @@ msgstr ""
 msgid "Checking you’re human…"
 msgstr ""
 
+#: src/Support/Turnstile.php:102
+msgid "Checking…"
+msgstr ""
+
 #: templates/public/door.php:66
 msgid "Choose"
 msgstr ""
@@ -12552,3 +12556,93 @@ msgstr ""
 msgid "🧭 Organizer guide ↓"
 msgstr ""
 
+
+#: src/Support/MonthlyReport.php
+#. translators: the month, like 10/2026
+msgid "Monthly report %s"
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+#. translators: 1: the month, like 10/2026, 2: the month before, like 9/2026
+msgid "EventCrew numbers for %1$s. In brackets: %2$s."
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "New people"
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "Used the bot"
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "Active on the web page"
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "Sign-ups"
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "No-shows"
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "Free entries used"
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "Email button clicks"
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "Visits from campaign links"
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "Page views (Burst)"
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "Visitors (Burst)"
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "Ticket buyers"
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "Ticket buyers per event"
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "Active → signed up → completed"
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "% = share of the row above"
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "No ticket buyers."
+msgstr ""
+
+#: src/Support/MonthlyReport.php
+msgid "Active"
+msgstr ""
+
+#: templates/admin/settings.php
+msgid "Monthly report"
+msgstr ""
+
+#: templates/admin/settings.php
+msgid "Send the monthly report"
+msgstr ""
+
+#: templates/admin/settings.php
+msgid "On the 1st of each month, every organizer gets last month’s numbers by email."
+msgstr ""
+
+#: templates/admin/settings.php
+msgid "Send a test report to me"
+msgstr ""

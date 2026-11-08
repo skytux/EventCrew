@@ -51,6 +51,7 @@ final class NewsletterControllerTest extends TestCase
             return true;
         });
         Functions\when('get_permalink')->justReturn('https://site.test/crew/');
+        Functions\when('wp_json_encode')->alias(static fn (mixed $data): string => (string) json_encode($data));
         Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
         Functions\when('add_query_arg')->alias(
             static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
@@ -1019,7 +1020,15 @@ final class NewsletterControllerTest extends TestCase
         $form = $controller->renderShortcode();
         $bar = self::bar($controller);
 
-        self::assertSame(1, substr_count($form . $bar, Turnstile::SCRIPT_URL));
+        // Cloudflare's script is not on the page: one loader adds it when a form is used.
+        self::assertStringNotContainsString('<script src="' . Turnstile::SCRIPT_URL, $form . $bar);
+        self::assertSame(1, substr_count($form . $bar, 'if(window.eventcrewTs){return;}'));
+        // Using the bar starts the script for the full form's check, and the bar's own check waits for it.
+        self::assertStringContainsString(
+            'bf.addEventListener("focusin",function(){if(window.eventcrewTs){eventcrewTs.load();}});',
+            $bar
+        );
+        self::assertStringContainsString('if(window.eventcrewTs){eventcrewTs.load(mine);}else{mine();}', $bar);
         self::assertSame(1, substr_count($form, 'class="cf-turnstile"'));
         self::assertSame(0, substr_count($bar, 'class="cf-turnstile"'));
         // Hidden unless Cloudflare needs a click.
@@ -1051,7 +1060,36 @@ final class NewsletterControllerTest extends TestCase
         $bar = self::bar($this->controller());
 
         self::assertSame(1, substr_count($bar, 'class="cf-turnstile"'));
-        self::assertSame(1, substr_count($bar, Turnstile::SCRIPT_URL));
+        self::assertSame(1, substr_count($bar, 'if(window.eventcrewTs){return;}'));
+        self::assertStringNotContainsString('<script src="' . Turnstile::SCRIPT_URL, $bar);
+    }
+
+    /** Without Turnstile keys the forms have no widget and no loader: nothing changes. */
+    public function testWithoutTurnstileKeysNoCloudflareCodeIsPrinted(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->onPublicPage();
+        $controller = $this->controller();
+
+        $html = $controller->renderShortcode() . self::bar($controller);
+
+        self::assertStringNotContainsString('class="cf-turnstile"', $html);
+        self::assertStringNotContainsString('if(window.eventcrewTs){return;}', $html);
+        self::assertStringNotContainsString('challenges.cloudflare', $html);
+    }
+
+    /**
+     * The same page for every visitor (the site has a full-page cache): two
+     * renders give the same loader, byte for byte.
+     */
+    public function testTheLoaderIsTheSameOnEveryRender(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->options[Turnstile::SITE_KEY_OPTION] = 'site-key';
+        $this->options[Turnstile::SECRET_KEY_OPTION] = 'secret';
+        $this->onPublicPage();
+
+        self::assertSame($this->controller()->renderShortcode(), $this->controller()->renderShortcode());
     }
 
     public function testADoorInviteSendsTheUsualConfirmationAndNoCaptchaIsAsked(): void

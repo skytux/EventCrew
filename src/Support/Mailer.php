@@ -103,6 +103,7 @@ final class Mailer
         }
 
         $manageUrl = $this->manageUrl($personId);
+        $actions = $this->counted($actions);
         $parts = explode(self::TICKETS_MARK, $body, 2);
         $before = rtrim($parts[0]);
         $after = ltrim(str_replace(self::TICKETS_MARK, '', $parts[1] ?? ''));
@@ -155,6 +156,7 @@ final class Mailer
     public function toUnconfirmedAddress(string $to, string $subject, string $body, array $actions = []): bool
     {
         $board = $this->boardUrl();
+        $actions = $this->counted($actions);
         $text = EmailBody::toText($body, $actions) . $this->signatureText() . "\n\n" . $this->footerText($board);
 
         $sent = EmailTemplate::enabled()
@@ -456,7 +458,10 @@ final class Mailer
             return false;
         }
 
-        $manageUrl = $this->manageUrl($personId);
+        // No person (0: an address that is not a member's, such as an
+        // administrator's test of the monthly report): no sign-in footer.
+        $manageUrl = $personId > 0 ? $this->manageUrl($personId) : '';
+        $actions = $this->counted($actions);
         $accent = EmailTemplate::accent();
         $rule = '<hr style="border:0;border-top:1px solid #e3e3e8;margin:24px 0">';
         $textRule = "\n\n————————\n\n";
@@ -466,10 +471,11 @@ final class Mailer
         $html = $this->template->render(
             $subject,
             $body,
-            EmailBody::footerHtml($this->footerLabel(), $manageUrl)
+            '' === $manageUrl ? '' : EmailBody::footerHtml($this->footerLabel(), $manageUrl)
         );
         $text = EmailBody::toText($intro) . $textRule . $contentText . $textRule
-            . EmailBody::toText('', $actions) . $this->signatureText() . "\n\n" . $this->footerText($manageUrl);
+            . EmailBody::toText('', $actions) . $this->signatureText()
+            . ('' === $manageUrl ? '' : "\n\n" . $this->footerText($manageUrl));
 
         $altBody = static function ($phpmailer) use ($text): void {
             $phpmailer->AltBody = $text;
@@ -562,6 +568,41 @@ final class Mailer
         remove_action('phpmailer_init', $altBody);
 
         return $sent;
+    }
+
+    /**
+     * $actions with their links going through the click counter
+     * (EmailClicks). A preview's links stay as they are. The email key is
+     * the action's own message kind (MessageActions::email()), else the
+     * class that sends the mail, like claim_notifier.
+     *
+     * @param array<int, array<string, mixed>> $actions
+     * @return array<int, array<string, mixed>>
+     */
+    private function counted(array $actions): array
+    {
+        if ($this->preview || [] === $actions) {
+            return $actions;
+        }
+
+        return EmailClicks::actions($actions, self::senderKey());
+    }
+
+    /** The short name of the first class outside the Mailer on the call stack, in snake case. */
+    private static function senderKey(): string
+    {
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace -- names the sender, nothing is logged.
+        foreach (debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 8) as $frame) {
+            $class = (string) ($frame['class'] ?? '');
+
+            if ('' !== $class && self::class !== $class) {
+                $short = substr((string) strrchr('\\' . $class, '\\'), 1);
+
+                return strtolower((string) preg_replace('/(?<=[a-z0-9])([A-Z])/', '_$1', $short));
+            }
+        }
+
+        return 'email';
     }
 
     public function manageUrl(int $personId): string

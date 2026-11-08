@@ -241,6 +241,43 @@ final class SignupControllerTest extends TestCase
         self::assertStringNotContainsString('<nav class="eventcrew-tabs"', $html);
     }
 
+    /**
+     * With a site key the sign-in form gets the widget box and the small
+     * loader, never Cloudflare's script tag itself: api.js is added only when
+     * the visitor starts using the form.
+     */
+    public function testWithASiteKeyTheSignInFormLoadsCloudflareOnlyOnDemand(): void
+    {
+        $this->stubPageRender();
+        Functions\when('get_option')->alias(
+            static fn (string $name): mixed => Turnstile::SITE_KEY_OPTION === $name ? 'site-key' : false
+        );
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertStringContainsString('class="cf-turnstile eventcrew-turnstile"', $html);
+        self::assertSame(1, substr_count($html, 'if(window.eventcrewTs){return;}'));
+        self::assertStringNotContainsString('<script src="' . Turnstile::SCRIPT_URL, $html);
+        self::assertStringNotContainsString('challenges.cloudflare.com/turnstile/v0/api.js"', $html);
+    }
+
+    /** Without a site key there is no widget and no loader: nothing changes. */
+    public function testWithoutASiteKeyTheSignInFormHasNoCloudflareCode(): void
+    {
+        $this->stubPageRender();
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertStringContainsString('data-eventcrew-signin', $html);
+        self::assertStringNotContainsString('class="cf-turnstile', $html);
+        self::assertStringNotContainsString('if(window.eventcrewTs){return;}', $html);
+        self::assertStringNotContainsString('challenges.cloudflare', $html);
+    }
+
     public function testAnExpiredSignInLinkSaysSoAboveTheFormAndKeepsTheTarget(): void
     {
         $this->stubPageRender();

@@ -208,6 +208,10 @@ msgstr "Kirjautumislinkki on tulossa sähköpostiisi — katso myös roskapostik
 msgid "Checking you’re human…"
 msgstr "Tarkistetaan, että olet ihminen…"
 
+#: src/Support/Turnstile.php:102
+msgid "Checking…"
+msgstr "Tarkistetaan…"
+
 #: templates/public/door.php:45
 msgid "Choose"
 msgstr "Valitse"
@@ -10491,3 +10495,93 @@ msgstr "Kun päällä, jäsen voi käyttää lisää vapaalippuja illalle, jolle
 #: templates/public/signup.php
 msgid "Search"
 msgstr "Hae"
+
+#: src/Support/MonthlyReport.php
+#. translators: the month, like 10/2026
+msgid "Monthly report %s"
+msgstr "Kuukausiraportti %s"
+
+#: src/Support/MonthlyReport.php
+#. translators: 1: the month, like 10/2026, 2: the month before, like 9/2026
+msgid "EventCrew numbers for %1$s. In brackets: %2$s."
+msgstr "EventCrew-luvut %1$s. Suluissa: %2$s."
+
+#: src/Support/MonthlyReport.php
+msgid "New people"
+msgstr "Uudet ihmiset"
+
+#: src/Support/MonthlyReport.php
+msgid "Used the bot"
+msgstr "Käytti bottia"
+
+#: src/Support/MonthlyReport.php
+msgid "Active on the web page"
+msgstr "Aktiivinen verkkosivulla"
+
+#: src/Support/MonthlyReport.php
+msgid "Sign-ups"
+msgstr "Ilmoittautumiset"
+
+#: src/Support/MonthlyReport.php
+msgid "No-shows"
+msgstr "Ei saapuneet"
+
+#: src/Support/MonthlyReport.php
+msgid "Free entries used"
+msgstr "Käytetyt vapaaliput"
+
+#: src/Support/MonthlyReport.php
+msgid "Email button clicks"
+msgstr "Sähköpostinappien klikit"
+
+#: src/Support/MonthlyReport.php
+msgid "Visits from campaign links"
+msgstr "Käynnit kampanjalinkeistä"
+
+#: src/Support/MonthlyReport.php
+msgid "Page views (Burst)"
+msgstr "Sivunäytöt (Burst)"
+
+#: src/Support/MonthlyReport.php
+msgid "Visitors (Burst)"
+msgstr "Kävijät (Burst)"
+
+#: src/Support/MonthlyReport.php
+msgid "Ticket buyers"
+msgstr "Lipunostajat"
+
+#: src/Support/MonthlyReport.php
+msgid "Ticket buyers per event"
+msgstr "Lipunostajat illoittain"
+
+#: src/Support/MonthlyReport.php
+msgid "Active → signed up → completed"
+msgstr "Aktiivinen → mukana → tehty"
+
+#: src/Support/MonthlyReport.php
+msgid "% = share of the row above"
+msgstr "% = osuus yllä olevasta rivistä"
+
+#: src/Support/MonthlyReport.php
+msgid "No ticket buyers."
+msgstr "Ei lipunostajia."
+
+#: src/Support/MonthlyReport.php
+msgid "Active"
+msgstr "Aktiivinen"
+
+#: templates/admin/settings.php
+msgid "Monthly report"
+msgstr "Kuukausiraportti"
+
+#: templates/admin/settings.php
+msgid "Send the monthly report"
+msgstr "Lähetä kuukausiraportti"
+
+#: templates/admin/settings.php
+msgid "On the 1st of each month, every organizer gets last month’s numbers by email."
+msgstr "Kuun 1. päivänä jokainen järjestäjä saa edellisen kuun luvut sähköpostilla."
+
+#: templates/admin/settings.php
+msgid "Send a test report to me"
+msgstr "Lähetä testiraportti minulle"

@@ -118,7 +118,15 @@ final class MessageTemplate
      */
     public function actions(array $context, Mailer $mailer): array
     {
-        return null === $this->actions ? [] : array_values(($this->actions)($context, $mailer));
+        if (null === $this->actions) {
+            return [];
+        }
+
+        return array_values(array_map(
+            fn (MessageAction $action): MessageAction
+                => '' === $action->mail ? $action->withMail($this->id) : $action,
+            ($this->actions)($context, $mailer)
+        ));
     }
 
     public function hasSubject(): bool

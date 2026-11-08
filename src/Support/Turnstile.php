@@ -24,13 +24,96 @@ final class Turnstile
     /** The widget field the browser posts back, named by Cloudflare. */
     public const RESPONSE_FIELD = 'cf-turnstile-response';
 
-    /** The implicit-render script; loading it turns any .cf-turnstile div live. */
+    /** Cloudflare's widget script; loaderScript() adds it to the page when a form is first used. */
     public const SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+
+    /** The global function api.js calls once it has loaded (its onload argument). */
+    public const READY_CALLBACK = 'eventcrewTsReady';
 
     private const VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
+    /**
+     * Loads api.js only when a visitor starts using a form with a widget in
+     * it, not with the page: the script is large, and most visitors never use
+     * a form. The first focusin, pointerdown, touchstart or keydown inside a
+     * form that holds a .cf-turnstile box adds the script once (explicit
+     * render), and when it is ready every .cf-turnstile box that is still
+     * empty is drawn from its data- attributes. Any number of forms on one
+     * page share the one script.
+     *
+     * A form sent before its token is there is held: the submit is stopped
+     * before the page's own handlers see it, the button is disabled and says
+     * "Checking…", and the form is sent again (requestSubmit, so the page's
+     * own handlers run as usual) as soon as the token arrives. A token that
+     * Cloudflare has handed to getResponse() but not yet written into the
+     * form's cf-turnstile-response field is written there first. When the
+     * script cannot load, or no token comes in 60 seconds, the form goes on
+     * without one and the server (or the page's own script) says why, so the
+     * button is never dead.
+     *
+     * window.eventcrewTs.load(callback) starts the script from other code
+     * and calls back once it is ready.
+     *
+     * The script can be printed inside a block's HTML, where WordPress turns
+     * "&" into "&#038;", so it has no "&" and no "<"; the two strings come
+     * in JSON-escaped (%URL%, %LABEL%).
+     */
+    private const LOADER_JS = '(function(){if(window.eventcrewTs){return;}'
+        . 'var U=%URL%,L=%LABEL%,on=0,ready=0,fail=0,cbs=[],ev=["focusin","pointerdown","touchstart","keydown"];'
+        . 'function draw(){document.querySelectorAll(".cf-turnstile").forEach(function(c){if(!c.firstChild){'
+        . 'try{c.eventcrewTsId=turnstile.render(c);}catch(x){}}});}'
+        . 'window.eventcrewTsReady=function(){ready=1;draw();var l=cbs;cbs=[];'
+        . 'l.forEach(function(f){try{f();}catch(x){}});};'
+        . 'function load(cb){if(cb){if(ready){cb();}else{cbs.push(cb);}}if(on){return;}on=1;'
+        . 'ev.forEach(function(n){document.removeEventListener(n,wake,true);});'
+        . 'var s=document.createElement("script");s.src=U;s.async=true;s.onerror=function(){fail=1;};'
+        . 'document.head.appendChild(s);}'
+        . 'function box(f){return f.querySelector?f.querySelector(".cf-turnstile"):null;}'
+        . 'function wake(e){var f=e.target.closest?e.target.closest("form"):null;if(f){if(box(f)){load();}}}'
+        . 'ev.forEach(function(n){document.addEventListener(n,wake,{capture:true,passive:true});});'
+        . 'function tok(f){var i=f.querySelector("[name=cf-turnstile-response]"),v=i?i.value:"",c=box(f);'
+        . 'if(!v){if(window.turnstile){if(c.firstChild){'
+        . 'try{v=turnstile.getResponse(c.eventcrewTsId||c)||"";}catch(x){}if(v){if(i){i.value=v;}}}}}return v;}'
+        . 'document.addEventListener("submit",function(e){var f=e.target;'
+        . 'if(!box(f)){return;}if(f.eventcrewTsGo){return;}if(tok(f)){return;}'
+        . 'e.preventDefault();e.stopImmediatePropagation();if(f.hasAttribute("data-ts-wait")){return;}'
+        . 'f.setAttribute("data-ts-wait","1");'
+        . 'var b=e.submitter||f.querySelector("[type=submit]"),t=b?b.textContent:"",n=0;'
+        . 'if(b){b.disabled=true;b.textContent=L;}load();'
+        . '(function poll(){if(!tok(f)){if(!fail){if(300>n++){setTimeout(poll,200);return;}}}'
+        . 'f.removeAttribute("data-ts-wait");if(b){b.disabled=false;b.textContent=t;}f.eventcrewTsGo=1;'
+        . 'try{if(f.requestSubmit){if(b){f.requestSubmit(b);}else{f.requestSubmit();}}else{f.submit();}}'
+        . 'finally{f.eventcrewTsGo=0;}})();},true);'
+        . 'window.eventcrewTs={load:load};})();';
+
     public function __construct(private readonly Logger $logger)
     {
+    }
+
+    /**
+     * The inline script tag that loads the widget on demand (see LOADER_JS).
+     * The same for every visitor, so a cached page is right for all of them.
+     * Safe to print more than once: only the first copy runs.
+     */
+    public static function loaderScript(): string
+    {
+        $js = strtr(self::LOADER_JS, [
+            '%URL%' => self::jsString(self::SCRIPT_URL . '?render=explicit&onload=' . self::READY_CALLBACK),
+            '%LABEL%' => self::jsString(__('Checking…', 'eventcrew')),
+        ]);
+
+        return '<script>' . $js . '</script>';
+    }
+
+    /** A JavaScript string literal with no "&", "<" or ">" in it. */
+    private static function jsString(string $text): string
+    {
+        $slash = chr(92);
+
+        return strtr(
+            (string) wp_json_encode($text),
+            ['&' => $slash . 'u0026', '<' => $slash . 'u003C', '>' => $slash . 'u003E']
+        );
     }
 
     public function siteKey(): string
