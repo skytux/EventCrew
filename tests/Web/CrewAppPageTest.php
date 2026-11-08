@@ -61,6 +61,21 @@ final class CrewAppPageTest extends TestCase
         self::assertSame($page, CrewAppPage::current());
     }
 
+    /**
+     * Owner 2026-11-08: on the Crew app page the language switch moves up to
+     * the app bar, opposite ← Website; on a theme page nothing takes it.
+     */
+    public function testTheAppBarTakesHtmlOnlyOnTheCrewAppPage(): void
+    {
+        self::assertFalse(CrewAppPage::putInBar('<form class="eventcrew-language"></form>'));
+
+        $page = $this->page();
+        $page->templateFor('/theme/page.html');
+
+        self::assertTrue(CrewAppPage::putInBar('<form class="eventcrew-language"></form>'));
+        self::assertSame('<form class="eventcrew-language"></form>', $page->barHtml());
+    }
+
     public function testOtherPagesAndTheSwitchedOffSettingKeepTheThemeTemplate(): void
     {
         Functions\when('is_page')->justReturn(false);

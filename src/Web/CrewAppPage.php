@@ -35,6 +35,9 @@ final class CrewAppPage
     /** @var list<string>|null See crewPaths(). */
     private ?array $crewPaths = null;
 
+    /** What the crew page put in the bar beside "← Website" (putInBar()). */
+    private string $barHtml = '';
+
     public function __construct(
         private readonly SignupController $signup,
         private readonly PwaController $pwa
@@ -89,6 +92,29 @@ final class CrewAppPage
     public function banner(): string
     {
         return SiteBanner::html($this->websiteUrl());
+    }
+
+    /**
+     * Hands $html (the signed-in person's language switch, already escaped)
+     * to the bar at the top of this page, on the side opposite "← Website",
+     * so the two take one line (Owner 2026-11-08). False when the crew page
+     * is not shown as this page: the caller then prints it where it was.
+     */
+    public static function putInBar(string $html): bool
+    {
+        if (null === self::$current) {
+            return false;
+        }
+
+        self::$current->barHtml .= $html;
+
+        return true;
+    }
+
+    /** What putInBar() was given, '' when nothing; printed by crew-app.php. */
+    public function barHtml(): string
+    {
+        return $this->barHtml;
     }
 
     /** The "← Website" link: the home page in the language the page is shown in. */

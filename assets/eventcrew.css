@@ -140,6 +140,7 @@
 .eventcrew-signup .eventcrew-tab {
     box-sizing: border-box; padding: .3em .9em;
     color: inherit; text-decoration: none; font-weight: 600; line-height: 1.2;
+    font-size: 1.1em;
     border-bottom: 3px solid transparent; margin-bottom: -1px; opacity: .7;
     min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
 }
@@ -178,11 +179,13 @@
 .eventcrew-signup .has-subtabs [data-eventcrew-subpanel]:not(.is-active) { display: none; }
 /*
  * Phone: smaller text and padding so five tabs fit on one line in English; if
- * they still wrap (Finnish), each row's tabs stretch to fill it evenly.
+ * they still wrap (Finnish), each row's tabs stretch to fill it evenly. The
+ * text is a size up from .75em (Owner 2026-11-08: "a bit bigger"); at 360px
+ * the five English tabs still fit on one line.
  */
 @media (max-width: 640px) {
     .eventcrew-signup .eventcrew-tabs { gap: 0; }
-    .eventcrew-signup .eventcrew-tab { flex: 1 1 auto; padding: .3em .35em; font-size: .75em; }
+    .eventcrew-signup .eventcrew-tab { flex: 1 1 auto; padding: .3em .3em; font-size: .88em; }
 }
 /*
  * Browsers draw their own ring on click as well as on keyboard focus; the
@@ -323,9 +326,6 @@
 .eventcrew-signup .eventcrew-give summary::-webkit-details-marker { display: none; }
 .eventcrew-signup .eventcrew-give-form { display: flex; flex-direction: column; gap: .3em; max-width: 24em; margin: 0 0 .3em; }
 .eventcrew-signup .eventcrew-give-form button { align-self: flex-start; }
-.eventcrew-signup .eventcrew-mine-label { font-weight: 600; }
-.eventcrew-signup .eventcrew-mine-when { font-size: .85em; opacity: .75; }
-.eventcrew-signup .eventcrew-mine-when a { white-space: nowrap; }
 /* A ticket the door has marked in: the ticket page's orange, with dark text (7:1) on any theme. */
 .eventcrew-signup .eventcrew-used {
     align-self: flex-start; margin-top: .2em; padding: .15em .6em; border-radius: 999px;
@@ -438,11 +438,40 @@
 .eventcrew-signup .eventcrew-admin-guests li > form { display: flex; flex-direction: column; gap: .5em; }
 .eventcrew-signup .eventcrew-admin-guests p { margin: 0; }
 .eventcrew-signup .eventcrew-admin-buyers { columns: 2 10em; margin: 0 0 .7em; padding-left: 1.2em; }
-/* Tickets are a plain list like My tasks: the ticket's name as the link, its
-   day under it, no bullets and no ragged wrap after a dash. */
-.eventcrew-signup .eventcrew-ticket-list { margin: 0 0 .8em; }
-.eventcrew-signup .eventcrew-ticket-list a.eventcrew-mine-label { text-decoration: underline; text-underline-offset: .15em; }
-.eventcrew-signup .eventcrew-listhead { margin: .4em 0 .2em; }
+/*
+ * One entry in the Me tab's Tickets, Tasks, Past tickets and Past tasks
+ * (signup-me-row.php, Owner 2026-11-08): the day in bold with the times or
+ * the status on the right, the event's name, its DJs, what it is, then a
+ * line of small text links. A thin accent bar on the left ties the lines of
+ * one entry together, so a card reads as entries, not a run of links.
+ */
+.eventcrew-signup .eventcrew-me-list li.eventcrew-me-row {
+    gap: .05em;
+    padding-block: .6em;
+    overflow-wrap: break-word;
+    border-left: 3px solid color-mix(in srgb, var(--eventcrew-accent) 70%, transparent);
+}
+.eventcrew-signup .eventcrew-me-row-head {
+    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+    gap: 0 .75em;
+}
+.eventcrew-signup .eventcrew-me-day { font-weight: 700; font-size: 1.05em; }
+.eventcrew-signup .eventcrew-me-time { font-size: .85em; opacity: .8; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.eventcrew-signup .eventcrew-me-status {
+    padding: 0 .5em; border: 1px solid var(--eventcrew-line); border-radius: 999px;
+    font-size: .8em; opacity: .85; white-space: nowrap;
+}
+.eventcrew-signup .eventcrew-me-event { font-weight: 600; }
+.eventcrew-signup .eventcrew-me-what { font-size: .85em; opacity: .8; }
+/* The actions: small text links on one line, wrapping between links only. */
+.eventcrew-signup .eventcrew-me-actions {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0 1em;
+    margin-top: .1em; font-size: .9em;
+}
+.eventcrew-signup .eventcrew-me-actions .eventcrew-textlink { min-height: 36px; white-space: nowrap; }
+.eventcrew-signup .eventcrew-me-actions .eventcrew-inline-form { align-self: center; }
+/* Give away opened: its form takes the whole width under the links. */
+.eventcrew-signup .eventcrew-me-actions .eventcrew-give[open] { flex-basis: 100%; }
 .eventcrew-signup form { margin: 0; }
 
 /*
@@ -855,11 +884,11 @@
 .eventcrew-signup .eventcrew-header-card .eventcrew-disclosure { margin-bottom: 0; }
 /* The crew guide under the person's details: one card body, so no second gap. */
 .eventcrew-signup .eventcrew-header-card .eventcrew-card-body + .eventcrew-header-guide { padding-top: 0; }
-/* 🎟 Tickets: the one button in the header card, the guide link under it. */
-.eventcrew-signup .eventcrew-header-guide p { margin: 0 0 .5em; }
-.eventcrew-signup .eventcrew-header-guide p:last-child { margin-bottom: 0; }
-/* The Tickets card clears the top of the screen when 🎟 Tickets scrolls to it. */
-.eventcrew-signup #eventcrew-my-tickets { scroll-margin-top: 1em; }
+/* The crew guide link, centred under the details. */
+.eventcrew-signup .eventcrew-header-guide { text-align: center; }
+.eventcrew-signup .eventcrew-header-guide p { margin: 0; }
+/* A Me-tab card clears the top of the screen when a link scrolls to it. */
+.eventcrew-signup .eventcrew-me-card[id] { scroll-margin-top: 1em; }
 .eventcrew-signup .eventcrew-disclosure { margin: .3em 0 .8em; font-size: .9em; }
 .eventcrew-signup .eventcrew-disclosure summary { cursor: pointer; opacity: .8; padding: .3em 0; }
 .eventcrew-signup .eventcrew-score-help table { border-collapse: collapse; margin: .4em 0; }

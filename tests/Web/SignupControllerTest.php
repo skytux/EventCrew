@@ -589,8 +589,11 @@ final class SignupControllerTest extends TestCase
         self::assertStringNotContainsString('eventcrew-help-commands', $html);
     }
 
-    /** Owner 2026-11-08: 🎟 Tickets in the header card opens the Tickets card, named as in the bot. */
-    public function testSignedInTheHeaderCardHasTicketsLeadingToTheTicketsCard(): void
+    /**
+     * Owner 2026-11-08: the header card has no 🎟 Tickets button any more,
+     * only the crew guide link, centred; the Tickets card is on the Me tab.
+     */
+    public function testSignedInTheHeaderCardHasOnlyTheCentredGuideLink(): void
     {
         $this->stubPageRender();
         $this->setGuideUrl();
@@ -613,8 +616,10 @@ final class SignupControllerTest extends TestCase
         $html = $this->controller()->renderShortcode();
 
         self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card">.*?</section>~s', $html, $card));
-        self::assertMatchesRegularExpression('~href="#eventcrew-my-tickets" data-eventcrew-goto="eventcrew-my-tickets">\s*🎟 Tickets~', $card[0]);
-        self::assertLessThan(strpos($card[0], 'Crew guide'), strpos($card[0], '🎟 Tickets'));
+        self::assertStringNotContainsString('🎟', $card[0]);
+        self::assertStringNotContainsString('eventcrew-my-tickets-btn', $html);
+        self::assertStringNotContainsString('wp-element-button', $card[0]);
+        self::assertMatchesRegularExpression('~<div class="eventcrew-card-body eventcrew-header-guide">\s*<p>\s*<a class="eventcrew-textlink"[^>]*>[^<]*Crew guide~', $card[0]);
         self::assertStringContainsString('id="eventcrew-my-tickets"', $html);
     }
 
@@ -774,6 +779,77 @@ final class SignupControllerTest extends TestCase
         self::assertStringContainsString('name="redemption_id" value="11"', $card[0]);
         self::assertStringContainsString('<button type="submit" class="eventcrew-textlink">Cancel offer</button>', $card[0]);
         self::assertSame(2, substr_count($card[0], 'data-eventcrew-reload="eventcrew-my-tickets"'));
+    }
+
+    /**
+     * The Me tab's cards in Owner 2026-11-08's order: Tickets, Tasks, Past
+     * tickets, Past tasks; each entry shows its day, the event's clean name
+     * and its DJs, and its actions as text links.
+     */
+    public function testTheMeTabCardsComeInOrderWithTheDjNames(): void
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        Functions\when('get_the_title')->justReturn('ECSTATIC DANCE / Esimerkki');
+        Functions\when('get_option')->alias(static fn (string $name, mixed $default = false): mixed => $default);
+        $this->fakeEventNames([42 => ['en' => 'Ecstatic Dance']], [42 => ['Esimerkki', 'Toinen']]);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+        $db = $this->useMeTabWpdb();
+        $past = self::redemptionRow(10, '2026-07-01');
+        $past['event_post_id'] = 42;
+        $coming = self::redemptionRow(11, '2026-08-02');
+        $coming['event_post_id'] = 42;
+        $db->redemptions[] = $past;
+        $db->redemptions[] = $coming;
+
+        $html = $this->controller(null, null, $this->transfers())->renderShortcode();
+
+        $at = static fn (string $id): int|false => strpos($html, 'id="' . $id . '"');
+        self::assertNotFalse($at('eventcrew-my-tickets'));
+        self::assertLessThan($at('eventcrew-my-tasks'), $at('eventcrew-my-tickets'));
+        self::assertLessThan($at('eventcrew-past-tickets'), $at('eventcrew-my-tasks'));
+        self::assertLessThan($at('eventcrew-past-tasks'), $at('eventcrew-past-tickets'));
+
+        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card" id="eventcrew-my-tickets">.*?</section>~s', $html, $card));
+        self::assertStringContainsString('<span class="eventcrew-me-event">Ecstatic Dance</span>', $card[0]);
+        self::assertStringContainsString('<span class="eventcrew-event-dj eventcrew-me-dj">Esimerkki &amp; Toinen</span>', $card[0]);
+        self::assertStringContainsString('<span class="eventcrew-me-what">Free entry</span>', $card[0]);
+        self::assertStringContainsString('<span class="eventcrew-me-actions">', $card[0]);
+        self::assertStringNotContainsString('wp-element-button', $card[0]);
+        self::assertStringNotContainsString('ECSTATIC DANCE', $card[0]);
+
+        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card" id="eventcrew-past-tickets">.*?</section>~s', $html, $card));
+        self::assertStringContainsString('Esimerkki &amp; Toinen', $card[0]);
+        self::assertStringNotContainsString('eventcrew-me-actions', $card[0]);
+    }
+
+    /** No past tickets: no Past tickets card; only past ones: "No coming tickets.". */
+    public function testPastTicketsIsLeftOutWhenEmptyAndTicketsSaysNoComingOnes(): void
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        Functions\when('get_option')->alias(static fn (string $name, mixed $default = false): mixed => $default);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+        $db = $this->useMeTabWpdb();
+        $db->redemptions[] = self::redemptionRow(11, '2026-08-02');
+
+        $html = $this->controller(null, null, $this->transfers())->renderShortcode();
+
+        self::assertStringNotContainsString('id="eventcrew-past-tickets"', $html);
+        // No post, so no DJs to name: the DJ line is left out.
+        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card" id="eventcrew-my-tickets">.*?</section>~s', $html, $card));
+        self::assertStringContainsString('<span class="eventcrew-me-event">Party</span>', $card[0]);
+        self::assertStringNotContainsString('eventcrew-me-dj', $card[0]);
+
+        $db->assignments = [];
+        $db->redemptions = [self::redemptionRow(10, '2026-07-01')];
+        $html = $this->controller(null, null, $this->transfers())->renderShortcode();
+
+        self::assertStringContainsString('id="eventcrew-past-tickets"', $html);
+        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card" id="eventcrew-my-tickets">.*?</section>~s', $html, $card));
+        self::assertStringContainsString('No coming tickets.', $card[0]);
     }
 
     /** Give away and Cancel offer answer with the bot's texts. */

@@ -47,7 +47,12 @@ final class TicketList
      * page's Me tab, which shows each of those on its task's own row. 'used'
      * is when the door marked the ticket in (site time), null while it is not.
      *
-     * @return array{upcoming: array<int, array{label: string, when: string, url: string, used: ?string}>, past: array<int, array{label: string, when: string, url: string, used: ?string}>}
+     * Besides 'label' (one line, as the bot shows it), each ticket carries its
+     * parts for the web's Me tab: 'what' (the roles, or "Free entry" and who
+     * gave it), 'event' (the event's name, '' when unknown) and 'dj' (its DJ
+     * line, EventName::djLine(), '' when none).
+     *
+     * @return array{upcoming: array<int, array{label: string, what: string, event: string, dj: string, when: string, url: string, used: ?string}>, past: array<int, array{label: string, what: string, event: string, dj: string, when: string, url: string, used: ?string}>}
      */
     public function forPerson(int $personId, bool $withTasks = true): array
     {
@@ -80,9 +85,13 @@ final class TicketList
                 $tasks,
                 static fn ($a, $b): int => [(string) $a->startsAt, $a->id] <=> [(string) $b->startsAt, $b->id]
             );
+            $roles = implode(', ', array_map(static fn ($task): string => $task->roleLabel(), $tasks));
+            $event = EventName::ofTask($tasks[0], EventName::lang());
             $item = [
-                'label' => implode(', ', array_map(static fn ($task): string => $task->roleLabel(), $tasks))
-                    . ' · ' . $tasks[0]->eventName(),
+                'label' => $roles . ' · ' . $tasks[0]->eventName(),
+                'what' => $roles,
+                'event' => $event['name'],
+                'dj' => $event['dj'],
                 'when' => $date,
                 'url' => TicketMail::workUrl($personId, $date),
                 'kinds' => CheckinRepository::TASK_TICKET_KINDS,
@@ -97,14 +106,18 @@ final class TicketList
             }
 
             $moved = null === $this->transfers ? null : $this->transfers->movedTo($redemption);
+            $label = null === $moved
+                ? __('Free entry', 'eventcrew')
+                : __('Free entry', 'eventcrew') . ' · ' . sprintf(
+                    /* translators: %s: the name of the person the ticket was given to */
+                    __('Given to %s', 'eventcrew'),
+                    $this->transfers?->receiverName($moved)
+                );
             $item = [
-                'label' => null === $moved
-                    ? __('Free entry', 'eventcrew')
-                    : __('Free entry', 'eventcrew') . ' · ' . sprintf(
-                        /* translators: %s: the name of the person the ticket was given to */
-                        __('Given to %s', 'eventcrew'),
-                        $this->transfers?->receiverName($moved)
-                    ),
+                'label' => $label,
+                'what' => $label,
+                'event' => self::eventName($redemption->eventPostId, $redemption->eventLabel),
+                'dj' => null === $redemption->eventPostId ? '' : EventName::djLine($redemption->eventPostId),
                 'when' => $redemption->redeemedFor,
                 'url' => self::url('credit_ticket', $redemption->id),
                 'kinds' => CheckinRepository::CREDIT_TICKET_KINDS,
@@ -118,11 +131,15 @@ final class TicketList
         // own row (CheckinRepository::KIND_TRANSFER), so its time is read here.
         foreach (null === $this->transfers ? [] : $this->transfers->heldBy($personId) as $transfer) {
             $from = $this->transfers->nameOf($transfer->giverPersonId);
+            $label = '' === $from
+                ? __('Free entry', 'eventcrew')
+                /* translators: %s: the name of the member who gave the ticket away */
+                : sprintf(__('Free entry · from %s', 'eventcrew'), $from);
             $item = [
-                'label' => '' === $from
-                    ? __('Free entry', 'eventcrew')
-                    /* translators: %s: the name of the member who gave the ticket away */
-                    : sprintf(__('Free entry · from %s', 'eventcrew'), $from),
+                'label' => $label,
+                'what' => $label,
+                'event' => self::eventName($transfer->eventPostId, ''),
+                'dj' => null === $transfer->eventPostId ? '' : EventName::djLine($transfer->eventPostId),
                 'when' => $transfer->eventDate,
                 'url' => TicketMail::transferUrl($transfer->id),
                 'kinds' => [],
@@ -168,6 +185,21 @@ final class TicketList
     public static function taskTicketUrl(int $assignmentId): string
     {
         return self::url('ticket', $assignmentId);
+    }
+
+    /**
+     * A free-entry ticket's event: its post's name (EventName) when it has
+     * one, else the label saved with it; '' when neither.
+     */
+    private static function eventName(?int $eventPostId, string $label): string
+    {
+        if (null === $eventPostId) {
+            return $label;
+        }
+
+        $title = function_exists('get_the_title') ? get_the_title($eventPostId) : '';
+
+        return EventName::name($eventPostId, EventName::lang(), '' !== $label ? $label : (is_string($title) ? $title : ''));
     }
 
     private static function url(string $purpose, int $id): string

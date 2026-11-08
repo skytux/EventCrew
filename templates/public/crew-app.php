@@ -37,10 +37,15 @@ $eventcrew_language = $eventcrew_page->language();
         color: <?php echo esc_html($eventcrew_colors['text']); ?>;
     }
     .eventcrew-app-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px 16px;
         padding: 10px 16px;
         font-size: 15px;
     }
-    .eventcrew-app-bar a {
+    .eventcrew-app-bar-home {
         color: inherit;
         text-decoration: none;
         opacity: .85;
@@ -49,6 +54,31 @@ $eventcrew_language = $eventcrew_page->language();
     .eventcrew-app-bar a:focus {
         opacity: 1;
         text-decoration: underline;
+    }
+    /* The language switch, on the right of the bar: plain text buttons, the one in use bold. */
+    .eventcrew-app-bar .eventcrew-language {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 2px 6px;
+        margin: 0 0 0 auto;
+    }
+    .eventcrew-app-bar .eventcrew-language button {
+        min-height: 32px;
+        padding: 0 4px;
+        background: none;
+        border: 0;
+        font: inherit;
+        color: inherit;
+        text-decoration: underline;
+        text-underline-offset: .2em;
+        cursor: pointer;
+        opacity: .85;
+    }
+    .eventcrew-app-bar .eventcrew-language button[aria-pressed="true"] {
+        font-weight: 700;
+        text-decoration: none;
+        opacity: 1;
     }
     .eventcrew-app-main {
         box-sizing: border-box;
@@ -64,8 +94,16 @@ $eventcrew_language = $eventcrew_page->language();
 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- SiteBanner escapes its own output.
 echo $eventcrew_page->banner();
 ?>
+<?php
+// "← Website" on one side and, signed in, the language switch the crew page
+// handed over (CrewAppPage::putInBar()) on the other: one line, not two.
+?>
 <nav class="eventcrew-app-bar">
-    <a href="<?php echo esc_url($eventcrew_page->websiteUrl()); ?>">← <?php echo esc_html(\EventCrew\Support\Language::run($eventcrew_language, static fn (): string => __('Website', 'eventcrew'))); ?></a>
+    <a class="eventcrew-app-bar-home" href="<?php echo esc_url($eventcrew_page->websiteUrl()); ?>">← <?php echo esc_html(\EventCrew\Support\Language::run($eventcrew_language, static fn (): string => __('Website', 'eventcrew'))); ?></a>
+    <?php
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the signup template escaped it.
+    echo $eventcrew_page->barHtml();
+    ?>
 </nav>
 <main class="eventcrew-app-main">
     <?php

@@ -13236,3 +13236,12 @@ msgstr "/subscribe e-post – lägg till någon i nyhetsbrevet; de bekräftar vi
 
 msgid "Preview of the next announcement"
 msgstr "Förhandsvisning av nästa utskick"
+
+msgid "Get a ticket"
+msgstr "Skaffa en biljett"
+
+msgid "No coming tickets."
+msgstr "Inga kommande biljetter."
+
+msgid "Past tickets"
+msgstr "Tidigare biljetter"

@@ -28,13 +28,13 @@ $eventcrew_redeem_action = (string) ($view['redeem_action'] ?? '');
 /** @var array<string, array{label: string, dm: bool, email: bool}> $eventcrew_notify_matrix */
 $eventcrew_notify_matrix = is_array($view['notify_matrix'] ?? null) ? $view['notify_matrix'] : [];
 $eventcrew_prefs_action = (string) ($view['prefs_action'] ?? '');
-/** @var array{upcoming: array<int, array{label: string, when: string, url: string}>, past: array<int, array{label: string, when: string, url: string}>} $eventcrew_my_tickets */
+/** @var array{upcoming: array<int, array{label: string, what: string, event: string, dj: string, when: string, url: string}>, past: array<int, array{label: string, what: string, event: string, dj: string, when: string, url: string}>} $eventcrew_my_tickets */
 $eventcrew_my_tickets = is_array($view['my_tickets'] ?? null)
     ? $view['my_tickets']
     : ['upcoming' => [], 'past' => []];
-/** @var array<int, array{task_id: int, label: string, when: string, calendar_url: string}> $eventcrew_my_upcoming */
+/** @var array<int, array{task_id: int, day: string, event: string, dj: string, role: string, time: string, calendar_url: string}> $eventcrew_my_upcoming */
 $eventcrew_my_upcoming = is_array($view['my_upcoming'] ?? null) ? $view['my_upcoming'] : [];
-/** @var array<int, array{when: string, label: string, status: string}> $eventcrew_my_history */
+/** @var array<int, array{day: string, event: string, dj: string, role: string, time: string, status: string}> $eventcrew_my_history */
 $eventcrew_my_history = is_array($view['my_history'] ?? null) ? $view['my_history'] : [];
 // Each paged list's page and page count, by its query argument (signup-pager.php).
 /** @var array<string, array{page: int, pages: int}> $eventcrew_pages */
@@ -434,9 +434,15 @@ if ($eventcrew_link_expired) {
                  * this person in: one button per site language, main language
                  * first. The names stay untranslated: each is written in its
                  * own language so a reader can find theirs whichever is on.
+                 *
+                 * On the Crew app's own page the switch goes up into the bar
+                 * beside "← Website", on the opposite side, so the two take
+                 * one line (Owner 2026-11-08, CrewAppPage::putInBar()); inside
+                 * a theme page it stays here.
                  */
                 ?>
                 <?php if ('' !== (string) ($view['language_action'] ?? '')) : ?>
+                    <?php ob_start(); ?>
                     <form class="eventcrew-language" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                         <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['language_action']); ?>">
                         <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
@@ -453,6 +459,14 @@ if ($eventcrew_link_expired) {
                                 aria-pressed="<?php echo $eventcrew_lang_code === ($view['language'] ?? '') ? 'true' : 'false'; ?>"><?php echo esc_html((string) $eventcrew_lang_name); ?></button>
                         <?php endforeach; ?>
                     </form>
+                    <?php
+                    $eventcrew_language_form = (string) ob_get_clean();
+
+                    if (! \EventCrew\Web\CrewAppPage::putInBar($eventcrew_language_form)) {
+                        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it was written above.
+                        echo $eventcrew_language_form;
+                    }
+                    ?>
                 <?php endif; ?>
                 <form class="eventcrew-signout" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                     <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['logout_action']); ?>">
@@ -530,25 +544,20 @@ if ($eventcrew_link_expired) {
                 </div>
             <?php endif; ?>
             <?php
-            // 🎟 Tickets, then the crew guide, under the person's details
-            // (Owner 2026-11-08). Named as in the bot's /me; it opens the Me
-            // tab at the Tickets card. Signed out there is no guide link.
+            // The crew guide under the person's details, centred (Owner
+            // 2026-11-08: the 🎟 Tickets button that stood above it is gone;
+            // tickets are on the Me tab). Signed out there is no guide link.
             $eventcrew_header_guide = \EventCrew\Support\RoleGuide::emailAction();
             ?>
-            <div class="eventcrew-card-body eventcrew-header-guide">
-                <p>
-                    <a class="wp-element-button eventcrew-my-tickets-btn" href="#eventcrew-my-tickets" data-eventcrew-goto="eventcrew-my-tickets">
-                        🎟 <?php esc_html_e('Tickets', 'eventcrew'); ?>
-                    </a>
-                </p>
-                <?php if (null !== $eventcrew_header_guide) : ?>
+            <?php if (null !== $eventcrew_header_guide) : ?>
+                <div class="eventcrew-card-body eventcrew-header-guide">
                     <p>
                         <a class="eventcrew-textlink" href="<?php echo esc_url($eventcrew_header_guide['url']); ?>" target="_blank" rel="noopener">
                             <?php echo esc_html($eventcrew_header_guide['label']); ?>
                         </a>
                     </p>
-                <?php endif; ?>
-            </div>
+                </div>
+            <?php endif; ?>
         </section>
 
         <section class="eventcrew-panel" id="eventcrew-panel-board" data-eventcrew-panel="board" aria-labelledby="eventcrew-tab-board">
@@ -564,9 +573,10 @@ if ($eventcrew_link_expired) {
             <?php
             /*
              * Each part is a card like an event on the board: a header bar with
-             * its name, and its rows under it. My tasks and Tickets are always
-             * drawn, even empty, because "you are not on anything yet" is worth
-             * knowing.
+             * its name, and its rows under it. In order (Owner 2026-11-08):
+             * Get a ticket, Tickets, Tasks, Past tickets, Past tasks. Tickets,
+             * Tasks and Past tasks are always drawn, even empty, because "you
+             * are not on anything yet" is worth knowing.
              *
              * Sales desk comes first, and only for someone on tonight's
              * sales-desk task who is not an organizer: an organizer has the
@@ -588,6 +598,121 @@ if ($eventcrew_link_expired) {
                     </div>
                 </section>
             <?php endif; ?>
+            <?php
+            /*
+             * Get a ticket: spending a credit, its own card, only while there
+             * is a credit and an event to spend it on. It sits above the
+             * tickets because what it produces is a ticket.
+             */
+            ?>
+            <?php if ('' !== $eventcrew_redeem_action && [] !== $eventcrew_ticket_dates) : ?>
+                <section class="eventcrew-event eventcrew-me-card" id="eventcrew-get-ticket">
+                    <header class="eventcrew-event-head">
+                        <h3 class="eventcrew-event-title"><?php esc_html_e('Get a ticket', 'eventcrew'); ?></h3>
+                    </header>
+                    <div class="eventcrew-card-body">
+                        <form class="eventcrew-action eventcrew-redeem" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                            data-eventcrew-confirm="<?php echo esc_attr(\EventCrew\Telegram\TicketRedemptionService::creditQuestion('%s', null === $eventcrew_standing ? 0 : $eventcrew_standing->creditBalance)); ?>">
+                            <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_redeem_action); ?>">
+                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                            <label for="eventcrew-ticket-date"><?php esc_html_e('Spend a free-entry credit on', 'eventcrew'); ?></label>
+                            <select name="ticket_date" id="eventcrew-ticket-date">
+                                <?php foreach ($eventcrew_ticket_dates as $eventcrew_date => $eventcrew_date_label) : ?>
+                                    <option value="<?php echo esc_attr((string) $eventcrew_date); ?>"><?php echo esc_html($eventcrew_date_label); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button type="submit" class="wp-element-button"><?php esc_html_e('Get my ticket', 'eventcrew'); ?></button>
+                        </form>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <?php
+            /*
+             * The coming tickets, task tickets too, as on the bot's Tickets
+             * screen. Always drawn, like Tasks. Each entry: day, event, DJs,
+             * what the ticket is, then text links (Ticket, Give away / Cancel
+             * offer, as on the bot, Owner 2026-11-08), so the card has no
+             * button at all; Give away opens its form under the link.
+             */
+            ?>
+            <section class="eventcrew-event eventcrew-me-card" id="eventcrew-my-tickets">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Tickets', 'eventcrew'); ?></h3>
+                </header>
+                <?php if ([] === $eventcrew_my_tickets['upcoming']) : ?>
+                    <p class="eventcrew-muted eventcrew-card-body">
+                        <?php
+                        echo esc_html(
+                            [] === $eventcrew_my_tickets['past']
+                                ? __('No tickets yet — sign up for a task or spend a credit.', 'eventcrew')
+                                : __('No coming tickets.', 'eventcrew')
+                        );
+                        ?>
+                    </p>
+                <?php else : ?>
+                    <ul class="eventcrew-plain-list eventcrew-me-list">
+                        <?php foreach ($eventcrew_my_tickets['upcoming'] as $eventcrew_ticket) : ?>
+                            <?php
+                            $eventcrew_row = [
+                                'day' => \EventCrew\Web\SignupBoardView::humanDate((string) $eventcrew_ticket['when']),
+                                'event' => (string) ($eventcrew_ticket['event'] ?? ''),
+                                'dj' => (string) ($eventcrew_ticket['dj'] ?? ''),
+                                'what' => (string) ($eventcrew_ticket['what'] ?? $eventcrew_ticket['label']),
+                                'used' => $eventcrew_ticket['used'] ?? null,
+                            ];
+                            $eventcrew_rid = (int) ($eventcrew_ticket['redemption_id'] ?? 0);
+                            $eventcrew_offer_to = (string) ($eventcrew_ticket['offer_to'] ?? '');
+                            ?>
+                            <li class="eventcrew-me-row">
+                                <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-me-row.php'; ?>
+                                <?php if ('' !== $eventcrew_offer_to) : ?>
+                                    <span class="eventcrew-me-what">
+                                        <?php
+                                        /* translators: %s: the name of the person the ticket was offered to */
+                                        echo esc_html(sprintf(__('Waiting for %s to accept', 'eventcrew'), $eventcrew_offer_to));
+                                        ?>
+                                    </span>
+                                <?php endif; ?>
+                                <span class="eventcrew-me-actions">
+                                    <a class="eventcrew-textlink" href="<?php echo esc_url((string) $eventcrew_ticket['url']); ?>" target="_blank" rel="noopener"><?php esc_html_e('Ticket', 'eventcrew'); ?></a>
+                                    <?php if ('' !== $eventcrew_offer_to) : ?>
+                                        <form class="eventcrew-action eventcrew-inline-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                                            data-eventcrew-reload="eventcrew-my-tickets">
+                                            <input type="hidden" name="action" value="<?php echo esc_attr((string) ($view['cancel_offer_action'] ?? '')); ?>">
+                                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                                            <input type="hidden" name="redemption_id" value="<?php echo esc_attr((string) $eventcrew_rid); ?>">
+                                            <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Cancel offer', 'eventcrew'); ?></button>
+                                        </form>
+                                    <?php elseif (! empty($eventcrew_ticket['give'])) : ?>
+                                        <details class="eventcrew-give">
+                                            <summary class="eventcrew-textlink"><?php esc_html_e('Give away', 'eventcrew'); ?></summary>
+                                            <form class="eventcrew-action eventcrew-give-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                                                data-eventcrew-reload="eventcrew-my-tickets">
+                                                <input type="hidden" name="action" value="<?php echo esc_attr((string) ($view['give_action'] ?? '')); ?>">
+                                                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                                                <input type="hidden" name="redemption_id" value="<?php echo esc_attr((string) $eventcrew_rid); ?>">
+                                                <label for="eventcrew-give-email-<?php echo esc_attr((string) $eventcrew_rid); ?>"><?php esc_html_e('Email', 'eventcrew'); ?></label>
+                                                <input type="email" class="wp-element-input" name="email" required autocomplete="off"
+                                                    id="eventcrew-give-email-<?php echo esc_attr((string) $eventcrew_rid); ?>">
+                                                <label for="eventcrew-give-name-<?php echo esc_attr((string) $eventcrew_rid); ?>"><?php esc_html_e('Their name', 'eventcrew'); ?></label>
+                                                <input type="text" class="wp-element-input" name="name" autocomplete="off"
+                                                    maxlength="<?php echo esc_attr((string) \EventCrew\Support\TicketTransferService::NAME_MAX); ?>"
+                                                    id="eventcrew-give-name-<?php echo esc_attr((string) $eventcrew_rid); ?>">
+                                                <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Send the offer', 'eventcrew'); ?></button>
+                                            </form>
+                                        </details>
+                                    <?php endif; ?>
+                                </span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </section>
+
             <section class="eventcrew-event eventcrew-me-card" id="eventcrew-my-tasks">
                 <header class="eventcrew-event-head">
                     <h3 class="eventcrew-event-title"><?php esc_html_e('Tasks', 'eventcrew'); ?></h3>
@@ -602,38 +727,41 @@ if ($eventcrew_link_expired) {
                         <a class="eventcrew-textlink" href="#eventcrew-panel-board" data-eventcrew-goto="eventcrew-panel-board"><?php esc_html_e('See open tasks', 'eventcrew'); ?></a>
                     </p>
                 <?php else : ?>
-                    <ul class="eventcrew-plain-list">
+                    <ul class="eventcrew-plain-list eventcrew-me-list">
                         <?php foreach ($eventcrew_my_upcoming as $eventcrew_mine) : ?>
-                            <li>
-                                <span class="eventcrew-mine-label"><?php echo esc_html($eventcrew_mine['label']); ?></span>
-                                <?php if ('' !== ($eventcrew_mine['dj'] ?? '')) : ?>
-                                    <span class="eventcrew-event-dj"><?php echo esc_html($eventcrew_mine['dj']); ?></span>
-                                <?php endif; ?>
-                                <span class="eventcrew-mine-when">
-                                    <?php echo esc_html($eventcrew_mine['when']); ?>
-                                    · <a href="<?php echo esc_url((string) $eventcrew_mine['ticket_url']); ?>" target="_blank" rel="noopener"><?php esc_html_e('Ticket', 'eventcrew'); ?></a>
-                                    · <a href="<?php echo esc_url($eventcrew_mine['calendar_url']); ?>"><?php esc_html_e('Add to calendar', 'eventcrew'); ?></a>
+                            <?php
+                            $eventcrew_row = [
+                                'day' => (string) $eventcrew_mine['day'],
+                                'side' => (string) $eventcrew_mine['time'],
+                                'event' => (string) $eventcrew_mine['event'],
+                                'dj' => (string) $eventcrew_mine['dj'],
+                                'what' => (string) $eventcrew_mine['role'],
+                                'used' => $eventcrew_mine['used'] ?? null,
+                            ];
+                            ?>
+                            <li class="eventcrew-me-row">
+                                <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-me-row.php'; ?>
+                                <span class="eventcrew-me-actions">
+                                    <a class="eventcrew-textlink" href="<?php echo esc_url((string) $eventcrew_mine['ticket_url']); ?>" target="_blank" rel="noopener"><?php esc_html_e('Ticket', 'eventcrew'); ?></a>
+                                    <a class="eventcrew-textlink" href="<?php echo esc_url($eventcrew_mine['calendar_url']); ?>"><?php esc_html_e('Add to calendar', 'eventcrew'); ?></a>
+                                    <?php
+                                    /*
+                                     * Cancel here too, as a text link (Owner 2026-11-08):
+                                     * the board's drop action with the board's question.
+                                     * The page reloads after it, so this card and the
+                                     * Tickets card show the change.
+                                     */
+                                    ?>
+                                    <form class="eventcrew-action eventcrew-inline-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                                        data-eventcrew-confirm="<?php echo esc_attr((string) ($eventcrew_mine['cancel_ask'] ?? '')); ?>"
+                                        data-eventcrew-reload="eventcrew-my-tasks">
+                                        <input type="hidden" name="action" value="<?php echo esc_attr(\EventCrew\Web\SignupController::DROP_ACTION); ?>">
+                                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                                        <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_mine['task_id']); ?>">
+                                        <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Cancel', 'eventcrew'); ?></button>
+                                    </form>
                                 </span>
-                                <?php if (null !== ($eventcrew_mine['used'] ?? null)) : ?>
-                                    <span class="eventcrew-used"><?php echo esc_html(\EventCrew\Support\TicketList::usedText((string) $eventcrew_mine['used'])); ?></span>
-                                <?php endif; ?>
-                                <?php
-                                /*
-                                 * Cancel here too, as a text link (Owner 2026-11-08):
-                                 * the board's drop action with the board's question.
-                                 * The page reloads after it, so this card and the
-                                 * Tickets card show the change.
-                                 */
-                                ?>
-                                <form class="eventcrew-action eventcrew-inline-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
-                                    data-eventcrew-confirm="<?php echo esc_attr((string) ($eventcrew_mine['cancel_ask'] ?? '')); ?>"
-                                    data-eventcrew-reload="eventcrew-my-tasks">
-                                    <input type="hidden" name="action" value="<?php echo esc_attr(\EventCrew\Web\SignupController::DROP_ACTION); ?>">
-                                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                                    <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_mine['task_id']); ?>">
-                                    <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Cancel', 'eventcrew'); ?></button>
-                                </form>
                             </li>
                         <?php endforeach; ?>
                     </ul>
@@ -646,9 +774,40 @@ if ($eventcrew_link_expired) {
 
             <?php
             /*
+             * Past tickets: only listed, as on the bot, since there is no door
+             * left to show them at; the card is left out until there is one.
+             */
+            ?>
+            <?php if ([] !== $eventcrew_my_tickets['past']) : ?>
+                <section class="eventcrew-event eventcrew-me-card" id="eventcrew-past-tickets">
+                    <header class="eventcrew-event-head">
+                        <h3 class="eventcrew-event-title"><?php esc_html_e('Past tickets', 'eventcrew'); ?></h3>
+                    </header>
+                    <ul class="eventcrew-plain-list eventcrew-me-list">
+                        <?php foreach ($eventcrew_my_tickets['past'] as $eventcrew_ticket) : ?>
+                            <?php
+                            $eventcrew_row = [
+                                'day' => \EventCrew\Web\SignupBoardView::humanDate((string) $eventcrew_ticket['when']),
+                                'event' => (string) ($eventcrew_ticket['event'] ?? ''),
+                                'dj' => (string) ($eventcrew_ticket['dj'] ?? ''),
+                                'what' => (string) ($eventcrew_ticket['what'] ?? $eventcrew_ticket['label']),
+                                'used' => $eventcrew_ticket['used'] ?? null,
+                            ];
+                            ?>
+                            <li class="eventcrew-me-row">
+                                <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-me-row.php'; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </section>
+            <?php endif; ?>
+
+            <?php
+            /*
              * Every past task, a page at a time, and the card drawn even
              * before the first one with the bot's words (Owner 2026-11-08:
-             * like Telegram's Past tasks).
+             * like Telegram's Past tasks). The status sits where a coming
+             * task shows its times.
              */
             ?>
             <section class="eventcrew-event eventcrew-me-card" id="eventcrew-past-tasks">
@@ -658,17 +817,20 @@ if ($eventcrew_link_expired) {
                 <?php if ([] === $eventcrew_my_history) : ?>
                     <p class="eventcrew-muted eventcrew-card-body"><?php echo esc_html(\EventCrew\Telegram\ProfileService::noPastTasksText()); ?></p>
                 <?php else : ?>
-                    <ul class="eventcrew-plain-list">
+                    <ul class="eventcrew-plain-list eventcrew-me-list">
                         <?php foreach ($eventcrew_my_history as $eventcrew_past) : ?>
-                            <li>
-                                <span class="eventcrew-mine-label"><?php echo esc_html($eventcrew_past['label']); ?></span>
-                                <?php if ('' !== ($eventcrew_past['dj'] ?? '')) : ?>
-                                    <span class="eventcrew-event-dj"><?php echo esc_html($eventcrew_past['dj']); ?></span>
-                                <?php endif; ?>
-                                <span class="eventcrew-mine-when">
-                                    <?php echo esc_html($eventcrew_past['when']); ?>
-                                    · <?php echo esc_html($eventcrew_past['status']); ?>
-                                </span>
+                            <?php
+                            $eventcrew_row = [
+                                'day' => (string) $eventcrew_past['day'],
+                                'side' => (string) $eventcrew_past['status'],
+                                'side_class' => 'eventcrew-me-status',
+                                'event' => (string) $eventcrew_past['event'],
+                                'dj' => (string) $eventcrew_past['dj'],
+                                'what' => implode(' · ', array_filter([(string) $eventcrew_past['role'], (string) $eventcrew_past['time']], static fn (string $part): bool => '' !== $part)),
+                            ];
+                            ?>
+                            <li class="eventcrew-me-row">
+                                <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-me-row.php'; ?>
                             </li>
                         <?php endforeach; ?>
                     </ul>
@@ -677,100 +839,6 @@ if ($eventcrew_link_expired) {
                     require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-pager.php';
                     ?>
                 <?php endif; ?>
-            </section>
-
-            <section class="eventcrew-event eventcrew-me-card" id="eventcrew-my-tickets">
-                <header class="eventcrew-event-head">
-                    <h3 class="eventcrew-event-title"><?php esc_html_e('Tickets', 'eventcrew'); ?></h3>
-                </header>
-                <div class="eventcrew-card-body">
-                    <?php
-                    // Spending a credit lives here rather than beside the credit
-                    // count: what it produces is a ticket, and this is where the
-                    // tickets are.
-                    ?>
-                    <?php if ('' !== $eventcrew_redeem_action && [] !== $eventcrew_ticket_dates) : ?>
-                        <form class="eventcrew-action eventcrew-redeem" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
-                            data-eventcrew-confirm="<?php echo esc_attr(\EventCrew\Telegram\TicketRedemptionService::creditQuestion('%s', null === $eventcrew_standing ? 0 : $eventcrew_standing->creditBalance)); ?>">
-                            <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_redeem_action); ?>">
-                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                            <label for="eventcrew-ticket-date"><?php esc_html_e('Spend a free-entry credit on', 'eventcrew'); ?></label>
-                            <select name="ticket_date" id="eventcrew-ticket-date">
-                                <?php foreach ($eventcrew_ticket_dates as $eventcrew_date => $eventcrew_date_label) : ?>
-                                    <option value="<?php echo esc_attr((string) $eventcrew_date); ?>"><?php echo esc_html($eventcrew_date_label); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <button type="submit" class="wp-element-button"><?php esc_html_e('Get my ticket', 'eventcrew'); ?></button>
-                        </form>
-                    <?php endif; ?>
-
-                    <?php if ([] === $eventcrew_my_tickets['upcoming'] && [] === $eventcrew_my_tickets['past']) : ?>
-                        <p class="eventcrew-muted"><?php esc_html_e('No tickets yet — sign up for a task or spend a credit.', 'eventcrew'); ?></p>
-                    <?php else : ?>
-                        <?php foreach (['upcoming' => __('Upcoming', 'eventcrew'), 'past' => __('Past', 'eventcrew')] as $eventcrew_group => $eventcrew_group_label) : ?>
-                            <?php if ([] !== $eventcrew_my_tickets[$eventcrew_group]) : ?>
-                                <p class="eventcrew-muted eventcrew-listhead"><strong><?php echo esc_html($eventcrew_group_label); ?></strong></p>
-                                <ul class="eventcrew-plain-list eventcrew-ticket-list">
-                                    <?php foreach ($eventcrew_my_tickets[$eventcrew_group] as $eventcrew_ticket) : ?>
-                                        <li>
-                                            <a class="eventcrew-mine-label" href="<?php echo esc_url($eventcrew_ticket['url']); ?>" target="_blank" rel="noopener">
-                                                <?php echo esc_html($eventcrew_ticket['label']); ?>
-                                            </a>
-                                            <span class="eventcrew-mine-when"><?php echo esc_html(\EventCrew\Web\SignupBoardView::humanDate((string) $eventcrew_ticket['when'])); ?></span>
-                                            <?php if (null !== ($eventcrew_ticket['used'] ?? null)) : ?>
-                                                <span class="eventcrew-used"><?php echo esc_html(\EventCrew\Support\TicketList::usedText((string) $eventcrew_ticket['used'])); ?></span>
-                                            <?php endif; ?>
-                                            <?php
-                                            /*
-                                             * Give away / Cancel offer, as on the bot's Tickets
-                                             * screen (Owner 2026-11-08). Text links, so the card
-                                             * keeps one button; the form opens under the link.
-                                             */
-                                            $eventcrew_rid = (int) ($eventcrew_ticket['redemption_id'] ?? 0);
-                                            ?>
-                                            <?php if ('' !== (string) ($eventcrew_ticket['offer_to'] ?? '')) : ?>
-                                                <span class="eventcrew-mine-when">
-                                                    <?php
-                                                    /* translators: %s: the name of the person the ticket was offered to */
-                                                    echo esc_html(sprintf(__('Waiting for %s to accept', 'eventcrew'), (string) $eventcrew_ticket['offer_to']));
-                                                    ?>
-                                                </span>
-                                                <form class="eventcrew-action eventcrew-inline-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
-                                                    data-eventcrew-reload="eventcrew-my-tickets">
-                                                    <input type="hidden" name="action" value="<?php echo esc_attr((string) ($view['cancel_offer_action'] ?? '')); ?>">
-                                                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                                                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                                                    <input type="hidden" name="redemption_id" value="<?php echo esc_attr((string) $eventcrew_rid); ?>">
-                                                    <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Cancel offer', 'eventcrew'); ?></button>
-                                                </form>
-                                            <?php elseif (! empty($eventcrew_ticket['give'])) : ?>
-                                                <details class="eventcrew-give">
-                                                    <summary class="eventcrew-textlink"><?php esc_html_e('Give away', 'eventcrew'); ?></summary>
-                                                    <form class="eventcrew-action eventcrew-give-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
-                                                        data-eventcrew-reload="eventcrew-my-tickets">
-                                                        <input type="hidden" name="action" value="<?php echo esc_attr((string) ($view['give_action'] ?? '')); ?>">
-                                                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                                                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                                                        <input type="hidden" name="redemption_id" value="<?php echo esc_attr((string) $eventcrew_rid); ?>">
-                                                        <label for="eventcrew-give-email-<?php echo esc_attr((string) $eventcrew_rid); ?>"><?php esc_html_e('Email', 'eventcrew'); ?></label>
-                                                        <input type="email" class="wp-element-input" name="email" required autocomplete="off"
-                                                            id="eventcrew-give-email-<?php echo esc_attr((string) $eventcrew_rid); ?>">
-                                                        <label for="eventcrew-give-name-<?php echo esc_attr((string) $eventcrew_rid); ?>"><?php esc_html_e('Their name', 'eventcrew'); ?></label>
-                                                        <input type="text" class="wp-element-input" name="name" autocomplete="off"
-                                                            maxlength="<?php echo esc_attr((string) \EventCrew\Support\TicketTransferService::NAME_MAX); ?>"
-                                                            id="eventcrew-give-name-<?php echo esc_attr((string) $eventcrew_rid); ?>">
-                                                        <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Send the offer', 'eventcrew'); ?></button>
-                                                    </form>
-                                                </details>
-                                            <?php endif; ?>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
             </section>
         </section>
 
@@ -2633,8 +2701,8 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         return 'board';
     }
 
-    // A link to a card on another tab, such as 🎟 Tickets in the header
-    // card: its tab opens, then the page scrolls to the card.
+    // A link to a card on another tab, such as See open tasks on the Me
+    // tab: its tab opens, then the page scrolls to the card.
     root.addEventListener('click', function (e) {
         var link = e.target.closest ? e.target.closest('[data-eventcrew-goto]') : null;
         var target = link ? document.getElementById(link.getAttribute('data-eventcrew-goto')) : null;

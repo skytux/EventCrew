@@ -142,7 +142,7 @@ final class SignupBoardView
      * first. Each carries an add-to-calendar link and the task id, so the
      * profile can surface "what am I next on" with a one-tap calendar hold.
      *
-     * @return array<int, array{task_id: int, label: string, dj: string, when: string, calendar_url: string, ticket_url: string, cancel_ask: string, used: ?string}>
+     * @return array<int, array{task_id: int, day: string, event: string, dj: string, role: string, time: string, calendar_url: string, ticket_url: string, cancel_ask: string, used: ?string}>
      */
     private function upcomingFor(int $personId): array
     {
@@ -168,9 +168,13 @@ final class SignupBoardView
                 'sort' => $task->taskDate . ' ' . ($task->startsAt ?? ''),
                 'date' => $task->taskDate,
                 'task_id' => $task->id,
-                'label' => $task->roleLabel() . ' · ' . $event['name'],
+                // The row's parts, drawn as the Me tab's entry: the day on
+                // top, the event and its DJs, then the role and its times.
+                'day' => $day,
+                'event' => $event['name'],
                 'dj' => $event['dj'],
-                'when' => '' === $time ? $day : $day . ' · ' . $time,
+                'role' => $task->roleLabel(),
+                'time' => $time,
                 'calendar_url' => CalendarController::url($task->id),
                 'ticket_url' => TicketMail::workUrl($personId, $task->taskDate),
                 // Cancel sits on each row too, asking what the board's
@@ -205,7 +209,7 @@ final class SignupBoardView
      * shown under "you're on next", and repeating it here as history would be
      * an odd thing to read.
      *
-     * @return array<int, array{when: string, label: string, dj: string, status: string}>
+     * @return array<int, array{day: string, event: string, dj: string, role: string, time: string, status: string}>
      */
     private function historyFor(int $personId): array
     {
@@ -224,9 +228,11 @@ final class SignupBoardView
             $event = null === $task ? ['name' => '', 'dj' => ''] : EventName::ofTask($task, EventName::lang());
 
             $history[] = [
-                'when' => self::humanDate($date),
-                'label' => null === $task ? '' : $task->roleLabel() . ' · ' . $event['name'],
+                'day' => self::humanDate($date),
+                'event' => $event['name'],
                 'dj' => $event['dj'],
+                'role' => null === $task ? '' : $task->roleLabel(),
+                'time' => null === $task ? '' : $task->timeRange(),
                 'status' => AssignmentStatus::label($assignment->status),
             ];
         }

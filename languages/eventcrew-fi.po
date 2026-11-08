@@ -10286,3 +10286,12 @@ msgstr "/subscribe sähköposti – lisää joku uutiskirjeeseen; hän vahvistaa
 
 msgid "Preview of the next announcement"
 msgstr "Seuraavan tiedotteen esikatselu"
+
+msgid "Get a ticket"
+msgstr "Hanki lippu"
+
+msgid "No coming tickets."
+msgstr "Ei tulevia lippuja."
+
+msgid "Past tickets"
+msgstr "Menneet liput"

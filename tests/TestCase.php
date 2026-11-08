@@ -38,6 +38,10 @@ abstract class TestCase extends PHPUnitTestCase
             Language::leave();
         }
 
+        // Nor leave the Crew app's own page picked: the crew page would then
+        // hand its language switch to a bar no later test draws.
+        (new \ReflectionProperty(\EventCrew\Web\CrewAppPage::class, 'current'))->setValue(null, null);
+
         Monkey\tearDown();
         parent::tearDown();
 
