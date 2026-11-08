@@ -1151,45 +1151,25 @@
 }
 
 /*
- * The website's banner at the top of the Crew app page (SiteBanner): the site
- * logo on a dark rounded plate, as the website's pages show it, over the
- * picture they open with. Full width and a fixed height that grows a little
- * with the screen, so nothing under it moves while the pictures load. The
- * logo is sized by its height; its width follows from its width and height
- * attributes.
+ * The website's banner at the top of the Crew app page: the site logo alone
+ * on the page colour, no picture or box behind it. A fixed height, so nothing
+ * under it moves while the logo loads; the logo is sized by its height.
  */
 .eventcrew-site-banner {
-    --eventcrew-banner-height: clamp(96px, 14vw, 168px);
-    position: relative;
+    --eventcrew-banner-height: clamp(64px, 9vw, 104px);
     box-sizing: border-box;
     display: flex; align-items: center; justify-content: center;
     width: 100%; height: var(--eventcrew-banner-height);
-    padding: 12px 16px;
-    overflow: hidden;
-    background: #1d1630;
-}
-.eventcrew-site-banner-picture {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%; max-width: none;
-    object-fit: cover;
+    padding: 12px 16px 0;
 }
 .eventcrew-site-banner-home {
-    position: relative;
     display: block; max-width: 100%;
     line-height: 0; text-decoration: none; color: #fff;
-}
-.eventcrew-site-banner-plate {
-    box-sizing: border-box;
-    display: inline-block; max-width: 100%;
-    padding: .5em .9em;
-    border-radius: 1.6em 1.6em 1.6em 0;
-    background: rgba(0, 0, 0, .5);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
 }
 .eventcrew-site-banner-logo {
     display: block;
     width: auto; max-width: 100%;
-    height: calc(var(--eventcrew-banner-height) - 24px - 1em);
+    height: calc(var(--eventcrew-banner-height) - 12px);
     object-fit: contain;
 }
 .eventcrew-site-banner-name {

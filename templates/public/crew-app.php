@@ -60,7 +60,7 @@ $eventcrew_language = $eventcrew_page->language();
 <body <?php body_class('eventcrew-crew-app'); ?>>
 <?php wp_body_open(); ?>
 <?php
-// The website's banner: the site logo on the picture its pages open with.
+// The website's banner: the site logo alone, linking to the website.
 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- SiteBanner escapes its own output.
 echo $eventcrew_page->banner();
 ?>
