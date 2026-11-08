@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.187
+Stable tag: 1.140.188
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,12 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.188 =
+* The Sign up button on the web board is the same size as the other buttons, with a centred label and a lighter green.
+* Signed out, the sign-in card on the crew page shows the next event's picture, the same one the Telegram board posts.
+* New setting "Members can give away their ticket" (on by default). When it is off, the give-away offers disappear and old give links and buttons are refused; tickets already given stay valid.
+* With several tickets for one night, each ticket card says "Ticket 2 of 3 · issued …" and the ticket emails say how many tickets the person has. The clock explanation is gone and the QR code is a little smaller, so cards are shorter.
 
 = 1.140.187 =
 * The plugin author is skytux. Example names, addresses and places in the code, tests and docs are made-up examples.
@@ -1894,6 +1900,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.188 =
+No settings change.
 
 = 1.140.187 =
 No settings change.
