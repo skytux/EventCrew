@@ -418,11 +418,12 @@ final class StandingNoticeTest extends TestCase
         self::assertStringStartsWith('💌 ', $dm);
         self::assertStringEndsWith("\n\nWith love, the crew", $dm);
         self::assertStringContainsString('Thank you for Decorate at Party', $dm);
-        self::assertStringContainsString('│', $dm);
+        self::assertMatchesRegularExpression('/[🟩🟧🟥⬜]{10} \d+% · /u', $dm);
         self::assertMatchesRegularExpression('/Standing \d+% → \d+%\./', $dm);
         self::assertStringContainsString('more completed task', $dm);
         self::assertCount(1, $this->mails);
-        self::assertStringContainsString('│', $this->mails[0]); // the text bar; StandingBarTest draws the HTML one
+        // The text bar; StandingBarTest draws the HTML one.
+        self::assertMatchesRegularExpression('/[🟩🟧🟥⬜]{10} \d+% · /u', $this->mails[0]);
         self::assertStringContainsString('task_thanks', $this->wpdb->lastQuery());
         // The thank-you only looks back a few days, not over every task ever.
         $thanksQuery = implode("\n", array_filter(

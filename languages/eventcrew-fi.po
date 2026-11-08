@@ -9410,8 +9410,11 @@ msgid_plural "Thanks for letting us know. This close to the task it counts again
 msgstr[0] "Kiitos, että kerroit. Näin lähellä tehtävää se heikentää luotettavuuttasi; peruminen %d tunnin tai enemmän ennen ei vaikuta mitenkään ja antaa jollekulle muulle aikaa ottaa paikka. Voit myös luovuttaa tehtävän: toinen henkilö lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
 msgstr[1] "Kiitos, että kerroit. Näin lähellä tehtävää se heikentää luotettavuuttasi; peruminen %d tuntia tai enemmän ennen ei vaikuta mitenkään ja antaa jollekulle muulle aikaa ottaa paikka. Voit myös luovuttaa tehtävän: toinen henkilö lähettää botille /me ja napauttaa 🔁 Ota tehtävä, ja sinä hyväksyt."
 
-msgid "Good standing from %d%%"
-msgstr "Hyvä taso alkaen %d %%"
+msgid "Close to the %d%% limit"
+msgstr "Lähellä %d %%:n rajaa"
+
+msgid "Under the %d%% limit"
+msgstr "Alle %d %%:n rajan"
 
 msgid "Standing %1$d%% → %2$d%%."
 msgstr "Luotettavuus %1$d %% → %2$d %%."
@@ -9433,8 +9436,8 @@ msgstr "Yhä hyvä taso, mutta lähellä %d %%:n rajaa."
 msgid "Good standing is %d%% or more."
 msgstr "Hyvä taso on %d %% tai enemmän."
 
-msgid "The standing as a bar from 0 to 100 percent, with the good-standing limit marked; in the email a coloured bar. On a line of its own; the line goes while the person has no score yet."
-msgstr "Luotettavuus palkkina 0–100 prosenttia, hyvän tason raja merkittynä; sähköpostissa värillinen palkki. Omalla rivillään; rivi poistuu, kun henkilöllä ei vielä ole lukua."
+msgid "The standing as a green, orange or red bar from 0 to 100 percent with a short text, like: 85% · Good standing. On a line of its own; the line goes while the person has no score yet."
+msgstr "Luotettavuus vihreänä, oranssina tai punaisena palkkina 0–100 prosenttia ja lyhyt teksti, esim.: 85 % · Hyvä taso. Omalla rivillään; rivi poistuu, kun henkilöllä ei vielä ole lukua."
 
 msgid "The standing before and after, like: Standing 82 → 74 percent, with one sentence on what it means. Before the person has a score: how many tasks until they get one."
 msgstr "Luotettavuus ennen ja jälkeen, kuten: Luotettavuus 82 → 74 prosenttia, ja yksi lause sen merkityksestä. Ennen kuin henkilöllä on luku: montako tehtävää siihen on."

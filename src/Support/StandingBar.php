@@ -5,21 +5,23 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 /**
- * A person's standing drawn as a bar from 0 to 100%: a gold fill, a mark at
- * the good-standing limit (Settings, 60% by default) and a warning zone just
- * above it (Owner 2026-11-07).
+ * A person's standing drawn as one bar from 0 to 100%, coloured by where the
+ * score is: green from ten points above the good-standing limit (Settings),
+ * orange from the limit up to there, red under it. A short text follows it:
+ * "85% · Good standing" (Owner, Q382 2026-11-08).
  *
- * One picture in three forms: a short text bar for Telegram and the plain-text
+ * One picture in three forms: a text bar for Telegram and the plain-text
  * email part, an HTML table with inline styles for the HTML email (EmailBody
  * draws a paragraph that is exactly a text bar as this table), and the zone
- * and numbers the crew page draws as a CSS bar.
+ * and numbers the crew page draws as a CSS bar. The web and email bars also
+ * have a small mark at the limit.
  */
 final class StandingBar
 {
     /**
      * How many points above the good-standing limit the warning zone reaches:
-     * 60-70% with the default limit. Still good standing, but one more miss
-     * can take the person under the limit.
+     * 65-74% with a 65% limit. Still good standing, but one more miss can
+     * take the person under the limit.
      */
     public const WARNING_POINTS = 10;
 
@@ -30,22 +32,29 @@ final class StandingBar
     /** Cells in the text bar: one per 10%. */
     private const CELLS = 10;
 
-    /** The good-standing limit in the text bar. */
-    private const MARK = '│';
-
     private const FILL = [
-        self::ZONE_GOOD => '🟨',
+        self::ZONE_GOOD => '🟩',
         self::ZONE_WARNING => '🟧',
         self::ZONE_DANGER => '🟥',
     ];
 
     private const EMPTY = '⬜';
 
-    private const GOLD = '#d4a017';
-    private const TRACK = '#ececf0';
-    private const RED = '#d9534f';
-    private const AMBER = '#f0ad4e';
-    private const CLEAR = '#c9d8c5';
+    /** The fill colour per zone; the same as the crew page's. */
+    private const COLOUR = [
+        self::ZONE_GOOD => '#2e9d4a',
+        self::ZONE_WARNING => '#ee8a1a',
+        self::ZONE_DANGER => '#d9534f',
+    ];
+
+    /** The percentage's colour per zone in the email: darker, to read on white. */
+    private const TEXT_COLOUR = [
+        self::ZONE_GOOD => '#1e7b34',
+        self::ZONE_WARNING => '#a85a00',
+        self::ZONE_DANGER => '#b52b27',
+    ];
+
+    private const TRACK = '#e4e4e8';
     private const TICK = '#333333';
 
     /** The good-standing limit as a whole percentage (Settings). */
@@ -54,7 +63,7 @@ final class StandingBar
         return (int) round((new ReputationSettings())->threshold() * 100);
     }
 
-    /** The top of the warning zone, capped at 100. */
+    /** The top of the warning zone (where green starts), capped at 100. */
     public static function warningTop(?int $limit = null): int
     {
         return min(100, ($limit ?? self::limit()) + self::WARNING_POINTS);
@@ -71,24 +80,47 @@ final class StandingBar
         return $percent < self::warningTop($limit) ? self::ZONE_WARNING : self::ZONE_GOOD;
     }
 
+    /** "Good standing", "Close to the 65% limit" or "Under the 65% limit". */
+    public static function state(int $percent, ?int $limit = null): string
+    {
+        $limit ??= self::limit();
+
+        return match (self::zone($percent, $limit)) {
+            self::ZONE_GOOD => __('Good standing', 'eventcrew'),
+            self::ZONE_WARNING => sprintf(
+                /* translators: %d: the good-standing limit percentage */
+                __('Close to the %d%% limit', 'eventcrew'),
+                $limit
+            ),
+            default => sprintf(
+                /* translators: %d: the good-standing limit percentage */
+                __('Under the %d%% limit', 'eventcrew'),
+                $limit
+            ),
+        };
+    }
+
+    /** "85% · Good standing": the text beside the bar in every form. */
+    public static function label(int $percent, ?int $limit = null): string
+    {
+        $percent = self::clamp($percent);
+
+        return $percent . '% · ' . self::state($percent, self::clamp($limit ?? self::limit()));
+    }
+
     /**
-     * "🟨🟨🟨🟨🟨🟨│🟨⬜⬜⬜ 74%": a cell per full 10%, coloured by zone, the
-     * limit marked. 15 visible characters.
+     * "🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜ 85% · Good standing": a cell per full 10%, all in
+     * the zone's colour, then the label.
      */
     public static function text(int $percent, ?int $limit = null): string
     {
         $percent = self::clamp($percent);
         $limit = self::clamp($limit ?? self::limit());
         $filled = intdiv($percent, 10);
-        $markAt = (int) round($limit / 10);
-        $fill = self::FILL[self::zone($percent, $limit)];
-        $bar = '';
 
-        for ($i = 0; $i < self::CELLS; ++$i) {
-            $bar .= ($i === $markAt ? self::MARK : '') . ($i < $filled ? $fill : self::EMPTY);
-        }
-
-        return $bar . (self::CELLS === $markAt ? self::MARK : '') . ' ' . $percent . '%';
+        return str_repeat(self::FILL[self::zone($percent, $limit)], $filled)
+            . str_repeat(self::EMPTY, self::CELLS - $filled)
+            . ' ' . self::label($percent, $limit);
     }
 
     /**
@@ -97,59 +129,50 @@ final class StandingBar
      */
     public static function parse(string $line): ?int
     {
-        $cells = implode('|', array_map('preg_quote', array_merge(array_values(self::FILL), [self::EMPTY, self::MARK])));
+        $cells = implode('|', array_map('preg_quote', array_merge(array_values(self::FILL), [self::EMPTY])));
+        $pattern = '/^(?:' . $cells . '){' . self::CELLS . '} (\d{1,3})%(?: · [^\n]+)?$/u';
 
-        return 1 === preg_match('/^(?:' . $cells . ')+ (\d{1,3})%$/u', trim($line), $match)
+        return 1 === preg_match($pattern, trim($line), $match)
             ? self::clamp((int) $match[1])
             : null;
     }
 
     /**
      * The bar for the HTML email: a table with inline styles only, as mail
-     * clients drop stylesheets. A gold fill on a grey track, a strip under it
-     * with the zones (red below the limit, amber for the warning zone), a tick
-     * at the limit through both, and the percentage under it.
+     * clients drop stylesheets. The fill in the zone's colour on a grey
+     * track, a small tick at the limit, and the label under it.
      */
     public static function html(int $percent, ?int $limit = null): string
     {
         $percent = self::clamp($percent);
         $limit = self::clamp($limit ?? self::limit());
-        $top = self::warningTop($limit);
-        $edges = array_values(array_unique([0, $percent, $limit, $top, 100]));
+        $zone = self::zone($percent, $limit);
+        $edges = array_values(array_unique([0, $percent, $limit, 100]));
         sort($edges);
 
-        $fillRow = '';
-        $zoneRow = '';
+        $row = '';
 
         for ($i = 0; $i < count($edges) - 1; ++$i) {
             [$from, $to] = [$edges[$i], $edges[$i + 1]];
-
-            if ($to <= $from) {
-                continue;
-            }
-
             $tick = ($from === $limit && $limit > 0) ? 'border-left:2px solid ' . self::TICK . ';' : '';
-            $zone = $from < $limit ? self::RED : ($from < $top ? self::AMBER : self::CLEAR);
-            $cell = '<td width="%1$d%%" style="width:%1$d%%;%2$sbackground:%3$s;height:%4$dpx;'
-                . 'line-height:%4$dpx;font-size:1px;padding:0">&nbsp;</td>';
-            $fillRow .= sprintf($cell, $to - $from, $tick, $to <= $percent ? self::GOLD : self::TRACK, 14);
-            $zoneRow .= sprintf($cell, $to - $from, $tick, $zone, 5);
+            $row .= sprintf(
+                '<td width="%1$d%%" style="width:%1$d%%;%2$sbackground:%3$s;height:12px;'
+                    . 'line-height:12px;font-size:1px;padding:0">&nbsp;</td>',
+                $to - $from,
+                $tick,
+                $to <= $percent ? self::COLOUR[$zone] : self::TRACK
+            );
         }
-
-        $label = sprintf(
-            /* translators: %d: the good-standing limit percentage */
-            __('Good standing from %d%%', 'eventcrew'),
-            $limit
-        );
 
         return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"'
             . ' style="width:100%;max-width:420px;border-collapse:collapse;margin:0 0 16px">'
             . '<tr><td style="padding:0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"'
             . ' border="0" style="width:100%;border-collapse:collapse;border-radius:4px;overflow:hidden">'
-            . '<tr>' . $fillRow . '</tr><tr>' . $zoneRow . '</tr></table></td></tr>'
+            . '<tr>' . $row . '</tr></table></td></tr>'
             . '<tr><td style="padding:4px 0 0;font-size:13px;line-height:18px;color:#555">'
-            . '<strong style="color:#9a7410;font-size:15px">' . esc_html((string) $percent) . '%</strong>'
-            . ' &nbsp;·&nbsp; ' . esc_html($label)
+            . '<strong style="color:' . self::TEXT_COLOUR[$zone] . ';font-size:15px">'
+            . esc_html((string) $percent) . '%</strong>'
+            . ' &nbsp;·&nbsp; ' . esc_html(self::state($percent, $limit))
             . '</td></tr></table>';
     }
 
@@ -160,7 +183,7 @@ final class StandingBar
     }
 
     /**
-     * "Standing 82% → 74%. Still good standing, but close to the 60% limit.":
+     * "Standing 82% → 70%. Still good standing, but close to the 65% limit.":
      * the score before and after a mark, and what the new one means. While
      * the person is not rated yet, how many tasks until they are instead.
      * '' without a standing.

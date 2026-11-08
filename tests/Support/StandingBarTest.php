@@ -10,9 +10,10 @@ use EventCrew\Support\StandingBar;
 use EventCrew\Tests\TestCase;
 
 /**
- * The standing bar: the zones around the good-standing limit (60% by
- * default, warning up to 70%), the text bar for Telegram, the HTML bar the
- * email draws from it, and the before/after sentence.
+ * The standing bar: one bar coloured by the zone around the good-standing
+ * limit (60% by default, 65% live; orange up to ten points above it), the
+ * text bar for Telegram, the HTML bar the email draws from it, and the
+ * before/after sentence.
  */
 final class StandingBarTest extends TestCase
 {
@@ -23,51 +24,84 @@ final class StandingBarTest extends TestCase
         self::assertSame(StandingBar::ZONE_DANGER, StandingBar::zone(0));
         self::assertSame(StandingBar::ZONE_DANGER, StandingBar::zone(59));
         self::assertSame(StandingBar::ZONE_WARNING, StandingBar::zone(60));
-        self::assertSame(StandingBar::ZONE_WARNING, StandingBar::zone(65));
+        self::assertSame(StandingBar::ZONE_WARNING, StandingBar::zone(69));
         self::assertSame(StandingBar::ZONE_GOOD, StandingBar::zone(70));
         self::assertSame(StandingBar::ZONE_GOOD, StandingBar::zone(100));
     }
 
-    public function testTheTextBarFillsACellPerTenPercentAndMarksTheLimit(): void
+    public function testTheBoundariesAtTheLiveLimit(): void
     {
-        self::assertSame('⬜⬜⬜⬜⬜⬜│⬜⬜⬜⬜ 0%', StandingBar::text(0));
-        self::assertSame('🟥🟥🟥🟥🟥⬜│⬜⬜⬜⬜ 59%', StandingBar::text(59));
-        self::assertSame('🟧🟧🟧🟧🟧🟧│⬜⬜⬜⬜ 60%', StandingBar::text(60));
-        self::assertSame('🟧🟧🟧🟧🟧🟧│⬜⬜⬜⬜ 65%', StandingBar::text(65));
-        self::assertSame('🟨🟨🟨🟨🟨🟨│🟨🟨🟨🟨 100%', StandingBar::text(100));
-        self::assertSame('🟨🟨🟨🟨🟨🟨│🟨⬜⬜⬜ 74%', StandingBar::text(74));
-        // Under 20 visible characters.
-        self::assertLessThan(20, mb_strlen(StandingBar::text(100)));
+        self::assertSame(StandingBar::ZONE_DANGER, StandingBar::zone(64, 65));
+        self::assertSame(StandingBar::ZONE_WARNING, StandingBar::zone(65, 65));
+        self::assertSame(StandingBar::ZONE_WARNING, StandingBar::zone(74, 65));
+        self::assertSame(StandingBar::ZONE_GOOD, StandingBar::zone(75, 65));
+        self::assertSame(StandingBar::ZONE_GOOD, StandingBar::zone(85, 65));
+    }
+
+    public function testTheStateSaysWhereTheScoreIs(): void
+    {
+        self::assertSame('85% · Good standing', StandingBar::label(85, 65));
+        self::assertSame('70% · Close to the 65% limit', StandingBar::label(70, 65));
+        self::assertSame('65% · Close to the 65% limit', StandingBar::label(65, 65));
+        self::assertSame('60% · Under the 65% limit', StandingBar::label(60, 65));
+        self::assertSame('Good standing', StandingBar::state(75, 65));
+    }
+
+    public function testTheTextBarFillsACellPerTenPercentInTheZoneColour(): void
+    {
+        self::assertSame('🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜ 85% · Good standing', StandingBar::text(85, 65));
+        self::assertSame('🟧🟧🟧🟧🟧🟧🟧⬜⬜⬜ 70% · Close to the 65% limit', StandingBar::text(70, 65));
+        self::assertSame('🟥🟥🟥🟥🟥🟥⬜⬜⬜⬜ 60% · Under the 65% limit', StandingBar::text(60, 65));
+        self::assertSame('🟥🟥🟥🟥🟥🟥⬜⬜⬜⬜ 64% · Under the 65% limit', StandingBar::text(64, 65));
+        self::assertSame('🟧🟧🟧🟧🟧🟧🟧⬜⬜⬜ 74% · Close to the 65% limit', StandingBar::text(74, 65));
+        self::assertSame('🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% · Good standing', StandingBar::text(75, 65));
+        self::assertSame('⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ 0% · Under the 60% limit', StandingBar::text(0));
+        self::assertSame('🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% · Good standing', StandingBar::text(100));
+        // No separate limit mark in the text form.
+        self::assertStringNotContainsString('│', StandingBar::text(85, 65));
     }
 
     public function testATextBarIsReadBackOnlyWhenTheLineIsOne(): void
     {
-        foreach ([0, 59, 60, 65, 100] as $percent) {
+        foreach ([0, 59, 60, 65, 74, 75, 85, 100] as $percent) {
             self::assertSame($percent, StandingBar::parse(StandingBar::text($percent)));
         }
 
         self::assertNull(StandingBar::parse('Standing 74%.'));
-        self::assertNull(StandingBar::parse('🟨 hello 74%'));
+        self::assertNull(StandingBar::parse('🟩 hello 74%'));
+        self::assertNull(StandingBar::parse('🟩🟩 74% · Good standing'));
     }
 
-    public function testTheEmailDrawsTheBarAsATableWithZonesAndATick(): void
+    public function testTheEmailDrawsOneBarInTheZoneColourWithATick(): void
     {
-        $html = EmailBody::toHtml("Hi Sam,\n\n" . StandingBar::text(74) . "\n\nStanding 82% → 74%.");
+        $html = EmailBody::toHtml("Hi Sam,\n\n" . StandingBar::text(85) . "\n\nStanding 82% → 85%.");
 
         self::assertStringContainsString('<table role="presentation"', $html);
-        self::assertStringContainsString('background:#d4a017', $html);   // gold fill
-        self::assertStringContainsString('background:#d9534f', $html);   // danger zone
-        self::assertStringContainsString('background:#f0ad4e', $html);   // warning zone
+        self::assertStringContainsString('background:#2e9d4a', $html);   // green fill
+        self::assertStringNotContainsString('background:#d9534f', $html); // no zones strip
+        self::assertStringNotContainsString('background:#ee8a1a', $html);
+        self::assertStringNotContainsString('#d4a017', $html);            // no gold
         self::assertStringContainsString('border-left:2px solid', $html); // the limit
-        self::assertStringContainsString('Good standing from 60%', $html);
-        self::assertStringNotContainsString('🟨', $html);
+        self::assertStringContainsString('85%</strong> &nbsp;·&nbsp; Good standing', $html);
+        self::assertStringNotContainsString('🟩', $html);
+        // One row of cells only.
+        self::assertSame(1, preg_match_all('/<tr><td width=/', $html));
         // The plain-text part keeps the text bar.
-        self::assertStringContainsString('🟨', EmailBody::toText(StandingBar::text(74)));
+        self::assertStringContainsString('🟩', EmailBody::toText(StandingBar::text(85)));
+    }
+
+    public function testTheEmailBarColourFollowsTheZone(): void
+    {
+        self::assertStringContainsString('background:#ee8a1a', StandingBar::html(70, 65));
+        self::assertStringContainsString('Close to the 65% limit', StandingBar::html(70, 65));
+        self::assertStringContainsString('background:#d9534f', StandingBar::html(60, 65));
+        self::assertStringContainsString('Under the 65% limit', StandingBar::html(60, 65));
+        self::assertStringContainsString('background:#2e9d4a', StandingBar::html(85, 65));
     }
 
     public function testTheEmailBarWidthsAddUpAtTheEdges(): void
     {
-        foreach ([0, 59, 60, 65, 100] as $percent) {
+        foreach ([0, 59, 60, 65, 85, 100] as $percent) {
             preg_match_all('/<tr>(<td width=.*?)<\/tr>/', StandingBar::html($percent), $rows);
             preg_match_all('/width="(\d+)%"/', $rows[1][0], $widths);
 

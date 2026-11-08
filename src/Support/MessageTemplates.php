@@ -1515,7 +1515,7 @@ final class MessageTemplates
             ? $c['standing_after']
             : null;
         $standingBar = self::placeholder(
-            __('The standing as a bar from 0 to 100 percent, with the good-standing limit marked; in the email a coloured bar. On a line of its own; the line goes while the person has no score yet.', 'eventcrew'),
+            __('The standing as a green, orange or red bar from 0 to 100 percent with a short text, like: 85% · Good standing. On a line of its own; the line goes while the person has no score yet.', 'eventcrew'),
             static fn (array $c): string => StandingBar::forStanding($after($c)),
             false,
             true

@@ -503,27 +503,25 @@ if ($eventcrew_link_expired) {
                     </p>
                     <?php
                     /*
-                     * The standing as a bar once rated: gold fill, the limit
-                     * for good standing marked, the warning zone above it
-                     * (StandingBar). Before that, how many tasks to go.
+                     * The standing as one bar once rated, green, orange or
+                     * red by where the score is, a small mark at the limit
+                     * and a short text (StandingBar, Owner Q382). Before
+                     * that, how many tasks to go.
                      */
                     ?>
                     <?php if ($eventcrew_standing->isRated()) : ?>
                         <?php
                         $eventcrew_bar_percent = $eventcrew_standing->scorePercent();
                         $eventcrew_bar_limit = \EventCrew\Support\StandingBar::limit();
-                        /* translators: %d: the good-standing limit percentage */
-                        $eventcrew_bar_label = sprintf(__('Good standing from %d%%', 'eventcrew'), $eventcrew_bar_limit);
                         ?>
                         <div class="eventcrew-standing-bar eventcrew-standing-bar--<?php echo esc_attr(\EventCrew\Support\StandingBar::zone($eventcrew_bar_percent, $eventcrew_bar_limit)); ?>"
                             role="img"
-                            aria-label="<?php echo esc_attr($eventcrew_bar_percent . '% · ' . $eventcrew_bar_label); ?>"
-                            style="<?php echo esc_attr(sprintf('--eventcrew-bar-fill:%d%%;--eventcrew-bar-limit:%d%%;--eventcrew-bar-warn:%d%%', $eventcrew_bar_percent, $eventcrew_bar_limit, \EventCrew\Support\StandingBar::warningTop($eventcrew_bar_limit))); ?>">
+                            aria-label="<?php echo esc_attr(\EventCrew\Support\StandingBar::label($eventcrew_bar_percent, $eventcrew_bar_limit)); ?>"
+                            style="<?php echo esc_attr(sprintf('--eventcrew-bar-fill:%d%%;--eventcrew-bar-limit:%d%%', $eventcrew_bar_percent, $eventcrew_bar_limit)); ?>">
                             <span class="eventcrew-standing-bar-track"><span class="eventcrew-standing-bar-fill"></span></span>
-                            <span class="eventcrew-standing-bar-zones"></span>
                             <span class="eventcrew-standing-bar-limit"></span>
                         </div>
-                        <p class="eventcrew-muted eventcrew-standing-bar-label"><strong><?php echo esc_html($eventcrew_bar_percent . '%'); ?></strong> · <?php echo esc_html($eventcrew_bar_label); ?></p>
+                        <p class="eventcrew-muted eventcrew-standing-bar-label"><strong><?php echo esc_html($eventcrew_bar_percent . '%'); ?></strong> · <?php echo esc_html(\EventCrew\Support\StandingBar::state($eventcrew_bar_percent, $eventcrew_bar_limit)); ?></p>
                     <?php else : ?>
                         <p class="eventcrew-muted"><?php echo esc_html(\EventCrew\Support\StandingBar::untilRated($eventcrew_standing)); ?></p>
                     <?php endif; ?>

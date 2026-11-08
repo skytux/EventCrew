@@ -12348,8 +12348,11 @@ msgid_plural "Thanks for letting us know. This close to the task it counts again
 msgstr[0] "Tack för att du hörde av dig. Så här nära uppgiften räknas det mot din pålitlighet; att avboka %d timme eller mer innan påverkar inget och ger någon annan tid att ta platsen. Du kan också lämna över en uppgift: den andra personen skickar /me till boten och trycker på 🔁 Ta över en uppgift, och du godkänner."
 msgstr[1] "Tack för att du hörde av dig. Så här nära uppgiften räknas det mot din pålitlighet; att avboka %d timmar eller mer innan påverkar inget och ger någon annan tid att ta platsen. Du kan också lämna över en uppgift: den andra personen skickar /me till boten och trycker på 🔁 Ta över en uppgift, och du godkänner."
 
-msgid "Good standing from %d%%"
-msgstr "God pålitlighet från %d %%"
+msgid "Close to the %d%% limit"
+msgstr "Nära gränsen på %d %%"
+
+msgid "Under the %d%% limit"
+msgstr "Under gränsen på %d %%"
 
 msgid "Standing %1$d%% → %2$d%%."
 msgstr "Pålitlighet %1$d %% → %2$d %%."
@@ -12371,8 +12374,8 @@ msgstr "Fortfarande god pålitlighet, men nära gränsen på %d %%."
 msgid "Good standing is %d%% or more."
 msgstr "God pålitlighet är %d %% eller mer."
 
-msgid "The standing as a bar from 0 to 100 percent, with the good-standing limit marked; in the email a coloured bar. On a line of its own; the line goes while the person has no score yet."
-msgstr "Pålitligheten som en stapel från 0 till 100 procent, med gränsen för god pålitlighet markerad; i e-posten en färgad stapel. På en egen rad; raden tas bort så länge personen inte har något värde."
+msgid "The standing as a green, orange or red bar from 0 to 100 percent with a short text, like: 85% · Good standing. On a line of its own; the line goes while the person has no score yet."
+msgstr "Pålitligheten som en grön, orange eller röd stapel från 0 till 100 procent med en kort text, t.ex.: 85 % · God pålitlighet. På en egen rad; raden tas bort så länge personen inte har något värde."
 
 msgid "The standing before and after, like: Standing 82 → 74 percent, with one sentence on what it means. Before the person has a score: how many tasks until they get one."
 msgstr "Pålitligheten före och efter, till exempel: Pålitlighet 82 → 74 procent, med en mening om vad det betyder. Innan personen har ett värde: hur många uppgifter som återstår."
