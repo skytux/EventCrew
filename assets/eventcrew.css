@@ -439,6 +439,93 @@
 .eventcrew-signup .eventcrew-admin-guests p { margin: 0; }
 .eventcrew-signup .eventcrew-admin-buyers { columns: 2 10em; margin: 0 0 .7em; padding-left: 1.2em; }
 /*
+ * The Admin cards in the Me cards' frame (Owner 2026-11-08: "coherent with
+ * the other cards and more clear while saving space"): a title strip with an
+ * (i) for the longer explanation, one short line under it, rows like the Me
+ * tab's, one button per card and text links for the rest. A form used now
+ * and then is folded under a text link (+ Add a person, Give a credit...).
+ */
+.eventcrew-signup .eventcrew-admin-card .eventcrew-event-head { align-items: center; }
+.eventcrew-signup .eventcrew-admin-card .eventcrew-event-head > .eventcrew-about-btn {
+    margin: 0 auto 0 calc(-1em + .4em); flex: none;
+}
+.eventcrew-signup .eventcrew-about-p { display: block; }
+.eventcrew-signup .eventcrew-about-p + .eventcrew-about-p { margin-top: .5em; }
+.eventcrew-signup .eventcrew-admin-card .eventcrew-admin-lead { font-size: .9em; }
+.eventcrew-signup .eventcrew-admin-card .eventcrew-card-body + .eventcrew-card-body,
+.eventcrew-signup .eventcrew-admin-card .eventcrew-plain-list + .eventcrew-card-body,
+.eventcrew-signup .eventcrew-admin-card .eventcrew-card-body + .eventcrew-plain-list {
+    border-top: 1px solid var(--eventcrew-line);
+}
+.eventcrew-signup .eventcrew-admin-card .eventcrew-admin-lead + .eventcrew-plain-list { border-top: 0; }
+.eventcrew-signup .eventcrew-admin-card a.eventcrew-me-day { color: inherit; }
+/* A folded form: a text link that opens the form under it. */
+.eventcrew-signup .eventcrew-admin-fold > summary { list-style: none; }
+.eventcrew-signup .eventcrew-admin-fold > summary::-webkit-details-marker { display: none; }
+.eventcrew-signup .eventcrew-admin-fold[open] > summary { font-weight: 600; }
+.eventcrew-signup .eventcrew-admin-folds { display: flex; flex-wrap: wrap; column-gap: 1.2em; }
+.eventcrew-signup .eventcrew-admin-folds > .eventcrew-admin-fold[open] { flex-basis: 100%; }
+.eventcrew-signup .eventcrew-admin-form { display: flex; flex-direction: column; gap: .6em; margin: 0 0 .3em; }
+.eventcrew-signup .eventcrew-admin-form > p { margin: 0; }
+.eventcrew-signup .eventcrew-admin-form > .wp-element-button { align-self: flex-start; }
+.eventcrew-signup .eventcrew-admin-form .eventcrew-admin-hint { margin-top: 0; }
+/* Search: the field and its text link on one line. */
+.eventcrew-signup .eventcrew-admin-search { display: flex; align-items: center; gap: .8em; }
+.eventcrew-signup .eventcrew-admin-search input[type="search"] {
+    flex: 1 1 auto; min-width: 0; box-sizing: border-box; min-height: 44px; padding: .4em .6em;
+    font: inherit; color: inherit; background: color-mix(in srgb, currentColor 8%, transparent);
+    border: 1px solid var(--eventcrew-line); border-radius: var(--eventcrew-radius);
+}
+/* Label on the left, value on the right: a person's status, a role's counts. */
+.eventcrew-signup .eventcrew-admin-card .eventcrew-admin-facts li {
+    flex-direction: row; flex-wrap: wrap; justify-content: space-between; gap: 0 1em; padding-block: .35em;
+}
+.eventcrew-signup .eventcrew-admin-facts li > span:first-child { opacity: .8; }
+.eventcrew-signup .eventcrew-admin-facts li > span:last-child { font-weight: 600; text-align: right; }
+/* The roster: each task a title strip, each person a row with the status menu on the right. */
+.eventcrew-signup .eventcrew-admin-crew .eventcrew-admin-task {
+    padding: .6em 1em; border-bottom: 1px solid var(--eventcrew-line);
+    background: color-mix(in srgb, currentColor 6%, transparent);
+}
+.eventcrew-signup .eventcrew-admin-crew * + .eventcrew-admin-task { border-top: 1px solid var(--eventcrew-line); }
+.eventcrew-signup .eventcrew-admin-crew .eventcrew-admin-nobody { padding: .6em 1em; }
+.eventcrew-signup .eventcrew-admin-crew .eventcrew-me-row-head { align-items: center; flex-wrap: nowrap; }
+.eventcrew-signup .eventcrew-admin-crew .eventcrew-me-row-head .eventcrew-me-day { min-width: 0; overflow-wrap: anywhere; }
+.eventcrew-signup .eventcrew-admin-crew .eventcrew-admin-roster .eventcrew-me-row-head select {
+    flex: none; width: auto; max-width: 55%; min-height: 36px; padding: .2em .4em; font-size: .9em;
+}
+.eventcrew-signup .eventcrew-me-what > span + span::before { content: " · "; }
+.eventcrew-signup .eventcrew-admin-crew .eventcrew-admin-attend { padding: 0 1em .4em; border-top: 1px solid var(--eventcrew-line); }
+.eventcrew-signup .eventcrew-admin-crew .eventcrew-admin-add { padding: .2em 1em .5em; border-top: 1px solid var(--eventcrew-line); }
+/* A status line with its text-link actions after it, wrapping between links. */
+.eventcrew-signup .eventcrew-admin-links { display: flex; flex-wrap: wrap; align-items: center; column-gap: 1.2em; }
+.eventcrew-signup .eventcrew-admin-links + .eventcrew-admin-links { margin-top: .5em; }
+.eventcrew-signup .eventcrew-admin-line { flex-basis: 100%; font-size: .9em; }
+.eventcrew-signup .eventcrew-me-actions .eventcrew-admin-fold[open] { flex-basis: 100%; }
+.eventcrew-signup .eventcrew-admin-blocked { display: flex; flex-direction: column; align-items: flex-start; gap: .2em; }
+/* Tasks: the date menu on one line with its label; a role's folds stacked inside its form. */
+.eventcrew-signup .eventcrew-admin-search select { flex: 1 1 auto; min-width: 0; width: auto; }
+.eventcrew-signup .eventcrew-admin-folds > .eventcrew-admin-search { flex-basis: 100%; }
+.eventcrew-signup .eventcrew-admin-fold > .eventcrew-admin-search { margin: .3em 0 .5em; }
+.eventcrew-signup .eventcrew-admin-form .eventcrew-admin-fold[open] { display: flex; flex-direction: column; gap: .5em; padding-bottom: .5em; }
+.eventcrew-signup .eventcrew-admin-fold > p { margin: 0; }
+.eventcrew-signup .eventcrew-admin-count { display: flex; align-items: center; justify-content: space-between; gap: .8em; }
+.eventcrew-signup .eventcrew-admin-count input[type="number"] { flex: 0 0 6em; width: 6em; }
+/* Messages: a sub-title strip per text or event, each language's text a row. */
+.eventcrew-signup .eventcrew-admin-card .eventcrew-admin-sub {
+    margin: 0; padding: .6em 1em; font-size: .95em; text-wrap: wrap;
+    border-top: 1px solid var(--eventcrew-line); border-bottom: 1px solid var(--eventcrew-line);
+    background: color-mix(in srgb, currentColor 6%, transparent);
+}
+.eventcrew-signup .eventcrew-admin-sub + .eventcrew-card-body,
+.eventcrew-signup .eventcrew-admin-sub + .eventcrew-plain-list { border-top: 0; }
+.eventcrew-signup .eventcrew-admin-text { white-space: pre-line; font-size: .9em; }
+.eventcrew-signup .eventcrew-admin-texts .eventcrew-me-day { font-size: .9em; }
+.eventcrew-signup .eventcrew-admin-events { margin: .3em 0 .5em; padding-left: 1.2em; }
+.eventcrew-signup .eventcrew-admin-lead + .eventcrew-admin-events { margin-top: 0; }
+.eventcrew-signup .eventcrew-card-body > .eventcrew-admin-lead { margin: 0; }
+.eventcrew-signup .eventcrew-admin-line + .eventcrew-admin-line { margin-top: .3em; }
+/*
  * One entry in the Me tab's Tickets, Tasks, Past tickets and Past tasks
  * (signup-me-row.php, Owner 2026-11-08): the day in bold with the times or
  * the status on the right, the event's name, its DJs, what it is, then a

@@ -12537,3 +12537,6 @@ msgstr ""
 msgid "🧭 Organizer guide ↓"
 msgstr ""
 
+#: templates/public/signup.php
+msgid "Search"
+msgstr ""
