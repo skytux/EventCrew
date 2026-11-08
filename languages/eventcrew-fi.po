@@ -9930,6 +9930,18 @@ msgid "Members can give away their ticket"
 msgstr "Jäsenet voivat antaa lippunsa pois"
 
 #: templates/admin/settings.php
+msgid "Ticking clock"
+msgstr "Tikittävä kello"
+
+#: templates/admin/settings.php
+msgid "Show a ticking clock on the ticket"
+msgstr "Näytä tikittävä kello lipussa"
+
+#: templates/admin/settings.php
+msgid "When on, the ticket shows the current time, ticking every second, so the door can tell a live ticket from a screenshot. Off by default."
+msgstr "Kun päällä, lipussa näkyy kellonaika, joka tikittää sekunnin välein, joten ovella erottaa oikean lipun kuvakaappauksesta. Oletuksena pois."
+
+#: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "Kun päällä, jäsen voi antaa vapaalipulla saamansa lipun toiselle jäsenelle tai sähköpostiosoitteeseen lippusivulta tai botissa. Kun pois päältä, Anna pois -linkit ja -painikkeet piilotetaan, eivätkä vanhat toimi. Jo annetut liput pysyvät voimassa."
 

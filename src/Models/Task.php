@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Models;
 
 use EventCrew\Support\EventName;
+use EventCrew\Support\EventTimes;
 use EventCrew\Support\Roles;
 
 /**
@@ -117,6 +118,17 @@ final class Task
         }
 
         return $start . '–' . $this->clockTime($this->endsAt);
+    }
+
+    /**
+     * The times a member reads on their own task list: the task's own
+     * (timeRange()), else its event's (EventTimes::range()), else ''.
+     */
+    public function shownTime(): string
+    {
+        $own = $this->timeRange();
+
+        return '' !== $own ? $own : EventTimes::range($this->eventPostId);
     }
 
     /**

@@ -13,6 +13,7 @@ use EventCrew\Support\Organization;
 use EventCrew\Support\EventTimes;
 use EventCrew\Support\ShortCode;
 use EventCrew\Support\SignedLink;
+use EventCrew\Support\TicketClock;
 use EventCrew\Support\TicketMail;
 use EventCrew\Telegram\TicketController;
 use EventCrew\Tests\Support\FakeEventNames;
@@ -210,7 +211,8 @@ final class TicketControllerTest extends TestCase
         self::assertSame('Cy Cole', $ticket['name']);
     }
 
-    public function testRenderPageShowsTheLiveClock(): void
+    /** The ticking clock is a setting, off by default (Owner 2026-11-08). */
+    public function testRenderPageHasNoClockByDefault(): void
     {
         $ticket = [
             'valid' => true, 'name' => 'Sam', 'event' => 'Party', 'date' => '2026-08-01',
@@ -219,8 +221,27 @@ final class TicketControllerTest extends TestCase
 
         $html = $this->controller()->renderPage($ticket);
 
-        self::assertStringContainsString('id="ec-clock"', $html);
-        self::assertStringContainsString('Issued 20:00, Fri 24 Jul', $html);
+        self::assertStringNotContainsString('ec-clock', $html);
+        self::assertStringNotContainsString('t-clock"', $html);
+        self::assertStringNotContainsString('toLocaleTimeString', $html);
+        self::assertStringContainsString('<p class="t-proof t-small">Issued 20:00, Fri 24 Jul</p>', $html);
+    }
+
+    public function testRenderPageShowsTheLiveClockOnItsOwnLineWhenOn(): void
+    {
+        $this->clockOn();
+        $ticket = [
+            'valid' => true, 'name' => 'Sam', 'event' => 'Party', 'date' => '2026-08-01',
+            'role' => 'Free entry', 'time' => '', 'issued' => '2026-07-24 20:00:00',
+        ];
+
+        $html = $this->controller()->renderPage($ticket);
+
+        self::assertStringContainsString(
+            '<p class="t-proof t-small">Issued 20:00, Fri 24 Jul</p><p class="t-clock" id="ec-clock">—</p>',
+            $html
+        );
+        self::assertStringContainsString('toLocaleTimeString', $html);
         // The clock stays; the line explaining it is gone (Owner, 2026-11-08).
         self::assertStringNotContainsString('frozen clock', $html);
         self::assertStringNotContainsString('Ticket 1 of', $html);
@@ -306,6 +327,23 @@ final class TicketControllerTest extends TestCase
         $html = $this->controller()->renderPage($ticket);
 
         self::assertStringContainsString('<h1 class="t-event">Ecstatic Dance</h1>', $html);
+        self::assertStringNotContainsString('class="t-dj"', $html);
+    }
+
+    /** The DJs on their own line under the event's name (Owner 2026-11-08). */
+    public function testRenderPageShowsTheDjsUnderTheEventName(): void
+    {
+        Functions\when('get_site_icon_url')->justReturn('');
+        $this->fakeEventNames([41 => ['en' => 'Ecstatic Dance']], [41 => ['Aino Testinen', 'Bo Kokeilu']]);
+        $ticket = $this->sampleTicket();
+        $ticket['event_id'] = 41;
+
+        $html = $this->controller()->renderPage($ticket);
+
+        self::assertStringContainsString(
+            '<h1 class="t-event">Ecstatic Dance</h1><p class="t-dj">Aino Testinen & Bo Kokeilu</p><p class="t-date">',
+            $html
+        );
     }
 
     public function testRenderPageWritesTheDateOutInFull(): void
@@ -440,6 +478,7 @@ final class TicketControllerTest extends TestCase
      */
     public function testRenderPageDrawsOneCardPerTicket(): void
     {
+        $this->clockOn();
         Functions\when('get_site_icon_url')->justReturn('');
         $crew = ['role' => 'decorate', 'time' => '18:00–20:00', 'poll' => 'https://site.test/state?token=crew']
             + $this->sampleTicket();
@@ -463,7 +502,7 @@ final class TicketControllerTest extends TestCase
         // Each card is numbered on its issued line (Owner, 2026-11-08).
         foreach ([1, 2] as $n) {
             self::assertStringContainsString(
-                '<span class="t-small">Ticket ' . $n . ' of 2 · issued 20:00, Fri 24 Jul</span>',
+                '<p class="t-proof t-small">Ticket ' . $n . ' of 2 · issued 20:00, Fri 24 Jul</p>',
                 $html
             );
         }
@@ -473,10 +512,9 @@ final class TicketControllerTest extends TestCase
         $single = $this->controller()->renderPage($crew);
         self::assertStringContainsString('<main class="t">', $single);
         self::assertStringNotContainsString('<section', $single);
-        // The issued time shares a line with the clock (Owner 2026-11-08: a shorter ticket).
+        // The clock has its own line under the issued time (Owner 2026-11-08).
         self::assertStringContainsString(
-            '<p class="t-proof"><span class="t-small">Issued 20:00, Fri 24 Jul</span>'
-            . '<span class="t-clock" id="ec-clock">',
+            '<p class="t-proof t-small">Issued 20:00, Fri 24 Jul</p><p class="t-clock" id="ec-clock">',
             $single
         );
         self::assertStringNotContainsString(' of 1', $single);
@@ -495,7 +533,7 @@ final class TicketControllerTest extends TestCase
 
         $first = strpos($html, 'Ticket 1 of 3 · issued');
         $second = strpos($html, 'Ticket 2 of 3 · issued');
-        $last = strpos($html, '<span class="t-small">Ticket 3 of 3</span>');
+        $last = strpos($html, '<p class="t-proof t-small">Ticket 3 of 3</p>');
         self::assertIsInt($first);
         self::assertIsInt($second);
         self::assertIsInt($last);
@@ -1256,4 +1294,13 @@ final class TicketControllerTest extends TestCase
         $response = $this->waitingController($slept)->state($this->stateRequest('2026-07-20', SignedLink::sign('manage', 3)));
         self::assertSame(404, $response->status);
     }
+
+    /** Turns the ticking clock setting on (TicketClock, off by default). */
+    private function clockOn(): void
+    {
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => TicketClock::OPTION === $name ? '1' : null
+        );
+    }
+
 }

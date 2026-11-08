@@ -13,6 +13,7 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\Dates;
+use EventCrew\Support\EmailBody;
 use EventCrew\Support\Paging;
 use EventCrew\Support\StandingBar;
 use EventCrew\Support\StandingCalculator;
@@ -88,7 +89,7 @@ final class ProfileService
             '',
         ];
 
-        $lines = array_merge($lines, $this->comingBlock($this->upcoming($person->id)[0], '💫 '));
+        $lines = array_merge($lines, self::spaced($this->comingBlock($this->upcoming($person->id)[0], '💫 ')));
 
         $this->deliver(
             $telegramUserId,
@@ -129,7 +130,7 @@ final class ProfileService
         ));
         $title = '📋 ' . __('Tasks', 'eventcrew')
             . ($paged['pages'] > 1 ? MessagePages::note($paged['page'] - 1, $paged['pages']) : '');
-        $lines = array_merge([$title], $this->comingBlock($pageLines));
+        $lines = self::spaced(array_merge([$title], $this->comingBlock($pageLines)));
 
         $this->deliver(
             $telegramUserId,
@@ -419,7 +420,7 @@ final class ProfileService
         foreach (array_reverse($entries) as $entry) {
             $task = $this->tasks->find($entry['assignment']->taskId);
             // "Signed up" goes without saying; tonight's "arrived" does not.
-            $lines[] = $this->line($entry, $task, AssignmentStatus::SIGNED_UP !== $entry['assignment']->status);
+            $lines[] = $this->line($entry, $task, AssignmentStatus::SIGNED_UP !== $entry['assignment']->status, true);
 
             if (null !== $task) {
                 // Keyed like its line, so a page of lines finds its rows.
@@ -453,6 +454,28 @@ final class ProfileService
     }
 
     /**
+     * One section of lines, with an empty line under each when any of them
+     * is likely to wrap on a phone (longer than EmailBody::WRAP), the DM
+     * spacing EmailBody::forDm() gives (Owner 2026-11-07).
+     *
+     * @param array<int, string> $section
+     * @return array<int, string>
+     */
+    private static function spaced(array $section): array
+    {
+        foreach ($section as $line) {
+            if (mb_strlen(trim($line), 'UTF-8') > EmailBody::WRAP) {
+                return array_slice(array_merge(...array_map(
+                    static fn (string $l): array => [$l, ''],
+                    array_values($section)
+                )), 0, -1);
+            }
+        }
+
+        return array_values($section);
+    }
+
+    /**
      * Everything filed on a past date, whatever the outcome, newest first.
      *
      * @return array<int, string>
@@ -473,13 +496,19 @@ final class ProfileService
 
     /**
      * One assignment as a "• date — role (event): status" line; a coming
-     * task leaves out a plain "signed up".
+     * task leaves out a plain "signed up" and has its time after the date,
+     * the task's own or else its event's (Task::shownTime(), Owner
+     * 2026-11-08: "Add the time for the tasks in the task list").
      *
      * @param array{assignment: \EventCrew\Models\Assignment, task_date: string} $entry
      * @param Task|false|null $task The task when already looked up; false = look it up.
      */
-    private function line(array $entry, Task|false|null $task = false, bool $withStatus = true): string
-    {
+    private function line(
+        array $entry,
+        Task|false|null $task = false,
+        bool $withStatus = true,
+        bool $withTime = false
+    ): string {
         $assignment = $entry['assignment'];
         $task = false === $task ? $this->tasks->find($assignment->taskId) : $task;
 
@@ -487,7 +516,9 @@ final class ProfileService
             ? __('a task', 'eventcrew')
             : sprintf('%s (%s)', $task->roleLabel(), $task->eventName());
 
-        $line = sprintf('• %s — %s', Dates::dayLabel((string) $entry['task_date']), $what);
+        $time = $withTime && null !== $task ? $task->shownTime() : '';
+        $when = Dates::dayLabel((string) $entry['task_date']) . ('' === $time ? '' : ' ' . $time);
+        $line = sprintf('• %s — %s', $when, $what);
 
         return $withStatus ? $line . ': ' . $assignment->statusLabel() : $line;
     }

@@ -4659,6 +4659,18 @@ msgstr ""
 msgid "Members can give away their ticket"
 msgstr ""
 
+#: templates/admin/settings.php:1248
+msgid "Ticking clock"
+msgstr ""
+
+#: templates/admin/settings.php:1252
+msgid "Show a ticking clock on the ticket"
+msgstr ""
+
+#: templates/admin/settings.php:1254
+msgid "When on, the ticket shows the current time, ticking every second, so the door can tell a live ticket from a screenshot. Off by default."
+msgstr ""
+
 #: src/Support/TicketRules.php:62
 msgid "Members can't cancel a free-entry ticket; organizers still can (/unticket). Why: one simple rule, and nobody can win a credit back by changing plans late."
 msgstr ""

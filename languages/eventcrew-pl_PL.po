@@ -12443,6 +12443,18 @@ msgid "Members can give away their ticket"
 msgstr "Członkowie mogą oddać swój bilet"
 
 #: templates/admin/settings.php
+msgid "Ticking clock"
+msgstr "Tykający zegar"
+
+#: templates/admin/settings.php
+msgid "Show a ticking clock on the ticket"
+msgstr "Pokazuj tykający zegar na bilecie"
+
+#: templates/admin/settings.php
+msgid "When on, the ticket shows the current time, ticking every second, so the door can tell a live ticket from a screenshot. Off by default."
+msgstr "Gdy włączone, bilet pokazuje bieżącą godzinę, która zmienia się co sekundę, aby przy wejściu odróżnić prawdziwy bilet od zrzutu ekranu. Domyślnie wyłączone."
+
+#: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "Gdy włączone, członek może oddać darmowy bilet uzyskany za kredyty innemu członkowi lub na adres e-mail, ze strony biletu lub w bocie. Gdy wyłączone, linki i przyciski Oddaj są ukryte, a stare są odrzucane. Bilety już oddane pozostają ważne."
 

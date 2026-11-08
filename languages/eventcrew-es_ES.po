@@ -12405,6 +12405,18 @@ msgid "Members can give away their ticket"
 msgstr "Los miembros pueden regalar su entrada"
 
 #: templates/admin/settings.php
+msgid "Ticking clock"
+msgstr "Reloj en marcha"
+
+#: templates/admin/settings.php
+msgid "Show a ticking clock on the ticket"
+msgstr "Mostrar un reloj en marcha en la entrada"
+
+#: templates/admin/settings.php
+msgid "When on, the ticket shows the current time, ticking every second, so the door can tell a live ticket from a screenshot. Off by default."
+msgstr "Si está activado, la entrada muestra la hora actual, que avanza cada segundo, para que en la puerta se distinga una entrada real de una captura de pantalla. Desactivado por defecto."
+
+#: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "Si está activado, un miembro puede regalar una entrada gratuita canjeada con créditos a otro miembro o a una dirección de correo, desde la página de la entrada o el bot. Si está desactivado, los enlaces y botones Regalar se ocultan y los antiguos se rechazan. Las entradas ya regaladas siguen siendo válidas."
 

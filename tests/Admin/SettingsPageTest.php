@@ -667,6 +667,22 @@ final class SettingsPageTest extends TelegramTestCase
         self::assertStringContainsString('Allow several free-entry tickets per night', $template);
     }
 
+    public function testTheTicketClockSwitchSavesAndIsOffByDefault(): void
+    {
+        self::assertFalse(\EventCrew\Support\TicketClock::isOn());
+
+        $this->saveUntil(['ticket_clock' => '1'], \EventCrew\Support\TicketClock::OPTION);
+        self::assertSame('1', $this->options[\EventCrew\Support\TicketClock::OPTION]);
+        self::assertTrue(\EventCrew\Support\TicketClock::isOn());
+
+        $this->saveUntil([], \EventCrew\Support\TicketClock::OPTION);
+        self::assertSame('0', $this->options[\EventCrew\Support\TicketClock::OPTION]);
+
+        $template = (string) file_get_contents(dirname(__DIR__, 2) . '/templates/admin/settings.php');
+        self::assertStringContainsString('name="ticket_clock"', $template);
+        self::assertStringContainsString('Show a ticking clock on the ticket', $template);
+    }
+
     public function testTheTelegramSignInSwitchSaves(): void
     {
         $this->saveTelegramSection(['telegram_web_login' => '1']);

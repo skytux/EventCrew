@@ -49,6 +49,7 @@ use EventCrew\Support\SiteTexts;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TakeoverDeadline;
 use EventCrew\Support\TelegramLogin;
+use EventCrew\Support\TicketClock;
 use EventCrew\Support\TicketFormats;
 use EventCrew\Support\TranslatedText;
 use EventCrew\Support\Turnstile;
@@ -234,6 +235,7 @@ final class SettingsPage
                 'organization_name' => Organization::stored(),
                 'ticket_background' => (string) get_option(TicketController::BACKGROUND_OPTION, ''),
                 'ticket_giving' => TicketTransferService::isOn(),
+                'ticket_clock' => TicketClock::isOn(),
                 'ticket_note' => SiteTexts::value('ticket_note'),
                 'doors_close_on' => EventTimes::doorsOn(),
                 'doors_close_minutes' => EventTimes::doorsMinutes(),
@@ -888,6 +890,7 @@ final class SettingsPage
         );
 
         TicketTransferService::save(isset($_POST['ticket_giving']));
+        TicketClock::save(isset($_POST['ticket_clock']));
 
         $appPageId = isset($_POST['app_page_id']) ? max(0, (int) $_POST['app_page_id']) : 0;
         update_option(PwaController::PAGE_OPTION, $appPageId);

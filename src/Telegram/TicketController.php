@@ -22,6 +22,7 @@ use EventCrew\Support\Language;
 use EventCrew\Support\ShortCode;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\SiteTexts;
+use EventCrew\Support\TicketClock;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketTransferService;
 use EventCrew\Models\Person;
@@ -862,6 +863,7 @@ final class TicketController
 
         return $this->headBlock(
             $event,
+            null === $eventId ? '' : EventName::djLine($eventId),
             $ticket['date'],
             EventTimes::start($eventId),
             (string) ($ticket['image'] ?? '')
@@ -1033,15 +1035,16 @@ final class TicketController
     /**
      * The card's header, like an event card on the crew board: the event's
      * picture behind it under a dark layer (faces sit about a third of the way
-     * down the posters, hence centre 25%), the event name large, and the date
-     * written out with the event's start time ($start, '' when not known) on
+     * down the posters, hence centre 25%), the event name large, its DJs
+     * ($djs, EventName::djLine(); '' for none) on their own line under it,
+     * and the date written out with the event's start time ($start, '' when not known) on
      * one line. The page's title ("Your ... ticket") is the tab's title only.
      * Without a picture the header is plain dark.
      *
      * The picture URL goes through esc_url() inside &quot; quotes, as in
      * watermarkStyle().
      */
-    private function headBlock(string $event, string $date, string $start, string $image): string
+    private function headBlock(string $event, string $djs, string $date, string $start, string $image): string
     {
         $style = '' === $image
             ? ''
@@ -1049,10 +1052,13 @@ final class TicketController
                 . esc_url($image) . '&quot;)"';
 
         return sprintf(
-            '<header class="t-head%1$s"%2$s><h1 class="t-event">%3$s</h1><p class="t-date">%4$s</p></header>',
+            '<header class="t-head%1$s"%2$s><h1 class="t-event">%3$s</h1>%4$s<p class="t-date">%5$s</p></header>',
             '' === $image ? '' : ' has-image',
             $style,
             esc_html($event),
+            // The DJs on their own line under the name, as on the crew board
+            // (Owner 2026-11-08: put back the DJ name).
+            '' === $djs ? '' : '<p class="t-dj">' . esc_html($djs) . '</p>',
             // The date and the start time on one line (Owner 2026-11-08: a
             // shorter ticket).
             esc_html(Dates::longDayLabel($date) . ('' === $start ? '' : ' · ' . $start))
@@ -1139,8 +1145,9 @@ final class TicketController
     }
 
     /**
-     * The issued time (static) and a live ticking clock (script) that a
-     * screenshot cannot fake, so door staff can tell a real, freshly-loaded
+     * The issued time (static) and, when the setting is on (TicketClock), a
+     * live ticking clock (script) on its own line that a screenshot cannot
+     * fake, so door staff can tell a real, freshly-loaded
      * ticket from a saved image or an old copy. With more than one card on
      * the page ($count), the issued line also numbers the card: "Ticket 2
      * of 3 · issued ...", small, so it is there for whoever looks.
@@ -1165,12 +1172,18 @@ final class TicketController
             $line = sprintf(__('Issued %s', 'eventcrew'), $this->formatIssued($issued));
         }
 
+        $issuedLine = '' === $line ? '' : '<p class="t-proof t-small">' . esc_html($line) . '</p>';
+
+        // The ticking clock only when the setting is on (TicketClock, off by
+        // default), on its own line under the issued time (Owner 2026-11-08).
+        if (! TicketClock::isOn()) {
+            return $issuedLine;
+        }
+
         // The clock is written and ticked entirely client-side (no network), so
-        // it moves every second on a live page and freezes in a screenshot. It
-        // shares a line with the issued time (Owner 2026-11-08: a shorter ticket).
-        return '<p class="t-proof">'
-            . ('' === $line ? '' : '<span class="t-small">' . esc_html($line) . '</span>')
-            . '<span class="t-clock" id="ec-clock' . $suffix . '">—</span></p>'
+        // it moves every second on a live page and freezes in a screenshot.
+        return $issuedLine
+            . '<p class="t-clock" id="ec-clock' . $suffix . '">—</p>'
             // phpcs:ignore Generic.Files.LineLength.TooLong -- one self-contained clock script; wrapping adds stray whitespace.
             . '<script>(function(){var e=document.getElementById("ec-clock' . $suffix . '");function t(){var d=new Date();e.textContent=d.toLocaleTimeString();}t();setInterval(t,1000);})();</script>';
     }
@@ -1204,6 +1217,7 @@ final class TicketController
             . '.t-head.has-image{min-height:6.5em}'
             . '.t-head p,.t-head h1{margin:0;text-shadow:0 1px 3px rgba(0,0,0,.6)}'
             . '.t-event{font-size:1.35em;line-height:1.2;margin:0 0 .15em}'
+            . '.t-dj{font-size:.85em;font-weight:400;opacity:.85;margin:-.1em 0 .2em}'
             . '.t-date{font-size:.95em}'
             . '.t-body{padding:.9em 1em 1em}'
             // The name and the ticket's kind share a line when they fit.
@@ -1367,7 +1381,7 @@ final class TicketController
             . '.t-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1em;font-weight:600;'
             . 'letter-spacing:.06em;opacity:.75}'
             . '.t-proof{margin-bottom:.6em}'
-            . '.t-clock{font-size:1.5em;font-variant-numeric:tabular-nums}'
+            . '.t-clock{font-size:1.5em;font-variant-numeric:tabular-nums;margin:-.3em 0 .5em}'
             . '.t-small{opacity:.7;font-size:.82em}'
             . '.t-note{white-space:pre-line;font-size:.92em;margin:0 0 .6em}'
             . '.t-give{margin:0}.t-give a{color:#0a58ca}'

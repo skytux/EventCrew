@@ -40,6 +40,34 @@ final class EventTimes
     }
 
     /**
+     * The event's times, like 19:00–23:00, or only its start when it has no
+     * end; an end on a later day than the start gets the day offset, like
+     * "19:00–02:00 (+1)", as Task::timeRange() marks it. '' when there is no
+     * event, EventMesh is off or the event has no start time.
+     */
+    public static function range(?int $postId): string
+    {
+        $start = self::start($postId);
+        $event = '' === $start || null === $postId ? null : EventSource::describe($postId);
+
+        if (null === $event) {
+            return '';
+        }
+
+        $end = substr($event['ends_at'], 11, 5);
+
+        if ('' === $end) {
+            return $start;
+        }
+
+        $from = strtotime(substr($event['starts_at'], 0, 10) . ' 00:00:00');
+        $to = strtotime(substr($event['ends_at'], 0, 10) . ' 00:00:00');
+        $days = false === $from || false === $to ? 0 : (int) round(($to - $from) / 86400);
+
+        return $start . '–' . (0 === $days ? $end : sprintf('%s (%+d)', $end, $days));
+    }
+
+    /**
      * When the event's doors close, like 19:30: the event's own time (Messages
      * page, Coming events tab) when set, else the start plus the minutes of
      * the setting when it is on. '' when neither gives a time.

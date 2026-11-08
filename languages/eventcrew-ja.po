@@ -12325,6 +12325,18 @@ msgid "Members can give away their ticket"
 msgstr "メンバーはチケットを譲渡できる"
 
 #: templates/admin/settings.php
+msgid "Ticking clock"
+msgstr "動く時計"
+
+#: templates/admin/settings.php
+msgid "Show a ticking clock on the ticket"
+msgstr "チケットに動く時計を表示する"
+
+#: templates/admin/settings.php
+msgid "When on, the ticket shows the current time, ticking every second, so the door can tell a live ticket from a screenshot. Off by default."
+msgstr "オンにすると、チケットに現在時刻が表示され、毎秒進みます。入口で本物のチケットとスクリーンショットを見分けられます。初期設定はオフです。"
+
+#: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "オンのとき、メンバーはクレジットで引き換えた無料チケットを、チケットページまたはボットから、ほかのメンバーやメールアドレスに譲渡できます。オフのとき、譲渡のリンクとボタンは非表示になり、古いものは拒否されます。すでに譲渡されたチケットは有効なままです。"
 

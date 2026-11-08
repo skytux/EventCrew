@@ -164,7 +164,8 @@ final class SignupBoardView
                 continue;
             }
 
-            $time = $task->timeRange();
+            // The event's times when the task has none of its own.
+            $time = $task->shownTime();
             $day = self::humanDate($task->taskDate);
             $event = EventName::ofTask($task, EventName::lang());
 

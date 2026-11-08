@@ -12405,6 +12405,18 @@ msgid "Members can give away their ticket"
 msgstr "I membri possono cedere il loro biglietto"
 
 #: templates/admin/settings.php
+msgid "Ticking clock"
+msgstr "Orologio in tempo reale"
+
+#: templates/admin/settings.php
+msgid "Show a ticking clock on the ticket"
+msgstr "Mostra un orologio in tempo reale sul biglietto"
+
+#: templates/admin/settings.php
+msgid "When on, the ticket shows the current time, ticking every second, so the door can tell a live ticket from a screenshot. Off by default."
+msgstr "Se attivo, il biglietto mostra l’ora attuale, che avanza ogni secondo, così all’ingresso si distingue un biglietto vero da uno screenshot. Disattivato per impostazione predefinita."
+
+#: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "Se attivo, un membro può cedere un biglietto gratuito ottenuto con i crediti a un altro membro o a un indirizzo email, dalla pagina del biglietto o dal bot. Se disattivo, i link e i pulsanti Cedi sono nascosti e quelli vecchi vengono rifiutati. I biglietti già ceduti restano validi."
 

@@ -439,4 +439,59 @@ final class ProfileServiceTest extends TelegramTestCase
         self::assertSame(1, substr_count($text, '🟠 Already used · 21:05'));
         self::assertMatchesRegularExpression('/2026-07-18[^\n]*🟠 Already used · 21:05/u', $text);
     }
+
+    /**
+     * Owner 2026-11-08: "Add the time for the tasks in the task list" - each
+     * coming task shows its own times, else its event's; with a line that
+     * long the section gets an empty line under each line (DM spacing rule).
+     */
+    public function testComingTasksShowTheirTimeElseTheEventsTime(): void
+    {
+        Functions\when('current_time')->justReturn('2026-07-10');
+        Functions\when('post_type_exists')->justReturn(true);
+        $event = (object) ['ID' => 41, 'post_type' => 'eventmesh_event', 'post_title' => 'Dance', 'post_status' => 'publish'];
+        Functions\when('get_post')->alias(static fn (int $id): ?object => 41 === $id ? $event : null);
+        Functions\when('get_post_meta')->alias(static fn (int $id, string $key): string => [
+            '_eventmesh_starts_at' => '2026-07-27T21:00:00',
+            '_eventmesh_ends_at' => '2026-07-28T02:00:00',
+        ][$key] ?? '');
+        $expected = [
+            // Every line fits: no empty lines.
+            'Dance' => "📋 Tasks\nComing up:\n"
+                . "• Mon 20 Jul 18:15–19:15 — Decorate (Dance)\n"
+                . "• Mon 27 Jul 21:00–02:00 (+1) — Decorate (Dance)\n"
+                . '• Wed 29 Jul — Decorate (Dance)',
+            // One line likely to wrap spaces out the whole section.
+            'Summer Salsa Night' => "📋 Tasks\n\nComing up:\n\n"
+                . "• Mon 20 Jul 18:15–19:15 — Decorate (Summer Salsa Night)\n\n"
+                . "• Mon 27 Jul 21:00–02:00 (+1) — Decorate (Dance)\n\n"
+                . '• Wed 29 Jul — Decorate (Dance)',
+        ];
+
+        foreach ($expected as $label => $text) {
+            $this->wpdb->nextRows[] = [
+                'id' => 7,
+                'email' => 'sam@example.com',
+                'display_name' => 'Sam',
+                'email_verified_at' => '2026-07-01 00:00:00',
+                'telegram_user_id' => 555,
+            ];
+            $this->wpdb->nextResults[] = [
+                ['id' => 3, 'task_id' => 3, 'person_id' => 7, 'status' => 'signed_up', 'task_date' => '2026-07-29'],
+                ['id' => 2, 'task_id' => 2, 'person_id' => 7, 'status' => 'signed_up', 'task_date' => '2026-07-27'],
+                ['id' => 1, 'task_id' => 1, 'person_id' => 7, 'status' => 'signed_up', 'task_date' => '2026-07-20'],
+            ];
+            $this->wpdb->nextRows[] = [
+                'starts_at' => '2026-07-20 18:15:00',
+                'ends_at' => '2026-07-20 19:15:00',
+                'event_label' => $label,
+            ] + $this->taskRow(1);
+            $this->wpdb->nextRows[] = ['task_date' => '2026-07-27', 'event_post_id' => 41] + $this->taskRow(2);
+            $this->wpdb->nextRows[] = ['id' => 3, 'task_date' => '2026-07-29'] + $this->taskRow(3);
+
+            $this->service()->onMyTasks(555, 555);
+
+            self::assertSame($text, $this->lastCallTo('sendMessage')['text']);
+        }
+    }
 }

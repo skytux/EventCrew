@@ -12405,6 +12405,18 @@ msgid "Members can give away their ticket"
 msgstr "Leden kunnen hun ticket weggeven"
 
 #: templates/admin/settings.php
+msgid "Ticking clock"
+msgstr "Tikkende klok"
+
+#: templates/admin/settings.php
+msgid "Show a ticking clock on the ticket"
+msgstr "Toon een tikkende klok op het ticket"
+
+#: templates/admin/settings.php
+msgid "When on, the ticket shows the current time, ticking every second, so the door can tell a live ticket from a screenshot. Off by default."
+msgstr "Als dit aan staat, toont het ticket de huidige tijd, die elke seconde verspringt, zodat de deur een echt ticket kan onderscheiden van een screenshot. Standaard uit."
+
+#: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "Aan: een lid kan een met credits verkregen gratis ticket weggeven aan een ander lid of aan een e-mailadres, via de ticketpagina of de bot. Uit: de links en knoppen Weggeven zijn verborgen en oude worden geweigerd. Al weggegeven tickets blijven geldig."
 

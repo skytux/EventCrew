@@ -12325,6 +12325,18 @@ msgid "Members can give away their ticket"
 msgstr "成员可以赠送自己的门票"
 
 #: templates/admin/settings.php
+msgid "Ticking clock"
+msgstr "走动的时钟"
+
+#: templates/admin/settings.php
+msgid "Show a ticking clock on the ticket"
+msgstr "在票上显示走动的时钟"
+
+#: templates/admin/settings.php
+msgid "When on, the ticket shows the current time, ticking every second, so the door can tell a live ticket from a screenshot. Off by default."
+msgstr "开启后，票上显示每秒走动的当前时间，门口可借此区分真票和截图。默认关闭。"
+
+#: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "开启时，成员可以在门票页面或机器人中，把用积分兑换的免费门票赠送给其他成员或某个电子邮件地址。关闭时，赠送链接和按钮会隐藏，旧的也会被拒绝。已经赠送的门票仍然有效。"
 

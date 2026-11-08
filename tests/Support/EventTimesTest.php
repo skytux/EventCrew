@@ -208,4 +208,37 @@ final class EventTimesTest extends TestCase
             MessageTemplates::raw('signup_confirmed_dm', MessageTemplates::BODY)
         );
     }
+
+    public function testTheEventsTimes(): void
+    {
+        $this->event(43, '2026-11-28', 'Late', ['_eventmesh_ends_at' => '2026-11-29T02:00:00']);
+        $this->event(44, '2026-12-05', 'Early', ['_eventmesh_ends_at' => '2026-12-05T23:30:00']);
+
+        self::assertSame('21:00', EventTimes::range(41), 'no end');
+        self::assertSame('21:00–02:00 (+1)', EventTimes::range(43));
+        self::assertSame('21:00–23:30', EventTimes::range(44));
+        self::assertSame('', EventTimes::range(42), 'a date with no time');
+        self::assertSame('', EventTimes::range(99));
+        self::assertSame('', EventTimes::range(null));
+    }
+
+    /**
+     * Owner 2026-11-08 ("Add the time for the tasks in the task list"): a
+     * task's own times, else its event's, else none.
+     */
+    public function testATaskShowsItsOwnTimesElseItsEvents(): void
+    {
+        $this->event(44, '2026-12-05', 'Early', ['_eventmesh_ends_at' => '2026-12-05T23:30:00']);
+        $row = ['task_date' => '2026-12-05', 'role_slug' => 'door', 'capacity' => '1'];
+
+        $own = Task::fromRow($row + [
+            'event_post_id' => '44',
+            'starts_at' => '2026-12-05 18:15:00',
+            'ends_at' => '2026-12-05 19:15:00',
+        ]);
+        self::assertSame('18:15–19:15', $own->shownTime());
+        self::assertSame('21:00–23:30', Task::fromRow($row + ['event_post_id' => '44'])->shownTime());
+        self::assertSame('', Task::fromRow($row + ['event_post_id' => '42'])->shownTime());
+        self::assertSame('', Task::fromRow($row)->shownTime());
+    }
 }

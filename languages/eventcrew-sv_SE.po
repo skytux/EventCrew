@@ -12880,6 +12880,18 @@ msgid "Members can give away their ticket"
 msgstr "Medlemmar kan ge bort sin biljett"
 
 #: templates/admin/settings.php
+msgid "Ticking clock"
+msgstr "Tickande klocka"
+
+#: templates/admin/settings.php
+msgid "Show a ticking clock on the ticket"
+msgstr "Visa en tickande klocka på biljetten"
+
+#: templates/admin/settings.php
+msgid "When on, the ticket shows the current time, ticking every second, so the door can tell a live ticket from a screenshot. Off by default."
+msgstr "När på visar biljetten aktuell tid som tickar varje sekund, så att dörren kan skilja en riktig biljett från en skärmbild. Av som standard."
+
+#: templates/admin/settings.php
 msgid "When on, a member can give a free-entry ticket bought with credits to another member or to an email address, from the ticket page or the bot. When off, the Give away links and buttons are hidden and old ones are refused. Tickets already given stay valid."
 msgstr "När det är på kan en medlem ge bort en fribiljett till en annan medlem eller till en e-postadress, från biljettsidan eller boten. När det är av döljs länkarna och knapparna Ge bort, och gamla nekas. Biljetter som redan getts bort gäller fortfarande."
 
