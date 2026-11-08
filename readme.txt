@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.184
+Stable tag: 1.140.185
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.185 =
+* The message to a new organizer also tells about the organizer commands in the bot, links the organizer help, and says wp-admin access can be asked from the contact address. Edited texts get the new lines.
+* Thank-you email: when the coming event has a DJ text, only that text is shown under the picture, not the longer event text as well.
+* Email cards show Doors open at the event's start time when the event text gives no time.
 
 = 1.140.184 =
 * Welcome email: one See open tasks button, with Open in Telegram, the Telegram group and Help as small links under it; the organizer welcome keeps Admin tab and wp-admin as buttons.
@@ -1879,6 +1884,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.185 =
+No settings change.
 
 = 1.140.184 =
 No settings change.
