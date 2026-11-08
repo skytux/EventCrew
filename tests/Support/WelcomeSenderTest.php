@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Support;
 
+use EventCrew\Support\PrivacyPolicy;
 use Brain\Monkey\Functions;
 use EventCrew\Models\Person;
 use EventCrew\Support\OrganizerGuide;
@@ -30,6 +31,7 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         $this->mails = [];
         $this->options['eventcrew_email_html'] = '0';
         $this->options['eventcrew_signup_page_id'] = 7;
+        $this->options[PrivacyPolicy::CONTACT_OPTION] = 'maintainer@example.org';
 
         Functions\when('get_permalink')->justReturn('https://site.test/crew/');
         Functions\when('get_bloginfo')->justReturn('Test Crew');
@@ -517,7 +519,7 @@ final class WelcomeSenderTest extends SalesDeskTestCase
         self::assertStringContainsString('write what you want in your own words', $body);
         self::assertStringContainsString('it passes it on to the organizers', $body);
         self::assertStringContainsString(
-            'contact the maintainer, maintainer@example.org or @maintainer, or just try again a bit later.',
+            'contact the maintainer, maintainer@example.org, or just try again a bit later.',
             $body
         );
         self::assertStringContainsString('Talking to the bot', $this->lastCallTo('sendMessage')['text']);

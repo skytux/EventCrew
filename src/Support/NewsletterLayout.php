@@ -48,6 +48,13 @@ namespace EventCrew\Support;
  *    title and a link to its tickets, and the event's picture small on its
  *    left, linked like the line, when it has one.
  *
+ * The announcement's own cards (html()'s $announcement, Owner, 2026-11-08)
+ * differ in two things: the picture's alt text is "DJ · event · weekday
+ * date time · place" in the email's first language (announcementAlt()), and
+ * the only practical line under the picture is the doors close time (no
+ * venue, address or doors open line), in the HTML and the plain text. The
+ * post-event email's cards stay as described above.
+ *
  * "The title" is the event's clean name with the DJ line under it when
  * EventMesh has them (EventName), else the title as written. A "Later"
  * picture's alt text is the clean name too.
@@ -108,6 +115,12 @@ final class NewsletterLayout
      * @param string $kind The message kind (HybridPolicy) whose Hybrid tick
      *        decides the every-language version: the newsletter's, or the
      *        post-event email's when it shows the coming events.
+     * @param bool $announcement True for the cards in the announcement's
+     *        look (Owner, 2026-11-08): the picture's alt text names the DJ, the
+     *        event, the day and time and the place (announcementAlt()), and
+     *        the only practical line is the doors close time. False (the
+     *        post-event email) keeps the venue, the address and both door
+     *        times.
      */
     public static function html(
         array $cards,
@@ -116,7 +129,8 @@ final class NewsletterLayout
         string $accent,
         string $lang = '',
         bool $band = false,
-        string $kind = HybridPolicy::NEWSLETTER
+        string $kind = HybridPolicy::NEWSLETTER,
+        bool $announcement = false
     ): string {
         $langs = self::languages($lang, $kind);
         $words = self::words($langs);
@@ -153,7 +167,7 @@ final class NewsletterLayout
         $html .= self::bilingual(self::inLanguage(self::byLanguage($text ?? [], ''), $langs), '0 0 24px');
 
         foreach ($cards as $card) {
-            $html .= self::cardHtml($card, $words, $accent, $langs);
+            $html .= self::cardHtml($card, $words, $accent, $langs, $announcement);
         }
 
         if ([] !== $later) {
@@ -212,13 +226,16 @@ final class NewsletterLayout
      * @param array<string, string>|null $text Keyed by language.
      * @param string $lang A site language for a one-language email; '' for every language.
      * @param string $kind The message kind whose Hybrid tick applies; see html().
+     * @param bool $announcement True for the announcement's cards: the doors close time is the only
+     *        practical line; see html().
      */
     public static function text(
         array $cards,
         array $later,
         ?array $text,
         string $lang = '',
-        string $kind = HybridPolicy::NEWSLETTER
+        string $kind = HybridPolicy::NEWSLETTER,
+        bool $announcement = false
     ): string {
         $langs = self::languages($lang, $kind);
         $words = self::words($langs);
@@ -231,7 +248,7 @@ final class NewsletterLayout
         }
 
         foreach ($cards as $card) {
-            $parts[] = self::cardText($card, $words, $langs);
+            $parts[] = self::cardText($card, $words, $langs, $announcement);
         }
 
         if ([] !== $later) {
@@ -256,17 +273,18 @@ final class NewsletterLayout
      * One card as plain text: the date, the title, the DJ line, the DJ or
      * host text (about_en) when it has one, else the card's own text when it
      * has one, the
-     * practical information, then the ticket and music links.
+     * practical information (the doors close time alone in the
+     * announcement), then the ticket and music links.
      *
      * @param array<string, mixed> $card
      * @param array<string, array<string, string>> $words
      * @param list<string> $langs
      */
-    private static function cardText(array $card, array $words, array $langs): string
+    private static function cardText(array $card, array $words, array $langs, bool $announcement = false): string
     {
         $about = self::bilingualText(self::about($card, $langs));
         $text = self::bilingualText(self::written($card, $langs));
-        $practical = self::practicalLines($card, $words);
+        $practical = self::practicalLines($card, $words, $announcement);
         $times = self::bilingualText(self::inLanguage(
             array_map(static fn (array $lines): string => implode("\n", $lines), $practical['times']),
             $langs
@@ -317,8 +335,13 @@ final class NewsletterLayout
      * @param array<string, array<string, string>> $words
      * @param list<string> $langs
      */
-    private static function cardHtml(array $card, array $words, string $accent, array $langs): string
-    {
+    private static function cardHtml(
+        array $card,
+        array $words,
+        string $accent,
+        array $langs,
+        bool $announcement = false
+    ): string {
         $font = EmailBody::FONT;
         $ticket = (string) ($card['ticket_url'] ?? '');
         $listen = (string) ($card['listen'] ?? '');
@@ -342,7 +365,7 @@ final class NewsletterLayout
             // they are not written under it; they are its alt text instead,
             // styled to read as a heading when the email client does not
             // load pictures (Owner, 2026-11-03).
-            $alt = implode(' — ', array_filter(
+            $alt = $announcement ? self::announcementAlt($card, $langs[0]) : implode(' — ', array_filter(
                 [self::when($card), $name, ...$under],
                 static fn (string $part): bool => '' !== $part
             ));
@@ -400,7 +423,7 @@ final class NewsletterLayout
         // newsletter's cards have none.
         $body .= self::bilingual(self::written($card, $langs), '0 0 14px');
 
-        $practical = self::practicalLines($card, $words);
+        $practical = self::practicalLines($card, $words, $announcement);
 
         // A one-language email has one block of door times, with no label.
         $timeBlocks = [];
@@ -665,12 +688,14 @@ final class NewsletterLayout
      * none (no start time), the model's time is kept. When the model read no
      * doors open time, the doors open when the event starts
      * (EventTimes::start()); with no start time either, the line is left out.
+     * With $doorsCloseOnly (the announcement's cards, Owner, 2026-11-08) only
+     * the doors close line is given: no venue, address or doors open line.
      *
      * @param array<string, mixed> $card
      * @param array<string, array<string, string>> $words
      * @return array{plain: list<string>, times: array<string, list<string>>}
      */
-    private static function practicalLines(array $card, array $words): array
+    private static function practicalLines(array $card, array $words, bool $doorsCloseOnly = false): array
     {
         $info = NewsletterWriter::practicalOf($card['practical'] ?? null);
 
@@ -699,7 +724,7 @@ final class NewsletterLayout
         }
 
         foreach (NewsletterWriter::PRACTICAL_KEYS as $key) {
-            if ('' === $info[$key]) {
+            if ('' === $info[$key] || ($doorsCloseOnly && 'doors_close' !== $key)) {
                 continue;
             }
 
@@ -722,6 +747,43 @@ final class NewsletterLayout
         $time = (string) ($event['time'] ?? '');
 
         return TicketMail::shortDate((string) ($event['date'] ?? '')) . ('' === $time ? '' : ' · ' . $time);
+    }
+
+    /**
+     * An announcement card picture's alt text, in $lang (the email's first
+     * language): the DJ line, the event's name, the short weekday with the
+     * date and the time, and the place, each part only when known
+     * ("Esimerkki · Ecstatic Dance · la 14.11.2026 18:30 · Helsinki
+     * Example Hall"). The place is the venue the language model read from
+     * the description (the card's practical information), else the event's
+     * venue (EventVenue: its own, the default one or EventMesh's).
+     *
+     * @param array<string, mixed> $card
+     */
+    private static function announcementAlt(array $card, string $lang): string
+    {
+        $id = (int) ($card['id'] ?? 0);
+        $titleFi = trim((string) ($card['title_fi'] ?? ''));
+        $fallback = Language::FINNISH === $lang && '' !== $titleFi ? $titleFi : (string) ($card['title'] ?? '');
+        $date = (string) ($card['date'] ?? '');
+        $time = (string) ($card['time'] ?? '');
+        $noon = '' === $date ? false : strtotime($date . ' 12:00:00 UTC');
+        $weekday = false === $noon
+            ? ''
+            : (string) Language::run($lang, static fn (): string => Dates::format('D', $noon));
+        $when = trim(
+            $weekday . ' ' . ('' === $date ? '' : TicketMail::shortDate($date)) . ('' === $time ? '' : ' ' . $time)
+        );
+        $venue = (string) (NewsletterWriter::practicalOf($card['practical'] ?? null)['venue'] ?? '');
+
+        if ('' === $venue && $id > 0) {
+            $venue = EventVenue::forEvent($id);
+        }
+
+        return implode(' · ', array_filter(
+            [self::dj($card), self::plain(EventName::name($id, $lang, $fallback)), $when, self::plain($venue)],
+            static fn (string $part): bool => '' !== $part
+        ));
     }
 
     private static function title(array $event): string

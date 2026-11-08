@@ -366,7 +366,11 @@ final class Newsletter
      * link of each event are read from EventMesh now, so a change made since
      * the plan is in the email. From what the language model wrote ($written,
      * NewsletterWriter), the cards show each event's practical information,
-     * and its opening text stands in for a missing organizers' text.
+     * and its opening text stands in for a missing organizers' text. The
+     * cards are the announcement's own (NewsletterLayout::html()'s
+     * $announcement: the alt text with the DJ, the event, the day and the
+     * place, and only the doors close time under the picture), and the crew
+     * part of the thank-you email (crewPart()) comes after the events.
      *
      * $lang is the subscriber's language: a site language makes the email in
      * that language only, '' in every language (Owner, 2026-11-03). A
@@ -395,8 +399,16 @@ final class Newsletter
             NewsletterWriter::apply(array_map([self::class, 'withCard'], array_values($events)), $written),
             array_map([self::class, 'withCard'], array_values($later)),
             $text ?? $opening,
-            $lang
+            $lang,
+            false,
+            HybridPolicy::NEWSLETTER,
+            true
         );
+
+        // Before the sign-off: the crew, and how to join it (Owner, 2026-11-08).
+        $crew = self::crewPart($lang);
+        $mail['html'] .= $crew['html'];
+        $mail['text'] .= $crew['text'];
 
         if (
             in_array($lang, HybridPolicy::siteLanguages(), true)
@@ -453,6 +465,7 @@ final class Newsletter
      * @param bool $band True for the heading as a dark band (FollowupMail); see NewsletterLayout::html().
      * @param string $kind The message kind whose Hybrid tick decides the every-language version
      *        (HybridPolicy): NEWSLETTER, or FOLLOWUP from the post-event email.
+     * @param bool $announcement True for the announcement's own cards (compose()); see NewsletterLayout::html().
      * @return array{html: string, text: string}
      */
     public static function content(
@@ -461,12 +474,48 @@ final class Newsletter
         ?array $text,
         string $lang = '',
         bool $band = false,
-        string $kind = HybridPolicy::NEWSLETTER
+        string $kind = HybridPolicy::NEWSLETTER,
+        bool $announcement = false
     ): array {
         return [
-            'html' => NewsletterLayout::html($cards, $later, $text, EmailTemplate::accent(), $lang, $band, $kind),
-            'text' => NewsletterLayout::text($cards, $later, $text, $lang, $kind),
+            'html' => NewsletterLayout::html(
+                $cards,
+                $later,
+                $text,
+                EmailTemplate::accent(),
+                $lang,
+                $band,
+                $kind,
+                $announcement
+            ),
+            'text' => NewsletterLayout::text($cards, $later, $text, $lang, $kind, $announcement),
         ];
+    }
+
+    /**
+     * The announcement's crew part, HTML and plain text: the post-event
+     * email's (FollowupMail::crewPart()) with its first sentence about the
+     * nights in general, in the email's languages ($lang a site language for
+     * that one, '' for the every-language version). The crew page link
+     * carries utm_campaign=newsletter; the Telegram link is the bare start
+     * link. Empty when neither link is set.
+     *
+     * @return array{html: string, text: string}
+     */
+    private static function crewPart(string $lang): array
+    {
+        $langs = in_array($lang, HybridPolicy::siteLanguages(), true)
+            ? [$lang]
+            : HybridPolicy::languagesFor(HybridPolicy::NEWSLETTER);
+        $parts = HybridPolicy::inEach($langs, static fn (): array => FollowupMail::crewWords(true));
+
+        return FollowupMail::crewPart(
+            HybridPolicy::field($parts, 'crew'),
+            static fn (string $key): string => HybridPolicy::rows(HybridPolicy::field($parts, $key)),
+            EmailTemplate::accent(),
+            static fn (string $url): string => FollowupMail::withUtm($url, 'newsletter'),
+            static fn (string $url): string => $url
+        );
     }
 
     /**

@@ -63,6 +63,8 @@ use EventCrew\Web\NewsletterController;
  * whose target is not set is left out, and with neither the part is left out.
  * The Telegram link is counted but carries no utm_ arguments: a t.me start
  * link takes only its start payload.
+ * The next events announcement ends with the same part (crewPart()), with
+ * its own first sentence about the nights in general (Owner, 2026-11-08).
  * At the end, a "Don't send me these" link (?eventcrew_optout=<token>)
  * carries a signed link to the same row: pressing it puts the row's address
  * on the do-not-send list (FollowupOptOut, optOutClick()), with no sign-in.
@@ -916,8 +918,7 @@ final class FollowupMail
     /**
      * The thank-you's crew part: the credit and the invitation in each
      * language, then Join on the web (the crew page) and Join on Telegram
-     * (the bot's sign-up). A button whose target is not set is left out;
-     * with neither, the part is empty.
+     * (the bot's sign-up), as counted links (crewPart()).
      *
      * @param array<string, array<string, string>> $parts Each language's words().
      * @param callable(string): string $pair One language per row of a label.
@@ -931,26 +932,54 @@ final class FollowupMail
         string $kind,
         int $rowId
     ): array {
+        return self::crewPart(
+            HybridPolicy::field($parts, 'crew'),
+            $pair,
+            $accent,
+            static fn (string $url): string => self::trackedUrl(self::withUtm($url, $campaign), $kind, $rowId),
+            static fn (string $url): string => self::trackedUrl($url, $kind, $rowId)
+        );
+    }
+
+    /**
+     * The crew part of an email, HTML and plain text, after a line: $invites
+     * (language => the credit and the invitation, crewWords()), each with its
+     * FI / EN tag when they differ, then Join on the web (the crew page,
+     * CrewPageHelp::pageUrl(), through $webLink) and Join on Telegram (the
+     * bot's sign-up, through $telegramLink), their labels from $pair. A
+     * button whose target is not set is left out; with neither, the part is
+     * empty. The thank-you (crewInvite()) and the next events announcement
+     * (Newsletter::compose(), Owner, 2026-11-08) both show it.
+     *
+     * @param array<string, string> $invites Language => text.
+     * @param callable(string): string $pair One language per row of a label ('crew_web', 'crew_telegram').
+     * @param callable(string): string $webLink The crew page URL as linked.
+     * @param callable(string): string $telegramLink The bot's sign-up URL as linked.
+     * @return array{html: string, text: string}
+     */
+    public static function crewPart(
+        array $invites,
+        callable $pair,
+        string $accent,
+        callable $webLink,
+        callable $telegramLink
+    ): array {
         $web = CrewPageHelp::pageUrl();
         $telegram = MessageActions::payloadUrl(self::CREW_START);
         $buttons = [];
 
         if ('' !== $web) {
-            $buttons[] = [
-                'label' => $pair('crew_web'),
-                'url' => self::trackedUrl(self::withUtm($web, $campaign), $kind, $rowId),
-            ];
+            $buttons[] = ['label' => $pair('crew_web'), 'url' => $webLink($web)];
         }
 
         if ('' !== $telegram) {
-            $buttons[] = ['label' => $pair('crew_telegram'), 'url' => self::trackedUrl($telegram, $kind, $rowId)];
+            $buttons[] = ['label' => $pair('crew_telegram'), 'url' => $telegramLink($telegram)];
         }
 
         if ([] === $buttons) {
             return ['html' => '', 'text' => ''];
         }
 
-        $invites = HybridPolicy::field($parts, 'crew');
         $html = '<hr style="border:0;border-top:1px solid #e3e3e8;margin:8px 0 20px">'
             . (HybridPolicy::differ($invites)
                 ? implode('', array_map(
@@ -965,6 +994,29 @@ final class FollowupMail
             'html' => $html,
             'text' => "\n\n————————\n\n" . implode("\n\n", $invites) . "\n\n" . ltrim(EmailBody::toText('', $buttons)),
         ];
+    }
+
+    /**
+     * The crew part's words in the current language: 'crew' (the credit and
+     * the invitation), 'crew_web' and 'crew_telegram' (the buttons). The
+     * thank-you's credit is about the night that was ("The evening was made
+     * by our crew"); the announcement's ($announcement) is about the nights
+     * in general ("Our evenings are made by our crew"), with the rest the
+     * same.
+     *
+     * @return array{crew: string, crew_web: string, crew_telegram: string}
+     */
+    public static function crewWords(bool $announcement = false): array
+    {
+        // phpcs:disable Generic.Files.LineLength.TooLong -- gettext literals; splitting one breaks extraction.
+        return [
+            'crew' => $announcement
+                ? __('Our evenings are made by our crew: the people who work behind the scenes so everyone else can dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets.', 'eventcrew')
+                : __('The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets.', 'eventcrew'),
+            'crew_web' => __('Join on the web', 'eventcrew'),
+            'crew_telegram' => __('Join on Telegram', 'eventcrew'),
+        ];
+        // phpcs:enable Generic.Files.LineLength.TooLong
     }
 
     /** The footer line, in the post-event email's languages (HybridPolicy). */
@@ -1435,11 +1487,7 @@ final class FollowupMail
             'optout' => __("Don't send me these", 'eventcrew'),
             // The subscribe button's line; leaving stays one click away.
             'invite' => __('Get an email when new events come out. You can leave any time.', 'eventcrew'),
-            // The thank-you's crew part (crewInvite()).
-            'crew' => __('The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            'crew_web' => __('Join on the web', 'eventcrew'),
-            'crew_telegram' => __('Join on Telegram', 'eventcrew'),
-        ];
+        ] + self::crewWords(); // The thank-you's crew part (crewInvite()).
     }
 
     /**

@@ -55,6 +55,6 @@ Yksityisviestissä botille riittää yleensä, että kirjoitat omin sanoin, mit�
 
 Ongelma, palautetta tai bugi? Kerro botille: se välittää asian järjestäjille.
 
-Jos botti ei vastaa, ota yhteyttä ylläpitäjään, maintainer@example.org tai @maintainer, tai yritä hetken päästä uudelleen.
+Jos botti ei vastaa, ota yhteyttä ylläpitäjään, maintainer@example.org, tai yritä hetken päästä uudelleen.
 
 <a href="https://site.test/crew/#eventcrew-panel-help">📖 Ohje</a>

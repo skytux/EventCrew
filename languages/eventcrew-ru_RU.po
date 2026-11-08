@@ -10779,9 +10779,6 @@ msgstr "Получить ссылку для входа"
 msgid "Give or remove roles"
 msgstr "Выдать или снять роли"
 
-msgid "%1$s or %2$s"
-msgstr "%1$s или %2$s"
-
 msgid "Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers."
 msgstr "Какие-то трудности, отзыв или ошибка? Просто напиши боту: он передаст организаторам."
 
@@ -11710,6 +11707,10 @@ msgstr "Получай письмо, когда выходят новые соб
 #: src/Support/FollowupMail.php
 msgid "The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
 msgstr "Этот вечер сделал наш crew: люди, которые работали за кулисами, чтобы все остальные могли танцевать. Хочешь присоединиться? Это отличный способ познакомиться с людьми, почувствовать себя полезным и сэкономить на билетах."
+
+#: src/Support/FollowupMail.php
+msgid "Our evenings are made by our crew: the people who work behind the scenes so everyone else can dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
+msgstr "Наши вечера делает наш crew: люди, которые работают за кулисами, чтобы все остальные могли танцевать. Хочешь присоединиться? Это отличный способ познакомиться с людьми, почувствовать себя полезным и сэкономить на билетах."
 
 msgid "Nothing after a few minutes, not even in spam? Try again, with the same or another address."
 msgstr "Ничего за несколько минут, даже в спаме? Попробуйте снова, с тем же или другим адресом."

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Support;
 
+use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 use EventCrew\Models\CrewTicket;
 use EventCrew\Models\Guest;
@@ -15,12 +16,15 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\EmailTemplate;
+use EventCrew\Support\Language;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\ShortCode;
 use EventCrew\Support\SignedLink;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketQr;
+use EventCrew\Telegram\BoardDjText;
 use EventCrew\Tests\Telegram\FakeEvents;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\CrewAdminRoster;
@@ -407,8 +411,167 @@ final class TicketMailTest extends TestCase
 
         self::assertStringContainsString('Salsa Night<br>14.11.2026</h1>', $mail['html']);
         self::assertStringContainsString('tapahtumaan Salsa Night 14.11.2026', $mail['html']);
-        // The event picture is no longer in the ticket email.
-        self::assertStringNotContainsString('poster.jpg', $mail['html']);
+        // The event's picture is under the "Open my ticket" button (Owner, 2026-11-08).
+        self::assertGreaterThan(
+            (int) strpos($mail['html'], 'Open my ticket'),
+            (int) strpos($mail['html'], 'poster.jpg')
+        );
+    }
+
+    /**
+     * The event of the ticket test: post 55, "Ecstatic Dance" on 14.11.2026
+     * at 21:00 with its picture, venue and DJ, and the group board's short
+     * DJ text in English and, when given, in Finnish ($texts).
+     *
+     * @param array<string, string> $texts language => DJ text
+     */
+    private function pictureEvent(array $texts, string $image = 'https://site.test/dance.jpg'): void
+    {
+        $this->fakeEvents();
+        $this->event(55, '2026-11-14', 'Ecstatic Dance', [
+            '_eventmesh_image_url' => $image,
+            '_eventmesh_venue_name' => 'Example Hall Helsinki',
+        ]);
+        Functions\when('get_the_post_thumbnail_url')->justReturn('');
+        Filters\expectApplied(NewsletterWriter::DJ_FILTER)->zeroOrMoreTimes()->andReturnUsing(
+            static fn (mixed $value, int $postId): array => 55 === $postId
+                ? [['name' => 'Esimerkki', 'description' => 'Plays ecstatic journeys.']]
+                : []
+        );
+        $english = $texts[Language::ENGLISH] ?? '';
+        $options = [BoardDjText::OPTION => [55 => [
+            'hash' => md5(BoardDjText::source(55)),
+            'text' => $english,
+            'texts' => array_diff_key($texts, [Language::ENGLISH => true]),
+            'text_hash' => md5($english),
+        ]]];
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => $options[$name] ?? $default
+        );
+        $this->wpdb->nextResults[] = [[
+            'id' => 3,
+            'task_date' => '2026-11-14',
+            'event_post_id' => 55,
+            'event_label' => 'Ecstatic Dance',
+        ]];
+    }
+
+    /**
+     * Right under the "Open my ticket" button: the event's picture, with an
+     * alt text that says who plays, what, when and where, then the short DJ
+     * text in each of the email's languages; then the closing line.
+     */
+    public function testThePictureAndTheDjTextAreRightUnderTheButton(): void
+    {
+        $this->pictureEvent([
+            Language::ENGLISH => 'Esimerkki takes you on a journey.',
+            Language::FINNISH => 'Esimerkki vie sinut matkalle.',
+        ]);
+
+        $mail = $this->ticketMail()->compose(TicketBuyer::fromRow($this->buyerRow(1)));
+        $html = $mail['html'];
+        $button = (int) strpos($html, 'Open my ticket</span></a>');
+        $picture = (int) strpos($html, '<img src="https://site.test/dance.jpg"');
+        $finnish = (int) strpos($html, 'Esimerkki vie sinut matkalle.');
+        $english = (int) strpos($html, 'Esimerkki takes you on a journey.');
+
+        self::assertGreaterThan(0, $button);
+        self::assertGreaterThan($button, $picture);
+        // Nothing between the button and the picture but the button's own end.
+        self::assertSame('</td></tr></table><div style="margin:26px 0 0">', substr($html, $button + 25, $picture - $button - 25));
+        self::assertStringContainsString(
+            'alt="Esimerkki · Ecstatic Dance · la 14.11.2026 21:00 · Example Hall Helsinki"',
+            $html
+        );
+        self::assertGreaterThan($picture, $finnish);
+        self::assertGreaterThan($finnish, $english);
+        self::assertGreaterThan($english, (int) strpos($html, 'See you on the dancefloor'));
+        // The two texts differ, so each has its language tag.
+        self::assertStringContainsString('>FI</span>&nbsp; Esimerkki vie', $html);
+        self::assertStringContainsString('>EN</span>&nbsp; Esimerkki takes', $html);
+
+        // The plain text: the DJ texts, no picture, right after the ticket link.
+        $text = $mail['text'];
+        self::assertStringNotContainsString('dance.jpg', $text);
+        self::assertMatchesRegularExpression(
+            '~Open my ticket: \S+\n\nEsimerkki vie sinut matkalle\.\n\nEsimerkki takes you on a journey\.\n\nAnna Virtanen~u',
+            $text
+        );
+    }
+
+    /**
+     * A reader whose language has no translation yet gets the English text,
+     * and the translation is asked for in the background; the alt text is
+     * in the email's language.
+     */
+    public function testWithoutATranslationTheDjTextIsInEnglish(): void
+    {
+        $this->pictureEvent([Language::ENGLISH => 'Esimerkki takes you on a journey.']);
+        $ticket = new CrewTicket(
+            CrewTicket::KIND_CREDIT,
+            7,
+            '2026-11-14',
+            'Mia Crew',
+            'mia@example.test',
+            language: Language::ENGLISH
+        );
+
+        $mail = $this->ticketMail()->compose($ticket);
+
+        self::assertStringContainsString('alt="Esimerkki · Ecstatic Dance · Sat 14.11.2026 21:00 · Helsinki', $mail['html']);
+        self::assertStringContainsString('Esimerkki takes you on a journey.</p>', $mail['html']);
+
+        $this->wpdb->nextResults[] = [['id' => 3, 'task_date' => '2026-11-14', 'event_post_id' => 55, 'event_label' => 'Ecstatic Dance']];
+        $finnish = $this->ticketMail()->compose(new CrewTicket(
+            CrewTicket::KIND_CREDIT,
+            7,
+            '2026-11-14',
+            'Mia Crew',
+            'mia@example.test',
+            language: Language::FINNISH
+        ));
+
+        self::assertStringContainsString('alt="Esimerkki · Ecstatic Dance · la 14.11.2026 21:00', $finnish['html']);
+        self::assertStringContainsString('Esimerkki takes you on a journey.</p>', $finnish['html']);
+        self::assertStringContainsString("\n\nEsimerkki takes you on a journey.\n\n", $finnish['text']);
+        // One text, so no language tag.
+        self::assertStringNotContainsString('>EN</span>&nbsp; Esimerkki', $finnish['html']);
+    }
+
+    /** No picture: no image, but the DJ text is still under the button. */
+    public function testWithoutAPictureTheDjTextIsStillThere(): void
+    {
+        $this->pictureEvent([Language::ENGLISH => 'Esimerkki takes you on a journey.'], '');
+
+        $html = $this->ticketMail()->compose(TicketBuyer::fromRow($this->buyerRow(1)))['html'];
+
+        self::assertStringNotContainsString('<img', $html);
+        self::assertGreaterThan(
+            (int) strpos($html, 'Open my ticket</span></a>'),
+            (int) strpos($html, 'Esimerkki takes you on a journey.')
+        );
+    }
+
+    /** No DJ text at all: the picture alone, the text is asked for in the background. */
+    public function testWithoutADjTextThePictureIsAlone(): void
+    {
+        $this->pictureEvent([]);
+
+        $mail = $this->ticketMail()->compose(TicketBuyer::fromRow($this->buyerRow(1)));
+
+        self::assertStringContainsString('<img src="https://site.test/dance.jpg"', $mail['html']);
+        self::assertMatchesRegularExpression('~Open my ticket: \S+\n\nAnna Virtanen~u', $mail['text']);
+    }
+
+    /** A night with no linked event: nothing under the button. */
+    public function testWithoutAnEventNothingIsAdded(): void
+    {
+        Functions\when('get_the_post_thumbnail_url')->justReturn('https://site.test/poster.jpg');
+
+        $html = $this->ticketMail()->compose(TicketBuyer::fromRow($this->buyerRow(1)))['html'];
+
+        self::assertStringNotContainsString('<img', $html);
+        self::assertStringContainsString('</table><p style="margin:26px 0 0;', $html);
     }
 
     /** The heading has the event's start time when EventMesh has one. */

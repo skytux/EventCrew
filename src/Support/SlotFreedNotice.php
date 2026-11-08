@@ -9,7 +9,6 @@ use EventCrew\Models\Task;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Telegram\TelegramClient;
-use EventCrew\Web\SignupBoardView;
 
 /**
  * When a late cancellation frees a slot - close to the event, when it most needs
@@ -426,15 +425,7 @@ final class SlotFreedNotice
      */
     public static function pictureUrl(Task $task): string
     {
-        $postId = (int) ($task->eventPostId ?? 0);
-
-        if ($postId <= 0) {
-            return '';
-        }
-
-        $image = (string) (EventSource::card($postId)['image'] ?? '');
-
-        return '' !== $image ? $image : SignupBoardView::eventImage($postId);
+        return EventPicture::url($task->eventPostId);
     }
 
     /**
@@ -451,14 +442,7 @@ final class SlotFreedNotice
             return null;
         }
 
-        $html = sprintf(
-            '<div style="margin:16px 0 0"><img src="%s" width="560" alt="%s" '
-                . 'style="display:block;width:100%%;max-width:560px;height:auto;border:0;border-radius:12px"></div>',
-            esc_url($url),
-            esc_attr($task->eventName())
-        );
-
-        return ['html' => $html, 'text' => ''];
+        return ['html' => EventPicture::html($url, $task->eventName()), 'text' => ''];
     }
 
     /** What {event_picture} is filled with: the mark Mailer puts the picture at, or ''. */

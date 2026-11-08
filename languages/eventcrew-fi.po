@@ -8615,9 +8615,6 @@ msgstr "Hae kirjautumislinkki"
 msgid "Give or remove roles"
 msgstr "Anna tai poista rooleja"
 
-msgid "%1$s or %2$s"
-msgstr "%1$s tai %2$s"
-
 msgid "Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers."
 msgstr "Ongelma, palautetta tai bugi? Kerro botille: se välittää asian järjestäjille."
 
@@ -9522,6 +9519,10 @@ msgstr "Saat sähköpostin, kun uusia tapahtumia julkaistaan. Voit perua milloin
 #: src/Support/FollowupMail.php
 msgid "The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
 msgstr "Illan teki mahdolliseksi crew: ihmiset, jotka tekivät töitä kulisseissa, jotta kaikki muut saivat tanssia. Haluaisitko mukaan? Se on mukava tapa tutustua ihmisiin, tuntea itsensä hyödylliseksi ja säästää lipuissa."
+
+#: src/Support/FollowupMail.php
+msgid "Our evenings are made by our crew: the people who work behind the scenes so everyone else can dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
+msgstr "Iltamme tekee mahdolliseksi crew: ihmiset, jotka tekevät töitä kulisseissa, jotta kaikki muut voivat tanssia. Haluaisitko mukaan? Se on mukava tapa tutustua ihmisiin, tuntea itsensä hyödylliseksi ja säästää lipuissa."
 
 msgid "Nothing after a few minutes, not even in spam? Try again, with the same or another address."
 msgstr "Eikö mitään muutamassa minuutissa, ei edes roskapostissa? Yritä uudelleen samalla tai toisella osoitteella."

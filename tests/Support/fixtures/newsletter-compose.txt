@@ -6,16 +6,12 @@ EN: Welcome!
 
 27.7.2026 · 21:00
 Summer Dance
-FI: Ovet aukeavat 21:00
-EN: Doors open 21:00
 Osta lippu · Buy a ticket · 27,50 €: https://shop.test/p/1
 Kuuntele DJ:tä
 Listen to the DJ: https://music.test/dj
 
 28.7.2026 · 21:00
 Full House
-FI: Ovet aukeavat 21:00
-EN: Doors open 21:00
 Loppuunmyyty
 Sold out
 
@@ -23,3 +19,14 @@ Sold out
 Myöhemmin
 Later
 - 10.8.2026 · 21:00 · Autumn Night: https://site.test/event-3/
+
+————————
+
+Iltamme tekee mahdolliseksi crew: ihmiset, jotka tekevät töitä kulisseissa, jotta kaikki muut voivat tanssia. Haluaisitko mukaan? Se on mukava tapa tutustua ihmisiin, tuntea itsensä hyödylliseksi ja säästää lipuissa.
+
+Our evenings are made by our crew: the people who work behind the scenes so everyone else can dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets.
+
+Liity verkossa
+Join on the web: https://site.test/event-50/?utm_source=eventcrew&utm_medium=email&utm_campaign=newsletter
+Liity Telegramissa
+Join on Telegram: https://t.me/crew_bot?start=onboard

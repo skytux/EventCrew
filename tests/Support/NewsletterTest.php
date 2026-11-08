@@ -522,11 +522,10 @@ final class NewsletterTest extends TestCase
 
         self::assertSame('Tulevat tapahtumat / Coming events – Test Site', $mail['subject']);
         self::assertStringContainsString('src="https://cdn.test/1.jpg"', $html);
-        self::assertStringContainsString('27.7.2026 · 21:00', $html);
-        self::assertStringContainsString('Kesätanssit', $html);
+        self::assertStringContainsString('alt="Kesätanssit · ma 27.7.2026 21:00"', $html);
         self::assertStringNotContainsString('We dance all night.', $html);
         self::assertStringNotContainsString('Tanssimme koko yön.', $html);
-        self::assertLessThan(strpos($html, 'Summer Dance'), strpos($html, 'Tervetuloa!'));
+        self::assertLessThan(strpos($html, 'Kesätanssit'), strpos($html, 'Tervetuloa!'));
         self::assertStringContainsString('href="https://shop.test/p/1"', $html);
         self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €', $html);
         self::assertSame(1, substr_count($html, 'Buy a ticket'));
@@ -617,10 +616,15 @@ final class NewsletterTest extends TestCase
      * shared with the post-event email (FollowupMail), and made again when
      * the cards lost their description and were centred, and again when a
      * card's picture took the date and the title into its alt text
-     * (2026-11-03).
+     * (2026-11-03), and again when the announcement got its own cards (an
+     * alt text with the DJ, the weekday and the place, only the doors'
+     * closing time under the picture) and the crew part before the end
+     * (Owner, 2026-11-08).
      */
     public function testComposeOutputIsUnchangedForAFixedInput(): void
     {
+        $this->options['eventcrew_signup_page_id'] = 50;
+        $this->options[\EventCrew\Telegram\BoardService::USERNAME_OPTION] = 'crew_bot';
         $this->event(1, '2026-07-27', 'Summer Dance', [
             '_eventmesh_image_url' => 'https://cdn.test/1.jpg',
             '_eventmesh_price' => '27.50 EUR',
@@ -646,6 +650,46 @@ final class NewsletterTest extends TestCase
         self::assertSame('Tulevat tapahtumat / Coming events – Test Site', $mail['subject']);
         self::assertStringEqualsFile(__DIR__ . '/fixtures/newsletter-compose.html', $mail['html']);
         self::assertStringEqualsFile(__DIR__ . '/fixtures/newsletter-compose.txt', $mail['text']);
+    }
+
+    /**
+     * The announcement ends with the post-event email's crew part, with its
+     * own first sentence about the nights in general: in the HTML and the
+     * text, in the email's language, before the "Automatically translated"
+     * note. Without the crew page and the bot there is no part (Owner,
+     * 2026-11-08).
+     */
+    public function testTheAnnouncementEndsWithTheCrewPart(): void
+    {
+        $text = ['fi' => 'Tervetuloa!', 'en' => 'Welcome!', 'source' => 'fi', 'translated' => true];
+        $sentence = 'Our evenings are made by our crew: the people who work behind the scenes';
+
+        $without = $this->composeSample('en', $text);
+        self::assertStringNotContainsString($sentence, $without['html'] . $without['text']);
+        self::assertStringNotContainsString('Join on', $without['html'] . $without['text']);
+
+        $this->options['eventcrew_signup_page_id'] = 50;
+        $this->options[\EventCrew\Telegram\BoardService::USERNAME_OPTION] = 'crew_bot';
+        $english = $this->composeSample('en', $text);
+        $finnish = $this->composeSample('fi', $text);
+
+        foreach ([$english['html'], $english['text']] as $out) {
+            self::assertStringContainsString($sentence, $out);
+            self::assertStringContainsString('Join on the web', $out);
+            self::assertStringContainsString('Join on Telegram', $out);
+            self::assertStringNotContainsString('The evening was made by our crew', $out);
+            self::assertLessThan(strpos($out, 'Automatically translated'), strpos($out, 'Join on Telegram'));
+            self::assertLessThan(strpos($out, $sentence), strpos($out, 'Autumn Night'));
+        }
+
+        self::assertStringContainsString('https://t.me/crew_bot?start=onboard', $english['html']);
+        self::assertStringContainsString(
+            'Join on the web: https://site.test/event-50/?utm_source=eventcrew&utm_medium=email&utm_campaign=newsletter',
+            $english['text']
+        );
+        self::assertStringContainsString('Iltamme tekee mahdolliseksi crew', $finnish['text']);
+        self::assertStringContainsString('Liity Telegramissa', $finnish['html']);
+        self::assertStringNotContainsString($sentence, $finnish['html'] . $finnish['text']);
     }
 
     /**
@@ -683,7 +727,7 @@ final class NewsletterTest extends TestCase
                         'venue' => 'Old Hall',
                         'address' => 'Main St 1',
                         'doors_open' => '18:30',
-                        'doors_close' => '',
+                        'doors_close' => '02:00',
                     ],
                 ],
             ],
@@ -710,17 +754,20 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString('▶<br>Kuuntele DJ:tä</a>', $html);
         self::assertStringContainsString('Loppuunmyyty', $html);
         self::assertStringContainsString('>Myöhemmin</h2>', $html);
-        self::assertStringContainsString('>Ovet aukeavat 18:30</p>', $html);
-        self::assertStringContainsString('Old Hall<br>Main St 1', $html);
+        // Under the picture only the doors' closing time; the rest is in its alt text (Owner, 2026-11-08).
+        self::assertStringContainsString('>Ovet sulkeutuvat 02:00</p>', $html);
+        self::assertStringContainsString('alt="Summer Dance · ma 27.7.2026 21:00 · Old Hall"', $html);
+        self::assertStringNotContainsString('Ovet aukeavat', $html . $text);
+        self::assertStringNotContainsString('Main St 1', $html . $text);
 
         self::assertStringStartsWith("TULEVAT TAPAHTUMAT\n\nTervetuloa!\n\n", $text);
-        self::assertStringContainsString("Main St 1\n\nOvet aukeavat 18:30\n", $text);
+        self::assertStringContainsString("Summer Dance\nOvet sulkeutuvat 02:00\n", $text);
         self::assertStringContainsString('Osta lippu · 27,50 €: https://shop.test/p/1', $text);
         self::assertStringContainsString('Kuuntele DJ:tä: https://music.test/dj', $text);
 
         foreach ([$html, $text] as $out) {
             $english = ['Coming events', 'Welcome!', 'Buy a ticket', 'Listen to the DJ'];
-            $english = [...$english, 'Sold out', 'Later', 'Doors open'];
+            $english = [...$english, 'Sold out', 'Later', 'Doors close'];
             foreach ($english as $en) {
                 self::assertStringNotContainsString($en, $out);
             }
@@ -753,7 +800,8 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString('▶<br>Listen to the DJ</a>', $html);
         self::assertStringContainsString('Sold out', $html);
         self::assertStringContainsString('>Later</h2>', $html);
-        self::assertStringContainsString('>Doors open 18:30</p>', $html);
+        self::assertStringContainsString('>Doors close 02:00</p>', $html);
+        self::assertStringContainsString('alt="Summer Dance · Mon 27.7.2026 21:00 · Old Hall"', $html);
 
         self::assertStringStartsWith("COMING EVENTS\n\nWelcome!\n\n", $text);
         self::assertStringContainsString('Buy a ticket · 27,50 €: https://shop.test/p/1', $text);
@@ -766,7 +814,7 @@ final class NewsletterTest extends TestCase
 
         foreach ([$html, $text] as $out) {
             $finnish = ['Tulevat tapahtumat', 'Tervetuloa!', 'Osta lippu', 'Kuuntele'];
-            $finnish = [...$finnish, 'Loppuunmyyty', 'Myöhemmin', 'Ovet aukeavat'];
+            $finnish = [...$finnish, 'Loppuunmyyty', 'Myöhemmin', 'Ovet sulkeutuvat'];
             foreach ($finnish as $fi) {
                 self::assertStringNotContainsString($fi, $out);
             }
@@ -796,7 +844,7 @@ final class NewsletterTest extends TestCase
         self::assertStringContainsString('EN</span>&nbsp; Welcome!', $both['html']);
         self::assertStringContainsString('Osta lippu · Buy a ticket · 27,50 €', $both['html']);
         self::assertStringContainsString('Myöhemmin<br>Later', $both['html']);
-        self::assertStringContainsString("FI: Ovet aukeavat 18:30\nEN: Doors open 18:30", $both['text']);
+        self::assertStringContainsString("FI: Ovet sulkeutuvat 02:00\nEN: Doors close 02:00", $both['text']);
         self::assertStringNotContainsString('Automatically translated', $both['html'] . $both['text']);
     }
 

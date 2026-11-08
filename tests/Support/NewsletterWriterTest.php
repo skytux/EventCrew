@@ -19,6 +19,7 @@ use EventCrew\Support\NewsletterLayout;
 use EventCrew\Support\NewsletterText;
 use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\SiteLanguages;
+use EventCrew\Telegram\BoardDjText;
 use EventCrew\Tests\TestCase;
 
 /**
@@ -200,6 +201,23 @@ final class NewsletterWriterTest extends TestCase
         ];
     }
 
+    /**
+     * Stores event $id's current DJ or host text (BoardDjText) in English
+     * and its translations ($texts, language code => text), as the board's
+     * cron run would have written them.
+     *
+     * @param array<string, string> $texts
+     */
+    private function djText(int $id, string $english, array $texts = []): void
+    {
+        $this->options[BoardDjText::OPTION][$id] = [
+            'hash' => md5(BoardDjText::source($id)),
+            'text' => $english,
+            'texts' => $texts,
+            'text_hash' => md5($english),
+        ];
+    }
+
     private static function answer(string $key, string $text): string
     {
         return (string) json_encode([$key => $text]);
@@ -244,6 +262,7 @@ final class NewsletterWriterTest extends TestCase
             'not an array',
             ['name' => 'DJ Kuu', 'description' => ['not', 'a', 'string']],
         ];
+        $this->djText(1, 'DJ Aurora brings warm, rolling grooves.', ['fi' => 'DJ Aurora tuo lämpimiä grooveja.']);
         $this->options[NewsletterWriter::WORDS_OPTION] = "Say \"dance floor\", never \"party\".";
         $this->options[NewsletterWriter::MEMORY_OPTION] = [
             ['opening' => 'Oldest opening.', 'events' => ['Oldest text.']],
@@ -308,7 +327,20 @@ final class NewsletterWriterTest extends TestCase
             . "DJ Aurora, DJ Kuu\n  Text about this event: Tule tanssimaan DJ Auroran lämpimiin grooveihin.",
             self::user($opening)
         );
+        self::assertStringContainsString(NewsletterWriter::OPENING_DJ, self::system($opening));
+        self::assertStringContainsString(
+            "DJ text (the short text about the DJ or host of the first event):\n"
+            . "- Finnish: DJ Aurora tuo lämpimiä grooveja.\n- English: DJ Aurora brings warm, rolling grooves.",
+            self::user($opening)
+        );
         self::assertStringContainsString('from Finnish into each of these languages', self::system($openingEn));
+        self::assertStringContainsString(
+            NewsletterWriter::TRANSLATE_DJ . "\n- Finnish (fi): DJ Aurora tuo lämpimiä grooveja.\n"
+            . '- English (en): DJ Aurora brings warm, rolling grooves.',
+            self::system($openingEn)
+        );
+        self::assertStringNotContainsString(NewsletterWriter::TRANSLATE_DJ, self::system($translation));
+        self::assertStringNotContainsString(NewsletterWriter::OPENING_DJ, self::system($event));
         self::assertSame('Kesä on täällä, ja niin on tanssilattiakin.', self::user($openingEn));
 
         self::assertStringContainsString('Copy the venue and the address exactly', self::system($practical));
@@ -337,7 +369,8 @@ final class NewsletterWriterTest extends TestCase
         $body = $this->mails[0]['body'];
         self::assertStringContainsString('FI</span>&nbsp; Kesä on täällä, ja niin on tanssilattiakin.', $body);
         self::assertStringContainsString('EN</span>&nbsp; Summer is here, and so is the dance floor.', $body);
-        self::assertStringContainsString('>the Old Hall</p>', $body);
+        // The announcement's card shows only the doors' closing time (Owner, 2026-11-08).
+        self::assertStringNotContainsString('the Old Hall', $body);
         self::assertStringNotContainsString('Tule tanssimaan DJ Auroran', $body);
         self::assertStringNotContainsString('Come and dance to the warm grooves of DJ Aurora.', $body);
         self::assertStringNotContainsString('social dancing', $body);
@@ -354,6 +387,7 @@ final class NewsletterWriterTest extends TestCase
         $this->options[SiteLanguages::OPTION] = ['fi', 'en', 'sv'];
         $this->options[\EventCrew\Support\HybridPolicy::SHOWN_OPTION] = 3;
         $this->event(1, '2026-07-27', 'Summer Social');
+        $this->djText(1, 'A night of swing.', ['fi' => 'Swingin ilta.', 'sv' => 'En kväll med swing.']);
         $this->answers = [
             self::answer('text', 'Tule tanssimaan.'),
             (string) json_encode(['en' => 'Come and dance.', 'sv' => 'Kom och dansa.']),
@@ -489,6 +523,7 @@ final class NewsletterWriterTest extends TestCase
     public function testARemovedOrganizersTextGetsAnOpeningOnTheNextRun(): void
     {
         $this->event(1, '2026-07-27', 'Summer Social');
+        $this->djText(1, 'A night of swing.', ['fi' => 'Swingin ilta.']);
         $this->withPlan([
             'events' => [self::planEvent(1, '2026-07-27', 'Summer Social')],
             'written' => [
@@ -589,6 +624,7 @@ final class NewsletterWriterTest extends TestCase
             throw new \RuntimeException('boom');
         });
         $this->event(1, '2026-07-27', 'Summer Social');
+        $this->djText(1, 'A night of swing.', ['fi' => 'Swingin ilta.']);
         $this->queueOrganizer();
 
         $this->newsletter()->run();
@@ -747,6 +783,116 @@ final class NewsletterWriterTest extends TestCase
         self::assertArrayNotHasKey(NewsletterWriter::MEMORY_OPTION, $this->options);
     }
 
+    /**
+     * The first event's DJ text is not written yet: the run writes the
+     * event's text and practical information but not the opening, asks
+     * BoardDjText for the DJ text (queue and one cron run) and notes when it
+     * started waiting. Once the DJ text and its translation are there, the
+     * next run writes the opening from it (Owner, 2026-11-08).
+     */
+    public function testTheOpeningWaitsForTheFirstEventsDjText(): void
+    {
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $scheduled = [];
+        Functions\when('wp_schedule_single_event')->alias(function (int $at, string $hook) use (&$scheduled): bool {
+            $scheduled[] = $hook;
+
+            return true;
+        });
+        $this->answers = [
+            self::answer('text', 'Tule.'),
+            self::answer('en', 'Come.'),
+            self::practicalAnswer(''),
+        ];
+        $this->queueOrganizer();
+
+        $this->newsletter()->run();
+
+        self::assertCount(3, $this->requests, 'the event text, its translation and the practical information');
+        foreach ($this->requests as $request) {
+            self::assertStringNotContainsString('opening text', self::system($request));
+        }
+        $written = $this->plan()['written'];
+        self::assertNull($written['opening']);
+        self::assertEqualsWithDelta(time(), $written['dj_wait'], 2);
+        self::assertSame([1], $this->options[BoardDjText::QUEUE_OPTION]);
+        self::assertContains(BoardDjText::HOOK, $scheduled);
+
+        // Only the English text: the Finnish translation is still waited for.
+        $this->djText(1, 'DJ Aurora plays warm swing.');
+        $this->requests = [];
+        $this->newsletter()->run();
+
+        self::assertSame([], $this->requests);
+        self::assertEqualsWithDelta(time(), $this->plan()['written']['dj_wait'], 2);
+
+        $this->djText(1, 'DJ Aurora plays warm swing.', ['fi' => 'DJ Aurora soittaa lämmintä swingiä.']);
+        $this->answers = [self::answer('text', 'Tervetuloa.'), self::answer('en', 'Welcome.')];
+        $this->newsletter()->run();
+
+        self::assertCount(2, $this->requests);
+        self::assertStringContainsString(NewsletterWriter::OPENING_DJ, self::system($this->requests[0]));
+        self::assertStringContainsString('- Finnish: DJ Aurora soittaa lämmintä swingiä.', self::user($this->requests[0]));
+        self::assertStringContainsString('- English: DJ Aurora plays warm swing.', self::user($this->requests[0]));
+        self::assertStringContainsString(
+            '- English (en): DJ Aurora plays warm swing.',
+            self::system($this->requests[1])
+        );
+        self::assertSame(['fi' => 'Tervetuloa.', 'en' => 'Welcome.'], $this->plan()['written']['opening']);
+    }
+
+    /**
+     * The opening does not wait for ever: after DJ_WAIT it is written with
+     * what there is of the DJ text (here nothing), and with no instruction
+     * about it.
+     */
+    public function testTheOpeningIsWrittenWithoutTheDjTextAfterTheWait(): void
+    {
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $this->withPlan([
+            'events' => [self::planEvent(1, '2026-07-27', 'Summer Social')],
+            'written' => [
+                'events' => [1 => ['fi' => 'Tule.', 'en' => 'Come.']],
+                'opening' => null,
+                'practical' => [1 => []],
+                'dj_wait' => time() - NewsletterWriter::DJ_WAIT,
+            ],
+        ]);
+        $this->answers = [self::answer('text', 'Tervetuloa.'), self::answer('en', 'Welcome.')];
+        $this->queueOrganizer();
+
+        $this->newsletter()->run();
+
+        self::assertCount(2, $this->requests);
+        self::assertStringContainsString('opening text', self::system($this->requests[0]));
+        self::assertStringNotContainsString(NewsletterWriter::OPENING_DJ, self::system($this->requests[0]));
+        self::assertStringNotContainsString('DJ text', self::user($this->requests[0]));
+        self::assertStringNotContainsString(NewsletterWriter::TRANSLATE_DJ, self::system($this->requests[1]));
+        self::assertSame(['fi' => 'Tervetuloa.', 'en' => 'Welcome.'], $this->plan()['written']['opening']);
+        self::assertArrayNotHasKey(BoardDjText::QUEUE_OPTION, $this->options);
+    }
+
+    /**
+     * An event with neither DJs nor a description has nothing to write a DJ
+     * text from, so the opening is written at once.
+     */
+    public function testTheOpeningDoesNotWaitWhenThereIsNoDjTextToWrite(): void
+    {
+        $this->event(1, '2026-07-27', 'Summer Social', '');
+        $this->withPlan([
+            'events' => [self::planEvent(1, '2026-07-27', 'Summer Social')],
+            'written' => ['events' => [1 => []], 'opening' => null, 'practical' => [1 => []]],
+        ]);
+        $this->answers = [self::answer('text', 'Tervetuloa.'), self::answer('en', 'Welcome.')];
+        $this->queueOrganizer();
+
+        $this->newsletter()->run();
+
+        self::assertSame(['fi' => 'Tervetuloa.', 'en' => 'Welcome.'], $this->plan()['written']['opening']);
+        self::assertArrayNotHasKey('dj_wait', $this->plan()['written']);
+        self::assertArrayNotHasKey(BoardDjText::QUEUE_OPTION, $this->options);
+    }
+
     /** The switch is on when the option was never saved. */
     public function testTheSwitchIsOnByDefault(): void
     {
@@ -803,7 +949,7 @@ final class NewsletterWriterTest extends TestCase
 
         self::assertCount(1, $this->mails);
         self::assertTrue($this->plan()['previewed']);
-        self::assertStringContainsString('>old hall</p>', $this->mails[0]['body']);
+        self::assertStringNotContainsString('old hall', $this->mails[0]['body'], 'the card shows only doors close');
         self::assertStringNotContainsString('Come and dance.', $this->mails[0]['body']);
         self::assertStringNotContainsString('social dancing', $this->mails[0]['body']);
     }

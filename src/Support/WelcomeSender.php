@@ -604,14 +604,16 @@ final class WelcomeSender
         return '' !== $stored ? $stored : self::maintainerDefault();
     }
 
+    /**
+     * Without a stored maintainer contact: the privacy contact from Settings,
+     * else the site admin email. No address is written in the code (Owner
+     * 2026-11-08: the old default drew spam from GitHub).
+     */
     public static function maintainerDefault(): string
     {
-        return sprintf(
-            /* translators: 1: an email address, 2: a Telegram user name */
-            __('%1$s or %2$s', 'eventcrew'),
-            'maintainer@example.org',
-            '@maintainer'
-        );
+        $contact = PrivacyPolicy::contact();
+
+        return '' !== $contact ? $contact : trim((string) get_option('admin_email', ''));
     }
 
     /**

@@ -53,7 +53,7 @@ In a private chat with the bot, it is usually enough to write what you want in y
 
 Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers.
 
-If you cannot reach the bot, contact the maintainer, maintainer@example.org or @maintainer, or just try again a bit later.
+If you cannot reach the bot, contact the maintainer, maintainer@example.org, or just try again a bit later.
 
 📋 See open tasks: https://site.test/crew/#eventcrew-panel-board
 📖 Help: https://site.test/crew/#eventcrew-panel-help

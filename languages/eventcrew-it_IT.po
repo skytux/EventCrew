@@ -10758,9 +10758,6 @@ msgstr "Ottieni il link di accesso web"
 msgid "Give or remove roles"
 msgstr "Assegna o togli ruoli"
 
-msgid "%1$s or %2$s"
-msgstr "%1$s o %2$s"
-
 msgid "Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers."
 msgstr "Difficoltà, feedback o un bug? Dillo al bot: lo passa agli organizzatori."
 
@@ -11675,6 +11672,10 @@ msgstr "Ricevi un’email quando escono nuovi eventi. Puoi uscire quando vuoi."
 #: src/Support/FollowupMail.php
 msgid "The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
 msgstr "La serata l’ha resa possibile la nostra crew: le persone che hanno lavorato dietro le quinte perché tutti gli altri potessero ballare. Ti piacerebbe unirti? È un bel modo per conoscere persone, sentirti utile e risparmiare sui biglietti."
+
+#: src/Support/FollowupMail.php
+msgid "Our evenings are made by our crew: the people who work behind the scenes so everyone else can dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
+msgstr "Le nostre serate le rende possibili la nostra crew: le persone che lavorano dietro le quinte perché tutti gli altri possano ballare. Ti piacerebbe unirti? È un bel modo per conoscere persone, sentirti utile e risparmiare sui biglietti."
 
 msgid "Nothing after a few minutes, not even in spam? Try again, with the same or another address."
 msgstr "Niente dopo qualche minuto, nemmeno nello spam? Riprova, con lo stesso indirizzo o un altro."

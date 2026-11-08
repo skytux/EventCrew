@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Support;
 
+use EventCrew\Support\PrivacyPolicy;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
@@ -40,6 +41,7 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
         $this->webOnly = false;
         $this->options['eventcrew_email_html'] = '0';
         $this->options['eventcrew_signup_page_id'] = 7;
+        $this->options[PrivacyPolicy::CONTACT_OPTION] = 'maintainer@example.org';
 
         Functions\when('get_permalink')->justReturn('https://site.test/crew/');
         Functions\when('get_bloginfo')->justReturn('Test Crew');

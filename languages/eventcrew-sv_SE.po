@@ -11528,9 +11528,6 @@ msgstr "Hämta länk för webbinloggning"
 msgid "Give or remove roles"
 msgstr "Ge eller ta bort roller"
 
-msgid "%1$s or %2$s"
-msgstr "%1$s eller %2$s"
-
 msgid "Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers."
 msgstr "Problem, feedback eller en bugg? Säg det bara till boten: den skickar det vidare till arrangörerna."
 
@@ -12468,6 +12465,10 @@ msgstr "Få ett mejl när nya evenemang kommer ut. Du kan avsluta när som helst
 #: src/Support/FollowupMail.php
 msgid "The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
 msgstr "Kvällen blev av tack vare vårt crew: de som jobbade bakom kulisserna så att alla andra kunde dansa. Vill du vara med? Det är ett fint sätt att lära känna folk, känna dig behövd och spara på biljetter."
+
+#: src/Support/FollowupMail.php
+msgid "Our evenings are made by our crew: the people who work behind the scenes so everyone else can dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
+msgstr "Våra kvällar blir av tack vare vårt crew: de som jobbar bakom kulisserna så att alla andra kan dansa. Vill du vara med? Det är ett fint sätt att lära känna folk, känna dig behövd och spara på biljetter."
 
 msgid "Nothing after a few minutes, not even in spam? Try again, with the same or another address."
 msgstr "Inget efter några minuter, inte ens i skräpposten? Försök igen med samma eller en annan adress."

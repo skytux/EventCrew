@@ -4,14 +4,32 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Telegram\BoardDjText;
+
 /**
  * The texts the language model writes for the next events announcement.
  *
  * When the switch (ENABLED_OPTION) is on and the model is set up, the model
  * writes 2–3 sentences for each event and, when the organizers wrote no
- * opening text, a 2–3 sentence opening for the email. The cards do not show
- * the event texts (Owner, 2026-11-03); the opening is written from them, so the
- * place is taken from the event's own text and not from a DJ name.
+ * opening text, a 2–3 sentence opening for the email, shown at the top above
+ * the event cards. The cards do not show the event texts (Owner, 2026-11-03);
+ * the opening is written from them, so the place is taken from the event's
+ * own text and not from a DJ name.
+ *
+ * The opening builds on the first coming event's short text about its DJ or
+ * host (BoardDjText, as EventDescription::short() gives it: the text the
+ * post-event email shows under that event's picture), so the two emails
+ * speak of the DJ the same way (Owner, 2026-11-08). The model gets that text
+ * in Finnish (when there is one) and in English, with the instruction
+ * (OPENING_DJ) to include its phrasing and keep its names exactly; the
+ * translation of the opening gets the DJ text in each target language
+ * (TRANSLATE_DJ), so the translated opening uses the same wording. The DJ
+ * text and its translations must exist first: while they are missing the
+ * opening is not written in that run (fill() asks for them,
+ * BoardDjText::schedule(), and notes when it started waiting in the plan's
+ * 'written' as 'dj_wait'), and a later heartbeat run writes it. It is
+ * written without the DJ text (or with what there is of it) when there is
+ * nothing to write that text from, or after DJ_WAIT seconds of waiting.
  *
  * The model also picks each event's practical information out of its
  * description: the venue, the street address and the times the doors open and
@@ -89,6 +107,19 @@ final class NewsletterWriter
 
     /** The keys of an event's practical information, in the order the card shows them. */
     public const PRACTICAL_KEYS = ['venue', 'address', 'doors_open', 'doors_close'];
+
+    /** Seconds the opening waits for the first event's DJ or host text before it is written without it. */
+    public const DJ_WAIT = 3 * 3600;
+
+    /** Added to the opening's prompt when the first event has a DJ or host text. */
+    public const OPENING_DJ = 'The first event has a short text about its DJ or host, under "DJ text" in the input. '
+        . 'Build the opening on that text: include its phrasing in the opening, in Finnish the phrasing of the '
+        . 'Finnish DJ text when there is one, and keep every name exactly as it is written there.';
+
+    /** Added to the opening's translation prompt, followed by the DJ text in each language. */
+    public const TRANSLATE_DJ = 'The text builds on a short text about the DJ or host of an event, '
+        . 'which already has the translations below. Where the text uses the phrasing of that DJ text, '
+        . 'use the same wording as its translation in each language, and keep every name exactly as it is.';
 
     /** Tokens for one answer. */
     private const MAX_TOKENS = 600;
@@ -182,9 +213,18 @@ final class NewsletterWriter
         }
 
         if ($wantOpening && null === $written['opening'] && [] !== $events && $inTime()) {
-            $written['opening'] = $this->safely(
-                fn (): ?array => $this->writeOpening($events, $written['events'])
-            ) ?? [];
+            $first = (int) (reset($events)['id'] ?? 0);
+            $dj = self::djTexts($first, $written['dj_wait']);
+
+            if (null === $dj) {
+                // The DJ text comes first: asked for now, the opening on a later run.
+                $written['dj_wait'] ??= time();
+                BoardDjText::schedule($first);
+            } else {
+                $written['opening'] = $this->safely(
+                    fn (): ?array => $this->writeOpening($events, $written['events'], $dj)
+                ) ?? [];
+            }
         }
 
         foreach ($events as $event) {
@@ -199,6 +239,10 @@ final class NewsletterWriter
             }
 
             $written['practical'][$id] = $this->safely(fn (): ?array => $this->writePractical($event)) ?? [];
+        }
+
+        if (null === $written['dj_wait']) {
+            unset($written['dj_wait']);
         }
 
         $plan['written'] = $written;
@@ -476,16 +520,60 @@ final class NewsletterWriter
     }
 
     /**
+     * The first event's DJ or host text (EventDescription::short()) by
+     * language, for the opening; null while the opening should wait for it:
+     * BoardDjText has something to write it from, its English text or a
+     * translation is missing, and the opening has waited less than DJ_WAIT
+     * ($waitingSince, null = not yet). A missing translation that the
+     * translator cannot make (no model for it) is not waited for.
+     *
+     * @return array<string, string>|null
+     */
+    private static function djTexts(int $postId, ?int $waitingSince): ?array
+    {
+        if ($postId <= 0) {
+            return [];
+        }
+
+        $texts = [];
+
+        foreach (array_unique([self::WRITES_IN, Language::ENGLISH, ...SiteLanguages::codes()]) as $lang) {
+            $text = EventDescription::short($postId, $lang);
+
+            if ('' !== $text) {
+                $texts[$lang] = $text;
+            }
+        }
+
+        $english = '' !== BoardDjText::stored($postId);
+
+        if (
+            ($english && ([] === BoardDjText::untranslated($postId) || ! TranslatedText::modelReady()))
+            || '' === BoardDjText::source($postId)
+            || (null !== $waitingSince && time() - $waitingSince >= self::DJ_WAIT)
+        ) {
+            return $texts;
+        }
+
+        return null;
+    }
+
+    /**
      * The opening text in every site language, or null.
      *
      * Each event's own written text goes with it, so the model takes the
      * place from there and not from a DJ name in the title (Owner, 2026-11-03).
+     * The first event's DJ or host text ($dj, djTexts()) goes with it in
+     * Finnish and English, and the opening builds on its phrasing
+     * (OPENING_DJ); its translation keeps that phrasing (TRANSLATE_DJ, Owner,
+     * 2026-11-08).
      *
      * @param array<int, array<string, mixed>> $events The plan's events.
      * @param array<int, array<string, string>> $texts Event id => its written text ([] = failed).
+     * @param array<string, string> $dj Language code => the first event's DJ or host text.
      * @return array<string, string>|null Language code => text.
      */
-    private function writeOpening(array $events, array $texts = []): ?array
+    private function writeOpening(array $events, array $texts = [], array $dj = []): ?array
     {
         $lines = ['The events in this newsletter:'];
 
@@ -501,13 +589,29 @@ final class NewsletterWriter
             }
         }
 
+        $prompt = AiPrompts::get(AiPrompts::NEWSLETTER_OPENING);
+        $djLines = [];
+
+        foreach ([self::WRITES_IN, Language::ENGLISH] as $lang) {
+            if ('' !== trim($dj[$lang] ?? '')) {
+                $djLines[] = '- ' . SiteLanguages::name($lang) . ': ' . trim($dj[$lang]);
+            }
+        }
+
+        if ([] !== $djLines) {
+            $prompt .= "\n\n" . self::OPENING_DJ;
+            $lines[] = '';
+            $lines[] = 'DJ text (the short text about the DJ or host of the first event):';
+            array_push($lines, ...$djLines);
+        }
+
         $fi = $this->ask(
-            self::system(AiPrompts::get(AiPrompts::NEWSLETTER_OPENING), true, '{"text": "the Finnish text"}'),
+            self::system($prompt, true, '{"text": "the Finnish text"}'),
             implode("\n", $lines),
             'text'
         );
 
-        return null === $fi ? null : $this->translated($fi, self::WRITES_IN);
+        return null === $fi ? null : $this->translated($fi, self::WRITES_IN, [] === $djLines ? [] : $dj);
     }
 
     /**
@@ -575,11 +679,14 @@ final class NewsletterWriter
      * codes; null when that answer cannot be used. $text is kept under $lang
      * even when $lang is not a site language, because the memory of earlier
      * texts is kept in that language. With no other site language, nothing
-     * is asked.
+     * is asked. $reference (language code => text) is the DJ or host text the
+     * text builds on: the request gets it in every language it has, with
+     * TRANSLATE_DJ, so the translations use the same wording.
      *
+     * @param array<string, string> $reference
      * @return array<string, string>|null Language code => text.
      */
-    private function translated(string $text, string $lang): ?array
+    private function translated(string $text, string $lang, array $reference = []): ?array
     {
         $targets = array_values(array_diff(SiteLanguages::codes(), [$lang]));
 
@@ -600,6 +707,17 @@ final class NewsletterWriter
             '{from}' => SiteLanguages::name($lang),
             '{to}' => implode(', ', $names),
         ]);
+        $known = [];
+
+        foreach ($reference as $code => $about) {
+            if ('' !== trim($about)) {
+                $known[] = '- ' . SiteLanguages::name((string) $code) . ' (' . $code . '): ' . trim($about);
+            }
+        }
+
+        if ([] !== $known) {
+            $prompt .= "\n\n" . self::TRANSLATE_DJ . "\n" . implode("\n", $known);
+        }
         $content = $this->answer(
             self::system($prompt, false, '{' . implode(', ', $shape) . '}'),
             $text,
@@ -815,14 +933,16 @@ final class NewsletterWriter
 
     /**
      * The plan's 'written' in a known shape: event id => text ([] = failed),
-     * the opening (null = not asked yet, [] = failed), and event id => its
-     * practical information ([] = failed).
+     * the opening (null = not asked yet, [] = failed), event id => its
+     * practical information ([] = failed), and when the opening started
+     * waiting for the first event's DJ text (null = it did not wait).
      *
      * @param array<string, mixed> $plan
      * @return array{
      *     events: array<int, array<string, string>>,
      *     opening: array<string, string>|null,
-     *     practical: array<int, array<string, string>>
+     *     practical: array<int, array<string, string>>,
+     *     dj_wait: int|null
      * }
      */
     private static function written(array $plan): array
@@ -833,6 +953,7 @@ final class NewsletterWriter
             'events' => is_array($written['events'] ?? null) ? $written['events'] : [],
             'opening' => is_array($written['opening'] ?? null) ? $written['opening'] : null,
             'practical' => is_array($written['practical'] ?? null) ? $written['practical'] : [],
+            'dj_wait' => is_int($written['dj_wait'] ?? null) ? $written['dj_wait'] : null,
         ];
     }
 

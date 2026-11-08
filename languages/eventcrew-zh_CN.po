@@ -10695,9 +10695,6 @@ msgstr "获取网页登录链接"
 msgid "Give or remove roles"
 msgstr "授予或移除角色"
 
-msgid "%1$s or %2$s"
-msgstr "%1$s 或 %2$s"
-
 msgid "Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers."
 msgstr "遇到困难、有反馈或发现 bug？直接告诉机器人：它会转告组织者。"
 
@@ -11598,6 +11595,10 @@ msgstr "有新活动时收到邮件。可随时退订。"
 #: src/Support/FollowupMail.php
 msgid "The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
 msgstr "这个夜晚由我们的 crew 成就：他们在幕后工作，让其他人都能尽情跳舞。想加入吗？这是认识新朋友、发挥作用并省下门票钱的好方式。"
+
+#: src/Support/FollowupMail.php
+msgid "Our evenings are made by our crew: the people who work behind the scenes so everyone else can dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."
+msgstr "我们的夜晚由我们的 crew 成就：他们在幕后工作，让其他人都能尽情跳舞。想加入吗？这是认识新朋友、发挥作用并省下门票钱的好方式。"
 
 msgid "Nothing after a few minutes, not even in spam? Try again, with the same or another address."
 msgstr "几分钟后仍未收到，垃圾邮件里也没有？请用同一地址或其他地址再试一次。"
