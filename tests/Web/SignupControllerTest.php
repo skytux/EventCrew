@@ -705,9 +705,11 @@ final class SignupControllerTest extends TestCase
         $html = $this->controller()->renderShortcode();
 
         self::assertStringContainsString(
-            '<a class="wp-element-button eventcrew-btn-go" href="#eventcrew-signin" data-eventcrew-signin-task="5">Take someone’s task</a>',
+            '<a class="eventcrew-textlink" href="#eventcrew-signin" data-eventcrew-signin-task="5">Take someone’s task</a>',
             $html
         );
+        // A text link on its own line under the row, not a button beside the count.
+        self::assertStringContainsString('<span class="eventcrew-task-takeover">', $html);
         self::assertStringNotContainsString('eventcrew-btn-full', $html);
     }
 
@@ -732,7 +734,8 @@ final class SignupControllerTest extends TestCase
         $html = $this->controller(null, null, null, $this->takeovers())->renderShortcode();
 
         self::assertSame(1, preg_match('~<li[^>]*id="eventcrew-task-6".*?</li>~s', $html, $row));
-        self::assertStringContainsString('Take someone’s task</summary>', $row[0]);
+        self::assertStringContainsString('<summary class="eventcrew-textlink">Take someone’s task</summary>', $row[0]);
+        self::assertStringContainsString('<details class="eventcrew-credit-ask eventcrew-task-takeover">', $row[0]);
         self::assertStringContainsString('value="' . SignupController::TAKEOVER_ACTION . '"', $row[0]);
         self::assertStringContainsString('name="assignment_id" value="80"', $row[0]);
         self::assertStringContainsString('<button type="submit" class="eventcrew-textlink">Anna</button>', $row[0]);

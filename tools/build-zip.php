@@ -73,6 +73,8 @@ $excludePatterns = [
     '#(^|/)dist(/|$)#',
     '#\.dist$#',
     '#(^|/)composer\.(json|lock|phar)$#',
+    // Test-only Patchwork config (its cache dir is a dotfile, caught above).
+    '#(^|/)patchwork\.json$#',
 ];
 
 // ---------------------------------------------------------------------------

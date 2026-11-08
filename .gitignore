@@ -7,3 +7,4 @@ composer.phar
 /ideas
 /tmp/
 /.live-mail.json
+/.patchwork-cache/

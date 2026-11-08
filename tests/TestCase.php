@@ -40,6 +40,44 @@ abstract class TestCase extends PHPUnitTestCase
 
         Monkey\tearDown();
         parent::tearDown();
+
+        $this->releaseProperties();
+    }
+
+    /**
+     * PHPUnit keeps every finished test object until the run ends, and with it
+     * whatever the test left in its properties: fake databases, repositories,
+     * services, captured output. Over the whole suite that no longer fit in
+     * 128 MB, so each test drops its own properties once it is done. PHPUnit's
+     * own properties (declared on its TestCase) stay; static and readonly ones
+     * are left alone. Unset rather than nulled, so typed non-nullable
+     * properties are released too; the closure is bound to the declaring
+     * class so private properties of every level can be reached.
+     */
+    private function releaseProperties(): void
+    {
+        $class = new \ReflectionClass($this);
+
+        while (false !== $class && PHPUnitTestCase::class !== $class->getName()) {
+            $scope = $class->getName();
+
+            foreach ($class->getProperties() as $property) {
+                if (
+                    $property->isStatic()
+                    || $property->isReadOnly()
+                    || $property->getDeclaringClass()->getName() !== $scope
+                ) {
+                    continue;
+                }
+
+                $name = $property->getName();
+                \Closure::bind(function () use ($name): void {
+                    unset($this->$name);
+                }, $this, $scope)();
+            }
+
+            $class = $class->getParentClass();
+        }
     }
 
     /**

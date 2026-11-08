@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+// Patchwork (under Brain Monkey) rewrites every source file it loads and, with
+// no cache, keeps the rewritten code in memory for the whole run. patchwork.json
+// points it at this disk cache instead; it must exist before the autoloader
+// loads Patchwork, or Patchwork refuses to start.
+if (! is_dir(dirname(__DIR__) . '/.patchwork-cache')) {
+    mkdir(dirname(__DIR__) . '/.patchwork-cache', 0777, true);
+}
+
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 if (! defined('EVENTCREW_PLUGIN_DIR')) {

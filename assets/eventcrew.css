@@ -463,9 +463,15 @@
  * its content's minimum width - the same trap min-width:auto sets on a flex
  * item, and the reason a long event name could shove the button aside.
  */
+/*
+ * The name column keeps at least 9em (or the whole row, if narrower): a wide
+ * action beside it squeezed "Decorate" down to "Decor / ate" (2026-11-08).
+ * Names wrap between words only; a single word longer than the line is the one
+ * case left to break.
+ */
 .eventcrew-signup .eventcrew-task-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(min(9em, 100%), 1fr) auto;
     align-items: center;
     gap: .75em;
     padding: .6em 0; border-bottom: 1px solid var(--eventcrew-line);
@@ -473,10 +479,25 @@
 .eventcrew-signup .eventcrew-task-row:last-child { border-bottom: 0; }
 .eventcrew-signup .eventcrew-task-main {
     display: flex; flex-direction: column; gap: .1em;
-    min-width: 0; overflow-wrap: anywhere;
+    min-width: 0; overflow-wrap: break-word; word-break: normal;
 }
-.eventcrew-signup .eventcrew-task-role { font-weight: 600; }
-.eventcrew-signup .eventcrew-task-when { font-size: .85em; opacity: .8; font-variant-numeric: tabular-nums; }
+.eventcrew-signup .eventcrew-task-role { font-weight: 600; overflow-wrap: break-word; word-break: normal; hyphens: manual; }
+/* The time on one line: "17:00–18:30" must not wrap at its dash. */
+.eventcrew-signup .eventcrew-task-when { font-size: .85em; opacity: .8; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/*
+ * Take someone's task: a text link on its own line under the row, spanning
+ * both columns and right aligned under the count. The row's gap is pulled back
+ * so it sits with its row; the link itself keeps the 44px tap height. Opened,
+ * the holders' names line up on the right too.
+ */
+.eventcrew-signup .eventcrew-task-takeover {
+    grid-column: 1 / -1; justify-self: end; text-align: right;
+    margin-top: -.6em;
+}
+.eventcrew-signup .eventcrew-task-takeover summary.eventcrew-textlink {
+    display: inline-flex; line-height: inherit; white-space: normal;
+}
+.eventcrew-signup .eventcrew-task-takeover form { margin: 0 0 0 .75em; }
 .eventcrew-signup .eventcrew-task-names { display: block; font-size: .85em; opacity: .8; overflow-wrap: anywhere; }
 .eventcrew-signup .eventcrew-task-desc { font-size: .85em; }
 
