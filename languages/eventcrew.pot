@@ -92,7 +92,7 @@ msgstr ""
 msgid "%1$s (%2$s) wrote to the bot in a private chat. Here is that chat, oldest first."
 msgstr ""
 
-#: src/Support/TicketTransferService.php:551
+#: src/Support/TicketTransferService.php:581
 #. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
 msgid "%1$s accepted your free-entry ticket for %2$s. Your own ticket no longer works."
 msgstr ""
@@ -122,7 +122,7 @@ msgstr ""
 msgid "%1$s does not have the %2$s role. As an organizer you can still add them; they get the role."
 msgstr ""
 
-#: src/Support/TicketTransferService.php:528
+#: src/Support/TicketTransferService.php:558
 #. translators: 1: the giver's name, 2: the night, like "Sat 14 Nov · Dance Night"
 msgid "%1$s gave you their free-entry ticket for %2$s."
 msgstr ""
@@ -151,7 +151,7 @@ msgstr ""
 msgid "%1$s is covering for %2$s: %3$s at %4$s."
 msgstr ""
 
-#: src/Support/TicketMail.php:1118 src/Telegram/TransferPage.php:410
+#: src/Support/TicketMail.php:1125 src/Telegram/TransferPage.php:444
 #. translators: 1: the giver's name, 2: the night, e.g. "Club night 14.11.2026"
 #. translators: 1: the giver's name, 2: the night, like "Sat 14 Nov · Dance Night"
 msgid "%1$s is giving you their free-entry ticket for %2$s."
@@ -290,7 +290,7 @@ msgid_plural "%d names were skipped because they were already on the guest list.
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/TicketMail.php:1830 src/Telegram/DoorListService.php:167 templates/public/signup.php:890
+#: src/Support/TicketMail.php:1837 src/Telegram/DoorListService.php:167 templates/public/signup.php:890
 #. translators: %d: number of people
 msgid "%d person"
 msgid_plural "%d people"
@@ -392,7 +392,7 @@ msgstr ""
 msgid "%s bot – commands"
 msgstr ""
 
-#: src/Support/TicketMail.php:1805
+#: src/Support/TicketMail.php:1812
 msgid "%s gave you their free-entry ticket."
 msgstr ""
 
@@ -666,7 +666,7 @@ msgstr ""
 msgid "A few questions for the organizers, then I’ll email you the link. Have you worked on the crew here before?"
 msgstr ""
 
-#: src/Support/TicketMail.php:1125 src/Telegram/TransferPage.php:364
+#: src/Support/TicketMail.php:1132 src/Telegram/TransferPage.php:396
 msgid "A free-entry ticket for you"
 msgstr ""
 
@@ -976,11 +976,11 @@ msgstr ""
 msgid "Accept"
 msgstr ""
 
-#: src/Support/TicketMail.php:1121
+#: src/Support/TicketMail.php:1128
 msgid "Accept it and write your name, and we will email you the ticket. The offer ends when the doors open."
 msgstr ""
 
-#: src/Support/TicketMail.php:1126 src/Telegram/TransferPage.php:422
+#: src/Support/TicketMail.php:1133 src/Telegram/TransferPage.php:457
 msgid "Accept the ticket"
 msgstr ""
 
@@ -1480,7 +1480,7 @@ msgstr ""
 msgid "Back to top"
 msgstr ""
 
-#: src/Telegram/TransferPage.php:115
+#: src/Telegram/TransferPage.php:116
 msgid "Back to your ticket"
 msgstr ""
 
@@ -1687,7 +1687,7 @@ msgstr ""
 msgid "Cancel a free-entry ticket: /unticket name\nExample: /unticket Milla\nA date first picks another night: /unticket 21.11. Milla"
 msgstr ""
 
-#: src/Telegram/TransferBot.php:64
+#: src/Telegram/TransferBot.php:69
 msgid "Cancel offer"
 msgstr ""
 
@@ -1703,7 +1703,7 @@ msgstr ""
 msgid "Cancel the free-entry ticket of %1$s for %2$s? The credit goes back."
 msgstr ""
 
-#: src/Telegram/TransferPage.php:139
+#: src/Telegram/TransferPage.php:140
 msgid "Cancel the offer"
 msgstr ""
 
@@ -2251,7 +2251,7 @@ msgstr ""
 msgid "Crew privacy notice"
 msgstr ""
 
-#: src/Support/TicketMail.php:1884
+#: src/Support/TicketMail.php:1891
 msgid "Crew ticket"
 msgstr ""
 
@@ -2459,16 +2459,16 @@ msgstr ""
 msgid "Done ✓"
 msgstr ""
 
-#: src/Support/TicketTransferService.php:493
+#: src/Support/TicketTransferService.php:522
 msgid "Done."
 msgstr ""
 
-#: src/Telegram/TransferBot.php:302 src/Telegram/TransferPage.php:164
+#: src/Telegram/TransferBot.php:364 src/Telegram/TransferPage.php:165
 #. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
 msgid "Done. %1$s has your ticket for %2$s now. Your own ticket no longer works."
 msgstr ""
 
-#: src/Telegram/TransferPage.php:197
+#: src/Telegram/TransferPage.php:205
 #. translators: %s: the receiver's name
 msgid "Done. %s has your ticket now. Your own ticket no longer works."
 msgstr ""
@@ -3076,7 +3076,7 @@ msgstr ""
 msgid "Free-entry credits: %d"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:208 src/Support/TicketMail.php:1885 src/Telegram/TicketRedemptionService.php:164
+#: src/Support/MessageTemplates.php:208 src/Support/TicketMail.php:1892 src/Telegram/TicketRedemptionService.php:164
 msgid "Free-entry ticket"
 msgstr ""
 
@@ -3145,7 +3145,7 @@ msgstr ""
 msgid "Getting started"
 msgstr ""
 
-#: src/Telegram/TransferBot.php:258
+#: src/Telegram/TransferBot.php:319
 msgid "Give"
 msgstr ""
 
@@ -3165,7 +3165,7 @@ msgstr ""
 msgid "Give a one-time pass"
 msgstr ""
 
-#: src/Telegram/TicketController.php:798 src/Telegram/TransferBot.php:51
+#: src/Telegram/TicketController.php:798 src/Telegram/TransferBot.php:56
 msgid "Give away"
 msgstr ""
 
@@ -3189,7 +3189,7 @@ msgstr ""
 msgid "Give the guest’s number from the list, e.g. /door remove 2"
 msgstr ""
 
-#: src/Telegram/TransferPage.php:336
+#: src/Telegram/TransferPage.php:368
 msgid "Give the ticket"
 msgstr ""
 
@@ -3205,11 +3205,11 @@ msgstr ""
 msgid "Give ticket"
 msgstr ""
 
-#: src/Telegram/TransferPage.php:111
+#: src/Telegram/TransferPage.php:112
 msgid "Give your ticket away"
 msgstr ""
 
-#: src/Telegram/TransferPage.php:296
+#: src/Telegram/TransferPage.php:328
 #. translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night"
 msgid "Give your ticket for %2$s to %1$s? It moves at once and your own ticket stops working."
 msgstr ""
@@ -3227,7 +3227,7 @@ msgstr ""
 msgid "Giving tickets away"
 msgstr ""
 
-#: src/Support/TicketTransferService.php:501
+#: src/Support/TicketTransferService.php:531
 msgid "Giving tickets away is turned off."
 msgstr ""
 
@@ -3443,7 +3443,7 @@ msgid "Hi %s!"
 msgstr ""
 
 #: src/Support/DmBody.php:48 src/Support/EmailBody.php:461 src/Support/FollowupMail.php:1471 src/Support/MessageTemplates.php:2041
-#: src/Support/MessageTemplates.php:2807 src/Support/MessageTemplates.php:3442 src/Support/TicketMail.php:1505 src/Support/TicketText.php:92
+#: src/Support/MessageTemplates.php:2807 src/Support/MessageTemplates.php:3442 src/Support/TicketMail.php:1512 src/Support/TicketText.php:92
 #. translators: %s: the person's first name
 msgid "Hi %s,"
 msgstr ""
@@ -3456,7 +3456,7 @@ msgstr ""
 msgid "Hi!"
 msgstr ""
 
-#: src/Support/EmailBody.php:459 src/Support/FollowupMail.php:1469 src/Support/TicketMail.php:1116 src/Support/TicketMail.php:1503
+#: src/Support/EmailBody.php:459 src/Support/FollowupMail.php:1469 src/Support/TicketMail.php:1510
 msgid "Hi,"
 msgstr ""
 
@@ -3920,7 +3920,7 @@ msgstr ""
 msgid "Keep"
 msgstr ""
 
-#: src/Telegram/BoardService.php:1549 src/Telegram/TransferBot.php:259
+#: src/Telegram/BoardService.php:1549 src/Telegram/TransferBot.php:320
 msgid "Keep it"
 msgstr ""
 
@@ -3944,7 +3944,7 @@ msgstr ""
 msgid "Kept the current text."
 msgstr ""
 
-#: src/Telegram/TransferBot.php:319
+#: src/Telegram/TransferBot.php:381
 msgid "Kept. The ticket stays with you."
 msgstr ""
 
@@ -4487,7 +4487,7 @@ msgstr[1] ""
 msgid "Newsletter sent (the number is its row below; point at it for the subject)"
 msgstr ""
 
-#: src/Telegram/TransferPage.php:219 templates/public/signup.php:943
+#: src/Telegram/TransferPage.php:227 templates/public/signup.php:943
 msgid "Next"
 msgstr ""
 
@@ -4639,11 +4639,11 @@ msgstr ""
 msgid "No guests yet."
 msgstr ""
 
-#: src/Support/TicketMail.php:1890
+#: src/Support/TicketMail.php:1897
 msgid "No internet? Show these QR codes at the door."
 msgstr ""
 
-#: src/Support/TicketMail.php:1889
+#: src/Support/TicketMail.php:1896
 msgid "No internet? Show this QR code at the door."
 msgstr ""
 
@@ -4667,7 +4667,7 @@ msgstr ""
 msgid "No member called “%s” was found. Someone who is not a member yet: ➕ Add someone under /board."
 msgstr ""
 
-#: src/Telegram/TransferPage.php:288
+#: src/Telegram/TransferPage.php:320
 msgid "No member found by that name. Write their name again, or an email address."
 msgstr ""
 
@@ -5089,12 +5089,12 @@ msgstr ""
 msgid "Off by default. When on, the text board shows the next event, who is signed up for which task, the task buttons and the date buttons. The next event's picture is posted to the group on its own, once when it becomes the next event and again on its morning, never with /board: its picture, name, date, price, two sentences about the DJ or host written by the language model, and its links. Only for an EventMesh event with a picture."
 msgstr ""
 
-#: src/Telegram/TransferBot.php:330 src/Telegram/TransferPage.php:124
+#: src/Telegram/TransferBot.php:392 src/Telegram/TransferPage.php:125
 msgid "Offer cancelled. Your ticket is yours again."
 msgstr ""
 
-#: src/Telegram/TransferPage.php:307
-#. translators: 1: an email address, 2: the night, like "Sat 14 Nov · Dance Night"
+#: src/Telegram/TransferPage.php:339
+#. translators: 1: an email address, or a name and an email address, 2: the night, like "Sat 14 Nov · Dance Night"
 msgid "Offer your ticket for %2$s to %1$s? They must accept before the doors open. Until then your ticket works."
 msgstr ""
 
@@ -5338,7 +5338,7 @@ msgstr ""
 msgid "Open in Telegram:"
 msgstr ""
 
-#: src/Support/TicketMail.php:1887
+#: src/Support/TicketMail.php:1894
 msgid "Open my ticket"
 msgstr ""
 
@@ -5682,7 +5682,7 @@ msgstr ""
 msgid "Pick an event:"
 msgstr ""
 
-#: src/Telegram/TransferPage.php:327
+#: src/Telegram/TransferPage.php:359
 msgid "Pick the member who gets your ticket. It moves at once and your own ticket stops working."
 msgstr ""
 
@@ -5731,7 +5731,7 @@ msgstr ""
 msgid "Please tell an organizer what is not right: they can correct it."
 msgstr ""
 
-#: src/Support/TicketTransferService.php:499
+#: src/Support/TicketTransferService.php:528
 msgid "Please write your name."
 msgstr ""
 
@@ -6496,7 +6496,7 @@ msgstr ""
 msgid "See you next time!"
 msgstr ""
 
-#: src/Support/TicketMail.php:1862
+#: src/Support/TicketMail.php:1869
 msgid "See you on the dancefloor"
 msgstr ""
 
@@ -6565,7 +6565,7 @@ msgstr ""
 msgid "Send the night’s ticket emails now: /sendtickets (or /sendtickets 21.11.)\nCancel the waiting send: /sendtickets cancel"
 msgstr ""
 
-#: src/Telegram/TransferPage.php:253
+#: src/Telegram/TransferPage.php:293
 msgid "Send the offer"
 msgstr ""
 
@@ -6956,8 +6956,8 @@ msgstr ""
 msgid "Sent. Check your email, or Telegram if you use the bot."
 msgstr ""
 
-#: src/Telegram/TransferBot.php:310 src/Telegram/TransferPage.php:204
-#. translators: %s: an email address
+#: src/Telegram/TransferBot.php:372 src/Telegram/TransferPage.php:212
+#. translators: %s: the name of the person the ticket was offered to
 msgid "Sent. When %s accepts, the ticket moves to them. Until then your own ticket works."
 msgstr ""
 
@@ -7022,7 +7022,7 @@ msgstr ""
 msgid "Settings: roles, reputation, notifications and their times, the Telegram bot, email, privacy, and the welcome message."
 msgstr ""
 
-#: src/Support/TicketMail.php:1888
+#: src/Support/TicketMail.php:1895
 msgid "Short code"
 msgstr ""
 
@@ -7052,7 +7052,7 @@ msgstr ""
 msgid "Show the open tasks"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:463 src/Telegram/TicketRedemptionService.php:516 src/Telegram/TransferPage.php:433
+#: src/Support/MessageTemplates.php:463 src/Telegram/TicketRedemptionService.php:516 src/Telegram/TransferPage.php:468
 msgid "Show your ticket"
 msgstr ""
 
@@ -7234,7 +7234,7 @@ msgstr ""
 msgid "Some tasks still need people"
 msgstr ""
 
-#: src/Support/TicketTransferService.php:529
+#: src/Support/TicketTransferService.php:559
 msgid "Someone"
 msgstr ""
 
@@ -7246,7 +7246,7 @@ msgstr ""
 msgid "Someone else has already asked to take over this task. Wait until that request is answered."
 msgstr ""
 
-#: src/Support/TicketMail.php:1803
+#: src/Support/TicketMail.php:1810
 msgid "Someone gave you their free-entry ticket."
 msgstr ""
 
@@ -7417,11 +7417,11 @@ msgstr ""
 msgid "Switched off"
 msgstr ""
 
-#: src/Support/TicketMail.php:1442
+#: src/Support/TicketMail.php:1449
 msgid "TICKET CANCELLED"
 msgstr ""
 
-#: src/Support/TicketMail.php:1478
+#: src/Support/TicketMail.php:1485
 msgid "TICKET MOVED"
 msgstr ""
 
@@ -7981,7 +7981,7 @@ msgstr ""
 msgid "That is not a valid email address."
 msgstr ""
 
-#: src/Support/TicketTransferService.php:496
+#: src/Support/TicketTransferService.php:525
 msgid "That is not an email address. Write a name or an email address."
 msgstr ""
 
@@ -7989,7 +7989,7 @@ msgstr ""
 msgid "That is not the code on the crew app, so this sign-in is cancelled. Press Telegram on the crew app to start again."
 msgstr ""
 
-#: src/Support/TicketTransferService.php:495
+#: src/Support/TicketTransferService.php:524
 msgid "That is you. Pick someone else."
 msgstr ""
 
@@ -8387,7 +8387,7 @@ msgstr ""
 msgid "The door list, guest list and sales desk"
 msgstr ""
 
-#: src/Support/TicketTransferService.php:498
+#: src/Support/TicketTransferService.php:527
 msgid "The doors are already open. Give the ticket to a member instead."
 msgstr ""
 
@@ -8726,7 +8726,7 @@ msgstr ""
 msgid "The organizer help (link below) explains how everything works."
 msgstr ""
 
-#: src/Support/TicketTransferService.php:401
+#: src/Support/TicketTransferService.php:419
 #. translators: %s: the night, like "Sat 14 Nov · Dance Night"
 msgid "The organizers cancelled the free-entry ticket you were given for %s."
 msgstr ""
@@ -8735,7 +8735,7 @@ msgstr ""
 msgid "The organizers do not know you yet, so they could not say OK to your sign-up. Please come and talk to us at an event; an organizer can then say OK."
 msgstr ""
 
-#: src/Support/TicketMail.php:1195
+#: src/Support/TicketMail.php:1202
 msgid "The organizers have cancelled the task %s. You are no longer signed up for it. This does not count against your standing."
 msgstr ""
 
@@ -9075,7 +9075,7 @@ msgstr ""
 msgid "The ticket emails go out at %s. To stop them, press \"Cancel sending\" on the Roster page before then."
 msgstr ""
 
-#: src/Telegram/TransferPage.php:430
+#: src/Telegram/TransferPage.php:465
 #. translators: %s: an email address
 msgid "The ticket is yours. We emailed it to %s."
 msgstr ""
@@ -9144,6 +9144,10 @@ msgstr ""
 
 #: templates/admin/messages-tab-messages.php:115
 msgid "The {reason} line of the ticket email for this kind of ticket. Empty, or the same as the built-in line, means the built-in line."
+msgstr ""
+
+#: src/Telegram/TransferPage.php:290
+msgid "Their name"
 msgstr ""
 
 #: templates/admin/settings.php:1159
@@ -9416,7 +9420,7 @@ msgstr ""
 msgid "This notice was last updated on %s."
 msgstr ""
 
-#: src/Support/TicketTransferService.php:500
+#: src/Support/TicketTransferService.php:530
 msgid "This offer is no longer open."
 msgstr ""
 
@@ -9444,7 +9448,7 @@ msgstr ""
 msgid "This replaces your edit."
 msgstr ""
 
-#: src/Telegram/AssignCommand.php:192 src/Telegram/CommandFlow.php:188 src/Telegram/TaskCommand.php:135 src/Telegram/TransferBot.php:343
+#: src/Telegram/AssignCommand.php:192 src/Telegram/CommandFlow.php:188 src/Telegram/TaskCommand.php:135 src/Telegram/TransferBot.php:405
 msgid "This request has expired. Please send it again."
 msgstr ""
 
@@ -9477,15 +9481,15 @@ msgstr ""
 msgid "This ticket"
 msgstr ""
 
-#: src/Support/TicketTransferService.php:502
+#: src/Support/TicketTransferService.php:532
 msgid "This ticket cannot be given away."
 msgstr ""
 
-#: src/Support/TicketTransferService.php:494
+#: src/Support/TicketTransferService.php:523
 msgid "This ticket is already offered to someone. Cancel that offer first."
 msgstr ""
 
-#: src/Telegram/TicketController.php:676 src/Telegram/TransferPage.php:99
+#: src/Telegram/TicketController.php:676 src/Telegram/TransferPage.php:100
 msgid "This ticket link is not valid."
 msgstr ""
 
@@ -9526,7 +9530,7 @@ msgstr ""
 msgid "Ticket"
 msgstr ""
 
-#: src/Support/TicketMail.php:1883 src/Telegram/TicketController.php:1031
+#: src/Support/TicketMail.php:1890 src/Telegram/TicketController.php:1031
 msgid "Ticket %1$d of %2$d"
 msgstr ""
 
@@ -9576,7 +9580,7 @@ msgstr ""
 msgid "Ticket cancelled or moved email"
 msgstr ""
 
-#: src/Support/PrivacyExporter.php:242 src/Support/TicketMail.php:1861
+#: src/Support/PrivacyExporter.php:242 src/Support/TicketMail.php:1868
 msgid "Ticket code"
 msgstr ""
 
@@ -9635,7 +9639,7 @@ msgstr ""
 msgid "Ticket list not imported (email)"
 msgstr ""
 
-#: src/Telegram/TicketController.php:671 src/Telegram/TransferPage.php:98
+#: src/Telegram/TicketController.php:671 src/Telegram/TransferPage.php:99
 msgid "Ticket not found"
 msgstr ""
 
@@ -9804,7 +9808,7 @@ msgstr ""
 msgid "Transferred"
 msgstr ""
 
-#: src/Support/TicketMail.php:1886
+#: src/Support/TicketMail.php:1893
 msgid "Transferred ticket"
 msgstr ""
 
@@ -10056,8 +10060,8 @@ msgstr ""
 msgid "Waiting"
 msgstr ""
 
-#: src/Telegram/ProfileService.php:256 src/Telegram/TicketController.php:793 src/Telegram/TransferPage.php:136
-#. translators: %s: the email address the ticket was offered to
+#: src/Telegram/ProfileService.php:256 src/Telegram/TicketController.php:793 src/Telegram/TransferPage.php:137
+#. translators: %s: the name of the person the ticket was offered to
 msgid "Waiting for %s to accept"
 msgstr ""
 
@@ -10252,6 +10256,10 @@ msgstr ""
 
 #: templates/admin/settings.php:1653
 msgid "What is hybrid?"
+msgstr ""
+
+#: src/Telegram/TransferBot.php:248
+msgid "What is their name?"
 msgstr ""
 
 #: src/Web/NewsletterController.php:673 src/Web/NewsletterController.php:1279
@@ -10452,11 +10460,11 @@ msgstr ""
 msgid "Who else can see it"
 msgstr ""
 
-#: src/Telegram/TransferBot.php:225
+#: src/Telegram/TransferBot.php:240
 msgid "Who gets your ticket?"
 msgstr ""
 
-#: src/Telegram/TransferPage.php:227
+#: src/Telegram/TransferPage.php:235
 msgid "Who gets your ticket? Write a member’s name, or the email address of someone who is not a member."
 msgstr ""
 
@@ -10647,6 +10655,10 @@ msgstr ""
 msgid "Write the AI texts now"
 msgstr ""
 
+#: src/Support/TicketTransferService.php:529
+msgid "Write the name of the person who gets the ticket."
+msgstr ""
+
 #: templates/admin/messages-tab-events.php:267
 msgid "Write them again"
 msgstr ""
@@ -10686,7 +10698,7 @@ msgstr ""
 msgid "You already asked to take over this task. %1$s has until %2$s to answer."
 msgstr ""
 
-#: src/Support/TicketTransferService.php:497
+#: src/Support/TicketTransferService.php:526
 msgid "You already have 3 offers waiting. Cancel one first."
 msgstr ""
 
@@ -10828,7 +10840,7 @@ msgid_plural "You get a standing score after %d more tasks."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/TicketMail.php:1162
+#: src/Support/TicketMail.php:1169
 msgid "You get this email because someone gave you a ticket to this event."
 msgstr ""
 
@@ -10841,11 +10853,11 @@ msgstr ""
 msgid "You get this email because you are in the crew. Change your details or leave the announcement"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1025 src/Support/TicketMail.php:1402
+#: src/Support/FollowupMail.php:1025 src/Support/TicketMail.php:1409
 msgid "You get this email because you had a ticket to this event."
 msgstr ""
 
-#: src/Support/TicketMail.php:1736
+#: src/Support/TicketMail.php:1743
 msgid "You get this email because you have a ticket to this event."
 msgstr ""
 
@@ -10853,7 +10865,7 @@ msgstr ""
 msgid "You get this email because you joined the next events announcement. Change your details or leave the announcement"
 msgstr ""
 
-#: src/Support/TicketMail.php:1879
+#: src/Support/TicketMail.php:1886
 #. translators: %d: how many tickets the person has for the night, always 2 or more
 msgid "You have %d ticket for this night."
 msgid_plural "You have %d tickets for this night."
@@ -11044,7 +11056,7 @@ msgstr ""
 msgid "Your language is saved."
 msgstr ""
 
-#: src/Telegram/TransferPage.php:420
+#: src/Telegram/TransferPage.php:454
 msgid "Your name"
 msgstr ""
 
@@ -11076,7 +11088,7 @@ msgstr ""
 msgid "Your notification preferences are saved."
 msgstr ""
 
-#: src/Support/TicketMail.php:1440
+#: src/Support/TicketMail.php:1447
 msgid "Your other tickets for this night still work. They are below."
 msgstr ""
 
@@ -11154,24 +11166,24 @@ msgstr ""
 msgid "Your template keeps whatever design it was created with. Use “Reset the template” below to take up the current built-in one."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:2039 src/Support/TicketMail.php:1509 src/Support/TicketMail.php:1860
+#: src/Support/MessageTemplates.php:2039 src/Support/TicketMail.php:1516 src/Support/TicketMail.php:1867
 msgid "Your ticket"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:2065 src/Support/TicketMail.php:1441
+#: src/Support/MessageTemplates.php:2065 src/Support/TicketMail.php:1448
 msgid "Your ticket is cancelled"
 msgstr ""
 
-#: src/Support/TicketMail.php:1477
+#: src/Support/TicketMail.php:1484
 msgid "Your ticket moved to another address"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:2068 src/Support/TicketMail.php:1437
+#: src/Support/MessageTemplates.php:2068 src/Support/TicketMail.php:1444
 #. translators: 1: the event's name, 2: its date, e.g. 14.11.2026
 msgid "Your ticket to %1$s on %2$s is cancelled. The QR code in the ticket email no longer works at the door."
 msgstr ""
 
-#: src/Support/TicketMail.php:1473
+#: src/Support/TicketMail.php:1480
 msgid "Your ticket to %1$s on %2$s was moved to another email address. The QR code in your earlier ticket email no longer works at the door."
 msgstr ""
 
@@ -11761,7 +11773,7 @@ msgid_plural "🎁 You’ve been given %d free-entry credits. Tap 🎟 Free-entr
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/MessageTemplates.php:464 src/Support/MessageTemplates.php:1198 src/Support/TicketTransferService.php:533 src/Telegram/TicketRedemptionService.php:486
+#: src/Support/MessageTemplates.php:464 src/Support/MessageTemplates.php:1198 src/Support/TicketTransferService.php:563 src/Telegram/TicketRedemptionService.php:486
 msgid "🎟 Show your ticket"
 msgstr ""
 
