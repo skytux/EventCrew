@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.206
+Stable tag: 1.140.207
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.207 =
+* Telegram profile: once you are rated, the standing bar alone shows your score and level, so they no longer appear twice.
+* History in wp-admin reads on a phone: each row shows what happened, with the time, who did it, the task and the night under it, no need to open rows one by one.
 
 = 1.140.206 =
 * Organizers get a monthly report email: new people, bot and web use, sign-ups and cancellations (web and bot), no-shows, completed tasks, free entries, ticket buyers and a funnel, with the previous month for comparison. On by default; Settings has a switch and a test send.
@@ -1984,6 +1988,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.207 =
+No settings change.
 
 = 1.140.206 =
 No settings change.

@@ -1889,7 +1889,7 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: src/Telegram/ProfileService.php:430
+#: src/Telegram/ProfileService.php:433
 #. translators: 1: role, 2: day
 msgid "Cancel %1$s, %2$s"
 msgstr ""
@@ -2203,7 +2203,7 @@ msgstr ""
 msgid "Coming events"
 msgstr ""
 
-#: src/Telegram/ProfileService.php:453
+#: src/Telegram/ProfileService.php:456
 msgid "Coming up:"
 msgstr ""
 
@@ -2236,7 +2236,7 @@ msgstr ""
 msgid "Completed tasks a member works to earn one free-entry credit. Default 2."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:81 templates/public/signup.php:503
+#: src/Telegram/ProfileService.php:84 templates/public/signup.php:503
 #. translators: %d: completed tasks
 msgid "Completed tasks: %d"
 msgstr ""
@@ -3390,7 +3390,7 @@ msgstr ""
 msgid "Free-entry credits and tickets have no cash value. They can't be refunded, sold or paid out in any form; they can only be used to get a ticket for an eligible event."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:86 src/Telegram/TicketRedemptionService.php:168 templates/public/signup.php:507
+#: src/Telegram/ProfileService.php:89 src/Telegram/TicketRedemptionService.php:168 templates/public/signup.php:507
 #. translators: %d: free-entry credits
 msgid "Free-entry credits: %d"
 msgstr ""
@@ -3709,7 +3709,7 @@ msgstr ""
 msgid "Here you can change the name we greet you with and your language, or leave the announcement."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:357
+#: src/Telegram/ProfileService.php:360
 msgid "Here’s your sign-in link for the web board — good for 30 minutes, one use."
 msgstr ""
 
@@ -5011,7 +5011,7 @@ msgstr ""
 msgid "No coming night has a post-event email yet."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:452 templates/public/signup.php:734
+#: src/Telegram/ProfileService.php:455 templates/public/signup.php:734
 msgid "No coming tasks."
 msgstr ""
 
@@ -5151,7 +5151,7 @@ msgstr ""
 msgid "No password — we email you a link, good for 30 minutes."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:212
+#: src/Telegram/ProfileService.php:215
 msgid "No past tasks yet — your history starts once you’ve worked one."
 msgstr ""
 
@@ -5249,7 +5249,7 @@ msgstr ""
 msgid "No ticket on tonight’s list has this code."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:244 templates/public/signup.php:657
+#: src/Telegram/ProfileService.php:247 templates/public/signup.php:657
 msgid "No tickets yet — sign up for a task or spend a credit."
 msgstr ""
 
@@ -5377,7 +5377,7 @@ msgstr ""
 msgid "Nothing logged recently. Errors from the bot, mail and boot will appear here."
 msgstr ""
 
-#: src/Admin/HistoryListTable.php:85
+#: src/Admin/HistoryListTable.php:145
 msgid "Nothing recorded for this choice."
 msgstr ""
 
@@ -6073,7 +6073,7 @@ msgstr ""
 msgid "Past tickets"
 msgstr ""
 
-#: src/Telegram/ProfileService.php:262
+#: src/Telegram/ProfileService.php:265
 msgid "Past:"
 msgstr ""
 
@@ -7495,7 +7495,7 @@ msgid "Set yourself up first: send /start to the bot."
 msgstr ""
 
 #: src/Admin/Admin.php:469 src/Admin/Admin.php:470 src/Support/History.php:252 src/Telegram/MenuButtons.php:178
-#: src/Telegram/ProfileService.php:164 templates/public/signup.php:107 templates/public/signup.php:854
+#: src/Telegram/ProfileService.php:167 templates/public/signup.php:107 templates/public/signup.php:854
 msgid "Settings"
 msgstr ""
 
@@ -8131,7 +8131,7 @@ msgstr ""
 msgid "Task: %s"
 msgstr ""
 
-#: src/Admin/Admin.php:442 src/Admin/Admin.php:443 src/Telegram/MenuButtons.php:177 src/Telegram/ProfileService.php:131
+#: src/Admin/Admin.php:442 src/Admin/Admin.php:443 src/Telegram/MenuButtons.php:177 src/Telegram/ProfileService.php:134
 #: templates/admin/tasks.php:55 templates/public/signup.php:726 templates/public/signup.php:1110 templates/public/signup.php:2138
 #: templates/public/signup.php:2143
 msgid "Tasks"
@@ -9787,7 +9787,7 @@ msgstr ""
 msgid "There is no upcoming event night yet."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:339
+#: src/Telegram/ProfileService.php:342
 msgid "There’s no public sign-up page set up yet, so there’s nothing to sign in to on the web."
 msgstr ""
 
@@ -10566,7 +10566,7 @@ msgstr ""
 msgid "Upcoming"
 msgstr ""
 
-#: src/Telegram/ProfileService.php:248
+#: src/Telegram/ProfileService.php:251
 msgid "Upcoming:"
 msgstr ""
 
@@ -10690,7 +10690,7 @@ msgstr ""
 msgid "Waiting"
 msgstr ""
 
-#: src/Telegram/ProfileService.php:300 src/Telegram/TicketController.php:915 src/Telegram/TransferPage.php:137 templates/public/signup.php:682
+#: src/Telegram/ProfileService.php:303 src/Telegram/TicketController.php:915 src/Telegram/TransferPage.php:137 templates/public/signup.php:682
 #. translators: %s: the name of the person the ticket was offered to
 msgid "Waiting for %s to accept"
 msgstr ""
@@ -11790,7 +11790,7 @@ msgstr ""
 msgid "Your own placeholders"
 msgstr ""
 
-#: src/Telegram/ProfileService.php:194
+#: src/Telegram/ProfileService.php:197
 msgid "Your past tasks:"
 msgstr ""
 
@@ -11877,7 +11877,7 @@ msgstr ""
 msgid "Your ticket to %1$s on %2$s was moved to another email address. The QR code in your earlier ticket email no longer works at the door."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:238
+#: src/Telegram/ProfileService.php:241
 msgid "Your tickets"
 msgstr ""
 
@@ -11958,7 +11958,7 @@ msgstr ""
 msgid "a guest"
 msgstr ""
 
-#: src/Telegram/PersonCommands.php:458 src/Telegram/ProfileService.php:516
+#: src/Telegram/PersonCommands.php:458 src/Telegram/ProfileService.php:519
 msgid "a task"
 msgstr ""
 
@@ -12218,7 +12218,7 @@ msgstr ""
 msgid "organizer email"
 msgstr ""
 
-#: src/Telegram/MessagePages.php:41 src/Telegram/ProfileService.php:189 templates/public/signup-pager.php:34
+#: src/Telegram/MessagePages.php:41 src/Telegram/ProfileService.php:192 templates/public/signup-pager.php:34
 msgid "page %1$d of %2$d"
 msgstr ""
 
@@ -12595,7 +12595,7 @@ msgstr ""
 msgid "🔁 %1$s asks to take over your task: %2$s at %3$s, %4$s.\n\nYou decide: let them take it, or keep it. Please answer by %5$s. If you do not answer by then, you keep the task."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:359
+#: src/Telegram/ProfileService.php:362
 msgid "🔑 Sign in on the web"
 msgstr ""
 
