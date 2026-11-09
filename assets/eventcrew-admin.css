@@ -136,3 +136,20 @@
 
 /* Settings > Roles: Guest sign up means nothing while Guest display is off, so it greys out then. */
 td:has(input[name^="role_on_board"]:not(:checked)):has(input[name^="role_members_display"]:not(:checked)) .eventcrew-needs-display { opacity: 0.5; }
+
+/*
+ * History: the action is the table's primary column (a <th> in each row), so
+ * it keeps the size of the other cells on wide screens. On a phone each row is
+ * the action with time · done by · task · night under it, the other columns
+ * and the per-row "Show more details" button gone, so the log reads by
+ * scrolling.
+ */
+.wp-list-table.eventcrew-history tbody th.column-primary { font-size: 13px; line-height: 1.5em; }
+.eventcrew-history-meta { display: none; }
+@media screen and (max-width: 782px) {
+    .wp-list-table.eventcrew-history thead th:not(.column-primary),
+    .wp-list-table.eventcrew-history tfoot th:not(.column-primary),
+    .wp-list-table.eventcrew-history tbody tr:not(.no-items) td { display: none; }
+    .wp-list-table.eventcrew-history tbody th.column-primary { padding-right: 10px; }
+    .eventcrew-history-meta { display: block; margin-top: 2px; color: #646970; font-size: 12px; }
+}
