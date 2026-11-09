@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.207
+Stable tag: 1.140.208
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.208 =
+* Telegram profile: once you are rated, the standing bar alone shows your score and level, so they no longer appear twice.
+* History in wp-admin reads on a phone: each row shows what happened, with the time, who did it, the task and the night under it, no need to open rows one by one.
 
 = 1.140.207 =
 * When Telegram says an account is deleted, the bot marks it and stops sending it direct messages. The log and Diagnostics name the person. The mark is removed if that account writes to the bot or the group again.
@@ -1987,6 +1991,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.208 =
+No settings change.
 
 = 1.140.207 =
 No settings change.
