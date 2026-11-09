@@ -1379,7 +1379,7 @@ msgstr ""
 msgid "All systems go."
 msgstr ""
 
-#: src/Support/HealthReport.php:122
+#: src/Support/HealthReport.php:163
 #. translators: %s: schema version number
 msgid "All tables present at schema version %s."
 msgstr ""
@@ -1553,7 +1553,7 @@ msgstr ""
 msgid "Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers."
 msgstr ""
 
-#: src/Support/HealthReport.php:236
+#: src/Support/HealthReport.php:277
 msgid "App icons"
 msgstr ""
 
@@ -2546,7 +2546,7 @@ msgstr ""
 msgid "Data protection officer"
 msgstr ""
 
-#: src/Support/HealthReport.php:79
+#: src/Support/HealthReport.php:120
 msgid "Database"
 msgstr ""
 
@@ -2658,6 +2658,10 @@ msgstr ""
 #: src/Telegram/BuyerListReset.php:119
 #. translators: 1: number of ticket buyers deleted, 2: the event day, e.g. "Sat 1 Aug"
 msgid "Deleted %1$d ticket buyers for %2$s."
+msgstr ""
+
+#: src/Support/HealthReport.php:85
+msgid "Deleted Telegram accounts"
 msgstr ""
 
 #: src/Telegram/ManageController.php:219 src/Telegram/ManageController.php:232
@@ -2835,7 +2839,7 @@ msgstr ""
 msgid "Edited by hand"
 msgstr ""
 
-#: src/Admin/PeopleListTable.php:49 src/Support/HealthReport.php:260 src/Support/PrivacyExporter.php:153 src/Support/PrivacyExporter.php:241
+#: src/Admin/PeopleListTable.php:49 src/Support/HealthReport.php:301 src/Support/PrivacyExporter.php:153 src/Support/PrivacyExporter.php:241
 #: src/Support/PrivacyExporter.php:279 src/Support/PrivacyExporter.php:309 src/Support/PrivacyExporter.php:344 src/Support/PrivacyExporter.php:368
 #: templates/admin/newsletter.php:196 templates/admin/people.php:55 templates/admin/people.php:331 templates/admin/roster.php:196
 #: templates/admin/roster.php:208 templates/admin/roster.php:231 templates/admin/roster.php:268 templates/admin/roster.php:277
@@ -4421,7 +4425,7 @@ msgstr ""
 msgid "Last error"
 msgstr ""
 
-#: src/Support/HealthReport.php:177
+#: src/Support/HealthReport.php:218
 #. translators: %s: human-readable time span, e.g. "5 hours"
 msgid "Last run %s ago; WP-Cron may not be firing. Consider the on-request fallback."
 msgstr ""
@@ -4556,7 +4560,7 @@ msgstr ""
 msgid "Logo"
 msgstr ""
 
-#: src/Support/HealthReport.php:274
+#: src/Support/HealthReport.php:315
 #. translators: %s: the site admin email address
 msgid "Mail sends via wp_mail (admin: %s). Deliverability depends on the host and SPF/DKIM."
 msgstr ""
@@ -4751,7 +4755,7 @@ msgstr ""
 msgid "Messages: the text of every email and Telegram message, the AI prompts, the texts for the coming events, and how every email looks."
 msgstr ""
 
-#: src/Support/HealthReport.php:98
+#: src/Support/HealthReport.php:139
 #. translators: %s: comma-separated table names
 msgid "Missing tables: %s. Deactivate and reactivate the plugin to run the migration."
 msgstr ""
@@ -4967,11 +4971,11 @@ msgstr ""
 msgid "No AI service is set up at the moment, so nothing is sent to one."
 msgstr ""
 
-#: src/Support/HealthReport.php:254
+#: src/Support/HealthReport.php:295
 msgid "No Site Icon and GD unavailable, so the app has no icon. Set one in Settings → General."
 msgstr ""
 
-#: src/Support/HealthReport.php:248
+#: src/Support/HealthReport.php:289
 msgid "No Site Icon set; a lettered icon is generated with GD."
 msgstr ""
 
@@ -4995,7 +4999,7 @@ msgstr ""
 msgid "No blocked member called “%s” was found."
 msgstr ""
 
-#: src/Support/HealthReport.php:136
+#: src/Support/HealthReport.php:177
 msgid "No bot token set. The bot is optional — add one in Settings to run the group board."
 msgstr ""
 
@@ -5139,7 +5143,7 @@ msgstr ""
 msgid "No organizer answered in 48 hours. They were told."
 msgstr ""
 
-#: src/Support/HealthReport.php:201
+#: src/Support/HealthReport.php:242
 msgid "No page chosen for web signup / the mobile app. Set one in Settings → Mobile app."
 msgstr ""
 
@@ -5192,7 +5196,7 @@ msgstr ""
 msgid "No send was waiting. It may have gone out already."
 msgstr ""
 
-#: src/Support/HealthReport.php:266
+#: src/Support/HealthReport.php:307
 msgid "No site admin email is set, so wp_mail has no default sender."
 msgstr ""
 
@@ -5457,7 +5461,7 @@ msgstr ""
 msgid "Notification emails"
 msgstr ""
 
-#: src/Support/HealthReport.php:157 templates/admin/settings.php:999 templates/public/signup.php:885
+#: src/Support/HealthReport.php:198 templates/admin/settings.php:999 templates/public/signup.php:885
 msgid "Notifications"
 msgstr ""
 
@@ -6198,7 +6202,7 @@ msgstr ""
 msgid "Please sign in first."
 msgstr ""
 
-#: src/Telegram/UpdateRouter.php:763
+#: src/Telegram/UpdateRouter.php:766
 msgid "Please tell an organizer what is not right: they can correct it."
 msgstr ""
 
@@ -6492,7 +6496,7 @@ msgstr ""
 msgid "Reminder: %1$s for %2$s"
 msgstr ""
 
-#: src/Support/HealthReport.php:187
+#: src/Support/HealthReport.php:228
 #. translators: %s: human-readable time span, e.g. "20 minutes"
 msgid "Reminders and the open-task call ran %s ago."
 msgstr ""
@@ -7719,7 +7723,7 @@ msgstr ""
 msgid "Signup confirmations and task reminders are always sent on both channels."
 msgstr ""
 
-#: src/Support/HealthReport.php:195 templates/admin/settings.php:1155
+#: src/Support/HealthReport.php:236 templates/admin/settings.php:1155
 msgid "Signup page"
 msgstr ""
 
@@ -7895,7 +7899,7 @@ msgstr ""
 msgid "Stopped. Nothing is waiting for an answer."
 msgstr ""
 
-#: src/Support/HealthReport.php:111
+#: src/Support/HealthReport.php:152
 #. translators: 1: stored schema version, 2: expected version
 msgid "Stored schema version is %1$s, but %2$s is expected; it migrates on next load."
 msgstr ""
@@ -8202,7 +8206,7 @@ msgstr ""
 msgid "Telegram board: the text about the DJ"
 msgstr ""
 
-#: src/Support/HealthReport.php:130 src/Support/TranslationRow.php:65 templates/admin/settings.php:103 templates/admin/settings.php:1975
+#: src/Support/HealthReport.php:171 src/Support/TranslationRow.php:65 templates/admin/settings.php:103 templates/admin/settings.php:1975
 msgid "Telegram bot"
 msgstr ""
 
@@ -8258,6 +8262,11 @@ msgstr ""
 #: src/Admin/SettingsPage.php:2028
 #. translators: %s: the error Telegram returned
 msgid "Telegram refused the webhook: %s"
+msgstr ""
+
+#: src/Support/HealthReport.php:88
+#. translators: %s: a list of names, each with a Telegram id in brackets.
+msgid "Telegram says these accounts are deleted, so the bot does not message them: %s"
 msgstr ""
 
 #: src/Web/SignupController.php:1361
@@ -8855,11 +8864,11 @@ msgstr ""
 msgid "The check that you are not a bot failed. Please try again."
 msgstr ""
 
-#: src/Support/HealthReport.php:220
+#: src/Support/HealthReport.php:261
 msgid "The chosen page has no [eventcrew_signup] shortcode or EventCrew signup block."
 msgstr ""
 
-#: src/Support/HealthReport.php:210
+#: src/Support/HealthReport.php:251
 msgid "The chosen signup page is missing or not published."
 msgstr ""
 
@@ -9050,11 +9059,11 @@ msgstr ""
 msgid "The hourly heartbeat strips anything past the period above: email address, name, notes and any Telegram link are erased for good, while the attendance rows stay, so “nine people worked that night” survives with nobody attached to it. Organizers are never touched while they hold the role."
 msgstr ""
 
-#: src/Support/HealthReport.php:166
+#: src/Support/HealthReport.php:207
 msgid "The hourly job has never run. If it stays so, enable the fallback in Settings."
 msgstr ""
 
-#: src/Support/HealthReport.php:165
+#: src/Support/HealthReport.php:206
 msgid "The hourly job has not run yet; the on-request fallback will run it on a visit."
 msgstr ""
 
@@ -10369,11 +10378,11 @@ msgstr ""
 msgid "To those who did not come"
 msgstr ""
 
-#: src/Support/HealthReport.php:151
+#: src/Support/HealthReport.php:192
 msgid "Token set and webhook installed. The live status is on the Settings page."
 msgstr ""
 
-#: src/Support/HealthReport.php:145
+#: src/Support/HealthReport.php:186
 msgid "Token set, but the webhook is not installed — install it from the Settings page."
 msgstr ""
 
@@ -10638,7 +10647,7 @@ msgstr ""
 msgid "Uses the active roles' offsets, exactly like \"Create an event's tasks\" on the Tasks page. Only ever runs the first time an event is synced - a later re-sync that corrects its time never touches tasks that may already have signups or edits on them. Use the button on the Tasks page for any event synced before this was turned on."
 msgstr ""
 
-#: src/Support/HealthReport.php:241
+#: src/Support/HealthReport.php:282
 msgid "Using the WordPress Site Icon for the installed app."
 msgstr ""
 
@@ -11302,7 +11311,7 @@ msgstr ""
 msgid "Write again"
 msgstr ""
 
-#: src/Telegram/UpdateRouter.php:769
+#: src/Telegram/UpdateRouter.php:772
 msgid "Write here in a few words what is not right. The organizers get it and can correct it."
 msgstr ""
 
@@ -12388,7 +12397,7 @@ msgstr ""
 msgid "“%s” is not an email address."
 msgstr ""
 
-#: src/Support/HealthReport.php:228
+#: src/Support/HealthReport.php:269
 #. translators: %s: the page title
 msgid "“%s” is published and carries the signup board."
 msgstr ""

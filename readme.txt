@@ -156,8 +156,7 @@ cannot drift. The outcome weights, threshold and half-life are editable in Setti
 == Changelog ==
 
 = 1.140.207 =
-* Telegram profile: once you are rated, the standing bar alone shows your score and level, so they no longer appear twice.
-* History in wp-admin reads on a phone: each row shows what happened, with the time, who did it, the task and the night under it, no need to open rows one by one.
+* When Telegram says an account is deleted, the bot marks it and stops sending it direct messages. The log and Diagnostics name the person. The mark is removed if that account writes to the bot or the group again.
 
 = 1.140.206 =
 * Organizers get a monthly report email: new people, bot and web use, sign-ups and cancellations (web and bot), no-shows, completed tasks, free entries, ticket buyers and a funnel, with the previous month for comparison. On by default; Settings has a switch and a test send.

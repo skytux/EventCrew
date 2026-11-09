@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Database\Schema;
+use EventCrew\Repositories\PersonRepository;
+use EventCrew\Telegram\ClosedAccounts;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Telegram\WebhookController;
@@ -28,8 +30,10 @@ final class HealthReport
      * writes to. Both the log buffer and the last-update marker are stored as
      * options, so reading them keeps the no-outbound-call promise.
      */
-    public function __construct(private readonly Logger $logger = new Logger())
-    {
+    public function __construct(
+        private readonly Logger $logger = new Logger(),
+        private readonly PersonRepository $people = new PersonRepository()
+    ) {
     }
 
     /**
@@ -40,7 +44,7 @@ final class HealthReport
      */
     public function checks(): array
     {
-        return [
+        $checks = [
             $this->database(),
             $this->bot(),
             $this->notifications(),
@@ -48,6 +52,43 @@ final class HealthReport
             $this->appIcons(),
             $this->email(),
         ];
+
+        $closed = $this->closedAccounts();
+
+        if (null !== $closed) {
+            $checks[] = $closed;
+        }
+
+        return $checks;
+    }
+
+    /**
+     * Who the bot stopped messaging because Telegram says the account was
+     * deleted; null when there is nobody, so the page has no empty row.
+     */
+    private function closedAccounts(): ?Diagnostic
+    {
+        $names = [];
+
+        foreach (array_keys(ClosedAccounts::all()) as $telegramUserId) {
+            $person = $this->people->findByTelegramUserId((int) $telegramUserId);
+            $names[] = null !== $person
+                ? sprintf('%s (%d)', $person->displayName, $telegramUserId)
+                : (string) $telegramUserId;
+        }
+
+        if ([] === $names) {
+            return null;
+        }
+
+        return Diagnostic::info(
+            __('Deleted Telegram accounts', 'eventcrew'),
+            sprintf(
+                /* translators: %s: a list of names, each with a Telegram id in brackets. */
+                __('Telegram says these accounts are deleted, so the bot does not message them: %s', 'eventcrew'),
+                implode(', ', $names)
+            )
+        );
     }
 
     /**

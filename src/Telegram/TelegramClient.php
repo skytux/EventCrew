@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\Logger;
 
 /**
@@ -45,6 +46,9 @@ final class TelegramClient
         'query id is invalid',
     ];
 
+    /** The part of Telegram's answer that says an account was deleted. */
+    private const DEACTIVATED_ERROR = 'user is deactivated';
+
     /** The description from the most recent failed call, for the admin to see. */
     private string $lastError = '';
 
@@ -69,7 +73,8 @@ final class TelegramClient
 
     public function __construct(
         private readonly Logger $logger,
-        private readonly DohResolver $resolver
+        private readonly DohResolver $resolver,
+        private readonly ?PersonRepository $people = null
     ) {
     }
 
@@ -119,6 +124,16 @@ final class TelegramClient
 
         if (str_starts_with($method, 'send')) {
             $this->record = false;
+
+            $chatId = (int) ($params['chat_id'] ?? 0);
+
+            // No log line here: the Diagnostics page lists these accounts, and
+            // a line per skipped message would push real errors out of the log.
+            if ($chatId > 0 && ClosedAccounts::isClosed($chatId)) {
+                $this->lastError = self::DEACTIVATED_ERROR;
+
+                return null;
+            }
         }
 
         $token = self::token();
@@ -166,6 +181,11 @@ final class TelegramClient
 
             $this->lastError = $description;
             $this->lastRetryAfter = is_array($decoded) ? max(0, (int) ($decoded['parameters']['retry_after'] ?? 0)) : 0;
+
+            if ($this->markIfDeactivated($method, $params, $description)) {
+                return null;
+            }
+
             $message = sprintf('Telegram %s returned an error: %s', $method, $this->lastError);
             $quiet ? $this->logger->info($message) : $this->logger->warning($message);
 
@@ -182,6 +202,40 @@ final class TelegramClient
         $this->track($method, $params, $result, $record);
 
         return $result;
+    }
+
+    /**
+     * When Telegram refuses a direct message because the account was deleted,
+     * marks the account so nothing more is sent to it, and logs once who it is.
+     *
+     * @param array<string, mixed> $params
+     */
+    private function markIfDeactivated(string $method, array $params, string $description): bool
+    {
+        $chatId = (int) ($params['chat_id'] ?? 0);
+
+        if (
+            $chatId <= 0
+            || ! str_starts_with($method, 'send')
+            || false === stripos($description, self::DEACTIVATED_ERROR)
+        ) {
+            return false;
+        }
+
+        ClosedAccounts::mark($chatId);
+
+        $person = $this->people?->findByTelegramUserId($chatId);
+
+        $this->logger->warning(
+            sprintf(
+                'Telegram %s: the account of %s (Telegram id %d) is deactivated. The bot stops messaging it.',
+                $method,
+                null !== $person ? $person->displayName : 'an unknown person',
+                $chatId
+            )
+        );
+
+        return true;
     }
 
     /**

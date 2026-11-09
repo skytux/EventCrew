@@ -783,7 +783,8 @@ final class Kernel
             TelegramClient::class,
             fn (Container $container) => new TelegramClient(
                 $container->get(Logger::class),
-                $container->get(DohResolver::class)
+                $container->get(DohResolver::class),
+                $container->get(PersonRepository::class)
             )
         );
 
@@ -1940,7 +1941,8 @@ final class Kernel
         $this->container->singleton(
             HealthReport::class,
             fn (Container $container) => new HealthReport(
-                $container->get(Logger::class)
+                $container->get(Logger::class),
+                $container->get(PersonRepository::class)
             )
         );
 

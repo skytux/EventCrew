@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
+use EventCrew\Telegram\ClosedAccounts;
 use EventCrew\Telegram\TelegramClient;
 
 final class TelegramClientTest extends TelegramTestCase
@@ -20,6 +21,46 @@ final class TelegramClientTest extends TelegramTestCase
         self::assertSame(['inline_keyboard' => []], $body['reply_markup']);
         // A bare `true` result comes back as an empty array meaning "ok".
         self::assertIsArray($result);
+    }
+
+    public function testADeactivatedAccountIsMarkedAndGetsNoFurtherDirectMessages(): void
+    {
+        $this->telegramErrors['sendMessage'] = 'Forbidden: user is deactivated';
+
+        self::assertNull($this->client()->sendMessage(42, 'first'));
+        self::assertTrue(ClosedAccounts::isClosed(42));
+        self::assertCount(1, $this->calledMethods());
+
+        self::assertNull($this->client()->sendMessage(42, 'second'));
+        self::assertCount(1, $this->calledMethods());
+    }
+
+    public function testADeactivatedAnswerInAGroupMarksNothing(): void
+    {
+        $this->telegramErrors['sendMessage'] = 'Forbidden: user is deactivated';
+
+        $this->client()->sendMessage(-100123, 'hello');
+
+        self::assertSame([], ClosedAccounts::all());
+    }
+
+    public function testAnotherRefusalMarksNothing(): void
+    {
+        $this->telegramErrors['sendMessage'] = 'Forbidden: bot was blocked by the user';
+
+        $this->client()->sendMessage(42, 'hello');
+
+        self::assertFalse(ClosedAccounts::isClosed(42));
+    }
+
+    public function testClearingTheMarkAllowsDirectMessagesAgain(): void
+    {
+        ClosedAccounts::mark(42);
+        ClosedAccounts::clear(42);
+
+        $this->client()->sendMessage(42, 'hello');
+
+        self::assertSame(['sendMessage'], $this->calledMethods());
     }
 
     public function testSendPhotoSendsThePictureAddressWithAnHtmlCaption(): void

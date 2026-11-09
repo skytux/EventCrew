@@ -9,6 +9,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\SiteLanguages;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\ClosedAccounts;
 use EventCrew\Telegram\ConversationLog;
 use EventCrew\Telegram\LanguageService;
 use EventCrew\Telegram\UpdateRouter;
@@ -71,6 +72,20 @@ final class UpdateRouterTest extends TelegramTestCase
             'telegram_chat_id' => 555,
             'banned_at' => '2026-08-01 00:00:00',
         ];
+    }
+
+    public function testWritingToTheBotRemovesTheClosedAccountMark(): void
+    {
+        ClosedAccounts::mark(555);
+        ClosedAccounts::mark(777);
+        $this->wpdb->nextRows[] = $this->blockedRow();
+
+        $this->updateRouter(null, null, null, null, null, true)->dispatch([
+            'callback_query' => ['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'j:5'],
+        ]);
+
+        self::assertFalse(ClosedAccounts::isClosed(555));
+        self::assertTrue(ClosedAccounts::isClosed(777));
     }
 
     public function testABlockedPersonsButtonTapGetsOnlyTheBlockedPopup(): void
