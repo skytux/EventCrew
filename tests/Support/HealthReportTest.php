@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Database\Schema;
 use EventCrew\Support\Diagnostic;
 use EventCrew\Support\HealthReport;
+use EventCrew\Telegram\ClosedAccounts;
 use EventCrew\Telegram\UpdateRouter;
 use EventCrew\Tests\TestCase;
 
@@ -26,6 +27,21 @@ final class HealthReportTest extends TestCase
         Functions\when('get_option')->alias(
             static fn (string $key, mixed $default = false): mixed => $options[$key] ?? $default
         );
+    }
+
+    public function testAClosedTelegramAccountIsListedByName(): void
+    {
+        $this->wpdb->nextVars = array_fill(0, count(Schema::tableNames()), 'wp_eventcrew_people');
+        $this->withOptions([
+            Schema::VERSION_OPTION => Schema::DB_VERSION,
+            ClosedAccounts::OPTION => [555 => 1800000000],
+        ]);
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'a@example.test', 'display_name' => 'Sam Example'];
+
+        $checks = (new HealthReport())->checks();
+
+        self::assertCount(7, $checks);
+        self::assertStringContainsString('Sam Example (555)', $checks[6]->detail);
     }
 
     public function testChecksRunWithoutAnyOutboundCall(): void

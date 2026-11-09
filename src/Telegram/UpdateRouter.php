@@ -91,6 +91,9 @@ final class UpdateRouter
             return;
         }
 
+        // Someone who writes has a working account, even if it was marked closed.
+        ClosedAccounts::clear($this->senderId($update));
+
         // What this update changes is done by its sender (the history).
         History::actAs(History::CHANNEL_BOT, null, $this->senderId($update));
 

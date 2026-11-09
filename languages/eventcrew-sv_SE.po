@@ -13535,3 +13535,11 @@ msgstr "Den 1:a varje månad får varje arrangör förra månadens siffror per m
 #: templates/admin/settings.php
 msgid "Send a test report to me"
 msgstr "Skicka en testrapport till mig"
+
+#: src/Support/HealthReport.php
+msgid "Deleted Telegram accounts"
+msgstr "Borttagna Telegram-konton"
+
+#: src/Support/HealthReport.php
+msgid "Telegram says these accounts are deleted, so the bot does not message them: %s"
+msgstr "Enligt Telegram är dessa konton borttagna, så boten skickar inga meddelanden till dem: %s"

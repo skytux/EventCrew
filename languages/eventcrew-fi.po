@@ -10585,3 +10585,11 @@ msgstr "Kuun 1. päivänä jokainen järjestäjä saa edellisen kuun luvut sähk
 #: templates/admin/settings.php
 msgid "Send a test report to me"
 msgstr "Lähetä testiraportti minulle"
+
+#: src/Support/HealthReport.php
+msgid "Deleted Telegram accounts"
+msgstr "Poistetut Telegram-tilit"
+
+#: src/Support/HealthReport.php
+msgid "Telegram says these accounts are deleted, so the bot does not message them: %s"
+msgstr "Telegramin mukaan nämä tilit on poistettu, joten botti ei lähetä niille viestejä: %s"
