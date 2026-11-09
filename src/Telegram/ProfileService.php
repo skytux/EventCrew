@@ -72,9 +72,12 @@ final class ProfileService
             '✨ ' . __('My info', 'eventcrew') . ' ✨',
             '',
             '🌟 ' . $person->name(),
-            $standing->ratedSummary(),
-            // The bar once rated, else how many tasks until rated (Owner 2026-11-07).
-            $standing->isRated() ? StandingBar::forStanding($standing) : StandingBar::untilRated($standing),
+            // Once rated, the bar alone: it already says the score and the
+            // level, so a summary line above it repeated both (Owner
+            // 2026-11-09). Before that, the level and how many tasks to go.
+            ...($standing->isRated()
+                ? [StandingBar::forStanding($standing)]
+                : [$standing->ratedSummary(), StandingBar::untilRated($standing)]),
             '',
             sprintf(
                 /* translators: %d: completed tasks */

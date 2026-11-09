@@ -82,6 +82,9 @@ final class ProfileServiceTest extends TelegramTestCase
         $body = (string) $this->lastCallTo('sendMessage')['text'];
         self::assertStringContainsString('Sam', $body);
         self::assertStringContainsString('Good standing', $body);
+        // Owner 2026-11-09: the bar alone, so the score and the level show once.
+        self::assertSame(1, substr_count($body, '%'));
+        self::assertSame(1, substr_count($body, 'Good standing'));
         self::assertStringContainsString('4', $body); // completed count
         self::assertStringContainsString('2', $body); // credit balance
         self::assertStringContainsString('Mon 20 Jul — Decorate', $body); // a recent task line
