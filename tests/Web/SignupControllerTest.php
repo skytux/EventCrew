@@ -789,6 +789,55 @@ final class SignupControllerTest extends TestCase
         self::assertStringContainsString('<button type="submit" class="eventcrew-textlink">Bo</button>', $row[0]);
         self::assertSame(1, preg_match('~<li[^>]*id="eventcrew-task-5".*?</li>~s', $html, $own));
         self::assertStringNotContainsString(SignupController::TAKEOVER_ACTION, $own[0]);
+        // Full: Take someone's task stands in for Full, as before.
+        self::assertStringNotContainsString('eventcrew-btn-full', $row[0]);
+        self::assertStringNotContainsString('value="' . SignupController::CLAIM_ACTION . '"', $row[0]);
+    }
+
+    /**
+     * Signed in, a task with room and someone on it keeps Sign up and offers
+     * Take someone's task under the row as well, as the bot's board does
+     * (Owner 2026-11-11); a task with nobody on it offers no takeover.
+     */
+    public function testSignedInATaskWithRoomListsItsHoldersBesideSignUp(): void
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+        $db = $this->useMeTabWpdb();
+        $db->people[8] = ['id' => 8, 'email' => 'a@example.com', 'display_name' => 'Anna Virtanen'];
+        $db->tasks[] = array_merge($this->taskRow(), ['id' => 6]);
+        $db->tasks[] = array_merge($this->taskRow(), ['id' => 8]);
+        $db->assignments[] = ['id' => 80, 'task_id' => 6, 'person_id' => 8, 'status' => 'signed_up', 'signed_up_at' => '2026-07-01 10:00:00'];
+
+        $html = $this->controller(null, null, null, $this->takeovers())->renderShortcode();
+
+        self::assertSame(1, preg_match('~<li[^>]*id="eventcrew-task-6".*?</li>~s', $html, $row));
+        self::assertStringContainsString('value="' . SignupController::CLAIM_ACTION . '"', $row[0]);
+        self::assertStringContainsString('<button type="submit" class="wp-element-button eventcrew-btn-go">Sign up</button>', $row[0]);
+        self::assertStringContainsString('<details class="eventcrew-credit-ask eventcrew-task-takeover">', $row[0]);
+        self::assertStringContainsString('name="assignment_id" value="80"', $row[0]);
+        self::assertStringContainsString('<button type="submit" class="eventcrew-textlink">Anna</button>', $row[0]);
+        self::assertSame(1, preg_match('~<li[^>]*id="eventcrew-task-8".*?</li>~s', $html, $empty));
+        self::assertStringContainsString('value="' . SignupController::CLAIM_ACTION . '"', $empty[0]);
+        self::assertStringNotContainsString(SignupController::TAKEOVER_ACTION, $empty[0]);
+        self::assertSame(1, preg_match('~<li[^>]*id="eventcrew-task-5".*?</li>~s', $html, $own));
+        self::assertStringNotContainsString(SignupController::TAKEOVER_ACTION, $own[0]);
+    }
+
+    /** Signed out, a task with room and someone on it shows only Sign up. */
+    public function testSignedOutATaskWithRoomOffersNoTakeover(): void
+    {
+        $this->stubPageRender();
+        $this->wpdb->nextResults[] = [$this->taskRow()];
+        $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 1]];
+
+        $html = $this->controller(null, null, null, $this->takeovers())->renderShortcode();
+
+        self::assertStringContainsString('data-eventcrew-signin-task="5">Sign up</a>', $html);
+        self::assertStringNotContainsString('Take someone’s task', $html);
+        self::assertStringNotContainsString('eventcrew-task-takeover', $html);
     }
 
     /**

@@ -63,7 +63,7 @@ final class SignupBoardView
         // Optional: with it a ticket given away reads "Given to …", as in
         // the bot's Tickets screen.
         private readonly ?TicketTransferService $transfers = null,
-        // Optional: with it a full task offers Take someone's task.
+        // Optional: with it a task someone is on offers Take someone's task.
         private readonly ?TakeoverService $takeovers = null
     ) {
     }
@@ -408,14 +408,16 @@ final class SignupBoardView
     }
 
     /**
-     * The holders a full task's Take someone's task lists, for a signed-in
-     * person who is not on it (TakeoverService::holdersFor()).
+     * The holders Take someone's task lists on a task someone is on, full
+     * or not, as the bot's board does since 2026-11-10 (unlimited tasks
+     * too), for a signed-in person who is not on it
+     * (TakeoverService::holdersFor()).
      *
      * @return list<array{assignment_id: int, name: string}>
      */
     private function holders(Task $task, int $taken, bool $mine, ?Person $person): array
     {
-        if (null === $this->takeovers || null === $person || $mine || $task->hasNoLimit() || $taken < $task->capacity) {
+        if (null === $this->takeovers || null === $person || $mine || $taken <= 0) {
             return [];
         }
 

@@ -111,7 +111,7 @@ final class TakeoverService
     /**
      * Whose places on a task the cover could ask to take over, for the
      * board's Take someone's task on any task someone is on (Owner
-     * 2026-11-10) and the web page's on a full task (2026-11-08): one
+     * 2026-11-10) and the web page's, likewise since 2026-11-11: one
      * entry per holder, by first name, or "Person 2" where the role hides
      * names from the cover (Anonymous display). Empty when the cover may not
      * take the task, is on it already, or it is too late to ask.

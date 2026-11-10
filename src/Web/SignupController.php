@@ -65,7 +65,7 @@ final class SignupController
     public const LANGUAGE_ACTION = 'eventcrew_web_language';
     public const PROFILE_ACTION = 'eventcrew_web_profile';
 
-    /** A full task's Take someone's task: asks one holder to hand theirs over. */
+    /** Take someone's task on a task someone is on: asks one holder to hand theirs over. */
     public const TAKEOVER_ACTION = 'eventcrew_web_takeover';
 
     /** A free-entry ticket's Give away on the Tickets card: offers it to an email address. */

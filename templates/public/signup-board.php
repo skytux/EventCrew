@@ -185,7 +185,7 @@ endif; ?>
                 </span>
                 <?php
                 $eventcrew_blocked = (string) ($eventcrew_row['blocked'] ?? '');
-                // Set below when this full task offers Take someone's task.
+                // Set below when this row offers Take someone's task.
                 $eventcrew_takeover = '';
                 ?>
                 <?php if (! $eventcrew_row['mine'] && ! empty($eventcrew_row['crew_only'])) :
@@ -267,7 +267,7 @@ endif; ?>
                     /*
                      * Take someone's task (Owner 2026-11-08): drawn on its
                      * own line under the row (below), not here beside the
-                     * count.
+                     * count. On a full task it takes the place of Full.
                      */
                     $eventcrew_takeover = 'ask';
                 elseif ($eventcrew_full) :
@@ -279,7 +279,10 @@ endif; ?>
                      * A restricted task (Organize, DJ, ...) asks first whether it
                      * counts toward free-entry credit. Yes and No are two small
                      * forms, so each sends its own answer without any script.
+                     * Take someone's task goes under the row too when someone
+                     * is on the task (Owner 2026-11-11).
                      */
+                    $eventcrew_takeover = empty($eventcrew_row['holders']) ? '' : 'ask';
                     ?>
                     <details class="eventcrew-credit-ask">
                         <summary class="wp-element-button eventcrew-btn-go"><?php esc_html_e('Sign up', 'eventcrew'); ?></summary>
@@ -298,6 +301,12 @@ endif; ?>
                     </details>
                     <?php
                 else :
+                    /*
+                     * A task with room keeps Sign up; when someone is on it,
+                     * Take someone's task goes under the row as well, as on
+                     * the bot's board (Owner 2026-11-11).
+                     */
+                    $eventcrew_takeover = empty($eventcrew_row['holders']) ? '' : 'ask';
                     ?>
                     <form class="eventcrew-action" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                         <?php
@@ -316,9 +325,11 @@ endif; ?>
                  * link on its own line under the name and the count, right
                  * aligned, rather than a wide button beside them: as a button
                  * it squeezed the name column until "Decorate" broke mid-word
-                 * (2026-11-08). On a signed-in row it opens the holders'
+                 * (2026-11-08). On a signed-in row, on any task someone is
+                 * on, full or not (Owner 2026-11-11), it opens the holders'
                  * names, as the bot lists them; the holder decides
-                 * (TakeoverService). Names are text links too.
+                 * (TakeoverService). Names are text links too. Signed out,
+                 * only a full task offers it, through the sign-in card.
                  */
                 if ('signin' === $eventcrew_takeover) :
                     ?>
