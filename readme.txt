@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.208
+Stable tag: 1.140.209
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.209 =
+* Telegram: the board button Take someone’s task lists everyone on the tasks of that night, not only full ones, and shows whenever someone is on a task that night.
+* Telegram: a button tap in the group that answers by DM shows Sent you a DM as a short popup instead of a group message; after a typed command the note is deleted from the group after about a minute.
 
 = 1.140.208 =
 * Telegram profile: once you are rated, the standing bar alone shows your score and level, so they no longer appear twice.
@@ -1991,6 +1995,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.209 =
+No settings change.
 
 = 1.140.208 =
 No settings change.

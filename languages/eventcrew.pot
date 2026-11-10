@@ -146,7 +146,7 @@ msgid_plural "%1$s got %2$d credits"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/TakeoverService.php:532
+#: src/Support/TakeoverService.php:533
 #. translators: 1: the first name of the person who asks, 2: tasks done
 msgid "%1$s has done %2$d task."
 msgid_plural "%1$s has done %2$d tasks."
@@ -165,7 +165,7 @@ msgstr ""
 msgid "%1$s has no task on %2$s."
 msgstr ""
 
-#: src/Support/TakeoverService.php:666
+#: src/Support/TakeoverService.php:667
 #. translators: 1: cover's name, 2: person being covered, 3: role, 4: event
 msgid "%1$s is covering for %2$s: %3$s at %4$s."
 msgstr ""
@@ -366,7 +366,7 @@ msgid_plural "%d people updated."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Telegram/BoardRenderer.php:511 src/Web/CrewAdminController.php:1076 templates/public/signup-board.php:118
+#: src/Telegram/BoardRenderer.php:512 src/Web/CrewAdminController.php:1076 templates/public/signup-board.php:118
 msgid "%d signed up"
 msgstr ""
 
@@ -459,7 +459,7 @@ msgstr ""
 msgid "%s has a one-time sign-up pass."
 msgstr ""
 
-#: src/Support/TakeoverService.php:527
+#: src/Support/TakeoverService.php:528
 #. translators: %s: the first name of the person who asks
 msgid "%s has not done a task yet."
 msgstr ""
@@ -1527,8 +1527,8 @@ msgstr ""
 msgid "Answer plain messages with the language model"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:1277 src/Support/MessageTemplates.php:1344 src/Support/NewcomerApproval.php:582 src/Support/TakeoverService.php:472
-#: src/Support/TakeoverService.php:478
+#: src/Support/MessageTemplates.php:1277 src/Support/MessageTemplates.php:1344 src/Support/NewcomerApproval.php:582 src/Support/TakeoverService.php:473
+#: src/Support/TakeoverService.php:479
 msgid "Answer the request"
 msgstr ""
 
@@ -4223,14 +4223,14 @@ msgstr ""
 msgid "It is the first button in your sign-up confirmation, and the bot lists all your tickets when you ask."
 msgstr ""
 
-#: src/Support/TakeoverService.php:718
+#: src/Support/TakeoverService.php:719
 #. translators: %d: hours before the task starts
 msgid "It is too late to ask: a takeover must be answered at least %d hour before the task starts."
 msgid_plural "It is too late to ask: a takeover must be answered at least %d hours before the task starts."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/TakeoverService.php:713
+#: src/Support/TakeoverService.php:714
 msgid "It is too late to ask: the task has already started."
 msgstr ""
 
@@ -5122,7 +5122,7 @@ msgstr ""
 msgid "No newsletter was sent in this time range."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:619 templates/public/signup-board.php:42
+#: src/Telegram/BoardRenderer.php:620 templates/public/signup-board.php:42
 msgid "No open tasks right now. Check back soon!"
 msgstr ""
 
@@ -5209,7 +5209,7 @@ msgstr ""
 msgid "No task called “%s” was found."
 msgstr ""
 
-#: src/Telegram/ReplacementService.php:278
+#: src/Telegram/ReplacementService.php:280
 msgid "No task here can be taken over."
 msgstr ""
 
@@ -5817,7 +5817,7 @@ msgstr ""
 msgid "Open tasks"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:633
+#: src/Telegram/BoardRenderer.php:634
 msgid "Open tasks — tap one to sign up. To cancel, tap 👤 My info."
 msgstr ""
 
@@ -6121,7 +6121,7 @@ msgstr ""
 msgid "Person"
 msgstr ""
 
-#: src/Support/TakeoverService.php:148
+#: src/Support/TakeoverService.php:149
 msgid "Person %d"
 msgstr ""
 
@@ -6202,7 +6202,7 @@ msgstr ""
 msgid "Please sign in first."
 msgstr ""
 
-#: src/Telegram/UpdateRouter.php:766
+#: src/Telegram/UpdateRouter.php:778
 msgid "Please tell an organizer what is not right: they can correct it."
 msgstr ""
 
@@ -7759,7 +7759,7 @@ msgstr ""
 msgid "Someone asked to delete your crew account and its history. If it was you, press the button below. The link works once and for 30 minutes. If it was not you, ignore this email."
 msgstr ""
 
-#: src/Support/TakeoverService.php:705
+#: src/Support/TakeoverService.php:706
 msgid "Someone else has already asked to take over this task. Wait until that request is answered."
 msgstr ""
 
@@ -7962,7 +7962,7 @@ msgstr ""
 msgid "Take over a task"
 msgstr ""
 
-#: src/Telegram/ReplacementService.php:231 templates/public/signup-board.php:326 templates/public/signup-board.php:332
+#: src/Telegram/ReplacementService.php:233 templates/public/signup-board.php:326 templates/public/signup-board.php:332
 msgid "Take someone’s task"
 msgstr ""
 
@@ -8637,7 +8637,7 @@ msgstr ""
 msgid "That task is full."
 msgstr ""
 
-#: src/Support/RoleTaskService.php:328 src/Support/TakeoverService.php:92 src/Support/TakeoverService.php:168 src/Telegram/BoardService.php:917
+#: src/Support/RoleTaskService.php:328 src/Support/TakeoverService.php:92 src/Support/TakeoverService.php:169 src/Telegram/BoardService.php:917
 #: src/Telegram/BoardService.php:1246 src/Telegram/RoleTaskBot.php:356 src/Telegram/RoleTaskBot.php:392 src/Web/SignupController.php:1337
 #: src/Web/SignupController.php:1458
 msgid "That task is no longer available."
@@ -9560,7 +9560,7 @@ msgstr ""
 msgid "The subscription to the next events announcement was deleted, with its name and language."
 msgstr ""
 
-#: src/Support/TakeoverService.php:416
+#: src/Support/TakeoverService.php:417
 msgid "The task could not be moved, so you keep it."
 msgstr ""
 
@@ -9663,7 +9663,7 @@ msgstr ""
 msgid "The ticket with its QR code, to ticket buyers, guests and crew. Sent in every site language, or in one language when its Hybrid tick in Settings > Email is off."
 msgstr ""
 
-#: src/Support/TakeoverService.php:375
+#: src/Support/TakeoverService.php:376
 msgid "The time to answer has passed, so you keep your task."
 msgstr ""
 
@@ -9966,7 +9966,7 @@ msgstr ""
 msgid "This link is invalid or has expired"
 msgstr ""
 
-#: src/Support/TakeoverService.php:231 src/Support/TakeoverService.php:501 src/Telegram/ManageController.php:169 src/Telegram/ReplacementService.php:324
+#: src/Support/TakeoverService.php:232 src/Support/TakeoverService.php:502 src/Telegram/ManageController.php:169 src/Telegram/ReplacementService.php:330
 #: src/Web/FollowupController.php:224 src/Web/FollowupController.php:283 src/Web/NewsletterController.php:1383 src/Web/TakeoverController.php:75
 msgid "This link is no longer valid."
 msgstr ""
@@ -10038,11 +10038,11 @@ msgstr ""
 msgid "This request has expired. Please send it again."
 msgstr ""
 
-#: src/Support/TakeoverService.php:377
+#: src/Support/TakeoverService.php:378
 msgid "This request is already closed."
 msgstr ""
 
-#: src/Support/TakeoverService.php:376
+#: src/Support/TakeoverService.php:377
 msgid "This request is closed: the task changed or was cancelled."
 msgstr ""
 
@@ -11192,7 +11192,7 @@ msgstr ""
 msgid "Whose task are you covering? Send their name, or @mention them."
 msgstr ""
 
-#: src/Telegram/ReplacementService.php:288
+#: src/Telegram/ReplacementService.php:289
 msgid "Whose task do you want to take? They decide."
 msgstr ""
 
@@ -11311,7 +11311,7 @@ msgstr ""
 msgid "Write again"
 msgstr ""
 
-#: src/Telegram/UpdateRouter.php:772
+#: src/Telegram/UpdateRouter.php:784
 msgid "Write here in a few words what is not right. The organizers get it and can correct it."
 msgstr ""
 
@@ -11377,7 +11377,7 @@ msgstr ""
 msgid "Yes. Your ticket stays as it is. A bought ticket never turns into a credit."
 msgstr ""
 
-#: src/Support/TakeoverService.php:697
+#: src/Support/TakeoverService.php:698
 #. translators: 1: holder's name, 2: answer deadline
 msgid "You already asked to take over this task. %1$s has until %2$s to answer."
 msgstr ""
@@ -11390,11 +11390,11 @@ msgstr ""
 msgid "You already have a free-entry ticket for that night."
 msgstr ""
 
-#: src/Support/TakeoverService.php:374
+#: src/Support/TakeoverService.php:375
 msgid "You already kept this task."
 msgstr ""
 
-#: src/Support/TakeoverService.php:373
+#: src/Support/TakeoverService.php:374
 msgid "You already let them take this task."
 msgstr ""
 
@@ -11592,7 +11592,7 @@ msgid_plural "You have no free-entry credits yet — you earn one for every %d t
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/TakeoverService.php:270
+#: src/Support/TakeoverService.php:271
 #. translators: 1: role, 2: event, 3: date/time, 4: cover's name
 msgid "You keep your task: %1$s at %2$s, %3$s. %4$s has been told."
 msgstr ""
@@ -12032,7 +12032,7 @@ msgstr ""
 msgid "credits"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:545
+#: src/Telegram/BoardRenderer.php:546
 msgid "crew only"
 msgstr ""
 
@@ -12094,7 +12094,7 @@ msgstr ""
 msgid "from %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:769
+#: src/Telegram/BoardRenderer.php:770
 msgid "full"
 msgstr ""
 
@@ -12259,7 +12259,7 @@ msgstr ""
 msgid "signed up %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:533
+#: src/Telegram/BoardRenderer.php:534
 msgid "someone"
 msgstr ""
 
@@ -12429,12 +12429,12 @@ msgstr ""
 msgid "✅ Added %1$s to %2$s."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:3131 src/Support/TakeoverService.php:681
+#: src/Support/MessageTemplates.php:3131 src/Support/TakeoverService.php:682
 #. translators: 1: cover's name, 2: role, 3: event, 4: date/time
 msgid "✅ Done: %1$s now has your task: %2$s at %3$s, %4$s."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:1346 src/Support/TakeoverService.php:562 src/Web/TakeoverController.php:129
+#: src/Support/MessageTemplates.php:1346 src/Support/TakeoverService.php:563 src/Web/TakeoverController.php:129
 msgid "✅ Let them take it"
 msgstr ""
 
@@ -12447,7 +12447,7 @@ msgstr ""
 msgid "✅ The team said OK. You can now take tasks."
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:377
+#: src/Telegram/BoardRenderer.php:378
 msgid "✋ sign up · ❌ cancel"
 msgstr ""
 
@@ -12479,11 +12479,11 @@ msgstr ""
 msgid "❌ Cancelled"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:1346 src/Support/TakeoverService.php:563 src/Web/TakeoverController.php:130
+#: src/Support/MessageTemplates.php:1346 src/Support/TakeoverService.php:564 src/Web/TakeoverController.php:130
 msgid "❌ Keep my task"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:381
+#: src/Telegram/BoardRenderer.php:382
 msgid "➕ add someone"
 msgstr ""
 
@@ -12524,7 +12524,7 @@ msgstr ""
 msgid "👋 %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:674
+#: src/Telegram/BoardRenderer.php:675
 msgid "👋 New here? Sign up →"
 msgstr ""
 
@@ -12536,7 +12536,7 @@ msgstr ""
 msgid "👋 arrived · ✓ done · ⏰ late · ✗ no-show"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:1300 src/Support/WelcomeSender.php:312 src/Telegram/BoardRenderer.php:665
+#: src/Support/MessageTemplates.php:1300 src/Support/WelcomeSender.php:312 src/Telegram/BoardRenderer.php:666
 msgid "👤 My info"
 msgstr ""
 
@@ -12556,7 +12556,7 @@ msgstr ""
 msgid "📅 Add to calendar"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:661
+#: src/Telegram/BoardRenderer.php:662
 msgid "📅 More tasks"
 msgstr ""
 
@@ -12569,7 +12569,7 @@ msgstr ""
 msgid "📝 About the task: %s"
 msgstr ""
 
-#: src/Telegram/BoardRenderer.php:655
+#: src/Telegram/BoardRenderer.php:656
 msgid "📝 Task info"
 msgstr ""
 
@@ -12582,11 +12582,11 @@ msgstr ""
 msgid "📧 Your crew account email is now %s. If you did not do this, tell an organizer."
 msgstr ""
 
-#: src/Support/TakeoverService.php:209
+#: src/Support/TakeoverService.php:210
 msgid "📨 Request sent. %1$s decides whether you take over their task: %2$s at %3$s, %4$s.\n\nThey have until %5$s to answer. If they do not answer by then, they keep the task."
 msgstr ""
 
-#: src/Telegram/GroupBreadcrumb.php:28
+#: src/Telegram/GroupBreadcrumb.php:43
 msgid "📬 Sent you a DM."
 msgstr ""
 
@@ -12599,7 +12599,7 @@ msgstr ""
 msgid "📸 /events, in a private chat with the bot, shows you the next %d coming events as cards: the picture, the date, the price, a short description, and buttons to buy a ticket and to listen to the DJ. Tap Confirm and the bot posts the same cards in the group; tap Cancel and nothing is sent. You can also ask the bot in your own words which events come next."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:3117 src/Support/TakeoverService.php:647
+#: src/Support/MessageTemplates.php:3117 src/Support/TakeoverService.php:648
 #. translators: 1: cover's name, 2: role, 3: event, 4: date/time, 5: answer deadline
 msgid "🔁 %1$s asks to take over your task: %2$s at %3$s, %4$s.\n\nYou decide: let them take it, or keep it. Please answer by %5$s. If you do not answer by then, you keep the task."
 msgstr ""
