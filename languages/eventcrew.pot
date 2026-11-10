@@ -2352,7 +2352,7 @@ msgid "Count one person in without a name"
 msgstr ""
 
 #: src/Telegram/AssignCommand.php:421 src/Telegram/RoleTaskBot.php:144 src/Telegram/RoleTaskBot.php:366 templates/public/door.php:77
-#: templates/public/signup-board.php:286 templates/public/signup.php:1580
+#: templates/public/signup-board.php:289 templates/public/signup.php:1580
 msgid "Count toward free-entry credit?"
 msgstr ""
 
@@ -4958,7 +4958,7 @@ msgstr ""
 
 #: src/Support/MessageTemplates.php:1278 src/Support/NewcomerApproval.php:129 src/Support/PrivacyExporter.php:158 src/Support/PrivacyExporter.php:318
 #: src/Telegram/OnboardingService.php:349 src/Telegram/RoleTaskBot.php:332 templates/admin/people.php:150 templates/public/door.php:79
-#: templates/public/signup-board.php:287 templates/public/signup.php:256 templates/public/signup.php:1226 templates/public/signup.php:1366
+#: templates/public/signup-board.php:290 templates/public/signup.php:256 templates/public/signup.php:1226 templates/public/signup.php:1366
 #: templates/public/signup.php:1584
 msgid "No"
 msgstr ""
@@ -7614,8 +7614,8 @@ msgstr ""
 msgid "Sign out of the web board on every browser and phone? Nothing is lost; you just sign in again."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:546 templates/public/door.php:75 templates/public/signup-board.php:215 templates/public/signup-board.php:285
-#: templates/public/signup-board.php:308
+#: src/Support/MessageTemplates.php:546 templates/public/door.php:75 templates/public/signup-board.php:215 templates/public/signup-board.php:288
+#: templates/public/signup-board.php:317
 msgid "Sign up"
 msgstr ""
 
@@ -7962,7 +7962,7 @@ msgstr ""
 msgid "Take over a task"
 msgstr ""
 
-#: src/Telegram/ReplacementService.php:233 templates/public/signup-board.php:326 templates/public/signup-board.php:332
+#: src/Telegram/ReplacementService.php:233 templates/public/signup-board.php:337 templates/public/signup-board.php:343
 msgid "Take someone’s task"
 msgstr ""
 
@@ -11196,7 +11196,7 @@ msgstr ""
 msgid "Whose task do you want to take? They decide."
 msgstr ""
 
-#: templates/public/signup-board.php:333
+#: templates/public/signup-board.php:344
 msgid "Whose task?"
 msgstr ""
 
@@ -11356,7 +11356,7 @@ msgid "Written in Finnish, then translated into the other site languages."
 msgstr ""
 
 #: src/Support/PrivacyExporter.php:157 src/Support/PrivacyExporter.php:318 src/Telegram/OnboardingService.php:348 src/Telegram/RoleTaskBot.php:331
-#: templates/admin/people.php:149 templates/public/door.php:78 templates/public/signup-board.php:287 templates/public/signup.php:255
+#: templates/admin/people.php:149 templates/public/door.php:78 templates/public/signup-board.php:290 templates/public/signup.php:255
 #: templates/public/signup.php:1366 templates/public/signup.php:1368 templates/public/signup.php:1583
 msgid "Yes"
 msgstr ""
