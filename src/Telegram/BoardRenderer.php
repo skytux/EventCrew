@@ -214,8 +214,9 @@ final class BoardRenderer
         // for, as the text now shows more days than the buttons (Q365).
         $buttons = array_merge($this->taskButtons($guest, $taken, $daySuffix), $role['buttons']);
         // A full task has no button; one full-width 🔁 Take someone's task
-        // under the rest starts a takeover for the day's full tasks (Owner
-        // 2026-11-08).
+        // under the rest, shown once anyone is on a task that day, starts a
+        // takeover for any of the day's tasks, full or not (Owner 2026-11-08,
+        // 2026-11-10).
         $take = ReplacementService::boardButton(array_merge($guest, $own), $taken, $shown);
         $keyboard = [] === $buttons && null === $take ? [] : [[self::dayButton($shown)]];
 

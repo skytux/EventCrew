@@ -30,10 +30,10 @@ final class ReplacementService
 
     private const AWAIT_PREFIX = 'eventcrew_tg_await_replace_target_';
 
-    /** The board's Take someone's task: rep:d:<Y-m-d>, the full tasks of that day. */
+    /** The board's Take someone's task: rep:d:<Y-m-d>, every task of that day someone is on. */
     public const DAY_PREFIX = 'rep:d:';
 
-    /** A full task's Take someone's task: rep:t:<taskId>. */
+    /** One task's Take someone's task: rep:t:<taskId>. */
     public const TASK_PREFIX = 'rep:t:';
 
     public function __construct(
@@ -154,9 +154,9 @@ final class ReplacementService
 
     /**
      * A task was picked (callback rep:<assignmentId>): ask the holder. The
-     * board's Take someone's task sends rep:d:<date> (the full tasks of that
-     * day) and a full task's link rep:t:<taskId>: those list the holders
-     * first (listHolders()).
+     * board's Take someone's task sends rep:d:<date> (every task of that day
+     * someone is on, full or not) and one task's link rep:t:<taskId>: those
+     * list the holders first (listHolders()).
      *
      * @param array<string, mixed> $callbackQuery
      */
@@ -174,14 +174,14 @@ final class ReplacementService
         }
 
         if (1 === preg_match('/^' . preg_quote(self::DAY_PREFIX, '/') . '(\d{4}-\d{2}-\d{2})$/', $data, $m)) {
-            $this->listHolders($callbackQuery, $cover, $this->fullTasks($this->tasks->upcoming(), $m[1]));
+            $this->listHolders($callbackQuery, $cover, $this->takenTasks($this->tasks->upcoming(), $m[1]));
 
             return;
         }
 
         if (1 === preg_match('/^' . preg_quote(self::TASK_PREFIX, '/') . '(\d+)$/', $data, $m)) {
             $task = $this->tasks->find((int) $m[1]);
-            $this->listHolders($callbackQuery, $cover, null === $task ? [] : $this->fullTasks([$task], $task->taskDate));
+            $this->listHolders($callbackQuery, $cover, null === $task ? [] : $this->takenTasks([$task], $task->taskDate));
 
             return;
         }
@@ -202,8 +202,10 @@ final class ReplacementService
 
     /**
      * The 🔁 Take someone's task button under the board's task buttons, or
-     * '' when no task shown is full (Owner 2026-11-08: the board has no
-     * buttons for full tasks, so this one row stands in for them).
+     * null when nobody is on any task shown. It lists the holders of every
+     * task that day, full or not (Owner 2026-11-10): the board has no
+     * buttons for full tasks, and a place on a task with room left can be
+     * asked for too.
      *
      * @param array<int, Task> $tasks The tasks shown, all on $date.
      * @param array<int, int>  $taken Places taken, by task id.
@@ -212,7 +214,7 @@ final class ReplacementService
     public static function boardButton(array $tasks, array $taken, string $date): ?array
     {
         foreach ($tasks as $task) {
-            if (($taken[$task->id] ?? 0) >= $task->capacity) {
+            if (($taken[$task->id] ?? 0) > 0) {
                 return ['text' => self::takeLabel(), 'callback_data' => self::DAY_PREFIX . $date];
             }
         }
@@ -220,7 +222,7 @@ final class ReplacementService
         return null;
     }
 
-    /** The button for one full task, rep:t:<id>, e.g. under "That slot just filled up." */
+    /** The button for one task, rep:t:<id>, e.g. under "That slot just filled up." */
     public static function taskButton(int $taskId): array
     {
         return ['text' => self::takeLabel(), 'callback_data' => self::TASK_PREFIX . $taskId];
@@ -232,24 +234,24 @@ final class ReplacementService
     }
 
     /**
-     * The full tasks among $tasks on $date.
+     * The tasks among $tasks on $date that someone is on, full or not.
      *
      * @param array<int, Task> $tasks
      * @return list<Task>
      */
-    private function fullTasks(array $tasks, string $date): array
+    private function takenTasks(array $tasks, string $date): array
     {
         $tasks = array_values(array_filter($tasks, static fn (Task $t): bool => $t->taskDate === $date));
         $taken = $this->tasks->occupancyFor(array_map(static fn (Task $t): int => $t->id, $tasks));
 
         return array_values(array_filter(
             $tasks,
-            static fn (Task $t): bool => ($taken[$t->id] ?? 0) >= $t->capacity
+            static fn (Task $t): bool => ($taken[$t->id] ?? 0) > 0
         ));
     }
 
     /**
-     * Lists, in the DM, whose places on the given full tasks the cover can
+     * Lists, in the DM, whose places on the given tasks the cover can
      * ask for, one button each (rep:<assignmentId>, as captureTarget()'s);
      * a tap asks that holder. Asked in the group, a breadcrumb points there.
      *

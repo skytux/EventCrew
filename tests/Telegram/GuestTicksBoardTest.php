@@ -103,7 +103,8 @@ final class GuestTicksBoardTest extends TelegramTestCase
 
         $board = $this->renderer()->crewBoard();
 
-        self::assertSame(['t:1'], self::data($board));
+        // Anna is on it, so Take someone's task is offered too (Owner 2026-11-10).
+        self::assertSame(['t:1', 'rep:d:2026-08-01'], self::data($board));
         self::assertStringContainsString("🎈 Decorate · 1/2\nAnna", $board['text']);
         self::assertStringNotContainsString('crew only', $board['text']);
     }

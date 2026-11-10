@@ -329,15 +329,25 @@ final class ReplacementServiceTest extends TelegramTestCase
         self::assertSame([], $this->wpdb->inserts, 'listing asks nobody yet');
     }
 
-    /** The board's row (rep:d:<date>) covers that day's full tasks only. */
-    public function testTheBoardsTakeSomeonesTaskListsTheDaysFullTasks(): void
+    /**
+     * The board's row (rep:d:<date>) covers every task of that day someone
+     * is on, full or not (Owner 2026-11-10); a task nobody is on is skipped.
+     */
+    public function testTheBoardsTakeSomeonesTaskListsEveryoneOnThatDaysTasks(): void
     {
         $this->wpdb->nextRows[] = array_merge($this->verifiedPersonRow(7, 555), ['telegram_chat_id' => 555]);
-        $this->wpdb->nextResults[] = [$this->taskRow(5), $this->taskRow(6)];   // upcoming
-        $this->wpdb->nextResults[] = [['task_id' => 6, 'taken' => 2]];          // only 6 is full
-        $this->wpdb->nextResults[] = [
+        $this->wpdb->nextResults[] = [$this->taskRow(5), $this->taskRow(6), $this->taskRow(7)]; // upcoming
+        $this->wpdb->nextResults[] = [                    // occupancyFor: 5 has room, 6 is full, 7 is empty
+            ['task_id' => 5, 'taken' => 1],
+            ['task_id' => 6, 'taken' => 2],
+        ];
+        $this->wpdb->nextResults[] = [                    // forTask(5)
+            ['id' => 3, 'task_id' => 5, 'person_id' => 8, 'status' => AssignmentStatus::SIGNED_UP],
+        ];
+        $this->wpdb->nextResults[] = [                    // forTask(6)
             ['id' => 4, 'task_id' => 6, 'person_id' => 9, 'status' => AssignmentStatus::SIGNED_UP],
         ];
+        $this->wpdb->nextRows[] = array_merge($this->verifiedPersonRow(8, 888), ['display_name' => 'Anna Virtanen']);
         $this->wpdb->nextRows[] = $this->verifiedPersonRow(9, 999);
 
         $this->service()->onSelect([
@@ -345,7 +355,28 @@ final class ReplacementServiceTest extends TelegramTestCase
         ]);
 
         $keyboard = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
-        self::assertSame(['rep:4'], array_map(static fn (array $row): string => $row[0]['callback_data'], $keyboard));
+        self::assertSame(['rep:3', 'rep:4'], array_map(static fn (array $row): string => $row[0]['callback_data'], $keyboard));
+        self::assertStringStartsWith('Anna · ', $keyboard[0][0]['text']);
+        self::assertSame([], $this->wpdb->inserts, 'listing asks nobody yet');
+    }
+
+    /** One task's link (rep:t:<id>) lists its holder when it still has room. */
+    public function testTakeSomeonesTaskListsTheHolderOfATaskWithRoomLeft(): void
+    {
+        $this->wpdb->nextRows[] = array_merge($this->verifiedPersonRow(7, 555), ['telegram_chat_id' => 555]);
+        $this->wpdb->nextRows[] = $this->taskRow(5);                         // tasks->find(5)
+        $this->wpdb->nextResults[] = [['task_id' => 5, 'taken' => 1]];       // occupancyFor: 1/2
+        $this->wpdb->nextResults[] = [
+            ['id' => 3, 'task_id' => 5, 'person_id' => 8, 'status' => AssignmentStatus::SIGNED_UP],
+        ];
+        $this->wpdb->nextRows[] = $this->verifiedPersonRow(8, 888);
+
+        $this->service()->onSelect([
+            'id' => 'cbq', 'from' => ['id' => 555], 'data' => ReplacementService::TASK_PREFIX . '5',
+        ]);
+
+        $keyboard = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
+        self::assertSame(['rep:3'], array_map(static fn (array $row): string => $row[0]['callback_data'], $keyboard));
     }
 
     /** The cover already on the task, or nobody to ask: a popup, no list. */

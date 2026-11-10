@@ -395,6 +395,35 @@ final class BoardServiceTest extends TelegramTestCase
         self::assertStringContainsString('2/2 · full', $rendered['text']);
     }
 
+    /**
+     * Owner 2026-11-10: someone on a task with room left is enough for the
+     * Take someone's task row; nobody on any task that night, no row.
+     */
+    public function testTakeSomeonesTaskShowsOnceAnyoneIsOnATaskThatNight(): void
+    {
+        $this->wpdb->nextResults[] = [$this->taskRow(1, 100, 'Party')];
+        $this->wpdb->nextResults[] = [['task_id' => 1, 'taken' => 1]]; // 1/2, not full
+
+        $data = array_column(array_merge(...$this->board()->render()['keyboard']), 'callback_data');
+
+        self::assertContains('t:1', $data);
+        self::assertContains('rep:d:2026-08-01', $data);
+    }
+
+    public function testTakeSomeonesTaskIsHiddenWhenNobodyIsOnATaskThatNight(): void
+    {
+        $this->wpdb->nextResults[] = [$this->taskRow(1, 100, 'Party')];
+        $this->wpdb->nextResults[] = [];
+
+        $data = array_column(array_merge(...$this->board()->render()['keyboard']), 'callback_data');
+
+        self::assertContains('t:1', $data);
+        self::assertSame([], array_values(array_filter(
+            $data,
+            static fn (?string $d): bool => str_starts_with((string) $d, 'rep:')
+        )));
+    }
+
     public function testRenderAddsTheDeepLinkButtonWhenTheUsernameIsKnown(): void
     {
         $this->options[BoardService::USERNAME_OPTION] = 'eventcrew_bot';
