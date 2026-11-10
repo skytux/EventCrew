@@ -135,6 +135,7 @@ use EventCrew\Telegram\BotTexts;
 use EventCrew\Telegram\BuyerListReset;
 use EventCrew\Telegram\ChatForwarder;
 use EventCrew\Telegram\DohResolver;
+use EventCrew\Telegram\DmNote;
 use EventCrew\Telegram\ManageController;
 use EventCrew\Telegram\NewsletterCommand;
 use EventCrew\Telegram\SayCommand;
@@ -319,6 +320,16 @@ final class Kernel
         // The short DJ or host text under the group board's picture: written
         // by the language model in a single WP-Cron run the board asks for.
         $this->container->get(BoardDjText::class)->boot();
+
+        // The "Sent you a DM." note a typed group command leaves: a WP-Cron
+        // event deletes it about a minute later.
+        add_action(
+            DmNote::HOOK,
+            fn (int $chatId, int $messageId)
+                => (new DmNote($this->container->get(TelegramClient::class)))->delete($chatId, $messageId),
+            10,
+            2
+        );
 
         // "Translate missing" on the Translations page: its batches are a
         // WP-Cron event, so they run with the page closed.

@@ -284,13 +284,17 @@ final class ReplacementService
             return;
         }
 
-        $this->telegram->answerCallbackQuery($callbackId);
         $this->telegram->sendMessage(
             $cover->telegramChatId ?? $coverTelegramId,
             __('Whose task do you want to take? They decide.', 'eventcrew'),
             ['inline_keyboard' => $buttons]
         );
-        $this->sentDmNote((int) ($chat['id'] ?? $coverTelegramId), 'private' === ($chat['type'] ?? 'private'));
+        // Answers the tap: in a group with the note as a toast.
+        $this->sentDmNote(
+            (int) ($chat['id'] ?? $coverTelegramId),
+            'private' === ($chat['type'] ?? 'private'),
+            $callbackId
+        );
     }
 
     /**

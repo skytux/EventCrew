@@ -518,16 +518,17 @@ final class TelegramClient
      * Removes a message the bot posted. Used when the board is re-posted, so the
      * old board is cleared rather than left behind. A message too old to delete
      * (Telegram limits bots to 48h) or already gone comes back as an error the
-     * caller can safely ignore - the new board is what matters.
+     * caller can safely ignore - the new board is what matters. With $quiet
+     * such a failure is logged as info only (call()).
      *
      * @return array<string, mixed>|null
      */
-    public function deleteMessage(int|string $chatId, int $messageId): ?array
+    public function deleteMessage(int|string $chatId, int $messageId, bool $quiet = false): ?array
     {
         return $this->call('deleteMessage', [
             'chat_id' => $chatId,
             'message_id' => $messageId,
-        ]);
+        ], $quiet);
     }
 
     /**

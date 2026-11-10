@@ -647,15 +647,27 @@ final class UpdateRouter
         $chatId = (int) ($chat['id'] ?? $fromId);
         $isPrivate = 'private' === ($chat['type'] ?? 'private');
 
-        if (null !== $this->help) {
-            $this->help->answerTap((string) ($callbackQuery['id'] ?? ''));
+        $callbackId = (string) ($callbackQuery['id'] ?? '');
+
+        // In a group the answer waits: a screen that goes to the DM answers
+        // it with "Sent you a DM." as a toast (GroupBreadcrumb).
+        if ($isPrivate || 0 === $fromId) {
+            $this->help?->answerTap($callbackId);
+        } else {
+            DmNote::holdTap($callbackId);
         }
 
         if (0 === $fromId) {
             return;
         }
 
-        $this->runMenu($data, $fromId, $chatId, $isPrivate);
+        try {
+            $this->runMenu($data, $fromId, $chatId, $isPrivate);
+        } finally {
+            if (! $isPrivate) {
+                $this->help?->answerTap(DmNote::takeTap());
+            }
+        }
     }
 
     /**
