@@ -168,9 +168,9 @@ endif; ?>
                  */
                 ?>
                 <?php
-                // The count and the action travel together: when the row is too
-                // narrow for one line they wrap as a pair to the right, rather
-                // than one of them dropping away from the other.
+                // The right column: the count on the name's line, the action
+                // under it on the time's line, Take someone's task last
+                // (2026-11-11). The CSS lays these straight into the row's grid.
                 ?>
                 <span class="eventcrew-task-side">
                 <span class="eventcrew-capacity">
@@ -317,15 +317,15 @@ endif; ?>
                         <button type="submit" class="wp-element-button eventcrew-btn-go"><?php esc_html_e('Sign up', 'eventcrew'); ?></button>
                     </form>
                     <?php
-                endif; ?>
-                </span>
-                <?php
+                endif;
                 /*
                  * Take someone's task is a secondary action, so it is a text
-                 * link on its own line under the name and the count, right
-                 * aligned, rather than a wide button beside them: as a button
-                 * it squeezed the name column until "Decorate" broke mid-word
-                 * (2026-11-08). On a signed-in row, on any task someone is
+                 * link in the right column, not a wide button: as a button it
+                 * squeezed the name column until "Decorate" broke mid-word
+                 * (2026-11-08). It stands where the action goes, or right
+                 * under Sign up when the row has both (2026-11-11); opened,
+                 * the holders' names take the row's full width below. On a
+                 * signed-in row, on any task someone is
                  * on, full or not (Owner 2026-11-11), it opens the holders'
                  * names, as the bot lists them; the holder decides
                  * (TakeoverService). Names are text links too. Signed out,
@@ -356,6 +356,7 @@ endif; ?>
                     <?php
                 endif;
                 ?>
+                </span>
             </li>
             <?php
         endforeach; ?>
