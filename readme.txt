@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.215
+Stable tag: 1.140.216
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,13 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.216 =
+* Settings: new tick Send emails to organizers at any hour (on by default); organizer notices, the monthly report and previews no longer wait for the sending window.
+* Bot: Act as ends 15 minutes after the organizer’s last action, with a warning 2 minutes before (Keep acting / Stop acting).
+* Bot: when an Act as session ends, the person gets one email listing the changes made for them.
+* Bot: /me is shown again after an action started from it.
+* Monthly report: new section Done for others lists what organizers and wp-admin users did for other people, by who, what and when.
 
 = 1.140.215 =
 * Bot: after 🎁 Give credits, the name buttons turn into the confirmation, so a second tap can’t give the credit twice.
@@ -2015,6 +2022,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.216 =
+No settings change.
 
 = 1.140.215 =
 No settings change.
