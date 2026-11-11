@@ -593,13 +593,13 @@
  * is display: contents, so its parts sit straight in this grid, one row each
  * down the right column; the name block spans those rows, and the last row
  * (1fr) takes any height the name block has over them, so the action never
- * drifts down from the count. The right column is fit-content(60%), not auto:
- * with auto the 1fr column took all the spare width and Take someone's task
- * wrapped onto three lines in a desktop card (three cards across).
+ * drifts down from the count. The left column's floor is 7em: at this
+ * row's font size 9em is about 196px, which left Take someone's task too
+ * little room in a desktop card (three cards across) and it wrapped.
  */
 .eventcrew-signup .eventcrew-task-row {
     display: grid;
-    grid-template-columns: minmax(min(9em, 100%), 1fr) fit-content(60%);
+    grid-template-columns: minmax(min(7em, 100%), 1fr) fit-content(60%);
     grid-template-rows: auto auto 1fr;
     align-items: start;
     column-gap: .75em; row-gap: .3em;
