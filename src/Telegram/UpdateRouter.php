@@ -778,6 +778,7 @@ final class UpdateRouter
             MenuButtons::GIFT => $this->gift->start($fromId, $chatId, $isPrivate),
             MenuButtons::ROLES => $this->permissions->start($fromId, $chatId, $isPrivate),
             MenuButtons::ELIGIBLE => $this->permissions->onEligible($fromId, $chatId, $isPrivate),
+            MenuButtons::ACT_AS => $this->permissions->start($fromId, $chatId, $isPrivate, true),
             MenuButtons::CANCEL => $this->cancelQuestions($fromId, $chatId, $isPrivate),
             MenuButtons::ME => $this->profile->onMe($fromId, $chatId, $isPrivate),
             MenuButtons::BOARD => $this->privateBoard($chatId),

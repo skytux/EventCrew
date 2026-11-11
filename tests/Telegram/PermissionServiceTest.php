@@ -241,6 +241,28 @@ final class PermissionServiceTest extends TelegramTestCase
         self::assertStringStartsNotWith('✅ ', $buttons[0]['text']);
     }
 
+    public function testActAsSomeoneOffersTheActAsButtonForTheNamedPerson(): void
+    {
+        // 👤 Act as someone under /people: the reply naming the person gets
+        // only the Act as button, not the role card.
+        Functions\when('get_transient')->justReturn('act');
+        Functions\when('delete_transient')->justReturn(true);
+        $this->wpdb->nextResults[] = [
+            ['id' => 8, 'display_name' => 'Sam', 'email_verified_at' => '2026-11-01 10:00:00'],
+            ['id' => 9, 'display_name' => 'Samu'],
+        ];
+
+        $this->service()->captureTarget(555, 555, 'Sam', []);
+
+        $sends = array_column(
+            array_values(array_filter($this->telegramCalls, static fn (array $c): bool => 'sendMessage' === $c['method'])),
+            'body'
+        );
+        self::assertSame('👤 Sam', $sends[0]['text']);
+        self::assertSame(['act:8'], array_column($sends[0]['reply_markup']['inline_keyboard'][0], 'callback_data'));
+        self::assertSame('Samu has no verified email, so you can’t act as them.', $sends[1]['text']);
+    }
+
     public function testTheWhoButtonShowsThePersonsRoleButtonsAndChangesNothing(): void
     {
         // An organizer notice's button: perm:who:8 shows Sam's role buttons.

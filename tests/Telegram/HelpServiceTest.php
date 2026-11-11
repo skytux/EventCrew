@@ -591,7 +591,7 @@ final class HelpServiceTest extends TelegramTestCase
         $this->person(true);
         $this->send('/people');
         self::assertSame('👥 People: choose what to do.', $this->lastText());
-        self::assertSame(['mn:gift', 'mn:roles', 'mn:elig', 'mn:admin'], $this->lastButtons());
+        self::assertSame(['mn:gift', 'mn:roles', 'mn:actas', 'mn:elig', 'mn:admin'], $this->lastButtons());
     }
 
     public function testMeComesWithItsButtons(): void

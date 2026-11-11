@@ -10683,3 +10683,16 @@ msgstr "%1$s otti vastaan lipun (%3$s), jonka %2$s antoi sinulle."
 #: src/Telegram/ActingAs.php
 msgid "%1$s cancelled the offer of your ticket for %2$s."
 msgstr "%1$s perui lippusi (%2$s) tarjouksen."
+
+#: src/Telegram/MenuButtons.php
+msgid "Act as someone"
+msgstr "Toimi toisen puolesta"
+
+#: src/Telegram/PermissionService.php
+msgid "Whom do you want to act as? Send their name, or @mention them."
+msgstr "Kenen puolesta haluat toimia? Lähetä nimi tai @mainitse hänet."
+
+#. translators: %s: person's name
+#: src/Telegram/PermissionService.php
+msgid "%s has no verified email, so you can’t act as them."
+msgstr "Henkilöllä %s ei ole vahvistettua sähköpostia, joten et voi toimia hänen puolestaan."

@@ -29,6 +29,7 @@ final class MenuButtons
     public const GIFT = 'mn:gift';
     public const ROLES = 'mn:roles';
     public const ELIGIBLE = 'mn:elig';
+    public const ACT_AS = 'mn:actas';
     public const CANCEL = 'mn:cancel';
 
     /** /me, /board in a private chat and /people, as buttons under a message. */
@@ -367,6 +368,7 @@ final class MenuButtons
         return ['inline_keyboard' => [
             [self::button('🎁 ' . __('Give credits', 'eventcrew'), self::GIFT)],
             [self::button('🏷 ' . __('Give or remove roles', 'eventcrew'), self::ROLES)],
+            [self::button('👤 ' . __('Act as someone', 'eventcrew'), self::ACT_AS)],
             [self::button('✅ ' . __('Who may hold each role', 'eventcrew'), self::ELIGIBLE)],
             self::backRow(self::ADMIN),
         ]];

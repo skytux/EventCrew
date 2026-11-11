@@ -13633,3 +13633,16 @@ msgstr "%1$s tog emot biljetten för %3$s som %2$s gav dig."
 #: src/Telegram/ActingAs.php
 msgid "%1$s cancelled the offer of your ticket for %2$s."
 msgstr "%1$s drog tillbaka erbjudandet av din biljett för %2$s."
+
+#: src/Telegram/MenuButtons.php
+msgid "Act as someone"
+msgstr "Agera som någon"
+
+#: src/Telegram/PermissionService.php
+msgid "Whom do you want to act as? Send their name, or @mention them."
+msgstr "Vem vill du agera som? Skicka namnet eller @nämn personen."
+
+#. translators: %s: person's name
+#: src/Telegram/PermissionService.php
+msgid "%s has no verified email, so you can’t act as them."
+msgstr "%s har ingen verifierad e-post, så du kan inte agera som hen."

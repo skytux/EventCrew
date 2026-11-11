@@ -40,6 +40,10 @@ final class PermissionService
      */
     public const WHO_VERB = 'who';
 
+    /** What the "whose?" question was for: a role card, or 👤 Act as. */
+    private const MODE_ROLES = 'roles';
+    private const MODE_ACT = 'act';
+
     public function __construct(
         private readonly PersonRepository $people,
         private readonly TelegramClient $telegram,
@@ -47,7 +51,11 @@ final class PermissionService
     ) {
     }
 
-    public function start(int $telegramUserId, int $chatId, bool $isPrivate = true): void
+    /**
+     * Asks whose roles to change, or, with $actAs (👤 Act as someone under
+     * /people), whom to act as (ActingAs).
+     */
+    public function start(int $telegramUserId, int $chatId, bool $isPrivate = true, bool $actAs = false): void
     {
         $organizer = $this->people->findByTelegramUserId($telegramUserId);
 
@@ -57,10 +65,13 @@ final class PermissionService
             return;
         }
 
-        set_transient(self::AWAIT_PREFIX . $telegramUserId, true, 15 * MINUTE_IN_SECONDS);
+        $mode = $actAs ? self::MODE_ACT : self::MODE_ROLES;
+        set_transient(self::AWAIT_PREFIX . $telegramUserId, $mode, 15 * MINUTE_IN_SECONDS);
         $this->telegram->sendMessage(
             $telegramUserId,
-            __('Whose roles do you want to change? Send their name, or @mention them.', 'eventcrew'),
+            $actAs
+                ? __('Whom do you want to act as? Send their name, or @mention them.', 'eventcrew')
+                : __('Whose roles do you want to change? Send their name, or @mention them.', 'eventcrew'),
             MenuButtons::cancel()
         );
         $this->sentDmNote($chatId, $isPrivate);
@@ -137,6 +148,7 @@ final class PermissionService
      */
     public function captureTarget(int $telegramUserId, int $chatId, string $text, array $entities): void
     {
+        $actAs = self::MODE_ACT === get_transient(self::AWAIT_PREFIX . $telegramUserId);
         delete_transient(self::AWAIT_PREFIX . $telegramUserId);
 
         $matches = PersonResolver::matching($this->people, $text, $entities);
@@ -151,7 +163,21 @@ final class PermissionService
         }
 
         foreach ($matches as $person) {
-            $this->telegram->sendMessage($chatId, $this->menuText($person), $this->menuKeyboard($person));
+            if (! $actAs) {
+                $this->telegram->sendMessage($chatId, $this->menuText($person), $this->menuKeyboard($person));
+            } elseif ($person->isEmailVerified() && ! $person->isAnonymized()) {
+                $this->telegram->sendMessage(
+                    $chatId,
+                    '👤 ' . $person->name(),
+                    ['inline_keyboard' => [ActingAs::startRow($person->id)]]
+                );
+            } else {
+                $this->telegram->sendMessage($chatId, sprintf(
+                    /* translators: %s: person's name */
+                    __('%s has no verified email, so you can’t act as them.', 'eventcrew'),
+                    $person->name()
+                ));
+            }
         }
     }
 
