@@ -3519,7 +3519,7 @@ msgstr ""
 msgid "Full"
 msgstr ""
 
-#: src/Telegram/GiftService.php:194
+#: src/Telegram/GiftService.php:212
 #. translators: 1: recipient's name, 2: credits granted, 3: their new balance
 msgid "Gave %1$s %2$d credit — they now have %3$d."
 msgid_plural "Gave %1$s %2$d credits — they now have %3$d."
@@ -8580,6 +8580,10 @@ msgstr ""
 
 #: src/Admin/RosterPage.php:137 src/Web/CrewAdminRoster.php:604
 msgid "That credit could not be redeemed."
+msgstr ""
+
+#: src/Telegram/GiftService.php:191
+msgid "That credit was already given. Send /people to give another."
 msgstr ""
 
 #: src/Admin/TasksPage.php:135 src/Web/CrewAdminTasks.php:297
