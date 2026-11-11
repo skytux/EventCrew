@@ -5,6 +5,17 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
+use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\HistoryRepository;
+use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\RedemptionRepository;
+use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\DoorAccess;
+use EventCrew\Support\DoorAddedBy;
+use EventCrew\Support\DoorList;
+use EventCrew\Support\History;
+use EventCrew\Telegram\DoorListService;
 use EventCrew\Telegram\BoardRenderer;
 use EventCrew\Telegram\DayPicker;
 
@@ -385,5 +396,77 @@ final class DoorListServiceTest extends TelegramTestCase
         ]);
 
         self::assertSame($pages[count($pages) - 1]['text'], $this->lastCallTo('editMessageText')['text']);
+    }
+
+    /** The service as the kernel builds it: the lists say who added an entry. */
+    private function serviceWithAddedBy(): DoorListService
+    {
+        $addedBy = new DoorAddedBy(new HistoryRepository(), new PersonRepository());
+
+        return new DoorListService(
+            new DoorList(
+                new TaskRepository(),
+                new AssignmentRepository(),
+                new PersonRepository(),
+                new RedemptionRepository(),
+                $this->standing(),
+                addedBy: $addedBy
+            ),
+            new GuestRepository(),
+            new DoorAccess(new TaskRepository(), new AssignmentRepository()),
+            new PersonRepository(),
+            $this->client(),
+            $addedBy
+        );
+    }
+
+    public function testEntriesSomeoneElseAddedSayWhoAndWhen(): void
+    {
+        $this->asker(true);
+        $this->wpdb->nextResults[] = [$this->task(5, 'decorate')];                                   // tasks->forDate
+        $this->wpdb->nextResults[] = [
+            ['id' => 1, 'task_id' => 5, 'person_id' => 8, 'status' => 'signed_up'],
+            ['id' => 3, 'task_id' => 5, 'person_id' => 10, 'status' => 'signed_up'],
+        ];                                                                                           // forTask
+        $this->wpdb->nextRows[] = ['id' => 8, 'email' => 'a@example.com', 'display_name' => 'Alex'];  // find(8)
+        $this->wpdb->nextRows[] = ['id' => 10, 'email' => 'c@example.com', 'display_name' => 'Cy'];   // find(10)
+        $this->wpdb->nextResults[] = [];                                                             // standing(8)
+        $this->wpdb->nextResults[] = [];                                                             // standing(10)
+        $this->wpdb->nextResults[] = [['id' => 2, 'person_id' => 9, 'redeemed_for' => '2026-08-01']]; // redemptions
+        $this->wpdb->nextRows[] = ['id' => 9, 'email' => 'b@example.com', 'display_name' => 'Bo'];    // find(9)
+        $this->wpdb->nextResults[] = [];                                                             // standing(9)
+        $this->wpdb->nextResults[] = [                                                               // doorAdds
+            [
+                'id' => 1, 'kind' => History::ASSIGNED, 'person_id' => 8, 'task_id' => 5,
+                'actor_kind' => History::ACTOR_ORGANIZER, 'actor_person_id' => 7, 'actor_wp_user_id' => null,
+                'created_at' => '2026-07-30 14:02:00', 'actor_name' => 'Door', 'actor_email' => 'door@example.com',
+            ],
+            [
+                'id' => 2, 'kind' => History::SIGNED_UP, 'person_id' => 10, 'task_id' => 5,
+                'actor_kind' => History::ACTOR_PERSON, 'actor_person_id' => 10, 'actor_wp_user_id' => null,
+                'created_at' => '2026-07-30 15:00:00', 'actor_name' => 'Cy', 'actor_email' => 'c@example.com',
+            ],
+            [
+                'id' => 3, 'kind' => History::CREDIT_REDEEMED, 'person_id' => 9, 'task_id' => null,
+                'actor_kind' => History::ACTOR_PERSON, 'actor_person_id' => 9, 'actor_wp_user_id' => null,
+                'created_at' => '2026-07-31 09:00:00', 'actor_name' => 'Bo', 'actor_email' => 'b@example.com',
+            ],
+        ];
+        $this->wpdb->nextResults[] = [                                                               // guests
+            [
+                'id' => 1, 'event_date' => '2026-08-01', 'name' => 'Anna', 'plus_ones' => 0, 'note' => '',
+                'added_by' => 7, 'created_at' => '2026-07-29 20:15:00',
+            ],
+        ];
+        $this->wpdb->nextResults[] = [['id' => 7, 'email' => 'door@example.com', 'display_name' => 'Door']]; // findMany
+        $this->wpdb->nextCols[] = [];                                                                // nearbyDates
+
+        $this->serviceWithAddedBy()->onTicketsCommand(555, 555, true, '1.8.');
+
+        $text = $this->lastCallTo('sendMessage')['text'];
+        self::assertStringContainsString("• Alex — Working: Decorate\n    added by Door · 30 Jul 14:02\n• Bo", $text);
+        // Bo spent the credit and Cy signed up themselves: no line.
+        self::assertStringContainsString("• Bo — Free-entry credit\n• Cy — Working: Decorate\n", $text);
+        self::assertStringContainsString("🎫 Guests\n• Anna\n    added by Door · 29 Jul 20:15", $text);
     }
 }

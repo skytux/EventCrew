@@ -50,6 +50,7 @@ use EventCrew\Support\CampaignVisits;
 use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\DoorAccess;
+use EventCrew\Support\DoorAddedBy;
 use EventCrew\Support\DoorDesk;
 use EventCrew\Support\DoorHandoff;
 use EventCrew\Support\DoorNewMember;
@@ -1079,7 +1080,8 @@ final class Kernel
                 $container->get(BuyerImport::class),
                 $container->get(MailImporter::class),
                 $container->get(TicketMail::class),
-                $container->get(FollowupMail::class)
+                $container->get(FollowupMail::class),
+                $container->get(DoorAddedBy::class)
             )
         );
 
@@ -1332,7 +1334,16 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(RedemptionRepository::class),
                 $container->get(StandingCalculator::class),
-                transfers: $container->get(TicketTransferRepository::class)
+                transfers: $container->get(TicketTransferRepository::class),
+                addedBy: $container->get(DoorAddedBy::class)
+            )
+        );
+
+        $this->container->singleton(
+            DoorAddedBy::class,
+            fn (Container $container) => new DoorAddedBy(
+                $container->get(HistoryRepository::class),
+                $container->get(PersonRepository::class)
             )
         );
 
@@ -1378,7 +1389,8 @@ final class Kernel
                 $container->get(GuestRepository::class),
                 $container->get(DoorAccess::class),
                 $container->get(PersonRepository::class),
-                $container->get(TelegramClient::class)
+                $container->get(TelegramClient::class),
+                $container->get(DoorAddedBy::class)
             )
         );
 
@@ -1945,7 +1957,8 @@ final class Kernel
                 $container->get(BuyerImport::class),
                 $container->get(TicketMail::class),
                 $container->get(FollowupMail::class),
-                $container->get(DoorDesk::class)
+                $container->get(DoorDesk::class),
+                $container->get(DoorAddedBy::class)
             )
         );
 

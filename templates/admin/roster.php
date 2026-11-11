@@ -7,8 +7,9 @@
  * @var array<int, string> $past_dates Dates with tasks before today, most recent first.
  * @var string $selected_date The date currently shown (Y-m-d), or '' when none.
  * @var array<int, array{task: \EventCrew\Models\Task, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, occupying: bool, marked_by: string, standing: ?\EventCrew\Support\Standing}>}> $roster
- * @var array{entrants: array<int, array{name: string, detail: string, standing: \EventCrew\Support\Standing, redemption_id: ?int}>, candidates: array<int, array{person_id: int, name: string, credit_balance: int}>} $door
+ * @var array{entrants: array<int, array{name: string, detail: string, standing: \EventCrew\Support\Standing, redemption_id: ?int, added_by: string}>, candidates: array<int, array{person_id: int, name: string, credit_balance: int}>} $door
  * @var array<int, \EventCrew\Models\Guest> $guests The shown date's guest list, in the order added.
+ * @var array<int, string> $guest_added_by Guest id => "added by Lou · 9 Nov 14:02" for a guest someone added.
  * @var array<int, \EventCrew\Models\TicketBuyer> $ticket_buyers The shown date's imported Holvi buyers, by name.
  * @var array<int, array{name: string, email: string, newsletter: bool, came: string}> $door_notes Names and emails the door crew noted for given-away tickets and +1s.
  * @var string $import_mailbox The address organizers can mail a ticket file or a guest list to; '' when none is set.
@@ -141,7 +142,11 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                     <?php foreach ($door['entrants'] as $eventcrew_entrant) : ?>
                         <tr>
                             <td><?php echo esc_html($eventcrew_entrant['name']); ?></td>
-                            <td><?php echo esc_html($eventcrew_entrant['detail']); ?></td>
+                            <td><?php echo esc_html($eventcrew_entrant['detail']); ?>
+                                <?php if ('' !== ($eventcrew_entrant['added_by'] ?? '')) : ?>
+                                    <br><span class="description"><?php echo esc_html($eventcrew_entrant['added_by']); ?></span>
+                                <?php endif; ?>
+                            </td>
                             <td><?php echo $eventcrew_standing_badge($eventcrew_entrant['standing']); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- badge builds its own escaped markup. ?></td>
                             <td>
                                 <?php if (null !== $eventcrew_entrant['redemption_id']) : ?>
@@ -201,7 +206,11 @@ $eventcrew_standing_badge = static function (\EventCrew\Support\Standing $standi
                     <?php foreach ($guests as $eventcrew_guest) : ?>
                         <?php $eventcrew_form = 'eventcrew-guest-' . $eventcrew_guest->id; ?>
                         <tr>
-                            <td data-label="<?php esc_attr_e('Name', 'eventcrew'); ?>"><input type="text" name="guest_name" required maxlength="191" class="regular-text" style="width:100%" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr($eventcrew_guest->name); ?>"></td>
+                            <td data-label="<?php esc_attr_e('Name', 'eventcrew'); ?>"><input type="text" name="guest_name" required maxlength="191" class="regular-text" style="width:100%" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr($eventcrew_guest->name); ?>">
+                                <?php if ('' !== ($guest_added_by[$eventcrew_guest->id] ?? '')) : ?>
+                                    <br><span class="description"><?php echo esc_html($guest_added_by[$eventcrew_guest->id]); ?></span>
+                                <?php endif; ?>
+                            </td>
                             <td data-label="<?php esc_attr_e('Plus-ones', 'eventcrew'); ?>"><input type="number" name="guest_plus_ones" min="0" max="<?php echo esc_attr((string) \EventCrew\Repositories\GuestRepository::MAX_PLUS_ONES); ?>" style="width:5em" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr((string) $eventcrew_guest->plusOnes); ?>"></td>
                             <td data-label="<?php esc_attr_e('Note', 'eventcrew'); ?>"><input type="text" name="guest_note" maxlength="191" style="width:100%" form="<?php echo esc_attr($eventcrew_form); ?>" value="<?php echo esc_attr($eventcrew_guest->note); ?>"></td>
                             <?php /* A changed email makes a new ticket for the new address; the old ticket stops working. */ ?>

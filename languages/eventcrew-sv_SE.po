@@ -13543,3 +13543,9 @@ msgstr "Borttagna Telegram-konton"
 #: src/Support/HealthReport.php
 msgid "Telegram says these accounts are deleted, so the bot does not message them: %s"
 msgstr "Enligt Telegram är dessa konton borttagna, så boten skickar inga meddelanden till dem: %s"
+
+#. translators: 1: name of who put the person on the door list, 2: day and time, like "9 Nov 14:02"
+#: src/Support/DoorAddedBy.php
+#, php-format
+msgid "added by %1$s · %2$s"
+msgstr "tillagd av %1$s · %2$s"

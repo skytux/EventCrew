@@ -37,6 +37,43 @@ final class PersonRepository
     }
 
     /**
+     * Several people by id in one query, keyed by id. An id with no person
+     * is left out.
+     *
+     * @param array<int, int> $ids
+     * @return array<int, Person>
+     */
+    public function findMany(array $ids): array
+    {
+        global $wpdb;
+
+        $ids = array_values(array_unique(array_filter(
+            array_map('intval', $ids),
+            static fn (int $id): bool => $id > 0
+        )));
+
+        if ([] === $ids) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        // Placeholders generated for the ids; every value is bound.
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+        $rows = $wpdb->get_results(
+            $wpdb->prepare("SELECT * FROM {$this->table()} WHERE id IN ({$placeholders})", ...$ids),
+            ARRAY_A
+        );
+        $people = [];
+
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $person = Person::fromRow($row);
+            $people[$person->id] = $person;
+        }
+
+        return $people;
+    }
+
+    /**
      * Email is compared lowercased because addresses are case-insensitive in
      * practice, and two rows differing only in case would split one person's
      * history - and therefore their earned credits - across two records.

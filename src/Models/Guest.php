@@ -11,6 +11,8 @@ namespace EventCrew\Models;
  * mailStatus is '' (not sent), 'sent' or 'failed'. ticketRev goes up by one
  * each time an organizer changes the address; it is signed into the
  * ticket's code, so the old code stops working (TicketMail::guestCode()).
+ * createdAt is when the guest was added (site time), for the door list's
+ * "added by" line (DoorAddedBy).
  */
 final class Guest
 {
@@ -24,7 +26,8 @@ final class Guest
         public readonly string $email = '',
         public readonly string $mailStatus = '',
         public readonly string $mailedAt = '',
-        public readonly int $ticketRev = 0
+        public readonly int $ticketRev = 0,
+        public readonly string $createdAt = ''
     ) {
     }
 
@@ -45,7 +48,8 @@ final class Guest
             (string) ($row['email'] ?? ''),
             (string) ($row['ticket_mail_status'] ?? ''),
             (string) ($row['ticket_mailed_at'] ?? ''),
-            (int) ($row['ticket_rev'] ?? 0)
+            (int) ($row['ticket_rev'] ?? 0),
+            (string) ($row['created_at'] ?? '')
         );
     }
 

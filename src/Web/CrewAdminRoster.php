@@ -19,6 +19,7 @@ use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\BuyerImport;
 use EventCrew\Support\Dates;
+use EventCrew\Support\DoorAddedBy;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\MarkedBy;
@@ -60,7 +61,8 @@ final class CrewAdminRoster
         private readonly BuyerImport $buyerImport,
         private readonly MailImporter $mailImporter,
         private readonly ?TicketMail $ticketMail = null,
-        private readonly ?FollowupMail $followup = null
+        private readonly ?FollowupMail $followup = null,
+        private readonly ?DoorAddedBy $addedBy = null
     ) {
     }
 
@@ -107,14 +109,18 @@ final class CrewAdminRoster
 
     /**
      * The door list, the free-entry state, the guests and the ticket buyers
-     * for $date, and the mailbox state, for the template.
+     * for $date, and the mailbox state, for the template. added_by is "added
+     * by Lou · 9 Nov 14:02" under an entry or guest someone else added, ''
+     * otherwise (DoorAddedBy).
      *
      * @return array{
-     *     entrants: list<array{name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int}>,
+     *     entrants: list<array{
+     *         name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int, added_by: string
+     *     }>,
      *     candidates: list<array{person_id: int, name: string, credit_balance: int}>,
      *     closed_by_hand: bool,
      *     event_reason: string,
-     *     guests: list<array{id: int, name: string, plus_ones: int, note: string}>,
+     *     guests: list<array{id: int, name: string, plus_ones: int, note: string, email: string, added_by: string}>,
      *     buyers: list<string>,
      *     ticket_mail_buyers: string,
      *     ticket_mail_guests: string,
@@ -156,12 +162,15 @@ final class CrewAdminRoster
                 'standing' => $entrant['standing']->ratedSummary(),
                 'at_risk' => $entrant['standing']->isAtRisk(),
                 'redemption_id' => $entrant['redemption_id'],
+                'added_by' => $entrant['added_by'] ?? '',
             ];
         }
 
         $view['candidates'] = array_values($door['candidates']);
         $view['closed_by_hand'] = $this->freeEntry->isClosedByHand($date);
         $view['event_reason'] = $this->freeEntry->eventReason($date);
+        $guests = array_values($this->guests->forDate($date));
+        $guestAddedBy = null === $this->addedBy ? [] : $this->addedBy->forGuests($guests);
         $view['guests'] = array_map(
             static fn (Guest $guest): array => [
                 'id' => $guest->id,
@@ -169,8 +178,9 @@ final class CrewAdminRoster
                 'plus_ones' => $guest->plusOnes,
                 'note' => $guest->note,
                 'email' => $guest->email,
+                'added_by' => $guestAddedBy[$guest->id] ?? '',
             ],
-            array_values($this->guests->forDate($date))
+            $guests
         );
 
         foreach ($this->ticketBuyers->forDate($date) as $buyer) {

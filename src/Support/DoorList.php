@@ -30,14 +30,15 @@ final class DoorList
         private readonly PersonRepository $people,
         private readonly RedemptionRepository $redemptions,
         private readonly StandingCalculator $standing,
-        private readonly ?TicketTransferRepository $transfers = null
+        private readonly ?TicketTransferRepository $transfers = null,
+        private readonly ?DoorAddedBy $addedBy = null
     ) {
     }
 
     /**
      * @return array{
      *     entrants: array<int, array{
-     *         person_id: int, name: string, detail: string, standing: Standing, redemption_id: ?int
+     *         person_id: int, name: string, detail: string, standing: Standing, redemption_id: ?int, added_by: string
      *     }>,
      *     candidates: array<int, array{person_id: int, name: string, credit_balance: int}>
      * }
@@ -58,14 +59,22 @@ final class DoorList
     /**
      * Only the people who get in free on $date, sorted by name - without the
      * redemption candidates, whose scan reads every person's standing.
+     * added_by is "added by Lou · 9 Nov 14:02" for an entry someone else
+     * put there (DoorAddedBy), '' otherwise.
      *
-     * @return array<int, array{person_id: int, name: string, detail: string, standing: Standing, redemption_id: ?int}>
+     * @return array<int, array{
+     *     person_id: int, name: string, detail: string, standing: Standing, redemption_id: ?int, added_by: string
+     * }>
      */
     public function entrantsFor(string $date): array
     {
-        $entrants = $this->workers($date);
+        $workerTasks = [];
+        $entrants = $this->workers($date, $workerTasks);
+        $creditPeople = [];
 
         foreach ($this->redemptions->forDate($date) as $redemption) {
+            $creditPeople[] = $redemption->personId;
+
             // A worker who also holds a free-entry ticket gets a second row:
             // they may give that ticket to someone else (Owner 2026-11-07).
             $person = $this->people->find($redemption->personId);
@@ -76,6 +85,7 @@ final class DoorList
                 'detail' => __('Free-entry credit', 'eventcrew'),
                 'standing' => $this->standing->for($redemption->personId),
                 'redemption_id' => $redemption->id,
+                'added_by' => '',
             ];
         }
 
@@ -99,6 +109,7 @@ final class DoorList
                     ? new Standing(Standing::UNRATED, 0.0, 0, 0)
                     : $this->standing->for($receiver->id),
                 'redemption_id' => $transfer->redemptionId,
+                'added_by' => '',
             ];
 
             // The giver's cancelled ticket, so the list says where it went.
@@ -112,7 +123,20 @@ final class DoorList
                 ),
                 'standing' => $this->standing->for($transfer->giverPersonId),
                 'redemption_id' => null,
+                'added_by' => '',
             ];
+        }
+
+        if (null !== $this->addedBy) {
+            $lines = $this->addedBy->forNight($date, $workerTasks, $creditPeople);
+
+            foreach ($entrants as $key => $entrant) {
+                if (is_int($key)) {
+                    $entrants[$key]['added_by'] = $lines['workers'][$key] ?? '';
+                } elseif (str_starts_with((string) $key, 'credit:')) {
+                    $entrants[$key]['added_by'] = $lines['credits'][$entrant['person_id']] ?? '';
+                }
+            }
         }
 
         return $this->sortedByName($entrants);
@@ -120,11 +144,15 @@ final class DoorList
 
     /**
      * People occupying a slot on $date, keyed by person id, each with the roles
-     * they are covering rolled into one detail line.
+     * they are covering rolled into one detail line. $taskIds gets each
+     * person's task ids, for who added them (DoorAddedBy).
      *
-     * @return array<int, array{person_id: int, name: string, detail: string, standing: Standing, redemption_id: ?int}>
+     * @param array<int, array<int, int>> $taskIds
+     * @return array<int, array{
+     *     person_id: int, name: string, detail: string, standing: Standing, redemption_id: ?int, added_by: string
+     * }>
      */
-    private function workers(string $date): array
+    private function workers(string $date, array &$taskIds = []): array
     {
         $roles = [];
 
@@ -135,6 +163,7 @@ final class DoorList
                 }
 
                 $roles[$assignment->personId][] = $task->roleLabel();
+                $taskIds[$assignment->personId][] = $task->id;
             }
         }
 
@@ -153,6 +182,7 @@ final class DoorList
                 ),
                 'standing' => $this->standing->for($personId),
                 'redemption_id' => null,
+                'added_by' => '',
             ];
         }
 
@@ -194,9 +224,11 @@ final class DoorList
 
     /**
      * @param array<int, array{
-     *     person_id: int, name: string, detail: string, standing: Standing, redemption_id: ?int
+     *     person_id: int, name: string, detail: string, standing: Standing, redemption_id: ?int, added_by: string
      * }> $entrants
-     * @return array<int, array{person_id: int, name: string, detail: string, standing: Standing, redemption_id: ?int}>
+     * @return array<int, array{
+     *     person_id: int, name: string, detail: string, standing: Standing, redemption_id: ?int, added_by: string
+     * }>
      */
     private function sortedByName(array $entrants): array
     {

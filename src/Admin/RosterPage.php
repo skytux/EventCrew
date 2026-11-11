@@ -14,6 +14,7 @@ use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\BuyerImport;
 use EventCrew\Support\DoorDesk;
+use EventCrew\Support\DoorAddedBy;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FreeEntryGate;
@@ -52,7 +53,8 @@ final class RosterPage
         private readonly BuyerImport $buyerImport,
         private readonly ?TicketMail $ticketMail = null,
         private readonly ?FollowupMail $followup = null,
-        private readonly ?DoorDesk $desk = null
+        private readonly ?DoorDesk $desk = null,
+        private readonly ?DoorAddedBy $addedBy = null
     ) {
     }
 
@@ -72,6 +74,7 @@ final class RosterPage
         $door = '' === $selected
             ? ['entrants' => [], 'candidates' => []]
             : $this->doorList->forDate($selected);
+        $guests = '' === $selected ? [] : $this->guests->forDate($selected);
 
         $this->view->render(
             'roster',
@@ -81,7 +84,9 @@ final class RosterPage
                 'selected_date' => $selected,
                 'roster' => '' === $selected ? [] : $this->assembler->forDate($selected),
                 'door' => $door,
-                'guests' => '' === $selected ? [] : $this->guests->forDate($selected),
+                'guests' => $guests,
+                // "added by Lou · 9 Nov 14:02" under a guest someone added, by guest id.
+                'guest_added_by' => null === $this->addedBy ? [] : $this->addedBy->forGuests($guests),
                 'ticket_buyers' => '' === $selected ? [] : array_values(array_filter(
                     $this->ticketBuyers->forDate($selected),
                     static fn (TicketBuyer $buyer): bool => ! $buyer->isDoorSale()

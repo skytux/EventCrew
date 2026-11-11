@@ -186,6 +186,36 @@ final class HistoryRepository
     }
 
     /**
+     * The rows that put someone on one night's door list - sign-ups (their
+     * own or assigned by someone else) and credits spent - oldest first, with
+     * the acting person's name and email, for "added by" on the door list
+     * (Support\DoorAddedBy). One query for the whole night.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function doorAdds(string $date): array
+    {
+        global $wpdb;
+
+        $people = Schema::table(Schema::PEOPLE);
+        $kinds = [History::SIGNED_UP, History::ASSIGNED, History::CREDIT_REDEEMED];
+        $placeholders = implode(',', array_fill(0, count($kinds), '%s'));
+
+        $sql = "SELECT h.id, h.kind, h.person_id, h.task_id, h.actor_kind, h.actor_person_id,
+                h.actor_wp_user_id, h.created_at, a.display_name AS actor_name, a.email AS actor_email
+            FROM {$this->table()} AS h
+            LEFT JOIN {$people} AS a ON a.id = h.actor_person_id
+            WHERE h.event_date = %s AND h.kind IN ({$placeholders})
+            ORDER BY h.created_at ASC, h.id ASC";
+
+        // Built from table-name constants and placeholders; every value is bound.
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery
+        $rows = $wpdb->get_results($wpdb->prepare($sql, $date, ...$kinds), ARRAY_A);
+
+        return array_values(is_array($rows) ? $rows : []);
+    }
+
+    /**
      * What the recorder needs of an assignment: its person, task and night.
      *
      * @return array{person_id: int, task_id: int, event_date: ?string}|null

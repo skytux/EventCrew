@@ -17,6 +17,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\GuestRepository;
+use EventCrew\Repositories\HistoryRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
@@ -26,6 +27,7 @@ use EventCrew\Support\BuyerImport;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\DoorAccess;
+use EventCrew\Support\DoorAddedBy;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FollowupText;
@@ -167,7 +169,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
      * so only a date closed by hand is closed. The mailbox is a stand-in that
      * holds no mail, or fails when $mailboxFails is set.
      */
-    private function rosterScreen(): CrewAdminRoster
+    private function rosterScreen(?DoorAddedBy $addedBy = null): CrewAdminRoster
     {
         $tasks = new TaskRepository();
         $assignments = new AssignmentRepository();
@@ -178,7 +180,14 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         return new CrewAdminRoster(
             $tasks,
             $assignments,
-            new DoorList($tasks, $assignments, new PersonRepository(), new RedemptionRepository(), $this->standing()),
+            new DoorList(
+                $tasks,
+                $assignments,
+                new PersonRepository(),
+                new RedemptionRepository(),
+                $this->standing(),
+                addedBy: $addedBy
+            ),
             new RedemptionRepository(),
             $this->standing(),
             new FreeEntryGate(),
@@ -198,7 +207,8 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
                 new MailedListImport(new PersonRepository(), $buyerImport, $this->mailer(), new GuestRepository()),
                 new Logger(),
                 static fn (): Mailbox => $mailbox
-            )
+            ),
+            addedBy: $addedBy
         );
     }
 
@@ -3345,5 +3355,25 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
                 new NotificationsRepository()
             )
         );
+    }
+
+    public function testTheDoorListSaysWhoAddedAGuest(): void
+    {
+        $this->wpdb->nextResults[] = [];                                                  // tasks->forDate
+        $this->wpdb->nextResults[] = [];                                                  // redemptions->forDate
+        $this->wpdb->nextResults[] = [];                                                  // candidates: people->all
+        $this->wpdb->nextResults[] = [
+            [
+                'id' => 1, 'event_date' => '2026-08-01', 'name' => 'Anna', 'plus_ones' => 0, 'note' => '',
+                'added_by' => 7, 'created_at' => '2026-07-29 20:15:00',
+            ],
+            ['id' => 2, 'event_date' => '2026-08-01', 'name' => 'Bea', 'created_at' => '2026-07-29 20:16:00'],
+        ];                                                                                // guests
+        $this->wpdb->nextResults[] = [['id' => 7, 'email' => 'lou@example.com', 'display_name' => 'Lou']]; // findMany
+
+        $view = $this->rosterScreen(new DoorAddedBy(new HistoryRepository(), new PersonRepository()))
+            ->view('2026-08-01');
+
+        self::assertSame(['added by Lou · 29 Jul 20:15', ''], array_column($view['guests'], 'added_by'));
     }
 }

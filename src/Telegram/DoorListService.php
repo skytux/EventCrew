@@ -10,6 +10,7 @@ use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\Dates;
 use EventCrew\Support\DoorAccess;
+use EventCrew\Support\DoorAddedBy;
 use EventCrew\Support\DoorList;
 
 /**
@@ -21,6 +22,9 @@ use EventCrew\Support\DoorList;
  * role can look at their own night. The list always goes to the asker's DM.
  * A date can be given ("/door 1.8."), and buttons under the list switch between the
  * nearby nights by editing the message in place.
+ *
+ * An entry someone else added has its "added by Lou · 9 Nov 14:02" line
+ * under it (DoorAddedBy), indented, kept with the entry across pages.
  *
  * A list too long for one Telegram message is split into pages: the message
  * shows one page, with previous and next buttons (dl:<Y-m-d>:<page>) above
@@ -44,7 +48,8 @@ final class DoorListService
         private readonly GuestRepository $guests,
         private readonly DoorAccess $access,
         private readonly PersonRepository $people,
-        private readonly TelegramClient $telegram
+        private readonly TelegramClient $telegram,
+        private readonly ?DoorAddedBy $addedBy = null
     ) {
     }
 
@@ -173,18 +178,28 @@ final class DoorListService
             $blocks[] = [
                 'heading' => [''],
                 'lines' => array_map(
-                    static fn (array $entrant): string => sprintf('• %s — %s', $entrant['name'], $entrant['detail']),
+                    static fn (array $entrant): string => self::withAddedBy(
+                        sprintf('• %s — %s', $entrant['name'], $entrant['detail']),
+                        (string) ($entrant['added_by'] ?? '')
+                    ),
                     $entrants
                 ),
             ];
         }
 
         if ([] !== $guests) {
+            $guestAddedBy = null === $this->addedBy ? [] : $this->addedBy->forGuests($guests);
             // A blank line, then the heading, both after the people above
             // and straight under the total.
             $blocks[] = [
                 'heading' => ['', '🎫 ' . __('Guests', 'eventcrew')],
-                'lines' => array_map(static fn (Guest $guest): string => '• ' . $guest->line(), $guests),
+                'lines' => array_map(
+                    static fn (Guest $guest): string => self::withAddedBy(
+                        '• ' . $guest->line(),
+                        $guestAddedBy[$guest->id] ?? ''
+                    ),
+                    $guests
+                ),
             ];
         }
 
@@ -224,6 +239,15 @@ final class DoorListService
         $rows[] = MenuButtons::backRow(MenuButtons::DOOR);
 
         return ['inline_keyboard' => $rows];
+    }
+
+    /**
+     * The entry's line, with its "added by" line under it, indented, when
+     * there is one. One string, so a page break never parts the two.
+     */
+    private static function withAddedBy(string $line, string $addedBy): string
+    {
+        return '' === $addedBy ? $line : $line . "\n    " . $addedBy;
     }
 
     private function deniedMessage(): string

@@ -10593,3 +10593,9 @@ msgstr "Poistetut Telegram-tilit"
 #: src/Support/HealthReport.php
 msgid "Telegram says these accounts are deleted, so the bot does not message them: %s"
 msgstr "Telegramin mukaan nämä tilit on poistettu, joten botti ei lähetä niille viestejä: %s"
+
+#. translators: 1: name of who put the person on the door list, 2: day and time, like "9 Nov 14:02"
+#: src/Support/DoorAddedBy.php
+#, php-format
+msgid "added by %1$s · %2$s"
+msgstr "lisännyt %1$s · %2$s"
