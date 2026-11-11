@@ -224,8 +224,18 @@ final class MenuButtons
      *
      * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
      */
-    public static function settings(): array
+    public static function settings(bool $acting = false): array
     {
+        if ($acting) {
+            // An organizer acting as the person (ActingAs): their name, email
+            // and sign-in stay theirs.
+            return ['inline_keyboard' => [
+                [self::button('🔔 ' . __('Choose notifications', 'eventcrew'), self::NOTIFICATIONS)],
+                [self::button('🌐 ' . __('Change language', 'eventcrew'), self::LANGUAGE)],
+                self::backRow(),
+            ]];
+        }
+
         return ['inline_keyboard' => [
             [self::button('✏️ ' . __('Change name', 'eventcrew'), self::NAME)],
             [self::button('📧 ' . __('Change email', 'eventcrew'), self::EMAIL)],

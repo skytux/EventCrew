@@ -62,6 +62,7 @@ final class HistoryRecorder
         try {
             foreach ($this->rows($entry) as $row) {
                 $this->repository->insert($row);
+                History::observed($row);
             }
         } catch (\Throwable) {
             // The history never breaks the action it records.

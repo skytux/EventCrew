@@ -10599,3 +10599,87 @@ msgstr "Telegramin mukaan nämä tilit on poistettu, joten botti ei lähetä nii
 #, php-format
 msgid "added by %1$s · %2$s"
 msgstr "lisännyt %1$s · %2$s"
+
+#: src/Telegram/ActingAs.php
+msgid "Act as"
+msgstr "Toimi puolesta"
+
+#: src/Telegram/ActingAs.php
+msgid "Stop acting"
+msgstr "Lopeta toimiminen"
+
+#: src/Telegram/ActingAs.php
+msgid "Acting as %s. Every change is logged under your name."
+msgstr "Toimit puolesta: %s. Jokainen muutos kirjataan sinun nimiisi."
+
+#: src/Telegram/ActingAs.php
+msgid "Acting as someone has ended. Open their card under /people to start again."
+msgstr "Puolesta toimiminen päättyi. Avaa henkilön kortti /people-kohdasta aloittaaksesi uudelleen."
+
+#: src/Telegram/ActingAs.php
+msgid "Not while acting as %s: their name, email and sign-in stay theirs."
+msgstr "Ei, kun toimit puolesta (%s): nimi, sähköposti ja kirjautuminen ovat hänen omiaan."
+
+#: src/Telegram/ActingAs.php
+msgid "Only organizers can act as someone, in the private chat."
+msgstr "Vain järjestäjät voivat toimia toisen puolesta, yksityischatissa."
+
+#: src/Telegram/ActingAs.php
+msgid "Stopped acting as %s."
+msgstr "Et enää toimi puolesta: %s."
+
+#: src/Telegram/ActingAs.php
+msgid "That person has no confirmed account to act in."
+msgstr "Henkilöllä ei ole vahvistettua tiliä."
+
+#: src/Telegram/ActingAs.php
+msgid "You are not acting as anyone."
+msgstr "Et toimi kenenkään puolesta."
+
+#: src/Telegram/ActingAs.php
+msgid "%s changed your language."
+msgstr "%s vaihtoi kielesi."
+
+#: src/Telegram/ActingAs.php
+msgid "%s changed your notifications."
+msgstr "%s muutti ilmoitusasetuksesi."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s signed you up for %2$s on %3$s."
+msgstr "%1$s ilmoitti sinut tehtävään %2$s %3$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s cancelled your %2$s task on %3$s."
+msgstr "%1$s perui tehtäväsi %2$s %3$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s gave your %2$s task on %3$s to %4$s."
+msgstr "%1$s antoi tehtäväsi %2$s %3$s henkilölle %4$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s had you take over %2$s on %3$s from %4$s."
+msgstr "%1$s siirsi sinulle tehtävän %2$s %3$s henkilöltä %4$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s used one of your credits for free entry on %2$s."
+msgstr "%1$s käytti vapaalippusi illalle %2$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s cancelled your free entry on %2$s."
+msgstr "%1$s perui vapaalippusi %2$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s offered your ticket for %2$s to %3$s."
+msgstr "%1$s tarjosi lippusi (%2$s) henkilölle %3$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s gave your ticket for %2$s to %3$s."
+msgstr "%1$s antoi lippusi (%2$s) henkilölle %3$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s took the ticket %2$s gave you for %3$s."
+msgstr "%1$s otti vastaan lipun (%3$s), jonka %2$s antoi sinulle."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s cancelled the offer of your ticket for %2$s."
+msgstr "%1$s perui lippusi (%2$s) tarjouksen."

@@ -107,6 +107,9 @@ final class History
 
     private static int $muted = 0;
 
+    /** @var (callable(array<string, mixed>): void)|null */
+    private static $observer = null;
+
     /**
      * Records one action. $entry holds the ids the caller has: person_id,
      * other_person_id, task_id, event_date, assignment_id, redemption_id,
@@ -161,12 +164,44 @@ final class History
         return self::$context;
     }
 
-    /** Forgets the sink, the context and any mute (between tests). */
+    /** Forgets the sink, the context, the observer and any mute (between tests). */
     public static function reset(): void
     {
         self::$sink = null;
         self::$context = null;
         self::$muted = 0;
+        self::$observer = null;
+    }
+
+    /**
+     * Who is told of each row the recorder writes, with the row as written
+     * (who it is about, the task and night filled in, the kind it became):
+     * the bot's Act as, which DMs the person what was done for them
+     * (Telegram\ActingAs). null stops it.
+     *
+     * @param (callable(array<string, mixed>): void)|null $observer
+     */
+    public static function observe(?callable $observer): void
+    {
+        self::$observer = $observer;
+    }
+
+    /**
+     * The recorder wrote $row: tells the observer, if any. Never throws.
+     *
+     * @param array<string, mixed> $row
+     */
+    public static function observed(array $row): void
+    {
+        if (null === self::$observer) {
+            return;
+        }
+
+        try {
+            (self::$observer)($row);
+        } catch (\Throwable) {
+            // Telling someone never breaks the action.
+        }
     }
 
     /**

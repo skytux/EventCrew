@@ -99,7 +99,7 @@ final class ProfileService
             $chatId,
             $isPrivate,
             implode("\n", $lines),
-            MenuButtons::me($person->isOrganizer)
+            MenuButtons::me($person->isOrganizer && null === ActingAs::subjectIn($telegramUserId))
         );
     }
 
@@ -164,7 +164,13 @@ final class ProfileService
             return;
         }
 
-        $this->deliver($telegramUserId, $chatId, $isPrivate, '⚙️ ' . __('Settings', 'eventcrew'), MenuButtons::settings());
+        $this->deliver(
+            $telegramUserId,
+            $chatId,
+            $isPrivate,
+            '⚙️ ' . __('Settings', 'eventcrew'),
+            MenuButtons::settings(null !== ActingAs::subjectIn($telegramUserId))
+        );
     }
 
     /**
@@ -393,6 +399,15 @@ final class ProfileService
         string $body,
         ?array $replyMarkup = null
     ): void {
+        $subject = ActingAs::subjectIn($telegramUserId);
+
+        if (null !== $subject) {
+            // An organizer acting as the person: who is shown, and the way out.
+            $body = ActingAs::banner($subject) . "\n\n" . $body;
+            $replyMarkup = is_array($replyMarkup) ? $replyMarkup : ['inline_keyboard' => []];
+            $replyMarkup['inline_keyboard'][] = ActingAs::stopRow();
+        }
+
         $this->telegram->sendMessage($telegramUserId, $body, $replyMarkup);
         $this->sentDmNote($chatId, $isPrivate);
     }

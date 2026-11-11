@@ -19,6 +19,36 @@ use EventCrew\Support\Roles;
  */
 final class PersonRepository
 {
+    /**
+     * Telegram user id => person id that findByTelegramUserId() answers
+     * with instead, while an organizer acts as someone (Telegram\ActingAs).
+     *
+     * @var array<int, int>
+     */
+    private static array $standIns = [];
+
+    /**
+     * From now on findByTelegramUserId($telegramUserId) finds person
+     * $personId; null ends it. Only Telegram\ActingAs sets it, for one
+     * update at a time.
+     */
+    public static function standIn(int $telegramUserId, ?int $personId): void
+    {
+        if (null === $personId) {
+            unset(self::$standIns[$telegramUserId]);
+
+            return;
+        }
+
+        self::$standIns[$telegramUserId] = $personId;
+    }
+
+    /** The person findByTelegramUserId($telegramUserId) finds in place of its owner, if any. */
+    public static function standInFor(int $telegramUserId): ?int
+    {
+        return self::$standIns[$telegramUserId] ?? null;
+    }
+
     private function table(): string
     {
         return Schema::table(Schema::PEOPLE);
@@ -96,6 +126,10 @@ final class PersonRepository
     public function findByTelegramUserId(int $telegramUserId): ?Person
     {
         global $wpdb;
+
+        if (isset(self::$standIns[$telegramUserId])) {
+            return $this->find(self::$standIns[$telegramUserId]);
+        }
 
         $row = $wpdb->get_row(
             $wpdb->prepare(

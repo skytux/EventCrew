@@ -74,7 +74,8 @@ final class UpdateRouter
         private readonly ?TaskCommand $taskCommand = null,
         private readonly ?ChatCommands $chatCommands = null,
         private readonly ?TransferBot $transfer = null,
-        private readonly ?SubscribeCommand $subscribe = null
+        private readonly ?SubscribeCommand $subscribe = null,
+        private readonly ?ActingAs $acting = null
     ) {
     }
 
@@ -189,6 +190,43 @@ final class UpdateRouter
 
         $this->replaceInPlace($update);
 
+        // An organizer acting as someone (👤 Act as on a person's card): their
+        // screens and buttons run as that person (ActingAs).
+        if (null !== $this->acting) {
+            $this->acting->route($update, $this->awaitsActingAnswer($update), function () use ($update, $chosen): void {
+                $this->handleUpdate($update, $chosen);
+            });
+
+            return;
+        }
+
+        $this->handleUpdate($update, $chosen);
+    }
+
+    /**
+     * True when the sender's next plain message answers a question of the
+     * person's own flows: who to take over from, who gets the ticket.
+     *
+     * @param array<string, mixed> $update
+     */
+    private function awaitsActingAnswer(array $update): bool
+    {
+        $fromId = (int) ($update['message']['from']['id'] ?? 0);
+
+        if (0 === $fromId || isset($update['callback_query'])) {
+            return false;
+        }
+
+        return (null !== $this->transfer && $this->transfer->isAwaiting($fromId))
+            || $this->replacement->isAwaitingTarget($fromId);
+    }
+
+    /**
+     * @param array<string, mixed> $update
+     * @param string|null $chosen The sender's language, null if not chosen yet.
+     */
+    private function handleUpdate(array $update, ?string $chosen): void
+    {
         if (isset($update['callback_query']) && is_array($update['callback_query'])) {
             $callbackQuery = $update['callback_query'];
 

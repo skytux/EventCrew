@@ -239,7 +239,14 @@ final class PermissionService
             ];
         }
 
-        return ['inline_keyboard' => array_chunk($buttons, 2)];
+        $rows = array_chunk($buttons, 2);
+
+        // 👤 Act as: the person's /me, as they see it (ActingAs).
+        if ($person->isEmailVerified() && ! $person->isAnonymized()) {
+            $rows[] = ActingAs::startRow($person->id);
+        }
+
+        return ['inline_keyboard' => $rows];
     }
 
     /**

@@ -120,6 +120,7 @@ use EventCrew\Support\TranslatedText;
 use EventCrew\Support\TranslationJob;
 use EventCrew\Support\TranslationRegistry;
 use EventCrew\Support\Turnstile;
+use EventCrew\Telegram\ActingAs;
 use EventCrew\Telegram\AssignCommand;
 use EventCrew\Telegram\ChatCommands;
 use EventCrew\Telegram\MemberCommands;
@@ -1567,7 +1568,18 @@ final class Kernel
                 $container->get(TaskCommand::class),
                 $container->get(ChatCommands::class),
                 transfer: $container->get(TransferBot::class),
-                subscribe: $container->get(SubscribeCommand::class)
+                subscribe: $container->get(SubscribeCommand::class),
+                acting: $container->get(ActingAs::class)
+            )
+        );
+
+        $this->container->singleton(
+            ActingAs::class,
+            fn (Container $container) => new ActingAs(
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class),
+                $container->get(ProfileService::class),
+                $container->get(TaskRepository::class)
             )
         );
 

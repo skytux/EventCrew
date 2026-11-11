@@ -13549,3 +13549,87 @@ msgstr "Enligt Telegram är dessa konton borttagna, så boten skickar inga medde
 #, php-format
 msgid "added by %1$s · %2$s"
 msgstr "tillagd av %1$s · %2$s"
+
+#: src/Telegram/ActingAs.php
+msgid "Act as"
+msgstr "Agera som"
+
+#: src/Telegram/ActingAs.php
+msgid "Stop acting"
+msgstr "Sluta agera"
+
+#: src/Telegram/ActingAs.php
+msgid "Acting as %s. Every change is logged under your name."
+msgstr "Du agerar som %s. Varje ändring loggas i ditt namn."
+
+#: src/Telegram/ActingAs.php
+msgid "Acting as someone has ended. Open their card under /people to start again."
+msgstr "Att agera som någon har upphört. Öppna personens kort under /people för att börja igen."
+
+#: src/Telegram/ActingAs.php
+msgid "Not while acting as %s: their name, email and sign-in stay theirs."
+msgstr "Inte medan du agerar som %s: namn, e-post och inloggning förblir personens egna."
+
+#: src/Telegram/ActingAs.php
+msgid "Only organizers can act as someone, in the private chat."
+msgstr "Bara arrangörer kan agera som någon, i den privata chatten."
+
+#: src/Telegram/ActingAs.php
+msgid "Stopped acting as %s."
+msgstr "Du agerar inte längre som %s."
+
+#: src/Telegram/ActingAs.php
+msgid "That person has no confirmed account to act in."
+msgstr "Personen har inget bekräftat konto att agera i."
+
+#: src/Telegram/ActingAs.php
+msgid "You are not acting as anyone."
+msgstr "Du agerar inte som någon."
+
+#: src/Telegram/ActingAs.php
+msgid "%s changed your language."
+msgstr "%s ändrade ditt språk."
+
+#: src/Telegram/ActingAs.php
+msgid "%s changed your notifications."
+msgstr "%s ändrade dina aviseringar."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s signed you up for %2$s on %3$s."
+msgstr "%1$s anmälde dig till %2$s %3$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s cancelled your %2$s task on %3$s."
+msgstr "%1$s avbokade din uppgift %2$s %3$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s gave your %2$s task on %3$s to %4$s."
+msgstr "%1$s gav din uppgift %2$s %3$s till %4$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s had you take over %2$s on %3$s from %4$s."
+msgstr "%1$s lät dig ta över %2$s %3$s från %4$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s used one of your credits for free entry on %2$s."
+msgstr "%1$s använde en fribiljett för fritt inträde %2$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s cancelled your free entry on %2$s."
+msgstr "%1$s avbokade ditt fria inträde %2$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s offered your ticket for %2$s to %3$s."
+msgstr "%1$s erbjöd din biljett för %2$s till %3$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s gave your ticket for %2$s to %3$s."
+msgstr "%1$s gav din biljett för %2$s till %3$s."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s took the ticket %2$s gave you for %3$s."
+msgstr "%1$s tog emot biljetten för %3$s som %2$s gav dig."
+
+#: src/Telegram/ActingAs.php
+msgid "%1$s cancelled the offer of your ticket for %2$s."
+msgstr "%1$s drog tillbaka erbjudandet av din biljett för %2$s."
