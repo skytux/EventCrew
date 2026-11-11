@@ -179,7 +179,27 @@ final class GiftService
             return;
         }
 
-        [$credits, $note] = $this->pendingAmount($organizerTelegramId);
+        // The amount rides a transient from the name to the tap, and the tap
+        // uses it up: a second tap on the same buttons gives nothing.
+        $pending = $this->pendingAmount($organizerTelegramId);
+        $chatId = (int) ($callbackQuery['message']['chat']['id'] ?? 0);
+        $messageId = (int) ($callbackQuery['message']['message_id'] ?? 0);
+
+        if (null === $pending) {
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('That credit was already given. Send /people to give another.', 'eventcrew'),
+                true
+            );
+
+            if (0 !== $chatId && 0 !== $messageId) {
+                $this->telegram->editMessageReplyMarkup($chatId, $messageId, null);
+            }
+
+            return;
+        }
+
+        [$credits, $note] = $pending;
 
         // A discretionary bot grant carries no WordPress user id, but the
         // organizer who tapped 🎁 Give credits is a known person, so record them - the audit
@@ -187,21 +207,24 @@ final class GiftService
         $this->grants->record($recipient->id, $credits, $note, 0, $organizer->id);
         $balance = $this->standing->for($recipient->id)->creditBalance;
 
-        $this->telegram->answerCallbackQuery(
-            $callbackId,
-            sprintf(
-                /* translators: 1: recipient's name, 2: credits granted, 3: their new balance */
-                _n(
-                    'Gave %1$s %2$d credit — they now have %3$d.',
-                    'Gave %1$s %2$d credits — they now have %3$d.',
-                    $credits,
-                    'eventcrew'
-                ),
-                $recipient->name(),
+        $done = sprintf(
+            /* translators: 1: recipient's name, 2: credits granted, 3: their new balance */
+            _n(
+                'Gave %1$s %2$d credit — they now have %3$d.',
+                'Gave %1$s %2$d credits — they now have %3$d.',
                 $credits,
-                $balance
-            )
+                'eventcrew'
+            ),
+            $recipient->name(),
+            $credits,
+            $balance
         );
+        $this->telegram->answerCallbackQuery($callbackId, $done);
+
+        // The picker message becomes the confirmation, without its buttons.
+        if (0 !== $chatId && 0 !== $messageId) {
+            $this->telegram->editMessageText($chatId, $messageId, '✅ ' . $done);
+        }
 
         // The recipient hears about it on both channels, the same as a gift from
         // the People page.
@@ -209,15 +232,20 @@ final class GiftService
     }
 
     /**
-     * The credits and note the organizer set when they named this person, or the
-     * defaults if the short-lived transient has expired.
+     * The credits and note the organizer set when they named this person, used
+     * up by the tap. Null when there are none: the buttons were already used,
+     * or are older than the transient.
      *
-     * @return array{0: int, 1: string}
+     * @return array{0: int, 1: string}|null
      */
-    private function pendingAmount(int $organizerTelegramId): array
+    private function pendingAmount(int $organizerTelegramId): ?array
     {
         $pending = get_transient(self::AMOUNT_PREFIX . $organizerTelegramId);
         delete_transient(self::AMOUNT_PREFIX . $organizerTelegramId);
+
+        if (! is_array($pending)) {
+            return null;
+        }
 
         $credits = is_array($pending) && isset($pending['credits']) ? max(1, (int) $pending['credits']) : 1;
         $note = is_array($pending) && isset($pending['note']) && '' !== (string) $pending['note']

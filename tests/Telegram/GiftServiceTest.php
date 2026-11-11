@@ -63,6 +63,7 @@ final class GiftServiceTest extends TelegramTestCase
     public function testAnOrganizerGiftRecordsACreditAndNotifiesTheRecipient(): void
     {
         // findByTelegramUserId(organizer), then people->find(recipient).
+        $this->transients['eventcrew_tg_gift_amount_555'] = ['credits' => 1, 'note' => 'gift via bot'];
         $this->wpdb->nextRows[] = ['id' => 7, 'display_name' => 'Boss', 'is_organizer' => 1, 'telegram_user_id' => 555];
         $this->wpdb->nextRows[] = [
             'id' => 8, 'display_name' => 'Sam', 'email' => 'sam@example.com', 'telegram_chat_id' => 999,
@@ -77,6 +78,38 @@ final class GiftServiceTest extends TelegramTestCase
         // ...and the recipient was told, on both channels.
         self::assertSame(999, $this->lastCallTo('sendMessage')['chat_id']);
         self::assertSame('sam@example.com', $this->mails[0]['to']);
+    }
+
+    public function testTheTapTurnsThePickerIntoTheConfirmationAndASecondTapGivesNothing(): void
+    {
+        $this->transients['eventcrew_tg_gift_amount_555'] = ['credits' => 1, 'note' => 'gift via bot'];
+        $this->wpdb->nextRows[] = ['id' => 7, 'display_name' => 'Boss', 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'email' => 'sam@example.com'];
+        $tap = [
+            'id' => 'cbq', 'from' => ['id' => 555], 'data' => 'gift:8',
+            'message' => ['chat' => ['id' => 555], 'message_id' => 42],
+        ];
+
+        $this->service()->onSelect($tap);
+
+        $edit = $this->lastCallTo('editMessageText');
+        self::assertSame(42, $edit['message_id']);
+        self::assertStringStartsWith('✅ Gave Sam 1 credit', $edit['text']);
+        self::assertArrayNotHasKey('reply_markup', $edit);
+        self::assertCount(1, $this->wpdb->inserts);
+
+        // The same button again: no second credit, and the buttons go.
+        $this->wpdb->nextRows[] = ['id' => 7, 'display_name' => 'Boss', 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'email' => 'sam@example.com'];
+
+        $this->service()->onSelect($tap);
+
+        self::assertCount(1, $this->wpdb->inserts);
+        self::assertSame(
+            'That credit was already given. Send /people to give another.',
+            $this->lastCallTo('answerCallbackQuery')['text']
+        );
+        self::assertSame(42, $this->lastCallTo('editMessageReplyMarkup')['message_id']);
     }
 
     public function testGiftGrantsTheQuantityAndNoteTheOrganizerSet(): void

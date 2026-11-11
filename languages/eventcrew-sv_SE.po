@@ -13646,3 +13646,7 @@ msgstr "Vem vill du agera som? Skicka namnet eller @nämn personen."
 #: src/Telegram/PermissionService.php
 msgid "%s has no verified email, so you can’t act as them."
 msgstr "%s har ingen verifierad e-post, så du kan inte agera som hen."
+
+#: src/Telegram/GiftService.php
+msgid "That credit was already given. Send /people to give another."
+msgstr "Fribiljetten är redan given. Skicka /people för att ge en till."
