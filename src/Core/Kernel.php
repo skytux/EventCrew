@@ -121,6 +121,7 @@ use EventCrew\Support\TranslationJob;
 use EventCrew\Support\TranslationRegistry;
 use EventCrew\Support\Turnstile;
 use EventCrew\Telegram\ActingAs;
+use EventCrew\Telegram\ReopenProfile;
 use EventCrew\Telegram\AssignCommand;
 use EventCrew\Telegram\ChatCommands;
 use EventCrew\Telegram\MemberCommands;
@@ -331,6 +332,17 @@ final class Kernel
                 => (new DmNote($this->container->get(TelegramClient::class)))->delete($chatId, $messageId),
             10,
             2
+        );
+
+        // Acting as someone (ActingAs): the warning two minutes before the
+        // end, and the end itself, are WP-Cron events.
+        add_action(
+            ActingAs::WARN_HOOK,
+            fn (int|string $telegramUserId) => $this->container->get(ActingAs::class)->onWarnDue((int) $telegramUserId)
+        );
+        add_action(
+            ActingAs::END_HOOK,
+            fn (int|string $telegramUserId) => $this->container->get(ActingAs::class)->onEndDue((int) $telegramUserId)
         );
 
         // "Translate missing" on the Translations page: its batches are a
@@ -1569,7 +1581,17 @@ final class Kernel
                 $container->get(ChatCommands::class),
                 transfer: $container->get(TransferBot::class),
                 subscribe: $container->get(SubscribeCommand::class),
-                acting: $container->get(ActingAs::class)
+                acting: $container->get(ActingAs::class),
+                reopen: $container->get(ReopenProfile::class)
+            )
+        );
+
+        $this->container->singleton(
+            ReopenProfile::class,
+            fn (Container $container) => new ReopenProfile(
+                $container->get(TelegramClient::class),
+                $container->get(ProfileService::class),
+                $container->get(PersonRepository::class)
             )
         );
 
@@ -1579,7 +1601,8 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(TelegramClient::class),
                 $container->get(ProfileService::class),
-                $container->get(TaskRepository::class)
+                $container->get(TaskRepository::class),
+                $container->get(Mailer::class)
             )
         );
 

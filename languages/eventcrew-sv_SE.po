@@ -13658,3 +13658,32 @@ msgstr "Skicka mejl till arrangörer när som helst"
 #: templates/admin/settings.php
 msgid "Organizer-only emails (previews, reports, role notices) go out as soon as they are due. Emails to the crew still wait for the hours above."
 msgstr "Mejl bara till arrangörer (förhandsvisningar, rapporter, rollnotiser) går ut så snart de är aktuella. Mejl till crewet väntar fortfarande på timmarna ovan."
+
+#. translators: %s: the name of the person the organizer acts as
+#: src/Telegram/ActingAs.php
+msgid "Acting as %s ends in 2 minutes."
+msgstr "Att agera som %s slutar om 2 minuter."
+
+#: src/Telegram/ActingAs.php
+msgid "Keep acting"
+msgstr "Fortsätt agera"
+
+#. translators: %s: the name of the person the organizer acted as
+#: src/Telegram/ActingAs.php
+msgid "Stopped acting as %s: 15 minutes without an action."
+msgstr "Du agerar inte längre som %s: 15 minuter utan någon åtgärd."
+
+#. translators: %s: the name of the person the organizer acts as
+#: src/Telegram/ActingAs.php
+msgid "Still acting as %s."
+msgstr "Du agerar fortfarande som %s."
+
+#. translators: 1: the organizer's name, 2: start, 3: end, each like "Sat 1 Aug 18:00"
+#: src/Telegram/ActingAs.php
+msgid "%1$s acted for you in the Telegram bot from %2$s to %3$s and made these changes:"
+msgstr "%1$s agerade åt dig i Telegram-boten från %2$s till %3$s och gjorde de här ändringarna:"
+
+#. translators: %s: the organizer's name
+#: src/Telegram/ActingAs.php
+msgid "%s made changes for you"
+msgstr "%s gjorde ändringar åt dig"

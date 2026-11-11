@@ -10,6 +10,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Dates;
 use EventCrew\Support\History;
 use EventCrew\Support\Language;
+use EventCrew\Support\Mailer;
 use EventCrew\Support\TakeoverService;
 
 /**
@@ -21,7 +22,12 @@ use EventCrew\Support\TakeoverService;
  * or deleting their data.
  *
  * Who is acted on is kept per organizer (a transient: the person's id and
- * the end time, ACTIVE_SECONDS after Act as). Each private update from the
+ * the end time, ACTIVE_SECONDS after Act as or after the organizer's last
+ * action while acting, Owner 2026-11-11). WARN_SECONDS before the end the
+ * bot warns the organizer, with Keep acting and Stop acting; at the end it
+ * says acting stopped. Both are WP-Cron single events (WARN_HOOK, END_HOOK)
+ * with the organizer's Telegram id; each reads the state again, so a later
+ * action only moves the end time. Each private update from the
  * organizer that is one of those screens or buttons (scope()) runs with
  * PersonRepository::standIn(), so every findByTelegramUserId() of the
  * organizer's Telegram id finds the person: the existing /me handlers act on
@@ -32,6 +38,9 @@ use EventCrew\Support\TakeoverService;
  * Telegram sender (UpdateRouter::dispatch()), so each row names the
  * organizer as the actor (actor_kind organizer). Each row about the person
  * becomes a line of one DM to them, in their language, after the update.
+ * The session keeps those changes (record()); when it ends (Stop acting,
+ * the end time, Act as on someone else), the person gets one email listing
+ * them, with who acted and when (mailSummary()).
  * The organizer is checked again at every update; Stop acting, or the end
  * time, ends it.
  */
@@ -41,10 +50,23 @@ final class ActingAs
     public const PREFIX = 'act:';
     public const STOP = 'act:stop';
 
-    /** How long acting lasts from the Act as tap. */
+    /** Keep acting, under the warning: another ACTIVE_SECONDS. */
+    public const KEEP = 'act:keep';
+
+    /** How long acting lasts from the organizer's last action while acting. */
     public const ACTIVE_SECONDS = 15 * MINUTE_IN_SECONDS;
 
+    /** The warning comes this long before the end. */
+    public const WARN_SECONDS = 2 * MINUTE_IN_SECONDS;
+
+    /** WP-Cron: the warning, and the end; the argument is the organizer's Telegram id. */
+    public const WARN_HOOK = 'eventcrew_acting_warn';
+    public const END_HOOK = 'eventcrew_acting_end';
+
     private const STATE_PREFIX = 'eventcrew_tg_acting_';
+
+    /** At most this many changes are kept for the session's email. */
+    private const MAX_CHANGES = 100;
 
     /** The state is kept a day, so a tap after the end time says it ended. */
     private const STATE_TTL = DAY_IN_SECONDS;
@@ -98,7 +120,8 @@ final class ActingAs
         private readonly PersonRepository $people,
         private readonly TelegramClient $telegram,
         private readonly ProfileService $profile,
-        private readonly TaskRepository $tasks = new TaskRepository()
+        private readonly TaskRepository $tasks = new TaskRepository(),
+        private readonly ?Mailer $mailer = null
     ) {
     }
 
@@ -178,7 +201,7 @@ final class ActingAs
             // Ended (the time is up, or the organizer or the person is gone):
             // a tap on one of the person's buttons does nothing, so it is
             // never mistaken for the organizer's own.
-            delete_transient(self::STATE_PREFIX . $sender);
+            $this->stop($sender, $state);
 
             if (null !== $callback && $inScope) {
                 $this->telegram->answerCallbackQuery(
@@ -215,6 +238,8 @@ final class ActingAs
             return;
         }
 
+        // Each of the person's screens or actions moves the end time.
+        $this->extend($sender, $state);
         $this->run($sender, $pair[0], $pair[1], $data, $route);
     }
 
@@ -244,6 +269,7 @@ final class ActingAs
             self::$scope = $outer;
         }
 
+        self::record($telegramUserId, $subject->id, $rows, $data);
         $this->tell($organizer, $subject, $rows, $data);
     }
 
@@ -259,11 +285,18 @@ final class ActingAs
         $chatId = (int) ($callback['message']['chat']['id'] ?? $sender);
         $isPrivate = 'private' === ($callback['message']['chat']['type'] ?? 'private');
         $data = (string) ($callback['data'] ?? '');
+
+        if (self::KEEP === $data) {
+            $this->onKeep($callbackId, $sender);
+
+            return;
+        }
+
         $organizer = $sender > 0 ? $this->people->findByTelegramUserId($sender) : null;
 
         if (self::STOP === $data) {
             $state = self::state($sender);
-            delete_transient(self::STATE_PREFIX . $sender);
+            $this->stop($sender, $state);
             $this->telegram->answerCallbackQuery($callbackId);
             $subject = null === $state ? null : $this->people->find($state['person_id']);
             $this->telegram->sendMessage(
@@ -304,11 +337,29 @@ final class ActingAs
             return;
         }
 
-        set_transient(
-            self::STATE_PREFIX . $sender,
-            ['person_id' => $subject->id, 'until' => time() + self::ACTIVE_SECONDS],
-            self::STATE_TTL
-        );
+        // Act as on the same person while still acting goes on with the same
+        // session; anyone else (or after the end) ends it, with its email.
+        $old = self::state($sender);
+        $same = null !== $old && $old['person_id'] === $subject->id && $old['until'] > time();
+
+        if ($same) {
+            $this->clearWarning($sender, $old['warning']);
+            self::unschedule(self::END_HOOK, $sender);
+        } else {
+            $this->stop($sender, $old);
+        }
+
+        $until = time() + self::ACTIVE_SECONDS;
+        self::save($sender, [
+            'person_id' => $subject->id,
+            'until' => $until,
+            'warned' => false,
+            'warning' => 0,
+            'organizer_id' => $organizer->id,
+            'started' => $same ? $old['started'] : time(),
+            'changes' => $same ? $old['changes'] : [],
+        ]);
+        self::schedule(self::WARN_HOOK, $until - self::WARN_SECONDS, $sender);
         $this->telegram->answerCallbackQuery($callbackId);
         $this->run($sender, $organizer, $subject, MenuButtons::ME, function () use ($sender, $chatId): void {
             $this->profile->onMe($sender, $chatId);
@@ -320,7 +371,7 @@ final class ActingAs
      * not past, the sender is still an organizer, and the person is still
      * there. null otherwise.
      *
-     * @param array{person_id: int, until: int} $state
+     * @param array<string, mixed> $state
      * @return array{0: Person, 1: Person}|null
      */
     private function pair(int $sender, array $state): ?array
@@ -345,10 +396,13 @@ final class ActingAs
     }
 
     /**
-     * Whom $telegramUserId acts as and until when, ended or not; null when
-     * they never started or stopped.
+     * Whom $telegramUserId acts as and until when, ended or not, whether
+     * the warning went and its message id, who started it and when, and the
+     * session's changes for the email (record()); null when they never
+     * started or stopped.
      *
-     * @return array{person_id: int, until: int}|null
+     * @return array{person_id: int, until: int, warned: bool, warning: int, organizer_id: int, started: int,
+     *     changes: list<array<string, mixed>>}|null
      */
     private static function state(int $telegramUserId): ?array
     {
@@ -358,7 +412,326 @@ final class ActingAs
             return null;
         }
 
-        return ['person_id' => (int) $state['person_id'], 'until' => (int) ($state['until'] ?? 0)];
+        return [
+            'person_id' => (int) $state['person_id'],
+            'until' => (int) ($state['until'] ?? 0),
+            'warned' => (bool) ($state['warned'] ?? false),
+            'warning' => (int) ($state['warning'] ?? 0),
+            'organizer_id' => (int) ($state['organizer_id'] ?? 0),
+            'started' => (int) ($state['started'] ?? 0),
+            'changes' => is_array($state['changes'] ?? null) ? array_values($state['changes']) : [],
+        ];
+    }
+
+    /**
+     * Keeps one update's changes for the session's email: the history rows
+     * about the person, and a language or notification change (data).
+     *
+     * @param list<array<string, mixed>> $rows
+     */
+    private static function record(int $telegramUserId, int $subjectId, array $rows, string $data): void
+    {
+        $state = self::state($telegramUserId);
+
+        if (null === $state || $state['person_id'] !== $subjectId) {
+            return;
+        }
+
+        $keys = array_flip(['kind', 'person_id', 'other_person_id', 'task_id', 'event_date']);
+        $changes = [];
+
+        foreach ($rows as $row) {
+            $changes[] = array_intersect_key($row, $keys);
+        }
+
+        if (str_starts_with($data, LanguageService::PREFIX)) {
+            $changes[] = ['kind' => 'language'];
+        } elseif (str_starts_with($data, 'np:')) {
+            $changes[] = ['kind' => 'notifications'];
+        }
+
+        if ([] === $changes) {
+            return;
+        }
+
+        $state['changes'] = array_slice(array_merge($state['changes'], $changes), -self::MAX_CHANGES);
+        self::save($telegramUserId, $state);
+    }
+
+    /**
+     * The session's email to the person (Owner 2026-11-11): who acted, when
+     * it started and ended, and a line for each change, the lines of the
+     * DMs. Nothing when nothing changed, or without a confirmed email.
+     *
+     * @param array<string, mixed> $state
+     */
+    private function mailSummary(array $state): void
+    {
+        if ([] === $state['changes'] || null === $this->mailer) {
+            return;
+        }
+
+        $subject = $this->people->find($state['person_id']);
+        $organizer = $state['organizer_id'] > 0 ? $this->people->find($state['organizer_id']) : null;
+
+        if (null === $subject || null === $organizer || $subject->isAnonymized() || ! $subject->isEmailVerified()) {
+            return;
+        }
+
+        $ended = min(time(), $state['until']);
+        $zone = function_exists('wp_timezone') ? wp_timezone() : null;
+
+        Language::forPerson($subject, function () use ($state, $subject, $organizer, $ended, $zone): void {
+            $lines = [];
+
+            foreach ($state['changes'] as $change) {
+                $line = $this->changeLine($change, $organizer->name(), $subject->id);
+
+                if ('' !== $line) {
+                    $lines[] = '- ' . $line;
+                }
+            }
+
+            if ([] === $lines) {
+                return;
+            }
+
+            $body = sprintf(
+                /* translators: 1: the organizer's name, 2: start, 3: end, each like "Sat 1 Aug 18:00" */
+                __('%1$s acted for you in the Telegram bot from %2$s to %3$s and made these changes:', 'eventcrew'),
+                $organizer->name(),
+                Dates::dayTimeLabel($state['started'] > 0 ? $state['started'] : $ended, $zone),
+                Dates::dayTimeLabel($ended, $zone)
+            ) . "\n\n" . implode("\n", $lines);
+
+            $this->mailer->toPerson(
+                $subject->id,
+                $subject->email,
+                sprintf(
+                    /* translators: %s: the organizer's name */
+                    __('%s made changes for you', 'eventcrew'),
+                    $organizer->name()
+                ),
+                $body
+            );
+        });
+    }
+
+    /**
+     * @param array<string, mixed> $change
+     */
+    private function changeLine(array $change, string $organizer, int $subjectId): string
+    {
+        $kind = (string) ($change['kind'] ?? '');
+
+        if ('language' === $kind) {
+            return sprintf(
+                /* translators: %s: the organizer's name */
+                __('%s changed your language.', 'eventcrew'),
+                $organizer
+            );
+        }
+
+        if ('notifications' === $kind) {
+            return sprintf(
+                /* translators: %s: the organizer's name */
+                __('%s changed your notifications.', 'eventcrew'),
+                $organizer
+            );
+        }
+
+        return $this->line($change, $organizer, $subjectId);
+    }
+
+    /**
+     * @param array<string, mixed> $state
+     */
+    private static function save(int $telegramUserId, array $state): void
+    {
+        set_transient(self::STATE_PREFIX . $telegramUserId, $state, self::STATE_TTL);
+    }
+
+    /**
+     * Another ACTIVE_SECONDS from now. After the warning, its buttons go and
+     * a new warning is due; before it, the warning event moves itself
+     * (onWarnDue()).
+     *
+     * @param array<string, mixed> $state
+     */
+    private function extend(int $telegramUserId, array $state): void
+    {
+        $state['until'] = time() + self::ACTIVE_SECONDS;
+
+        if ($state['warned']) {
+            $this->clearWarning($telegramUserId, $state['warning']);
+            $state['warned'] = false;
+            $state['warning'] = 0;
+            self::unschedule(self::END_HOOK, $telegramUserId);
+            self::schedule(self::WARN_HOOK, $state['until'] - self::WARN_SECONDS, $telegramUserId);
+        }
+
+        self::save($telegramUserId, $state);
+    }
+
+    /**
+     * Ends acting: the state, the events, and the warning's buttons; the
+     * person gets the session's email.
+     *
+     * @param array<string, mixed>|null $state
+     */
+    private function stop(int $telegramUserId, ?array $state): void
+    {
+        delete_transient(self::STATE_PREFIX . $telegramUserId);
+        self::unschedule(self::WARN_HOOK, $telegramUserId);
+        self::unschedule(self::END_HOOK, $telegramUserId);
+
+        if (null !== $state) {
+            $this->clearWarning($telegramUserId, $state['warning']);
+            $this->mailSummary($state);
+        }
+    }
+
+    /** The warning's Keep acting and Stop acting go, once it no longer applies. */
+    private function clearWarning(int $telegramUserId, int $messageId): void
+    {
+        if ($messageId > 0) {
+            $this->telegram->editMessageReplyMarkup($telegramUserId, $messageId, null);
+        }
+    }
+
+    /** One single event at $at, in place of any of that hook for the organizer. */
+    private static function schedule(string $hook, int $at, int $telegramUserId): void
+    {
+        self::unschedule($hook, $telegramUserId);
+
+        if (function_exists('wp_schedule_single_event')) {
+            wp_schedule_single_event($at, $hook, [$telegramUserId]);
+        }
+    }
+
+    private static function unschedule(string $hook, int $telegramUserId): void
+    {
+        if (function_exists('wp_clear_scheduled_hook')) {
+            wp_clear_scheduled_hook($hook, [$telegramUserId]);
+        }
+    }
+
+    /**
+     * WARN_HOOK: "Acting as Sam ends in 2 minutes." with Keep acting and
+     * Stop acting, in the organizer's private chat. Nothing when acting
+     * already ended or the warning went; a later end time (an action since)
+     * moves the event there.
+     */
+    public function onWarnDue(int $telegramUserId): void
+    {
+        $state = self::state($telegramUserId);
+
+        if (null === $state || $state['warned']) {
+            return;
+        }
+
+        $warnAt = $state['until'] - self::WARN_SECONDS;
+
+        // Acted since: the warning moves with the end time. A minute of
+        // slack, since WP-Cron runs about once a minute (the pinger).
+        if ($warnAt > time() + MINUTE_IN_SECONDS) {
+            self::schedule(self::WARN_HOOK, $warnAt, $telegramUserId);
+
+            return;
+        }
+
+        if ($state['until'] <= time()) {
+            $this->onEndDue($telegramUserId);
+
+            return;
+        }
+
+        $pair = $this->pair($telegramUserId, $state);
+
+        if (null === $pair) {
+            $this->stop($telegramUserId, $state);
+
+            return;
+        }
+
+        [$organizer, $subject] = $pair;
+        $sent = Language::forPerson($organizer, fn (): ?array => $this->telegram->record()->sendMessage(
+            $telegramUserId,
+            '⏳ ' . sprintf(
+                /* translators: %s: the name of the person the organizer acts as */
+                __('Acting as %s ends in 2 minutes.', 'eventcrew'),
+                $subject->name()
+            ),
+            ['inline_keyboard' => [
+                [['text' => '▶️ ' . __('Keep acting', 'eventcrew'), 'callback_data' => self::KEEP]],
+                self::stopRow(),
+            ]]
+        ));
+
+        $state['warned'] = true;
+        $state['warning'] = (int) (is_array($sent) ? ($sent['message_id'] ?? 0) : 0);
+        self::save($telegramUserId, $state);
+        self::schedule(self::END_HOOK, $state['until'], $telegramUserId);
+    }
+
+    /**
+     * END_HOOK: when the end time is past, ends acting and says so, with
+     * Back to People. Nothing when acting already ended or an action since
+     * moved the end time.
+     */
+    public function onEndDue(int $telegramUserId): void
+    {
+        $state = self::state($telegramUserId);
+
+        if (null === $state || $state['until'] > time()) {
+            return;
+        }
+
+        $this->stop($telegramUserId, $state);
+        $organizer = $this->people->findByTelegramUserId($telegramUserId);
+        $subject = $this->people->find($state['person_id']);
+
+        if (null === $organizer || null === $subject) {
+            return;
+        }
+
+        Language::forPerson($organizer, fn (): ?array => $this->telegram->sendMessage(
+            $telegramUserId,
+            sprintf(
+                /* translators: %s: the name of the person the organizer acted as */
+                __('Stopped acting as %s: 15 minutes without an action.', 'eventcrew'),
+                $subject->name()
+            ),
+            $organizer->isOrganizer ? MenuButtons::back(MenuButtons::PEOPLE) : null
+        ));
+    }
+
+    /**
+     * Keep acting, under the warning: another ACTIVE_SECONDS, a short
+     * answer, and the warning's buttons go.
+     */
+    private function onKeep(string $callbackId, int $sender): void
+    {
+        $state = self::state($sender);
+        $pair = null === $state ? null : $this->pair($sender, $state);
+
+        if (null === $state || null === $pair) {
+            $this->stop($sender, $state);
+            $this->telegram->answerCallbackQuery(
+                $callbackId,
+                __('Acting as someone has ended. Open their card under /people to start again.', 'eventcrew'),
+                true
+            );
+
+            return;
+        }
+
+        $this->extend($sender, $state);
+        $this->telegram->answerCallbackQuery($callbackId, sprintf(
+            /* translators: %s: the name of the person the organizer acts as */
+            __('Still acting as %s.', 'eventcrew'),
+            $pair[1]->name()
+        ));
     }
 
     /**

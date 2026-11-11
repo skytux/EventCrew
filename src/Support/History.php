@@ -107,8 +107,8 @@ final class History
 
     private static int $muted = 0;
 
-    /** @var (callable(array<string, mixed>): void)|null */
-    private static $observer = null;
+    /** @var array<string, callable(array<string, mixed>): void> Observers by name (observe()). */
+    private static array $observers = [];
 
     /**
      * Records one action. $entry holds the ids the caller has: person_id,
@@ -170,20 +170,28 @@ final class History
         self::$sink = null;
         self::$context = null;
         self::$muted = 0;
-        self::$observer = null;
+        self::$observers = [];
     }
 
     /**
      * Who is told of each row the recorder writes, with the row as written
      * (who it is about, the task and night filled in, the kind it became):
      * the bot's Act as, which DMs the person what was done for them
-     * (Telegram\ActingAs). null stops it.
+     * (Telegram\ActingAs), and the bot's profile shown again after an action
+     * (Telegram\ReopenProfile). Each has a $name of its own, so one never
+     * stops the other; null stops that one.
      *
      * @param (callable(array<string, mixed>): void)|null $observer
      */
-    public static function observe(?callable $observer): void
+    public static function observe(?callable $observer, string $name = 'acting'): void
     {
-        self::$observer = $observer;
+        if (null === $observer) {
+            unset(self::$observers[$name]);
+
+            return;
+        }
+
+        self::$observers[$name] = $observer;
     }
 
     /**
@@ -193,14 +201,12 @@ final class History
      */
     public static function observed(array $row): void
     {
-        if (null === self::$observer) {
-            return;
-        }
-
-        try {
-            (self::$observer)($row);
-        } catch (\Throwable) {
-            // Telling someone never breaks the action.
+        foreach (self::$observers as $observer) {
+            try {
+                $observer($row);
+            } catch (\Throwable) {
+                // Telling someone never breaks the action.
+            }
         }
     }
 

@@ -198,6 +198,7 @@ final class ReplacementService
         // goes in the chat, where the cover can read it again later.
         $this->telegram->answerCallbackQuery($callbackId, __('Request sent.', 'eventcrew'));
         $this->telegram->sendMessage($cover->telegramChatId ?? $coverTelegramId, $result['text']);
+        ReopenProfile::done();
     }
 
     /**

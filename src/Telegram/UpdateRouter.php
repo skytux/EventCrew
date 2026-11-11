@@ -75,7 +75,8 @@ final class UpdateRouter
         private readonly ?ChatCommands $chatCommands = null,
         private readonly ?TransferBot $transfer = null,
         private readonly ?SubscribeCommand $subscribe = null,
-        private readonly ?ActingAs $acting = null
+        private readonly ?ActingAs $acting = null,
+        private readonly ?ReopenProfile $reopen = null
     ) {
     }
 
@@ -188,19 +189,29 @@ final class UpdateRouter
             return;
         }
 
-        $this->replaceInPlace($update);
+        // My info again after an action of a /me flow (ReopenProfile): it
+        // looks at the bot's last message before a written one forgets it.
+        $this->reopen?->begin($update);
 
-        // An organizer acting as someone (👤 Act as on a person's card): their
-        // screens and buttons run as that person (ActingAs).
-        if (null !== $this->acting) {
-            $this->acting->route($update, $this->awaitsActingAnswer($update), function () use ($update, $chosen): void {
+        try {
+            $this->replaceInPlace($update);
+            $handle = function () use ($update, $chosen): void {
                 $this->handleUpdate($update, $chosen);
-            });
+                $this->reopen?->finish();
+            };
 
-            return;
+            // An organizer acting as someone (👤 Act as on a person's card):
+            // their screens and buttons run as that person (ActingAs).
+            if (null !== $this->acting) {
+                $this->acting->route($update, $this->awaitsActingAnswer($update), $handle);
+
+                return;
+            }
+
+            $handle();
+        } finally {
+            $this->reopen?->end();
         }
-
-        $this->handleUpdate($update, $chosen);
     }
 
     /**
@@ -861,7 +872,14 @@ final class UpdateRouter
 
         $result = $this->language->onSelect($callbackQuery);
 
-        if (null === $result['language'] || null === $result['pending']) {
+        if (null === $result['language']) {
+            return;
+        }
+
+        if (null === $result['pending']) {
+            // Changed from Settings: My info again, in the new language.
+            ReopenProfile::done($result['language']);
+
             return;
         }
 

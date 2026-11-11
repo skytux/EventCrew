@@ -71,6 +71,14 @@ final class TelegramClient
     /** Set by record(): the next send is kept as its own message. */
     private bool $record = false;
 
+    /**
+     * The private chat watched during one update (watch()): the messages
+     * sent there, and the ones edited or deleted there.
+     *
+     * @var array{chat: int, sent: list<int>, touched: list<int>}|null
+     */
+    private static ?array $watch = null;
+
     public function __construct(
         private readonly Logger $logger,
         private readonly DohResolver $resolver,
@@ -255,6 +263,15 @@ final class TelegramClient
         }
 
         $messageId = (int) ($params['message_id'] ?? 0);
+        $sent = (int) ($result['message_id'] ?? 0);
+
+        if (null !== self::$watch && self::$watch['chat'] === $chatId) {
+            if (0 !== $messageId && (str_starts_with($method, 'edit') || 'deleteMessage' === $method)) {
+                self::$watch['touched'][] = $messageId;
+            } elseif (0 !== $sent && str_starts_with($method, 'send') && 'sendChatAction' !== $method) {
+                self::$watch['sent'][] = $sent;
+            }
+        }
 
         $touchesTarget = 0 !== $messageId && ($this->replace[$chatId] ?? 0) === $messageId;
 
@@ -268,8 +285,6 @@ final class TelegramClient
 
         // A new message in the chat: the tapped one is no longer the last.
         unset($this->replace[$chatId]);
-
-        $sent = (int) ($result['message_id'] ?? 0);
 
         if (0 === $sent || ! function_exists('set_transient')) {
             return;
@@ -330,6 +345,48 @@ final class TelegramClient
         if ((int) get_transient(self::LAST_PREFIX . $chatId) === $messageId) {
             $this->replace[$chatId] = $messageId;
         }
+    }
+
+    /**
+     * The next sendMessage to $chatId posts a new message, even when a tap
+     * asked to replace the tapped one (replaceNextIn()).
+     */
+    public function postNextAnew(int $chatId): void
+    {
+        unset($this->replace[$chatId]);
+    }
+
+    /**
+     * Notes, until unwatch(), each message sent to $chatId and each one
+     * edited or deleted there, whichever client instance does it
+     * (ReopenProfile).
+     */
+    public static function watch(int $chatId): void
+    {
+        self::$watch = ['chat' => $chatId, 'sent' => [], 'touched' => []];
+    }
+
+    /**
+     * What happened in the watched chat so far.
+     *
+     * @return array{sent: list<int>, touched: list<int>}
+     */
+    public static function watched(): array
+    {
+        return ['sent' => self::$watch['sent'] ?? [], 'touched' => self::$watch['touched'] ?? []];
+    }
+
+    /**
+     * Stops watching and returns what happened (watched()).
+     *
+     * @return array{sent: list<int>, touched: list<int>}
+     */
+    public static function unwatch(): array
+    {
+        $watched = self::watched();
+        self::$watch = null;
+
+        return $watched;
     }
 
     /** The person wrote in a private chat: the bot's last message there is no longer the last. */
