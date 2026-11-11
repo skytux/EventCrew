@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.212
+Stable tag: 1.140.213
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.213 =
+* Bot: organizers can act as a person from their card under /people, for 15 minutes: their /me, tasks, tickets and settings, each change logged under the organizer and told to the person by DM.
+* Door list: entries someone else added show who added them and when, in wp-admin, on the crew page and in the bot.
 
 = 1.140.212 =
 * Sign-up page: Take someone’s task now fits on one line when three event cards sit side by side.
@@ -2005,6 +2009,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.213 =
+No settings change.
 
 = 1.140.212 =
 No settings change.
