@@ -250,7 +250,8 @@ final class HistoryText
             : $at;
     }
 
-    private static function channel(string $channel): string
+    /** Where it was done: "bot", "web", "wp-admin", or '' for the system or none. */
+    public static function channel(string $channel): string
     {
         return match ($channel) {
             History::CHANNEL_BOT => __('bot', 'eventcrew'),

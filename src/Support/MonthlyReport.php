@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Admin\Admin;
+use EventCrew\Admin\HistoryPage;
 use EventCrew\Admin\SettingsPage;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\CheckinRepository;
@@ -15,8 +16,9 @@ use EventCrew\Repositories\TaskRepository;
 /**
  * The organizers' monthly report (Owner, 2026-11-08): on the 1st of each
  * month every organizer gets the previous calendar month's numbers by email,
- * with the month before in brackets. A table of counts, no names or
- * addresses.
+ * with the month before in brackets. A table of counts, then "Done for
+ * others": what organizers and wp-admin users did for other people that
+ * month (adminActions()). That list has names but never an address.
  *
  * Sent from the hourly heartbeat (Scheduler), like the newsletter and
  * post-event email previews: at any hour, or inside the send window when
@@ -50,7 +52,14 @@ use EventCrew\Repositories\TaskRepository;
  *   total with the top TOP_CLICKS email · button pairs and TOP_CAMPAIGNS
  *   campaigns under it;
  * - page views and visitors (Burst): read from the Burst Statistics plugin's
- *   table when it is there; the rows are left out when it is not.
+ *   table when it is there; the rows are left out when it is not;
+ * - done for others (Owner, 2026-11-11): the history rows of the month where
+ *   an organizer acted for someone else (the bot's Act as included) or a
+ *   WordPress user acted in wp-admin, settings and the task list included;
+ *   not anyone's own actions, the system's, or rows made from older data.
+ *   Grouped by who acted, most actions first, each line in time order with
+ *   the History page's words (HistoryText), at most ACTIONS_PER_ACTOR lines
+ *   each, and a link to the History page for the rest.
  *
  * To add a number: give stats() a key and add a row for it in countRows(),
  * or hook ROWS_FILTER from elsewhere. A row's key is read from both months'
@@ -95,6 +104,9 @@ final class MonthlyReport
 
     /** The stats keys of one campaign start with this. */
     private const CAMPAIGN = 'campaign:';
+
+    /** The most "Done for others" lines under one actor; the rest are counted. */
+    public const ACTIONS_PER_ACTOR = 100;
 
     /** Before a sub row's label: two no-break spaces and a dot. */
     private const SUB = "\u{00A0}\u{00A0}· ";
@@ -178,12 +190,15 @@ final class MonthlyReport
         // The click and campaign counts are kept for KEEP_MONTHS months.
         SiteStats::prune($now);
 
-        foreach ($this->people->organizers() as $person) {
+        $organizers = $this->people->organizers();
+        $actions = $this->adminActions($month);
+
+        foreach ($organizers as $person) {
             if ($person->isAnonymized() || $person->isBanned()) {
                 continue;
             }
 
-            if ($this->sendTo($person->email, $person, $stats, $before)) {
+            if ($this->sendTo($person->email, $person, $stats, $before, $actions)) {
                 $sent++;
             }
         }
@@ -208,7 +223,8 @@ final class MonthlyReport
             $to,
             $person,
             $this->stats($month),
-            $this->stats(self::previousMonth(self::firstDay($month)))
+            $this->stats(self::previousMonth(self::firstDay($month))),
+            $this->adminActions($month)
         );
     }
 
@@ -326,6 +342,22 @@ final class MonthlyReport
     }
 
     /**
+     * The month's (Y-m) history rows where someone acted for somebody else,
+     * oldest first: MonthlyReportRepository::adminActions().
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function adminActions(string $month): array
+    {
+        $start = self::firstDay($month);
+
+        return $this->data->adminActions(
+            $start->format('Y-m-d H:i:s'),
+            $start->modify('first day of next month')->format('Y-m-d H:i:s')
+        );
+    }
+
+    /**
      * The month's email button clicks and campaign visits (SiteStats): the
      * two totals and one key per pair and per campaign.
      *
@@ -369,9 +401,10 @@ final class MonthlyReport
      *
      * @param array<string, mixed> $stats From stats().
      * @param array<string, mixed> $before From stats().
+     * @param list<array<string, mixed>> $actions From adminActions().
      * @return array{subject: string, intro: string, html: string, text: string}
      */
-    public function compose(array $stats, array $before): array
+    public function compose(array $stats, array $before, array $actions = []): array
     {
         $month = self::monthLabel((string) $stats['month']);
         $previous = self::monthLabel((string) $before['month']);
@@ -419,16 +452,20 @@ final class MonthlyReport
         $percentNote = __('% = share of the row above', 'eventcrew');
         $noBuyers = __('No ticket buyers.', 'eventcrew');
 
+        $done = $this->doneForOthers($actions);
+
         $html = self::table($countRows)
             . self::heading($buyersHeading)
             . ([] === $nightRows ? self::note($noBuyers) : self::table($nightRows))
             . self::heading($funnelHeading)
             . self::table($funnelCells)
-            . self::note($percentNote);
+            . self::note($percentNote)
+            . $done['html'];
 
         $text = self::textRows($countRows) . "\n\n" . mb_strtoupper($buyersHeading) . "\n"
             . ([] === $nightRows ? $noBuyers : self::textRows($nightRows)) . "\n\n"
-            . mb_strtoupper($funnelHeading) . "\n" . self::textRows($funnelCells) . "\n" . $percentNote;
+            . mb_strtoupper($funnelHeading) . "\n" . self::textRows($funnelCells) . "\n" . $percentNote
+            . "\n\n" . $done['text'];
 
         return [
             /* translators: %s: the month, like 10/2026 */
@@ -442,6 +479,135 @@ final class MonthlyReport
             'html' => $html,
             'text' => $text,
         ];
+    }
+
+    /**
+     * The "Done for others" section of the email, as HTML and as text: one
+     * group per actor, most actions first, then one line per action in time
+     * order, like "Fri 14 Nov 21:03 — Sam signed up · Bar 20:00 · 14.11.
+     * (bot)". At most ACTIONS_PER_ACTOR lines per actor, then "and N more";
+     * a link to the History page under it all.
+     *
+     * @param list<array<string, mixed>> $actions From adminActions().
+     * @return array{html: string, text: string}
+     */
+    public function doneForOthers(array $actions): array
+    {
+        $heading = __('Done for others', 'eventcrew');
+        $groups = self::byActor($actions);
+
+        if ([] === $groups) {
+            $none = __('Nothing done for others.', 'eventcrew');
+
+            return [
+                'html' => self::heading($heading) . self::note($none),
+                'text' => mb_strtoupper($heading) . "\n" . $none,
+            ];
+        }
+
+        $html = self::heading($heading);
+        $text = [mb_strtoupper($heading)];
+
+        foreach ($groups as $group) {
+            $title = $group['name'] . ' · ' . count($group['rows']);
+            $lines = array_map(
+                [self::class, 'actionLine'],
+                array_slice($group['rows'], 0, self::ACTIONS_PER_ACTOR)
+            );
+            $more = count($group['rows']) - count($lines);
+
+            if ($more > 0) {
+                /* translators: %d: how many more actions are not listed */
+                $lines[] = sprintf(__('and %d more', 'eventcrew'), $more);
+            }
+
+            $html .= sprintf(
+                '<p style="margin:12px 0 4px;font-family:%s;font-size:15px;font-weight:700;color:%s">%s</p>',
+                EmailBody::FONT,
+                EmailBody::TEXT_COLOR,
+                esc_html($title)
+            );
+
+            foreach ($lines as $line) {
+                $html .= sprintf(
+                    '<p style="margin:0 0 2px;font-family:%s;font-size:14px;color:%s">%s</p>',
+                    EmailBody::FONT,
+                    EmailBody::TEXT_COLOR,
+                    esc_html($line)
+                );
+            }
+
+            $text[] = '';
+            $text[] = $title;
+            array_push($text, ...$lines);
+        }
+
+        $link = __('Full list on the History page', 'eventcrew');
+        $url = admin_url('admin.php?page=' . HistoryPage::PAGE_SLUG);
+
+        $html .= sprintf(
+            '<p style="margin:12px 0 20px;font-family:%s;font-size:13px;color:%s"><a href="%s">%s</a></p>',
+            EmailBody::FONT,
+            EmailBody::MUTED_COLOR,
+            esc_url($url),
+            esc_html($link)
+        );
+        $text[] = '';
+        $text[] = $link . ': ' . $url;
+
+        return ['html' => $html, 'text' => implode("\n", $text)];
+    }
+
+    /**
+     * $actions grouped by who acted (a person by id, a WordPress user by id),
+     * the group with the most actions first, a tie in name order; each
+     * group's rows keep their order.
+     *
+     * @param list<array<string, mixed>> $actions
+     * @return list<array{name: string, rows: list<array<string, mixed>>}>
+     */
+    private static function byActor(array $actions): array
+    {
+        $groups = [];
+
+        foreach ($actions as $row) {
+            $kind = (string) ($row['actor_kind'] ?? '');
+            $id = History::ACTOR_WP_USER === $kind
+                ? (int) ($row['actor_wp_user_id'] ?? 0)
+                : (int) ($row['actor_person_id'] ?? 0);
+            $key = $kind . ':' . $id;
+
+            // The actor's name alone, without the channel.
+            $groups[$key] ??= ['name' => HistoryText::actor(array_merge($row, ['channel' => ''])), 'rows' => []];
+            $groups[$key]['rows'][] = $row;
+        }
+
+        $groups = array_values($groups);
+        usort(
+            $groups,
+            static fn (array $a, array $b): int
+                => [count($b['rows']), $a['name']] <=> [count($a['rows']), $b['name']]
+        );
+
+        return $groups;
+    }
+
+    /**
+     * One action: "Fri 14 Nov 21:03 — Sam signed up · Bar 20:00 · 14.11. (bot)".
+     *
+     * @param array<string, mixed> $row
+     */
+    private static function actionLine(array $row): string
+    {
+        $parts = array_diff(
+            [HistoryText::action($row), HistoryText::task($row), HistoryText::night($row)],
+            ['']
+        );
+        $channel = HistoryText::channel((string) ($row['channel'] ?? ''));
+
+        return Dates::wallClock((string) ($row['created_at'] ?? ''), _x('D j M H:i', 'date format', 'eventcrew'))
+            . ' — ' . implode(' · ', $parts)
+            . ('' === $channel ? '' : ' (' . $channel . ')');
     }
 
     /**
@@ -559,10 +725,11 @@ final class MonthlyReport
     /**
      * @param array<string, mixed> $stats
      * @param array<string, mixed> $before
+     * @param list<array<string, mixed>> $actions
      */
-    private function sendTo(string $to, ?Person $person, array $stats, array $before): bool
+    private function sendTo(string $to, ?Person $person, array $stats, array $before, array $actions = []): bool
     {
-        $mail = Language::forPerson($person, fn (): array => $this->compose($stats, $before));
+        $mail = Language::forPerson($person, fn (): array => $this->compose($stats, $before, $actions));
 
         return $this->mailer->toPersonWithContent(
             null === $person ? 0 : $person->id,

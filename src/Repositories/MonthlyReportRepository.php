@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace EventCrew\Repositories;
 
 use EventCrew\Database\Schema;
+use EventCrew\Support\History;
 
 /**
  * The reads behind the organizers' monthly report (Support\MonthlyReport):
- * counts and person ids only, never a name or an address. Each method is one
- * query over a time range the caller gives: $from inclusive, $to exclusive,
+ * counts and person ids, never an address; only adminActions() reads names,
+ * for the "Done for others" list. Each method is one query over a time range
+ * the caller gives: $from inclusive, $to exclusive,
  * as Y-m-d H:i:s (site time, except the bot log, which keeps UTC) or Y-m-d
  * for the event-day ranges.
  */
@@ -268,6 +270,51 @@ final class MonthlyReportRepository
         );
 
         return is_array($row) ? ['views' => (int) $row['views'], 'visitors' => (int) $row['visitors']] : null;
+    }
+
+    /**
+     * The history rows in the range where someone acted for somebody else:
+     * an organizer acting for another person (the bot's Act as included) or
+     * a WordPress user in wp-admin, settings and task list changes included.
+     * Not anyone's own actions, not the system's, not rows made from older
+     * data. Oldest first, with the names Support\HistoryText needs: the
+     * person acted on, the other person, the actor, and the task's role and
+     * time. Never an email address.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function adminActions(string $from, string $to): array
+    {
+        global $wpdb;
+
+        $history = Schema::table(Schema::HISTORY);
+        $people = Schema::table(Schema::PEOPLE);
+        $tasks = Schema::table(Schema::TASKS);
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT h.id, h.created_at, h.actor_kind, h.actor_person_id, h.actor_wp_user_id, h.channel, h.kind,
+                    h.person_id, h.other_person_id, h.task_id, h.event_date, h.details,
+                    p.display_name AS person_name, o.display_name AS other_name, a.display_name AS actor_name,
+                    t.role_slug AS task_role_slug, t.starts_at AS task_starts_at
+                FROM {$history} AS h
+                LEFT JOIN {$people} AS p ON p.id = h.person_id
+                LEFT JOIN {$people} AS o ON o.id = h.other_person_id
+                LEFT JOIN {$people} AS a ON a.id = h.actor_person_id
+                LEFT JOIN {$tasks} AS t ON t.id = h.task_id
+                WHERE h.actor_kind IN (%s, %s) AND h.source <> %s
+                    AND h.created_at >= %s AND h.created_at < %s
+                ORDER BY h.created_at ASC, h.id ASC",
+                History::ACTOR_ORGANIZER,
+                History::ACTOR_WP_USER,
+                History::SOURCE_BACKFILL,
+                $from,
+                $to
+            ),
+            ARRAY_A
+        );
+
+        return array_values(is_array($rows) ? $rows : []);
     }
 
     /**

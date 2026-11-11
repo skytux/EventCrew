@@ -13687,3 +13687,21 @@ msgstr "%1$s agerade åt dig i Telegram-boten från %2$s till %3$s och gjorde de
 #: src/Telegram/ActingAs.php
 msgid "%s made changes for you"
 msgstr "%s gjorde ändringar åt dig"
+
+#: src/Support/MonthlyReport.php
+msgid "Done for others"
+msgstr "Gjort åt andra"
+
+#: src/Support/MonthlyReport.php
+msgid "Nothing done for others."
+msgstr "Inget gjort åt andra."
+
+#. translators: %d: how many more actions are not listed
+#: src/Support/MonthlyReport.php
+#, php-format
+msgid "and %d more"
+msgstr "och %d till"
+
+#: src/Support/MonthlyReport.php
+msgid "Full list on the History page"
+msgstr "Hela listan på sidan Historik"

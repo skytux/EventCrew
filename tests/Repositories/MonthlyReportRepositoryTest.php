@@ -9,7 +9,7 @@ use EventCrew\Tests\TestCase;
 
 /**
  * The reads behind the monthly report: one query each over the range, and
- * counts or ids back, never a name or an address.
+ * counts or ids back, never an address (names only for "Done for others").
  */
 final class MonthlyReportRepositoryTest extends TestCase
 {
@@ -63,6 +63,28 @@ final class MonthlyReportRepositoryTest extends TestCase
         $queries = count($this->wpdb->queries);
         self::assertSame([], $repository->historyByChannel([], 'a', 'b'));
         self::assertCount($queries, $this->wpdb->queries);
+    }
+
+    public function testAdminActionsAreWhatOrganizersAndWpUsersDidForOthers(): void
+    {
+        $this->wpdb->nextResults[] = [['id' => '1', 'kind' => 'assigned', 'actor_kind' => 'organizer']];
+
+        $rows = (new MonthlyReportRepository())->adminActions('2026-10-01 00:00:00', '2026-11-01 00:00:00');
+        $sql = $this->wpdb->lastQuery();
+
+        self::assertSame([['id' => '1', 'kind' => 'assigned', 'actor_kind' => 'organizer']], $rows);
+        // Organizers and wp-admin only: not own actions ('person'), not the system.
+        self::assertStringContainsString("h.actor_kind IN ('organizer', 'wp_user')", $sql);
+        // Not the rows made from older data.
+        self::assertStringContainsString("h.source <> 'backfill'", $sql);
+        self::assertStringContainsString(
+            "h.created_at >= '2026-10-01 00:00:00' AND h.created_at < '2026-11-01 00:00:00'",
+            $sql
+        );
+        self::assertStringContainsString('ORDER BY h.created_at ASC, h.id ASC', $sql);
+        // Names for the lines, never an address.
+        self::assertStringContainsString('a.display_name AS actor_name', $sql);
+        self::assertStringNotContainsString('email', $sql);
     }
 
     public function testTaskPeopleLeaveOutDeletedTasks(): void

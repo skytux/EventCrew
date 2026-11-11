@@ -48,6 +48,118 @@ final class MonthlyReportTest extends TestCase
         Functions\when('is_email')->alias(static fn (string $email): bool => str_contains($email, '@'));
         Functions\when('add_action')->justReturn(true);
         Functions\when('remove_action')->justReturn(true);
+        Functions\when('admin_url')->alias(
+            static fn (string $path = ''): string => 'https://example.test/wp-admin/' . $path
+        );
+        Functions\when('get_userdata')->alias(
+            static fn (int $id): object|false => 3 === $id ? (object) ['display_name' => 'Lou Admin'] : false
+        );
+    }
+
+    public function testDoneForOthersGroupsTheMonthsActionsByWhoActed(): void
+    {
+        $actions = [
+            self::action('2026-10-03 18:05:00', 'organizer', 7, 'Kim', 'assigned', 'bot', 'Sam', 'bar', '2026-10-10'),
+            self::action(
+                '2026-10-04 12:00:00',
+                'wp_user',
+                3,
+                '',
+                'settings_changed',
+                'admin',
+                null,
+                '',
+                null,
+                '{"options":["send_window"]}'
+            ),
+            self::action('2026-10-14 21:03:00', 'organizer', 7, 'Kim', 'cancelled', 'bot', 'Ann', 'door', '2026-10-17'),
+            self::action('2026-10-20 09:30:00', 'wp_user', 99, '', 'task_created', 'admin', null, 'bar', '2026-10-24'),
+        ];
+
+        $done = $this->report()->doneForOthers($actions);
+
+        self::assertSame(
+            "DONE FOR OTHERS\n\n"
+            // The most actions first; each line in time order, with the channel.
+            . "Kim · 2\n"
+            // The role's label (its slug here, with no roles set up).
+            . "Sat 3 Oct 18:05 — Sam was put on the task · bar 20:00 · 10.10. (bot)\n"
+            . "Wed 14 Oct 21:03 — Ann cancelled · door 20:00 · 17.10. (bot)\n\n"
+            // A WordPress user by their display name, one with none by number; a tie in name order.
+            . "Lou Admin · 1\n"
+            . "Sun 4 Oct 12:00 — Settings changed: send window (wp-admin)\n\n"
+            . "user #99 · 1\n"
+            . "Tue 20 Oct 09:30 — Task added · bar 20:00 · 24.10. (wp-admin)\n\n"
+            . 'Full list on the History page: https://example.test/wp-admin/admin.php?page=eventcrew-history',
+            $done['text']
+        );
+        self::assertStringContainsString('>Kim · 2</p>', $done['html']);
+        self::assertStringContainsString(
+            'href="https://example.test/wp-admin/admin.php?page=eventcrew-history"',
+            $done['html']
+        );
+
+        // In the email, after the funnel.
+        $mail = $this->report()->compose($this->stats('2026-10', 1.0), $this->stats('2026-09', 1.0), $actions);
+        self::assertStringContainsString("share of the row above\n\nDONE FOR OTHERS\n\nKim · 2", $mail['text']);
+    }
+
+    public function testDoneForOthersListsAtMostAHundredPerActor(): void
+    {
+        $actions = [];
+
+        for ($i = 0; $i < MonthlyReport::ACTIONS_PER_ACTOR + 3; $i++) {
+            $actions[] = self::action(
+                sprintf('2026-10-%02d 10:%02d:00', 1 + intdiv($i, 60), $i % 60),
+                'organizer',
+                7,
+                'Kim',
+                'signed_up',
+                'bot',
+                'Sam'
+            );
+        }
+
+        $text = $this->report()->doneForOthers($actions)['text'];
+
+        self::assertStringContainsString('Kim · 103', $text);
+        self::assertSame(MonthlyReport::ACTIONS_PER_ACTOR, substr_count($text, 'Sam signed up'));
+        self::assertStringContainsString("Sam signed up (bot)\nand 3 more\n\nFull list", $text);
+    }
+
+    public function testAMonthWithNothingDoneForOthersSaysSo(): void
+    {
+        $done = $this->report()->doneForOthers([]);
+
+        self::assertSame("DONE FOR OTHERS\nNothing done for others.", $done['text']);
+        self::assertStringContainsString('Nothing done for others.', $done['html']);
+        self::assertStringNotContainsString('href', $done['html']);
+    }
+
+    public function testTheReportReadsTheMonthsActionsOnceForAllOrganizers(): void
+    {
+        $this->queueMonth();
+        $this->queueMonth();
+        $this->wpdb->nextResults[] = [
+            self::organizerRow(1, 'one@example.test'),
+            self::organizerRow(2, 'two@example.test'),
+        ];
+        $this->wpdb->nextResults[] = [
+            self::action('2026-10-03 18:05:00', 'organizer', 1, 'Organizer 1', 'assigned', 'bot', 'Sam'),
+        ];
+
+        self::assertSame(2, $this->report()->run($this->at('2026-11-01 09:00')));
+
+        $captured = $this->mailer->captured();
+        $reads = array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_contains($sql, "actor_kind IN ('organizer', 'wp_user')")
+        );
+
+        self::assertCount(1, $reads);
+        self::assertStringContainsString("h.created_at >= '2026-10-01 00:00:00'", (string) current($reads));
+        self::assertStringContainsString('Sam was put on the task', $captured[0]['message']);
+        self::assertStringContainsString('Sam was put on the task', $captured[1]['message']);
     }
 
     public function testItCountsTheMonthFromTheTables(): void
@@ -392,6 +504,42 @@ final class MonthlyReportTest extends TestCase
             'notes' => '',
             'created_at' => '2026-01-01 00:00:00',
             'updated_at' => '2026-01-01 00:00:00',
+        ];
+    }
+
+    /**
+     * One row as MonthlyReportRepository::adminActions() gives it.
+     *
+     * @return array<string, mixed>
+     */
+    private static function action(
+        string $at,
+        string $actorKind,
+        int $actorId,
+        string $actorName,
+        string $kind,
+        string $channel,
+        ?string $person = null,
+        string $role = '',
+        ?string $night = null,
+        string $details = ''
+    ): array {
+        return [
+            'created_at' => $at,
+            'actor_kind' => $actorKind,
+            'actor_person_id' => 'organizer' === $actorKind ? (string) $actorId : null,
+            'actor_wp_user_id' => 'wp_user' === $actorKind ? (string) $actorId : null,
+            'actor_name' => '' === $actorName ? null : $actorName,
+            'channel' => $channel,
+            'kind' => $kind,
+            'person_id' => null === $person ? null : '12',
+            'person_name' => $person,
+            'other_person_id' => null,
+            'other_name' => null,
+            'event_date' => $night,
+            'details' => $details,
+            'task_role_slug' => $role,
+            'task_starts_at' => '' === $role ? null : $night . ' 20:00:00',
         ];
     }
 

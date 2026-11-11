@@ -10737,3 +10737,21 @@ msgstr "%1$s toimi puolestasi Telegram-botissa %2$s–%3$s ja teki nämä muutok
 #: src/Telegram/ActingAs.php
 msgid "%s made changes for you"
 msgstr "%s teki muutoksia puolestasi"
+
+#: src/Support/MonthlyReport.php
+msgid "Done for others"
+msgstr "Tehty muiden puolesta"
+
+#: src/Support/MonthlyReport.php
+msgid "Nothing done for others."
+msgstr "Ei mitään tehty muiden puolesta."
+
+#. translators: %d: how many more actions are not listed
+#: src/Support/MonthlyReport.php
+#, php-format
+msgid "and %d more"
+msgstr "ja %d muuta"
+
+#: src/Support/MonthlyReport.php
+msgid "Full list on the History page"
+msgstr "Koko lista Historia-sivulla"
