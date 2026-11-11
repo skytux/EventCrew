@@ -184,6 +184,7 @@ final class SettingsPage
                     (int) get_option(BoardPush::LEAD_SOON_OPTION, BoardPush::LEAD_SOON_DEFAULT)
                 ),
                 'notify_hour' => SendWindow::hour(),
+                'organizer_mail_any_hour' => SendWindow::organizersAnyHour(),
                 'open_task_lead_week' => max(
                     0,
                     (int) get_option(OpenTaskCall::LEAD_WEEK_OPTION, OpenTaskCall::LEAD_WEEK_DEFAULT)
@@ -737,6 +738,7 @@ final class SettingsPage
             SendWindow::OPTION,
             $notifyHour >= 0 && $notifyHour <= 23 ? $notifyHour : SendWindow::DEFAULT_HOUR
         );
+        SendWindow::saveOrganizersAnyHour(isset($_POST['organizer_mail_any_hour']));
 
         // The open-task call's own leads. Zero is meaningful here - it turns
         // that one of the two sends off - so these floor at 0 rather than 1.

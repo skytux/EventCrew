@@ -20,6 +20,11 @@ namespace EventCrew\Support;
  * do not come through here; they go immediately, which is the whole point of
  * them. A freed slot is told to the whole crew, so it is queued and waits for
  * the window.
+ *
+ * The organizers' own scheduled emails (the newsletter and post-event email
+ * previews, the monthly report, the role-conditions notice) wait for the
+ * window only when ORGANIZER_ANY_HOUR_OPTION is off (Owner, 2026-11-11: they
+ * should go out regardless of time). It is on by default.
  */
 final class SendWindow
 {
@@ -27,6 +32,12 @@ final class SendWindow
     public const OPTION = 'eventcrew_notify_hour';
 
     public const DEFAULT_HOUR = 9;
+
+    /**
+     * '1' or '0', on when unset: the organizer-only scheduled messages go out
+     * as soon as they are due, at any hour.
+     */
+    public const ORGANIZER_ANY_HOUR_OPTION = 'eventcrew_organizer_mail_any_hour';
 
     /** How long the window stays open. */
     private const LENGTH_HOURS = 12;
@@ -36,6 +47,18 @@ final class SendWindow
         $hour = (int) get_option(self::OPTION, self::DEFAULT_HOUR);
 
         return $hour >= 0 && $hour <= 23 ? $hour : self::DEFAULT_HOUR;
+    }
+
+    /** Whether the organizer-only scheduled messages ignore the window. */
+    public static function organizersAnyHour(): bool
+    {
+        return (bool) get_option(self::ORGANIZER_ANY_HOUR_OPTION, true);
+    }
+
+    /** Saves ORGANIZER_ANY_HOUR_OPTION. */
+    public static function saveOrganizersAnyHour(bool $on): void
+    {
+        update_option(self::ORGANIZER_ANY_HOUR_OPTION, $on ? '1' : '0');
     }
 
     /**

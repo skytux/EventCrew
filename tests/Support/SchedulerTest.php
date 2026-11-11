@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\MonthlyReportRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
@@ -17,6 +18,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\MonthlyReport;
 use EventCrew\Support\NewcomerApproval;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\PersonEraser;
@@ -37,8 +39,11 @@ use EventCrew\Tests\TestCase;
 
 final class SchedulerTest extends TestCase
 {
-    private function scheduler(?SlotFreedNotice $slotFreed = null, ?NewcomerApproval $newcomers = null): Scheduler
-    {
+    private function scheduler(
+        ?SlotFreedNotice $slotFreed = null,
+        ?NewcomerApproval $newcomers = null,
+        ?MonthlyReport $monthlyReport = null
+    ): Scheduler {
         $tasks = new TaskRepository();
         $assignments = new AssignmentRepository();
         $people = new PersonRepository();
@@ -86,7 +91,8 @@ final class SchedulerTest extends TestCase
             null,
             null,
             $slotFreed,
-            $newcomers
+            $newcomers,
+            $monthlyReport
         );
     }
 
@@ -352,5 +358,79 @@ final class SchedulerTest extends TestCase
     public function testRunLeavesNewcomerRequestsOutsideTheSendWindow(): void
     {
         self::assertFalse($this->runLooksForTimedOutNewcomers(13));
+    }
+
+    /**
+     * Runs the scheduler with the window opening at $openHour (the test clock
+     * is 12:00) and the organizer any-hour setting at $anyHour (null: never
+     * saved). Says whether the organizers' monthly report was looked at and
+     * whether the crew's newcomer time-outs were.
+     *
+     * @return array{report: bool, crew: bool}
+     */
+    private function runOrganizerAndCrewSends(int $openHour, ?string $anyHour): array
+    {
+        $options = [
+            SendWindow::OPTION => $openHour,
+            // Off, so the report stops right after reading its switch.
+            MonthlyReport::OPTION => '0',
+        ];
+
+        if (null !== $anyHour) {
+            $options[SendWindow::ORGANIZER_ANY_HOUR_OPTION] = $anyHour;
+        }
+
+        $read = [];
+        Functions\when('get_option')->alias(
+            static function (string $key, mixed $default = false) use ($options, &$read): mixed {
+                $read[$key] = true;
+
+                return $options[$key] ?? $default;
+            }
+        );
+        Functions\when('update_option')->justReturn(true);
+        $mailer = new Mailer(new Logger(), new EmailTemplate(new Logger()));
+        $newcomers = new NewcomerApproval(
+            new PersonRepository(),
+            $mailer,
+            new TelegramClient(new Logger(), new DohResolver(new Logger()))
+        );
+        $report = new MonthlyReport(new MonthlyReportRepository(), new PersonRepository(), $mailer);
+
+        $this->scheduler(null, $newcomers, $report)->run();
+
+        $crew = false;
+
+        foreach ($this->wpdb->queries as $sql) {
+            if (str_contains((string) $sql, 'email_verified_at IS NOT NULL') && str_contains((string) $sql, 'approval =')) {
+                $crew = true;
+            }
+        }
+
+        return ['report' => isset($read[MonthlyReport::OPTION]), 'crew' => $crew];
+    }
+
+    /** Lou 2026-11-11: outside the window the organizers' emails go, by default. */
+    public function testOrganizerSendsRunOutsideTheWindowByDefault(): void
+    {
+        self::assertSame(['report' => true, 'crew' => false], $this->runOrganizerAndCrewSends(13, null));
+    }
+
+    public function testOrganizerSendsRunOutsideTheWindowWhenSwitchedOn(): void
+    {
+        self::assertSame(['report' => true, 'crew' => false], $this->runOrganizerAndCrewSends(13, '1'));
+    }
+
+    /** Switched off: they wait for the window, as before. */
+    public function testOrganizerSendsWaitForTheWindowWhenSwitchedOff(): void
+    {
+        self::assertSame(['report' => false, 'crew' => false], $this->runOrganizerAndCrewSends(13, '0'));
+    }
+
+    public function testInsideTheWindowBothRunWhateverTheSwitch(): void
+    {
+        self::assertSame(['report' => true, 'crew' => true], $this->runOrganizerAndCrewSends(9, '0'));
+        $this->wpdb->queries = [];
+        self::assertSame(['report' => true, 'crew' => true], $this->runOrganizerAndCrewSends(9, '1'));
     }
 }

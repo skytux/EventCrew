@@ -251,8 +251,12 @@ final class FollowupMail
      * The heartbeat's call: sends the previews that are due and starts (or
      * goes on with) the nights whose send time has come. Does nothing while
      * switched off.
+     *
+     * With $send false (outside the send window, when the organizers have
+     * their emails at any hour) only the previews go: a night whose send
+     * time has come starts at the first run with $send true.
      */
-    public function run(?\DateTimeImmutable $now = null): void
+    public function run(?\DateTimeImmutable $now = null, bool $send = true): void
     {
         if (! self::enabled()) {
             return;
@@ -266,8 +270,8 @@ final class FollowupMail
             update_option(self::ENABLED_AT_OPTION, $now->getTimestamp());
         }
 
-        $this->locked(function () use ($now): void {
-            $this->runLocked($now);
+        $this->locked(function () use ($now, $send): void {
+            $this->runLocked($now, $send);
         });
     }
 
@@ -1033,7 +1037,7 @@ final class FollowupMail
         return __('Alex', 'eventcrew');
     }
 
-    private function runLocked(\DateTimeImmutable $now): void
+    private function runLocked(\DateTimeImmutable $now, bool $send = true): void
     {
         $state = $this->state();
         $today = $now->setTimezone(self::timezone())->format('Y-m-d');
@@ -1089,7 +1093,8 @@ final class FollowupMail
             }
 
             if (
-                isset($state['previewed'][$date])
+                $send
+                && isset($state['previewed'][$date])
                 && ! isset($state['done'][$date])
                 && $at >= $sendAt
                 && ($at < $sendAt + self::LATE_DAYS * DAY_IN_SECONDS || isset($state['started'][$date]))

@@ -1515,6 +1515,34 @@ final class NewsletterTest extends TestCase
         self::assertSame(Newsletter::PLAN_SENDING, $this->state()['plan']['status']);
     }
 
+    /**
+     * Outside the send window, with the organizers' emails at any hour
+     * (Lou 2026-11-11), the preview goes but the newsletter waits.
+     */
+    public function testOutsideTheWindowThePreviewGoesButTheSendingWaits(): void
+    {
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $plan = [
+            'send_on' => '2026-07-20',
+            'send_at' => '2026-07-20 11:00:00',
+            'preview_at' => '2026-07-20 10:00:00',
+            'previewed' => false,
+            'events' => [self::planEvent(1, '2026-07-27')],
+        ];
+        $this->withPlan($plan);
+        $this->queueOrganizer();
+
+        $this->newsletter()->run(false);
+        self::assertCount(1, $this->mails);
+        self::assertTrue($this->state()['plan']['previewed']);
+
+        $this->newsletter()->run(false);
+        self::assertSame(Newsletter::PLAN_PLANNED, $this->state()['plan']['status']);
+
+        $this->newsletter()->run();
+        self::assertSame(Newsletter::PLAN_SENDING, $this->state()['plan']['status']);
+    }
+
     /** The send time came before the preview went: the preview first, the sending on the next run. */
     public function testAPreviewNotYetSentGoesBeforeTheSending(): void
     {

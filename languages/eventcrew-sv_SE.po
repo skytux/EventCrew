@@ -13650,3 +13650,11 @@ msgstr "%s har ingen verifierad e-post, så du kan inte agera som hen."
 #: src/Telegram/GiftService.php
 msgid "That credit was already given. Send /people to give another."
 msgstr "Fribiljetten är redan given. Skicka /people för att ge en till."
+
+#: templates/admin/settings.php
+msgid "Send emails to organizers at any hour"
+msgstr "Skicka mejl till arrangörer när som helst"
+
+#: templates/admin/settings.php
+msgid "Organizer-only emails (previews, reports, role notices) go out as soon as they are due. Emails to the crew still wait for the hours above."
+msgstr "Mejl bara till arrangörer (förhandsvisningar, rapporter, rollnotiser) går ut så snart de är aktuella. Mejl till crewet väntar fortfarande på timmarna ovan."

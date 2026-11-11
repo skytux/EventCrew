@@ -108,7 +108,9 @@ final class Scheduler
         // holder keeps the task as soon as the time to answer runs out.
         $this->takeovers?->expireDue(self::BATCH);
 
-        if (SendWindow::isOpen()) {
+        $windowOpen = SendWindow::isOpen();
+
+        if ($windowOpen) {
             // "A spot just opened", queued by a late cancellation. Dropped
             // here when the task is full again, under way or deleted.
             $this->slotFreed?->sendDue(self::BATCH);
@@ -122,25 +124,33 @@ final class Scheduler
             $this->standingNotices->sendDue(self::BATCH);
             $this->boardPush->run();
 
-            // Tell the organizers about anyone who newly meets a role's conditions.
-            $this->roleNotifier->run();
-
             // The welcome message for members who have not had it yet: the
             // ones from before it existed, and anyone who linked Telegram or
             // became an organizer since. Does nothing while switched off.
             $this->welcome->sendDue(self::BATCH);
+        }
+
+        /*
+         * The messages only organizers get. They wait for the window too,
+         * unless the organizers chose to have them at any hour (the default,
+         * Owner 2026-11-11). The newsletter and the post-event email then
+         * send only their organizer previews outside the window: what goes to
+         * subscribers and guests still starts only while it is open.
+         */
+        if ($windowOpen || SendWindow::organizersAnyHour()) {
+            // Tell the organizers about anyone who newly meets a role's conditions.
+            $this->roleNotifier->run();
 
             // The newsletter: plans the next one and mails the organizers its
-            // preview, or starts sending one whose day has come. The sending
-            // itself runs in its own WP-Cron batches. Inside the window, so
-            // neither the preview nor the newsletter goes out at night. Does
-            // nothing while switched off.
-            $this->newsletter?->run();
+            // preview, or (in the window only) starts sending one whose day
+            // has come. The sending itself runs in its own WP-Cron batches.
+            // Does nothing while switched off.
+            $this->newsletter?->run($windowOpen);
 
             // The post-event email: the organizers' preview from 12:00 the
-            // day before a night, the emails themselves from 12:00 the day
-            // after. Does nothing while switched off.
-            $this->followup?->run();
+            // day before a night, the emails themselves (in the window only)
+            // from 12:00 the day after. Does nothing while switched off.
+            $this->followup?->run(null, $windowOpen);
 
             // The organizers' monthly report: last month's numbers, once,
             // from the 1st. Does nothing while switched off.

@@ -18,8 +18,9 @@ use EventCrew\Repositories\TaskRepository;
  * with the month before in brackets. A table of counts, no names or
  * addresses.
  *
- * Sent from the hourly heartbeat (Scheduler), inside the send window, like
- * the newsletter and the post-event email: the heartbeat's own WP-Cron event
+ * Sent from the hourly heartbeat (Scheduler), like the newsletter and
+ * post-event email previews: at any hour, or inside the send window when
+ * SendWindow::organizersAnyHour() is off. The heartbeat's own WP-Cron event
  * is what is registered, self-healed on boot and cleared on deactivation.
  * SENT_OPTION holds the last month reported, so it goes once per month;
  * a site whose cron did not run on the 1st still sends it in the first

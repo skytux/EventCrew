@@ -256,13 +256,18 @@ final class Newsletter
     /**
      * The heartbeat's part: delete expired sign-ups, then plan, preview and
      * start the next newsletter when it is due. Called on every heartbeat.
+     *
+     * With $send false (outside the send window, when the organizers have
+     * their emails at any hour) only the organizers' part runs: planning and
+     * the preview. A newsletter whose send time has come starts at the first
+     * run with $send true.
      */
-    public function run(): void
+    public function run(bool $send = true): void
     {
         $this->subscribers->purgePending(self::daysAgo(self::PENDING_DAYS));
 
-        $this->locked(function (): void {
-            $this->runLocked();
+        $this->locked(function () use ($send): void {
+            $this->runLocked($send);
         });
     }
 
@@ -573,7 +578,7 @@ final class Newsletter
         return ['footer' => self::footer($lang, $crew), 'crew_note' => $crew ? self::crewNote($lang) : ''];
     }
 
-    private function runLocked(): void
+    private function runLocked(bool $send = true): void
     {
         $state = $this->state();
         $today = (string) current_time('Y-m-d');
@@ -600,8 +605,12 @@ final class Newsletter
         $plan = $state['plan'];
 
         if (null !== $plan && self::PLAN_SENDING === $plan['status']) {
-            // Heals a lost cron event: the batches go on.
-            self::schedule();
+            // Heals a lost cron event: the batches go on. Not outside the
+            // window, as before the organizers' emails could go at any hour.
+            if ($send) {
+                self::schedule();
+            }
+
             $this->save($state);
 
             return;
@@ -661,7 +670,7 @@ final class Newsletter
                 return;
             }
 
-            if ($now >= $sendAt) {
+            if ($now >= $sendAt && $send) {
                 $state = $this->startSending($state, $today);
             }
 

@@ -27,6 +27,7 @@
  * @var int $board_push_lead_week Hours before an open event the first board re-post goes out.
  * @var int $board_push_lead_soon Hours before an open event the second board re-post goes out.
  * @var int $notify_hour Hour of day (0-23) the scheduled notification window opens.
+ * @var bool $organizer_mail_any_hour Whether the organizer-only scheduled emails ignore that window.
  * @var int $open_task_lead_week Hours before an open date the heads-up open-task call goes out.
  * @var int $open_task_lead_soon Hours before an open date the last-call open-task call goes out.
  * @var int $door_link_lead Minutes before the night's first task start organizers get the sales desk link.
@@ -674,6 +675,18 @@ if (! defined('ABSPATH')) {
                             esc_html(wp_timezone_string())
                         );
                         ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Send emails to organizers at any hour', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="organizer_mail_any_hour" value="1" <?php checked($organizer_mail_any_hour); ?>>
+                        <?php esc_html_e('On', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('Organizer-only emails (previews, reports, role notices) go out as soon as they are due. Emails to the crew still wait for the hours above.', 'eventcrew'); ?>
                     </p>
                 </td>
             </tr>

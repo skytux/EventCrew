@@ -313,6 +313,29 @@ final class FollowupMailTest extends TestCase
         self::assertSame('anna@example.test', $this->mails[0]['to']);
     }
 
+    /**
+     * Outside the send window, with the organizers' emails at any hour
+     * (Lou 2026-11-11): the preview goes, the guests' emails wait.
+     */
+    public function testOutsideTheWindowThePreviewGoesButTheEmailsWait(): void
+    {
+        $this->buyer(1, 'Anna Example', 'anna@example.test');
+        $this->organizer();
+        $mail = $this->followup();
+
+        $mail->run(new \DateTimeImmutable('2026-11-13T10:00:00Z'), false);
+        self::assertCount(1, $this->mails);
+        self::assertSame('org@example.test', $this->mails[0]['to']);
+
+        $this->mails = [];
+        $mail->run(new \DateTimeImmutable('2026-11-15T10:00:00Z'), false);
+        self::assertSame([], $this->mails);
+
+        $mail->run(new \DateTimeImmutable('2026-11-15T11:00:00Z'));
+        self::assertCount(1, $this->mails);
+        self::assertSame('anna@example.test', $this->mails[0]['to']);
+    }
+
     public function testANightWhosePreviewNeverWentIsNotSent(): void
     {
         $this->buyer(1, 'Anna Example', 'anna@example.test');

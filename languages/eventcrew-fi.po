@@ -10700,3 +10700,11 @@ msgstr "Henkilöllä %s ei ole vahvistettua sähköpostia, joten et voi toimia h
 #: src/Telegram/GiftService.php
 msgid "That credit was already given. Send /people to give another."
 msgstr "Vapaalippu on jo annettu. Lähetä /people antaaksesi toisen."
+
+#: templates/admin/settings.php
+msgid "Send emails to organizers at any hour"
+msgstr "Järjestäjien sähköpostit milloin vain"
+
+#: templates/admin/settings.php
+msgid "Organizer-only emails (previews, reports, role notices) go out as soon as they are due. Emails to the crew still wait for the hours above."
+msgstr "Vain järjestäjille menevät sähköpostit (esikatselut, raportit, rooli-ilmoitukset) lähtevät heti, kun ne ovat ajankohtaisia. Crew'lle menevät sähköpostit odottavat yhä yllä olevia tunteja."

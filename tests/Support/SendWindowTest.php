@@ -43,6 +43,18 @@ final class SendWindowTest extends TestCase
         self::assertFalse(SendWindow::isOpen($this->at('2026-08-09 21:00:00')));
     }
 
+    /** Lou 2026-11-11: organizer emails go at any hour unless switched off. */
+    public function testOrganizerEmailsIgnoreTheWindowByDefault(): void
+    {
+        self::assertTrue(SendWindow::organizersAnyHour());
+
+        $this->options[SendWindow::ORGANIZER_ANY_HOUR_OPTION] = '0';
+        self::assertFalse(SendWindow::organizersAnyHour());
+
+        $this->options[SendWindow::ORGANIZER_ANY_HOUR_OPTION] = '1';
+        self::assertTrue(SendWindow::organizersAnyHour());
+    }
+
     public function testAnEveningWindowWrapsPastMidnight(): void
     {
         // 18:00 means open until 06:00, which needs no second rule.

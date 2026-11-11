@@ -651,6 +651,23 @@ final class SettingsPageTest extends TelegramTestCase
         self::assertStringContainsString('Credit for extra tasks on the same night', $template);
     }
 
+    public function testTheOrganizerMailAnyHourSwitchSavesAndIsOnByDefault(): void
+    {
+        $option = \EventCrew\Support\SendWindow::ORGANIZER_ANY_HOUR_OPTION;
+        self::assertTrue(\EventCrew\Support\SendWindow::organizersAnyHour());
+
+        $this->saveUntil([], $option);
+        self::assertSame('0', $this->options[$option]);
+        self::assertFalse(\EventCrew\Support\SendWindow::organizersAnyHour());
+
+        $this->saveUntil(['organizer_mail_any_hour' => '1'], $option);
+        self::assertSame('1', $this->options[$option]);
+
+        $template = (string) file_get_contents(dirname(__DIR__, 2) . '/templates/admin/settings.php');
+        self::assertStringContainsString('name="organizer_mail_any_hour"', $template);
+        self::assertStringContainsString('Send emails to organizers at any hour', $template);
+    }
+
     public function testTheSeveralTicketsSwitchSavesAndIsOnByDefault(): void
     {
         self::assertTrue(\EventCrew\Support\SeveralTickets::isOn());
