@@ -9,6 +9,7 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\AppInstallPrompt;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\CancelNote;
 use EventCrew\Support\ClaimNotifier;
@@ -296,6 +297,14 @@ final class SignupController
 
         $fresh = WebSession::mint($person->id, $now);
 
+        // A "Get the app" pop-in this session closed stays closed until the
+        // next real sign-in, not merely until this daily renewal.
+        $carried = AppInstallPrompt::carryOver($person, (int) WebSession::issuedAt($cookie, $now), $now);
+
+        if (null !== $carried) {
+            $this->people->addRoleNotices($person->id, $carried);
+        }
+
         if (! headers_sent()) {
             $this->setSessionCookie($fresh, $now + WebSession::TTL);
         }
@@ -457,6 +466,28 @@ final class SignupController
             'language_choices' => SiteLanguages::choices(),
             'telegram_login' => null === $person ? $this->telegramLoginView() : null,
             'telegram_link' => null === $person ? null : self::telegramLinkView($person),
+            'app_install' => null === $person ? null : self::appInstallView($person),
+        ];
+    }
+
+    /**
+     * The "Get the app" pop-in's inputs for the signed-in person: whether it
+     * is due (AppInstallPrompt::state(), for this session's cookie), and the
+     * app's name, icon and colour for its card.
+     *
+     * @return array{popin: bool, installed: bool, offer_notify: bool, action: string, name: string, icon: string, color: string}
+     */
+    public static function appInstallView(Person $person, ?int $now = null): array
+    {
+        $cookie = isset($_COOKIE[WebSession::COOKIE]) ? (string) $_COOKIE[WebSession::COOKIE] : '';
+        $now ??= time();
+        $pwa = new PwaController();
+
+        return AppInstallPrompt::state($person, '' === $cookie ? null : WebSession::issuedAt($cookie, $now), $now) + [
+            'action' => AppInstallController::ACTION,
+            'name' => $pwa->appShortName(),
+            'icon' => PwaController::iconUrl(192),
+            'color' => $pwa->themeColor(),
         ];
     }
 

@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Web;
 
 use Brain\Monkey\Functions;
 use EventCrew\Models\Person;
+use EventCrew\Support\AppInstallPrompt;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CheckinRepository;
@@ -722,6 +723,38 @@ final class SignupControllerTest extends TestCase
         self::assertStringContainsString('name="task_id" value="5"', $card[0]);
         self::assertMatchesRegularExpression('~data-eventcrew-confirm="[^"]*Cancel[^"]+"~', $card[0]);
         self::assertStringContainsString('<button type="submit" class="eventcrew-textlink">Cancel</button>', $card[0]);
+    }
+
+    /**
+     * Owner 2026-11-12: a signed-in person gets the "Get the app" pop-in
+     * (its script shows it only where the app can be installed), with the
+     * app's short name; a signed-out visitor gets none of it.
+     */
+    public function testTheAppPopInIsOnTheSignedInPageOnly(): void
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        Functions\when('get_bloginfo')->justReturn('Ecstatic Dance Helsinki');
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+        $this->useMeTabWpdb();
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertStringContainsString('data-popin="1"', $html);
+        self::assertStringContainsString('<dialog class="eventcrew-app-dialog"', $html);
+        self::assertStringContainsString('Get the EDH Crew app', $html);
+        self::assertStringContainsString('data-action="eventcrew_app_install"', $html);
+        self::assertStringContainsString('id="eventcrew-notifications"', $html);
+        self::assertStringContainsString('data-eventcrew-goto="eventcrew-notifications"', $html);
+
+        unset($_COOKIE[WebSession::COOKIE]);
+        $this->wpdb = new \FakeWpdb();
+        $GLOBALS['wpdb'] = $this->wpdb;
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+
+        self::assertStringNotContainsString('data-eventcrew-app', $this->controller()->renderShortcode());
     }
 
     /** The signed-in person 7 (Sam), on task 5 (2026-08-01), through MeTabWpdb. */
@@ -2134,6 +2167,22 @@ final class SignupControllerTest extends TestCase
         self::assertSame(7, WebSession::read($fresh));
         self::assertGreaterThan($issued, WebSession::issuedAt($fresh));
         self::assertSame($fresh, $_COOKIE[WebSession::COOKIE]);
+    }
+
+    /** A "Get the app" pop-in closed in this session stays closed across the daily renewal. */
+    public function testRenewalCarriesAClosedAppPopInOver(): void
+    {
+        Functions\when('is_ssl')->justReturn(true);
+        $issued = time() - 2 * DAY_IN_SECONDS;
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7, $issued);
+        $row = self::samRow() + ['role_notices' => (string) json_encode([AppInstallPrompt::KEY_CLOSED => '5,' . $issued])];
+        $this->wpdb->nextRows[] = $row;
+        $this->wpdb->nextRows[] = $row; // addRoleNotices() reads the row fresh
+
+        $fresh = (string) $this->controller()->renewSession();
+
+        $written = json_decode((string) end($this->wpdb->updates)['data']['role_notices'], true);
+        self::assertSame('5,' . WebSession::issuedAt($fresh), $written[AppInstallPrompt::KEY_CLOSED]);
     }
 
     public function testAFreshSessionIsNotRenewed(): void

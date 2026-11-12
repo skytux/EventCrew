@@ -177,6 +177,7 @@ use EventCrew\Telegram\WebhookController;
 use EventCrew\Telegram\WebLoginBot;
 use EventCrew\MailImport\MailImporter;
 use EventCrew\MailImport\MailedListImport;
+use EventCrew\Web\AppInstallController;
 use EventCrew\Web\CrewAdminAiText;
 use EventCrew\Web\CrewAdminController;
 use EventCrew\Web\CrewAdminFollowup;
@@ -456,6 +457,8 @@ final class Kernel
         NotificationPreferences::useDeviceLookup(static fn (int $personId): bool => $pushSubscriptions->hasAny($personId));
         PushNotifier::use($this->container->get(PushNotifier::class));
         $this->container->get(PushController::class)->boot();
+        // The Crew app page's "Get the app" pop-in: what the person chose.
+        $this->container->get(AppInstallController::class)->boot();
 
         // The Crew app as a page of its own, and old page addresses redirected.
         $this->container->get(CrewAppPage::class)->boot();
@@ -884,6 +887,14 @@ final class Kernel
             PushController::class,
             fn (Container $container) => new PushController(
                 $container->get(PushSubscriptionRepository::class),
+                new SessionPerson($container->get(PersonRepository::class))
+            )
+        );
+
+        $this->container->singleton(
+            AppInstallController::class,
+            fn (Container $container) => new AppInstallController(
+                $container->get(PersonRepository::class),
                 new SessionPerson($container->get(PersonRepository::class))
             )
         );

@@ -171,6 +171,18 @@ final class PwaController
             . '<script>' . $register . '</script>' . "\n";
     }
 
+    /** The app icon's address at a size (the Site Icon, else the generated one). */
+    public static function iconUrl(int $size = 192): string
+    {
+        return add_query_arg([self::PARAM => 'icon', 'size' => $size], home_url('/'));
+    }
+
+    /** The app's name under its home-screen icon, such as "EDH Crew". */
+    public function appShortName(): string
+    {
+        return $this->shortName($this->appName());
+    }
+
     private function serveIcon(): never
     {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public, read-only.

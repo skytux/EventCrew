@@ -65,6 +65,7 @@
  * @var array<string, mixed> $app_short_name The name under the home-screen icon, a TranslatedText value (blank derives one).
  * @var string $app_theme_color The app's theme colour, as a hex string.
  * @var string $app_accent_color The Crew app's accent colour, as a hex string.
+ * @var int $app_remind_days How many days Remind me later hides the Crew app's "Get the app" pop-in.
  * @var array<string, mixed> $signature The crew's sign-off, a TranslatedText value, shared by the emails and the broadcast DMs.
  * @var bool $email_html Whether notifications go out as HTML rather than plain text.
  * @var string $email_logo An explicit logo URL for emails; blank uses the site's own logo.
@@ -1245,6 +1246,24 @@ if (! defined('ABSPATH')) {
                         name="app_accent_color"
                         value="<?php echo esc_attr($app_accent_color); ?>">
                     <p class="description"><?php esc_html_e('The selected tab and the outline of the field you type in. Pick a colour that stands out from the theme colour.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-app-remind-days"><?php esc_html_e('Remind about the app after', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <input
+                        type="number"
+                        id="eventcrew-app-remind-days"
+                        name="app_remind_days"
+                        min="1"
+                        max="<?php echo esc_attr((string) \EventCrew\Support\AppInstallPrompt::MAX_REMIND_DAYS); ?>"
+                        step="1"
+                        class="small-text"
+                        value="<?php echo esc_attr((string) $app_remind_days); ?>">
+                    <?php esc_html_e('days', 'eventcrew'); ?>
+                    <p class="description"><?php esc_html_e('Signed-in people who have not installed the Crew app see a pop-in offering it. Remind me later hides it for this many days.', 'eventcrew'); ?></p>
                 </td>
             </tr>
         </table>

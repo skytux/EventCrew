@@ -125,8 +125,9 @@ final class PersonEraser
         // name. They are not attendance numbers, so they go.
         $this->takeovers->deleteForPerson($personId);
         // What they said when joining (worked here before, how often, the
-        // tickets they think they should have) is about them, so it goes.
-        $this->people->replaceRoleNotices($personId, JoinAnswers::KEYS);
+        // tickets they think they should have) is about them, so it goes;
+        // so does what they did with the "Get the app" pop-in.
+        $this->people->replaceRoleNotices($personId, array_merge(JoinAnswers::KEYS, AppInstallPrompt::KEYS));
 
         // Muted: the organizer flag cleared here is part of the erasure, not
         // a change of its own.

@@ -6,6 +6,7 @@ namespace EventCrew\Admin;
 
 use EventCrew\Models\Task;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\AppInstallPrompt;
 use EventCrew\Support\AssistantKnowledge;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\BackgroundJobs;
@@ -231,6 +232,7 @@ final class SettingsPage
                     get_option(PwaController::ACCENT_OPTION, '')
                     ?: get_option(PwaController::COLOR_OPTION, PwaController::DEFAULT_COLOR)
                 ),
+                'app_remind_days' => AppInstallPrompt::remindDays(),
                 'signature' => SiteTexts::value('signature'),
                 'email_html' => EmailTemplate::enabled(),
                 'email_logo' => (string) get_option(EmailTemplate::LOGO_OPTION, ''),
@@ -915,6 +917,10 @@ final class SettingsPage
 
         if ('' !== (string) $accentColor) {
             update_option(PwaController::ACCENT_OPTION, $accentColor);
+        }
+
+        if (isset($_POST['app_remind_days'])) {
+            AppInstallPrompt::saveRemindDays(sanitize_text_field(wp_unslash((string) $_POST['app_remind_days'])));
         }
         $this->savePrivacy();
         $assistantError = $this->saveAssistant();

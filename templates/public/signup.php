@@ -996,7 +996,7 @@ if ($eventcrew_link_expired) {
             <?php endif; ?>
 
             <?php if ('' !== $eventcrew_prefs_action && [] !== $eventcrew_notify_matrix) : ?>
-                <section class="eventcrew-event eventcrew-me-card">
+                <section class="eventcrew-event eventcrew-me-card" id="eventcrew-notifications">
                 <header class="eventcrew-event-head">
                     <h3 class="eventcrew-event-title"><?php esc_html_e('Notifications', 'eventcrew'); ?></h3>
                 </header>
@@ -2856,6 +2856,11 @@ if ($eventcrew_link_expired) {
         <?php endif; ?>
         <?php
     endif; ?>
+    <?php
+    // The "Get the app" pop-in, signed in only (nothing when signed out).
+    $eventcrew_app_install = is_array($view['app_install'] ?? null) ? $view['app_install'] : null;
+    require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-app-install.php';
+    ?>
     <?php
     /*
      * "Install the app": a text link, hidden in the HTML and shown by the

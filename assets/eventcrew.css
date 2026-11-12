@@ -1376,3 +1376,54 @@
     display: block;
     font-size: clamp(1.2em, 4vw, 2em); font-weight: 700; line-height: 1.2;
 }
+
+/*
+ * The "Get the app" pop-in (signup-app-install.php): a native modal
+ * <dialog>, centred over a dim backdrop. It sits inside .eventcrew-signup,
+ * so it inherits the page's text colour and tokens and reads the same on a
+ * light or a dark page; the surface is the page's own background. The hero
+ * is the app icon on a soft fade of the app's theme colour
+ * (--eventcrew-app-color, set inline from Settings): no picture to load.
+ */
+.eventcrew-signup .eventcrew-app-dialog {
+    width: min(26rem, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px);
+    margin: auto; padding: 0; overflow: auto;
+    border: 1px solid var(--eventcrew-line); border-radius: calc(var(--eventcrew-radius) * 2);
+    background: var(--eventcrew-page-bg, var(--wp--preset--color--base, Canvas)); color: inherit;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .3);
+}
+.eventcrew-signup .eventcrew-app-dialog::backdrop { background: rgba(0, 0, 0, .55); }
+.eventcrew-signup .eventcrew-app-card { position: relative; padding: 0 1.25em 1.25em; text-align: center; }
+.eventcrew-signup .eventcrew-app-hero {
+    display: flex; justify-content: center; align-items: center;
+    margin: 0 -1.25em 1em; padding: 1.75em 1em 1.5em;
+    background:
+        radial-gradient(circle at 50% 120%, color-mix(in srgb, var(--eventcrew-app-color, #4a6cf7) 45%, transparent), transparent 70%),
+        linear-gradient(160deg, color-mix(in srgb, var(--eventcrew-app-color, #4a6cf7) 28%, transparent), color-mix(in srgb, var(--eventcrew-app-color, #4a6cf7) 6%, transparent));
+}
+.eventcrew-signup .eventcrew-app-hero img {
+    width: 72px; height: 72px; border-radius: 18px; box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
+}
+.eventcrew-signup .eventcrew-app-close {
+    position: absolute; top: .35em; right: .35em; z-index: 1;
+    width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%;
+    background: transparent; color: inherit; font: inherit; font-size: 1.6em; line-height: 1;
+    cursor: pointer; opacity: .75;
+}
+.eventcrew-signup .eventcrew-app-close:hover,
+.eventcrew-signup .eventcrew-app-close:focus-visible { opacity: 1; background: color-mix(in srgb, currentColor 12%, transparent); }
+.eventcrew-signup .eventcrew-app-title { margin: 0 0 .4em; font-size: 1.35em; line-height: 1.25; }
+.eventcrew-signup .eventcrew-app-step > p { margin: 0 0 1em; }
+.eventcrew-signup .eventcrew-app-actions { display: flex; flex-direction: column; align-items: stretch; gap: .6em; }
+.eventcrew-signup .eventcrew-app-actions > button { width: 100%; margin: 0; min-width: 0; }
+.eventcrew-signup .eventcrew-app-how { margin: 0; padding: 0; list-style: none; text-align: left; }
+.eventcrew-signup .eventcrew-app-how li {
+    display: flex; align-items: center; gap: .75em; padding: .55em 0;
+    border-top: 1px solid var(--eventcrew-line);
+}
+.eventcrew-signup .eventcrew-app-how li:first-child { border-top: 0; }
+.eventcrew-signup .eventcrew-app-how svg,
+.eventcrew-signup .eventcrew-app-how img { flex: none; width: 24px; height: 24px; border-radius: 6px; }
+.eventcrew-signup .eventcrew-app-how svg {
+    fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}

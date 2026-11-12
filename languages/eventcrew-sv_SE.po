@@ -13752,3 +13752,38 @@ msgstr "På iPhone fungerar aviseringar när du har lagt till sidan på hemskär
 
 msgid "Could not turn on notifications. Try again."
 msgstr "Det gick inte att slå på aviseringar. Försök igen."
+
+#. translators: %s: the app's short name, like "EDH Crew".
+msgid "Get the %s app"
+msgstr "Skaffa appen %s"
+
+msgid "Useful notifications you choose. No need for Telegram."
+msgstr "Nyttiga aviseringar som du väljer. Telegram behövs inte."
+
+msgid "Remind me later"
+msgstr "Påminn mig senare"
+
+msgid "Add it to your Home Screen"
+msgstr "Lägg till den på hemskärmen"
+
+msgid "Tap Share in the browser bar."
+msgstr "Tryck på Dela i webbläsarfältet."
+
+msgid "Choose Add to Home Screen."
+msgstr "Välj Lägg till på hemskärmen."
+
+#. translators: %s: the app's short name, like "EDH Crew".
+msgid "Open %s from your Home Screen."
+msgstr "Öppna %s från hemskärmen."
+
+msgid "Turn on notifications"
+msgstr "Slå på aviseringar"
+
+msgid "Then choose which notices reach you in the app."
+msgstr "Välj sedan vilka aviseringar du får i appen."
+
+msgid "Remind about the app after"
+msgstr "Påminn om appen efter"
+
+msgid "Signed-in people who have not installed the Crew app see a pop-in offering it. Remind me later hides it for this many days."
+msgstr "Inloggade som inte har installerat Crew-appen ser en ruta som erbjuder den. Påminn mig senare döljer den så här många dagar."
