@@ -20,8 +20,11 @@ abstract class SalesDeskTestCase extends TelegramTestCase
         parent::setUp();
 
         Functions\when('admin_url')->alias(static fn (string $path = ''): string => 'https://site.test/wp-admin/' . $path);
+        // Both of WordPress's forms: (array $args, $url) and ($key, $value, $url).
         Functions\when('add_query_arg')->alias(
-            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+            static fn (array|string $args, string $url, ?string $third = null): string => is_array($args)
+                ? $url . '?' . http_build_query($args)
+                : (string) $third . '?' . http_build_query([$args => $url])
         );
         Functions\when('get_the_title')->justReturn('');
         Functions\when('wp_mail')->justReturn(true);
