@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.216
+Stable tag: 1.140.217
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,13 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.217 =
+* Crew app: you stay signed in as long as you use it at least once in 30 days.
+* Crew app: installed on a phone, it stays on the Crew app pages; other links open in the browser.
+* Sign-in email: also has a 6-digit code to type in the app, for the home-screen app on iPhone.
+* Crew app: Install the app link at the foot of the page (Android install prompt, iPhone how-to).
+* Settings: App short name, shown under the home-screen icon; blank gives EDH Crew here.
 
 = 1.140.216 =
 * Settings: new tick Send emails to organizers at any hour (on by default); organizer notices, the monthly report and previews no longer wait for the sending window.
@@ -2022,6 +2029,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.217 =
+No settings change.
 
 = 1.140.216 =
 No settings change.

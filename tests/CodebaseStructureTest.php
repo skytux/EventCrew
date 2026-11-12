@@ -123,8 +123,9 @@ final class CodebaseStructureTest extends TestCase
      * it ends in exit() - and the shape of the mistake (a form and a handler
      * that stopped agreeing) is exactly what a structural check can see.
      *
-     * The sign-in form is the one exemption: it is posted by somebody who has
-     * no session yet, and its action is handled before the gate.
+     * The sign-in form and the sign-in code form are the exemptions: they are
+     * posted by somebody who has no session yet, and their actions are handled
+     * before the gate (the code form is guarded by a same-origin check).
      */
     public function testEveryPostingFormOnTheCrewPageCarriesTheCsrfToken(): void
     {
@@ -145,7 +146,7 @@ final class CodebaseStructureTest extends TestCase
                 continue;
             }
 
-            if (str_contains($form, 'data-eventcrew-signin')) {
+            if (str_contains($form, 'data-eventcrew-signin') || str_contains($form, 'data-eventcrew-code')) {
                 continue;
             }
 
