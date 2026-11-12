@@ -3225,10 +3225,6 @@ msgstr "登録"
 msgid "Join the Telegram group"
 msgstr "Telegram グループに参加"
 
-#: src/Support/FollowupMail.php:1328
-msgid "Join the announcement"
-msgstr "お知らせに登録"
-
 #: src/Admin/NewsletterPage.php:347
 msgid "Joins and leaves over time, with the sent newsletters marked"
 msgstr "登録と解除の推移（送信したニュースレターに印付き）"

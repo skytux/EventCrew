@@ -3427,10 +3427,6 @@ msgstr "Gå med på webben"
 msgid "Join on Telegram"
 msgstr "Gå med i Telegram"
 
-#: src/Support/FollowupMail.php:1322
-msgid "Join the announcement"
-msgstr "Gå med i utskicket"
-
 #: src/Admin/NewsletterPage.php:347
 msgid "Joins and leaves over time, with the sent newsletters marked"
 msgstr "Anslutna och lämnade över tid, med skickade nyhetsbrev markerade"

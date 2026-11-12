@@ -5346,9 +5346,6 @@ msgstr "Liity verkossa"
 msgid "Join on Telegram"
 msgstr "Liity Telegramissa"
 
-msgid "Join the announcement"
-msgstr "Tilaa tiedote"
-
 msgid "Off by default. When it is on, everyone who had a ticket to an event and gave an email address gets a short email the day after at 12:00: a thank-you if they were checked in at the door, and a kind “sorry we missed you” if they were not. Both show the next three events. The day before the event at 12:00, every organizer gets a preview with a Stop button; the Roster page has the same button."
 msgstr "Oletuksena pois päältä. Kun se on päällä, jokainen, jolla oli lippu tapahtumaan ja joka antoi sähköpostiosoitteensa, saa tapahtumaa seuraavana päivänä klo 12.00 lyhyen viestin: kiitoksen, jos hänet merkittiin sisään ovella, ja lämpimän ”harmi, ettet päässyt” -viestin, jos ei. Kummassakin näkyvät kolme seuraavaa tapahtumaa. Tapahtumaa edeltävänä päivänä klo 12.00 jokainen järjestäjä saa esikatselun, jossa on Pysäytä-painike; Läsnäolo-sivulla on sama painike."
 

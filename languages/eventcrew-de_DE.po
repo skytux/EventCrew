@@ -3263,10 +3263,6 @@ msgstr "Beitreten"
 msgid "Join the Telegram group"
 msgstr "Der Telegram-Gruppe beitreten"
 
-#: src/Support/FollowupMail.php:1328
-msgid "Join the announcement"
-msgstr "Ankündigung abonnieren"
-
 #: src/Admin/NewsletterPage.php:347
 msgid "Joins and leaves over time, with the sent newsletters marked"
 msgstr "Anmeldungen und Abmeldungen im Zeitverlauf, mit markierten verschickten Newslettern"

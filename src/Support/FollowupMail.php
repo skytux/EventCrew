@@ -1574,7 +1574,7 @@ final class FollowupMail
         return [
             'body' => $body,
             'subject' => MessageTemplates::subject($id, $context),
-            'join' => __('Join the announcement', 'eventcrew'),
+            'join' => __('Subscribe', 'eventcrew'),
             'optout' => __("Don't send me these", 'eventcrew'),
             // The subscribe button's line; leaving stays one click away.
             'invite' => __('Stay in touch: one email before each event, nothing else. You can leave any time.', 'eventcrew'),

@@ -3225,10 +3225,6 @@ msgstr "加入"
 msgid "Join the Telegram group"
 msgstr "加入 Telegram 群"
 
-#: src/Support/FollowupMail.php:1328
-msgid "Join the announcement"
-msgstr "加入公告"
-
 #: src/Admin/NewsletterPage.php:347
 msgid "Joins and leaves over time, with the sent newsletters marked"
 msgstr "随时间变化的加入和退出，并标出已发送的新闻通讯"

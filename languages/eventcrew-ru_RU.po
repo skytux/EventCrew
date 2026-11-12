@@ -3265,10 +3265,6 @@ msgstr "Присоединиться"
 msgid "Join the Telegram group"
 msgstr "Вступить в группу Telegram"
 
-#: src/Support/FollowupMail.php:1328
-msgid "Join the announcement"
-msgstr "Подписаться на рассылку"
-
 #: src/Admin/NewsletterPage.php:347
 msgid "Joins and leaves over time, with the sent newsletters marked"
 msgstr "Подписки и отписки во времени, с отметками об отправленных рассылках"

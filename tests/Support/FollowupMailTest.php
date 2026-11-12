@@ -994,7 +994,7 @@ final class FollowupMailTest extends TestCase
                 self::assertSame(1, substr_count($body, 'https://cdn.test/' . $id . '.jpg'), 'a Later picture');
                 self::assertStringContainsString('width="80" alt="Ecstatic Dance ' . $id . '"', $body);
             }
-            self::assertStringContainsString('Tilaa tiedote', $body, 'the announcement invite');
+            self::assertStringContainsString('Tilaa<br>Subscribe', $body, 'the announcement invite');
 
             // Every link goes through the counted redirect, with the campaign.
             preg_match_all('/eventcrew_go=([A-Za-z0-9_.\-]+)/', $body, $tokens);
@@ -1212,7 +1212,7 @@ final class FollowupMailTest extends TestCase
         );
         self::assertMatchesRegularExpression('~>FI</span>&nbsp; Pidetään yhteyttä~', $mail['html'], 'the invitation');
         self::assertMatchesRegularExpression('~>EN</span>&nbsp; Stay in touch~', $mail['html']);
-        self::assertStringContainsString('Tilaa tiedote<br>Join the announcement', $mail['html'], 'the button, one language per row');
+        self::assertStringContainsString('Tilaa<br>Subscribe', $mail['html'], 'the button, one language per row');
         self::assertSame(
             6,
             substr_count($mail['html'], '</span>&nbsp; '),
@@ -1344,7 +1344,7 @@ final class FollowupMailTest extends TestCase
 
         $mail = $this->followup()->compose(self::NIGHT, true, 'Anna', 'b', 1);
 
-        self::assertStringNotContainsString('Join the announcement', $mail['html']);
+        self::assertStringNotContainsString('Tilaa<br>Subscribe', $mail['html']);
     }
 
     /** Neither version has a "See the coming events" button, in HTML or plain text. */
@@ -1401,7 +1401,7 @@ final class FollowupMailTest extends TestCase
         self::assertStringContainsString("Liity verkossa\nJoin on the web: ", $mail['text']);
         self::assertStringContainsString("Liity Telegramissa\nJoin on Telegram: ", $mail['text']);
 
-        $join = strpos($html, 'Join the announcement');
+        $join = strpos($html, 'Subscribe</');
         $crew = strpos($html, 'The evening was made by our crew');
         $optOut = strpos($html, "Don't send me these");
         self::assertNotFalse($join);
