@@ -10788,10 +10788,10 @@ msgid "Shown under the home-screen icon, 12 characters at most. Blank uses the a
 msgstr "Näkyy aloitusnäytön kuvakkeen alla, enintään 12 merkkiä. Tyhjänä käytetään sovelluksen nimeä, jos se mahtuu, muuten sen alkukirjaimia ja ”Crew”."
 
 msgid "Signup confirmations and task reminders are always sent on every channel."
-msgstr "Ilmoittautumisvahvistukset ja tehtävämuistutukset lähetetään aina kaikkia kanavia."
+msgstr "Ilmoittautumisvahvistukset ja tehtävämuistutukset lähetetään aina kaikilla kanavilla."
 
 msgid "🔔 Your notifications — tap to toggle 📱 Telegram, ✉ email or 🔔 app.\n\nSignup confirmations and task reminders always send on every channel."
-msgstr "🔔 Ilmoituksesi — napauta, niin 📱 Telegram, ✉ sähköposti tai 🔔 sovellus menee päälle tai pois.\n\nIlmoittautumisvahvistukset ja tehtävämuistutukset lähetetään aina kaikkia kanavia."
+msgstr "🔔 Ilmoituksesi — kytke 📱 Telegram, ✉ sähköposti tai 🔔 sovellus päälle tai pois napauttamalla.\n\nIlmoittautumisvahvistukset ja tehtävämuistutukset lähetetään aina kaikilla kanavilla."
 
 msgctxt "notification channel"
 msgid "App"
