@@ -559,10 +559,12 @@ final class NewcomerApproval
         $context = ['member' => $person];
         $prefs = new NotificationPreferences();
 
-        // The app only tells: OK and No are in the bot and the wp-admin.
-        $pushed = PushNotifier::notify($organizer, NotificationPreferences::NEWCOMER, MessageTemplates::body('newcomer_waiting_dm', $context));
+        // The app only tells: OK and No are in the bot and the wp-admin, so
+        // the DM goes even to an organizer who chose App only (Lou,
+        // 2026-11-13: always send the newcomer approval DM).
+        PushNotifier::notify($organizer, NotificationPreferences::NEWCOMER, MessageTemplates::body('newcomer_waiting_dm', $context));
 
-        if ($prefs->dmWanted($organizer, NotificationPreferences::NEWCOMER, $pushed)) {
+        if ($prefs->dmAllowed($organizer, NotificationPreferences::NEWCOMER)) {
             $chatId = (int) $organizer->telegramChatId;
             $messageId = $this->sendRequest($chatId, $organizer, $person, '', self::markup($person->id));
 

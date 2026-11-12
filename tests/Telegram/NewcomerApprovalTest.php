@@ -7,10 +7,14 @@ namespace EventCrew\Tests\Telegram;
 use Brain\Monkey\Functions;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\PushSubscriptionRepository;
+use EventCrew\Support\ChannelChoice;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\NewcomerApproval;
+use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\PushNotifier;
 use EventCrew\Support\Roles;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\MenuButtons;
@@ -359,6 +363,36 @@ final class NewcomerApprovalTest extends TelegramTestCase
 
         self::assertNotNull($this->lastCallTo('sendMessage'));
         self::assertSame([], $this->mails);
+    }
+
+    public function testAnAppOnlyOrganizerStillGetsTheDmWithItsButtons(): void
+    {
+        // Owner 2026-11-13: the OK and No buttons are only in the DM.
+        NotificationPreferences::useDeviceLookup(static fn (int $id): bool => true);
+        PushNotifier::use(new class () extends PushNotifier {
+            public function __construct()
+            {
+                parent::__construct(new PushSubscriptionRepository());
+            }
+
+            public function send(Person $person, string $type, string $text, string $url = ''): int
+            {
+                return 1;
+            }
+        });
+        $this->telegramResults['sendMessage'] = ['message_id' => 71];
+        $this->wpdb->nextRows[] = self::sam();
+        $this->wpdb->nextRows[] = self::sam();
+        $this->wpdb->nextResults[] = [
+            self::kim() + ['role_notices' => json_encode([ChannelChoice::KEY => ChannelChoice::APP])],
+        ];
+
+        $this->approval()->onEmailVerified(8);
+
+        $dm = $this->lastCallTo('sendMessage');
+        self::assertNotNull($dm);
+        self::assertSame(555, $dm['chat_id']);
+        self::assertArrayHasKey('reply_markup', $dm);
     }
 
     public function testAnOrganizerWhoTurnedBothOffIsNotAsked(): void
