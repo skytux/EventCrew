@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.217
+Stable tag: 1.140.218
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.218 =
+* Crew app: push notifications. Turn them on per device with the link under Notifications; on iPhone after adding the app to the Home Screen (iOS 16.4+).
+* Notifications: new App column on the web and in the bot, next to Telegram and email. Existing accounts get App on only for the types where both Telegram and email were on.
 
 = 1.140.217 =
 * Crew app: you stay signed in as long as you use it at least once in 30 days.
@@ -2029,6 +2033,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.218 =
+No settings change.
 
 = 1.140.217 =
 No settings change.
