@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.221
+Stable tag: 1.140.222
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.222 =
+* Crew app: a box under the menu where signed-in crew can type or speak (🎤) what they want to do; the bot's assistant answers in a pop-in, with Confirm for sign-ups and cancellations, buttons to the right tab, or Open in Telegram for bot-only things.
 
 = 1.140.221 =
 * Crew app: Chat tab shows the crew Telegram group (last 30 days) and lets signed-in crew post to it; the bot posts as Name (web). Organizers can hide messages. Off until switched on in Settings (Group chat on the web).
@@ -2046,6 +2049,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.222 =
+No settings change.
 
 = 1.140.221 =
 No settings change.
