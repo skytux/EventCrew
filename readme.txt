@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.225
+Stable tag: 1.140.226
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.226 =
+* Notifications: people who get both app notifications and Telegram DMs choose where they go: App only, Telegram only or Both. Until they choose, both come. Asked once (after turning on app notifications, when Telegram gets linked, or on a later Crew app visit); changeable later under When both are on, on the web and in the bot. App only falls back to Telegram when no device got the notification.
 
 = 1.140.225 =
 * Crew app: the install pop-in comes back after the app is removed. Android and computers ask the browser; where it can tell the app is still installed, a small Open in the app link shows instead. On iPhone it comes back when the app has not been opened for the remind days.
@@ -2059,6 +2062,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.226 =
+No settings change.
 
 = 1.140.225 =
 No settings change.
