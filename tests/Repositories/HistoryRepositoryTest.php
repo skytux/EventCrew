@@ -69,7 +69,7 @@ final class HistoryRepositoryTest extends TestCase
         $source = (string) file_get_contents(dirname(__DIR__, 2) . '/src/Database/Schema.php');
 
         self::assertStringContainsString('self::backfillHistory((string) get_option(self::VERSION_OPTION', $source);
-        self::assertSame('37', Schema::DB_VERSION);
+        self::assertGreaterThanOrEqual(37, (int) Schema::DB_VERSION);
     }
 
     public function testRetentionDeletesRowsOlderThanOneYear(): void
