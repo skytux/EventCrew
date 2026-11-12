@@ -11644,8 +11644,8 @@ msgid "See you next time!"
 msgstr "Bis zum nächsten Mal!"
 
 #: src/Support/FollowupMail.php
-msgid "Get an email when new events come out. You can leave any time."
-msgstr "Erhalte eine E-Mail, wenn neue Events erscheinen. Abmelden geht jederzeit."
+msgid "Stay in touch: one email before each event, nothing else. You can leave any time."
+msgstr "Bleib in Kontakt: eine E-Mail vor jedem Event, sonst nichts. Abmelden geht jederzeit."
 
 #: src/Support/FollowupMail.php
 msgid "The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."

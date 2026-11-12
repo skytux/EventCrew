@@ -19,7 +19,7 @@ use EventCrew\Tests\TestCase;
  */
 final class SwedishLanguageTest extends TestCase
 {
-    private const INVITE = 'Get an email when new events come out. You can leave any time.';
+    private const INVITE = 'Stay in touch: one email before each event, nothing else. You can leave any time.';
 
     protected function setUp(): void
     {
@@ -48,7 +48,7 @@ final class SwedishLanguageTest extends TestCase
 
         self::assertSame('sv_SE', $locale);
         self::assertSame('Hej,', $hello);
-        self::assertStringStartsWith('Få ett mejl när nya evenemang kommer ut.', $invite);
+        self::assertStringStartsWith('Håll kontakten: ett mejl före varje evenemang', $invite);
     }
 
     public function testTheSwedishRowOfAMessageInEveryLanguageIsSwedish(): void

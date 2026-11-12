@@ -40,7 +40,9 @@ namespace EventCrew\Support;
  *      block of Finnish lines with a small FI label and one block of English
  *      lines with a small EN label.
  *    - A "Buy a ticket" button with the price that opens the ticket shop, or
- *      "Sold out" for a sold-out event.
+ *      "Sold out" for a sold-out event. Filled with the accent in the
+ *      announcement; outlined and smaller in the post-event email, whose
+ *      invitation to join the announcement comes first ($quietTickets).
  *    - A "Listen to the DJ" button when the event has the DJ's music page
  *      (an email cannot play music itself, so it opens the page), on three
  *      lines: the ▶ icon, the Finnish words, the English words.
@@ -121,6 +123,11 @@ final class NewsletterLayout
      *        the only practical line is the doors close time. False (the
      *        post-event email) keeps the venue, the address and both door
      *        times.
+     * @param bool $quietTickets True for outlined, smaller "Buy a ticket"
+     *        buttons (the accent edge and text on white): the post-event
+     *        email, where the invitation to join the announcement above them
+     *        has the strongest button (Owner, 2026-11-12). False keeps them
+     *        filled with the accent.
      */
     public static function html(
         array $cards,
@@ -130,7 +137,8 @@ final class NewsletterLayout
         string $lang = '',
         bool $band = false,
         string $kind = HybridPolicy::NEWSLETTER,
-        bool $announcement = false
+        bool $announcement = false,
+        bool $quietTickets = false
     ): string {
         $langs = self::languages($lang, $kind);
         $words = self::words($langs);
@@ -167,7 +175,7 @@ final class NewsletterLayout
         $html .= self::bilingual(self::inLanguage(self::byLanguage($text ?? [], ''), $langs), '0 0 24px');
 
         foreach ($cards as $card) {
-            $html .= self::cardHtml($card, $words, $accent, $langs, $announcement);
+            $html .= self::cardHtml($card, $words, $accent, $langs, $announcement, $quietTickets);
         }
 
         if ([] !== $later) {
@@ -340,7 +348,8 @@ final class NewsletterLayout
         array $words,
         string $accent,
         array $langs,
-        bool $announcement = false
+        bool $announcement = false,
+        bool $quietTickets = false
     ): string {
         $font = EmailBody::FONT;
         $ticket = (string) ($card['ticket_url'] ?? '');
@@ -477,6 +486,23 @@ final class NewsletterLayout
                 $font,
                 self::MUTED_COLOR,
                 self::pairHtml(self::pair($words, 'sold_out'))
+            );
+        } elseif ('' !== $ticket && $quietTickets) {
+            $body .= sprintf(
+                '<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
+                    . ' style="margin:4px auto 16px">'
+                    . '<tr><td align="center" style="border-radius:999px;background:#ffffff;'
+                    . 'border:1.5px solid %1$s">'
+                    . '<a href="%2$s" style="display:inline-block;text-align:center;padding:10px 20px;'
+                    . 'font-family:%3$s;font-size:14px;'
+                    . 'font-weight:600;line-height:1.2;color:%4$s;text-decoration:none;border-radius:999px">%5$s</a>'
+                    . '</td></tr></table>',
+                esc_attr($accent),
+                esc_url($ticket),
+                $font,
+                // The accent as text only when it reads on white (a dark accent).
+                '#ffffff' === EmailBody::readableOn($accent) ? esc_attr($accent) : self::TEXT_COLOR,
+                self::pairHtml(self::buyLabel($card, $words))
             );
         } elseif ('' !== $ticket) {
             $body .= sprintf(

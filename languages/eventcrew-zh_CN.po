@@ -11546,8 +11546,8 @@ msgid "See you next time!"
 msgstr "下次见！"
 
 #: src/Support/FollowupMail.php
-msgid "Get an email when new events come out. You can leave any time."
-msgstr "有新活动时收到邮件。可随时退订。"
+msgid "Stay in touch: one email before each event, nothing else. You can leave any time."
+msgstr "保持联系：每场活动前一封邮件，仅此而已。可随时退订。"
 
 #: src/Support/FollowupMail.php
 msgid "The evening was made by our crew: the people who worked behind the scenes so everyone else could dance. Would you like to join them? It is a lovely way to get to know people, feel useful and save on tickets."

@@ -30,13 +30,25 @@ use EventCrew\Web\NewsletterController;
  * the Messages page subject. The one-time texts are removed once the next night's
  * emails are all sent, or when that night (its preview sent) is stopped or
  * left too late to send.
- * Under the text are the coming events the way the next events announcement
+ * Right under the text, while the announcement is switched on and the
+ * address is not a confirmed subscriber of it yet, comes the invitation to
+ * join it: the email's main goal, before the tickets (Owner, 2026-11-12). It
+ * sits in a soft panel with the email's biggest, darkest button
+ * (joinInvite()). The button (?eventcrew_join=<token>) carries a signed link
+ * to this one ticket holder's row: pressing it subscribes that row's address
+ * as confirmed, with the first word of the ticket holder's name as the name
+ * to greet them with (joinClick()). The press comes from the mailbox the
+ * email went to, so no confirmation email follows. A preview's or a test's
+ * button subscribes nobody; a preview and a test always show the invitation.
+ * Then the coming events the way the next events announcement
  * shows them (Newsletter::content()): its heading, the next one as a card
  * with its picture and the rest as short lines with small pictures under
  * "Later". The card never shows the event's description. Right under its
  * picture is the event's short DJ or host text in the email's languages
  * (BoardDjText, withAbout()), written and translated in the background from
- * the day before the night (scheduleTexts()). It also shows a short
+ * the day before the night (scheduleTexts()). Its "Buy a ticket" buttons
+ * are outlined and smaller than the announcement's, below the invitation's.
+ * It also shows a short
  * text the language model wrote for this email only (two sentences in the
  * style of the event's DJ, in English and in Finnish) and the event's
  * practical information. Both are written once per night in a background
@@ -48,13 +60,6 @@ use EventCrew\Web\NewsletterController;
  * in any language (NewsletterLayout, Owner, 2026-11-08): one description under
  * the picture. Nothing is written while an email is put together. A newly written text
  * sends no second preview: the preview goes out once per night.
- * Then, while the announcement is switched on, an invitation to join it.
- * Its button (?eventcrew_join=<token>) carries a signed link to this one
- * ticket holder's row: pressing it subscribes that row's address as
- * confirmed, with the first word of the ticket holder's name as the name to
- * greet them with (joinClick()). The press comes from the mailbox the email
- * went to, so no confirmation email follows. A preview's or a test's button
- * subscribes nobody.
  * Then, in the thank-you only (Owner, 2026-11-07), a word for the crew who
  * made the night happen and an invitation to join it (to get to know people,
  * feel useful and save on tickets), with up to two buttons: Join on the web
@@ -809,11 +814,19 @@ final class FollowupMail
      * One email: subject, the HTML content for the email template, the
      * plain-text alternative and the List-Unsubscribe headers of its "Don't
      * send me these" link. $kind and $rowId go into the counted links.
+     * $subscribed (the address already gets the announcement) leaves the
+     * invitation to join it out.
      *
      * @return array{subject: string, html: string, text: string, headers: list<string>}
      */
-    public function compose(string $date, bool $came, string $name, string $kind, int $rowId): array
-    {
+    public function compose(
+        string $date,
+        bool $came,
+        string $name,
+        string $kind,
+        int $rowId,
+        bool $subscribed = false
+    ): array {
         $shortDate = TicketMail::shortDate($date);
         $variant = $came ? FollowupText::CAME : FollowupText::MISSED;
         // Ticket holders have no stored language: every site language when
@@ -857,7 +870,25 @@ final class FollowupMail
             $coming
         );
 
+        // First after the text, while the announcement is on and the address
+        // does not get it yet: the invitation to join it, the strongest button
+        // of the email (Owner, 2026-11-12).
+        $invited = Newsletter::enabled() && ! $subscribed;
+
+        if ($invited) {
+            $invite = self::joinInvite(
+                HybridPolicy::field($parts, 'invite'),
+                $pair('join'),
+                // Not a counted link: the join link counts the click itself,
+                // and subscribes this row's address (joinClick()).
+                self::joinUrl($kind, $rowId, $campaign)
+            );
+            $html .= $invite['html'];
+            $text .= $invite['text'];
+        }
+
         // No coming events, no events part: the newsletter is not sent then.
+        // Its ticket buttons are outlined, below the invitation's.
         if ([] !== $events) {
             $coming = Newsletter::content(
                 self::withAbout($this->withWritten($date, array_slice($events, 0, self::EVENTS))),
@@ -865,32 +896,12 @@ final class FollowupMail
                 null,
                 1 === count($languages) ? $languages[0] : '',
                 true,
-                HybridPolicy::FOLLOWUP
+                HybridPolicy::FOLLOWUP,
+                false,
+                true
             );
             $html .= '<div style="margin:28px 0 0">' . $coming['html'] . '</div>';
-            $text .= "\n\n" . $coming['text'];
-        }
-
-        if (Newsletter::enabled()) {
-            $invites = HybridPolicy::field($parts, 'invite');
-            $join = [[
-                'label' => $pair('join'),
-                // Not a counted link: the join link counts the click itself,
-                // and subscribes this row's address (joinClick()).
-                'url' => self::joinUrl($kind, $rowId, $campaign),
-            ]];
-            $html .= '<hr style="border:0;border-top:1px solid #e3e3e8;margin:8px 0 20px">'
-                . (HybridPolicy::differ($invites)
-                    ? implode('', array_map(
-                        static fn (string $invite, string $tag): string
-                            => EmailBody::toHtml($invite, [], $accent, $tag),
-                        $invites,
-                        HybridPolicy::tags($invites)
-                    ))
-                    : EmailBody::toHtml(implode("\n\n", $invites)))
-                . EmailBody::centred(EmailBody::toHtml('', $join, $accent));
-            $text .= "\n\n————————\n\n" . implode("\n\n", $invites)
-                . "\n\n" . ltrim(EmailBody::toText('', $join));
+            $text .= ($invited ? "\n\n————————\n\n" : "\n\n") . $coming['text'];
         }
 
         // The thank-you only: the crew, and how to join it.
@@ -916,6 +927,70 @@ final class FollowupMail
             'html' => $html,
             'text' => $text,
             'headers' => self::unsubscribeHeaders($optOut),
+        ];
+    }
+
+    /** The background, edge, button and button text colours of joinInvite(). */
+    private const INVITE_BACKGROUND = '#fff4e6';
+    private const INVITE_EDGE = '#ffc98f';
+    private const INVITE_BUTTON = '#241238';
+    private const INVITE_BUTTON_TEXT = '#ffffff';
+
+    /**
+     * The invitation to join the announcement, HTML and plain text: a soft
+     * panel with each language's line ($invites, language => text, with its
+     * FI / EN tag when they differ) and one big dark button ($label, one
+     * language per row) to $url. It is the strongest button of the email:
+     * larger and darker than the events' outlined ticket buttons below it.
+     *
+     * @param array<string, string> $invites
+     * @return array{html: string, text: string}
+     */
+    private static function joinInvite(array $invites, string $label, string $url): array
+    {
+        $tags = HybridPolicy::tags($invites);
+        $lines = '';
+
+        foreach (array_unique($invites) as $language => $invite) {
+            $lines .= sprintf(
+                '<p style="margin:0 0 8px;font-family:%s;font-size:17px;line-height:1.5;color:%s;text-align:center">'
+                    . '%s%s</p>',
+                EmailBody::FONT,
+                EmailBody::TEXT_COLOR,
+                '' === ($tags[$language] ?? '') ? '' : EmailBody::langTag($tags[$language]),
+                esc_html($invite)
+            );
+        }
+
+        $button = sprintf(
+            '<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"'
+                . ' style="margin:14px auto 0"><tr><td align="center" bgcolor="%1$s"'
+                . ' style="border-radius:32px;background:%1$s;box-shadow:0 4px 18px rgba(36,18,56,.35)">'
+                . '<a href="%2$s" style="display:inline-block;padding:18px 44px;font-family:%3$s;font-size:19px;'
+                . 'font-weight:700;line-height:1.25;letter-spacing:.02em;color:%4$s;text-decoration:none;'
+                . 'border-radius:32px;text-align:center">%5$s</a></td></tr></table>',
+            self::INVITE_BUTTON,
+            esc_url($url),
+            EmailBody::FONT,
+            self::INVITE_BUTTON_TEXT,
+            str_replace("\n", '<br>', esc_html($label))
+        );
+
+        $html = sprintf(
+            '<table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0"'
+                . ' style="margin:28px 0 0;border-collapse:separate"><tr><td align="center" bgcolor="%1$s"'
+                . ' style="padding:24px 20px;background:%1$s;border:2px solid %2$s;border-radius:16px;'
+                . 'text-align:center">%3$s%4$s</td></tr></table>',
+            self::INVITE_BACKGROUND,
+            self::INVITE_EDGE,
+            $lines,
+            $button
+        );
+
+        return [
+            'html' => $html,
+            'text' => "\n\n" . implode("\n\n", array_unique($invites))
+                . "\n\n" . ltrim(EmailBody::toText('', [['label' => $label, 'url' => $url]])),
         ];
     }
 
@@ -1130,6 +1205,16 @@ final class FollowupMail
     {
         $checkedIn = $this->rows->checkedIn($date);
         $blocked = $this->optOut->blocked();
+        // Those who get the announcement already are not invited to it.
+        $subscribed = Newsletter::enabled()
+            ? array_fill_keys(
+                array_map(
+                    [NewsletterSubscriberRepository::class, 'normalize'],
+                    $this->subscribers->confirmedEmails()
+                ),
+                true
+            )
+            : [];
         $groups = [];
 
         foreach ($this->rows->recipients($date) as $row) {
@@ -1181,7 +1266,8 @@ final class FollowupMail
                 $came,
                 $first['name'],
                 FollowupRepository::KIND_GUEST === $first['kind'] ? 'g' : 'b',
-                $first['id']
+                $first['id'],
+                isset($subscribed[NewsletterSubscriberRepository::normalize($first['email'])])
             );
             $sent = $this->mailer->toTicketHolder(
                 $first['email'],
@@ -1491,7 +1577,7 @@ final class FollowupMail
             'join' => __('Join the announcement', 'eventcrew'),
             'optout' => __("Don't send me these", 'eventcrew'),
             // The subscribe button's line; leaving stays one click away.
-            'invite' => __('Get an email when new events come out. You can leave any time.', 'eventcrew'),
+            'invite' => __('Stay in touch: one email before each event, nothing else. You can leave any time.', 'eventcrew'),
         ] + self::crewWords(); // The thank-you's crew part (crewInvite()).
     }
 

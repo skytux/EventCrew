@@ -474,6 +474,8 @@ final class Newsletter
      * @param string $kind The message kind whose Hybrid tick decides the every-language version
      *        (HybridPolicy): NEWSLETTER, or FOLLOWUP from the post-event email.
      * @param bool $announcement True for the announcement's own cards (compose()); see NewsletterLayout::html().
+     * @param bool $quietTickets True for outlined ticket buttons (FollowupMail, under its invitation to join);
+     *        see NewsletterLayout::html().
      * @return array{html: string, text: string}
      */
     public static function content(
@@ -483,7 +485,8 @@ final class Newsletter
         string $lang = '',
         bool $band = false,
         string $kind = HybridPolicy::NEWSLETTER,
-        bool $announcement = false
+        bool $announcement = false,
+        bool $quietTickets = false
     ): array {
         return [
             'html' => NewsletterLayout::html(
@@ -494,7 +497,8 @@ final class Newsletter
                 $lang,
                 $band,
                 $kind,
-                $announcement
+                $announcement,
+                $quietTickets
             ),
             'text' => NewsletterLayout::text($cards, $later, $text, $lang, $kind, $announcement),
         ];

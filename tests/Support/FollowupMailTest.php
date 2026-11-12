@@ -14,6 +14,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupOptOut;
 use EventCrew\Support\FollowupText;
+use EventCrew\Support\HybridPolicy;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
@@ -805,6 +806,113 @@ final class FollowupMailTest extends TestCase
         self::assertTrue($this->state()['done'][self::NIGHT] ?? false);
     }
 
+    /**
+     * The invitation to join the announcement is the email's main goal
+     * (Owner, 2026-11-12): right under the text, before the coming events,
+     * in both versions, with the email's strongest button; the ticket
+     * buttons under it are outlined.
+     */
+    public function testTheInvitationToJoinComesBeforeTheEvents(): void
+    {
+        $this->sampleEvents();
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+
+        foreach ([true, false] as $came) {
+            $mail = $this->followup()->compose(self::NIGHT, $came, 'Anna', 'b', 7);
+            $html = $mail['html'];
+            $text = $mail['text'];
+
+            $invite = strpos($html, 'Stay in touch: one email before each event');
+            $join = strpos($html, 'eventcrew_join=');
+            $events = strpos($html, 'Coming events');
+            $ticket = strpos($html, 'Buy a ticket');
+            self::assertNotFalse($invite);
+            self::assertGreaterThan($invite, (int) $join, 'the button under its line');
+            self::assertGreaterThan((int) $join, (int) $events, 'before the events');
+            self::assertGreaterThan((int) $events, (int) $ticket);
+            self::assertGreaterThan((int) strpos($html, 'Warmly,'), $invite, 'after the main text');
+
+            // The strongest button: dark, big; the ticket button outlined.
+            self::assertMatchesRegularExpression('~bgcolor="#241238"[^>]*><a href="[^"]*eventcrew_join=~', $html);
+            self::assertStringContainsString('font-size:19px;font-weight:700', $html);
+            self::assertStringContainsString('background:#ffffff;border:1.5px solid #4a6cf7', $html);
+            self::assertStringNotContainsString('padding:13px 24px', $html, 'no filled ticket button');
+
+            $textInvite = strpos($text, 'Stay in touch: one email before each event');
+            self::assertNotFalse($textInvite);
+            self::assertGreaterThan($textInvite, (int) strpos($text, 'eventcrew_join='));
+            self::assertGreaterThan((int) strpos($text, 'eventcrew_join='), (int) strpos($text, 'COMING EVENTS'));
+        }
+    }
+
+    /** The announcement keeps its filled ticket buttons; only the post-event email outlines them. */
+    public function testTheAnnouncementKeepsItsFilledTicketButtons(): void
+    {
+        $this->sampleEvents();
+        $events = array_map([Newsletter::class, 'withCard'], Newsletter::comingEvents(self::NIGHT));
+
+        $filled = Newsletter::content(array_slice($events, 0, 1), array_slice($events, 1), null);
+        $quiet = Newsletter::content(
+            array_slice($events, 0, 1),
+            array_slice($events, 1),
+            null,
+            '',
+            false,
+            HybridPolicy::NEWSLETTER,
+            false,
+            true
+        );
+
+        self::assertStringContainsString('padding:13px 24px', $filled['html']);
+        self::assertStringNotContainsString('border:1.5px solid', $filled['html']);
+        self::assertStringContainsString('border:1.5px solid #4a6cf7', $quiet['html']);
+        self::assertStringNotContainsString('padding:13px 24px', $quiet['html']);
+        self::assertSame($filled['text'], $quiet['text'], 'the plain text is the same');
+    }
+
+    /** An address that already gets the announcement is not invited to it; the events stay. */
+    public function testNoInvitationForAnAddressThatGetsTheAnnouncement(): void
+    {
+        $this->sampleEvents();
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+
+        foreach ([true, false] as $came) {
+            $mail = $this->followup()->compose(self::NIGHT, $came, 'Anna', 'b', 7, true);
+
+            self::assertStringNotContainsString('eventcrew_join=', $mail['html'] . $mail['text']);
+            self::assertStringNotContainsString('Stay in touch', $mail['html'] . $mail['text']);
+            self::assertGreaterThan(
+                (int) strpos($mail['text'], 'COMING EVENTS'),
+                (int) strpos($mail['text'], '————————'),
+                'no line before the events'
+            );
+            self::assertStringContainsString('Coming events', $mail['html']);
+            self::assertStringContainsString('Buy a ticket', $mail['html']);
+        }
+    }
+
+    /** The sent emails leave the invitation out for a confirmed subscriber's address, in any case. */
+    public function testTheSentEmailInvitesOnlyThoseWhoDoNotGetTheAnnouncement(): void
+    {
+        $this->options[Newsletter::ENABLED_OPTION] = '1';
+        $this->buyer(1, 'Anna Example', 'anna@example.test');
+        $this->buyer(2, 'Bo Example', 'bo@example.test');
+        $this->db->nextCols[] = []; // unsubscribedEmails()
+        $this->db->nextCols[] = ['BO@Example.test']; // confirmedEmails()
+        $this->previewed();
+
+        $this->followup()->run($this->at('2026-11-15 12:00'));
+
+        $bodies = array_column($this->mails, 'body', 'to');
+        self::assertCount(2, $bodies);
+        self::assertStringContainsString('eventcrew_join=', $bodies['anna@example.test']);
+        self::assertStringNotContainsString('eventcrew_join=', $bodies['bo@example.test']);
+        self::assertContains(
+            "SELECT email FROM wp_eventcrew_newsletter_subscribers WHERE status = 'confirmed'",
+            $this->db->queries
+        );
+    }
+
     // ---- The counts line --------------------------------------------------
 
     public function testTheStatusLine(): void
@@ -926,7 +1034,17 @@ final class FollowupMailTest extends TestCase
                 ]),
                 array_map([Newsletter::class, 'withCard'], Newsletter::comingEvents(self::NIGHT))
             );
-            $expected = Newsletter::content(array_slice($events, 0, 1), array_slice($events, 1), null, '', true);
+            // Its ticket buttons outlined, under the invitation to join.
+            $expected = Newsletter::content(
+                array_slice($events, 0, 1),
+                array_slice($events, 1),
+                null,
+                '',
+                true,
+                HybridPolicy::FOLLOWUP,
+                false,
+                true
+            );
 
             self::assertCount(4, $events);
             self::assertStringContainsString('Tulevat tapahtumat', $expected['html'], 'the newsletter heading');
@@ -1092,8 +1210,8 @@ final class FollowupMailTest extends TestCase
             '~<span [^>]*>EN</span>&nbsp; </p><p [^>]*font-style:italic[^>]*>Hi Anna,</p>~',
             $mail['html']
         );
-        self::assertMatchesRegularExpression('~>FI</span>&nbsp; Saat sähköpostin~', $mail['html'], 'the invitation');
-        self::assertMatchesRegularExpression('~>EN</span>&nbsp; Get an email~', $mail['html']);
+        self::assertMatchesRegularExpression('~>FI</span>&nbsp; Pidetään yhteyttä~', $mail['html'], 'the invitation');
+        self::assertMatchesRegularExpression('~>EN</span>&nbsp; Stay in touch~', $mail['html']);
         self::assertStringContainsString('Tilaa tiedote<br>Join the announcement', $mail['html'], 'the button, one language per row');
         self::assertSame(
             6,
