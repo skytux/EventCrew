@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Telegram;
 
 use Closure;
+use EventCrew\Models\Person;
 use EventCrew\Repositories\GroupMessageRepository;
 use EventCrew\Support\AssistantKnowledge;
 use EventCrew\Support\AssistantSettings;
@@ -13,6 +14,7 @@ use EventCrew\Support\Language;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\OrganizerGuide;
+use EventCrew\Web\WebAssistant;
 
 /**
  * Plain messages to the bot, read by a language model.
@@ -53,7 +55,7 @@ use EventCrew\Support\OrganizerGuide;
  * after fastcgi_finish_request() or litespeed_finish_request() where the
  * server has one), so a slow model never holds up the webhook.
  */
-final class AssistantService
+final class AssistantService implements WebAssistant
 {
     /** Callback data prefix: ai:ok:<id> or ai:no:<id>. */
     public const PREFIX = 'ai:';
@@ -318,6 +320,157 @@ final class AssistantService
             'action' => '' === $action || 'null' === strtolower($action) ? null : $action,
             'forward' => in_array($forward, ChatForwarder::KINDS, true) ? $forward : null,
         ];
+    }
+
+    /**
+     * A message typed (or spoken) into the helper box of the Crew app page,
+     * by the signed-in $person. The same model, rules, facts and actions as
+     * the private chat; the conversation record is the person's private one
+     * (ConversationLog::keyFor()), shared with the bot when they have
+     * Telegram. Nothing is sent anywhere: the page shows the answer.
+     *
+     * "status" is ok (an answer, maybe with an action), limited (the hourly
+     * limit is reached) or error (the model did not answer). "action" is the
+     * checked action (AssistantActions::validate()) or null; the page decides
+     * how it runs (AssistantWebActions). "lang" is the language the person
+     * wrote in, for the page's own words around the answer.
+     *
+     * @return array{status: string, text: string, lang: ?string, action: array{ok: bool, error: string, action: string, confirm: bool, run: string, payload: string}|null}
+     */
+    public function answerWeb(Person $person, string $text): array
+    {
+        $text = mb_substr(trim($text), 0, self::MAX_INPUT_CHARS);
+        $logKey = ConversationLog::keyFor($person->telegramUserId, $person->id);
+        $audience = $this->help->audienceForPerson($person);
+        $chosen = $person->language;
+
+        if (! $this->withinWebLimit($logKey, (bool) $audience['organizer'])) {
+            return [
+                'status' => 'limited',
+                'text' => $this->fixedWeb($chosen, 'limited'),
+                'lang' => $chosen,
+                'action' => null,
+            ];
+        }
+
+        $knowledge = $this->knowledge->build(
+            $audience['roleSlugs'] ?? [],
+            (bool) $audience['organizer'],
+            true,
+            $person->id,
+            $audience['organizer'] ? $text : ''
+        );
+        // Read before this message is added: the message goes as the user turn.
+        $history = ConversationLog::forPrompt($logKey);
+        ConversationLog::add($logKey, ConversationLog::PERSON, $text);
+
+        // The private-chat prompt, with the web page's own lines.
+        $message = ['chat' => ['id' => 0, 'type' => 'private'], 'from' => ['id' => $logKey], 'text' => $text];
+        $result = $this->llm->chat([
+            ['role' => 'system', 'content' => $this->instructions($message, $audience, $knowledge['facts'], $history, true)],
+            ['role' => 'user', 'content' => $text],
+        ]);
+        $parsed = $result['ok'] ? self::parseReply($result['content']) : null;
+
+        if (null === $parsed) {
+            if ($result['ok']) {
+                // The kind only; the answer itself is never logged.
+                $this->logger->warning('Assistant: the language model answer was not the expected JSON (bad_json).');
+            }
+
+            return ['status' => 'error', 'text' => $this->fixedWeb($chosen, 'error'), 'lang' => $chosen, 'action' => null];
+        }
+
+        $language = Language::normalize($parsed['lang']) ?? $chosen;
+        $reply = $this->clip(trim($parsed['reply']));
+        $checked = null;
+
+        if (null !== $parsed['action']) {
+            $checked = AssistantActions::validate(
+                (string) $parsed['action'],
+                $audience,
+                $text,
+                (string) current_time('Y-m-d'),
+                $knowledge['tasks']
+            );
+
+            if (! $checked['ok']) {
+                $reply = $this->fixedWeb(
+                    $language,
+                    AssistantActions::ERROR_NOT_REGISTERED === $checked['error'] ? 'register' : 'cannot'
+                );
+                $checked = null;
+            }
+        } elseif ('' === $reply) {
+            $reply = $this->fixedWeb($language, 'unknown');
+        }
+
+        if ('' !== $reply) {
+            ConversationLog::add($logKey, ConversationLog::BOT, $reply);
+        }
+
+        return ['status' => 'ok', 'text' => $reply, 'lang' => $language, 'action' => $checked];
+    }
+
+    /**
+     * An action kept from an earlier answer, checked again for $person now
+     * (Confirm on the page, up to ten minutes later): their roles, their
+     * confirmed email and the tasks open to them may have changed since.
+     *
+     * @return array{ok: bool, error: string, action: string, confirm: bool, run: string, payload: string}
+     */
+    public function recheckWeb(Person $person, string $action): array
+    {
+        $audience = $this->help->audienceForPerson($person);
+
+        return AssistantActions::validate(
+            $action,
+            $audience,
+            null,
+            (string) current_time('Y-m-d'),
+            $this->knowledge->offeredTaskIds(true, (bool) $audience['organizer'])
+        );
+    }
+
+    /**
+     * Puts the "[showed /board]" or "[ran /join 12]" line in the person's
+     * conversation record, after the page ran an action for them.
+     */
+    public function noteWeb(Person $person, string $action, bool $changed): void
+    {
+        $this->markRun(ConversationLog::keyFor($person->telegramUserId, $person->id), $action, $changed);
+    }
+
+    /**
+     * Counts a page message against the person's hourly private limit. With
+     * Telegram, the count is the bot's private chat's own (the same key), so
+     * the page is no way around it.
+     */
+    private function withinWebLimit(int $logKey, bool $organizer): bool
+    {
+        $key = self::RATE_PREFIX . 'p' . $logKey . '_' . intdiv(time(), HOUR_IN_SECONDS);
+        $count = (int) get_transient($key) + 1;
+        set_transient($key, $count, HOUR_IN_SECONDS);
+
+        $limit = AssistantSettings::privateLimit();
+
+        if ($organizer) {
+            $limit = max($limit, AssistantSettings::organizerLimit());
+        }
+
+        return $count <= $limit;
+    }
+
+    /** One of the page helper's own sentences, in $language. */
+    private function fixedWeb(?string $language, string $which): string
+    {
+        return Language::run($language, static fn (): string => match ($which) {
+            'unknown' => __('I do not know that. The Help tab has more, or ask an organizer.', 'eventcrew'),
+            'cannot' => __('I cannot do that for you here. The Help tab shows what you can do.', 'eventcrew'),
+            'register' => __('First confirm your email address in Settings.', 'eventcrew'),
+            'limited' => __('That is all I can answer this hour. The page works as usual.', 'eventcrew'),
+            default => __('Sorry, I could not answer just now. Please try again.', 'eventcrew'),
+        });
     }
 
     /**
@@ -616,10 +769,16 @@ final class AssistantService
      * @param array<string, mixed> $message
      * @param array{organizer: bool, welcomeCrew: bool, verified: bool} $audience
      */
-    private function instructions(array $message, array $audience, string $facts, string $history = ''): string
-    {
+    private function instructions(
+        array $message,
+        array $audience,
+        string $facts,
+        string $history = '',
+        bool $web = false
+    ): string {
         $isPrivate = 'private' === $message['chat']['type'];
-        $forward = $isPrivate && null !== $this->forwarder && AssistantSettings::forwardEnabled();
+        // The page has no way to ask and forward: that stays in the bot.
+        $forward = ! $web && $isPrivate && null !== $this->forwarder && AssistantSettings::forwardEnabled();
         $yes = static fn (bool $value): string => $value ? 'yes' : 'no';
 
         $lines = [
@@ -718,6 +877,16 @@ final class AssistantService
                 . ' conversation disagree, the FACTS are right: they are newer.';
             $lines[] = '- In a greeting, also say that you remember this chat for 24 hours, so the person can'
                 . ' refer back to what was said.';
+
+            if ($web) {
+                $lines[] = '- This message was written in the helper box of the crew web page (the Crew app),'
+                    . ' not in Telegram. The page has the tabs Board (the open tasks, sign up), Me (the'
+                    . ' person\'s tasks and tickets), Settings (notifications, language, name and email) and'
+                    . ' Help. In "reply", name the tab instead of a bot command: say "the Help tab", never'
+                    . ' "/help". Still give "action" lines from ACTIONS as usual: the page opens the matching'
+                    . ' part of the page, or asks to confirm, or offers to open the Telegram bot for what'
+                    . ' only the bot does. Bot lines in CONVERSATION may come from Telegram or from this page.';
+            }
 
             if ($forward) {
                 $lines[] = '- "forward" sends this chat to the organizers. It is "feedback" when the person gives'

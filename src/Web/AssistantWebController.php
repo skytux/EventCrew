@@ -1,0 +1,311 @@
+<?php
+
+declare(strict_types=1);
+
+namespace EventCrew\Web;
+
+use EventCrew\Models\Person;
+use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\AssistantSettings;
+use EventCrew\Support\Dates;
+use EventCrew\Support\Language;
+use EventCrew\Support\WebSession;
+use EventCrew\Telegram\AssistantService;
+use EventCrew\Telegram\BoardService;
+
+/**
+ * The helper box of the Crew app page: the bot's language-model helper
+ * (AssistantService::answerWeb()), asked from the page by the signed-in
+ * person.
+ *
+ * One admin-ajax action, ACTION, for the signed-in person only (the web
+ * session cookie and its CSRF token, as the page's own forms):
+ * - op=ask, text: the answer, and what the page can do with its action
+ *   (AssistantWebActions). Signing up for or cancelling a task is kept
+ *   here for ten minutes under a random id, bound to the person, and comes
+ *   back with Confirm or Cancel;
+ * - op=confirm, id: checks the kept action again and runs it once;
+ * - op=cancel, id: drops it.
+ *
+ * The message text is never logged. It goes to the configured model and
+ * into the person's 24-hour conversation record (ConversationLog), as in
+ * the bot's private chat.
+ */
+final class AssistantWebController
+{
+    public const ACTION = 'eventcrew_web_assistant';
+
+    /** Characters one message from the page may have. */
+    public const MAX_CHARS = 500;
+
+    public const PENDING_PREFIX = 'eventcrew_ai_webpending_';
+
+    public function __construct(
+        private readonly WebAssistant $assistant,
+        private readonly WebTaskSignup $signup,
+        private readonly TaskRepository $tasks,
+        private readonly SessionPerson $session
+    ) {
+    }
+
+    public function boot(): void
+    {
+        add_action('wp_ajax_' . self::ACTION, [$this, 'dispatch']);
+        add_action('wp_ajax_nopriv_' . self::ACTION, [$this, 'dispatch']);
+    }
+
+    /**
+     * What the page's helper box needs, or null when the helper is off (or
+     * not configured): then the page has no box.
+     *
+     * @return array{action: string, speech: string}|null
+     */
+    public static function view(Person $person): ?array
+    {
+        if (! AssistantSettings::isActive()) {
+            return null;
+        }
+
+        $speech = match (Language::normalize($person->language) ?? Language::current()) {
+            'fi' => 'fi-FI',
+            'sv' => 'sv-SE',
+            default => 'en-US',
+        };
+
+        return ['action' => self::ACTION, 'speech' => $speech];
+    }
+
+    /**
+     * The admin-ajax entry point: reads the request, answers JSON. The
+     * untested-by-design boundary; handle() is the tested part.
+     */
+    public function dispatch(): void
+    {
+        if (! defined('DONOTCACHEPAGE')) {
+            define('DONOTCACHEPAGE', true);
+        }
+
+        nocache_headers();
+
+        $method = isset($_SERVER['REQUEST_METHOD']) ? sanitize_key(wp_unslash($_SERVER['REQUEST_METHOD'])) : '';
+
+        if ('post' !== $method) {
+            wp_send_json(['ok' => false, 'error' => 'method'], 405);
+        }
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- the web session's CSRF token is checked in handle().
+        $posted = [
+            'op' => isset($_POST['op']) ? sanitize_key(wp_unslash($_POST['op'])) : '',
+            'csrf' => isset($_POST['csrf']) ? sanitize_text_field(wp_unslash($_POST['csrf'])) : '',
+            'id' => isset($_POST['id']) ? sanitize_key(wp_unslash($_POST['id'])) : '',
+            'text' => isset($_POST['text']) ? sanitize_textarea_field(wp_unslash($_POST['text'])) : '',
+        ];
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        [$status, $body] = $this->handle($this->session->current(), $posted);
+        wp_send_json($body, $status);
+    }
+
+    /**
+     * @param array<string, string> $posted op, csrf, and text (ask) or id (confirm, cancel)
+     * @return array{0: int, 1: array<string, mixed>} status code and JSON body
+     */
+    public function handle(?Person $person, array $posted): array
+    {
+        if (null === $person) {
+            return [401, ['ok' => false, 'error' => 'session']];
+        }
+
+        if (! WebSession::verifyCsrf($person->id, (string) ($posted['csrf'] ?? ''))) {
+            return [403, ['ok' => false, 'error' => 'csrf']];
+        }
+
+        if (! AssistantSettings::isActive()) {
+            return [404, ['ok' => false, 'error' => 'off']];
+        }
+
+        Language::enter($person->language);
+
+        return match ((string) ($posted['op'] ?? '')) {
+            'ask' => $this->ask($person, (string) ($posted['text'] ?? '')),
+            'confirm' => $this->confirm($person, (string) ($posted['id'] ?? '')),
+            'cancel' => $this->cancel($person, (string) ($posted['id'] ?? '')),
+            default => [400, ['ok' => false, 'error' => 'op']],
+        };
+    }
+
+    /**
+     * @return array{0: int, 1: array<string, mixed>}
+     */
+    private function ask(Person $person, string $text): array
+    {
+        $text = trim($text);
+
+        if ('' === $text) {
+            return [400, ['ok' => false, 'error' => 'empty']];
+        }
+
+        if (mb_strlen($text) > self::MAX_CHARS) {
+            return [400, ['ok' => false, 'error' => 'too_long']];
+        }
+
+        $answer = $this->assistant->answerWeb($person, $text);
+        $body = ['ok' => true, 'status' => $answer['status'], 'reply' => [], 'action' => null];
+        $reply = $answer['text'];
+        $checked = $answer['action'];
+
+        if (null !== $checked) {
+            $plan = AssistantWebActions::plan($checked['action']);
+            $language = $answer['lang'];
+
+            if (AssistantWebActions::CONFIRM === $plan['kind']) {
+                $id = bin2hex(random_bytes(8));
+                set_transient(
+                    self::PENDING_PREFIX . $id,
+                    ['person' => $person->id, 'action' => $checked['action']],
+                    AssistantService::PENDING_TTL
+                );
+                $body['action'] = [
+                    'kind' => AssistantWebActions::CONFIRM,
+                    'id' => $id,
+                    'summary' => $this->summary($plan, $language),
+                    'confirm' => (string) Language::run($language, static fn (): string => __('Confirm', 'eventcrew')),
+                    'cancel' => (string) Language::run($language, static fn (): string => __('Cancel', 'eventcrew')),
+                ];
+            } elseif (AssistantWebActions::GOTO === $plan['kind']) {
+                $this->assistant->noteWeb($person, $checked['action'], false);
+                $body['action'] = ['kind' => AssistantWebActions::GOTO, 'targets' => $plan['targets'] ?? []];
+            } else {
+                $url = self::botUrl();
+                $linked = $person->hasTelegram() && '' !== $url;
+                $body['action'] = [
+                    'kind' => AssistantWebActions::TELEGRAM,
+                    'url' => $linked ? $url : '',
+                    'label' => (string) Language::run($language, static fn (): string => __('Open in Telegram', 'eventcrew')),
+                ];
+
+                if (! $linked) {
+                    $only = (string) Language::run(
+                        $language,
+                        static fn (): string => __('That is only in the Telegram bot.', 'eventcrew')
+                    );
+                    $reply = trim($reply . "\n\n" . $only);
+                }
+            }
+        }
+
+        $body['reply'] = AssistantWebActions::segments($reply);
+
+        return [200, $body];
+    }
+
+    /**
+     * @return array{0: int, 1: array<string, mixed>}
+     */
+    private function confirm(Person $person, string $id): array
+    {
+        $pending = $this->takePending($person, $id);
+
+        if (null === $pending) {
+            return [200, $this->told(__('This question has expired. Please write again.', 'eventcrew'), 'expired')];
+        }
+
+        // Checked again: the person's roles and the open tasks may have changed.
+        $checked = $this->assistant->recheckWeb($person, $pending);
+        $plan = $checked['ok'] ? AssistantWebActions::plan($checked['action']) : ['kind' => ''];
+
+        if (AssistantWebActions::CONFIRM !== $plan['kind']) {
+            return [200, $this->told(__('That can no longer be done.', 'eventcrew'), 'refused')];
+        }
+
+        $taskId = (int) ($plan['task'] ?? 0);
+        $code = AssistantWebActions::JOIN === ($plan['op'] ?? '')
+            ? $this->signup->claimAndNotify($person, $taskId)
+            : $this->signup->dropAndNotify($person, $taskId);
+        $changed = in_array($code, ['claimed', 'dropped', 'dropped_late', 'dropped_early'], true);
+
+        if ($changed) {
+            $this->assistant->noteWeb($person, $checked['action'], true);
+        }
+
+        $text = SignupController::noticeText($code);
+
+        return [200, $this->told('' !== $text ? $text : __('That can no longer be done.', 'eventcrew'), $code, $changed)];
+    }
+
+    /**
+     * @return array{0: int, 1: array<string, mixed>}
+     */
+    private function cancel(Person $person, string $id): array
+    {
+        $this->takePending($person, $id);
+
+        return [200, $this->told(__('Cancelled.', 'eventcrew'), 'cancelled')];
+    }
+
+    /**
+     * The kept action under $id when it is this person's, removed so it runs
+     * at most once; null when it expired, is someone else's or never was.
+     */
+    private function takePending(Person $person, string $id): ?string
+    {
+        if (1 !== preg_match('/^[0-9a-f]{16}$/', $id)) {
+            return null;
+        }
+
+        $key = self::PENDING_PREFIX . $id;
+        $pending = get_transient($key);
+
+        if (! is_array($pending) || (int) ($pending['person'] ?? 0) !== $person->id) {
+            return null;
+        }
+
+        delete_transient($key);
+
+        return is_string($pending['action'] ?? null) ? $pending['action'] : null;
+    }
+
+    /**
+     * "Sign up for DJ, Sat 14.11." or "Cancel DJ, Sat 14.11.", in $language.
+     *
+     * @param array{kind: string, op?: string, task?: int} $plan
+     */
+    private function summary(array $plan, ?string $language): string
+    {
+        $task = $this->tasks->find((int) ($plan['task'] ?? 0));
+        $join = AssistantWebActions::JOIN === ($plan['op'] ?? '');
+
+        return (string) Language::run($language, static function () use ($task, $join): string {
+            $name = null === $task
+                ? __('this task', 'eventcrew')
+                : $task->roleDisplay() . ', ' . Dates::dayLabel($task->taskDate);
+
+            return $join
+                /* translators: %s: the task, like "DJ, Sat 14.11." */
+                ? sprintf(__('Sign up for %s', 'eventcrew'), $name)
+                /* translators: %s: the task, like "DJ, Sat 14.11." */
+                : sprintf(__('Cancel %s', 'eventcrew'), $name);
+        });
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function told(string $text, string $code, bool $changed = false): array
+    {
+        return [
+            'ok' => true,
+            'code' => $code,
+            'changed' => $changed,
+            'reply' => AssistantWebActions::segments($text),
+        ];
+    }
+
+    /** https://t.me/<the bot's username>, or '' when it is not known. */
+    public static function botUrl(): string
+    {
+        $username = ltrim(trim((string) get_option(BoardService::USERNAME_OPTION, '')), '@');
+
+        return 1 === preg_match('/^[A-Za-z0-9_]{3,64}$/', $username) ? 'https://t.me/' . $username : '';
+    }
+}

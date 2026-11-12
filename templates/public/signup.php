@@ -125,6 +125,12 @@ if ($eventcrew_link_expired) {
     <?php endif; ?>
 
     <?php
+    // The helper box under the tabs, signed in and while the helper is on.
+    $eventcrew_assistant = null !== $eventcrew_person && is_array($view['assistant'] ?? null) ? $view['assistant'] : null;
+    require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-assistant.php';
+    ?>
+
+    <?php
     // The Telegram group button, at the top of the page so it shows above
     // every tab, signed in only. The crew guide sits under the person's
     // details in the header card; signed out it is not shown (Lou 2026-11-08).

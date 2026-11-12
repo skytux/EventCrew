@@ -54,7 +54,7 @@ use EventCrew\Telegram\WebLoginBot;
  * host serves a JS challenge on /wp-json that a plain form post cannot pass -
  * the same reason the bot webhook has an admin-ajax fallback door.
  */
-final class SignupController
+final class SignupController implements WebTaskSignup
 {
     public const LOGIN_ACTION = 'eventcrew_web_login';
     public const CLAIM_ACTION = 'eventcrew_web_claim';
@@ -467,6 +467,8 @@ final class SignupController
             'telegram_login' => null === $person ? $this->telegramLoginView() : null,
             'telegram_link' => null === $person ? null : self::telegramLinkView($person),
             'app_install' => null === $person ? null : self::appInstallView($person),
+            // The helper box under the tabs; null when the helper is off.
+            'assistant' => null === $person ? null : AssistantWebController::view($person),
         ];
     }
 
@@ -1010,6 +1012,48 @@ final class SignupController
     }
 
     /**
+     * Claim for $person and, when it went through, send the same
+     * confirmation the bot sends on a join (with the door ticket). The
+     * page's sign-up form and its helper box both come here.
+     */
+    public function claimAndNotify(Person $person, int $taskId, ?bool $countsCredit = null): string
+    {
+        $notice = $this->claimFor($person->id, $taskId, $countsCredit);
+
+        if ('claimed' === $notice) {
+            $this->notifier->signedUp($person, $taskId);
+        }
+
+        return $notice;
+    }
+
+    /**
+     * Cancel for $person and, when it went through, send the cancellation
+     * email with the right standing note. Returns the notice code
+     * (dropped, dropped_late, dropped_early, not_on, signout_locked).
+     */
+    public function dropAndNotify(Person $person, int $taskId): string
+    {
+        $notice = $this->dropFor($person->id, $taskId);
+
+        if ('dropped' !== $notice) {
+            return $notice;
+        }
+
+        // The drop has resolved the row to late_cancel or cancelled; read it
+        // back so the cancellation email carries the right standing note.
+        $assignment = $this->assignments->findFor($taskId, $person->id);
+
+        if (null === $assignment) {
+            return $notice;
+        }
+
+        $this->notifier->cancelled($person, $taskId, $assignment->status);
+
+        return $this->droppedNotice($assignment->status, $taskId);
+    }
+
+    /**
      * The notice after a cancel on the page, by what it recorded (Q351): a
      * late cancel says Sign up again undoes it, an early one says why it has
      * no effect on the standing. A free cancel inside the second thoughts
@@ -1388,15 +1432,9 @@ final class SignupController
             $countsCredit = isset($_POST['counts_credit'])
                 ? '1' === sanitize_key(wp_unslash($_POST['counts_credit']))
                 : null;
-            $notice = $this->claimFor($person->id, $taskId, $countsCredit);
-
             // The same confirmation the bot sends on a join, so a slot claimed
             // from the web arrives with its door ticket too.
-            if ('claimed' === $notice) {
-                $this->notifier->signedUp($person, $taskId);
-            }
-
-            $this->finish($redirect, $notice, $isAjax);
+            $this->finish($redirect, $this->claimAndNotify($person, $taskId, $countsCredit), $isAjax);
         }
 
         if (self::PREFS_ACTION === $action) {
@@ -1456,20 +1494,7 @@ final class SignupController
             $this->redirect($redirect, 'ticket_' . $result['code']);
         }
 
-        $notice = $this->dropFor($person->id, $taskId);
-
-        if ('dropped' === $notice) {
-            // The drop has resolved the row to late_cancel or cancelled; read it
-            // back so the cancellation email carries the right standing note.
-            $assignment = $this->assignments->findFor($taskId, $person->id);
-
-            if (null !== $assignment) {
-                $this->notifier->cancelled($person, $taskId, $assignment->status);
-                $notice = $this->droppedNotice($assignment->status, $taskId);
-            }
-        }
-
-        $this->finish($redirect, $notice, $isAjax);
+        $this->finish($redirect, $this->dropAndNotify($person, $taskId), $isAjax);
         // phpcs:enable WordPress.Security.NonceVerification
     }
 

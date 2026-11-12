@@ -13885,3 +13885,57 @@ msgstr "Du är utloggad. Ladda om sidan."
 
 msgid "edited"
 msgstr "redigerad"
+
+msgid "I do not know that. The Help tab has more, or ask an organizer."
+msgstr "Det vet jag inte. Fliken Hjälp har mer, eller fråga en arrangör."
+
+msgid "I cannot do that for you here. The Help tab shows what you can do."
+msgstr "Det kan jag inte göra åt dig här. Fliken Hjälp visar vad du kan göra."
+
+msgid "First confirm your email address in Settings."
+msgstr "Bekräfta först din e-postadress under Inställningar."
+
+msgid "That is all I can answer this hour. The page works as usual."
+msgstr "Mer kan jag inte svara den här timmen. Sidan fungerar som vanligt."
+
+msgid "Sorry, I could not answer just now. Please try again."
+msgstr "Tyvärr kunde jag inte svara just nu. Försök igen."
+
+msgid "That is only in the Telegram bot."
+msgstr "Det finns bara i Telegram-botten."
+
+msgid "That can no longer be done."
+msgstr "Det går inte längre att göra."
+
+msgid "this task"
+msgstr "den här uppgiften"
+
+#. translators: %s: the task, like "DJ, Sat 14.11."
+#, php-format
+msgid "Sign up for %s"
+msgstr "Anmäl dig: %s"
+
+#. translators: %s: the task, like "DJ, Sat 14.11."
+#, php-format
+msgid "Cancel %s"
+msgstr "Avboka: %s"
+
+msgid "Tell me what you want to do…"
+msgstr "Berätta vad du vill göra…"
+
+msgid "Speak"
+msgstr "Tala"
+
+msgid "Thinking…"
+msgstr "Tänker…"
+
+#. translators: %s: a tab of the page, like "Settings".
+#, php-format
+msgid "Go to %s"
+msgstr "Gå till %s"
+
+msgid "Your browser’s speech service (Google or Apple) turns your voice into text."
+msgstr "Webbläsarens taltjänst (Google eller Apple) gör om din röst till text."
+
+msgid "Assistant"
+msgstr "Assistent"

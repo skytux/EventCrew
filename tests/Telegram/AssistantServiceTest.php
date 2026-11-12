@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
+use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\FollowupRepository;
 use EventCrew\Repositories\GuestRepository;
@@ -1673,5 +1674,116 @@ final class AssistantServiceTest extends TelegramTestCase
         self::assertStringNotContainsString('private question', $logged);
         self::assertStringNotContainsString('sk-very-secret', $logged);
         self::assertStringNotContainsString('garbage', $logged);
+    }
+
+    // ---- the Crew app page's helper box (answerWeb) ---------------------
+
+    private static function webPerson(?int $telegram = 555, bool $verified = true): Person
+    {
+        return Person::fromRow([
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => $verified ? '2026-07-01 00:00:00' : null,
+            'telegram_user_id' => $telegram,
+        ]);
+    }
+
+    public function testTheWebAnswerIsPlainTextAndThePromptKnowsItIsThePage(): void
+    {
+        $this->reply(true, true, 'The Help tab has the house rules.');
+
+        $answer = $this->service()->answerWeb(self::webPerson(), 'where are the rules?');
+
+        self::assertSame(
+            ['status' => 'ok', 'text' => 'The Help tab has the house rules.', 'lang' => 'en', 'action' => null],
+            $answer
+        );
+        self::assertStringContainsString('helper box of the crew web page', $this->systemPrompt(0));
+        self::assertSame([], $this->telegramCalls, 'Nothing goes to Telegram from the page.');
+    }
+
+    public function testTheWebConversationIsTheBotsOneForSomeoneWithTelegram(): void
+    {
+        $this->reply(true, true, 'Hi Sam.');
+
+        $this->service()->answerWeb(self::webPerson(555), 'hello');
+
+        self::assertCount(2, ConversationLog::entries(555));
+        self::assertSame([], ConversationLog::entries(-7));
+    }
+
+    public function testWithoutTelegramTheWebConversationIsKeptUnderThePerson(): void
+    {
+        $this->reply(true, true, 'Hi Sam.');
+        $this->reply(true, true, 'Yes, Saturday.');
+
+        $service = $this->service();
+        $service->answerWeb(self::webPerson(null), 'is there a night on saturday?');
+        $service->answerWeb(self::webPerson(null), 'and the time?');
+
+        self::assertCount(4, ConversationLog::entries(-7));
+        self::assertStringContainsString('is there a night on saturday?', $this->systemPrompt(1));
+    }
+
+    public function testAWebActionComesBackChecked(): void
+    {
+        $this->reply(true, true, 'Here are your tasks.', '/me');
+
+        $answer = $this->service()->answerWeb(self::webPerson(), 'what are my tasks?');
+
+        self::assertSame('/me', $answer['action']['action'] ?? null);
+        self::assertTrue($answer['action']['ok'] ?? false);
+        self::assertSame([], $this->ran, 'The page runs nothing here.');
+    }
+
+    public function testAWebSignUpForATaskNotOnOfferIsRefused(): void
+    {
+        $this->reply(true, true, 'Signing you up.', '/join 12');
+
+        $answer = $this->service()->answerWeb(self::webPerson(), 'sign me up for the bar');
+
+        self::assertNull($answer['action']);
+        self::assertSame('I cannot do that for you here. The Help tab shows what you can do.', $answer['text']);
+    }
+
+    public function testAnEmptyWebReplySaysTheHelpTab(): void
+    {
+        $this->reply(true, false, '');
+
+        $answer = $this->service()->answerWeb(self::webPerson(), 'what is the meaning of life?');
+
+        self::assertSame('I do not know that. The Help tab has more, or ask an organizer.', $answer['text']);
+    }
+
+    public function testAFailedModelCallGivesTheWebErrorSentence(): void
+    {
+        $this->llmStatus = 500;
+        $this->reply(true, true, 'never read');
+
+        $answer = $this->service()->answerWeb(self::webPerson(), 'hello');
+
+        self::assertSame('error', $answer['status']);
+        self::assertSame('Sorry, I could not answer just now. Please try again.', $answer['text']);
+    }
+
+    public function testTheWebSharesTheHourlyLimitWithTheBot(): void
+    {
+        $this->options[AssistantSettings::PRIVATE_LIMIT_OPTION] = 1;
+        $this->reply(true, true, 'Answer 0');
+        $this->ask(self::privateMessage('question 0'));
+
+        $answer = $this->service()->answerWeb(self::webPerson(555), 'question 1');
+
+        self::assertSame('limited', $answer['status']);
+        self::assertSame('That is all I can answer this hour. The page works as usual.', $answer['text']);
+        self::assertCount(1, $this->llmCalls);
+    }
+
+    public function testTheConversationKeyIsTheTelegramIdElseTheNegativePersonId(): void
+    {
+        self::assertSame(555, ConversationLog::keyFor(555, 7));
+        self::assertSame(-7, ConversationLog::keyFor(null, 7));
+        self::assertSame(-7, ConversationLog::keyFor(0, 7));
     }
 }

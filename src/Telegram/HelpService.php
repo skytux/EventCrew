@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Models\Person;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\DoorAccess;
@@ -236,7 +237,19 @@ final class HelpService
      */
     public function audience(int $telegramUserId): array
     {
-        $person = 0 !== $telegramUserId ? $this->people->findByTelegramUserId($telegramUserId) : null;
+        return $this->audienceForPerson(
+            0 !== $telegramUserId ? $this->people->findByTelegramUserId($telegramUserId) : null
+        );
+    }
+
+    /**
+     * The same as audience(), for a person already looked up (the Crew app
+     * page's helper box knows the signed-in person, Telegram or not).
+     *
+     * @return array{organizer: bool, welcomeCrew: bool, verified: bool, roles: list<string>, roleSlugs: list<string>}
+     */
+    public function audienceForPerson(?Person $person): array
+    {
         $organizer = null !== $person && $person->isOrganizer;
 
         return [

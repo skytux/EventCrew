@@ -85,6 +85,13 @@ function get_option($name, $default = false)
     return $default;
 }
 
+// No transients in the tests unless one aliases them; erasing a person
+// deletes their helper conversation (ConversationLog) on every path.
+function delete_transient($transient)
+{
+    return true;
+}
+
 // The webhook claim writes its option in SQL and then drops the cached copy;
 // there is no cache in the tests to drop.
 function wp_cache_delete($key, $group = '')

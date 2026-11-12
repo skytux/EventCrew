@@ -15,6 +15,7 @@ use EventCrew\Repositories\PushSubscriptionRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TakeoverRepository;
 use EventCrew\Repositories\TicketTransferRepository;
+use EventCrew\Telegram\ConversationLog;
 
 /**
  * The one place a person stops being personal data, in the two ways that can
@@ -65,6 +66,7 @@ final class PersonEraser
             return;
         }
 
+        $this->forgetConversation($personId);
         $this->tokens->deleteForPerson($personId);
         $this->notifications->deleteForPerson($personId);
         $this->push?->deleteForPerson($personId);
@@ -76,6 +78,19 @@ final class PersonEraser
         $this->grants->deleteForPerson($personId);
         $this->people->delete($personId);
         $this->forgetInHistory($personId, []);
+    }
+
+    /**
+     * Deletes what the person said to the language-model helper, and its
+     * answers (ConversationLog): the bot's private chat, and the Crew app
+     * page's helper box. Looked up before the person record goes.
+     */
+    private function forgetConversation(int $personId): void
+    {
+        $telegramUserId = $this->people->find($personId)?->telegramUserId;
+
+        ConversationLog::forget(ConversationLog::keyFor($telegramUserId, $personId));
+        ConversationLog::forget(ConversationLog::keyFor(null, $personId));
     }
 
     /**

@@ -10944,3 +10944,57 @@ msgstr "Olet kirjautunut ulos. Lataa sivu uudelleen."
 
 msgid "edited"
 msgstr "muokattu"
+
+msgid "I do not know that. The Help tab has more, or ask an organizer."
+msgstr "En tiedä sitä. Ohje-välilehdellä on lisää, tai kysy järjestäjältä."
+
+msgid "I cannot do that for you here. The Help tab shows what you can do."
+msgstr "En voi tehdä sitä puolestasi täällä. Ohje-välilehti kertoo, mitä voit tehdä."
+
+msgid "First confirm your email address in Settings."
+msgstr "Vahvista ensin sähköpostiosoitteesi Asetuksissa."
+
+msgid "That is all I can answer this hour. The page works as usual."
+msgstr "En voi vastata enempää tämän tunnin aikana. Sivu toimii kuten ennenkin."
+
+msgid "Sorry, I could not answer just now. Please try again."
+msgstr "Valitettavasti en pystynyt vastaamaan juuri nyt. Yritä uudelleen."
+
+msgid "That is only in the Telegram bot."
+msgstr "Se onnistuu vain Telegram-botissa."
+
+msgid "That can no longer be done."
+msgstr "Sitä ei voi enää tehdä."
+
+msgid "this task"
+msgstr "tämä tehtävä"
+
+#. translators: %s: the task, like "DJ, Sat 14.11."
+#, php-format
+msgid "Sign up for %s"
+msgstr "Ilmoittaudu: %s"
+
+#. translators: %s: the task, like "DJ, Sat 14.11."
+#, php-format
+msgid "Cancel %s"
+msgstr "Peru: %s"
+
+msgid "Tell me what you want to do…"
+msgstr "Kerro, mitä haluat tehdä…"
+
+msgid "Speak"
+msgstr "Puhu"
+
+msgid "Thinking…"
+msgstr "Mietin…"
+
+#. translators: %s: a tab of the page, like "Settings".
+#, php-format
+msgid "Go to %s"
+msgstr "Siirry: %s"
+
+msgid "Your browser’s speech service (Google or Apple) turns your voice into text."
+msgstr "Selaimesi puhepalvelu (Google tai Apple) muuttaa puheesi tekstiksi."
+
+msgid "Assistant"
+msgstr "Avustaja"

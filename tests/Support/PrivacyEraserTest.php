@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Support;
 
+use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CreditGrantRepository;
@@ -13,6 +14,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\PrivacyEraser;
+use EventCrew\Telegram\ConversationLog;
 use EventCrew\Tests\TestCase;
 
 final class PrivacyEraserTest extends TestCase
@@ -231,5 +233,28 @@ final class PrivacyEraserTest extends TestCase
             "DELETE FROM wp_eventcrew_door_notes WHERE email = 'aino@example.org'",
             $this->wpdb->queries
         );
+    }
+
+    /**
+     * What the person said to the language-model helper goes too: the bot's
+     * private chat (under their Telegram id) and the Crew app page's helper
+     * box (under the negative person id when they have no Telegram).
+     */
+    public function testTheHelperConversationIsDeleted(): void
+    {
+        $deleted = [];
+        Functions\when('delete_transient')->alias(function (string $key) use (&$deleted): bool {
+            $deleted[] = $key;
+
+            return true;
+        });
+        $row = ['id' => 7, 'email' => 'dancer@example.test', 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = $row;
+        $this->wpdb->nextRows[] = $row;
+
+        $this->eraser()->erase('dancer@example.test');
+
+        self::assertContains(ConversationLog::PREFIX . '555', $deleted);
+        self::assertContains(ConversationLog::PREFIX . '-7', $deleted);
     }
 }

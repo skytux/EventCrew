@@ -124,6 +124,18 @@ final class ConversationLog
         return implode("\n", array_reverse($lines));
     }
 
+    /**
+     * The record a person's private conversation is kept under, for the Crew
+     * app page's helper box: their Telegram user id when they have one, so
+     * the page and the bot's private chat share one conversation; otherwise
+     * minus their person id, which never matches a Telegram user id (those
+     * are positive).
+     */
+    public static function keyFor(?int $telegramUserId, int $personId): int
+    {
+        return null !== $telegramUserId && $telegramUserId > 0 ? $telegramUserId : -$personId;
+    }
+
     /** Deletes the person's record: the private one, or the one for group $chatId. */
     public static function forget(int $userId, int $chatId = 0): void
     {

@@ -1455,3 +1455,60 @@
 .eventcrew-signup .eventcrew-app-how svg {
     fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
 }
+/*
+ * The helper box under the tabs (signup-assistant.php): one rounded line
+ * with the Telegram-style icon, the text, and the mic and send buttons
+ * inside it. The answers open in a pop-in built on the "Get the app"
+ * dialog above, with the conversation as bubbles: the person's on the
+ * right, the helper's on the left.
+ */
+.eventcrew-signup .eventcrew-ai { max-width: calc(32em + 2px); margin: 0 auto 1.2em; }
+.eventcrew-signup .eventcrew-ai-line {
+    display: flex; align-items: center; gap: .25em; margin: 0;
+    padding: 0 .25em 0 .6em; min-height: 48px; box-sizing: border-box;
+    border: 1px solid var(--eventcrew-line); border-radius: 999px;
+    background: color-mix(in srgb, currentColor 4%, transparent);
+}
+.eventcrew-signup .eventcrew-ai-line:focus-within { border-color: var(--eventcrew-accent); }
+.eventcrew-signup .eventcrew-ai-icon { flex: none; display: flex; color: #2aabee; }
+.eventcrew-signup .eventcrew-ai-input {
+    flex: 1 1 auto; min-width: 0; margin: 0; padding: .55em .3em;
+    border: 0; background: transparent; color: inherit; font: inherit;
+    font-size: max(16px, 1em); box-shadow: none;
+}
+.eventcrew-signup .eventcrew-ai-input:focus { outline: none; }
+.eventcrew-signup .eventcrew-ai-btn {
+    flex: none; display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; margin: 0; padding: 0; border: 0; border-radius: 50%;
+    background: transparent; color: inherit; font: inherit; line-height: 1; cursor: pointer;
+}
+.eventcrew-signup .eventcrew-ai-btn[hidden] { display: none; }
+.eventcrew-signup .eventcrew-ai-btn:hover,
+.eventcrew-signup .eventcrew-ai-btn:focus-visible { background: color-mix(in srgb, currentColor 12%, transparent); outline: none; }
+.eventcrew-signup .eventcrew-ai-send { background: var(--eventcrew-accent); color: #fff; }
+.eventcrew-signup .eventcrew-ai-send:hover,
+.eventcrew-signup .eventcrew-ai-send:focus-visible { background: color-mix(in srgb, var(--eventcrew-accent) 85%, #000); }
+.eventcrew-signup .eventcrew-ai-send svg { fill: currentColor; }
+.eventcrew-signup .eventcrew-ai-mic.is-on { background: color-mix(in srgb, #e5484d 25%, transparent); }
+.eventcrew-signup .eventcrew-ai-note { margin: .4em 1em 0; font-size: .85em; opacity: .75; }
+.eventcrew-signup .eventcrew-ai-card { text-align: left; padding-top: 1em; }
+.eventcrew-signup .eventcrew-ai-title { padding-right: 44px; }
+.eventcrew-signup .eventcrew-ai-log {
+    display: flex; flex-direction: column; gap: .5em;
+    max-height: 55dvh; overflow-y: auto; margin: 0 0 .9em;
+}
+.eventcrew-signup .eventcrew-ai-msg {
+    max-width: 88%; padding: .5em .8em; border-radius: calc(var(--eventcrew-radius) * 1.5);
+    white-space: pre-line; overflow-wrap: anywhere;
+}
+.eventcrew-signup .eventcrew-ai-msg.is-person {
+    align-self: flex-end; background: color-mix(in srgb, var(--eventcrew-accent) 22%, transparent);
+}
+.eventcrew-signup .eventcrew-ai-msg.is-bot {
+    align-self: flex-start; background: color-mix(in srgb, currentColor 8%, transparent);
+}
+.eventcrew-signup .eventcrew-ai-msg.is-thinking { opacity: .7; font-style: italic; }
+.eventcrew-signup .eventcrew-ai-msg a { color: inherit; text-decoration: underline; }
+.eventcrew-signup .eventcrew-ai-summary { margin: .5em 0 0; font-weight: 600; }
+.eventcrew-signup .eventcrew-ai-actions { display: flex; flex-wrap: wrap; gap: .5em; margin-top: .6em; white-space: normal; }
+.eventcrew-signup .eventcrew-ai-actions > * { margin: 0; }
