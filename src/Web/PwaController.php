@@ -218,7 +218,12 @@ final class PwaController
         exit;
     }
 
-    private function startUrl(): string
+    /**
+     * The address the installed app opens at: the Crew app page with
+     * ?eventcrew_app=1, inside scope(). The install pop-in's "Open the app"
+     * opens it too (signup-app-install.php).
+     */
+    public function startUrl(): string
     {
         $pageId = (int) get_option(self::PAGE_OPTION, 0);
         $base = $pageId > 0 ? get_permalink($pageId) : false;

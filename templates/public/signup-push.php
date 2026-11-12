@@ -14,6 +14,13 @@
  * - an iPhone or iPad outside the Home Screen app: the line on adding it
  *   there first (Safari has push only in the installed app, iOS 16.4+).
  *
+ * Every outcome of a tap shows (Owner 2026-11-13: a tap once did nothing
+ * visible): the link waits disabled with "…"; a question the phone did not
+ * show (dismissed, Chrome's quiet permission UI, or no answer in 8 seconds)
+ * says where to allow it; blocked shows the blocked line; an error shows the
+ * failed line with the error's name, for a report. A service worker not
+ * ready after 5 seconds still shows the link, and a tap says to reload.
+ *
  * Turning them on here with Telegram linked and the question never asked
  * also asks where notifications should come (signup-channels.php).
  *
@@ -48,7 +55,9 @@ if ('' === $eventcrew_push_key) {
     </p>
     <p class="eventcrew-muted" data-eventcrew-push-blocked hidden><?php esc_html_e('Notifications are blocked for this site. Allow them in the browser settings.', 'eventcrew'); ?></p>
     <p class="eventcrew-muted" data-eventcrew-push-ios hidden><?php esc_html_e('On iPhone, notifications work after you add this page to your Home Screen.', 'eventcrew'); ?></p>
-    <p class="eventcrew-muted" data-eventcrew-push-failed hidden><?php esc_html_e('Could not turn on notifications. Try again.', 'eventcrew'); ?></p>
+    <p class="eventcrew-muted" data-eventcrew-push-dismissed hidden><?php esc_html_e("Your phone did not show the question. Allow notifications for this site in the browser's site settings, then try again.", 'eventcrew'); ?></p>
+    <p class="eventcrew-muted" data-eventcrew-push-loading hidden><?php esc_html_e('The app is still loading. Reload the page and try again.', 'eventcrew'); ?></p>
+    <p class="eventcrew-muted" data-eventcrew-push-failed hidden><?php esc_html_e('Could not turn on notifications. Try again.', 'eventcrew'); ?> <span class="eventcrew-push-error" data-eventcrew-push-error></span></p>
 </div>
 <script>
 (function () {
@@ -85,50 +94,107 @@ if ('' === $eventcrew_push_key) {
         return fetch(box.dataset.ajax, { method: 'POST', body: data, credentials: 'same-origin' })
             .then(function (r) { if (!r.ok) { throw new Error(String(r.status)); } return r; });
     };
+    // The lines under the link: at most one of these shows at a time.
+    var lines = ['failed', 'dismissed', 'loading'];
+    var only = function (name) {
+        lines.forEach(function (n) { part(n).hidden = n !== name; });
+    };
     var show = function (subscribed) {
-        part('failed').hidden = true;
+        only('');
         part('blocked').hidden = 'denied' !== Notification.permission;
         toggle.hidden = 'denied' === Notification.permission && !subscribed;
         on.hidden = subscribed;
         off.hidden = !subscribed;
     };
-    var failed = function () {
-        part('failed').hidden = false;
-        on.disabled = false;
-        off.disabled = false;
+    // Waiting: the link disabled, with "…" after its words.
+    var busy = function (link, waiting) {
+        if (!link.dataset.label) { link.dataset.label = link.textContent; }
+        link.disabled = waiting;
+        link.textContent = waiting ? link.dataset.label + ' …' : link.dataset.label;
+    };
+    // The failed line, with the error's name ("(NotAllowedError)") to report.
+    var failed = function (err) {
+        var name = err && err.name ? String(err.name) : '';
+        if ('Error' === name && err.message) { name += ' ' + String(err.message); }
+        part('error').textContent = name ? '(' + name + ')' : '';
+        busy(on, false);
+        busy(off, false);
+        only('failed');
     };
 
-    // The Crew app's service worker; on a page without one nothing shows.
-    navigator.serviceWorker.ready.then(function (reg) {
+    var reg = null;
+
+    // The Crew app's service worker. Not ready in 5 seconds: the link shows
+    // anyway, and a tap says to reload (below), rather than nothing at all.
+    var notReady = setTimeout(function () { if (!reg) { show(false); } }, 5000);
+    navigator.serviceWorker.ready.then(function (ready) {
+        clearTimeout(notReady);
+        reg = ready;
+        only('');
         reg.pushManager.getSubscription().then(function (sub) {
             show(!!sub);
             if (sub && 'granted' === Notification.permission) { post('subscribe', sub).catch(function () {}); }
         });
+    });
 
-        on.addEventListener('click', function () {
-            on.disabled = true;
-            Notification.requestPermission().then(function (permission) {
-                if ('granted' !== permission) { on.disabled = false; show(false); return null; }
-                return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key() })
-                    .then(function (sub) { return post('subscribe', sub); })
-                    .then(function (r) { return r.json().catch(function () { return {}; }); })
-                    .then(function (body) {
-                        on.disabled = false;
-                        show(true);
-                        // Telegram linked, not asked yet: "Where do you want
-                        // them?" (signup-channels.php).
-                        if (body && body.ask_channels) { document.dispatchEvent(new CustomEvent('eventcrew:ask-channels')); }
-                    });
-            }).catch(failed);
+    on.addEventListener('click', function () {
+        if (on.disabled) { return; }
+        if (!reg) { only('loading'); return; }
+        only('');
+        busy(on, true);
+        // No answer in 8 seconds: the phone did not show the question.
+        var answered = false;
+        var wait = setTimeout(function () {
+            if (answered) { return; }
+            busy(on, false);
+            only('dismissed');
+        }, 8000);
+        var asked;
+        try {
+            // Old Safari answers only through a callback and returns nothing.
+            asked = Promise.resolve(Notification.requestPermission()).then(function (p) { return p || Notification.permission; });
+        } catch (err) {
+            asked = Promise.reject(err);
+        }
+        asked.then(function (permission) {
+            answered = true;
+            clearTimeout(wait);
+            if ('granted' !== permission) {
+                busy(on, false);
+                show(false);
+                // 'denied' shows the blocked line (show); 'default' is a
+                // question dismissed or never shown.
+                if ('denied' !== permission) { only('dismissed'); }
+                return null;
+            }
+            only('');
+            busy(on, true);
+            return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key() })
+                .then(function (sub) { return post('subscribe', sub); })
+                .then(function (r) { return r.json().catch(function () { return {}; }); })
+                .then(function (body) {
+                    busy(on, false);
+                    show(true);
+                    // Telegram linked, not asked yet: "Where do you want
+                    // them?" (signup-channels.php).
+                    if (body && body.ask_channels) { document.dispatchEvent(new CustomEvent('eventcrew:ask-channels')); }
+                });
+        }).catch(function (err) {
+            answered = true;
+            clearTimeout(wait);
+            failed(err);
         });
+    });
 
-        off.addEventListener('click', function () {
-            off.disabled = true;
-            reg.pushManager.getSubscription().then(function (sub) {
-                if (!sub) { return null; }
-                return post('unsubscribe', sub).catch(function () {}).then(function () { return sub.unsubscribe(); });
-            }).then(function () { off.disabled = false; show(false); }).catch(failed);
-        });
+    off.addEventListener('click', function () {
+        if (off.disabled) { return; }
+        if (!reg) { only('loading'); return; }
+        only('');
+        busy(off, true);
+        reg.pushManager.getSubscription().then(function (sub) {
+            if (!sub) { return null; }
+            return post('unsubscribe', sub).catch(function () {}).then(function () { return sub.unsubscribe(); });
+        }).then(function () { busy(off, false); show(false); }).catch(failed);
     });
 })();
 </script>

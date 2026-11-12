@@ -747,6 +747,14 @@ final class SignupControllerTest extends TestCase
         self::assertStringContainsString('data-action="eventcrew_app_install"', $html);
         self::assertStringContainsString('id="eventcrew-notifications"', $html);
         self::assertStringContainsString('data-eventcrew-goto="eventcrew-notifications"', $html);
+        // Owner 2026-11-13: after an install the tab says so, with Open the
+        // app (the app's start address), and the Open in the app line is a
+        // clear line with the icon, no longer muted small print.
+        self::assertStringContainsString('data-eventcrew-app-step="installed"', $html);
+        self::assertStringContainsString('Open EDH Crew from your home screen.', $html);
+        self::assertStringContainsString('data-eventcrew-app-launch>Open the app</button>', $html);
+        self::assertMatchesRegularExpression('/data-start="https?:[^"]*eventcrew_app=[^"]*"/', $html);
+        self::assertStringContainsString('<p class="eventcrew-app-openline" data-eventcrew-app-open hidden>', $html);
 
         unset($_COOKIE[WebSession::COOKIE]);
         $this->wpdb = new \FakeWpdb();
@@ -755,6 +763,37 @@ final class SignupControllerTest extends TestCase
         $this->wpdb->nextResults[] = [];
 
         self::assertStringNotContainsString('data-eventcrew-app', $this->controller()->renderShortcode());
+    }
+
+    /**
+     * Owner 2026-11-13: a tap on Turn on notifications once showed nothing.
+     * Every outcome has its line now: the question not shown, the app still
+     * loading, and the failed line with a place for the error's name; the
+     * script waits 8 seconds for an answer and 5 for the service worker.
+     */
+    public function testTurnOnNotificationsHasALineForEveryOutcome(): void
+    {
+        $this->stubPageRender();
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => \EventCrew\Support\VapidKeys::OPTION === $name
+                ? ['private' => 'pem', 'public' => 'BPublicKey']
+                : $default
+        );
+        $eventcrew_ajax = 'https://site.test/wp-admin/admin-ajax.php';
+        $eventcrew_csrf = 'token';
+
+        ob_start();
+        require dirname(__DIR__, 2) . '/templates/public/signup-push.php';
+        $html = (string) ob_get_clean();
+
+        self::assertStringContainsString('data-key="BPublicKey"', $html);
+        self::assertStringContainsString('data-eventcrew-push-dismissed hidden>Your phone did not show the question. Allow notifications for this site in the browser', $html);
+        self::assertStringContainsString('data-eventcrew-push-loading hidden>The app is still loading. Reload the page and try again.</p>', $html);
+        self::assertStringContainsString('Could not turn on notifications. Try again. <span class="eventcrew-push-error" data-eventcrew-push-error></span>', $html);
+        self::assertStringContainsString('}, 8000);', $html);
+        self::assertStringContainsString('}, 5000);', $html);
+        // After subscribing it may still ask where notifications go.
+        self::assertStringContainsString("new CustomEvent('eventcrew:ask-channels')", $html);
     }
 
     /** The signed-in person 7 (Sam), on task 5 (2026-08-01), through MeTabWpdb. */

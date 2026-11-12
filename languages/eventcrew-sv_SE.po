@@ -13962,3 +13962,16 @@ msgstr "Sparat. Aviseringar kommer till Telegram."
 
 msgid "Saved. Notifications come to both."
 msgstr "Sparat. Aviseringar kommer till båda."
+
+#. translators: %s: the app's short name, like "EDH Crew".
+msgid "Open %s from your home screen."
+msgstr "Öppna %s från hemskärmen."
+
+msgid "Open the app"
+msgstr "Öppna appen"
+
+msgid "Your phone did not show the question. Allow notifications for this site in the browser's site settings, then try again."
+msgstr "Telefonen visade inte frågan. Tillåt aviseringar för den här webbplatsen i webbläsarens webbplatsinställningar och försök igen."
+
+msgid "The app is still loading. Reload the page and try again."
+msgstr "Appen laddas fortfarande. Ladda om sidan och försök igen."

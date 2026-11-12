@@ -11022,3 +11022,16 @@ msgstr "Tallennettu. Ilmoitukset tulevat Telegramiin."
 
 msgid "Saved. Notifications come to both."
 msgstr "Tallennettu. Ilmoitukset tulevat molempiin."
+
+#. translators: %s: the app's short name, like "EDH Crew".
+msgid "Open %s from your home screen."
+msgstr "Avaa %s aloitusnäytöltä."
+
+msgid "Open the app"
+msgstr "Avaa sovellus"
+
+msgid "Your phone did not show the question. Allow notifications for this site in the browser's site settings, then try again."
+msgstr "Puhelin ei näyttänyt kysymystä. Salli ilmoitukset tälle sivustolle selaimen sivustoasetuksista ja yritä uudelleen."
+
+msgid "The app is still loading. Reload the page and try again."
+msgstr "Sovellus latautuu vielä. Lataa sivu uudelleen ja yritä taas."

@@ -7,11 +7,15 @@
  * due; the script below shows it only in a browser tab that can install
  * the app (an iPhone or iPad, or a browser that offered to install it).
  *
- * Three steps in one card, one shown at a time:
+ * Four steps in one card, one shown at a time:
  * - offer: the pitch and the two buttons;
  * - ios: on an iPhone or iPad, how to add the app to the Home Screen;
- * - notify: once the app is installed (here, or on its first opening from
- *   the Home Screen, once), Turn on notifications. It presses the
+ * - installed (Owner 2026-11-13): once the browser says it installed the
+ *   app (appinstalled, or Install accepted in its prompt), "Installed",
+ *   where to find it, and Open the app. Chrome cannot move this tab into
+ *   the app, so the tab says plainly that the app is elsewhere now;
+ * - notify: on the installed app's first opening from the Home Screen
+ *   (once), Turn on notifications. It presses the
  *   Notifications card's own "Turn on notifications on this device" link
  *   (signup-push.php), then opens that card so the person can choose the
  *   notices.
@@ -20,7 +24,9 @@
  * Samsung Internet offer to install (beforeinstallprompt) only where the
  * app is not installed, so that offer brings the pop-in back after an
  * uninstall. Where getInstalledRelatedApps() says the app is installed, a
- * browser tab shows the small "Open in the app" link instead. An iPhone or
+ * browser tab shows an "Open in the app" line at the top of the page
+ * instead (a line with the app icon, not a button: the theme makes buttons
+ * huge). An iPhone or
  * iPad tells neither: the app records each opening (op opened, once a day)
  * and Safari offers it again once it has not been opened for a while
  * (ios_due). The installed app offers notifications once per install, and
@@ -39,24 +45,30 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-/** @var array{popin: bool, installed: bool, ios_due: bool, record_open: bool, offer_notify: bool, action: string, name: string, icon: string, color: string}|null $eventcrew_app_install */
+/** @var array{popin: bool, installed: bool, ios_due: bool, record_open: bool, offer_notify: bool, action: string, name: string, icon: string, color: string, start?: string}|null $eventcrew_app_install */
 /** @var string $eventcrew_ajax */
 /** @var string $eventcrew_csrf */
 
 if (null === $eventcrew_app_install) {
     return;
 }
+
+$eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
 ?>
 <div class="eventcrew-app" data-eventcrew-app
     data-ajax="<?php echo esc_url($eventcrew_ajax); ?>"
     data-action="<?php echo esc_attr($eventcrew_app_install['action']); ?>"
     data-csrf="<?php echo esc_attr($eventcrew_csrf); ?>"
+    data-start="<?php echo esc_url($eventcrew_app_start); ?>"
     data-popin="<?php echo $eventcrew_app_install['popin'] ? '1' : '0'; ?>"
     data-ios-due="<?php echo $eventcrew_app_install['ios_due'] ? '1' : '0'; ?>"
     data-record-open="<?php echo $eventcrew_app_install['record_open'] ? '1' : '0'; ?>"
     data-offer-notify="<?php echo $eventcrew_app_install['offer_notify'] ? '1' : '0'; ?>">
-<p class="eventcrew-install eventcrew-muted eventcrew-hint" data-eventcrew-app-open hidden>
-    <a href="#"><?php esc_html_e('Open in the app', 'eventcrew'); ?></a>
+<p class="eventcrew-app-openline" data-eventcrew-app-open hidden>
+    <a href="<?php echo esc_url('' !== $eventcrew_app_start ? $eventcrew_app_start : '#'); ?>" target="_blank" rel="noopener">
+        <img src="<?php echo esc_url($eventcrew_app_install['icon']); ?>" width="24" height="24" alt="" loading="lazy">
+        <span><?php esc_html_e('Open in the app', 'eventcrew'); ?></span>
+    </a>
 </p>
 <dialog class="eventcrew-app-dialog" aria-labelledby="eventcrew-app-title-offer"
     style="--eventcrew-app-color: <?php echo esc_attr($eventcrew_app_install['color']); ?>">
@@ -101,6 +113,18 @@ if (null === $eventcrew_app_install) {
                 </li>
             </ol>
         </div>
+        <div class="eventcrew-app-step" data-eventcrew-app-step="installed" hidden>
+            <h2 class="eventcrew-app-title" id="eventcrew-app-title-installed"><?php esc_html_e('Installed', 'eventcrew'); ?></h2>
+            <p>
+                <?php
+                /* translators: %s: the app's short name, like "EDH Crew". */
+                echo esc_html(sprintf(__('Open %s from your home screen.', 'eventcrew'), $eventcrew_app_install['name']));
+                ?>
+            </p>
+            <div class="eventcrew-app-actions">
+                <button type="button" class="wp-element-button eventcrew-linkbtn" data-eventcrew-app-launch><?php esc_html_e('Open the app', 'eventcrew'); ?></button>
+            </div>
+        </div>
         <div class="eventcrew-app-step" data-eventcrew-app-step="notify" hidden>
             <h2 class="eventcrew-app-title" id="eventcrew-app-title-notify"><?php esc_html_e('Turn on notifications', 'eventcrew'); ?></h2>
             <p><?php esc_html_e('Then choose which notices reach you in the app.', 'eventcrew'); ?></p>
@@ -124,6 +148,7 @@ if (null === $eventcrew_app_install) {
     var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
         || true === window.navigator.standalone;
     var offer = null, returnTo = null, step = 'offer', closing = '', queue = Promise.resolve();
+    var start = box.dataset.start || location.pathname;
 
     // One at a time, in order: a new install clears the notifications
     // offer, which must not overtake the offer's own "seen".
@@ -155,7 +180,8 @@ if (null === $eventcrew_app_install) {
         dialog.showModal();
     };
     // How it was closed decides what is stored: × and Esc close it until
-    // the next sign-in; the notifications step, once seen, is done.
+    // the next sign-in; the notifications step, once seen, is done; the
+    // installed step stores nothing more (appinstalled stored the install).
     var close = function (how) {
         closing = how;
         dialog.close();
@@ -163,7 +189,7 @@ if (null === $eventcrew_app_install) {
     dialog.addEventListener('close', function () {
         var how = closing;
         closing = '';
-        if ('notify' === step) { post('offered'); } else if ('later' !== how) { post('close'); }
+        if ('notify' === step) { post('offered'); } else if ('installed' !== step && 'later' !== how) { post('close'); }
         // Turn on notifications moves on to the Notifications card instead.
         if ('notify' !== how && returnTo && returnTo.focus && document.contains(returnTo)) {
             returnTo.focus({ preventScroll: true });
@@ -184,9 +210,50 @@ if (null === $eventcrew_app_install) {
         offer = null;
         asked.prompt();
         asked.userChoice.then(function (choice) {
-            if ('accepted' !== choice.outcome) { close('close'); }
+            if ('accepted' === choice.outcome) { installedHere(); } else { close('close'); }
         });
     });
+
+    /*
+     * Open the app from this browser tab. No web API launches an installed
+     * app, and Chrome cannot move a tab into it. What comes closest on
+     * Android (2026-11-13, not tried on a phone yet): a new top-level
+     * navigation, from a tap, to the start address inside the manifest's
+     * scope. The installed WebAPK registers its scope as an Android link
+     * handler, and Chrome checks a new navigation from a gesture against
+     * such handlers, so it may hand the address to the app or ask whether
+     * to open it there, by Chrome version. Where it does not, the new tab
+     * shows the page again, and the text above says where the app is (the
+     * home screen icon). Not chosen: a same-tab location change (an
+     * in-page navigation, the least likely to leave Chrome) and an
+     * intent:// address (needs the WebAPK's package name, which a page
+     * cannot know). window.open without "noopener" (that makes it return
+     * null), then the opener cut by hand; if it is blocked, this tab goes.
+     */
+    var launch = function (e) {
+        if (e) { e.preventDefault(); }
+        var w = window.open(start, '_blank');
+        if (w) { try { w.opener = null; } catch (err) {} } else { location.href = start; }
+    };
+    part('launch').addEventListener('click', launch);
+    // Kept by reference: once moved to the top it is outside the box.
+    var line = part('open'), lineShown = false;
+    var openLine = function () {
+        if (!line || lineShown) { return; }
+        lineShown = true;
+        // At the top of the page, under the tab bar, where it is seen first.
+        var root = box.closest('.eventcrew-signup');
+        var nav = root && root.querySelector('.eventcrew-tabs');
+        if (nav && nav.parentNode) { nav.parentNode.insertBefore(line, nav.nextSibling); } else if (root) { root.insertBefore(line, root.firstChild); }
+        line.querySelector('a').addEventListener('click', launch);
+        line.hidden = false;
+    };
+    // The browser installed the app from this tab: say so in the pop-in,
+    // opened again if it was closed (installed from the browser menu).
+    var installedHere = function () {
+        openLine();
+        open('installed');
+    };
     // Presses the Notifications card's own switch (signup-push.php) in this
     // same tap, which the browser's permission question needs; then the
     // click goes on to the page's [data-eventcrew-goto] handler, which opens
@@ -200,7 +267,7 @@ if (null === $eventcrew_app_install) {
 
     window.addEventListener('appinstalled', function () {
         post('installed');
-        if (dialog.open) { show('notify'); }
+        installedHere();
     });
 
     if (standalone) {
@@ -218,15 +285,14 @@ if (null === $eventcrew_app_install) {
         return;
     }
 
-    // Installed on this device (Chrome, Edge): a small link, no pop-in.
+    // Installed on this device (Chrome, Edge): the Open in the app line at
+    // the top, no pop-in.
     var installed = navigator.getInstalledRelatedApps
         ? navigator.getInstalledRelatedApps().catch(function () { return []; })
         : Promise.resolve([]);
     installed.then(function (apps) {
         if (!apps || !apps.length) { return; }
-        var link = part('open');
-        link.querySelector('a').href = location.pathname;
-        link.hidden = false;
+        openLine();
     });
 
     if ('1' !== box.dataset.popin) { return; }

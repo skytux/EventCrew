@@ -1186,6 +1186,17 @@
 .eventcrew-signup .eventcrew-signin-code[hidden],
 .eventcrew-signup .eventcrew-install[hidden],
 .eventcrew-signup .eventcrew-install [hidden] { display: none; }
+/*
+ * "Open in the app" (signup-app-install.php), moved by its script to the top
+ * of the page where the app is installed on this device: a clear line with
+ * the app icon, full strength, but a link, not one of the theme's big buttons.
+ */
+.eventcrew-signup .eventcrew-app-openline { margin: .75em 0; text-align: center; font-weight: 600; }
+.eventcrew-signup .eventcrew-app-openline a { display: inline-flex; align-items: center; gap: .5em; }
+.eventcrew-signup .eventcrew-app-openline img { flex: none; width: 24px; height: 24px; border-radius: 6px; }
+.eventcrew-signup .eventcrew-app-openline[hidden] { display: none; }
+/* The error name after "Could not turn on notifications" (signup-push.php). */
+.eventcrew-signup .eventcrew-push-error { font-size: .85em; opacity: .8; }
 .eventcrew-signup .tg-auth-button {
     box-sizing: border-box;
     display: flex;

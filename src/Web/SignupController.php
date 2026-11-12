@@ -477,9 +477,10 @@ final class SignupController implements WebTaskSignup
     /**
      * The "Get the app" pop-in's inputs for the signed-in person: whether it
      * is due (AppInstallPrompt::state(), for this session's cookie), and the
-     * app's name, icon and colour for its card.
+     * app's name, icon and colour for its card, and its start address (what
+     * "Open the app" opens).
      *
-     * @return array{popin: bool, installed: bool, offer_notify: bool, action: string, name: string, icon: string, color: string}
+     * @return array{popin: bool, installed: bool, offer_notify: bool, action: string, name: string, icon: string, color: string, start: string}
      */
     public static function appInstallView(Person $person, ?int $now = null): array
     {
@@ -492,6 +493,7 @@ final class SignupController implements WebTaskSignup
             'name' => $pwa->appShortName(),
             'icon' => PwaController::iconUrl(192),
             'color' => $pwa->themeColor(),
+            'start' => $pwa->startUrl(),
         ];
     }
 
