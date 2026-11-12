@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.219
+Stable tag: 1.140.220
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.220 =
+* Post-event email: the invitation to join the announcement now comes right after the main text, as the strongest button; ticket buttons are outlined. People already subscribed no longer get the invitation.
 
 = 1.140.219 =
 * Crew app: after signing in, a pop-in offers to install the app (Install the app / Remind me later / close). Close hides it until the next sign-in, Remind me later for the days set in Settings (default 14), never again once installed.
@@ -2038,6 +2041,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.220 =
+No settings change.
 
 = 1.140.219 =
 No settings change.
