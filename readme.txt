@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.224
+Stable tag: 1.140.225
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.225 =
+* Crew app: the install pop-in comes back after the app is removed. Android and computers ask the browser; where it can tell the app is still installed, a small Open in the app link shows instead. On iPhone it comes back when the app has not been opened for the remind days.
+* Crew app: after a reinstall, the app offers notifications again if this device has none.
 
 = 1.140.224 =
 * Crew app: the assistant box shows the bot's own picture instead of the Telegram logo.
@@ -2055,6 +2059,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.225 =
+No settings change.
 
 = 1.140.224 =
 No settings change.

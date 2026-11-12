@@ -468,7 +468,7 @@ msgstr ""
 msgid "%s (archived)"
 msgstr ""
 
-#: src/Web/PwaController.php:338
+#: src/Web/PwaController.php:345
 msgid "%s Crew"
 msgstr ""
 
@@ -1347,7 +1347,7 @@ msgstr ""
 msgid "Add guest"
 msgstr ""
 
-#: templates/public/signup-app-install.php:69
+#: templates/public/signup-app-install.php:83
 msgid "Add it to your Home Screen"
 msgstr ""
 
@@ -2288,7 +2288,7 @@ msgstr ""
 msgid "Choose"
 msgstr ""
 
-#: templates/public/signup-app-install.php:77
+#: templates/public/signup-app-install.php:91
 msgid "Choose Add to Home Screen."
 msgstr ""
 
@@ -2313,7 +2313,7 @@ msgid "Clean"
 msgstr ""
 
 #: src/Telegram/NightCommands.php:270 src/Web/NewsletterController.php:505 templates/public/door.php:253 templates/public/door.php:335
-#: templates/public/door.php:356 templates/public/door.php:373 templates/public/signup-app-install.php:51 templates/public/signup-assistant.php:80
+#: templates/public/door.php:356 templates/public/door.php:373 templates/public/signup-app-install.php:65 templates/public/signup-assistant.php:80
 msgid "Close"
 msgstr ""
 
@@ -3632,7 +3632,7 @@ msgstr ""
 msgid "Get my ticket"
 msgstr ""
 
-#: templates/public/signup-app-install.php:59
+#: templates/public/signup-app-install.php:73
 msgid "Get the %s app"
 msgstr ""
 
@@ -4390,7 +4390,7 @@ msgstr ""
 msgid "Install / refresh webhook"
 msgstr ""
 
-#: templates/public/signup-app-install.php:64 templates/public/signup.php:2887
+#: templates/public/signup-app-install.php:78 templates/public/signup.php:2887
 msgid "Install the app"
 msgstr ""
 
@@ -6005,7 +6005,7 @@ msgstr ""
 msgid "Only people with this role can sign up for this task."
 msgstr ""
 
-#: templates/public/signup-app-install.php:84
+#: templates/public/signup-app-install.php:98
 msgid "Open %s from your Home Screen."
 msgstr ""
 
@@ -6048,6 +6048,10 @@ msgstr ""
 
 #: src/Support/EmailBody.php:174
 msgid "Open in Telegram:"
+msgstr ""
+
+#: templates/public/signup-app-install.php:59
+msgid "Open in the app"
 msgstr ""
 
 #: src/Support/TicketMail.php:1978
@@ -6760,7 +6764,7 @@ msgstr ""
 msgid "Remind about the app after"
 msgstr ""
 
-#: templates/public/signup-app-install.php:65
+#: templates/public/signup-app-install.php:79
 msgid "Remind me later"
 msgstr ""
 
@@ -8385,7 +8389,7 @@ msgstr ""
 msgid "Tap Sales desk in the Me tab of the crew page (%s)."
 msgstr ""
 
-#: templates/public/signup-app-install.php:73
+#: templates/public/signup-app-install.php:87
 msgid "Tap Share in the browser bar."
 msgstr ""
 
@@ -10136,7 +10140,7 @@ msgstr ""
 msgid "Theme colour"
 msgstr ""
 
-#: templates/public/signup-app-install.php:92
+#: templates/public/signup-app-install.php:106
 msgid "Then choose which notices reach you in the app."
 msgstr ""
 
@@ -10921,7 +10925,7 @@ msgstr ""
 msgid "Turn off notifications on this device"
 msgstr ""
 
-#: templates/public/signup-app-install.php:91 templates/public/signup-app-install.php:95
+#: templates/public/signup-app-install.php:105 templates/public/signup-app-install.php:109
 msgid "Turn on notifications"
 msgstr ""
 
@@ -11070,7 +11074,7 @@ msgstr ""
 msgid "Used when the organizers wrote no text for the announcement."
 msgstr ""
 
-#: templates/public/signup-app-install.php:62
+#: templates/public/signup-app-install.php:76
 msgid "Useful notifications you choose. No need for Telegram."
 msgstr ""
 
