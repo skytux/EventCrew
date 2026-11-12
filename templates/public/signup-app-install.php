@@ -16,6 +16,16 @@
  *   (signup-push.php), then opens that card so the person can choose the
  *   notices.
  *
+ * Installed or not on this device (Owner 2026-11-13): Chrome, Edge and
+ * Samsung Internet offer to install (beforeinstallprompt) only where the
+ * app is not installed, so that offer brings the pop-in back after an
+ * uninstall. Where getInstalledRelatedApps() says the app is installed, a
+ * browser tab shows the small "Open in the app" link instead. An iPhone or
+ * iPad tells neither: the app records each opening (op opened, once a day)
+ * and Safari offers it again once it has not been opened for a while
+ * (ios_due). The installed app offers notifications once per install, and
+ * only where this device has no push subscription yet.
+ *
  * The page is only shown signed in, which is never cached (the CSRF token),
  * so the due-or-not answer is this person's, now.
  *
@@ -29,7 +39,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-/** @var array{popin: bool, installed: bool, offer_notify: bool, action: string, name: string, icon: string, color: string}|null $eventcrew_app_install */
+/** @var array{popin: bool, installed: bool, ios_due: bool, record_open: bool, offer_notify: bool, action: string, name: string, icon: string, color: string}|null $eventcrew_app_install */
 /** @var string $eventcrew_ajax */
 /** @var string $eventcrew_csrf */
 
@@ -42,8 +52,12 @@ if (null === $eventcrew_app_install) {
     data-action="<?php echo esc_attr($eventcrew_app_install['action']); ?>"
     data-csrf="<?php echo esc_attr($eventcrew_csrf); ?>"
     data-popin="<?php echo $eventcrew_app_install['popin'] ? '1' : '0'; ?>"
-    data-installed="<?php echo $eventcrew_app_install['installed'] ? '1' : '0'; ?>"
+    data-ios-due="<?php echo $eventcrew_app_install['ios_due'] ? '1' : '0'; ?>"
+    data-record-open="<?php echo $eventcrew_app_install['record_open'] ? '1' : '0'; ?>"
     data-offer-notify="<?php echo $eventcrew_app_install['offer_notify'] ? '1' : '0'; ?>">
+<p class="eventcrew-install eventcrew-muted eventcrew-hint" data-eventcrew-app-open hidden>
+    <a href="#"><?php esc_html_e('Open in the app', 'eventcrew'); ?></a>
+</p>
 <dialog class="eventcrew-app-dialog" aria-labelledby="eventcrew-app-title-offer"
     style="--eventcrew-app-color: <?php echo esc_attr($eventcrew_app_install['color']); ?>">
     <div class="eventcrew-app-card">
@@ -109,15 +123,19 @@ if (null === $eventcrew_app_install) {
     var ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
     var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
         || true === window.navigator.standalone;
-    var offer = null, returnTo = null, step = 'offer', closing = '';
+    var offer = null, returnTo = null, step = 'offer', closing = '', queue = Promise.resolve();
 
+    // One at a time, in order: a new install clears the notifications
+    // offer, which must not overtake the offer's own "seen".
     var post = function (op) {
         var data = new FormData();
         data.append('action', box.dataset.action);
         data.append('csrf', box.dataset.csrf);
         data.append('op', op);
-        fetch(box.dataset.ajax, { method: 'POST', body: data, credentials: 'same-origin', keepalive: true })
-            .catch(function () {});
+        queue = queue.then(function () {
+            return fetch(box.dataset.ajax, { method: 'POST', body: data, credentials: 'same-origin', keepalive: true })
+                .catch(function () {});
+        });
     };
     var show = function (name) {
         step = name;
@@ -156,7 +174,8 @@ if (null === $eventcrew_app_install) {
         b.addEventListener('click', function () { post('later'); close('later'); });
     });
     part('install').addEventListener('click', function () {
-        if (ios) { show('ios'); return; }
+        // The next opening from the Home Screen is a new install.
+        if (ios) { post('installing'); show('ios'); return; }
         if (!offer) { return; }
         var asked = offer;
         offer = null;
@@ -177,27 +196,45 @@ if (null === $eventcrew_app_install) {
     });
 
     window.addEventListener('appinstalled', function () {
-        if ('1' !== box.dataset.installed) { post('installed'); box.dataset.installed = '1'; }
+        post('installed');
         if (dialog.open) { show('notify'); }
     });
 
     if (standalone) {
-        if ('1' !== box.dataset.installed) { post('installed'); }
+        if ('1' === box.dataset.recordOpen) { post('opened'); }
         if ('1' !== box.dataset.offerNotify) { return; }
-        // Asked already (allowed or blocked): nothing to offer.
-        if ('Notification' in window && 'default' !== Notification.permission) { post('offered'); return; }
-        open('notify');
+        // Blocked, or this device gets them already: nothing to offer.
+        var sw = navigator.serviceWorker;
+        (sw && 'PushManager' in window
+            ? sw.getRegistration().then(function (r) { return r && r.pushManager.getSubscription(); })
+            : Promise.resolve(null)
+        ).catch(function () { return null; }).then(function (sub) {
+            if (sub || ('Notification' in window && 'denied' === Notification.permission)) { post('offered'); return; }
+            open('notify');
+        });
         return;
     }
 
+    // Installed on this device (Chrome, Edge): a small link, no pop-in.
+    var installed = navigator.getInstalledRelatedApps
+        ? navigator.getInstalledRelatedApps().catch(function () { return []; })
+        : Promise.resolve([]);
+    installed.then(function (apps) {
+        if (!apps || !apps.length) { return; }
+        var link = part('open');
+        link.querySelector('a').href = location.pathname;
+        link.hidden = false;
+    });
+
     if ('1' !== box.dataset.popin) { return; }
 
-    if (ios) { open('offer'); return; }
+    if (ios) { if ('1' === box.dataset.iosDue) { open('offer'); } return; }
 
+    // Offered only where the app is not installed: after an uninstall too.
     window.addEventListener('beforeinstallprompt', function (event) {
         event.preventDefault();
         offer = event;
-        if (!dialog.open) { open('offer'); }
+        installed.then(function (apps) { if (!(apps && apps.length) && !dialog.open) { open('offer'); } });
     });
 })();
 </script>

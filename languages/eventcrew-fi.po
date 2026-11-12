@@ -10995,3 +10995,6 @@ msgstr "Selaimesi puhepalvelu (Google tai Apple) muuttaa puheesi tekstiksi."
 
 msgid "Assistant"
 msgstr "Avustaja"
+
+msgid "Open in the app"
+msgstr "Avaa sovelluksessa"

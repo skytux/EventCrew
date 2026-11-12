@@ -20,14 +20,22 @@ use EventCrew\Models\Person;
  * - Remind me later: not again for remindDays() days (KEY_REMIND_AFTER),
  *   on any device or sign-in.
  * - Installed (the browser's appinstalled event, or the app opened from the
- *   Home Screen while signed in): never again (KEY_INSTALLED).
- * Once installed, the app offers "Turn on notifications" once
- * (KEY_NOTIFY_OFFERED).
+ *   Home Screen while signed in): kept as history (KEY_INSTALLED) only, since
+ *   the app can be removed again (Owner 2026-11-13). Whether it is installed
+ *   on this device the browser tells: Chrome, Edge and Samsung Internet fire
+ *   beforeinstallprompt only where it is not, and getInstalledRelatedApps()
+ *   says where it is (then the page shows "Open in the app" instead). An
+ *   iPhone or iPad tells nothing, so each opening of the app from the Home
+ *   Screen is recorded (KEY_LAST_OPEN, at most once a day), and Safari
+ *   offers the app again once it has not been opened for remindDays() days.
+ * Once installed, the app offers "Turn on notifications" once per install
+ * (KEY_NOTIFY_OFFERED): a new install (appinstalled, or the first opening
+ * after the iPhone steps were shown, KEY_INSTALL_PENDING) clears it again.
+ * The script offers it only where this device has no push subscription.
  *
- * Whether this browser can install the app at all (an iPhone or iPad, or a
- * browser that fired beforeinstallprompt) only the page's script can tell;
- * the server decides only whether the person is due for it. Signed-in pages
- * are never cached, so the answer is per request.
+ * Whether this browser can install the app at all only the page's script
+ * can tell; the server decides only whether the person is due for it.
+ * Signed-in pages are never cached, so the answer is per request.
  *
  * Kept in the person's role_notices record (the per-person key => value
  * record that also holds the newcomer request), so no schema change.
@@ -52,13 +60,28 @@ final class AppInstallPrompt
     /** role_notices: when the installed app offered to turn on notifications. */
     public const KEY_NOTIFY_OFFERED = 'app:notify_offered';
 
-    public const KEYS = [self::KEY_INSTALLED, self::KEY_REMIND_AFTER, self::KEY_CLOSED, self::KEY_NOTIFY_OFFERED];
+    /** role_notices: when the app was last opened from the Home Screen (site time). */
+    public const KEY_LAST_OPEN = 'app:last_open';
+
+    /** role_notices: when the pop-in showed the iPhone steps; the next opening is a new install. */
+    public const KEY_INSTALL_PENDING = 'app:install_pending';
+
+    public const KEYS = [
+        self::KEY_INSTALLED,
+        self::KEY_REMIND_AFTER,
+        self::KEY_CLOSED,
+        self::KEY_NOTIFY_OFFERED,
+        self::KEY_LAST_OPEN,
+        self::KEY_INSTALL_PENDING,
+    ];
 
     /** The ops the page posts (AppInstallController). */
     public const OP_CLOSE = 'close';
     public const OP_LATER = 'later';
     public const OP_INSTALLED = 'installed';
     public const OP_OFFERED = 'offered';
+    public const OP_INSTALLING = 'installing';
+    public const OP_OPENED = 'opened';
 
     /** How many closed sessions are remembered: a few devices at once. */
     private const CLOSED_KEEP = 5;
@@ -94,24 +117,32 @@ final class AppInstallPrompt
     /**
      * What the page's script needs for this person on this request.
      *
-     * popin: the browser-tab pop-in is due (the script still shows it only
-     * where the app can be installed). installed: the app was installed.
-     * offer_notify: the installed app has not yet offered notifications.
+     * popin: the browser-tab pop-in is due (not closed in this session, no
+     * Remind me later pending); the script still shows it only where the app
+     * can be installed. installed: the app was installed once (history).
+     * ios_due: an iPhone or iPad has not opened the app for remindDays()
+     * days, or never, so Safari may offer it again. record_open: the app,
+     * opened now, should post OP_OPENED. offer_notify: the app has not yet
+     * offered notifications for this install.
      *
-     * @return array{popin: bool, installed: bool, offer_notify: bool}
+     * @return array{popin: bool, installed: bool, ios_due: bool, record_open: bool, offer_notify: bool}
      */
-    public static function state(Person $person, ?int $sessionIssuedAt, int $now): array
+    public static function state(Person $person, ?int $sessionIssuedAt, int $now, ?string $siteNow = null): array
     {
         $record = $person->roleNotices;
-        $installed = '' !== (string) ($record[self::KEY_INSTALLED] ?? '');
+        $siteNow ??= (string) current_time('mysql');
+        $installed = self::has($person, self::KEY_INSTALLED);
+        $pending = self::has($person, self::KEY_INSTALL_PENDING);
+        $sinceOpen = self::secondsSince($person, self::KEY_LAST_OPEN, $siteNow);
 
         return [
-            'popin' => ! $installed
-                && null !== $sessionIssuedAt
+            'popin' => null !== $sessionIssuedAt
                 && $now >= (int) ($record[self::KEY_REMIND_AFTER] ?? 0)
                 && ! in_array($sessionIssuedAt, self::closedSessions($person), true),
             'installed' => $installed,
-            'offer_notify' => '' === (string) ($record[self::KEY_NOTIFY_OFFERED] ?? ''),
+            'ios_due' => null === $sinceOpen || $sinceOpen >= self::remindDays() * DAY_IN_SECONDS,
+            'record_open' => ! $installed || $pending || null === $sinceOpen || $sinceOpen >= DAY_IN_SECONDS,
+            'offer_notify' => $pending || ! self::has($person, self::KEY_NOTIFY_OFFERED),
         ];
     }
 
@@ -143,13 +174,30 @@ final class AppInstallPrompt
                 return [self::KEY_REMIND_AFTER => (string) ($now + $remindDays * DAY_IN_SECONDS)];
 
             case self::OP_INSTALLED:
-                // The first time counts; an app opened again changes nothing.
-                return '' !== (string) ($person->roleNotices[self::KEY_INSTALLED] ?? '')
-                    ? []
-                    : [self::KEY_INSTALLED => $siteNow];
+                // The browser's appinstalled: a new install on this device.
+                return self::newInstall($person, $siteNow);
+
+            case self::OP_INSTALLING:
+                // The iPhone steps were shown: the next opening is a new install.
+                return [self::KEY_INSTALL_PENDING => $siteNow];
+
+            case self::OP_OPENED:
+                $entries = self::has($person, self::KEY_INSTALL_PENDING) ? self::newInstall($person, $siteNow) : [];
+
+                if (! self::has($person, self::KEY_INSTALLED)) {
+                    $entries[self::KEY_INSTALLED] = $siteNow;
+                }
+
+                $sinceOpen = self::secondsSince($person, self::KEY_LAST_OPEN, $siteNow);
+
+                if (null === $sinceOpen || $sinceOpen >= DAY_IN_SECONDS) {
+                    $entries[self::KEY_LAST_OPEN] = $siteNow;
+                }
+
+                return $entries;
 
             case self::OP_OFFERED:
-                return '' !== (string) ($person->roleNotices[self::KEY_NOTIFY_OFFERED] ?? '')
+                return self::has($person, self::KEY_NOTIFY_OFFERED)
                     ? []
                     : [self::KEY_NOTIFY_OFFERED => $siteNow];
         }
@@ -177,6 +225,49 @@ final class AppInstallPrompt
         $closed[] = $newIssuedAt;
 
         return [self::KEY_CLOSED => self::encodeClosed($closed)];
+    }
+
+    /**
+     * A new install: the first install time is kept, the notifications
+     * offer comes back once, and a pending iPhone install is done.
+     *
+     * @return array<string, string>
+     */
+    private static function newInstall(Person $person, string $siteNow): array
+    {
+        $entries = [];
+
+        if (! self::has($person, self::KEY_INSTALLED)) {
+            $entries[self::KEY_INSTALLED] = $siteNow;
+        }
+
+        if (self::has($person, self::KEY_NOTIFY_OFFERED)) {
+            $entries[self::KEY_NOTIFY_OFFERED] = '';
+        }
+
+        if (self::has($person, self::KEY_INSTALL_PENDING)) {
+            $entries[self::KEY_INSTALL_PENDING] = '';
+        }
+
+        return $entries;
+    }
+
+    private static function has(Person $person, string $key): bool
+    {
+        return '' !== (string) ($person->roleNotices[$key] ?? '');
+    }
+
+    /** Seconds from a stored site time to $siteNow, or null when none is stored. */
+    private static function secondsSince(Person $person, string $key, string $siteNow): ?int
+    {
+        if (! self::has($person, $key)) {
+            return null;
+        }
+
+        $then = strtotime((string) $person->roleNotices[$key]);
+        $now = strtotime($siteNow);
+
+        return false === $then || false === $now ? null : $now - $then;
     }
 
     /** @return list<int> */

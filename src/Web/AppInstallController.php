@@ -12,9 +12,11 @@ use EventCrew\Support\WebSession;
 /**
  * Stores what the person did with the "Get the app" pop-in of the Crew app
  * page (AppInstallPrompt): closed it, Remind me later, installed the app,
- * or saw the installed app's offer to turn on notifications.
+ * saw the iPhone steps, opened the app from the Home Screen, or saw the
+ * installed app's offer to turn on notifications.
  *
- * One admin-ajax action, ACTION, with op=close|later|installed|offered, for
+ * One admin-ajax action, ACTION, with
+ * op=close|later|installed|installing|opened|offered, for
  * the signed-in person only (the web session cookie and its CSRF token, as
  * the page's own forms).
  */

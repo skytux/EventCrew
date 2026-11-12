@@ -17,13 +17,14 @@ final class WebManifest
     /**
      * @param array{
      *     name: string, short_name: string, start_url: string, icon_url: string,
-     *     theme_color: string, background_color: string, scope?: string
+     *     theme_color: string, background_color: string, scope?: string,
+     *     manifest_url?: string
      * } $config
      * @return array<string, mixed>
      */
     public static function build(array $config): array
     {
-        return [
+        $manifest = [
             'name' => $config['name'],
             'short_name' => $config['short_name'],
             'start_url' => $config['start_url'],
@@ -55,6 +56,17 @@ final class WebManifest
                 ],
             ],
         ];
+
+        // The app names itself, so a page in its scope can ask
+        // navigator.getInstalledRelatedApps() whether it is installed here
+        // (Chrome, Edge) and offer "Open in the app" instead of installing.
+        if ('' !== ($config['manifest_url'] ?? '')) {
+            $manifest['related_applications'] = [
+                ['platform' => 'webapp', 'url' => $config['manifest_url']],
+            ];
+        }
+
+        return $manifest;
     }
 
     private static function iconSrc(string $base, int $size): string

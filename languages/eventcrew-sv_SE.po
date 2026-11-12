@@ -13935,3 +13935,6 @@ msgstr "Webbläsarens taltjänst (Google eller Apple) gör om din röst till tex
 
 msgid "Assistant"
 msgstr "Assistent"
+
+msgid "Open in the app"
+msgstr "Öppna i appen"

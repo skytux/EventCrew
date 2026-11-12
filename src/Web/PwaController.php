@@ -125,6 +125,7 @@ final class PwaController
             'start_url' => $this->startUrl(),
             'scope' => $this->scope(),
             'icon_url' => add_query_arg(self::PARAM, 'icon', home_url('/')),
+            'manifest_url' => self::manifestUrl(),
             'theme_color' => $color,
             'background_color' => '#ffffff',
         ];
@@ -147,7 +148,7 @@ final class PwaController
 
     public function headTags(): string
     {
-        $manifest = esc_url(add_query_arg(self::PARAM, 'manifest', home_url('/')));
+        $manifest = esc_url(self::manifestUrl());
         $sw = esc_url(add_query_arg(self::PARAM, 'sw', home_url('/')));
         $appleIcon = esc_url(add_query_arg([self::PARAM => 'icon', 'size' => 180], home_url('/')));
         $color = esc_attr($this->themeColor());
@@ -169,6 +170,12 @@ final class PwaController
             . '<meta name="apple-mobile-web-app-title" content="' . $name . '">' . "\n"
             . '<link rel="apple-touch-icon" href="' . $appleIcon . '">' . "\n"
             . '<script>' . $register . '</script>' . "\n";
+    }
+
+    /** The manifest's address, as the head tag links it. */
+    public static function manifestUrl(): string
+    {
+        return add_query_arg(self::PARAM, 'manifest', home_url('/'));
     }
 
     /** The app icon's address at a size (the Site Icon, else the generated one). */

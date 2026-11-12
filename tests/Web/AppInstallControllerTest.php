@@ -27,16 +27,27 @@ final class AppInstallControllerTest extends TestCase
         return new AppInstallController($people, new SessionPerson($people));
     }
 
-    private function person(): Person
+    /** @param array<string, string> $record the person's role_notices */
+    private function person(array $record = []): Person
     {
-        return Person::fromRow(['id' => 7, 'email' => 'sam@example.com']);
+        return Person::fromRow([
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'role_notices' => [] === $record ? null : (string) json_encode($record),
+        ]);
     }
 
-    /** @return array{0: int, 1: array<string, mixed>} */
-    private function post(string $op): array
+    /**
+     * Posts an op for Sam, whose stored role_notices are $record (as the
+     * session reads them and the repository finds them again).
+     *
+     * @param array<string, string> $record
+     * @return array{0: int, 1: array<string, mixed>}
+     */
+    private function post(string $op, array $record = []): array
     {
         return $this->controller()->handle(
-            $this->person(),
+            $this->person($record),
             ['op' => $op, 'csrf' => WebSession::csrfToken(7)],
             self::SESSION,
             self::NOW
@@ -94,6 +105,52 @@ final class AppInstallControllerTest extends TestCase
             ['newcomer:before' => 'yes', AppInstallPrompt::KEY_INSTALLED => '2026-07-20 12:00:00'],
             $this->written()
         );
+    }
+
+    public function testOpenedRecordsTheOpeningAndSettlesAPendingInstall(): void
+    {
+        $record = [
+            AppInstallPrompt::KEY_INSTALLED => '2026-01-01 10:00:00',
+            AppInstallPrompt::KEY_NOTIFY_OFFERED => '2026-01-01 10:01:00',
+            AppInstallPrompt::KEY_INSTALL_PENDING => '2026-07-20 11:00:00',
+        ];
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'role_notices' => (string) json_encode($record),
+        ];
+
+        self::assertSame([200, ['ok' => true]], $this->post('opened', $record));
+        self::assertSame(
+            [
+                AppInstallPrompt::KEY_INSTALLED => '2026-01-01 10:00:00',
+                AppInstallPrompt::KEY_NOTIFY_OFFERED => '',
+                AppInstallPrompt::KEY_INSTALL_PENDING => '',
+                AppInstallPrompt::KEY_LAST_OPEN => '2026-07-20 12:00:00',
+            ],
+            $this->written()
+        );
+    }
+
+    public function testOpenedAgainTheSameDayWritesNothing(): void
+    {
+        $record = [
+            AppInstallPrompt::KEY_INSTALLED => '2026-01-01 10:00:00',
+            AppInstallPrompt::KEY_LAST_OPEN => '2026-07-20 09:00:00',
+        ];
+
+        self::assertSame([200, ['ok' => true]], $this->post('opened', $record));
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame([], $this->wpdb->queries);
+    }
+
+    public function testInstallingMarksThePendingInstall(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com'];
+
+        $this->post('installing');
+
+        self::assertSame([AppInstallPrompt::KEY_INSTALL_PENDING => '2026-07-20 12:00:00'], $this->written());
     }
 
     public function testRefusals(): void

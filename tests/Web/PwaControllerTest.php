@@ -56,6 +56,9 @@ final class PwaControllerTest extends TestCase
         self::assertSame('Crew App', $config['name']);
         self::assertStringContainsString('https://site.test/signup/', $config['start_url']);
         self::assertStringContainsString('eventcrew_app=1', $config['start_url']);
+        // The manifest names itself (related_applications), as the head links it.
+        self::assertSame(PwaController::manifestUrl(), $config['manifest_url']);
+        self::assertStringContainsString('eventcrew_pwa=manifest', $config['manifest_url']);
     }
 
     public function testManifestConfigFallsBackToTheSiteNameAndDefaultColour(): void

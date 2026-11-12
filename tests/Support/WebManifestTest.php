@@ -41,6 +41,17 @@ final class WebManifestTest extends TestCase
         self::assertSame('Crew', WebManifest::build(['scope' => '/crew-app/'] + $this->config())['short_name']);
     }
 
+    public function testNamesItselfAsARelatedWebAppWhenGivenItsAddress(): void
+    {
+        $url = 'https://site.test/?eventcrew_pwa=manifest';
+
+        self::assertSame(
+            [['platform' => 'webapp', 'url' => $url]],
+            WebManifest::build(['manifest_url' => $url] + $this->config())['related_applications']
+        );
+        self::assertArrayNotHasKey('related_applications', WebManifest::build($this->config()));
+    }
+
     public function testAdvertisesTheRequiredIconSizesIncludingMaskable(): void
     {
         $manifest = WebManifest::build($this->config());
