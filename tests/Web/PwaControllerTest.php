@@ -37,6 +37,8 @@ final class PwaControllerTest extends TestCase
         Functions\when('esc_url')->returnArg(1);
         Functions\when('esc_attr')->returnArg(1);
         Functions\when('wp_json_encode')->alias(static fn (mixed $v): string => (string) json_encode($v));
+        Functions\when('wp_parse_url')->alias(static fn (string $url, int $part = -1): mixed => parse_url($url, $part));
+        Functions\when('pll_get_post_translations')->justReturn([]);
     }
 
     private function controller(): PwaController
@@ -114,5 +116,66 @@ final class PwaControllerTest extends TestCase
         self::assertStringContainsString('apple-mobile-web-app-capable', $tags);
         self::assertStringContainsString('apple-touch-icon', $tags);
         self::assertStringContainsString('serviceWorker', $tags);
+    }
+
+    public function testTheScopeIsTheAppPagesPath(): void
+    {
+        $this->options[PwaController::PAGE_OPTION] = 12;
+
+        $config = $this->controller()->manifestConfig();
+
+        self::assertSame('/signup/', $config['scope']);
+        self::assertStringStartsWith('https://site.test/signup/', $config['start_url']);
+    }
+
+    public function testWithoutAnAppPageTheScopeIsTheWholeSite(): void
+    {
+        self::assertSame('/', $this->controller()->scope());
+    }
+
+    /** Polylang: /crew-app/ and /fi/crew-app/ share only "/". */
+    public function testTranslationsAtOtherPathsWidenTheScopeToWhatTheyShare(): void
+    {
+        $this->options[PwaController::PAGE_OPTION] = 12;
+        Functions\when('pll_get_post_translations')->justReturn(['en' => 12, 'fi' => 40]);
+        Functions\when('get_permalink')->alias(
+            static fn (int $id): string => 40 === $id ? 'https://site.test/fi/crew/app/' : 'https://site.test/crew/app/'
+        );
+
+        self::assertSame('/', $this->controller()->scope());
+
+        Functions\when('get_permalink')->alias(
+            static fn (int $id): string => 40 === $id
+                ? 'https://site.test/crew/sovellus/'
+                : 'https://site.test/crew/app/'
+        );
+
+        self::assertSame('/crew/', $this->controller()->scope());
+    }
+
+    public function testTheServiceWorkerIsRegisteredForTheScope(): void
+    {
+        $this->options[PwaController::PAGE_OPTION] = 12;
+
+        self::assertStringContainsString('var s="\\/signup\\/"', $this->controller()->headTags());
+    }
+
+    public function testALongNameIsShortenedToInitialsAndCrew(): void
+    {
+        self::assertSame('EDH Crew', $this->controller()->shortName('Ecstatic Dance Helsinki'));
+        self::assertSame('HD Crew', $this->controller()->shortName('Helsinki Dance Crew'));
+    }
+
+    public function testANameThatFitsIsKept(): void
+    {
+        self::assertSame('Dance Crew', $this->controller()->manifestConfig()['short_name']);
+    }
+
+    public function testTheShortNameSettingWins(): void
+    {
+        $this->options[PwaController::SHORT_NAME_OPTION] = 'EDH';
+
+        self::assertSame('EDH', $this->controller()->shortName('Ecstatic Dance Helsinki'));
+        self::assertSame('EDH', $this->controller()->manifestConfig()['short_name']);
     }
 }

@@ -23,6 +23,7 @@ use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\TakeoverService;
 use EventCrew\Support\TicketTransferService;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\LoginCode;
 use EventCrew\Support\PageLanguage;
 use EventCrew\Support\Paging;
 use EventCrew\Support\PrivacyPolicy;
@@ -78,6 +79,8 @@ final class SignupController
 
     /** The page asks here, every few seconds, whether the bot approved the code. */
     public const TG_STATUS_ACTION = 'eventcrew_web_tg_status';
+    /** The sign-in email's code typed on the page (Support\LoginCode). */
+    public const CODE_ACTION = 'eventcrew_web_login_code';
 
     private const LOGIN_PURPOSE = 'web_login';
     private const LOGIN_TTL = 30 * MINUTE_IN_SECONDS;
@@ -167,6 +170,7 @@ final class SignupController
             self::CANCEL_OFFER_ACTION,
             self::TG_START_ACTION,
             self::TG_STATUS_ACTION,
+            self::CODE_ACTION,
             TelegramLogin::RETURN_ACTION,
         ];
 
@@ -255,6 +259,50 @@ final class SignupController
         }
 
         nocache_headers();
+
+        // Only here, on a response that is already personal and kept out of
+        // every cache, may the session cookie be renewed: a Set-Cookie on a
+        // cacheable page would be stored and handed to the next visitor.
+        $this->renewSession();
+    }
+
+    /**
+     * Sliding sign-in: a valid session cookie older than a day
+     * (WebSession::RENEW_AFTER) is swapped for a fresh 30-day one, so
+     * someone who opens the app now and then is never signed out. The
+     * cookie alone decides whether to look further, so a fresh cookie costs
+     * no database read; an old one is renewed only for a person who may
+     * still sign in (currentPerson(): not blocked, the cookie not revoked by
+     * "Sign out everywhere"). Returns the new cookie value, or null when
+     * nothing was renewed.
+     *
+     * Called only from preventCachingWhenSignedIn(), whose response is never
+     * cached.
+     */
+    public function renewSession(?int $now = null): ?string
+    {
+        $cookie = isset($_COOKIE[WebSession::COOKIE]) ? (string) $_COOKIE[WebSession::COOKIE] : '';
+        $now ??= time();
+
+        if ('' === $cookie || ! WebSession::shouldRenew($cookie, $now)) {
+            return null;
+        }
+
+        $person = $this->currentPerson();
+
+        if (null === $person) {
+            return null;
+        }
+
+        $fresh = WebSession::mint($person->id, $now);
+
+        if (! headers_sent()) {
+            $this->setSessionCookie($fresh, $now + WebSession::TTL);
+        }
+
+        $_COOKIE[WebSession::COOKIE] = $fresh;
+
+        return $fresh;
     }
 
     /**
@@ -391,6 +439,7 @@ final class SignupController
 
         return $this->boardView->build($person, $tasksPage, $pastPage) + [
             'login_action' => self::LOGIN_ACTION,
+            'code_action' => self::CODE_ACTION,
             'claim_action' => self::CLAIM_ACTION,
             'drop_action' => self::DROP_ACTION,
             'logout_action' => self::LOGOUT_ACTION,
@@ -658,6 +707,15 @@ final class SignupController
         $body = EmailBody::withGreeting($name, MessageTemplates::body($kind));
 
         $raw = $this->tokens->issue($personId, self::LOGIN_PURPOSE, self::LOGIN_TTL);
+        // The same sign-in as a code to type, for an app on a phone's home
+        // screen, which does not share the cookies of the browser the link
+        // opens in. Spending either spends both.
+        $code = LoginCode::issue($email, $raw, self::LOGIN_TTL);
+        $body .= "\n\n" . sprintf(
+            /* translators: %s: the 6-digit sign-in code */
+            __('Sign-in code for the app: %s', 'eventcrew'),
+            $code
+        );
         $label = $hasAccount ? __('Sign in', 'eventcrew') : __('Create my account', 'eventcrew');
         $actions = [['label' => $label, 'url' => $this->loginUrl($raw)]];
 
@@ -826,7 +884,62 @@ final class SignupController
             return ['person_id' => null, 'notice' => 'bad_link'];
         }
 
+        return $this->signInWithSpentToken($personId);
+    }
+
+    /**
+     * The sign-in email's code typed on the page (Support\LoginCode), with
+     * the address it was sent to. A right code spends the email's link token,
+     * so it starts a session exactly as the link would, and only once.
+     * Notices: 'signed_in', 'bad_code' (wrong, expired, used, or no code
+     * waiting), 'code_locked' (the last allowed wrong try), 'code_busy' (too
+     * many wrong codes from $clientIp) or 'blocked'.
+     *
+     * @return array{person_id: ?int, notice: string}
+     */
+    public function signInWithCode(string $email, string $code, string $clientIp = ''): array
+    {
+        $email = sanitize_email($email);
+
+        if ('' === $email || ! is_email($email)) {
+            return ['person_id' => null, 'notice' => 'bad_code'];
+        }
+
+        $check = LoginCode::check($email, $code, $clientIp);
+
+        if (LoginCode::OK !== $check['state']) {
+            return ['person_id' => null, 'notice' => match ($check['state']) {
+                LoginCode::LOCKED => 'code_locked',
+                LoginCode::BUSY => 'code_busy',
+                default => 'bad_code',
+            }];
+        }
+
+        $personId = $this->tokens->consumeHashOnce($check['token'] ?? '', self::LOGIN_PURPOSE);
+
+        if (null === $personId) {
+            return ['person_id' => null, 'notice' => 'bad_code'];
+        }
+
+        return $this->signInWithSpentToken($personId);
+    }
+
+    /**
+     * After a sign-in token was spent (link or code): no session for a blocked account,
+     * which also covers a link mailed before the block; else the address is
+     * confirmed and the session can start.
+     *
+     * @return array{person_id: ?int, notice: string}
+     */
+    private function signInWithSpentToken(int $personId): array
+    {
         $person = $this->people->find($personId);
+
+        // The sign-in is used, so a code mailed with it is no longer needed
+        // (the link's token is spent too, so the code could not work anyway).
+        if (null !== $person) {
+            LoginCode::forget($person->email);
+        }
 
         if (null !== $person && $person->isBanned()) {
             return ['person_id' => null, 'notice' => 'blocked'];
@@ -1045,6 +1158,29 @@ final class SignupController
                 wp_safe_redirect($redirect);
 
                 exit;
+            }
+
+            $this->redirect($redirect, $notice);
+        }
+
+        if (self::CODE_ACTION === $action) {
+            // The code from the sign-in email, typed on the page. A form on
+            // another site could only sign this browser in to an account
+            // whose mailbox that site reads; the Origin check stops even that.
+            $email = isset($_POST['email']) ? sanitize_text_field(wp_unslash($_POST['email'])) : '';
+            $code = isset($_POST['code']) ? sanitize_text_field(wp_unslash($_POST['code'])) : '';
+            ['person_id' => $personId, 'notice' => $notice] = $this->sameOrigin()
+                ? $this->signInWithCode($email, $code, $this->clientIp())
+                : ['person_id' => null, 'notice' => 'bad_code'];
+
+            if (null !== $personId) {
+                $this->setSessionCookie(WebSession::mint($personId));
+            }
+
+            nocache_headers();
+
+            if ($isAjax) {
+                wp_send_json(['code' => $notice, 'notice' => self::noticeText($notice)]);
             }
 
             $this->redirect($redirect, $notice);
@@ -1368,6 +1504,9 @@ final class SignupController
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             'tg_busy' => __('Too many sign-in attempts from here. Wait a few minutes and try again, or sign in with email.', 'eventcrew'),
             'login_busy' => __('Too many sign-in links were asked for. Wait an hour and try again.', 'eventcrew'),
+            'bad_code' => __('That code is wrong or has expired.', 'eventcrew'),
+            'code_locked' => __('Too many wrong codes. Ask for a new link.', 'eventcrew'),
+            'code_busy' => __('Too many wrong codes from here. Wait an hour and try again.', 'eventcrew'),
         ];
 
         // The Admin tab's outcomes are worded by its own controller.
@@ -1666,6 +1805,30 @@ final class SignupController
         $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) wp_unslash($_SERVER['REMOTE_ADDR']) : '';
 
         return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '';
+    }
+
+    /**
+     * False when the request names another site as its origin (the Origin
+     * header, else the Referer). A request with neither is let through:
+     * browsers send Origin with every cross-site POST.
+     */
+    private function sameOrigin(): bool
+    {
+        // phpcs:disable WordPress.Security.NonceVerification -- read-only header check.
+        $origin = isset($_SERVER['HTTP_ORIGIN']) ? (string) wp_unslash($_SERVER['HTTP_ORIGIN']) : '';
+
+        if ('' === $origin && isset($_SERVER['HTTP_REFERER'])) {
+            $origin = (string) wp_unslash($_SERVER['HTTP_REFERER']);
+        }
+        // phpcs:enable WordPress.Security.NonceVerification
+
+        if ('' === $origin || 'null' === $origin) {
+            return '' === $origin;
+        }
+
+        $host = (string) wp_parse_url($origin, PHP_URL_HOST);
+
+        return '' !== $host && 0 === strcasecmp($host, (string) wp_parse_url((string) home_url('/'), PHP_URL_HOST));
     }
 
     private function redirect(string $url, string $notice): never

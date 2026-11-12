@@ -15,14 +15,23 @@ use EventCrew\Support\WebManifest;
  *
  * The assets are ordinary front-end requests (?eventcrew_pwa=…) rather than REST
  * routes, so they work on the host that blocks /wp-json, exactly like the signup
- * actions. The service worker is served from the site root path, so its scope
- * covers the whole origin and the installed app navigates normally.
+ * actions. The service worker script is served from the site root path, but
+ * the app's scope (manifest and service worker alike) is only the Crew app
+ * page's path (scope()): a link to the rest of the site opens in the browser,
+ * not inside the app window. The app's forms post to admin-ajax.php and are
+ * sent back to the page, so they end inside the scope.
  */
 final class PwaController
 {
     /** The page holding the [eventcrew_signup] shortcode - the app's home. */
     public const PAGE_OPTION = 'eventcrew_signup_page_id';
     public const NAME_OPTION = 'eventcrew_app_name';
+
+    /** The name under the home-screen icon; blank derives one (shortName()). */
+    public const SHORT_NAME_OPTION = 'eventcrew_app_short_name';
+
+    /** Longest short name: what fits under a home-screen icon. */
+    public const SHORT_NAME_MAX = 12;
     public const COLOR_OPTION = 'eventcrew_app_theme_color';
 
     /**
@@ -114,6 +123,7 @@ final class PwaController
             'name' => $name,
             'short_name' => $this->shortName($name),
             'start_url' => $this->startUrl(),
+            'scope' => $this->scope(),
             'icon_url' => add_query_arg(self::PARAM, 'icon', home_url('/')),
             'theme_color' => $color,
             'background_color' => '#ffffff',
@@ -141,7 +151,15 @@ final class PwaController
         $sw = esc_url(add_query_arg(self::PARAM, 'sw', home_url('/')));
         $appleIcon = esc_url(add_query_arg([self::PARAM => 'icon', 'size' => 180], home_url('/')));
         $color = esc_attr($this->themeColor());
-        $name = esc_attr($this->appName());
+        $name = esc_attr($this->shortName($this->appName()));
+        $register = 'if("serviceWorker" in navigator){'
+            . 'var s=' . wp_json_encode($this->scope()) . ';'
+            . 'navigator.serviceWorker.register(' . wp_json_encode($sw) . ',{scope:s});'
+            // Before the scope was the page's path it was the whole site:
+            // drop that older registration so it stops handling other pages.
+            . 'if(s!=="/"&&navigator.serviceWorker.getRegistrations){'
+            . 'navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(g){'
+            . 'if(new URL(g.scope).pathname==="/"){g.unregister();}});});}}';
 
         return "\n"
             . '<link rel="manifest" href="' . $manifest . '">' . "\n"
@@ -150,8 +168,7 @@ final class PwaController
             . '<meta name="apple-mobile-web-app-status-bar-style" content="default">' . "\n"
             . '<meta name="apple-mobile-web-app-title" content="' . $name . '">' . "\n"
             . '<link rel="apple-touch-icon" href="' . $appleIcon . '">' . "\n"
-            . '<script>if("serviceWorker" in navigator){navigator.serviceWorker.register('
-            . wp_json_encode($sw) . ',{scope:"/"});}</script>' . "\n";
+            . '<script>' . $register . '</script>' . "\n";
     }
 
     private function serveIcon(): never
@@ -205,11 +222,112 @@ final class PwaController
         return '' === $name ? 'EventCrew' : $name;
     }
 
-    private function shortName(string $name): string
+    /**
+     * The app's path on the site: the folder of the Crew app page's address
+     * ("/crew-app/"), so the installed app stays on that page and a link
+     * elsewhere opens in the browser. When the page has translations at
+     * other addresses (Polylang), the part of the path they share, so each
+     * language stays in the app; "/" when they share nothing or the page has
+     * no pretty address.
+     */
+    public function scope(): string
     {
-        $first = strtok($name, ' ');
+        $pageId = (int) get_option(self::PAGE_OPTION, 0);
 
-        return false === $first ? $name : $first;
+        if ($pageId <= 0) {
+            return '/';
+        }
+
+        $ids = [$pageId];
+
+        if (function_exists('pll_get_post_translations')) {
+            $translations = pll_get_post_translations($pageId);
+
+            if (is_array($translations)) {
+                $ids = array_merge($ids, array_map('intval', array_values($translations)));
+            }
+        }
+
+        $scope = null;
+
+        foreach (array_unique($ids) as $id) {
+            $link = $id > 0 ? get_permalink($id) : false;
+
+            if (! is_string($link) || '' === $link) {
+                continue;
+            }
+
+            $folder = self::folder((string) wp_parse_url($link, PHP_URL_PATH));
+            $scope = null === $scope ? $folder : self::sharedFolder($scope, $folder);
+        }
+
+        return $scope ?? '/';
+    }
+
+    /** "/a/b/" for "/a/b/" and "/a/b/page.php"; "/" for no path. */
+    private static function folder(string $path): string
+    {
+        if ('' === $path || ! str_starts_with($path, '/')) {
+            return '/';
+        }
+
+        return str_ends_with($path, '/') ? $path : substr($path, 0, (int) strrpos($path, '/') + 1);
+    }
+
+    /** The longest folder both paths are in ("/fi/x/" and "/x/" share "/"). */
+    private static function sharedFolder(string $a, string $b): string
+    {
+        $shared = '/';
+        $partsB = explode('/', trim($b, '/'));
+
+        foreach (explode('/', trim($a, '/')) as $i => $part) {
+            if ('' === $part || ($partsB[$i] ?? null) !== $part) {
+                break;
+            }
+
+            $shared .= $part . '/';
+        }
+
+        return $shared;
+    }
+
+    /**
+     * The name under the home-screen icon: the App short name setting, else
+     * the app name when it fits, else its initials and "Crew"
+     * ("Ecstatic Dance Helsinki" is "EDH Crew").
+     */
+    public function shortName(string $name): string
+    {
+        $set = trim(SiteTexts::text('app_short_name'));
+
+        if ('' !== $set) {
+            return $set;
+        }
+
+        if (mb_strlen($name) <= self::SHORT_NAME_MAX) {
+            return $name;
+        }
+
+        $words = preg_split('/[\s\-]+/u', trim($name), -1, PREG_SPLIT_NO_EMPTY);
+        $words = is_array($words) ? $words : [];
+
+        // "Helsinki Dance Crew" is "HD Crew", not "HDC Crew".
+        if (count($words) > 1 && 0 === strcasecmp((string) end($words), 'crew')) {
+            array_pop($words);
+        }
+
+        $initials = '';
+
+        foreach ($words as $word) {
+            $initials .= mb_strtoupper(mb_substr($word, 0, 1));
+        }
+
+        /* translators: %s: the initials of the app name, like "EDH". */
+        $short = sprintf(__('%s Crew', 'eventcrew'), $initials);
+
+        return '' === $initials || mb_strlen($short) > self::SHORT_NAME_MAX
+            ? mb_substr($name, 0, self::SHORT_NAME_MAX)
+            : $short;
     }
 
     public function themeColor(): string

@@ -17,7 +17,7 @@ final class WebManifest
     /**
      * @param array{
      *     name: string, short_name: string, start_url: string, icon_url: string,
-     *     theme_color: string, background_color: string
+     *     theme_color: string, background_color: string, scope?: string
      * } $config
      * @return array<string, mixed>
      */
@@ -27,7 +27,9 @@ final class WebManifest
             'name' => $config['name'],
             'short_name' => $config['short_name'],
             'start_url' => $config['start_url'],
-            'scope' => '/',
+            // The app's own path, so links elsewhere on the site open in
+            // the browser; '/' when none is given.
+            'scope' => $config['scope'] ?? '/',
             'display' => 'standalone',
             'orientation' => 'portrait',
             'background_color' => $config['background_color'],

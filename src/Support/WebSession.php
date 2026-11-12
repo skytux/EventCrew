@@ -23,6 +23,13 @@ final class WebSession
     public const TTL = 30 * DAY_IN_SECONDS;
 
     /**
+     * How old a cookie gets before a visit swaps it for a fresh one (sliding
+     * sign-in): someone who opens the app at least once a month stays signed
+     * in, while a cookie is re-minted at most once a day, not on every page.
+     */
+    public const RENEW_AFTER = DAY_IN_SECONDS;
+
+    /**
      * A signed cookie value for a person, good for TTL from now.
      *
      * The issue time is carried as well as the expiry, so a cookie can be
@@ -59,6 +66,21 @@ final class WebSession
     public static function issuedAt(string $cookie, ?int $now = null): ?int
     {
         return self::parse($cookie, $now)['issued_at'];
+    }
+
+    /**
+     * Whether $cookie is valid and old enough to be swapped for a fresh one
+     * (RENEW_AFTER). Only the cookie is looked at: the caller still checks
+     * the person row (blocked, revoked) before minting the new one. A cookie
+     * without an issue time (issued at 0, the old format) is renewed too,
+     * which moves it onto the current format.
+     */
+    public static function shouldRenew(string $cookie, ?int $now = null): bool
+    {
+        $now ??= time();
+        $issued = self::issuedAt($cookie, $now);
+
+        return null !== $issued && $now - $issued >= self::RENEW_AFTER;
     }
 
     /**

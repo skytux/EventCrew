@@ -30,6 +30,7 @@ use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\TicketTransferService;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\JoinAnswers;
+use EventCrew\Support\LoginCode;
 use EventCrew\Support\Turnstile;
 use EventCrew\Support\WebSession;
 use EventCrew\Telegram\BoardService;
@@ -1707,8 +1708,11 @@ final class SignupControllerTest extends TestCase
     /** The sent mail with its one-time token replaced by TOKEN, so it can be compared. */
     private function sentMail(int $index = 0): string
     {
+        // The sign-in code is random: CODE stands for it.
+        $body = (string) preg_replace('/(code for the app: )\d{6}/', '$1CODE', $this->mails[$index]);
+
         return $this->sent[$index]['subject'] . "\n---\n"
-            . (string) preg_replace('/token=[A-Za-z0-9_-]+/', 'token=TOKEN', $this->mails[$index]);
+            . (string) preg_replace('/token=[A-Za-z0-9_-]+/', 'token=TOKEN', $body);
     }
 
     /**
@@ -1749,6 +1753,7 @@ final class SignupControllerTest extends TestCase
             "Your Test Site sign-in link\n---\nHi Sam,\n\n"
                 . "Use the button below to sign in and manage your tasks.\n\n"
                 . "The link is good for 30 minutes, and works once.\n\n"
+                . "Sign-in code for the app: CODE\n\n"
                 . 'Sign in: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_web_login&token=TOKEN'
                 . "&redirect_to=https%253A%252F%252Fsite.test%252F\n\n—\nManage your account or stop these emails:"
                 . ' https://site.test/wp-json/eventcrew/v1/manage?token=TOKEN.2e7412c689f539f6489b9a1e298151a2431bfc264f90e62776a73bce4d9e9398',
@@ -1766,7 +1771,8 @@ final class SignupControllerTest extends TestCase
             "Create your crew account\n---\nHi,\n\n"
                 . "There is no crew account for this email address yet. The button below"
                 . " creates your account and signs you in.\n\nThe link is good for 30 minutes, and works once. If you"
-                . " did not ask for this, ignore this email.\n\nWe store your email to run the crew.\n\n"
+                . " did not ask for this, ignore this email.\n\nSign-in code for the app: CODE\n\n"
+                . "We store your email to run the crew.\n\n"
                 . 'Create my account: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_web_login&token=TOKEN'
                 . "&redirect_to=https%253A%252F%252Fsite.test%252F\n\n—\nManage your account or stop these emails:"
                 . ' https://site.test/wp-json/eventcrew/v1/manage?token=TOKEN.12c6aa29e718d0f450ae312aadd7b4a5574cbd732e15063ef00e534d9e56e15b',
@@ -1826,7 +1832,7 @@ final class SignupControllerTest extends TestCase
         $this->controller()->loginByEmail('sam@example.com');
 
         self::assertStringStartsWith(
-            "Sign in, please\n---\nHi Sam,\n\nPress the button.\n\n"
+            "Sign in, please\n---\nHi Sam,\n\nPress the button.\n\nSign-in code for the app: CODE\n\n"
                 . 'Sign in: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_web_login&token=TOKEN',
             $this->sentMail()
         );
@@ -1843,7 +1849,8 @@ final class SignupControllerTest extends TestCase
         $this->controller()->loginByEmail('new@example.com');
 
         self::assertStringStartsWith(
-            "Welcome\n---\nHi,\n\nPress the button to join.\n\nWe store your email to run the crew.\n\n"
+            "Welcome\n---\nHi,\n\nPress the button to join.\n\nSign-in code for the app: CODE\n\n"
+                . "We store your email to run the crew.\n\n"
                 . 'Create my account: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_web_login&token=TOKEN',
             $this->sentMail()
         );
@@ -1992,6 +1999,160 @@ final class SignupControllerTest extends TestCase
         // used_at burned by the conditional UPDATE, and the person marked verified.
         self::assertStringContainsString('used_at IS NULL', implode("\n", $this->wpdb->queries));
         self::assertGreaterThanOrEqual(1, count($this->wpdb->updates));
+    }
+
+    /** @return array<string, mixed> */
+    private static function samRow(?string $sessionsValidFrom = null): array
+    {
+        return [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'sessions_valid_from' => $sessionsValidFrom,
+        ];
+    }
+
+    public function testTheSignInEmailCarriesASixDigitCode(): void
+    {
+        $this->wpdb->nextRows[] = null; // findByEmail -> not found -> create
+
+        $this->controller()->loginByEmail('sam@example.com');
+
+        self::assertMatchesRegularExpression('/Sign-in code for the app: \d{6}\b/', $this->mails[0]);
+    }
+
+    public function testTheEmailedCodeSignsInAndSpendsTheLinkToo(): void
+    {
+        $code = LoginCode::issue('sam@example.com', 'rawtoken', 1800);
+
+        $this->wpdb->nextRows[] = self::liveSignInToken(); // consumeHashOnce reads the link's token
+        $this->wpdb->nextQueryResults[] = 1;                // and spends it
+        $this->wpdb->nextRows[] = self::samRow();           // find(7)
+
+        self::assertSame(
+            ['person_id' => 7, 'notice' => 'signed_in'],
+            $this->controller()->signInWithCode('sam@example.com', $code)
+        );
+        self::assertStringContainsString('used_at IS NULL', implode("\n", $this->wpdb->queries));
+
+        // The link is spent now: its row reads as used.
+        $this->wpdb->nextRows[] = self::liveSignInToken('2026-07-20 12:00:00');
+        self::assertSame(
+            ['person_id' => null, 'notice' => 'bad_link'],
+            $this->controller()->magicLinkSignIn('rawtoken')
+        );
+        // And the code does not work twice.
+        self::assertSame('bad_code', $this->controller()->signInWithCode('sam@example.com', $code)['notice']);
+    }
+
+    public function testOpeningTheLinkRemovesTheCode(): void
+    {
+        $code = LoginCode::issue('sam@example.com', 'rawtoken', 1800);
+
+        $this->wpdb->nextRows[] = self::liveSignInToken();
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = self::samRow();
+        self::assertSame('signed_in', $this->controller()->magicLinkSignIn('rawtoken')['notice']);
+
+        self::assertSame(
+            ['person_id' => null, 'notice' => 'bad_code'],
+            $this->controller()->signInWithCode('sam@example.com', $code)
+        );
+        self::assertSame([], $this->transients);
+    }
+
+    public function testAWrongCodeSignsNobodyIn(): void
+    {
+        $code = LoginCode::issue('sam@example.com', 'rawtoken', 1800);
+        $wrong = str_pad((string) (((int) $code + 1) % 1_000_000), 6, '0', STR_PAD_LEFT);
+
+        self::assertSame(
+            ['person_id' => null, 'notice' => 'bad_code'],
+            $this->controller()->signInWithCode('sam@example.com', $wrong)
+        );
+        self::assertSame([], $this->wpdb->queries, 'No token was spent.');
+    }
+
+    public function testTheFifthWrongCodeLocksTheCodesOut(): void
+    {
+        $code = LoginCode::issue('sam@example.com', 'rawtoken', 1800);
+        $wrong = str_pad((string) (((int) $code + 1) % 1_000_000), 6, '0', STR_PAD_LEFT);
+
+        for ($try = 1; $try < LoginCode::MAX_TRIES; ++$try) {
+            self::assertSame('bad_code', $this->controller()->signInWithCode('sam@example.com', $wrong)['notice']);
+        }
+
+        self::assertSame('code_locked', $this->controller()->signInWithCode('sam@example.com', $wrong)['notice']);
+        self::assertSame('bad_code', $this->controller()->signInWithCode('sam@example.com', $code)['notice']);
+        self::assertSame([], $this->wpdb->queries, 'No token was spent.');
+    }
+
+    public function testAnExpiredCodeSignsNobodyIn(): void
+    {
+        $code = LoginCode::issue('sam@example.com', 'rawtoken', 1800, time() - 1801);
+
+        self::assertSame('bad_code', $this->controller()->signInWithCode('sam@example.com', $code)['notice']);
+        self::assertSame([], $this->wpdb->queries, 'No token was spent.');
+    }
+
+    public function testACodeFromAnotherSiteIsRefused(): void
+    {
+        $code = LoginCode::issue('sam@example.com', 'rawtoken', 1800);
+        Functions\when('wp_parse_url')->alias(static fn (string $url, int $part = -1): mixed => parse_url($url, $part));
+        $_SERVER['HTTP_ORIGIN'] = 'https://elsewhere.test';
+        $post = ['email' => 'sam@example.com', 'code' => $code, 'redirect_to' => 'https://site.test/crew/'];
+        $_POST = $post;
+        $_REQUEST = ['action' => SignupController::CODE_ACTION] + $post;
+        $this->stubSignInExits();
+
+        try {
+            $this->controller()->dispatch();
+            self::fail('The controller sent no answer.');
+        } catch (\RuntimeException $answer) {
+            self::assertStringContainsString('eventcrew_notice=bad_code', $answer->getMessage());
+        } finally {
+            unset($_SERVER['HTTP_ORIGIN']);
+            $_POST = [];
+            $_REQUEST = [];
+        }
+
+        self::assertSame([], $this->wpdb->queries, 'No token was spent.');
+        self::assertNotSame([], $this->transients, 'The code is still waiting.');
+    }
+
+    public function testASessionADayOldIsRenewed(): void
+    {
+        Functions\when('is_ssl')->justReturn(true);
+        $issued = time() - 2 * DAY_IN_SECONDS;
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7, $issued);
+        $this->wpdb->nextRows[] = self::samRow();
+
+        $fresh = $this->controller()->renewSession();
+
+        self::assertNotNull($fresh);
+        self::assertSame(7, WebSession::read($fresh));
+        self::assertGreaterThan($issued, WebSession::issuedAt($fresh));
+        self::assertSame($fresh, $_COOKIE[WebSession::COOKIE]);
+    }
+
+    public function testAFreshSessionIsNotRenewed(): void
+    {
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7, time() - 60);
+        $this->wpdb->nextRows[] = self::samRow();
+
+        self::assertNull($this->controller()->renewSession());
+        self::assertCount(1, $this->wpdb->nextRows, 'The person was not even read.');
+    }
+
+    /** Sign out everywhere still ends an old session: it is not renewed past the revocation. */
+    public function testARevokedSessionIsNotRenewed(): void
+    {
+        Functions\when('get_gmt_from_date')->returnArg(1);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7, time() - 2 * DAY_IN_SECONDS);
+        $this->wpdb->nextRows[] = self::samRow(gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS));
+
+        self::assertNull($this->controller()->renewSession());
     }
 
     public function testASignInLinkOpenedTwiceAtOnceSignsInOnlyOnce(): void

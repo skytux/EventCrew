@@ -93,4 +93,29 @@ final class WebSessionTest extends TestCase
 
         self::assertNull(WebSession::read($forged));
     }
+
+    /** A cookie a day old or more is renewed, so an app used now and then stays signed in. */
+    public function testAnOldCookieShouldBeRenewed(): void
+    {
+        $cookie = WebSession::mint(42, 1_000_000);
+
+        self::assertTrue(WebSession::shouldRenew($cookie, 1_000_000 + WebSession::RENEW_AFTER));
+        self::assertTrue(WebSession::shouldRenew($cookie, 1_000_000 + 20 * DAY_IN_SECONDS));
+    }
+
+    /** A fresh one is not: no new cookie on every page. */
+    public function testAFreshCookieIsNotRenewed(): void
+    {
+        $cookie = WebSession::mint(42, 1_000_000);
+
+        self::assertFalse(WebSession::shouldRenew($cookie, 1_000_000 + WebSession::RENEW_AFTER - 1));
+    }
+
+    public function testAnExpiredOrForgedCookieIsNeverRenewed(): void
+    {
+        $cookie = WebSession::mint(42, 1_000_000);
+
+        self::assertFalse(WebSession::shouldRenew($cookie, 1_000_000 + WebSession::TTL + 1));
+        self::assertFalse(WebSession::shouldRenew('not-a-cookie', 1_000_000));
+    }
 }

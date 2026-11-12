@@ -4373,9 +4373,6 @@ msgstr "Myös sivu, jolle sähköpostiesi ”hallitse tietojasi” -linkki vie. 
 msgid "App name"
 msgstr "Sovelluksen nimi"
 
-msgid "Shown under the home-screen icon. Blank uses the site name."
-msgstr "Näkyy aloitusnäytön kuvakkeen alla. Tyhjänä käytetään sivuston nimeä."
-
 msgid "Theme colour"
 msgstr "Teemaväri"
 
@@ -10755,3 +10752,49 @@ msgstr "ja %d muuta"
 #: src/Support/MonthlyReport.php
 msgid "Full list on the History page"
 msgstr "Koko lista Historia-sivulla"
+
+#: src/Web/SignupController.php
+#, php-format
+msgid "Sign-in code for the app: %s"
+msgstr "Kirjautumiskoodi sovellukseen: %s"
+
+#: src/Web/SignupController.php
+msgid "That code is wrong or has expired."
+msgstr "Koodi on väärä tai vanhentunut."
+
+#: src/Web/SignupController.php
+msgid "Too many wrong codes. Ask for a new link."
+msgstr "Liian monta väärää koodia. Pyydä uusi linkki."
+
+#: src/Web/SignupController.php
+msgid "Too many wrong codes from here. Wait an hour and try again."
+msgstr "Liian monta väärää koodia täältä. Odota tunti ja yritä uudelleen."
+
+#: templates/public/signup.php
+msgid "Or type the code from the email"
+msgstr "Tai kirjoita sähköpostin koodi"
+
+#: templates/public/signup.php
+msgid "Install the app"
+msgstr "Asenna sovellus"
+
+#: templates/public/signup.php
+msgid "Tap Share, then Add to Home Screen."
+msgstr "Napauta Jaa ja sitten Lisää Koti-valikkoon."
+
+#: src/Support/SiteTexts.php
+msgid "App short name"
+msgstr "Sovelluksen lyhyt nimi"
+
+#: src/Web/PwaController.php
+#, php-format
+msgid "%s Crew"
+msgstr "%s Crew"
+
+#: templates/admin/settings.php
+msgid "The app’s full name. Blank uses the site name."
+msgstr "Sovelluksen koko nimi. Tyhjänä käytetään sivuston nimeä."
+
+#: templates/admin/settings.php
+msgid "Shown under the home-screen icon, 12 characters at most. Blank uses the app name if it fits, else its initials and “Crew”."
+msgstr "Näkyy aloitusnäytön kuvakkeen alla, enintään 12 merkkiä. Tyhjänä käytetään sovelluksen nimeä, jos se mahtuu, muuten sen alkukirjaimia ja ”Crew”."

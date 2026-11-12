@@ -333,6 +333,122 @@ if ($eventcrew_link_expired) {
                 <?php endif; ?>
             </form>
             <p id="eventcrew-signin-sent" class="eventcrew-muted eventcrew-hint" hidden><?php esc_html_e('Check your inbox for the sign-in link — and your spam folder if it’s not there. Press the button again to resend.', 'eventcrew'); ?></p>
+            <?php
+            /*
+             * The code from the sign-in email, typed here instead of opening
+             * the link: an app on an iPhone home screen has cookies of its
+             * own, so the link would sign in Safari, not the app. Shown by
+             * the script once a link was sent (and again after a reload, for
+             * the life of the link), so the cached page is the same for
+             * everyone; the address comes from the form above.
+             */
+            ?>
+            <form class="eventcrew-signin-code" data-eventcrew-code method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" hidden>
+                <input type="hidden" name="action" value="<?php echo esc_attr((string) ($view['code_action'] ?? '')); ?>">
+                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_signin_return); ?>">
+                <input type="hidden" name="email" value="">
+                <label for="eventcrew-code"><?php esc_html_e('Or type the code from the email', 'eventcrew'); ?></label>
+                <span class="eventcrew-signin-code-row">
+                    <input
+                        type="text"
+                        id="eventcrew-code"
+                        name="code"
+                        required
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        pattern="[0-9 ]*"
+                        maxlength="<?php echo (int) (\EventCrew\Support\LoginCode::LENGTH + 1); ?>"
+                        size="<?php echo (int) (\EventCrew\Support\LoginCode::LENGTH + 1); ?>"
+                        class="wp-element-input">
+                    <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Sign in', 'eventcrew'); ?></button>
+                </span>
+            </form>
+            <script>
+            (function () {
+                var form = document.querySelector('form[data-eventcrew-code]');
+                if (!form || !window.fetch || !window.FormData) { return; }
+                var WAIT_KEY = 'eventcrew_code_wait';
+                var EMAIL_KEY = 'eventcrew_email';
+                // As long as the emailed link and code are good.
+                var WAIT_MS = <?php echo (int) (30 * 60 * 1000); ?>;
+                var field = form.querySelector('input[name="code"]');
+                var email = form.querySelector('input[name="email"]');
+                var busy = false;
+
+                function toast(text) {
+                    var box = document.getElementById('eventcrew-toast');
+                    if (!box || !text) { return; }
+                    box.textContent = text;
+                    box.classList.add('show');
+                    clearTimeout(box.eventcrewCodeTimer);
+                    box.eventcrewCodeTimer = setTimeout(function () { box.classList.remove('show'); }, 6000);
+                }
+
+                function forget() {
+                    try { localStorage.removeItem(WAIT_KEY); } catch (e) {}
+                }
+
+                // Called by the sign-in form's script when a link was sent.
+                window.eventcrewShowCode = function (address) {
+                    if (!address) { return; }
+                    email.value = address;
+                    form.hidden = false;
+                    try { localStorage.setItem(WAIT_KEY, String(Date.now() + WAIT_MS)); } catch (e) {}
+                };
+
+                // Back after the phone reloaded the app (it often does when
+                // the mail app was opened): the field is there again.
+                try {
+                    var until = parseInt(localStorage.getItem(WAIT_KEY) || '0', 10);
+                    var address = localStorage.getItem(EMAIL_KEY) || '';
+                    if (until > Date.now() && address) {
+                        email.value = address;
+                        form.hidden = false;
+                        var sent = document.getElementById('eventcrew-signin-sent');
+                        if (sent) { sent.hidden = false; }
+                    } else if (until) {
+                        forget();
+                    }
+                } catch (e) {}
+
+                function send() {
+                    if (busy || !field.value.replace(/\D/g, '')) { return; }
+                    busy = true;
+                    var data = new FormData(form);
+                    data.append('eventcrew_ajax', '1');
+                    fetch(form.action, { method: 'POST', body: data, credentials: 'same-origin', cache: 'no-store' })
+                        .then(function (response) { return response.json(); })
+                        .then(function (res) {
+                            busy = false;
+                            if (res && 'signed_in' === res.code) {
+                                forget();
+                                var url = new URL(form.querySelector('input[name="redirect_to"]').value, window.location.href);
+                                url.searchParams.set('eventcrew_notice', 'signed_in');
+                                window.location.assign(url.toString());
+                                return;
+                            }
+                            if (res && 'code_locked' === res.code) {
+                                forget();
+                                form.hidden = true;
+                            }
+                            field.value = '';
+                            toast(res && res.notice);
+                        })
+                        .catch(function () { busy = false; });
+                }
+
+                form.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    send();
+                });
+                // Six digits typed or pasted: no need to press Sign in.
+                field.addEventListener('input', function () {
+                    if (field.value.replace(/\D/g, '').length === <?php echo (int) \EventCrew\Support\LoginCode::LENGTH; ?>) {
+                        send();
+                    }
+                });
+            })();
+            </script>
             <script>
             // A board row's Sign up, signed out, jumps here (#eventcrew-signin).
             // The sign-in, by email link or Telegram, then comes back to
@@ -2735,6 +2851,57 @@ if ($eventcrew_link_expired) {
         <?php endif; ?>
         <?php
     endif; ?>
+    <?php
+    /*
+     * "Install the app": a text link, hidden in the HTML and shown by the
+     * script only in a browser tab (not in the installed app). On Android
+     * (Chrome) it opens the browser's own install prompt once the browser
+     * offers one; on an iPhone or iPad, where no page can install itself, it
+     * shows the one line on how. Elsewhere it stays hidden. The same HTML for
+     * everyone, so the cached page is fine.
+     */
+    ?>
+    <p class="eventcrew-install eventcrew-muted eventcrew-hint" data-eventcrew-install hidden>
+        <button type="button" class="eventcrew-textlink"><?php esc_html_e('Install the app', 'eventcrew'); ?></button>
+        <span data-eventcrew-install-ios hidden><?php esc_html_e('Tap Share, then Add to Home Screen.', 'eventcrew'); ?></span>
+    </p>
+    <script>
+    (function () {
+        var box = document.querySelector('[data-eventcrew-install]');
+        if (!box) { return; }
+        var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+            || true === window.navigator.standalone;
+        if (standalone) { return; }
+        var link = box.querySelector('button');
+        var how = box.querySelector('[data-eventcrew-install-ios]');
+        var ua = navigator.userAgent || '';
+        // iPadOS Safari says it is a Mac; a Mac has no touch screen.
+        var ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+        var offer = null;
+
+        if (ios) {
+            box.hidden = false;
+            link.addEventListener('click', function () {
+                how.hidden = false;
+                link.hidden = true;
+            });
+            return;
+        }
+
+        window.addEventListener('beforeinstallprompt', function (event) {
+            event.preventDefault();
+            offer = event;
+            box.hidden = false;
+        });
+        window.addEventListener('appinstalled', function () { box.hidden = true; });
+        link.addEventListener('click', function () {
+            if (!offer) { return; }
+            offer.prompt();
+            offer = null;
+            box.hidden = true;
+        });
+    })();
+    </script>
 </div>
 <script>
 // The address's #part as the page opened: the tab script below replaces it
@@ -3584,6 +3751,8 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
             if (isSignin && res && 'check_email' === res.code) {
                 var sent = document.getElementById('eventcrew-signin-sent');
                 if (sent) { sent.hidden = false; }
+                // The field for the code in the same email.
+                if (window.eventcrewShowCode && emailField) { window.eventcrewShowCode(emailField.value); }
 
                 // Only a link that actually went starts the clock. A refusal
                 // leaves the button ready, because there is nothing to wait for.

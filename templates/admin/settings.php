@@ -62,6 +62,7 @@
  * @var int $app_page_id The page holding the signup shortcode, for the mobile app home.
  * @var string $orphan_signup_page Title of a published shortcode page when none is selected, else ''.
  * @var array<string, mixed> $app_name The installed app's name, a TranslatedText value (blank falls back to the site name).
+ * @var array<string, mixed> $app_short_name The name under the home-screen icon, a TranslatedText value (blank derives one).
  * @var string $app_theme_color The app's theme colour, as a hex string.
  * @var string $app_accent_color The Crew app's accent colour, as a hex string.
  * @var array<string, mixed> $signature The crew's sign-off, a TranslatedText value, shared by the emails and the broadcast DMs.
@@ -1198,7 +1199,26 @@ if (! defined('ABSPATH')) {
                         'text.app_name'
                     );
                     ?>
-                    <p class="description"><?php esc_html_e('Shown under the home-screen icon. Blank uses the site name.', 'eventcrew'); ?></p>
+                    <p class="description"><?php esc_html_e('The app’s full name. Blank uses the site name.', 'eventcrew'); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">
+                    <label for="eventcrew-app-short-name"><?php esc_html_e('App short name', 'eventcrew'); ?></label>
+                </th>
+                <td>
+                    <?php
+                    \EventCrew\Support\TranslatedText::field(
+                        'app_short_name',
+                        'eventcrew-app-short-name',
+                        $app_short_name,
+                        \EventCrew\Web\PwaController::SHORT_NAME_MAX,
+                        false,
+                        '',
+                        'text.app_short_name'
+                    );
+                    ?>
+                    <p class="description"><?php esc_html_e('Shown under the home-screen icon, 12 characters at most. Blank uses the app name if it fits, else its initials and “Crew”.', 'eventcrew'); ?></p>
                 </td>
             </tr>
             <tr>

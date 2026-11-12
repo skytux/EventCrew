@@ -32,6 +32,7 @@ final class SiteTexts
         'ticket_note' => [TicketController::NOTE_OPTION, 0, true],
         'infrastructure_note' => [HelpPage::INFRASTRUCTURE_OPTION, 0, true],
         'app_name' => [PwaController::NAME_OPTION, 0, false],
+        'app_short_name' => [PwaController::SHORT_NAME_OPTION, PwaController::SHORT_NAME_MAX, false],
     ];
 
     /**
@@ -124,6 +125,7 @@ final class SiteTexts
             'ticket_note' => __('Ticket note', 'eventcrew'),
             'infrastructure_note' => __('Infrastructure', 'eventcrew'),
             'app_name' => __('App name', 'eventcrew'),
+            'app_short_name' => __('App short name', 'eventcrew'),
         ];
         $rows = [];
 

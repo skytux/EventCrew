@@ -6370,10 +6370,6 @@ msgid ""
 msgstr ""
 "Visas bakom anmälningsfältet längst ner på de publika sidorna, under ett mörkt lager så att texten går att läsa. Utan bild har fältet en enkel mörk bakgrund."
 
-#: templates/admin/settings.php:1106
-msgid "Shown under the home-screen icon. Blank uses the site name."
-msgstr "Visas under ikonen på hemskärmen. Tomt använder webbplatsens namn."
-
 #: src/Support/AiPrompts.php:229
 msgid "Shown under the picture of the next event on the group board."
 msgstr "Visas under bilden på nästa evenemang på grupptavlan."
@@ -13705,3 +13701,49 @@ msgstr "och %d till"
 #: src/Support/MonthlyReport.php
 msgid "Full list on the History page"
 msgstr "Hela listan på sidan Historik"
+
+#: src/Web/SignupController.php
+#, php-format
+msgid "Sign-in code for the app: %s"
+msgstr "Inloggningskod för appen: %s"
+
+#: src/Web/SignupController.php
+msgid "That code is wrong or has expired."
+msgstr "Koden är fel eller har gått ut."
+
+#: src/Web/SignupController.php
+msgid "Too many wrong codes. Ask for a new link."
+msgstr "För många fel koder. Be om en ny länk."
+
+#: src/Web/SignupController.php
+msgid "Too many wrong codes from here. Wait an hour and try again."
+msgstr "För många fel koder härifrån. Vänta en timme och försök igen."
+
+#: templates/public/signup.php
+msgid "Or type the code from the email"
+msgstr "Eller skriv koden från mejlet"
+
+#: templates/public/signup.php
+msgid "Install the app"
+msgstr "Installera appen"
+
+#: templates/public/signup.php
+msgid "Tap Share, then Add to Home Screen."
+msgstr "Tryck på Dela och sedan Lägg till på hemskärmen."
+
+#: src/Support/SiteTexts.php
+msgid "App short name"
+msgstr "Appens korta namn"
+
+#: src/Web/PwaController.php
+#, php-format
+msgid "%s Crew"
+msgstr "%s Crew"
+
+#: templates/admin/settings.php
+msgid "The app’s full name. Blank uses the site name."
+msgstr "Appens fullständiga namn. Tomt använder webbplatsens namn."
+
+#: templates/admin/settings.php
+msgid "Shown under the home-screen icon, 12 characters at most. Blank uses the app name if it fits, else its initials and “Crew”."
+msgstr "Visas under ikonen på hemskärmen, högst 12 tecken. Tomt använder appens namn om det får plats, annars initialerna och ”Crew”."

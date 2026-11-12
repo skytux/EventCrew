@@ -58,11 +58,25 @@ final class AuthTokenRepository
      */
     public function consumeOnce(string $rawToken, string $purpose): ?int
     {
-        global $wpdb;
-
         $rawToken = trim($rawToken);
 
         if ('' === $rawToken) {
+            return null;
+        }
+
+        return $this->consumeHashOnce($this->hash($rawToken), $purpose);
+    }
+
+    /**
+     * consumeOnce() for a token known only by its hash: the sign-in email's
+     * code (Support\LoginCode) keeps the hash of its link's token, so typing
+     * the code spends the same token the link would.
+     */
+    public function consumeHashOnce(string $tokenHash, string $purpose): ?int
+    {
+        global $wpdb;
+
+        if (1 !== preg_match('/^[0-9a-f]{64}$/', $tokenHash)) {
             return null;
         }
 
@@ -72,7 +86,7 @@ final class AuthTokenRepository
                 "SELECT id, person_id, expires_at, used_at
                 FROM {$this->table()}
                 WHERE token_hash = %s AND purpose = %s",
-                $this->hash($rawToken),
+                $tokenHash,
                 $purpose
             ),
             ARRAY_A

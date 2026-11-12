@@ -35,6 +35,12 @@ final class WebManifestTest extends TestCase
         self::assertSame('#4a6cf7', $manifest['theme_color']);
     }
 
+    public function testTheScopeIsTheOneGivenElseTheWholeSite(): void
+    {
+        self::assertSame('/crew-app/', WebManifest::build(['scope' => '/crew-app/'] + $this->config())['scope']);
+        self::assertSame('Crew', WebManifest::build(['scope' => '/crew-app/'] + $this->config())['short_name']);
+    }
+
     public function testAdvertisesTheRequiredIconSizesIncludingMaskable(): void
     {
         $manifest = WebManifest::build($this->config());

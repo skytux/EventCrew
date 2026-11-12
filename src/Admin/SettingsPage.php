@@ -225,6 +225,7 @@ final class SettingsPage
                 'app_page_id' => (int) get_option(PwaController::PAGE_OPTION, 0),
                 'orphan_signup_page' => $this->unselectedSignupPage(),
                 'app_name' => SiteTexts::value('app_name'),
+                'app_short_name' => SiteTexts::value('app_short_name'),
                 'app_theme_color' => (string) get_option(PwaController::COLOR_OPTION, PwaController::DEFAULT_COLOR),
                 'app_accent_color' => (string) (
                     get_option(PwaController::ACCENT_OPTION, '')
