@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Models\Person;
+use EventCrew\Telegram\GroupRelay;
 
 /**
  * Decides, per person and per notification type, whether a Telegram DM, an
@@ -48,6 +49,16 @@ final class NotificationPreferences
     public const TICKET = 'ticket';
     public const PERMISSION = 'permission';
     public const OPEN_TASK = 'open_task';
+
+    /**
+     * New messages in the group chat on the web (Telegram\GroupRelay): an
+     * app notification only, and off until the person turns it on. A
+     * Telegram DM would repeat what Telegram users already see in the group
+     * itself, and an email per group message is far too many; the app
+     * notification is for the crew who read the group on the web. Shown
+     * only while the group chat on the web is on.
+     */
+    public const GROUP_CHAT = 'group_chat';
 
     /**
      * Toggleable types only an organizer receives, so only an organizer sees
@@ -101,7 +112,18 @@ final class NotificationPreferences
             self::TICKET => __('Free-entry ticket ready', 'eventcrew'),
             self::PERMISSION => __('Permission changes', 'eventcrew'),
             self::OPEN_TASK => __('Open-task alerts', 'eventcrew'),
-        ];
+        ] + (GroupRelay::isEnabled() ? [self::GROUP_CHAT => __('Group chat messages', 'eventcrew')] : []);
+    }
+
+    /**
+     * The channels a type can be sent on: every channel, except the group
+     * chat, which is the app alone (see GROUP_CHAT).
+     *
+     * @return list<string>
+     */
+    public static function channelsFor(string $type): array
+    {
+        return self::GROUP_CHAT === $type ? ['push'] : self::CHANNELS;
     }
 
     /** @return array<string, string> */
@@ -150,7 +172,9 @@ final class NotificationPreferences
      * type this person sees (independent of whether a channel could actually
      * reach them). The organizer-only rows are left out for everybody else.
      *
-     * @return array<string, array{label: string, dm: bool, email: bool, push: bool}>
+     * channels lists the channels the row offers (channelsFor()).
+     *
+     * @return array<string, array{label: string, dm: bool, email: bool, push: bool, channels: list<string>}>
      */
     public function matrix(Person $person): array
     {
@@ -162,6 +186,7 @@ final class NotificationPreferences
                 'dm' => $this->dmPref($person, $type),
                 'email' => $this->emailPref($person, $type),
                 'push' => $this->pushPref($person, $type),
+                'channels' => self::channelsFor($type),
             ];
         }
 
@@ -250,6 +275,7 @@ final class NotificationPreferences
             self::TICKET,
             self::PERMISSION,
             self::OPEN_TASK,
+            self::GROUP_CHAT,
             self::ROLE_NEWS,
             self::ROLE_MET,
             self::CHAT_FORWARD,
@@ -269,6 +295,10 @@ final class NotificationPreferences
             return true;
         }
 
+        if (! in_array('dm', self::channelsFor($type), true)) {
+            return false;
+        }
+
         return (bool) ($person->notifyPrefs[$type]['dm'] ?? ! $person->notifyMuted);
     }
 
@@ -276,6 +306,10 @@ final class NotificationPreferences
     {
         if (! self::isToggleable($type)) {
             return true;
+        }
+
+        if (! in_array('email', self::channelsFor($type), true)) {
+            return false;
         }
 
         return (bool) ($person->notifyPrefs[$type]['email'] ?? true);
@@ -293,7 +327,8 @@ final class NotificationPreferences
             return true;
         }
 
-        return (bool) ($person->notifyPrefs[$type]['push'] ?? true);
+        // The group chat starts off: a notice per group message is opt-in.
+        return (bool) ($person->notifyPrefs[$type]['push'] ?? self::GROUP_CHAT !== $type);
     }
 
     /** Any type with a row, the organizer-only ones included. */

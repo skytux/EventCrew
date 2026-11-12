@@ -212,6 +212,34 @@
     clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
+/*
+ * The Group chat tab (signup-groupchat.php): the group's messages in a box
+ * that scrolls on its own, newest at the bottom, the person's own messages
+ * set in a little; a quoted message under a line on the left.
+ */
+.eventcrew-signup .eventcrew-chat-list {
+    list-style: none; margin: 0 0 1em; padding: 0;
+    max-height: 60vh; overflow-y: auto; overscroll-behavior: contain;
+}
+.eventcrew-signup .eventcrew-chat-msg {
+    margin: 0 0 .6em; padding: .5em .7em;
+    border: 1px solid var(--eventcrew-line);
+    border-radius: var(--eventcrew-radius);
+    background: color-mix(in srgb, currentColor 4%, transparent);
+}
+.eventcrew-signup .eventcrew-chat-msg.is-mine { margin-left: 1.5em; background: color-mix(in srgb, currentColor 8%, transparent); }
+.eventcrew-signup .eventcrew-chat-msg p { margin: 0; }
+.eventcrew-signup .eventcrew-chat-meta { font-size: .88em; }
+.eventcrew-signup .eventcrew-chat-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.eventcrew-signup .eventcrew-chat-quote {
+    margin: .3em 0; padding: 0 0 0 .6em; font-size: .9em; opacity: .8;
+    border-left: 3px solid var(--eventcrew-line);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.eventcrew-signup .eventcrew-chat-actions { font-size: .88em; }
+.eventcrew-signup .eventcrew-chat-form textarea { width: 100%; box-sizing: border-box; }
+.eventcrew-signup .eventcrew-chat-error { color: var(--eventcrew-danger, #b32d2e); }
+
 /* The board list. Scoped to the board so ticket and task lists elsewhere in the
    panels keep the theme's own list styling. */
 .eventcrew-signup .eventcrew-board ul { list-style: none; padding: 0; margin: 0; }

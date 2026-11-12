@@ -99,7 +99,7 @@ final class NotificationSettingsService
 
         $map = (new NotificationPreferences())->asMap($person);
 
-        if (! isset($map[$type])) {
+        if (! isset($map[$type]) || ! in_array($channel, NotificationPreferences::channelsFor($type), true)) {
             $this->telegram->answerCallbackQuery($callbackId);
 
             return;
@@ -218,12 +218,19 @@ final class NotificationSettingsService
                 continue;
             }
 
+            $signs = ['dm' => '📱 ', 'email' => '✉ ', 'push' => '🔔 '];
+            $row = [];
+
+            // Only the channels the type is sent on: the group chat is the app alone.
+            foreach (NotificationPreferences::channelsFor($type) as $channel) {
+                $row[] = [
+                    'text' => $signs[$channel] . $mark((bool) ($pref[$channel] ?? false)),
+                    'callback_data' => self::PREFIX . $type . ':' . $channel,
+                ];
+            }
+
             $rows[] = [['text' => $label, 'callback_data' => self::PREFIX . 'noop']];
-            $rows[] = [
-                ['text' => '📱 ' . $mark($pref['dm']), 'callback_data' => self::PREFIX . $type . ':dm'],
-                ['text' => '✉ ' . $mark($pref['email']), 'callback_data' => self::PREFIX . $type . ':email'],
-                ['text' => '🔔 ' . $mark($pref['push'] ?? false), 'callback_data' => self::PREFIX . $type . ':push'],
-            ];
+            $rows[] = $row;
         }
 
         // The newsletter is email only.

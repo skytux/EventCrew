@@ -250,6 +250,42 @@ final class NotificationPreferencesTest extends TestCase
 
     public function testTheTypesAreTheOrganizersRows(): void
     {
+        $this->groupChatOn();
+
         self::assertSame(array_keys(NotificationPreferences::labels(true)), NotificationPreferences::types());
+    }
+
+    private function groupChatOn(): void
+    {
+        \Brain\Monkey\Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed
+                => \EventCrew\Telegram\GroupRelay::ENABLED_OPTION === $name ? '1' : $default
+        );
+    }
+
+    public function testTheGroupChatRowIsTheAppAloneOffUntilTurnedOnAndShownOnlyWhenOn(): void
+    {
+        $type = NotificationPreferences::GROUP_CHAT;
+
+        self::assertArrayNotHasKey($type, NotificationPreferences::labels());
+
+        $this->groupChatOn();
+        $person = $this->person(['telegram_chat_id' => 1, 'email_verified_at' => '2026-07-01 00:00:00']);
+        $row = $this->prefs()->matrix($person)[$type];
+
+        self::assertSame(['push'], $row['channels']);
+        self::assertFalse($row['dm']);
+        self::assertFalse($row['email']);
+        self::assertFalse($row['push']);
+        self::assertFalse($this->prefs()->withPushSeeded($person)[$type]['push']);
+
+        $on = $this->person([
+            'telegram_chat_id' => 1,
+            'notify_prefs' => (string) json_encode([$type => ['push' => true, 'dm' => true, 'email' => true]]),
+        ]);
+        $row = $this->prefs()->matrix($on)[$type];
+        self::assertTrue($row['push']);
+        self::assertFalse($row['dm']);
+        self::assertFalse($row['email']);
     }
 }

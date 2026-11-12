@@ -60,6 +60,7 @@ use EventCrew\Telegram\BoardBanner;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\CommandMenu;
 use EventCrew\Telegram\GroupChat;
+use EventCrew\Telegram\GroupRelay;
 use EventCrew\Telegram\PrivateChatGate;
 use EventCrew\Telegram\TelegramClient;
 use EventCrew\Telegram\TicketController;
@@ -415,6 +416,8 @@ final class SettingsPage
             'group_link_auto' => (string) get_option(BoardService::GROUP_LINK_AUTO_OPTION, ''),
             'group_lock' => (bool) get_option(BoardService::LOCK_OPTION, true),
             'group_gate' => PrivateChatGate::isOn(),
+            'group_chat_web' => GroupRelay::isEnabled(),
+            'reads_all' => (string) get_option(GroupRelay::READS_ALL_OPTION, ''),
             'board_cards' => BoardService::cardsOn(),
             'board_banner_page' => BoardBanner::pageId(),
             'profile' => [
@@ -653,6 +656,9 @@ final class SettingsPage
         // Checkbox, default on: only people in the crew group (or already
         // linked) can start the bot in a private chat (PrivateChatGate).
         update_option(PrivateChatGate::ENABLED_OPTION, isset($_POST['telegram_group_gate']) ? '1' : '0');
+
+        // Checkbox, default off: the Group chat tab of the Crew app (GroupRelay).
+        update_option(GroupRelay::ENABLED_OPTION, isset($_POST['telegram_group_chat_web']) ? '1' : '0');
 
         $noticeHours = isset($_POST['notice_hours']) ? max(0, (int) $_POST['notice_hours']) : 48;
         update_option(SignupService::NOTICE_HOURS_OPTION, $noticeHours);
@@ -2056,6 +2062,12 @@ final class SettingsPage
 
         if (is_array($me) && isset($me['first_name'])) {
             update_option(BoardService::NAME_OPTION, (string) $me['first_name']);
+        }
+
+        // Whether the bot reads every group message (BotFather /setprivacy:
+        // Disable), which the group chat on the web needs: shown in Settings.
+        if (is_array($me) && isset($me['can_read_all_group_messages'])) {
+            update_option(GroupRelay::READS_ALL_OPTION, $me['can_read_all_group_messages'] ? '1' : '0');
         }
 
         // So /board shows in the command menu and reaches the bot reliably even

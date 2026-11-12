@@ -26,6 +26,7 @@ use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\DoorNoteRepository;
 use EventCrew\Repositories\FollowupRepository;
+use EventCrew\Repositories\GroupMessageRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\HistoryRepository;
 use EventCrew\Repositories\MonthlyReportRepository;
@@ -137,6 +138,7 @@ use EventCrew\Telegram\BoardRefreshListener;
 use EventCrew\Telegram\BotLog;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\GroupChat;
+use EventCrew\Telegram\GroupRelay;
 use EventCrew\Telegram\BotTexts;
 use EventCrew\Telegram\BuyerListReset;
 use EventCrew\Telegram\ChatForwarder;
@@ -190,6 +192,7 @@ use EventCrew\Web\DoorController;
 use EventCrew\Web\FollowupController;
 use EventCrew\Web\NewsletterController;
 use EventCrew\Web\PrivacyController;
+use EventCrew\Web\GroupChatController;
 use EventCrew\Web\PushController;
 use EventCrew\Web\PwaController;
 use EventCrew\Web\SessionPerson;
@@ -459,6 +462,9 @@ final class Kernel
         $this->container->get(PushController::class)->boot();
         // The Crew app page's "Get the app" pop-in: what the person chose.
         $this->container->get(AppInstallController::class)->boot();
+
+        // The Group chat tab: the crew's Telegram group read and written on the web.
+        $this->container->get(GroupChatController::class)->boot();
 
         // The Crew app as a page of its own, and old page addresses redirected.
         $this->container->get(CrewAppPage::class)->boot();
@@ -887,6 +893,26 @@ final class Kernel
             PushController::class,
             fn (Container $container) => new PushController(
                 $container->get(PushSubscriptionRepository::class),
+                new SessionPerson($container->get(PersonRepository::class))
+            )
+        );
+
+        $this->container->singleton(GroupMessageRepository::class, fn () => new GroupMessageRepository());
+
+        $this->container->singleton(
+            GroupRelay::class,
+            fn (Container $container) => new GroupRelay(
+                $container->get(GroupMessageRepository::class),
+                $container->get(PersonRepository::class),
+                $container->get(TelegramClient::class),
+                $container->get(PushSubscriptionRepository::class)
+            )
+        );
+
+        $this->container->singleton(
+            GroupChatController::class,
+            fn (Container $container) => new GroupChatController(
+                $container->get(GroupRelay::class),
                 new SessionPerson($container->get(PersonRepository::class))
             )
         );
@@ -1320,7 +1346,8 @@ final class Kernel
                 $container->get(TakeoverRepository::class),
                 transfers: $container->get(TicketTransferRepository::class),
                 history: $container->get(HistoryRepository::class),
-                push: $container->get(PushSubscriptionRepository::class)
+                push: $container->get(PushSubscriptionRepository::class),
+                groupMessages: $container->get(GroupMessageRepository::class)
             )
         );
 
@@ -1623,7 +1650,8 @@ final class Kernel
                 transfer: $container->get(TransferBot::class),
                 subscribe: $container->get(SubscribeCommand::class),
                 acting: $container->get(ActingAs::class),
-                reopen: $container->get(ReopenProfile::class)
+                reopen: $container->get(ReopenProfile::class),
+                groupRelay: $container->get(GroupRelay::class)
             )
         );
 

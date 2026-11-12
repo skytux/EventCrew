@@ -87,7 +87,7 @@
  * @var array<int, array{id: string, name: string, columns: array<string, string|array<int, string>>, decoder_js: string}> $ticket_formats The ticket file formats.
  * @var array{protocol: string, server: string, port: int, security: string, username: string, password: string, folder: string, imported_folder: string, rejected_folder: string, authserv_id: string} $mail_fetch How the site reads the import mailbox itself.
  * @var array{time: int, ok: bool, message: string} $mail_fetch_status The last mailbox check.
- * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, group_gate: bool, board_cards: bool, board_banner_page: int, profile: array{about: array{source: string, texts: array<string, string>, manual: array<string, bool>}, description: array{source: string, texts: array<string, string>, manual: array<string, bool>}}, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
+ * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, group_gate: bool, group_chat_web: bool, reads_all: string, board_cards: bool, board_banner_page: int, profile: array{about: array{source: string, texts: array<string, string>, manual: array<string, bool>}, description: array{source: string, texts: array<string, string>, manual: array<string, bool>}}, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  * @var array{enabled: bool, forward: bool, url: string, model: string, key_status: string, private_limit: int, organizer_limit: int, group_limit: int, pages: array<int, int>, page_choices: array<int, string>, default_pages: array<int, string>, test_url: string, remove_key_url: string} $assistant The language-model helper for plain bot messages.
  * @var array{controller: string, address: string, contact: string, dpo_name: string, dpo_contact: string, retention_years: int, retention_min: int, retention_max: int, purge: bool, page_id: int, configured: bool, notice_url: string, buyer_page_id: int, buyer_notice_url: string, create_buyer_url: string, core_policy_url: string, create_nonce_action: string} $privacy Who is answerable for the crew's data, and how long it is kept.
  */
@@ -2145,6 +2145,36 @@ if (! defined('ABSPATH')) {
                     </label>
                     <p class="description">
                         <?php esc_html_e('On by default. Someone who is not yet in the crew and not in the group gets no answer from the bot. If they open the bot from a link in an email or on the website, they get a button to the crew group. Members who are already set up are not affected. Turn this off if the bot cannot check who is in the group.', 'eventcrew'); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><?php esc_html_e('Group chat on the web', 'eventcrew'); ?></th>
+                <td>
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="telegram_group_chat_web"
+                            value="1"
+                            <?php checked($telegram['group_chat_web']); ?>>
+                        <?php esc_html_e('Show the crew group in the Crew app', 'eventcrew'); ?>
+                    </label>
+                    <p class="description">
+                        <?php esc_html_e('Off by default. Signed-in crew read the group’s messages of the last 30 days in a Group chat tab and write to the group; the bot posts what they write with their name. Organizers can hide a message.', 'eventcrew'); ?>
+                    </p>
+                    <p class="description">
+                        <?php esc_html_e('The bot must read every group message: in BotFather, send /setprivacy, choose the bot, choose Disable. Then remove the bot from the group and add it back, and press Install / refresh webhook below.', 'eventcrew'); ?>
+                    </p>
+                    <p class="description">
+                        <?php
+                        if ('1' === $telegram['reads_all']) {
+                            esc_html_e('Now: the bot reads every group message.', 'eventcrew');
+                        } elseif ('0' === $telegram['reads_all']) {
+                            esc_html_e('Now: the bot reads only messages to it. Do the BotFather steps above.', 'eventcrew');
+                        } else {
+                            esc_html_e('Now: not known yet. Press Install / refresh webhook to check.', 'eventcrew');
+                        }
+                        ?>
                     </p>
                 </td>
             </tr>

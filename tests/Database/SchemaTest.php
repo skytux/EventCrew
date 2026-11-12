@@ -440,4 +440,14 @@ final class SchemaTest extends TestCase
         self::assertStringContainsString('CREATE TABLE wp_eventcrew_push_subscriptions', $sql);
         self::assertStringContainsString('UNIQUE KEY endpoint_hash (endpoint_hash)', $sql);
     }
+
+    public function testGroupMessagesAreUniquePerChatAndMessage(): void
+    {
+        $sql = implode("\n", $this->statements());
+
+        self::assertGreaterThanOrEqual(39, (int) Schema::DB_VERSION);
+        self::assertStringContainsString('CREATE TABLE wp_eventcrew_group_messages', $sql);
+        self::assertStringContainsString('UNIQUE KEY chat_message (chat_id,message_id)', $sql);
+        self::assertStringContainsString('KEY created_at (created_at)', $sql);
+    }
 }

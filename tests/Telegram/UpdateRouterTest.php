@@ -136,6 +136,20 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertSame([], $this->wpdb->updates);
     }
 
+    public function testAnEditedMessageIsNeverAnswered(): void
+    {
+        $this->updateRouter()->dispatch([
+            'edited_message' => [
+                'message_id' => 5,
+                'text' => '/help',
+                'chat' => ['id' => 555, 'type' => 'private'],
+                'from' => ['id' => 555],
+            ],
+        ]);
+
+        self::assertSame([], $this->calledMethods());
+    }
+
     public function testAPersonWhoIsNotBlockedStillReachesTheBoard(): void
     {
         $row = $this->blockedRow();

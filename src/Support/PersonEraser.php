@@ -7,6 +7,7 @@ namespace EventCrew\Support;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Repositories\GroupMessageRepository;
 use EventCrew\Repositories\HistoryRepository;
 use EventCrew\Repositories\NotificationsRepository;
 use EventCrew\Repositories\PersonRepository;
@@ -44,7 +45,8 @@ final class PersonEraser
         private readonly TakeoverRepository $takeovers = new TakeoverRepository(),
         private readonly ?TicketTransferRepository $transfers = null,
         private readonly ?HistoryRepository $history = null,
-        private readonly ?PushSubscriptionRepository $push = null
+        private readonly ?PushSubscriptionRepository $push = null,
+        private readonly ?GroupMessageRepository $groupMessages = null
     ) {
     }
 
@@ -66,6 +68,7 @@ final class PersonEraser
         $this->tokens->deleteForPerson($personId);
         $this->notifications->deleteForPerson($personId);
         $this->push?->deleteForPerson($personId);
+        $this->groupMessages?->forgetPerson($personId);
         $this->takeovers->deleteForPerson($personId);
         $this->assignments->deleteForPerson($personId);
         $this->redemptions->deleteForPerson($personId);
@@ -120,6 +123,7 @@ final class PersonEraser
         $this->notifications->deleteForPerson($personId);
         // Their devices' app notification addresses: nothing more is sent.
         $this->push?->deleteForPerson($personId);
+        $this->groupMessages?->forgetPerson($personId);
         // Takeover requests record who asked whom for which task, and a
         // pending one would go on sending messages about a person with no
         // name. They are not attendance numbers, so they go.

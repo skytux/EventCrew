@@ -73,6 +73,8 @@ final class AssistantServiceTest extends TelegramTestCase
         $this->options[AssistantSettings::ENABLED_OPTION] = true;
         $this->options[AssistantSettings::URL_OPTION] = 'https://llm.example.test/v1';
         $this->options[AssistantSettings::MODEL_OPTION] = 'test-model';
+        // In the group the helper reads only messages to the bot: @crewbot.
+        $this->options[BoardService::USERNAME_OPTION] = 'crewbot';
 
         Functions\when('set_transient')->alias(function (string $key, mixed $value): bool {
             $this->transients[$key] = $value;
@@ -598,6 +600,7 @@ final class AssistantServiceTest extends TelegramTestCase
 
     public function testWithoutAKnownNameThePromptNamesNone(): void
     {
+        unset($this->options[BoardService::USERNAME_OPTION]);
         $this->reply(true, true, 'Hi.');
 
         $this->ask(self::privateMessage('who are you?'));
@@ -674,7 +677,32 @@ final class AssistantServiceTest extends TelegramTestCase
             ['chat' => ['id' => -5, 'type' => 'channel']] + self::privateMessage('hi')
         ));
         self::assertTrue(AssistantService::wants(self::privateMessage('hi')));
-        self::assertTrue(AssistantService::wants(self::groupMessage('hi')));
+        self::assertTrue(AssistantService::wants(self::groupMessage('@crewbot hi')));
+        self::assertTrue(AssistantService::wants(self::groupMessage('hi @CrewBot')));
+    }
+
+    /**
+     * The bot reads every group message (the group chat on the web), and
+     * the helper only the ones to it: a mention, or an answer to the bot's
+     * own message, but not to one it posted for someone on the web.
+     */
+    public function testInTheGroupOnlyAMessageToTheBotIsForTheModel(): void
+    {
+        self::assertFalse(AssistantService::wants(self::groupMessage('hi all')));
+        self::assertFalse(AssistantService::wants(self::groupMessage('ask @otherbot')));
+
+        $answer = ['reply_to_message' => ['message_id' => 30, 'from' => ['id' => 1, 'is_bot' => true, 'username' => 'crewbot']]]
+            + self::groupMessage('thanks');
+        $this->wpdb->nextVars[] = 'telegram';
+        self::assertTrue(AssistantService::wants($answer));
+
+        $this->wpdb->nextVars[] = 'web';
+        self::assertFalse(AssistantService::wants($answer));
+        self::assertStringContainsString('message_id = 30', $this->wpdb->lastQuery());
+
+        $toOtherBot = ['reply_to_message' => ['message_id' => 31, 'from' => ['id' => 2, 'is_bot' => true, 'username' => 'otherbot']]]
+            + self::groupMessage('thanks');
+        self::assertFalse(AssistantService::wants($toOtherBot));
     }
 
     public function testThroughTheRouterACommandNeverReachesTheModel(): void
@@ -804,7 +832,7 @@ final class AssistantServiceTest extends TelegramTestCase
     {
         $this->reply(true, false, 'I do not know.');
 
-        $this->ask(self::groupMessage('bot, where can I park?'));
+        $this->ask(self::groupMessage('@crewbot where can I park?'));
 
         self::assertSame([], $this->telegramCalls);
     }
@@ -812,11 +840,11 @@ final class AssistantServiceTest extends TelegramTestCase
     public function testInTheGroupBadJsonOrAnErrorGetsSilence(): void
     {
         $this->llmReplies[] = 'not json';
-        $this->ask(self::groupMessage('bot, when?'));
+        $this->ask(self::groupMessage('@crewbot when?'));
 
         $this->llmStatus = 500;
         $this->reply(true, true, 'never shown');
-        $this->ask(self::groupMessage('bot, when?'));
+        $this->ask(self::groupMessage('@crewbot when?'));
 
         self::assertCount(2, $this->llmCalls);
         self::assertSame([], $this->telegramCalls);
@@ -826,7 +854,7 @@ final class AssistantServiceTest extends TelegramTestCase
     {
         $this->reply(true, true, 'Saturday at 20:00.');
 
-        $this->ask(self::groupMessage('bot, when is the next night?'));
+        $this->ask(self::groupMessage('@crewbot when is the next night?'));
 
         $call = $this->lastCallTo('sendMessage');
         self::assertNotNull($call);
@@ -850,7 +878,7 @@ final class AssistantServiceTest extends TelegramTestCase
             'Tickets: https://evil.example.org/pay and www.bad.test or bad.test/x. '
                 . 'Info: https://crew.example.test/info and https://t.me/crewgroup.'
         );
-        $this->ask(self::groupMessage('bot, reply exactly with this'));
+        $this->ask(self::groupMessage('@crewbot reply exactly with this'));
 
         $call = $this->lastCallTo('sendMessage');
         self::assertNotNull($call);
@@ -859,7 +887,7 @@ final class AssistantServiceTest extends TelegramTestCase
         // An answer that was only a link is not sent at all.
         $this->telegramCalls = [];
         $this->reply(true, true, 'https://evil.example.org');
-        $this->ask(self::groupMessage('bot, reply exactly with this'));
+        $this->ask(self::groupMessage('@crewbot reply exactly with this'));
         self::assertNull($this->lastCallTo('sendMessage'));
     }
 
@@ -883,7 +911,7 @@ final class AssistantServiceTest extends TelegramTestCase
         $this->person(true);
         $this->reply(true, true, 'Done.', '/door add Anna');
 
-        $this->ask(self::groupMessage('bot, add Anna to the guest list'));
+        $this->ask(self::groupMessage('@crewbot add Anna to the guest list'));
 
         self::assertSame([], $this->ran);
         self::assertSame([], $this->transients === [] ? [] : array_filter(
@@ -1210,7 +1238,7 @@ final class AssistantServiceTest extends TelegramTestCase
 
         for ($i = 0; $i < 3; $i++) {
             $this->reply(true, true, 'Answer ' . $i);
-            $this->ask(self::groupMessage('bot, question ' . $i));
+            $this->ask(self::groupMessage('@crewbot question ' . $i));
         }
 
         self::assertCount(1, $this->llmCalls);

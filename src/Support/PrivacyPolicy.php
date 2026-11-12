@@ -6,6 +6,7 @@ namespace EventCrew\Support;
 
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\BotLog;
+use EventCrew\Telegram\GroupRelay;
 use EventCrew\Telegram\TelegramClient;
 
 /**
@@ -490,6 +491,17 @@ final class PrivacyPolicy
                 ),
                 BotLog::KEEP_DAYS
             );
+
+            if (GroupRelay::isEnabled()) {
+                $paragraphs[] = sprintf(
+                    /* translators: %d: number of days */
+                    __(
+                        'The bot keeps a copy of the messages written in the crew’s Telegram group, so signed-in crew can read and answer them in the Crew app: the text, who wrote it, when, and which message it answers. A photo or a file is noted only by its kind, never stored. What you write in the Crew app the bot posts to the group with your name. Each message is deleted after %d days, and the organizers can hide one sooner. If your record is erased, your messages go with it.',
+                        'eventcrew'
+                    ),
+                    GroupRelay::KEEP_DAYS
+                );
+            }
         }
 
         $paragraphs[] = sprintf(

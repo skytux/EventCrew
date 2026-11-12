@@ -62,6 +62,23 @@ final class PushSubscriptionRepository
         return $out;
     }
 
+    /**
+     * Everyone with at least one device, by person id.
+     *
+     * @return list<int>
+     */
+    public function personIds(): array
+    {
+        global $wpdb;
+
+        $ids = $wpdb->get_col("SELECT DISTINCT person_id FROM {$this->table()}");
+
+        return array_values(array_filter(
+            array_map('intval', is_array($ids) ? $ids : []),
+            static fn (int $id): bool => $id > 0
+        ));
+    }
+
     /** Whether the person has at least one device with app notifications on. */
     public function hasAny(int $personId): bool
     {

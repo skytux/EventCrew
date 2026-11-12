@@ -10846,3 +10846,101 @@ msgstr "Muistuta sovelluksesta"
 
 msgid "Signed-in people who have not installed the Crew app see a pop-in offering it. Remind me later hides it for this many days."
 msgstr "Kirjautuneet, jotka eivät ole asentaneet Crew-sovellusta, näkevät sitä tarjoavan ikkunan. Muistuta myöhemmin piilottaa sen näin moneksi päiväksi."
+
+msgid "(web)"
+msgstr "(verkko)"
+
+msgid "Add your name in Settings first: the group sees it with your message."
+msgstr "Lisää ensin nimesi Asetuksiin: ryhmä näkee sen viestisi kanssa."
+
+msgid "Audio"
+msgstr "Ääni"
+
+msgid "Contact"
+msgstr "Yhteystieto"
+
+msgid "File"
+msgstr "Tiedosto"
+
+msgid "GIF"
+msgstr "GIF"
+
+msgid "Group chat"
+msgstr "Ryhmächat"
+
+msgid "Group chat messages"
+msgstr "Ryhmächatin viestit"
+
+msgid "Group chat on the web"
+msgstr "Ryhmächat verkossa"
+
+msgid "Hide"
+msgstr "Piilota"
+
+msgid "Hide this message? A message sent from the web is also deleted in the group."
+msgstr "Piilotetaanko viesti? Verkosta lähetetty viesti poistetaan myös ryhmästä."
+
+msgid "Location"
+msgstr "Sijainti"
+
+msgid "No messages in the last 30 days."
+msgstr "Ei viestejä viimeisen 30 päivän aikana."
+
+msgid "Now: not known yet. Press Install / refresh webhook to check."
+msgstr "Nyt: ei vielä tiedossa. Tarkista painamalla Asenna / päivitä webhook."
+
+msgid "Now: the bot reads every group message."
+msgstr "Nyt: botti lukee kaikki ryhmän viestit."
+
+msgid "Now: the bot reads only messages to it. Do the BotFather steps above."
+msgstr "Nyt: botti lukee vain sille osoitetut viestit. Tee yllä olevat BotFather-vaiheet."
+
+msgid "Off by default. Signed-in crew read the group’s messages of the last 30 days in a Group chat tab and write to the group; the bot posts what they write with their name. Organizers can hide a message."
+msgstr "Oletuksena pois. Kirjautunut crew lukee ryhmän viimeisen 30 päivän viestit Ryhmächat-välilehdellä ja kirjoittaa ryhmään; botti julkaisee viestin kirjoittajan nimellä. Järjestäjät voivat piilottaa viestin."
+
+msgid "Photo"
+msgstr "Kuva"
+
+msgid "Poll"
+msgstr "Kysely"
+
+msgid "Reply"
+msgstr "Vastaa"
+
+msgid "Show the crew group in the Crew app"
+msgstr "Näytä crew-ryhmä Crew-sovelluksessa"
+
+msgid "Something else"
+msgstr "Jotain muuta"
+
+msgid "Sticker"
+msgstr "Tarra"
+
+msgid "That is many messages in a short time. Wait a few minutes."
+msgstr "Paljon viestejä lyhyessä ajassa. Odota muutama minuutti."
+
+#, php-format
+msgid "That is too long: at most %d characters."
+msgstr "Liian pitkä: enintään %d merkkiä."
+
+#, php-format
+msgid "The bot keeps a copy of the messages written in the crew’s Telegram group, so signed-in crew can read and answer them in the Crew app: the text, who wrote it, when, and which message it answers. A photo or a file is noted only by its kind, never stored. What you write in the Crew app the bot posts to the group with your name. Each message is deleted after %d days, and the organizers can hide one sooner. If your record is erased, your messages go with it."
+msgstr "Botti säilyttää kopion crew’n Telegram-ryhmään kirjoitetuista viesteistä, jotta kirjautunut crew voi lukea ja vastata niihin Crew-sovelluksessa: tekstin, kirjoittajan, ajan ja sen, mihin viestiin se vastaa. Kuvasta tai tiedostosta merkitään vain sen laji, sitä ei tallenneta. Minkä kirjoitat Crew-sovelluksessa, botti julkaisee ryhmässä nimelläsi. Jokainen viesti poistetaan %d päivän jälkeen, ja järjestäjät voivat piilottaa viestin aiemmin. Jos tietosi poistetaan, viestisi poistuvat niiden mukana."
+
+msgid "The bot must read every group message: in BotFather, send /setprivacy, choose the bot, choose Disable. Then remove the bot from the group and add it back, and press Install / refresh webhook below."
+msgstr "Botin täytyy lukea kaikki ryhmän viestit: lähetä BotFatherissa /setprivacy, valitse botti ja valitse Disable. Poista sitten botti ryhmästä, lisää se takaisin ja paina alla Asenna / päivitä webhook."
+
+msgid "The crew’s Telegram group. What you send here, the bot posts to the group with your name."
+msgstr "Crew’n Telegram-ryhmä. Minkä lähetät täältä, botti julkaisee ryhmässä nimelläsi."
+
+msgid "The group chat needs JavaScript."
+msgstr "Ryhmächat tarvitsee JavaScriptin."
+
+msgid "Video"
+msgstr "Video"
+
+msgid "You are signed out. Reload the page."
+msgstr "Olet kirjautunut ulos. Lataa sivu uudelleen."
+
+msgid "edited"
+msgstr "muokattu"

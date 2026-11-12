@@ -76,7 +76,8 @@ final class UpdateRouter
         private readonly ?TransferBot $transfer = null,
         private readonly ?SubscribeCommand $subscribe = null,
         private readonly ?ActingAs $acting = null,
-        private readonly ?ReopenProfile $reopen = null
+        private readonly ?ReopenProfile $reopen = null,
+        private readonly ?GroupRelay $groupRelay = null
     ) {
     }
 
@@ -178,6 +179,14 @@ final class UpdateRouter
         // The crew's group, from any group update: a move to a supergroup, or
         // the group itself when the site knows none (GroupChat::learn()).
         GroupChat::learn($update);
+
+        // The crew group's messages for the group chat on the web
+        // (GroupRelay); an edit is only that, nothing to answer.
+        $this->groupRelay?->record($update);
+
+        if (isset($update['edited_message'])) {
+            return;
+        }
 
         if ($this->refusedAsBlocked($update)) {
             return;
@@ -586,8 +595,15 @@ final class UpdateRouter
 
         // Any other command - mistyped, or one the bot no longer has - gets the
         // /help answer, so the person sees what they can type. In a group, a
-        // command addressed to another bot (/x@otherbot) is left alone.
-        if (null !== $this->help && str_starts_with($text, '/') && ! $this->isForAnotherBot($text)) {
+        // command addressed to another bot (/x@otherbot) is left alone, and so
+        // is a bare one (/x): the bot reads every group message (privacy mode
+        // off, GroupRelay), so it may be another bot's. /x@thisbot gets it.
+        if (
+            null !== $this->help
+            && str_starts_with($text, '/')
+            && ! $this->isForAnotherBot($text)
+            && ($isPrivate || 1 === preg_match('#^/\w+@\w+#', $text))
+        ) {
             // The command list itself, not the Help menu (Owner 2026-11-08).
             $this->help->onCommands($fromId, $chatId, $isPrivate);
 

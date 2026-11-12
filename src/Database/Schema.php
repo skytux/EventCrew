@@ -23,7 +23,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '38';
+    public const DB_VERSION = '39';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -56,6 +56,7 @@ final class Schema
     public const DOOR_NOTES = 'eventcrew_door_notes';
     public const HISTORY = 'eventcrew_history';
     public const PUSH_SUBSCRIPTIONS = 'eventcrew_push_subscriptions';
+    public const GROUP_MESSAGES = 'eventcrew_group_messages';
 
     /**
      * Set by the schema 37 update when it has made the history from older
@@ -89,6 +90,7 @@ final class Schema
             self::DOOR_NOTES,
             self::HISTORY,
             self::PUSH_SUBSCRIPTIONS,
+            self::GROUP_MESSAGES,
         ];
     }
 
@@ -160,6 +162,9 @@ final class Schema
         // app switch written into every existing person's notification
         // preferences, on the most restrictive choice they already made.
         self::seedPushPrefs((string) get_option(self::VERSION_OPTION, ''));
+
+        // Schema 39: the group messages table (the group chat on the web).
+        // dbDelta adds it; nothing to copy.
 
         update_option(self::VERSION_OPTION, self::DB_VERSION);
     }
@@ -557,6 +562,7 @@ final class Schema
         $doorNotes = self::table(self::DOOR_NOTES);
         $history = self::table(self::HISTORY);
         $pushSubscriptions = self::table(self::PUSH_SUBSCRIPTIONS);
+        $groupMessages = self::table(self::GROUP_MESSAGES);
 
         return [
             // anonymized_at is the retention purge's high-water mark. Without it
@@ -1102,6 +1108,44 @@ final class Schema
                 PRIMARY KEY  (id),
                 UNIQUE KEY endpoint_hash (endpoint_hash),
                 KEY person_id (person_id)
+            ) ENGINE=InnoDB {$charsetCollate};",
+
+            // The crew's Telegram group, mirrored for the group chat on the
+            // web (schema 39, Telegram\GroupRelay): one row per message in
+            // the group the bot knows (GroupChat::id()), from Telegram or sent
+            // from the web through the bot. person_id is the sender when they
+            // are a known person (NULL otherwise; an erased person's messages
+            // are deleted); sender_name is the name shown. kind is '' for text and
+            // otherwise what was sent instead ('photo', 'sticker', ...), shown
+            // as a word on the web. reply_to is the message_id answered, with
+            // the answered sender and a short quote (reply_name, reply_text),
+            // so a quote of a message older than the stored ones still reads;
+            // reply_person_id is the answered sender, so erasing them empties
+            // the quote too.
+            // source is 'telegram' or 'web'. hidden is an organizer's hide.
+            // Rows older than GroupRelay::KEEP_DAYS are deleted by the
+            // heartbeat.
+            "CREATE TABLE {$groupMessages} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                chat_id bigint(20) NOT NULL,
+                message_id bigint(20) NOT NULL,
+                person_id bigint(20) unsigned DEFAULT NULL,
+                sender_name varchar(191) NOT NULL DEFAULT '',
+                text text NOT NULL,
+                kind varchar(16) NOT NULL DEFAULT '',
+                reply_to bigint(20) DEFAULT NULL,
+                reply_person_id bigint(20) unsigned DEFAULT NULL,
+                reply_name varchar(191) NOT NULL DEFAULT '',
+                reply_text varchar(255) NOT NULL DEFAULT '',
+                source varchar(10) NOT NULL DEFAULT 'telegram',
+                hidden tinyint(1) NOT NULL DEFAULT 0,
+                created_at datetime NOT NULL,
+                edited_at datetime DEFAULT NULL,
+                PRIMARY KEY  (id),
+                UNIQUE KEY chat_message (chat_id,message_id),
+                KEY created_at (created_at),
+                KEY person_id (person_id),
+                KEY reply_person_id (reply_person_id)
             ) ENGINE=InnoDB {$charsetCollate};",
         ];
     }

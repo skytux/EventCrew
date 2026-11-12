@@ -26,7 +26,7 @@ $eventcrew_turnstile_site_key = (string) $view['turnstile_site_key'];
 $eventcrew_ticket_dates = is_array($view['ticket_dates'] ?? null) ? $view['ticket_dates'] : [];
 $eventcrew_ticket_held = is_array($view['ticket_held'] ?? null) ? $view['ticket_held'] : [];
 $eventcrew_redeem_action = (string) ($view['redeem_action'] ?? '');
-/** @var array<string, array{label: string, dm: bool, email: bool, push: bool}> $eventcrew_notify_matrix */
+/** @var array<string, array{label: string, dm: bool, email: bool, push: bool, channels?: list<string>}> $eventcrew_notify_matrix */
 $eventcrew_notify_matrix = is_array($view['notify_matrix'] ?? null) ? $view['notify_matrix'] : [];
 $eventcrew_prefs_action = (string) ($view['prefs_action'] ?? '');
 /** @var array{upcoming: array<int, array{label: string, what: string, event: string, dj: string, when: string, url: string}>, past: array<int, array{label: string, what: string, event: string, dj: string, when: string, url: string}>} $eventcrew_my_tickets */
@@ -104,6 +104,10 @@ if ($eventcrew_link_expired) {
         $eventcrew_tabs = [
             'board' => __('Board', 'eventcrew'),
             'me' => __('Me', 'eventcrew'),
+        ];
+        // The group chat on the web (signup-groupchat.php), for the crew it is open to.
+        $eventcrew_tabs += \EventCrew\Telegram\GroupRelay::visibleTo($eventcrew_person) ? ['chat' => __('Chat', 'eventcrew')] : [];
+        $eventcrew_tabs += [
             'settings' => __('Settings', 'eventcrew'),
             'help' => __('Help', 'eventcrew'),
         ];
@@ -966,6 +970,10 @@ if ($eventcrew_link_expired) {
             </section>
         </section>
 
+        <?php if (\EventCrew\Telegram\GroupRelay::visibleTo($eventcrew_person)) : ?>
+            <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-groupchat.php'; ?>
+        <?php endif; ?>
+
         <section class="eventcrew-panel" id="eventcrew-panel-settings" data-eventcrew-panel="settings" aria-labelledby="eventcrew-tab-settings">
             <h2 class="eventcrew-panel-title"><?php esc_html_e('Settings', 'eventcrew'); ?></h2>
 
@@ -1017,15 +1025,13 @@ if ($eventcrew_link_expired) {
                         <?php foreach ($eventcrew_notify_matrix as $eventcrew_type => $eventcrew_pref) : ?>
                             <tr>
                                 <td><?php echo esc_html($eventcrew_pref['label']); ?></td>
-                                <td class="eventcrew-tick">
-                                    <input type="checkbox" name="prefs[<?php echo esc_attr((string) $eventcrew_type); ?>][dm]" value="1" <?php checked($eventcrew_pref['dm']); ?>>
-                                </td>
-                                <td class="eventcrew-tick">
-                                    <input type="checkbox" name="prefs[<?php echo esc_attr((string) $eventcrew_type); ?>][email]" value="1" <?php checked($eventcrew_pref['email']); ?>>
-                                </td>
-                                <td class="eventcrew-tick">
-                                    <input type="checkbox" name="prefs[<?php echo esc_attr((string) $eventcrew_type); ?>][push]" value="1" <?php checked($eventcrew_pref['push'] ?? false); ?>>
-                                </td>
+                                <?php foreach (['dm', 'email', 'push'] as $eventcrew_channel) : ?>
+                                    <td class="eventcrew-tick">
+                                        <?php if (in_array($eventcrew_channel, (array) ($eventcrew_pref['channels'] ?? ['dm', 'email', 'push']), true)) : ?>
+                                            <input type="checkbox" name="prefs[<?php echo esc_attr((string) $eventcrew_type); ?>][<?php echo esc_attr($eventcrew_channel); ?>]" value="1" <?php checked($eventcrew_pref[$eventcrew_channel] ?? false); ?>>
+                                        <?php endif; ?>
+                                    </td>
+                                <?php endforeach; ?>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>

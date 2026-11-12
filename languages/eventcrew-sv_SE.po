@@ -13787,3 +13787,101 @@ msgstr "Påminn om appen efter"
 
 msgid "Signed-in people who have not installed the Crew app see a pop-in offering it. Remind me later hides it for this many days."
 msgstr "Inloggade som inte har installerat Crew-appen ser en ruta som erbjuder den. Påminn mig senare döljer den så här många dagar."
+
+msgid "(web)"
+msgstr "(webb)"
+
+msgid "Add your name in Settings first: the group sees it with your message."
+msgstr "Lägg först till ditt namn under Inställningar: gruppen ser det med ditt meddelande."
+
+msgid "Audio"
+msgstr "Ljud"
+
+msgid "Contact"
+msgstr "Kontakt"
+
+msgid "File"
+msgstr "Fil"
+
+msgid "GIF"
+msgstr "GIF"
+
+msgid "Group chat"
+msgstr "Gruppchatt"
+
+msgid "Group chat messages"
+msgstr "Meddelanden i gruppchatten"
+
+msgid "Group chat on the web"
+msgstr "Gruppchatt på webben"
+
+msgid "Hide"
+msgstr "Dölj"
+
+msgid "Hide this message? A message sent from the web is also deleted in the group."
+msgstr "Dölja meddelandet? Ett meddelande skickat från webben tas också bort i gruppen."
+
+msgid "Location"
+msgstr "Plats"
+
+msgid "No messages in the last 30 days."
+msgstr "Inga meddelanden de senaste 30 dagarna."
+
+msgid "Now: not known yet. Press Install / refresh webhook to check."
+msgstr "Nu: inte känt än. Tryck på Installera / uppdatera webhook för att kontrollera."
+
+msgid "Now: the bot reads every group message."
+msgstr "Nu: boten läser alla meddelanden i gruppen."
+
+msgid "Now: the bot reads only messages to it. Do the BotFather steps above."
+msgstr "Nu: boten läser bara meddelanden till den. Gör BotFather-stegen ovan."
+
+msgid "Off by default. Signed-in crew read the group’s messages of the last 30 days in a Group chat tab and write to the group; the bot posts what they write with their name. Organizers can hide a message."
+msgstr "Av som standard. Inloggad crew läser gruppens meddelanden från de senaste 30 dagarna under fliken Gruppchatt och skriver till gruppen; boten publicerar det de skriver med deras namn. Arrangörer kan dölja ett meddelande."
+
+msgid "Photo"
+msgstr "Foto"
+
+msgid "Poll"
+msgstr "Omröstning"
+
+msgid "Reply"
+msgstr "Svara"
+
+msgid "Show the crew group in the Crew app"
+msgstr "Visa crew-gruppen i Crew-appen"
+
+msgid "Something else"
+msgstr "Något annat"
+
+msgid "Sticker"
+msgstr "Klistermärke"
+
+msgid "That is many messages in a short time. Wait a few minutes."
+msgstr "Det är många meddelanden på kort tid. Vänta några minuter."
+
+#, php-format
+msgid "That is too long: at most %d characters."
+msgstr "Det är för långt: högst %d tecken."
+
+#, php-format
+msgid "The bot keeps a copy of the messages written in the crew’s Telegram group, so signed-in crew can read and answer them in the Crew app: the text, who wrote it, when, and which message it answers. A photo or a file is noted only by its kind, never stored. What you write in the Crew app the bot posts to the group with your name. Each message is deleted after %d days, and the organizers can hide one sooner. If your record is erased, your messages go with it."
+msgstr "Boten sparar en kopia av meddelandena i crewets Telegramgrupp, så att inloggad crew kan läsa och svara på dem i Crew-appen: texten, vem som skrev, när och vilket meddelande det svarar på. Ett foto eller en fil noteras bara med sin typ och sparas aldrig. Det du skriver i Crew-appen publicerar boten i gruppen med ditt namn. Varje meddelande raderas efter %d dagar, och arrangörerna kan dölja ett tidigare. Om dina uppgifter raderas försvinner dina meddelanden med dem."
+
+msgid "The bot must read every group message: in BotFather, send /setprivacy, choose the bot, choose Disable. Then remove the bot from the group and add it back, and press Install / refresh webhook below."
+msgstr "Boten måste läsa alla meddelanden i gruppen: skicka /setprivacy i BotFather, välj boten, välj Disable. Ta sedan bort boten ur gruppen och lägg till den igen, och tryck på Installera / uppdatera webhook nedan."
+
+msgid "The crew’s Telegram group. What you send here, the bot posts to the group with your name."
+msgstr "Crewets Telegramgrupp. Det du skickar här publicerar boten i gruppen med ditt namn."
+
+msgid "The group chat needs JavaScript."
+msgstr "Gruppchatten kräver JavaScript."
+
+msgid "Video"
+msgstr "Video"
+
+msgid "You are signed out. Reload the page."
+msgstr "Du är utloggad. Ladda om sidan."
+
+msgid "edited"
+msgstr "redigerad"

@@ -624,8 +624,9 @@ final class TelegramClient
             // Just what the bot acts on. my_chat_member is the bot's own
             // being-added/removed notice, which Telegram delivers even under
             // group privacy mode - that is what lets the board's group be
-            // captured without making the bot an admin.
-            'allowed_updates' => ['message', 'callback_query', 'my_chat_member'],
+            // captured without making the bot an admin. edited_message keeps
+            // the group chat on the web in step with edits (GroupRelay).
+            'allowed_updates' => ['message', 'edited_message', 'callback_query', 'my_chat_member'],
         ]);
     }
 

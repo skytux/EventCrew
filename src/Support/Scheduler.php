@@ -10,6 +10,7 @@ use EventCrew\Telegram\BoardDjText;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\BotLog;
 use EventCrew\Telegram\CommandMenu;
+use EventCrew\Telegram\GroupRelay;
 
 /**
  * The heartbeat: one hourly WP-Cron event that runs the scheduled sends - the
@@ -188,6 +189,10 @@ final class Scheduler
         // Once a day, delete the history rows older than History::KEEP_DAYS
         // (one year), as the privacy notice says.
         History::purgeIfDue();
+
+        // Once a day, delete the group chat messages older than
+        // GroupRelay::KEEP_DAYS (30), as the privacy notice says.
+        GroupRelay::purgeIfDue();
 
         // Enforce the published retention period. Not inside the send window:
         // it notifies nobody, so there is no unsociable hour to protect anyone

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Telegram;
 
 use Closure;
+use EventCrew\Repositories\GroupMessageRepository;
 use EventCrew\Support\AssistantKnowledge;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\HelpPage;
@@ -139,7 +140,11 @@ final class AssistantService
     /**
      * Whether a message is one the helper reads at all: switched on, plain
      * text (no command), from a person (not a bot), in a private chat or a
-     * group.
+     * group. In a group only a message to the bot: one that names it
+     * (@username) or answers one of its own messages, not one it posted
+     * for someone on the web. The bot reads every group message (privacy
+     * mode off, for the group chat on the web, GroupRelay), and the helper
+     * is not asked about each one.
      *
      * @param array<string, mixed> $message
      */
@@ -152,12 +157,27 @@ final class AssistantService
         $text = trim((string) ($message['text'] ?? ''));
         $type = (string) ($message['chat']['type'] ?? '');
 
-        return '' !== $text
-            && ! str_starts_with($text, '/')
-            && 0 !== (int) ($message['chat']['id'] ?? 0)
-            && 0 !== (int) ($message['from']['id'] ?? 0)
-            && empty($message['from']['is_bot'])
-            && in_array($type, ['private', 'group', 'supergroup'], true);
+        if (
+            '' === $text
+            || str_starts_with($text, '/')
+            || 0 === (int) ($message['chat']['id'] ?? 0)
+            || 0 === (int) ($message['from']['id'] ?? 0)
+            || ! empty($message['from']['is_bot'])
+            || ! in_array($type, ['private', 'group', 'supergroup'], true)
+        ) {
+            return false;
+        }
+
+        if ('private' === $type) {
+            return true;
+        }
+
+        return self::mentionsBot($message)
+            || (self::repliesToBot($message)
+                && ! (new GroupMessageRepository())->isFromWeb(
+                    (int) $message['chat']['id'],
+                    (int) ($message['reply_to_message']['message_id'] ?? 0)
+                ));
     }
 
     /**
@@ -719,8 +739,8 @@ final class AssistantService
                 . ' bot: it mentions the bot, replies to the bot, or asks the bot something. Messages between'
                 . ' people are not for you: "aimed" is false. When unsure, "aimed" is false. In the group'
                 . ' "action" is always null.';
-            $lines[] = '- The message mentions the bot: ' . $yes($this->mentionsBot($message))
-                . '. It replies to a message of the bot: ' . $yes($this->repliesToBot($message)) . '.';
+            $lines[] = '- The message mentions the bot: ' . $yes(self::mentionsBot($message))
+                . '. It replies to a message of the bot: ' . $yes(self::repliesToBot($message)) . '.';
         }
 
         $lines[] = '';
@@ -810,7 +830,7 @@ final class AssistantService
     /**
      * @param array<string, mixed> $message
      */
-    private function mentionsBot(array $message): bool
+    private static function mentionsBot(array $message): bool
     {
         $own = ltrim(trim((string) get_option(BoardService::USERNAME_OPTION, '')), '@');
 
@@ -820,7 +840,7 @@ final class AssistantService
     /**
      * @param array<string, mixed> $message
      */
-    private function repliesToBot(array $message): bool
+    private static function repliesToBot(array $message): bool
     {
         $from = $message['reply_to_message']['from'] ?? null;
 

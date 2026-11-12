@@ -192,7 +192,7 @@ final class TelegramClientTest extends TelegramTestCase
         $body = $this->lastCallTo('setWebhook');
         self::assertSame('https://example.test/hook', $body['url']);
         self::assertSame('sekret', $body['secret_token']);
-        self::assertSame(['message', 'callback_query', 'my_chat_member'], $body['allowed_updates']);
+        self::assertSame(['message', 'edited_message', 'callback_query', 'my_chat_member'], $body['allowed_updates']);
     }
 
     public function testDeleteWebhookCallsTheMethod(): void

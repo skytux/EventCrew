@@ -154,6 +154,17 @@ final class HelpServiceTest extends TelegramTestCase
         self::assertNull($this->lastCallTo('sendMessage'));
     }
 
+    public function testABareUnknownGroupCommandIsLeftAlone(): void
+    {
+        // The bot reads every group message (the group chat on the web), so
+        // a bare /x may be another bot's.
+        $this->options['eventcrew_telegram_bot_username'] = 'CrewBot';
+
+        $this->send('/shifts', ['id' => -100, 'type' => 'supergroup']);
+
+        self::assertNull($this->lastCallTo('sendMessage'));
+    }
+
     public function testAnUnknownGroupCommandForThisBotGetsTheGroupHelp(): void
     {
         $this->options['eventcrew_telegram_bot_username'] = 'CrewBot';

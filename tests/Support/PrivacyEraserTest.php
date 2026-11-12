@@ -106,6 +106,35 @@ final class PrivacyEraserTest extends TestCase
         self::assertSame([['holder_id' => 7], ['cover_id' => 7]], $takeoverWheres);
     }
 
+    public function testTheGroupChatMessagesGoAndTheQuotesOfThemAreEmptied(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'dancer@example.test', 'created_at' => '2020-01-01 00:00:00'];
+        $people = new PersonRepository();
+        $eraser = new PrivacyEraser($people, new PersonEraser(
+            $people,
+            new AssignmentRepository(),
+            new RedemptionRepository(),
+            new CreditGrantRepository(),
+            new AuthTokenRepository(),
+            new NotificationsRepository(),
+            groupMessages: new \EventCrew\Repositories\GroupMessageRepository()
+        ));
+
+        $eraser->erase('dancer@example.test');
+
+        self::assertContains(
+            ['table' => 'wp_eventcrew_group_messages', 'where' => ['person_id' => 7]],
+            $this->wpdb->deletes
+        );
+        $quotes = array_values(array_filter(
+            $this->wpdb->queries,
+            static fn (string $q): bool => str_contains($q, 'UPDATE wp_eventcrew_group_messages')
+        ));
+        self::assertCount(1, $quotes);
+        self::assertStringContainsString("reply_text = ''", $quotes[0]);
+        self::assertStringContainsString('WHERE reply_person_id = 7', $quotes[0]);
+    }
+
     /**
      * An announcement subscriber's row is deleted entirely: it holds only the
      * address, the name to greet and the language.
