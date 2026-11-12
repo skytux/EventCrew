@@ -1470,7 +1470,8 @@
     background: color-mix(in srgb, currentColor 4%, transparent);
 }
 .eventcrew-signup .eventcrew-ai-line:focus-within { border-color: var(--eventcrew-accent); }
-.eventcrew-signup .eventcrew-ai-icon { flex: none; display: flex; color: #2aabee; }
+.eventcrew-signup .eventcrew-ai-icon { flex: none; display: flex; }
+.eventcrew-signup .eventcrew-ai-icon img { width: 28px; height: 28px; border-radius: 50%; display: block; }
 .eventcrew-signup .eventcrew-ai-input {
     flex: 1 1 auto; min-width: 0; margin: 0; padding: .55em .3em;
     border: 0; background: transparent; color: inherit; font: inherit;
