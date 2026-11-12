@@ -13,6 +13,7 @@ use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageAiText;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\PushNotifier;
 use EventCrew\Support\ReputationSettings;
 use EventCrew\Support\SeveralTickets;
 use EventCrew\Support\SignedLink;
@@ -482,7 +483,10 @@ final class TicketRedemptionService
         $when = $this->shortDate($date);
         $prefs = new NotificationPreferences();
 
-        if ($prefs->dmAllowed($person, NotificationPreferences::TICKET)) {
+        $dmOk = $prefs->dmAllowed($person, NotificationPreferences::TICKET);
+        $dmText = '';
+
+        if ($dmOk || $prefs->pushAllowed($person, NotificationPreferences::TICKET)) {
             // The night's event and its times, for the DM's own lines.
             [$dayEventId, $eventName] = $this->eventContext($date);
             $context = [
@@ -491,11 +495,18 @@ final class TicketRedemptionService
                 'event' => $eventName,
                 'event_id' => $eventPostId ?? $dayEventId,
             ];
+            // The Messages page template (MessageTemplates), made once for
+            // the DM and the app (it may be AI text).
+            $dmText = MessageAiText::body('free_ticket_dm', $context, $eventPostId);
+            // A tap on the app notification opens the ticket.
+            PushNotifier::notify($person, NotificationPreferences::TICKET, $dmText, $url);
+        }
+
+        if ($dmOk) {
             // The ticket is a record: it stays in the chat as its own message.
             $this->telegram->record()->sendMessage(
                 $person->telegramChatId,
-                // The Messages page template (MessageTemplates).
-                MessageAiText::body('free_ticket_dm', $context, $eventPostId),
+                $dmText,
                 ['inline_keyboard' => array_merge(
                     [[['text' => __('🎟 Show your ticket', 'eventcrew'), 'url' => $url]]],
                     // Giving the ticket away (TransferBot), when that is on.

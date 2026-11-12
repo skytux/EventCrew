@@ -12,15 +12,15 @@ use EventCrew\Support\NotificationPreferences;
 
 /**
  * 🔔 Notifications (a button under /me) - a keyboard menu for a person to choose which notifications
- * reach them, and on which channel. Three columns per row, like the web tab: the
- * type's name (a no-op cell), a 📱 Telegram toggle and a ✉ email toggle; tapping
- * either toggle flips it and edits the message in place.
+ * reach them, and on which channel, like the web tab: per type its name (a no-op
+ * row) and a row of three toggles, 📱 Telegram, ✉ email and 🔔 app (Web Push);
+ * tapping a toggle flips it and edits the message in place.
  *
  * The same per-type, per-channel preferences the web Notifications tab edits, so
  * a change in one shows in the other.
  *
  * The last row is 📰 Newsletter (Owner, 2026-11-08): the announcement email, on
- * or off for the person's verified address, in the ✉ column only. On adds the
+ * or off for the person's verified address, with a ✉ toggle only. On adds the
  * address as a confirmed subscriber (it is verified, so no confirmation email)
  * or brings back one who left; off unsubscribes it.
  */
@@ -28,7 +28,7 @@ final class NotificationSettingsService
 {
     use GroupBreadcrumb;
 
-    /** Callback data prefix for a toggle: np:<type>:<dm|email>. */
+    /** Callback data prefix for a toggle: np:<type>:<dm|email|push>. */
     private const PREFIX = 'np:';
 
     /** The newsletter row's callback data. */
@@ -105,7 +105,7 @@ final class NotificationSettingsService
             return;
         }
 
-        $map[$type][$channel] = ! $map[$type][$channel];
+        $map[$type][$channel] = ! ($map[$type][$channel] ?? false);
         $this->people->setNotifyPrefs($person->id, $map);
         $this->telegram->answerCallbackQuery($callbackId, __('Saved.', 'eventcrew'));
 
@@ -187,27 +187,25 @@ final class NotificationSettingsService
     {
         // The comment sits outside __( so tools/make-pot.php still reads the literal.
         // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-        return __("🔔 Your notifications — tap to toggle 📱 Telegram or ✉ email.\n\nSignup confirmations and task reminders always send on both.", 'eventcrew');
+        return __("🔔 Your notifications — tap to toggle 📱 Telegram, ✉ email or 🔔 app.\n\nSignup confirmations and task reminders always send on every channel.", 'eventcrew');
     }
 
     /**
+     * Per type, a row with its name (a no-op, so a tap on the label never
+     * changes a pref) and under it a row of its three toggles, each with its
+     * channel's sign: three toggles beside a name left the name too little
+     * room on a phone.
+     *
      * $newsletter: whether the address gets the newsletter; null leaves the
      * newsletter row out.
      *
-     * @param array<string, array{dm: bool, email: bool}> $map
+     * @param array<string, array{dm: bool, email: bool, push?: bool}> $map
      * @return array<int, array<int, array{text: string, callback_data: string}>>
      */
     private function keyboard(array $map, ?bool $newsletter = null): array
     {
         $rows = [];
-
-        // A header row labels the two toggle columns; the name cell above each
-        // row's toggles is a no-op, so a tap on the label never changes a pref.
-        $rows[] = [
-            ['text' => __('Notification', 'eventcrew'), 'callback_data' => self::PREFIX . 'noop'],
-            ['text' => '📱', 'callback_data' => self::PREFIX . 'noop'],
-            ['text' => '✉', 'callback_data' => self::PREFIX . 'noop'],
-        ];
+        $mark = static fn (bool $on): string => $on ? '✅' : '❌';
 
         // The map holds only the rows this person sees (asMap), so the
         // organizer-only rows reach the organizers alone.
@@ -220,29 +218,18 @@ final class NotificationSettingsService
                 continue;
             }
 
+            $rows[] = [['text' => $label, 'callback_data' => self::PREFIX . 'noop']];
             $rows[] = [
-                [
-                    'text' => $label,
-                    'callback_data' => self::PREFIX . 'noop',
-                ],
-                [
-                    'text' => $pref['dm'] ? '✅' : '❌',
-                    'callback_data' => self::PREFIX . $type . ':dm',
-                ],
-                [
-                    'text' => $pref['email'] ? '✅' : '❌',
-                    'callback_data' => self::PREFIX . $type . ':email',
-                ],
+                ['text' => '📱 ' . $mark($pref['dm']), 'callback_data' => self::PREFIX . $type . ':dm'],
+                ['text' => '✉ ' . $mark($pref['email']), 'callback_data' => self::PREFIX . $type . ':email'],
+                ['text' => '🔔 ' . $mark($pref['push'] ?? false), 'callback_data' => self::PREFIX . $type . ':push'],
             ];
         }
 
-        // The newsletter is email only: the 📱 cell is a no-op dash.
+        // The newsletter is email only.
         if (null !== $newsletter) {
-            $rows[] = [
-                ['text' => '📰 ' . __('Newsletter', 'eventcrew'), 'callback_data' => self::PREFIX . 'noop'],
-                ['text' => '—', 'callback_data' => self::PREFIX . 'noop'],
-                ['text' => $newsletter ? '✅' : '❌', 'callback_data' => self::NEWSLETTER],
-            ];
+            $rows[] = [['text' => '📰 ' . __('Newsletter', 'eventcrew'), 'callback_data' => self::PREFIX . 'noop']];
+            $rows[] = [['text' => '✉ ' . $mark($newsletter), 'callback_data' => self::NEWSLETTER]];
         }
 
         // Back to Settings, where 🔔 Notifications is.
@@ -252,11 +239,11 @@ final class NotificationSettingsService
     }
 
     /**
-     * @return array{0: string, 1: string} type, channel ('dm'|'email')
+     * @return array{0: string, 1: string} type, channel ('dm'|'email'|'push')
      */
     private function parse(string $data): array
     {
-        if (1 !== preg_match('#^' . preg_quote(self::PREFIX, '#') . '([a-z_]+):(dm|email)$#', $data, $m)) {
+        if (1 !== preg_match('#^' . preg_quote(self::PREFIX, '#') . '([a-z_]+):(dm|email|push)$#', $data, $m)) {
             return ['', ''];
         }
 

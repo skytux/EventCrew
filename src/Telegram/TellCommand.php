@@ -15,6 +15,7 @@ use EventCrew\Support\EmailBody;
 use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\PushNotifier;
 use EventCrew\Support\RoleTaskService;
 
 /**
@@ -265,6 +266,9 @@ final class TellCommand
         foreach ($this->recipients($task, $organizer) as $person) {
             $channel = Language::forPerson($person, function () use ($person, $task, $organizer, $message): string {
                 $header = self::header($organizer, $task);
+
+                // The app as well, on top of the one channel counted below.
+                PushNotifier::notify($person, NotificationPreferences::REMINDER, $header . "\n" . $message);
 
                 if ($this->prefs->dmAllowed($person, NotificationPreferences::REMINDER)) {
                     $done = $this->flow->telegram()->sendMessage(

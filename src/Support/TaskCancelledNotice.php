@@ -97,24 +97,26 @@ final class TaskCancelledNotice
     private function dm(Person $person, Task $task, array $others): void
     {
         $telegram = $this->telegram;
-
-        if (
-            null === $telegram
-            || null === $person->telegramChatId
-            || ! (new NotificationPreferences())->dmAllowed($person, NotificationPreferences::SIGNUP)
-        ) {
-            return;
-        }
-
         $chatId = $person->telegramChatId;
+        $dm = null !== $telegram
+            && null !== $chatId
+            && (new NotificationPreferences())->dmAllowed($person, NotificationPreferences::SIGNUP);
 
-        Language::forPerson($person, function () use ($person, $task, $others, $telegram, $chatId): void {
+        Language::forPerson($person, function () use ($person, $task, $others, $telegram, $chatId, $dm): void {
             $context = ['person' => $person, 'task' => $task, 'other_rows' => $others];
+            $text = MessageTemplates::body('task_cancelled_dm', $context);
+
+            // The app too, with the same text: also for a person without Telegram.
+            PushNotifier::notify($person, NotificationPreferences::SIGNUP, $text);
+
+            if (! $dm || null === $telegram || null === $chatId) {
+                return;
+            }
 
             $telegram->sendMessage(
                 $chatId,
                 // An organizer's doing, so the DM opens and signs off (DmBody).
-                DmBody::frame($person, MessageTemplates::body('task_cancelled_dm', $context)),
+                DmBody::frame($person, $text),
                 MessageActions::replyMarkup(MessageActions::of('task_cancelled_dm', $context, $this->mailer))
             );
         });

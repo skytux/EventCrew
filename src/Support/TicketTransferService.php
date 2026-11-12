@@ -569,22 +569,35 @@ final class TicketTransferService
         $from = $this->nameOf($transfer->giverPersonId);
         $this->ticketMail?->sendTransferTicket($transfer, $receiver, $from);
 
-        if (null === $receiver || null === $this->telegram) {
+        if (null === $receiver) {
             return;
         }
 
-        if (! (new NotificationPreferences())->dmAllowed($receiver, NotificationPreferences::TICKET)) {
+        $text = fn (): string => sprintf(
+            /* translators: 1: the giver's name, 2: the night, like "Sat 14 Nov · Dance Night" */
+            __('%1$s gave you their free-entry ticket for %2$s.', 'eventcrew'),
+            '' === $from ? __('Someone', 'eventcrew') : $from,
+            $this->nightLabel($transfer->eventDate)
+        );
+
+        // A tap on the app notification opens the ticket.
+        PushNotifier::notify(
+            $receiver,
+            NotificationPreferences::TICKET,
+            (string) Language::forPerson($receiver, $text),
+            TicketMail::transferUrl($transfer->id)
+        );
+
+        if (
+            null === $this->telegram
+            || ! (new NotificationPreferences())->dmAllowed($receiver, NotificationPreferences::TICKET)
+        ) {
             return;
         }
 
         $this->dm(
             $receiver,
-            fn (): string => sprintf(
-                /* translators: 1: the giver's name, 2: the night, like "Sat 14 Nov · Dance Night" */
-                __('%1$s gave you their free-entry ticket for %2$s.', 'eventcrew'),
-                '' === $from ? __('Someone', 'eventcrew') : $from,
-                $this->nightLabel($transfer->eventDate)
-            ),
+            $text,
             static fn (): array => ['inline_keyboard' => [[[
                 'text' => __('🎟 Show your ticket', 'eventcrew'),
                 'url' => TicketMail::transferUrl($transfer->id),

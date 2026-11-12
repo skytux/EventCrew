@@ -100,6 +100,8 @@ final class AccessNotifier
             );
         }
 
+        PushNotifier::notify($person, NotificationPreferences::PERMISSION, MessageTemplates::body($template . '_dm', $context));
+
         if ($prefs->emailAllowed($person, NotificationPreferences::PERMISSION)) {
             $this->mailer->toPerson(
                 $person->id,

@@ -35,7 +35,7 @@ final class Person
         public readonly string $updatedAt = '',
         public readonly bool $notifyMuted = false,
         public readonly bool $hasAtRiskPass = false,
-        /** @var array<string, array{dm?: bool, email?: bool}> per-type channel prefs */
+        /** @var array<string, array{dm?: bool, email?: bool, push?: bool}> per-type channel prefs */
         public readonly array $notifyPrefs = [],
         public readonly ?string $anonymizedAt = null,
         public readonly ?string $sessionsValidFrom = null,

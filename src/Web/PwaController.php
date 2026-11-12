@@ -379,6 +379,6 @@ final class PwaController
         });
         JS;
 
-        return sprintf($js, 'eventcrew-shell-' . EVENTCREW_VERSION);
+        return sprintf($js, 'eventcrew-shell-' . EVENTCREW_VERSION) . PushServiceWorker::js();
     }
 }

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace EventCrew\Database;
 
+use EventCrew\Models\Person;
 use EventCrew\Repositories\HistoryRepository;
 use EventCrew\Repositories\NewsletterHistoryRepository;
 use EventCrew\Support\History;
+use EventCrew\Support\NotificationPreferences;
 
 /**
  * Owns every EventCrew table definition and the migration that applies them.
@@ -21,7 +23,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '37';
+    public const DB_VERSION = '38';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -53,6 +55,7 @@ final class Schema
     public const TICKET_TRANSFERS = 'eventcrew_ticket_transfers';
     public const DOOR_NOTES = 'eventcrew_door_notes';
     public const HISTORY = 'eventcrew_history';
+    public const PUSH_SUBSCRIPTIONS = 'eventcrew_push_subscriptions';
 
     /**
      * Set by the schema 37 update when it has made the history from older
@@ -85,6 +88,7 @@ final class Schema
             self::TICKET_TRANSFERS,
             self::DOOR_NOTES,
             self::HISTORY,
+            self::PUSH_SUBSCRIPTIONS,
         ];
     }
 
@@ -152,6 +156,11 @@ final class Schema
         // last year is made once from the older tables.
         self::backfillHistory((string) get_option(self::VERSION_OPTION, ''));
 
+        // Schema 38: the push subscriptions table (dbDelta adds it), and the
+        // app switch written into every existing person's notification
+        // preferences, on the most restrictive choice they already made.
+        self::seedPushPrefs((string) get_option(self::VERSION_OPTION, ''));
+
         update_option(self::VERSION_OPTION, self::DB_VERSION);
     }
 
@@ -176,6 +185,66 @@ final class Schema
 
         return $repository->backfill(History::cutoff((string) current_time('mysql')));
     }
+
+    /**
+     * Schema 38: writes the app channel into the notification preferences of
+     * every person already stored (NotificationPreferences::withPushSeeded():
+     * on only where both Telegram and email are on). Skipped on a new install
+     * and once the stored schema is 38 or later; a row that already has the
+     * app switch is left alone, so a second run changes nothing. Written
+     * straight to the table, not through PersonRepository: it is not a
+     * change anyone made, so it records no history. Returns how many rows
+     * were written, -1 when skipped.
+     */
+    public static function seedPushPrefs(string $storedVersion): int
+    {
+        global $wpdb;
+
+        if ('' === $storedVersion || (int) $storedVersion >= 38) {
+            return -1;
+        }
+
+        $table = self::table(self::PEOPLE);
+        $prefs = new NotificationPreferences();
+        $written = 0;
+        $lastId = 0;
+
+        do {
+            // Table name is a constant joined to $wpdb->prefix.
+            $rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+                $wpdb->prepare(
+                    "SELECT id, is_organizer, notify_muted, notify_prefs FROM {$table}
+                     WHERE id > %d AND anonymized_at IS NULL ORDER BY id ASC LIMIT %d",
+                    $lastId,
+                    self::SEED_BATCH
+                ),
+                ARRAY_A
+            );
+            $rows = is_array($rows) ? $rows : [];
+
+            foreach ($rows as $row) {
+                $lastId = (int) $row['id'];
+                $person = Person::fromRow($row);
+                $seeded = $prefs->withPushSeeded($person);
+
+                if ($seeded === $person->notifyPrefs) {
+                    continue;
+                }
+
+                $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+                    $table,
+                    ['notify_prefs' => wp_json_encode($seeded)],
+                    ['id' => $lastId]
+                );
+                ++$written;
+            }
+        } while (self::SEED_BATCH === count($rows));
+
+        return $written;
+    }
+
+    /** People read per query by seedPushPrefs(). */
+    private const SEED_BATCH = 500;
 
     /**
      * A join recorded by the plugin is written right after confirmed_at, in
@@ -487,6 +556,7 @@ final class Schema
         $ticketTransfers = self::table(self::TICKET_TRANSFERS);
         $doorNotes = self::table(self::DOOR_NOTES);
         $history = self::table(self::HISTORY);
+        $pushSubscriptions = self::table(self::PUSH_SUBSCRIPTIONS);
 
         return [
             // anonymized_at is the retention purge's high-water mark. Without it
@@ -1009,6 +1079,29 @@ final class Schema
                 KEY actor_person_id (actor_person_id),
                 KEY task_id (task_id),
                 KEY event_date (event_date)
+            ) ENGINE=InnoDB {$charsetCollate};",
+
+            // The devices that turned on app notifications (Web Push), several
+            // per person. endpoint is the push service's address for one
+            // browser on one device; it is too long for a unique index under
+            // utf8mb4, so its SHA-256 (endpoint_hash) is the unique key.
+            // p256dh and auth are the browser's keys the payload is encrypted
+            // to (RFC 8291). device is a short label from the user agent,
+            // like "Android Chrome". last_ok_at is the last send the push
+            // service accepted; a 404 or 410 deletes the row.
+            "CREATE TABLE {$pushSubscriptions} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                person_id bigint(20) unsigned NOT NULL,
+                endpoint text NOT NULL,
+                endpoint_hash char(64) NOT NULL,
+                p256dh varchar(255) NOT NULL,
+                auth varchar(64) NOT NULL,
+                device varchar(64) NOT NULL DEFAULT '',
+                created_at datetime NOT NULL,
+                last_ok_at datetime DEFAULT NULL,
+                PRIMARY KEY  (id),
+                UNIQUE KEY endpoint_hash (endpoint_hash),
+                KEY person_id (person_id)
             ) ENGINE=InnoDB {$charsetCollate};",
         ];
     }

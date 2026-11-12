@@ -4377,10 +4377,6 @@ msgstr ""
 msgid "Notices about standing, credits, tickets and permissions."
 msgstr "Aviseringar om pålitlighet, fribiljetter, biljetter och behörigheter."
 
-#: src/Telegram/NotificationSettingsService.php:115
-msgid "Notification"
-msgstr "Avisering"
-
 #: templates/admin/settings.php:1433
 msgid "Notification emails"
 msgstr "Aviseringar via e-post"
@@ -6501,12 +6497,6 @@ msgid ""
 "Signing up for a task gives the member a free ticket for that night. The ticket is a web page with a clock that ticks. A clock that does not move is a screenshot."
 msgstr ""
 "Att anmäla sig till en uppgift ger medlemmen en gratisbiljett för den kvällen. Biljetten är en webbsida med en klocka som tickar. En klocka som inte rör sig är en skärmdump."
-
-#: templates/public/signup.php:594
-msgid ""
-"Signup confirmations and task reminders are always sent on both channels."
-msgstr ""
-"Bekräftelser på anmälan och påminnelser om uppgifter skickas alltid i båda kanalerna."
 
 #: src/Support/HealthReport.php:195 templates/admin/settings.php:1073
 msgid "Signup page"
@@ -10919,16 +10909,6 @@ msgstr ""
 "\n"
 "%s"
 
-#: src/Telegram/NotificationSettingsService.php:101
-msgid ""
-"🔔 Your notifications — tap to toggle 📱 Telegram or ✉ email.\n"
-"\n"
-"Signup confirmations and task reminders always send on both."
-msgstr ""
-"🔔 Dina aviseringar — tryck för att slå på/av 📱 Telegram eller ✉ e-post.\n"
-"\n"
-"Anmälningsbekräftelser och påminnelser om uppgifter skickas alltid via båda."
-
 #: src/Telegram/GuestListService.php:313
 msgid "🗑 Removed %s."
 msgstr "🗑 Tog bort %s."
@@ -13747,3 +13727,28 @@ msgstr "Appens fullständiga namn. Tomt använder webbplatsens namn."
 #: templates/admin/settings.php
 msgid "Shown under the home-screen icon, 12 characters at most. Blank uses the app name if it fits, else its initials and “Crew”."
 msgstr "Visas under ikonen på hemskärmen, högst 12 tecken. Tomt använder appens namn om det får plats, annars initialerna och ”Crew”."
+
+msgid "Signup confirmations and task reminders are always sent on every channel."
+msgstr "Bekräftelser på anmälan och påminnelser om uppgifter skickas alltid i alla kanaler."
+
+msgid "🔔 Your notifications — tap to toggle 📱 Telegram, ✉ email or 🔔 app.\n\nSignup confirmations and task reminders always send on every channel."
+msgstr "🔔 Dina aviseringar — tryck för att slå på/av 📱 Telegram, ✉ e-post eller 🔔 app.\n\nAnmälningsbekräftelser och påminnelser om uppgifter skickas alltid via alla kanaler."
+
+msgctxt "notification channel"
+msgid "App"
+msgstr "App"
+
+msgid "Turn on notifications on this device"
+msgstr "Slå på aviseringar på den här enheten"
+
+msgid "Turn off notifications on this device"
+msgstr "Stäng av aviseringar på den här enheten"
+
+msgid "Notifications are blocked for this site. Allow them in the browser settings."
+msgstr "Aviseringar är blockerade för den här webbplatsen. Tillåt dem i webbläsarens inställningar."
+
+msgid "On iPhone, notifications work after you add this page to your Home Screen."
+msgstr "På iPhone fungerar aviseringar när du har lagt till sidan på hemskärmen."
+
+msgid "Could not turn on notifications. Try again."
+msgstr "Det gick inte att slå på aviseringar. Försök igen."

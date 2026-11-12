@@ -209,6 +209,13 @@ function update_option($option, $value, $autoload = null)
     return true;
 }
 
+// The Crew app page makes the site's push key on first use (VapidKeys).
+// Nothing is stored, so get_option() above still answers the default.
+function add_option($option, $value = '', $deprecated = '', $autoload = 'yes')
+{
+    return false;
+}
+
 // An import asks WP-Cron to email the tickets (TicketMail::schedule).
 function wp_next_scheduled($hook, $args = [])
 {

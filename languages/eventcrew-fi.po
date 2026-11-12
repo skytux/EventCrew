@@ -974,10 +974,6 @@ msgstr "Ilmoitettu tehtävään ja kirjattu sisään. Hän on nyt crew-listalla.
 msgid "Signing in leaves this browser signed in for 30 days. If you have used a shared or borrowed device — or you think somebody else has your sign-in link — this signs out every browser and phone at once, including this one. Nothing is lost; you just sign in again."
 msgstr "Kirjautuminen pitää tämän selaimen kirjautuneena 30 päivää. Jos olet käyttänyt jaettua tai lainattua laitetta — tai epäilet, että jollakulla muulla on kirjautumislinkkisi — tämä kirjaa ulos kaikki selaimet ja puhelimet kerralla, myös tämän. Mitään ei katoa; kirjaudut vain uudelleen."
 
-#: templates/public/signup.php:409
-msgid "Signup confirmations and task reminders are always sent on both channels."
-msgstr "Ilmoittautumisvahvistukset ja tehtävämuistutukset lähetetään aina molempia kanavia."
-
 #: src/Support/OpenTaskCall.php:259
 msgid "Some tasks still need people"
 msgstr "Joihinkin tehtäviin tarvitaan vielä ihmisiä"
@@ -2717,10 +2713,6 @@ msgstr "En ymmärtänyt päivämäärää. Kirjoita se näin: 1.8. tai 2026-08-0
 msgid "Nothing was waiting for an answer."
 msgstr "Mikään ei odottanut vastausta."
 
-#: src/Telegram/NotificationSettingsService.php:115
-msgid "Notification"
-msgstr "Ilmoitus"
-
 #: src/Telegram/RosterService.php:169
 msgid "Only organizers and that night’s welcome crew can mark attendance."
 msgstr "Vain järjestäjät ja sen illan tervetulotiimi voivat merkitä läsnäolon."
@@ -2788,10 +2780,6 @@ msgstr "Viimeaikaisen läsnäolosi vuoksi ilmoittautumisesi on toistaiseksi kesk
 #: src/Telegram/RosterService.php:350
 msgid "👋 arrived · ✓ done · ⏰ late · ✗ no-show"
 msgstr "👋 saapui · ✓ tehty · ⏰ myöhässä · ✗ ei saapunut"
-
-#: src/Telegram/NotificationSettingsService.php:101
-msgid "🔔 Your notifications — tap to toggle 📱 Telegram or ✉ email.\n\nSignup confirmations and task reminders always send on both."
-msgstr "🔔 Ilmoituksesi — napauta, niin 📱 Telegram tai ✉ sähköposti menee päälle tai pois.\n\nIlmoittautumisvahvistukset ja tehtävämuistutukset lähetetään aina molempia kanavia."
 
 #: src/Telegram/CommandMenu.php:293
 msgid "Show the open tasks"
@@ -10798,3 +10786,28 @@ msgstr "Sovelluksen koko nimi. Tyhjänä käytetään sivuston nimeä."
 #: templates/admin/settings.php
 msgid "Shown under the home-screen icon, 12 characters at most. Blank uses the app name if it fits, else its initials and “Crew”."
 msgstr "Näkyy aloitusnäytön kuvakkeen alla, enintään 12 merkkiä. Tyhjänä käytetään sovelluksen nimeä, jos se mahtuu, muuten sen alkukirjaimia ja ”Crew”."
+
+msgid "Signup confirmations and task reminders are always sent on every channel."
+msgstr "Ilmoittautumisvahvistukset ja tehtävämuistutukset lähetetään aina kaikkia kanavia."
+
+msgid "🔔 Your notifications — tap to toggle 📱 Telegram, ✉ email or 🔔 app.\n\nSignup confirmations and task reminders always send on every channel."
+msgstr "🔔 Ilmoituksesi — napauta, niin 📱 Telegram, ✉ sähköposti tai 🔔 sovellus menee päälle tai pois.\n\nIlmoittautumisvahvistukset ja tehtävämuistutukset lähetetään aina kaikkia kanavia."
+
+msgctxt "notification channel"
+msgid "App"
+msgstr "Sovellus"
+
+msgid "Turn on notifications on this device"
+msgstr "Laita ilmoitukset päälle tällä laitteella"
+
+msgid "Turn off notifications on this device"
+msgstr "Laita ilmoitukset pois tältä laitteelta"
+
+msgid "Notifications are blocked for this site. Allow them in the browser settings."
+msgstr "Ilmoitukset on estetty tältä sivustolta. Salli ne selaimen asetuksista."
+
+msgid "On iPhone, notifications work after you add this page to your Home Screen."
+msgstr "iPhonessa ilmoitukset toimivat, kun lisäät sivun Koti-valikkoon."
+
+msgid "Could not turn on notifications. Try again."
+msgstr "Ilmoituksia ei saatu päälle. Yritä uudelleen."

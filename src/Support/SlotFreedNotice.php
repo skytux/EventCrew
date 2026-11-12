@@ -497,11 +497,21 @@ final class SlotFreedNotice
 
         $picture = self::pictureUrl($task);
 
-        if ($prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK)) {
+        $dmOk = $prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK);
+        // The DM's text, made once for the DM and the app (it may be AI text).
+        $dmText = $dmOk || $prefs->pushAllowed($person, NotificationPreferences::OPEN_TASK)
+            ? MessageAiText::body('slot_freed_dm', $context, $task->eventPostId)
+            : '';
+
+        if ('' !== $dmText && PushNotifier::notify($person, NotificationPreferences::OPEN_TASK, $dmText) > 0) {
+            $sent = true;
+        }
+
+        if ($dmOk) {
             // The event's picture as a large preview above the text (Owner, 2026-11-08).
             $this->telegram->sendMessage(
                 (int) $person->telegramChatId,
-                DmBody::frame($person, MessageAiText::body('slot_freed_dm', $context, $task->eventPostId)),
+                DmBody::frame($person, $dmText),
                 MessageActions::replyMarkup(MessageActions::of('slot_freed_dm', $context, $this->mailer)),
                 '' === $picture ? [] : ['link_preview_options' => [
                     'url' => $picture,

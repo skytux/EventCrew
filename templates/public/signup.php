@@ -26,7 +26,7 @@ $eventcrew_turnstile_site_key = (string) $view['turnstile_site_key'];
 $eventcrew_ticket_dates = is_array($view['ticket_dates'] ?? null) ? $view['ticket_dates'] : [];
 $eventcrew_ticket_held = is_array($view['ticket_held'] ?? null) ? $view['ticket_held'] : [];
 $eventcrew_redeem_action = (string) ($view['redeem_action'] ?? '');
-/** @var array<string, array{label: string, dm: bool, email: bool}> $eventcrew_notify_matrix */
+/** @var array<string, array{label: string, dm: bool, email: bool, push: bool}> $eventcrew_notify_matrix */
 $eventcrew_notify_matrix = is_array($view['notify_matrix'] ?? null) ? $view['notify_matrix'] : [];
 $eventcrew_prefs_action = (string) ($view['prefs_action'] ?? '');
 /** @var array{upcoming: array<int, array{label: string, what: string, event: string, dj: string, when: string, url: string}>, past: array<int, array{label: string, what: string, event: string, dj: string, when: string, url: string}>} $eventcrew_my_tickets */
@@ -1010,6 +1010,7 @@ if ($eventcrew_link_expired) {
                                 <th></th>
                                 <th><?php esc_html_e('Telegram', 'eventcrew'); ?></th>
                                 <th><?php esc_html_e('Email', 'eventcrew'); ?></th>
+                                <th><?php echo esc_html(_x('App', 'notification channel', 'eventcrew')); ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1022,13 +1023,17 @@ if ($eventcrew_link_expired) {
                                 <td class="eventcrew-tick">
                                     <input type="checkbox" name="prefs[<?php echo esc_attr((string) $eventcrew_type); ?>][email]" value="1" <?php checked($eventcrew_pref['email']); ?>>
                                 </td>
+                                <td class="eventcrew-tick">
+                                    <input type="checkbox" name="prefs[<?php echo esc_attr((string) $eventcrew_type); ?>][push]" value="1" <?php checked($eventcrew_pref['push'] ?? false); ?>>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
                     </table>
-                    <p class="eventcrew-muted"><?php esc_html_e('Signup confirmations and task reminders are always sent on both channels.', 'eventcrew'); ?></p>
+                    <p class="eventcrew-muted"><?php esc_html_e('Signup confirmations and task reminders are always sent on every channel.', 'eventcrew'); ?></p>
                     <button type="submit" class="wp-element-button eventcrew-linkbtn eventcrew-settings-btn"><?php esc_html_e('Save preferences', 'eventcrew'); ?></button>
                 </form>
+                <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-push.php'; ?>
                 </section>
             <?php endif; ?>
 

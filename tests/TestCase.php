@@ -31,6 +31,11 @@ abstract class TestCase extends PHPUnitTestCase
 
         // The count of jobs a request queued lives for one request.
         \EventCrew\Support\BackgroundJobs::resetAdded();
+
+        // No app notifications unless a test sets them up: the device lookup
+        // would otherwise take a queued database result.
+        \EventCrew\Support\PushNotifier::use(null);
+        \EventCrew\Support\NotificationPreferences::useDeviceLookup(null);
     }
 
     protected function tearDown(): void

@@ -248,8 +248,9 @@ final class OpenTaskCall
     {
         $emailOk = $prefs->emailAllowed($person, NotificationPreferences::OPEN_TASK);
         $dmOk = $prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK);
+        $pushOk = $prefs->pushAllowed($person, NotificationPreferences::OPEN_TASK);
 
-        if (! $emailOk && ! $dmOk) {
+        if (! $emailOk && ! $dmOk && ! $pushOk) {
             return false;
         }
 
@@ -282,6 +283,10 @@ final class OpenTaskCall
                 // away (left out when its link is not known).
                 MessageActions::replyMarkup(MessageActions::of('open_task_call_dm', $context, $this->mailer))
             );
+        }
+
+        if ($pushOk) {
+            PushNotifier::notify($person, NotificationPreferences::OPEN_TASK, MessageTemplates::body('open_task_call_dm', $context));
         }
 
         return true;

@@ -394,4 +394,50 @@ final class SchemaTest extends TestCase
 
         return $method->invoke(null, 'DEFAULT CHARACTER SET utf8mb4');
     }
+
+    /**
+     * Schema 38: the app channel written into every stored person's
+     * preferences, on only where Telegram and email are both on.
+     */
+    public function testTheAppSwitchIsSeededFromTheTelegramAndEmailSwitches(): void
+    {
+        $this->wpdb->nextResults[] = [
+            // Credit: Telegram on, email off; the rest nothing stored (both on).
+            ['id' => 4, 'is_organizer' => 0, 'notify_muted' => 0, 'notify_prefs' => '{"credit":{"dm":true,"email":false}}'],
+            // Already has the app switch everywhere: left alone.
+            ['id' => 9, 'is_organizer' => 0, 'notify_muted' => 0, 'notify_prefs' => (string) json_encode(array_fill_keys(
+                \EventCrew\Support\NotificationPreferences::types(),
+                ['push' => false]
+            ))],
+        ];
+        $this->wpdb->nextResults[] = [];
+
+        self::assertSame(1, Schema::seedPushPrefs('37'));
+
+        self::assertStringContainsString('FROM wp_eventcrew_people', $this->wpdb->queries[0]);
+        self::assertStringContainsString('anonymized_at IS NULL', $this->wpdb->queries[0]);
+        self::assertCount(1, $this->wpdb->updates);
+        self::assertSame(['id' => 4], $this->wpdb->updates[0]['where']);
+        $saved = json_decode((string) $this->wpdb->updates[0]['data']['notify_prefs'], true);
+        self::assertSame(['dm' => true, 'email' => false, 'push' => false], $saved['credit']);
+        self::assertSame(['push' => true], $saved['standing']);
+        self::assertSame(['push' => true], $saved['newcomer']);
+    }
+
+    public function testTheAppSwitchIsSeededOnlyWhenUpdatingFromBeforeSchema38(): void
+    {
+        self::assertSame(-1, Schema::seedPushPrefs(''));
+        self::assertSame(-1, Schema::seedPushPrefs('38'));
+        self::assertSame(-1, Schema::seedPushPrefs('39'));
+        self::assertSame([], $this->wpdb->queries);
+        self::assertGreaterThanOrEqual(38, (int) Schema::DB_VERSION);
+    }
+
+    public function testDevicesAreUniquePerEndpoint(): void
+    {
+        $sql = implode("\n", $this->statements());
+
+        self::assertStringContainsString('CREATE TABLE wp_eventcrew_push_subscriptions', $sql);
+        self::assertStringContainsString('UNIQUE KEY endpoint_hash (endpoint_hash)', $sql);
+    }
 }

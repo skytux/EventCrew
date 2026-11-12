@@ -17,6 +17,7 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageActions;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\PushNotifier;
 use EventCrew\Support\TicketFileException;
 use EventCrew\Support\TicketMail;
 use EventCrew\Telegram\BuyerListReset;
@@ -356,6 +357,7 @@ final class MailedListImport
         $organizerAddresses = [];
         $sent = [];
         $messaged = [];
+        $pushed = [];
 
         foreach ($this->people->organizers() as $organizer) {
             $address = strtolower(trim($organizer->email));
@@ -369,6 +371,15 @@ final class MailedListImport
                     $subject,
                     EmailBody::withGreeting($organizer->displayName, $body),
                     $actions
+                );
+            }
+
+            if (! isset($pushed[$organizer->id])) {
+                $pushed[$organizer->id] = true;
+                PushNotifier::notify(
+                    $organizer,
+                    NotificationPreferences::LIST_IMPORT,
+                    (string) Language::forPerson($organizer, $dm)
                 );
             }
 

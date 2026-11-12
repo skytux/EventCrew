@@ -568,6 +568,9 @@ final class NewcomerApproval
             }
         }
 
+        // The app only tells: OK and No are in the bot and the wp-admin.
+        PushNotifier::notify($organizer, NotificationPreferences::NEWCOMER, MessageTemplates::body('newcomer_waiting_dm', $context));
+
         if (! $prefs->emailAllowed($organizer, NotificationPreferences::NEWCOMER)) {
             return $sent;
         }

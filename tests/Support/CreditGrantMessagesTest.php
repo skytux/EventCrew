@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Support;
 
+use EventCrew\Models\Person;
+use EventCrew\Repositories\PushSubscriptionRepository;
+use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageActions;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\PushNotifier;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Tests\Telegram\TelegramTestCase;
 
@@ -73,5 +77,38 @@ final class CreditGrantMessagesTest extends TelegramTestCase
             "✨ Your free-entry ticket ✨\nSat 1 Aug\n\n💛 Thank you for being part of the crew and helping make these nights happen.\n💫 Show it at the door, then come dance and enjoy the night as our guest.",
             MessageTemplates::body('free_ticket_dm', ['date' => 'Sat 1 Aug'])
         );
+    }
+
+    public function testTheCreditDmIsAlsoPushedToTheApp(): void
+    {
+        $pushed = [];
+        PushNotifier::use(new class ($pushed) extends PushNotifier {
+            /** @param list<array{int, string, string}> $pushed */
+            public function __construct(private array &$pushed)
+            {
+                parent::__construct(new PushSubscriptionRepository());
+            }
+
+            public function send(Person $person, string $type, string $text, string $url = ''): int
+            {
+                $this->pushed[] = [$person->id, $type, $text];
+
+                return 1;
+            }
+        });
+        $notifier = new CreditGrantNotifier(new Mailer(new Logger(), new EmailTemplate(new Logger())), $this->client());
+        // Email off for credits, so no mail is made.
+        $person = Person::fromRow([
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'telegram_chat_id' => 999,
+            'notify_prefs' => json_encode(['credit' => ['email' => false]]),
+        ]);
+
+        $notifier->notify($person);
+
+        self::assertCount(1, $pushed);
+        self::assertSame([7, 'credit'], array_slice($pushed[0], 0, 2));
+        self::assertSame(MessageTemplates::body('credit_granted_dm', ['person' => $person, 'credits' => 1]), $pushed[0][2]);
     }
 }

@@ -87,7 +87,7 @@ final class NotificationPreferencesTest extends TestCase
         $map = $this->prefs()->asMap($person);
 
         self::assertArrayNotHasKey('cover', $map);
-        self::assertSame(['dm' => false, 'email' => true], $map['credit']);
+        self::assertSame(['dm' => false, 'email' => true, 'push' => true], $map['credit']);
     }
 
     public function testOrganizersAlsoGetTheOrganizerRowsDefaultingOn(): void
@@ -132,7 +132,7 @@ final class NotificationPreferencesTest extends TestCase
         self::assertTrue($this->prefs()->dmAllowed($organizer, NotificationPreferences::CHAT_FORWARD));
         self::assertFalse($this->prefs()->emailAllowed($organizer, NotificationPreferences::CHAT_FORWARD));
         self::assertTrue($this->prefs()->emailAllowed($organizer, NotificationPreferences::ROLE_NEWS));
-        self::assertSame(['dm' => true, 'email' => false], $this->prefs()->asMap($organizer)['chat_forward']);
+        self::assertSame(['dm' => true, 'email' => false, 'push' => true], $this->prefs()->asMap($organizer)['chat_forward']);
     }
 
     public function testAMutedOrganizerDefaultsToNoDmOnTheOrganizerRowsToo(): void
@@ -148,26 +148,108 @@ final class NotificationPreferencesTest extends TestCase
     {
         $posted = [
             'credit' => ['email' => '1'],
-            'role_met' => ['dm' => '1', 'email' => '1'],
+            'role_met' => ['dm' => '1', 'email' => '1', 'push' => '1'],
             'cover' => ['dm' => '1'],
         ];
 
         $member = NotificationPreferences::fromForm($this->person([]), $posted);
         self::assertSame(array_keys(NotificationPreferences::labels()), array_keys($member));
-        self::assertSame(['dm' => false, 'email' => true], $member['credit']);
-        self::assertSame(['dm' => false, 'email' => false], $member['standing']);
+        self::assertSame(['dm' => false, 'email' => true, 'push' => false], $member['credit']);
+        self::assertSame(['dm' => false, 'email' => false, 'push' => false], $member['standing']);
 
         $organizer = NotificationPreferences::fromForm($this->person(['is_organizer' => 1]), $posted);
-        self::assertSame(['dm' => true, 'email' => true], $organizer['role_met']);
-        self::assertSame(['dm' => false, 'email' => false], $organizer['chat_forward']);
+        self::assertSame(['dm' => true, 'email' => true, 'push' => true], $organizer['role_met']);
+        self::assertSame(['dm' => false, 'email' => false, 'push' => false], $organizer['chat_forward']);
         self::assertArrayNotHasKey('cover', $organizer);
     }
 
-    /** The labels sit in the bot's three-column keyboard, so they stay short. */
+    /** The labels sit in the bot's keyboard, so they stay short. */
     public function testTheLabelsAreShortEnoughForTheKeyboard(): void
     {
         foreach (NotificationPreferences::labels(true) as $label) {
             self::assertLessThanOrEqual(33, mb_strlen($label), $label);
         }
+    }
+
+    public function testNothingIsPushedWithoutADeviceThatTurnedAppNotificationsOn(): void
+    {
+        $person = $this->person([]);
+
+        // No lookup set (before boot): no one has a device.
+        self::assertFalse($this->prefs()->pushAllowed($person, NotificationPreferences::CREDIT));
+
+        NotificationPreferences::useDeviceLookup(static fn (int $id): bool => false);
+        self::assertFalse($this->prefs()->pushAllowed($person, NotificationPreferences::CREDIT));
+
+        NotificationPreferences::useDeviceLookup(static fn (int $id): bool => 7 === $id);
+        self::assertTrue($this->prefs()->pushAllowed($person, NotificationPreferences::CREDIT));
+        self::assertTrue($this->prefs()->pushAllowed($person, NotificationPreferences::SIGNUP));
+    }
+
+    public function testTheAppSwitchIsPerTypeAndLockedTypesAlwaysPush(): void
+    {
+        $asked = 0;
+        NotificationPreferences::useDeviceLookup(static function (int $id) use (&$asked): bool {
+            ++$asked;
+
+            return true;
+        });
+        $person = $this->person([
+            'notify_prefs' => json_encode(['credit' => ['dm' => true, 'email' => true, 'push' => false]]),
+        ]);
+
+        self::assertFalse($this->prefs()->pushAllowed($person, NotificationPreferences::CREDIT));
+        // The switch is read first: off costs no device lookup.
+        self::assertSame(0, $asked);
+        self::assertTrue($this->prefs()->pushAllowed($person, NotificationPreferences::TICKET));
+        self::assertTrue($this->prefs()->pushAllowed($person, NotificationPreferences::REMINDER));
+        self::assertFalse($this->prefs()->matrix($person)['credit']['push']);
+        self::assertTrue($this->prefs()->matrix($person)['ticket']['push']);
+    }
+
+    public function testExistingAccountsGetTheAppSwitchOnlyWhereTelegramAndEmailAreBothOn(): void
+    {
+        $person = $this->person([
+            'is_organizer' => 1,
+            'notify_prefs' => json_encode([
+                'credit' => ['dm' => true, 'email' => false],
+                'ticket' => ['dm' => false, 'email' => true],
+                'standing' => ['dm' => true, 'email' => true],
+                'open_task' => ['dm' => false, 'email' => false, 'push' => true],
+                'cover' => ['dm' => false, 'email' => false],
+            ]),
+        ]);
+
+        $seeded = $this->prefs()->withPushSeeded($person);
+
+        self::assertSame(['dm' => true, 'email' => false, 'push' => false], $seeded['credit']);
+        self::assertSame(['dm' => false, 'email' => true, 'push' => false], $seeded['ticket']);
+        self::assertSame(['dm' => true, 'email' => true, 'push' => true], $seeded['standing']);
+        // A stored app value is kept.
+        self::assertTrue($seeded['open_task']['push']);
+        // Nothing stored: both default on, so app on; organizer rows too.
+        self::assertSame(['push' => true], $seeded['permission']);
+        self::assertSame(['push' => true], $seeded['newcomer']);
+        // Other stored keys are left as they are.
+        self::assertSame(['dm' => false, 'email' => false], $seeded['cover']);
+
+        foreach (NotificationPreferences::types() as $type) {
+            self::assertArrayHasKey('push', $seeded[$type]);
+        }
+    }
+
+    public function testALegacyMutedAccountGetsTheAppSwitchOff(): void
+    {
+        // "Mute all DMs" reads as Telegram off on every row, so app is off too.
+        $person = $this->person(['telegram_chat_id' => 1, 'notify_muted' => 1]);
+
+        foreach ($this->prefs()->withPushSeeded($person) as $row) {
+            self::assertFalse($row['push']);
+        }
+    }
+
+    public function testTheTypesAreTheOrganizersRows(): void
+    {
+        self::assertSame(array_keys(NotificationPreferences::labels(true)), NotificationPreferences::types());
     }
 }

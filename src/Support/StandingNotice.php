@@ -184,6 +184,8 @@ final class StandingNotice
                 $this->telegram->sendMessage($person->telegramChatId, DmBody::frame($person, $text));
             }
 
+            PushNotifier::notify($person, NotificationPreferences::STANDING, $text);
+
             if ($prefs->emailAllowed($person, NotificationPreferences::STANDING)) {
                 $this->mailer->toPerson(
                     $person->id,
@@ -224,13 +226,23 @@ final class StandingNotice
             'extra_added' => $added,
         ];
 
-        if ($prefs->dmAllowed($person, NotificationPreferences::STANDING)) {
+        $dmOk = $prefs->dmAllowed($person, NotificationPreferences::STANDING);
+        // The DM's text, made once for the DM and the app (it may be AI text).
+        $dmText = $dmOk || $prefs->pushAllowed($person, NotificationPreferences::STANDING)
+            ? MessageAiText::body($kind . '_dm', $context, $task->eventPostId)
+            : '';
+
+        if ($dmOk) {
             // Framed and signed like every DM the scan sends unasked (DmBody).
             $this->telegram->sendMessage(
                 $person->telegramChatId,
-                DmBody::frame($person, MessageAiText::body($kind . '_dm', $context, $task->eventPostId)),
+                DmBody::frame($person, $dmText),
                 MessageActions::replyMarkup(MessageActions::of($kind . '_dm', $context, $this->mailer))
             );
+        }
+
+        if ('' !== $dmText) {
+            PushNotifier::notify($person, NotificationPreferences::STANDING, $dmText);
         }
 
         if (! $prefs->emailAllowed($person, NotificationPreferences::STANDING)) {

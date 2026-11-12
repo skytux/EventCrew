@@ -36,6 +36,7 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TakeoverRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\PushSubscriptionRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Repositories\TicketTransferRepository;
 use EventCrew\Support\AccessNotifier;
@@ -85,6 +86,7 @@ use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterCrew;
 use EventCrew\Support\NewsletterText;
 use EventCrew\Support\NewsletterWriter;
+use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\OwnTextNotice;
 use EventCrew\Support\OpenTaskCall;
 use EventCrew\Support\OrganizeTaskBackfill;
@@ -92,6 +94,7 @@ use EventCrew\Support\PageCacheFlush;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\PrivacyEraser;
 use EventCrew\Support\PrivacyExporter;
+use EventCrew\Support\PushNotifier;
 use EventCrew\Support\ReminderCall;
 use EventCrew\Support\RetentionPurge;
 use EventCrew\Support\RoleConditions;
@@ -186,6 +189,7 @@ use EventCrew\Web\DoorController;
 use EventCrew\Web\FollowupController;
 use EventCrew\Web\NewsletterController;
 use EventCrew\Web\PrivacyController;
+use EventCrew\Web\PushController;
 use EventCrew\Web\PwaController;
 use EventCrew\Web\SessionPerson;
 use EventCrew\Web\SignupController;
@@ -445,6 +449,13 @@ final class Kernel
         // The PWA layer over the signup page: serves the manifest, service worker
         // and icons, and injects the install tags. Front path, logged-out.
         $this->container->get(PwaController::class)->boot();
+
+        // App notifications (Web Push): every notifier's PushNotifier::notify()
+        // sends through this one, to the devices that turned them on.
+        $pushSubscriptions = $this->container->get(PushSubscriptionRepository::class);
+        NotificationPreferences::useDeviceLookup(static fn (int $personId): bool => $pushSubscriptions->hasAny($personId));
+        PushNotifier::use($this->container->get(PushNotifier::class));
+        $this->container->get(PushController::class)->boot();
 
         // The Crew app as a page of its own, and old page addresses redirected.
         $this->container->get(CrewAppPage::class)->boot();
@@ -857,6 +868,24 @@ final class Kernel
         $this->container->singleton(
             NotificationsRepository::class,
             fn () => new NotificationsRepository()
+        );
+
+        $this->container->singleton(
+            PushSubscriptionRepository::class,
+            fn () => new PushSubscriptionRepository()
+        );
+
+        $this->container->singleton(
+            PushNotifier::class,
+            fn (Container $container) => new PushNotifier($container->get(PushSubscriptionRepository::class))
+        );
+
+        $this->container->singleton(
+            PushController::class,
+            fn (Container $container) => new PushController(
+                $container->get(PushSubscriptionRepository::class),
+                new SessionPerson($container->get(PersonRepository::class))
+            )
         );
 
         $this->container->singleton(
@@ -1279,7 +1308,8 @@ final class Kernel
                 $container->get(NotificationsRepository::class),
                 $container->get(TakeoverRepository::class),
                 transfers: $container->get(TicketTransferRepository::class),
-                history: $container->get(HistoryRepository::class)
+                history: $container->get(HistoryRepository::class),
+                push: $container->get(PushSubscriptionRepository::class)
             )
         );
 

@@ -26,7 +26,7 @@ final class NotificationSettingsServiceTest extends TelegramTestCase
         self::assertNotEmpty($body['reply_markup']['inline_keyboard']);
     }
 
-    public function testEachRowHasThreeColumnsNameTelegramAndEmail(): void
+    public function testEachTypeHasANameRowAndARowOfTelegramEmailAndAppToggles(): void
     {
         $this->wpdb->nextRows[] = ['id' => 7, 'email_verified_at' => '2026-07-01 00:00:00', 'telegram_user_id' => 555, 'telegram_chat_id' => 999];
 
@@ -37,17 +37,37 @@ final class NotificationSettingsServiceTest extends TelegramTestCase
         // The last row is Back to Settings.
         self::assertSame([['text' => '⬅️ Back', 'callback_data' => 'mn:set']], array_pop($rows));
 
-        // A header row plus one row per type, every row three cells wide.
-        foreach ($rows as $row) {
-            self::assertCount(3, $row);
+        // Per type: a one-cell name row, then a three-cell toggle row.
+        self::assertSame(0, count($rows) % 2);
+
+        foreach (array_chunk($rows, 2) as [$name, $toggles]) {
+            self::assertCount(1, $name);
+            self::assertSame('np:noop', $name[0]['callback_data']);
+            self::assertCount(3, $toggles);
+            self::assertStringEndsWith(':dm', $toggles[0]['callback_data']);
+            self::assertStringEndsWith(':email', $toggles[1]['callback_data']);
+            self::assertStringEndsWith(':push', $toggles[2]['callback_data']);
         }
 
-        // In a type row the name cell is a no-op; the Telegram and email cells
-        // carry the toggle callbacks.
-        self::assertStringNotContainsString(':dm', $rows[1][0]['callback_data']);
-        self::assertStringNotContainsString(':email', $rows[1][0]['callback_data']);
-        self::assertStringEndsWith(':dm', $rows[1][1]['callback_data']);
-        self::assertStringEndsWith(':email', $rows[1][2]['callback_data']);
+        // An account with nothing stored: every switch on, the app's too (it
+        // sends only once a device turns app notifications on).
+        self::assertSame(['📱 ✅', '✉ ✅', '🔔 ✅'], array_column($rows[1], 'text'));
+    }
+
+    public function testTogglingTheAppChannelSavesIt(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 7, 'email_verified_at' => '2026-07-01 00:00:00', 'telegram_user_id' => 555, 'telegram_chat_id' => 999];
+
+        $this->service()->onToggle([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'data' => 'np:credit:push',
+            'message' => ['message_id' => 42, 'chat' => ['id' => 999]],
+        ]);
+
+        $saved = json_decode((string) $this->wpdb->updates[0]['data']['notify_prefs'], true);
+        self::assertFalse($saved['credit']['push']);
+        self::assertTrue($saved['credit']['dm']);
     }
 
     public function testTappingTheNameCellChangesNothing(): void
@@ -91,9 +111,11 @@ final class NotificationSettingsServiceTest extends TelegramTestCase
     {
         $types = [];
 
-        // Skip the header row and the Back row.
-        foreach (array_slice($this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'], 1, -1) as $row) {
-            $types[] = explode(':', (string) $row[1]['callback_data'])[1];
+        // Each type's toggle row (every second row); not the Back row.
+        $rows = array_slice($this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'], 0, -1);
+
+        foreach (array_chunk($rows, 2) as $pair) {
+            $types[] = explode(':', (string) $pair[1][0]['callback_data'])[1];
         }
 
         return $types;
@@ -180,10 +202,10 @@ final class NotificationSettingsServiceTest extends TelegramTestCase
 
         $rows = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
         array_pop($rows); // Back
-        $row = array_pop($rows);
-        self::assertSame('📰 Newsletter', $row[0]['text']);
-        self::assertSame('np:noop', $row[1]['callback_data']);
-        self::assertSame(['text' => '✅', 'callback_data' => 'np:newsletter'], $row[2]);
+        $toggle = array_pop($rows);
+        $name = array_pop($rows);
+        self::assertSame([['text' => '📰 Newsletter', 'callback_data' => 'np:noop']], $name);
+        self::assertSame([['text' => '✉ ✅', 'callback_data' => 'np:newsletter']], $toggle);
     }
 
     public function testWithoutTheSubscriberStoreThereIsNoNewsletterRow(): void

@@ -14,6 +14,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\PushNotifier;
 
 /**
  * Sends a private chat with the bot's language-model helper to the
@@ -137,6 +138,8 @@ final class ChatForwarder
                 DmBody::frame($organizer, MessageTemplates::body('chat_forward_dm', $context))
             );
         }
+
+        PushNotifier::notify($organizer, NotificationPreferences::CHAT_FORWARD, MessageTemplates::body('chat_forward_dm', $context));
 
         return true;
     }

@@ -177,6 +177,8 @@ final class RoleNotifier
             );
         }
 
+        PushNotifier::notify($organizer, $type, MessageTemplates::body($template . '_dm', $context));
+
         if (! $prefs->emailAllowed($organizer, $type)) {
             return;
         }

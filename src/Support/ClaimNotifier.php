@@ -339,14 +339,17 @@ final class ClaimNotifier
     }
 
     /**
-     * Sends a confirmation to the person's Telegram DM, when they have one. A
-     * no-op for a web-only person, and swallowed by TelegramClient if the send
-     * fails - a confirmation that doesn't arrive must never fail the signup.
+     * Sends a confirmation to the person's Telegram DM, when they have one,
+     * and to their devices with app notifications on. Swallowed by
+     * TelegramClient if the send fails - a confirmation that doesn't arrive
+     * must never fail the signup.
      *
      * @param array<string, mixed>|null $replyMarkup
      */
     private function dm(Person $person, string $text, ?array $replyMarkup = null): void
     {
+        PushNotifier::notify($person, NotificationPreferences::SIGNUP, $text);
+
         // Signup and cancellation are commitment confirmations - locked on, so a
         // muted account still gets word of what it just committed to (or dropped).
         if (! (new NotificationPreferences())->dmAllowed($person, NotificationPreferences::SIGNUP)) {
