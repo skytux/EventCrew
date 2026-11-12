@@ -4472,10 +4472,6 @@ msgstr ""
 msgid "Join the Telegram group"
 msgstr ""
 
-#: src/Support/FollowupMail.php:1577
-msgid "Join the announcement"
-msgstr ""
-
 #: src/Admin/NewsletterPage.php:347
 msgid "Joins and leaves over time, with the sent newsletters marked"
 msgstr ""
@@ -8250,7 +8246,7 @@ msgstr ""
 msgid "Subject"
 msgstr ""
 
-#: src/Web/NewsletterController.php:448 src/Web/NewsletterController.php:535 src/Web/NewsletterController.php:1119
+#: src/Support/FollowupMail.php:1577 src/Web/NewsletterController.php:448 src/Web/NewsletterController.php:535 src/Web/NewsletterController.php:1119
 msgid "Subscribe"
 msgstr ""
 
