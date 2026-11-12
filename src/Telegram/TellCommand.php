@@ -268,9 +268,17 @@ final class TellCommand
                 $header = self::header($organizer, $task);
 
                 // The app as well, on top of the one channel counted below.
-                PushNotifier::notify($person, NotificationPreferences::REMINDER, $header . "\n" . $message);
+                $pushed = PushNotifier::notify($person, NotificationPreferences::REMINDER, $header . "\n" . $message);
+                $dmAllowed = $this->prefs->dmAllowed($person, NotificationPreferences::REMINDER);
 
-                if ($this->prefs->dmAllowed($person, NotificationPreferences::REMINDER)) {
+                // Chose the app over Telegram (ChannelChoice) and the app
+                // reached them: no DM, and no email in its place, as when the
+                // DM goes. Counted with Telegram, the personal channel.
+                if ($dmAllowed && ! $this->prefs->dmWanted($person, NotificationPreferences::REMINDER, $pushed)) {
+                    return 'dm';
+                }
+
+                if ($dmAllowed) {
                     $done = $this->flow->telegram()->sendMessage(
                         (int) $person->telegramChatId,
                         EmailBody::forDm(DmBody::frame($person, $header . "\n" . $message))

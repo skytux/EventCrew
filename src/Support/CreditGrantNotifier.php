@@ -48,15 +48,15 @@ final class CreditGrantNotifier
 
         $dmText = MessageTemplates::body('credit_granted_dm', $context);
 
-        if ($prefs->dmAllowed($person, NotificationPreferences::CREDIT)) {
+        $pushed = PushNotifier::notify($person, NotificationPreferences::CREDIT, $dmText);
+
+        if ($prefs->dmWanted($person, NotificationPreferences::CREDIT, $pushed)) {
             $this->telegram->record()->sendMessage(
                 $person->telegramChatId,
                 DmBody::frame($person, $dmText),
                 MessageActions::replyMarkup(MessageActions::of('credit_granted_dm', $context, $this->mailer))
             );
         }
-
-        PushNotifier::notify($person, NotificationPreferences::CREDIT, $dmText);
 
         if (! $prefs->emailAllowed($person, NotificationPreferences::CREDIT)) {
             return;

@@ -13938,3 +13938,27 @@ msgstr "Assistent"
 
 msgid "Open in the app"
 msgstr "Öppna i appen"
+
+msgid "You get notifications in the app and in Telegram. Where do you want them?"
+msgstr "Du får aviseringar i appen och i Telegram. Var vill du ha dem?"
+
+msgid "App only"
+msgstr "Bara appen"
+
+msgid "Telegram only"
+msgstr "Bara Telegram"
+
+msgid "Both"
+msgstr "Båda"
+
+msgid "When both are on"
+msgstr "När båda är på"
+
+msgid "Saved. Notifications come to the app."
+msgstr "Sparat. Aviseringar kommer till appen."
+
+msgid "Saved. Notifications come to Telegram."
+msgstr "Sparat. Aviseringar kommer till Telegram."
+
+msgid "Saved. Notifications come to both."
+msgstr "Sparat. Aviseringar kommer till båda."

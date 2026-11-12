@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\PushSubscriptionRepository;
+use EventCrew\Support\ChannelChoice;
 use EventCrew\Support\WebPush;
 use EventCrew\Support\WebSession;
 use EventCrew\Tests\TestCase;
@@ -65,6 +66,25 @@ final class PushControllerTest extends TestCase
         self::assertStringContainsString("'" . PushSubscriptionRepository::hash(self::ENDPOINT) . "'", $insert);
         self::assertStringContainsString("'" . $posted['p256dh'] . "'", $insert);
         self::assertStringContainsString("'Android Chrome'", $insert);
+    }
+
+    public function testWithTelegramLinkedAndNeverAskedThePageAsksWhereNotificationsGo(): void
+    {
+        $agent = 'Mozilla/5.0 (Linux; Android 14) Chrome/130.0 Mobile Safari/537.36';
+        $linked = Person::fromRow(['id' => 7, 'email' => 'sam@example.com', 'telegram_user_id' => 555, 'telegram_chat_id' => 999]);
+        $answered = Person::fromRow([
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'telegram_user_id' => 555,
+            'telegram_chat_id' => 999,
+            'role_notices' => (string) json_encode([ChannelChoice::KEY => ChannelChoice::APP]),
+        ]);
+
+        $this->wpdb->nextQueryResults[] = 1;
+        self::assertSame([200, ['ok' => true, 'ask_channels' => true]], $this->controller()->handle($linked, $this->posted(), $agent));
+
+        $this->wpdb->nextQueryResults[] = 1;
+        self::assertSame([200, ['ok' => true]], $this->controller()->handle($answered, $this->posted(), $agent), 'Asked once.');
     }
 
     public function testUnsubscribingDeletesOnlyThePersonsOwnDevice(): void

@@ -169,15 +169,15 @@ final class RoleNotifier
         $type = 'met' === $kind ? NotificationPreferences::ROLE_MET : NotificationPreferences::ROLE_NEWS;
         $prefs = new NotificationPreferences();
 
-        if ($prefs->dmAllowed($organizer, $type)) {
+        $pushed = PushNotifier::notify($organizer, $type, MessageTemplates::body($template . '_dm', $context));
+
+        if ($prefs->dmWanted($organizer, $type, $pushed)) {
             $this->telegram->sendMessage(
                 $organizer->telegramChatId,
                 DmBody::frame($organizer, MessageTemplates::body($template . '_dm', $context)),
                 MessageActions::replyMarkup(MessageActions::of($template . '_dm', $context, $this->mailer))
             );
         }
-
-        PushNotifier::notify($organizer, $type, MessageTemplates::body($template . '_dm', $context));
 
         if (! $prefs->emailAllowed($organizer, $type)) {
             return;

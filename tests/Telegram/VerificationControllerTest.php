@@ -7,6 +7,8 @@ namespace EventCrew\Tests\Telegram;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\ChannelChoice;
+use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\Language;
 use EventCrew\Telegram\VerificationController;
 
@@ -58,6 +60,88 @@ final class VerificationControllerTest extends TelegramTestCase
         self::assertStringContainsString('used_at IS NULL', implode("\n", $this->wpdb->queries));
         self::assertCount(1, $this->wpdb->updates);
         self::assertContains('sendMessage', $this->calledMethods());
+    }
+
+    /**
+     * Clicks a link that a Telegram account asked for, and links it. The rows
+     * are what the database answers, in order.
+     *
+     * @param array<string, mixed> $after the person once linked
+     * @param bool                 $asks  whether the question is asked (one more read)
+     */
+    private function linkTelegram(array $after, bool $asks): bool
+    {
+        Functions\when('get_transient')->justReturn(['telegram_user_id' => 555, 'telegram_chat_id' => 999]);
+        $this->wpdb->nextRows[] = ['id' => 3, 'person_id' => 7, 'expires_at' => '2999-01-01 00:00:00', 'used_at' => null];
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com']; // before linking
+        $this->wpdb->nextRows[] = null; // nobody holds that Telegram account
+        $this->wpdb->nextRows[] = $after; // find() after linking
+        if ($asks) {
+            $this->wpdb->nextRows[] = $after; // addRoleNotices()' own read
+        }
+
+        return $this->controller()->verify('rawtoken');
+    }
+
+    /** @return list<array<string, mixed>> the sendMessage bodies */
+    private function sentMessages(): array
+    {
+        $sent = [];
+
+        foreach ($this->telegramCalls as $call) {
+            if ('sendMessage' === $call['method']) {
+                $sent[] = $call['body'];
+            }
+        }
+
+        return $sent;
+    }
+
+    public function testLinkingTelegramWithAppNotificationsOnAsksWhereTheyGo(): void
+    {
+        NotificationPreferences::useDeviceLookup(static fn (int $id): bool => 7 === $id);
+        $after = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'email_verified_at' => '2026-07-20 12:00:00',
+            'telegram_user_id' => 555,
+            'telegram_chat_id' => 999,
+        ];
+
+        self::assertTrue($this->linkTelegram($after, true));
+
+        $sent = $this->sentMessages();
+        self::assertCount(2, $sent, 'The confirmation, then the question.');
+        $question = $sent[1];
+        self::assertSame(ChannelChoice::question(), $question['text']);
+        $row = $question['reply_markup']['inline_keyboard'][0];
+        self::assertSame(['np:cq:app', 'np:cq:telegram', 'np:cq:both'], array_column($row, 'callback_data'));
+
+        $notices = end($this->wpdb->updates)['data']['role_notices'] ?? '';
+        self::assertSame([ChannelChoice::KEY_ASKED => '2026-07-20 12:00:00'], json_decode((string) $notices, true));
+    }
+
+    public function testTheQuestionIsNotAskedTwiceNorWithoutADevice(): void
+    {
+        $after = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'email_verified_at' => '2026-07-20 12:00:00',
+            'telegram_user_id' => 555,
+            'telegram_chat_id' => 999,
+        ];
+
+        // No device with app notifications: nothing to choose between.
+        self::assertTrue($this->linkTelegram($after, false));
+        self::assertCount(1, $this->sentMessages());
+
+        NotificationPreferences::useDeviceLookup(static fn (int $id): bool => true);
+        $this->telegramCalls = [];
+        $asked = $after + ['role_notices' => (string) json_encode([ChannelChoice::KEY_ASKED => '2026-07-01 10:00:00'])];
+
+        self::assertTrue($this->linkTelegram($asked, false));
+        self::assertCount(1, $this->sentMessages(), 'Asked once.');
     }
 
     public function testAVerificationLinkOpenedTwiceAtOnceConfirmsOnlyOnce(): void

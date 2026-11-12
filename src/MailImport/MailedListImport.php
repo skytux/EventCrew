@@ -375,8 +375,7 @@ final class MailedListImport
             }
 
             if (! isset($pushed[$organizer->id])) {
-                $pushed[$organizer->id] = true;
-                PushNotifier::notify(
+                $pushed[$organizer->id] = PushNotifier::notify(
                     $organizer,
                     NotificationPreferences::LIST_IMPORT,
                     (string) Language::forPerson($organizer, $dm)
@@ -386,7 +385,7 @@ final class MailedListImport
             if (
                 null === $this->telegram
                 || isset($messaged[(int) $organizer->telegramChatId])
-                || ! $prefs->dmAllowed($organizer, NotificationPreferences::LIST_IMPORT)
+                || ! $prefs->dmWanted($organizer, NotificationPreferences::LIST_IMPORT, $pushed[$organizer->id])
             ) {
                 continue;
             }

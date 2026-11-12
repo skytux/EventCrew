@@ -7,6 +7,7 @@ namespace EventCrew\Telegram;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\ChannelChoice;
 use EventCrew\Support\DoorDesk;
 use EventCrew\Support\NotificationPreferences;
 
@@ -23,6 +24,11 @@ use EventCrew\Support\NotificationPreferences;
  * or off for the person's verified address, with a ✉ toggle only. On adds the
  * address as a confirmed subscriber (it is verified, so no confirmation email)
  * or brings back one who left; off unsubscribes it.
+ *
+ * Above it, for a person with Telegram linked and a device with app
+ * notifications on, "When both are on": App only, Telegram only or Both
+ * (ChannelChoice), the selected one ticked. The same three answer the
+ * one-time question (choiceRow(), sent when Telegram is linked).
  */
 final class NotificationSettingsService
 {
@@ -33,6 +39,16 @@ final class NotificationSettingsService
 
     /** The newsletter row's callback data. */
     private const NEWSLETTER = 'np:newsletter';
+
+    /**
+     * Callback data prefix of the "When both are on" row:
+     * np:cc:<app|telegram|both>. Under np:, so ActingAs and ReopenProfile
+     * treat it as they treat the toggles.
+     */
+    public const CHOICE_PREFIX = 'np:cc:';
+
+    /** Callback data prefix of the one-time question's buttons: np:cq:<app|telegram|both>. */
+    public const QUESTION_PREFIX = 'np:cq:';
 
     public function __construct(
         private readonly PersonRepository $people,
@@ -66,9 +82,89 @@ final class NotificationSettingsService
         $this->telegram->sendMessage(
             $telegramUserId,
             $this->text(),
-            ['inline_keyboard' => $this->keyboard($map, $this->subscribed($person))]
+            ['inline_keyboard' => $this->keyboard($map, $this->subscribed($person), self::choiceFor($person))]
         );
         $this->sentDmNote($chatId, $isPrivate);
+    }
+
+    /**
+     * The three answers as one row of buttons, for the one-time question
+     * ($prefix QUESTION_PREFIX) or the settings row (CHOICE_PREFIX, with
+     * $selected ticked).
+     *
+     * @return list<array{text: string, callback_data: string}>
+     */
+    public static function choiceRow(string $prefix = self::QUESTION_PREFIX, ?string $selected = null): array
+    {
+        $row = [];
+
+        foreach (ChannelChoice::labels() as $choice => $label) {
+            $row[] = [
+                'text' => ($choice === $selected ? '✅ ' : '') . $label,
+                'callback_data' => $prefix . $choice,
+            ];
+        }
+
+        return $row;
+    }
+
+    /**
+     * A tap on one of the three answers, in the one-time question or in the
+     * settings row: stores it, says so, and edits the message in place (the
+     * question gives way to the answer; the menu shows the new tick).
+     *
+     * @param array<string, mixed> $callbackQuery
+     */
+    public function onChannelChoice(array $callbackQuery): void
+    {
+        $callbackId = (string) ($callbackQuery['id'] ?? '');
+        $telegramUserId = (int) ($callbackQuery['from']['id'] ?? 0);
+        $data = (string) ($callbackQuery['data'] ?? '');
+        $question = str_starts_with($data, self::QUESTION_PREFIX);
+        $choice = ChannelChoice::parse(substr($data, strlen($question ? self::QUESTION_PREFIX : self::CHOICE_PREFIX)));
+        $person = 0 === $telegramUserId ? null : $this->people->findByTelegramUserId($telegramUserId);
+
+        if (null === $person || null === $choice) {
+            $this->telegram->answerCallbackQuery($callbackId);
+
+            return;
+        }
+
+        $this->people->addRoleNotices($person->id, ChannelChoice::entriesFor($choice, (string) current_time('mysql')));
+        $this->telegram->answerCallbackQuery($callbackId, ChannelChoice::confirmation($choice));
+
+        $message = is_array($callbackQuery['message'] ?? null) ? $callbackQuery['message'] : [];
+        $chatId = (int) ($message['chat']['id'] ?? 0);
+        $messageId = (int) ($message['message_id'] ?? 0);
+
+        if (0 === $chatId || 0 === $messageId) {
+            return;
+        }
+
+        if ($question) {
+            $this->telegram->editMessageText($chatId, $messageId, ChannelChoice::confirmation($choice));
+
+            return;
+        }
+
+        $this->telegram->editMessageText(
+            $chatId,
+            $messageId,
+            $this->text(),
+            [
+                'inline_keyboard' => $this->keyboard(
+                    (new NotificationPreferences())->asMap($person),
+                    $this->subscribed($person),
+                    ChannelChoice::applies($person) ? $choice : null
+                ),
+            ]
+        );
+    }
+
+    /** The "When both are on" answer to tick, or null when the row is left out. */
+    private static function choiceFor(Person $person): ?string
+    {
+        return ChannelChoice::applies($person) ? ChannelChoice::of($person) : null;
     }
 
     /**
@@ -118,7 +214,7 @@ final class NotificationSettingsService
                 $chatId,
                 $messageId,
                 $this->text(),
-                ['inline_keyboard' => $this->keyboard($map, $this->subscribed($person))]
+                ['inline_keyboard' => $this->keyboard($map, $this->subscribed($person), self::choiceFor($person))]
             );
         }
     }
@@ -178,7 +274,7 @@ final class NotificationSettingsService
                 $chatId,
                 $messageId,
                 $this->text(),
-                ['inline_keyboard' => $this->keyboard($map, $this->subscribed($person))]
+                ['inline_keyboard' => $this->keyboard($map, $this->subscribed($person), self::choiceFor($person))]
             );
         }
     }
@@ -197,12 +293,13 @@ final class NotificationSettingsService
      * room on a phone.
      *
      * $newsletter: whether the address gets the newsletter; null leaves the
-     * newsletter row out.
+     * newsletter row out. $channelChoice: the "When both are on" answer to
+     * tick; null leaves that row out.
      *
      * @param array<string, array{dm: bool, email: bool, push?: bool}> $map
      * @return array<int, array<int, array{text: string, callback_data: string}>>
      */
-    private function keyboard(array $map, ?bool $newsletter = null): array
+    private function keyboard(array $map, ?bool $newsletter = null, ?string $channelChoice = null): array
     {
         $rows = [];
         $mark = static fn (bool $on): string => $on ? '✅' : '❌';
@@ -231,6 +328,12 @@ final class NotificationSettingsService
 
             $rows[] = [['text' => $label, 'callback_data' => self::PREFIX . 'noop']];
             $rows[] = $row;
+        }
+
+        // Where a notice goes that would reach them on both (ChannelChoice).
+        if (null !== $channelChoice) {
+            $rows[] = [['text' => ChannelChoice::rowLabel(), 'callback_data' => self::PREFIX . 'noop']];
+            $rows[] = self::choiceRow(self::CHOICE_PREFIX, $channelChoice);
         }
 
         // The newsletter is email only.

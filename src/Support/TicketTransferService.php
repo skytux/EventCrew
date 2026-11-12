@@ -581,7 +581,7 @@ final class TicketTransferService
         );
 
         // A tap on the app notification opens the ticket.
-        PushNotifier::notify(
+        $pushed = PushNotifier::notify(
             $receiver,
             NotificationPreferences::TICKET,
             (string) Language::forPerson($receiver, $text),
@@ -590,7 +590,7 @@ final class TicketTransferService
 
         if (
             null === $this->telegram
-            || ! (new NotificationPreferences())->dmAllowed($receiver, NotificationPreferences::TICKET)
+            || ! (new NotificationPreferences())->dmWanted($receiver, NotificationPreferences::TICKET, $pushed)
         ) {
             return;
         }

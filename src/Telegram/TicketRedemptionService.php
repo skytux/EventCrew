@@ -50,6 +50,9 @@ final class TicketRedemptionService
     /** The longest picker button text before the emoji, in characters. */
     public const BUTTON_MAX = 58;
 
+    /** Whether the last deliverTicket() sent the ticket as a DM. */
+    private bool $ticketDmSent = false;
+
     public function __construct(
         private readonly PersonRepository $people,
         private readonly TaskRepository $tasks,
@@ -280,12 +283,13 @@ final class TicketRedemptionService
         ));
 
         // redeem() already sent the ticket link on the channels the person
-        // allows. The buttons only appear in the private chat, so when ticket
-        // DMs are on, the ticket is the next message here; when they are off,
-        // the person is pointed at /me tickets instead.
+        // allows. The buttons only appear in the private chat, so when the
+        // ticket went as a DM, it is the next message here; when it did not
+        // (ticket DMs off, or the app only, ChannelChoice), the person is
+        // pointed at /me tickets instead.
         $this->telegram->answerCallbackQuery(
             $callbackId,
-            (new NotificationPreferences())->dmAllowed($person, NotificationPreferences::TICKET)
+            $this->ticketDmSent
                 ? __('Credit spent — your ticket is in the next message.', 'eventcrew')
                 : __('Credit spent — send /me tickets to see your ticket.', 'eventcrew')
         );
@@ -473,6 +477,7 @@ final class TicketRedemptionService
      */
     private function deliverTicket(int $personId, string $date, int $redemptionId, ?int $eventPostId): void
     {
+        $this->ticketDmSent = false;
         $url = $this->ticketUrl($redemptionId);
         $person = $this->people->find($personId);
 
@@ -485,6 +490,7 @@ final class TicketRedemptionService
 
         $dmOk = $prefs->dmAllowed($person, NotificationPreferences::TICKET);
         $dmText = '';
+        $pushed = 0;
 
         if ($dmOk || $prefs->pushAllowed($person, NotificationPreferences::TICKET)) {
             // The night's event and its times, for the DM's own lines.
@@ -499,10 +505,12 @@ final class TicketRedemptionService
             // the DM and the app (it may be AI text).
             $dmText = MessageAiText::body('free_ticket_dm', $context, $eventPostId);
             // A tap on the app notification opens the ticket.
-            PushNotifier::notify($person, NotificationPreferences::TICKET, $dmText, $url);
+            $pushed = PushNotifier::notify($person, NotificationPreferences::TICKET, $dmText, $url);
         }
 
-        if ($dmOk) {
+        $this->ticketDmSent = $dmOk && $prefs->dmWanted($person, NotificationPreferences::TICKET, $pushed);
+
+        if ($this->ticketDmSent) {
             // The ticket is a record: it stays in the chat as its own message.
             $this->telegram->record()->sendMessage(
                 $person->telegramChatId,

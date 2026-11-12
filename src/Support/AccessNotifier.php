@@ -90,7 +90,9 @@ final class AccessNotifier
 
         $prefs = new NotificationPreferences();
 
-        if ($prefs->dmAllowed($person, NotificationPreferences::PERMISSION)) {
+        $pushed = PushNotifier::notify($person, NotificationPreferences::PERMISSION, MessageTemplates::body($template . '_dm', $context));
+
+        if ($prefs->dmWanted($person, NotificationPreferences::PERMISSION, $pushed)) {
             // Unprompted from the person's side: an organizer, not they,
             // pressed the button that caused this.
             $this->telegram->sendMessage(
@@ -99,8 +101,6 @@ final class AccessNotifier
                 MessageActions::replyMarkup(MessageActions::of($template . '_dm', $context, $this->mailer))
             );
         }
-
-        PushNotifier::notify($person, NotificationPreferences::PERMISSION, MessageTemplates::body($template . '_dm', $context));
 
         if ($prefs->emailAllowed($person, NotificationPreferences::PERMISSION)) {
             $this->mailer->toPerson(

@@ -14,6 +14,9 @@
  * - an iPhone or iPad outside the Home Screen app: the line on adding it
  *   there first (Safari has push only in the installed app, iOS 16.4+).
  *
+ * Turning them on here with Telegram linked and the question never asked
+ * also asks where notifications should come (signup-channels.php).
+ *
  * The page is only shown signed in, which is never cached (the CSRF token).
  *
  * Expects $eventcrew_ajax and $eventcrew_csrf from signup.php.
@@ -108,7 +111,14 @@ if ('' === $eventcrew_push_key) {
                 if ('granted' !== permission) { on.disabled = false; show(false); return null; }
                 return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key() })
                     .then(function (sub) { return post('subscribe', sub); })
-                    .then(function () { on.disabled = false; show(true); });
+                    .then(function (r) { return r.json().catch(function () { return {}; }); })
+                    .then(function (body) {
+                        on.disabled = false;
+                        show(true);
+                        // Telegram linked, not asked yet: "Where do you want
+                        // them?" (signup-channels.php).
+                        if (body && body.ask_channels) { document.dispatchEvent(new CustomEvent('eventcrew:ask-channels')); }
+                    });
             }).catch(failed);
         });
 

@@ -6,6 +6,8 @@ namespace EventCrew\Tests\Telegram;
 
 use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\ChannelChoice;
+use EventCrew\Support\NotificationPreferences;
 use EventCrew\Telegram\NotificationSettingsService;
 
 final class NotificationSettingsServiceTest extends TelegramTestCase
@@ -52,6 +54,89 @@ final class NotificationSettingsServiceTest extends TelegramTestCase
         // An account with nothing stored: every switch on, the app's too (it
         // sends only once a device turns app notifications on).
         self::assertSame(['📱 ✅', '✉ ✅', '🔔 ✅'], array_column($rows[1], 'text'));
+    }
+
+    /** @return list<string> the callback data of the "When both are on" row, or [] */
+    private function choiceRowData(): array
+    {
+        foreach ($this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'] as $row) {
+            if (str_starts_with((string) ($row[0]['callback_data'] ?? ''), NotificationSettingsService::CHOICE_PREFIX)) {
+                return array_column($row, 'callback_data');
+            }
+        }
+
+        return [];
+    }
+
+    public function testTheWhenBothAreOnRowShowsOnlyWithADevice(): void
+    {
+        $row = ['id' => 7, 'email_verified_at' => '2026-07-01 00:00:00', 'telegram_user_id' => 555, 'telegram_chat_id' => 999];
+        $this->wpdb->nextRows[] = $row;
+        $this->service()->start(555, 555);
+
+        self::assertSame([], $this->choiceRowData(), 'No device with app notifications: no row.');
+
+        NotificationPreferences::useDeviceLookup(static fn (int $id): bool => true);
+        $this->wpdb->nextRows[] = $row + ['role_notices' => (string) json_encode([ChannelChoice::KEY => ChannelChoice::APP])];
+        $this->service()->start(555, 555);
+
+        self::assertSame(['np:cc:app', 'np:cc:telegram', 'np:cc:both'], $this->choiceRowData());
+        $rows = $this->lastCallTo('sendMessage')['reply_markup']['inline_keyboard'];
+        $choice = array_values(array_filter($rows, static fn (array $r): bool => 'np:cc:app' === ($r[0]['callback_data'] ?? '')))[0];
+        self::assertSame(['✅ App only', 'Telegram only', 'Both'], array_column($choice, 'text'));
+    }
+
+    public function testAnsweringTheQuestionStoresItAndReplacesTheButtons(): void
+    {
+        $row = ['id' => 7, 'email_verified_at' => '2026-07-01 00:00:00', 'telegram_user_id' => 555, 'telegram_chat_id' => 999];
+        $this->wpdb->nextRows[] = $row; // findByTelegramUserId()
+        $this->wpdb->nextRows[] = $row; // addRoleNotices()' read
+
+        $this->service()->onChannelChoice([
+            'id' => 'cbq',
+            'from' => ['id' => 555],
+            'data' => 'np:cq:telegram',
+            'message' => ['message_id' => 42, 'chat' => ['id' => 999]],
+        ]);
+
+        $saved = json_decode((string) end($this->wpdb->updates)['data']['role_notices'], true);
+        self::assertSame(ChannelChoice::TELEGRAM, $saved[ChannelChoice::KEY]);
+        self::assertSame('Saved. Notifications come to Telegram.', $this->lastCallTo('answerCallbackQuery')['text'] ?? null);
+        $edit = $this->lastCallTo('editMessageText');
+        self::assertSame('Saved. Notifications come to Telegram.', $edit['text']);
+        self::assertArrayNotHasKey('reply_markup', $edit);
+    }
+
+    public function testTheRouterSendsTheAnswersHere(): void
+    {
+        $row = ['id' => 7, 'email_verified_at' => '2026-07-01 00:00:00', 'telegram_user_id' => 555, 'telegram_chat_id' => 999];
+
+        for ($i = 0; $i < 6; $i++) {
+            $this->wpdb->nextRows[] = $row;
+        }
+
+        $this->updateRouter()->dispatch([
+            'callback_query' => [
+                'id' => 'cbq',
+                'from' => ['id' => 555],
+                'data' => 'np:cq:both',
+                'message' => ['message_id' => 42, 'chat' => ['id' => 999, 'type' => 'private']],
+            ],
+        ]);
+
+        $notices = array_values(array_filter(
+            array_map(static fn (array $u): ?string => $u['data']['role_notices'] ?? null, $this->wpdb->updates)
+        ));
+        self::assertNotSame([], $notices, 'The answer was stored.');
+        self::assertSame(ChannelChoice::BOTH, json_decode((string) end($notices), true)[ChannelChoice::KEY]);
+    }
+
+    public function testAnUnknownAnswerStoresNothing(): void
+    {
+        $this->service()->onChannelChoice(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'np:cc:email']);
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame(['answerCallbackQuery'], $this->calledMethods());
     }
 
     public function testTogglingTheAppChannelSavesIt(): void

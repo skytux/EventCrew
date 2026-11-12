@@ -1102,6 +1102,8 @@
 .eventcrew-signup .eventcrew-join .eventcrew-hint { margin: .1em 0 .3em; }
 .eventcrew-signup .eventcrew-join-choice { display: flex; flex-wrap: wrap; gap: .4em 1.4em; }
 .eventcrew-signup .eventcrew-join-choice label { display: inline-flex; align-items: center; gap: .35em; cursor: pointer; }
+.eventcrew-signup .eventcrew-channels { border: 0; padding: 0; margin: .8em 0; min-width: 0; }
+.eventcrew-signup .eventcrew-channels legend { padding: 0; margin-bottom: .3em; font-weight: 600; }
 /* The numbers show once Yes is ticked; a browser without :has() shows them always (the bot asks them too). */
 .eventcrew-signup .eventcrew-join-more { display: flex; flex-wrap: wrap; gap: .6em 1.2em; margin-top: .6em; }
 @supports selector(:has(*)) {
@@ -1444,6 +1446,9 @@
 .eventcrew-signup .eventcrew-app-step > p { margin: 0 0 1em; }
 .eventcrew-signup .eventcrew-app-actions { display: flex; flex-direction: column; align-items: stretch; gap: .6em; }
 .eventcrew-signup .eventcrew-app-actions > button { width: 100%; margin: 0; min-width: 0; }
+/* "Where do you want them?" (signup-channels.php): no hero, room for the ×. */
+.eventcrew-signup .eventcrew-channels-card { padding-top: 3em; }
+.eventcrew-signup .eventcrew-channels-card [data-eventcrew-channels-done] { margin: 0; font-weight: 600; }
 .eventcrew-signup .eventcrew-app-how { margin: 0; padding: 0; list-style: none; text-align: left; }
 .eventcrew-signup .eventcrew-app-how li {
     display: flex; align-items: center; gap: .75em; padding: .55em 0;

@@ -145,8 +145,12 @@ final class PersonEraser
         $this->takeovers->deleteForPerson($personId);
         // What they said when joining (worked here before, how often, the
         // tickets they think they should have) is about them, so it goes;
-        // so does what they did with the "Get the app" pop-in.
-        $this->people->replaceRoleNotices($personId, array_merge(JoinAnswers::KEYS, AppInstallPrompt::KEYS));
+        // so does what they did with the "Get the app" pop-in, and where
+        // they want notices that would reach them twice (ChannelChoice).
+        $this->people->replaceRoleNotices(
+            $personId,
+            array_merge(JoinAnswers::KEYS, AppInstallPrompt::KEYS, ChannelChoice::KEYS)
+        );
 
         // Muted: the organizer flag cleared here is part of the erasure, not
         // a change of its own.

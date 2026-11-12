@@ -276,6 +276,11 @@ final class UpdateRouter
                 $this->roleTasks->onSelect($callbackQuery);
             } elseif (str_starts_with($data, 'perm:')) {
                 $this->permissions->onSelect($callbackQuery);
+            } elseif (
+                str_starts_with($data, NotificationSettingsService::CHOICE_PREFIX)
+                || str_starts_with($data, NotificationSettingsService::QUESTION_PREFIX)
+            ) {
+                $this->notifications->onChannelChoice($callbackQuery);
             } elseif (str_starts_with($data, 'np:')) {
                 $this->notifications->onToggle($callbackQuery);
             } elseif (str_starts_with($data, 'dl:')) {

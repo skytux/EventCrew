@@ -275,7 +275,11 @@ final class OpenTaskCall
             );
         }
 
-        if ($dmOk) {
+        $pushed = $pushOk
+            ? PushNotifier::notify($person, NotificationPreferences::OPEN_TASK, MessageTemplates::body('open_task_call_dm', $context))
+            : 0;
+
+        if ($dmOk && $prefs->dmWanted($person, NotificationPreferences::OPEN_TASK, $pushed)) {
             $this->telegram->sendMessage(
                 (int) $person->telegramChatId,
                 DmBody::frame($person, MessageTemplates::body('open_task_call_dm', $context)),
@@ -283,10 +287,6 @@ final class OpenTaskCall
                 // away (left out when its link is not known).
                 MessageActions::replyMarkup(MessageActions::of('open_task_call_dm', $context, $this->mailer))
             );
-        }
-
-        if ($pushOk) {
-            PushNotifier::notify($person, NotificationPreferences::OPEN_TASK, MessageTemplates::body('open_task_call_dm', $context));
         }
 
         return true;

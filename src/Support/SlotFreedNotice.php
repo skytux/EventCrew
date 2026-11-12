@@ -503,11 +503,13 @@ final class SlotFreedNotice
             ? MessageAiText::body('slot_freed_dm', $context, $task->eventPostId)
             : '';
 
-        if ('' !== $dmText && PushNotifier::notify($person, NotificationPreferences::OPEN_TASK, $dmText) > 0) {
+        $pushed = '' === $dmText ? 0 : PushNotifier::notify($person, NotificationPreferences::OPEN_TASK, $dmText);
+
+        if ($pushed > 0) {
             $sent = true;
         }
 
-        if ($dmOk) {
+        if ($dmOk && $prefs->dmWanted($person, NotificationPreferences::OPEN_TASK, $pushed)) {
             // The event's picture as a large preview above the text (Owner, 2026-11-08).
             $this->telegram->sendMessage(
                 (int) $person->telegramChatId,

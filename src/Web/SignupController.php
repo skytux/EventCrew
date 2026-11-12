@@ -12,6 +12,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AppInstallPrompt;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\CancelNote;
+use EventCrew\Support\ChannelChoice;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\DmBody;
 use EventCrew\Support\DoorLinkSender;
@@ -467,6 +468,7 @@ final class SignupController implements WebTaskSignup
             'telegram_login' => null === $person ? $this->telegramLoginView() : null,
             'telegram_link' => null === $person ? null : self::telegramLinkView($person),
             'app_install' => null === $person ? null : self::appInstallView($person),
+            'channel_choice' => null === $person ? null : self::channelChoiceView($person),
             // The helper box under the tabs; null when the helper is off.
             'assistant' => null === $person ? null : AssistantWebController::view($person),
         ];
@@ -490,6 +492,30 @@ final class SignupController implements WebTaskSignup
             'name' => $pwa->appShortName(),
             'icon' => PwaController::iconUrl(192),
             'color' => $pwa->themeColor(),
+        ];
+    }
+
+    /**
+     * The "Where do you want them?" inputs for the signed-in person
+     * (ChannelChoice): whether the settings row shows (applies), the current
+     * answer, whether the pop-in is due on this visit, whether the question
+     * was ever asked (the page asks right after notifications go on only
+     * then), and the action the pop-in posts to.
+     *
+     * @return array{applies: bool, choice: string, due: bool, asked: bool, telegram: bool, action: string}
+     */
+    public static function channelChoiceView(Person $person): array
+    {
+        $applies = ChannelChoice::applies($person);
+        $asked = ChannelChoice::wasAsked($person);
+
+        return [
+            'applies' => $applies,
+            'choice' => ChannelChoice::of($person),
+            'due' => $applies && ! $asked,
+            'asked' => $asked,
+            'telegram' => $person->hasTelegram(),
+            'action' => ChannelChoiceController::ACTION,
         ];
     }
 
@@ -1441,6 +1467,13 @@ final class SignupController implements WebTaskSignup
             $posted = isset($_POST['prefs']) && is_array($_POST['prefs']) ? wp_unslash($_POST['prefs']) : [];
 
             $this->people->setNotifyPrefs($person->id, NotificationPreferences::fromForm($person, $posted));
+
+            // "When both are on" (ChannelChoice), shown only when it applies.
+            $channels = ChannelChoice::parse(isset($_POST['channels']) ? sanitize_key(wp_unslash($_POST['channels'])) : '');
+
+            if (null !== $channels && ChannelChoice::applies($person)) {
+                $this->people->addRoleNotices($person->id, ChannelChoice::entriesFor($channels, (string) current_time('mysql')));
+            }
             $this->finish($redirect, 'prefs_saved', $isAjax);
         }
 

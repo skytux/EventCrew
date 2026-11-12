@@ -107,9 +107,14 @@ final class TaskCancelledNotice
             $text = MessageTemplates::body('task_cancelled_dm', $context);
 
             // The app too, with the same text: also for a person without Telegram.
-            PushNotifier::notify($person, NotificationPreferences::SIGNUP, $text);
+            $pushed = PushNotifier::notify($person, NotificationPreferences::SIGNUP, $text);
 
-            if (! $dm || null === $telegram || null === $chatId) {
+            if (
+                ! $dm
+                || null === $telegram
+                || null === $chatId
+                || ! (new NotificationPreferences())->dmWanted($person, NotificationPreferences::SIGNUP, $pushed)
+            ) {
                 return;
             }
 

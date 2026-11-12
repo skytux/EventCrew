@@ -10998,3 +10998,27 @@ msgstr "Avustaja"
 
 msgid "Open in the app"
 msgstr "Avaa sovelluksessa"
+
+msgid "You get notifications in the app and in Telegram. Where do you want them?"
+msgstr "Saat ilmoitukset sovellukseen ja Telegramiin. Minne haluat ne?"
+
+msgid "App only"
+msgstr "Vain sovellus"
+
+msgid "Telegram only"
+msgstr "Vain Telegram"
+
+msgid "Both"
+msgstr "Molemmat"
+
+msgid "When both are on"
+msgstr "Kun molemmat ovat päällä"
+
+msgid "Saved. Notifications come to the app."
+msgstr "Tallennettu. Ilmoitukset tulevat sovellukseen."
+
+msgid "Saved. Notifications come to Telegram."
+msgstr "Tallennettu. Ilmoitukset tulevat Telegramiin."
+
+msgid "Saved. Notifications come to both."
+msgstr "Tallennettu. Ilmoitukset tulevat molempiin."

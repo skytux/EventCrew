@@ -181,6 +181,7 @@ use EventCrew\MailImport\MailImporter;
 use EventCrew\MailImport\MailedListImport;
 use EventCrew\Web\AppInstallController;
 use EventCrew\Web\AssistantWebController;
+use EventCrew\Web\ChannelChoiceController;
 use EventCrew\Web\CrewAdminAiText;
 use EventCrew\Web\CrewAdminController;
 use EventCrew\Web\CrewAdminFollowup;
@@ -463,6 +464,8 @@ final class Kernel
         $this->container->get(PushController::class)->boot();
         // The Crew app page's "Get the app" pop-in: what the person chose.
         $this->container->get(AppInstallController::class)->boot();
+        // The Crew app page's "Where do you want them?" pop-in: the answer.
+        $this->container->get(ChannelChoiceController::class)->boot();
         // The Crew app page's helper box: the bot's helper, asked from the page.
         $this->container->get(AssistantWebController::class)->boot();
 
@@ -923,6 +926,14 @@ final class Kernel
         $this->container->singleton(
             AppInstallController::class,
             fn (Container $container) => new AppInstallController(
+                $container->get(PersonRepository::class),
+                new SessionPerson($container->get(PersonRepository::class))
+            )
+        );
+
+        $this->container->singleton(
+            ChannelChoiceController::class,
+            fn (Container $container) => new ChannelChoiceController(
                 $container->get(PersonRepository::class),
                 new SessionPerson($container->get(PersonRepository::class))
             )

@@ -348,11 +348,12 @@ final class ClaimNotifier
      */
     private function dm(Person $person, string $text, ?array $replyMarkup = null): void
     {
-        PushNotifier::notify($person, NotificationPreferences::SIGNUP, $text);
+        $pushed = PushNotifier::notify($person, NotificationPreferences::SIGNUP, $text);
 
         // Signup and cancellation are commitment confirmations - locked on, so a
         // muted account still gets word of what it just committed to (or dropped).
-        if (! (new NotificationPreferences())->dmAllowed($person, NotificationPreferences::SIGNUP)) {
+        // App only (ChannelChoice) leaves it out once the app reached them.
+        if (! (new NotificationPreferences())->dmWanted($person, NotificationPreferences::SIGNUP, $pushed)) {
             return;
         }
 

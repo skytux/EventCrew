@@ -6,6 +6,7 @@ namespace EventCrew\Web;
 
 use EventCrew\Models\Person;
 use EventCrew\Repositories\PushSubscriptionRepository;
+use EventCrew\Support\ChannelChoice;
 use EventCrew\Support\PushNotifier;
 use EventCrew\Support\WebPush;
 use EventCrew\Support\WebSession;
@@ -118,7 +119,17 @@ final class PushController
             self::deviceLabel($userAgent)
         );
 
-        return $ok ? [200, ['ok' => true]] : [500, ['ok' => false, 'error' => 'store']];
+        if (! $ok) {
+            return [500, ['ok' => false, 'error' => 'store']];
+        }
+
+        // Telegram linked and not yet asked: the page asks "Where do you
+        // want them?" (ChannelChoice) right after notifications go on.
+        if ($person->hasTelegram() && ! ChannelChoice::wasAsked($person)) {
+            return [200, ['ok' => true, 'ask_channels' => true]];
+        }
+
+        return [200, ['ok' => true]];
     }
 
     /**

@@ -1042,6 +1042,24 @@ if ($eventcrew_link_expired) {
                         <?php endforeach; ?>
                         </tbody>
                     </table>
+                    <?php
+                    /*
+                     * "When both are on" (ChannelChoice, Owner 2026-11-13):
+                     * only with Telegram linked and a device with app
+                     * notifications on, as the bot's settings.
+                     */
+                    $eventcrew_channels = is_array($view['channel_choice'] ?? null) ? $view['channel_choice'] : null;
+                    ?>
+                    <?php if (null !== $eventcrew_channels && $eventcrew_channels['applies']) : ?>
+                        <fieldset class="eventcrew-channels">
+                            <legend><?php echo esc_html(\EventCrew\Support\ChannelChoice::rowLabel()); ?></legend>
+                            <div class="eventcrew-join-choice">
+                                <?php foreach (\EventCrew\Support\ChannelChoice::labels() as $eventcrew_channel_value => $eventcrew_channel_label) : ?>
+                                    <label><input type="radio" name="channels" value="<?php echo esc_attr($eventcrew_channel_value); ?>" <?php checked($eventcrew_channels['choice'], $eventcrew_channel_value); ?>> <?php echo esc_html($eventcrew_channel_label); ?></label>
+                                <?php endforeach; ?>
+                            </div>
+                        </fieldset>
+                    <?php endif; ?>
                     <p class="eventcrew-muted"><?php esc_html_e('Signup confirmations and task reminders are always sent on every channel.', 'eventcrew'); ?></p>
                     <button type="submit" class="wp-element-button eventcrew-linkbtn eventcrew-settings-btn"><?php esc_html_e('Save preferences', 'eventcrew'); ?></button>
                 </form>
@@ -2872,6 +2890,9 @@ if ($eventcrew_link_expired) {
     // The "Get the app" pop-in, signed in only (nothing when signed out).
     $eventcrew_app_install = is_array($view['app_install'] ?? null) ? $view['app_install'] : null;
     require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-app-install.php';
+    // "Where do you want them?", signed in with Telegram linked only.
+    $eventcrew_channels = is_array($view['channel_choice'] ?? null) ? $view['channel_choice'] : null;
+    require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-channels.php';
     ?>
     <?php
     /*

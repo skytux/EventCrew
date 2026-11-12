@@ -132,14 +132,14 @@ final class ChatForwarder
             return false;
         }
 
-        if ($prefs->dmAllowed($organizer, NotificationPreferences::CHAT_FORWARD)) {
+        $pushed = PushNotifier::notify($organizer, NotificationPreferences::CHAT_FORWARD, MessageTemplates::body('chat_forward_dm', $context));
+
+        if ($prefs->dmWanted($organizer, NotificationPreferences::CHAT_FORWARD, $pushed)) {
             $this->telegram->sendMessage(
                 $organizer->telegramChatId,
                 DmBody::frame($organizer, MessageTemplates::body('chat_forward_dm', $context))
             );
         }
-
-        PushNotifier::notify($organizer, NotificationPreferences::CHAT_FORWARD, MessageTemplates::body('chat_forward_dm', $context));
 
         return true;
     }

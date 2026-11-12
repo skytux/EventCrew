@@ -126,7 +126,8 @@ final class RetentionPurgeTest extends TestCase
 
     /**
      * What the person said when joining (JoinAnswers) is personal data:
-     * anonymising removes it and keeps the rest of the newcomer record.
+     * anonymising removes it, and their ChannelChoice answer, and keeps the
+     * rest of the newcomer record.
      */
     public function testAnonymisingRemovesTheJoinAnswers(): void
     {
@@ -140,7 +141,8 @@ final class RetentionPurgeTest extends TestCase
             'id' => 4,
             'email' => 'sam@example.com',
             'role_notices' => '{"newcomer:asked":"2026-01-01 10:00:00","newcomer:before":"yes",'
-                . '"newcomer:times":"5","newcomer:tickets":"3"}',
+                . '"newcomer:times":"5","newcomer:tickets":"3",'
+                . '"app:channels":"app","app:channels_asked":"2026-01-02 10:00:00"}',
         ];
 
         $this->purge()->run();

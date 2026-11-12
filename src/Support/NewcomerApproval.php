@@ -559,7 +559,10 @@ final class NewcomerApproval
         $context = ['member' => $person];
         $prefs = new NotificationPreferences();
 
-        if ($prefs->dmAllowed($organizer, NotificationPreferences::NEWCOMER)) {
+        // The app only tells: OK and No are in the bot and the wp-admin.
+        $pushed = PushNotifier::notify($organizer, NotificationPreferences::NEWCOMER, MessageTemplates::body('newcomer_waiting_dm', $context));
+
+        if ($prefs->dmWanted($organizer, NotificationPreferences::NEWCOMER, $pushed)) {
             $chatId = (int) $organizer->telegramChatId;
             $messageId = $this->sendRequest($chatId, $organizer, $person, '', self::markup($person->id));
 
@@ -567,9 +570,6 @@ final class NewcomerApproval
                 $sent[self::DM_KEY . $organizer->id] = $chatId . ':' . $messageId;
             }
         }
-
-        // The app only tells: OK and No are in the bot and the wp-admin.
-        PushNotifier::notify($organizer, NotificationPreferences::NEWCOMER, MessageTemplates::body('newcomer_waiting_dm', $context));
 
         if (! $prefs->emailAllowed($organizer, NotificationPreferences::NEWCOMER)) {
             return $sent;

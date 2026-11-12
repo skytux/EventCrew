@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Models\Person;
 use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\ChannelChoice;
 use EventCrew\Support\Language;
 use EventCrew\Support\TelegramLogin;
 use EventCrew\Support\Organization;
@@ -125,7 +127,34 @@ final class VerificationController
             ));
         }
 
+        // Telegram linked just now, and a device already gets app
+        // notifications: where should a notice go that would reach them on
+        // both? Asked once (ChannelChoice).
+        if ($linked && null !== $person) {
+            $this->askChannels($person);
+        }
+
         return true;
+    }
+
+    /**
+     * The one-time question of ChannelChoice, as a DM with its three
+     * buttons (NotificationSettingsService answers them), when it is due.
+     */
+    private function askChannels(Person $person): void
+    {
+        $chatId = $person->telegramChatId;
+
+        if (null === $chatId || ! ChannelChoice::due($person)) {
+            return;
+        }
+
+        $this->people->addRoleNotices($person->id, ChannelChoice::askedEntries($person, (string) current_time('mysql')));
+        Language::forPerson($person, fn () => $this->telegram->sendMessage(
+            $chatId,
+            ChannelChoice::question(),
+            ['inline_keyboard' => [NotificationSettingsService::choiceRow()]]
+        ));
     }
 
     /**

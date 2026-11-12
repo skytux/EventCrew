@@ -149,6 +149,9 @@ if (null === $eventcrew_app_install) {
         show(name);
         if (dialog.open) { return; }
         returnTo = document.activeElement;
+        // Seen on this visit: the "Where do you want them?" pop-in
+        // (signup-channels.php) waits for another visit.
+        box.dataset.shown = '1';
         dialog.showModal();
     };
     // How it was closed decides what is stored: × and Esc close it until

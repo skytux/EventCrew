@@ -14,9 +14,14 @@ use EventCrew\Telegram\GroupRelay;
  * account gets no email; the legacy "mute all DMs" flag) and the fine per-type
  * preferences are combined, so every notifier gates its sends the same way:
  *
- *     if ($prefs->dmAllowed($person, self::TYPE))    { ...DM... }
- *     if ($prefs->emailAllowed($person, self::TYPE)) { ...email... }
- *     PushNotifier::notify($person, self::TYPE, $text); // checks pushAllowed()
+ *     $pushed = PushNotifier::notify($person, self::TYPE, $text); // checks pushAllowed()
+ *     if ($prefs->dmWanted($person, self::TYPE, $pushed)) { ...DM... }
+ *     if ($prefs->emailAllowed($person, self::TYPE))      { ...email... }
+ *
+ * The app notification goes first, so the DM can follow the person's
+ * ChannelChoice for a message that would reach them on both: App only
+ * skips the DM when the app reached a device, and sends it when it reached
+ * none; Telegram only skips the app notification (pushAllowed()).
  *
  * Dependency-free and newed inline like ReputationSettings - its methods take a
  * Person and read no storage of their own, so it threads through no constructor.
@@ -43,6 +48,13 @@ final class NotificationPreferences
     {
         self::$hasDevice = $lookup;
     }
+
+    /** Whether the person has a device with app notifications on (false before boot and in tests). */
+    public static function hasDevice(int $personId): bool
+    {
+        return null !== self::$hasDevice && (self::$hasDevice)($personId);
+    }
+
     /** Toggleable, convenience types the two UIs expose to everybody. */
     public const STANDING = 'standing';
     public const CREDIT = 'credit';
@@ -145,14 +157,37 @@ final class NotificationPreferences
     }
 
     /**
+     * Whether the DM of a message goes out, once its app notification was
+     * tried and reached $pushed devices: dmAllowed(), except that a person
+     * who chose App only (ChannelChoice) gets no DM when the app notification
+     * reached a device. When it reached none (no device left, the push
+     * service refused it, an error) the DM goes after all, so nothing is lost.
+     */
+    public function dmWanted(Person $person, string $type, int $pushed): bool
+    {
+        if (! $this->dmAllowed($person, $type)) {
+            return false;
+        }
+
+        return $pushed <= 0 || ChannelChoice::APP !== ChannelChoice::of($person);
+    }
+
+    /**
      * An app notification: only to a person with a device that turned them
      * on (nothing is ever pushed before that), and only when the row's app
      * switch is on. Locked types always send, like email. The preference is
      * read first, so a person with it off costs no query.
+     *
+     * A person who chose Telegram only (ChannelChoice) gets no app
+     * notification of a message that also goes to them as a DM.
      */
     public function pushAllowed(Person $person, string $type): bool
     {
         if (! $this->pushPref($person, $type) || null === self::$hasDevice) {
+            return false;
+        }
+
+        if (ChannelChoice::TELEGRAM === ChannelChoice::of($person) && $this->dmAllowed($person, $type)) {
             return false;
         }
 

@@ -180,11 +180,11 @@ final class StandingNotice
                 . (null === $standing ? '' : "\n\n" . $standing->line());
             $prefs = new NotificationPreferences();
 
-            if ($prefs->dmAllowed($person, NotificationPreferences::STANDING)) {
+            $pushed = PushNotifier::notify($person, NotificationPreferences::STANDING, $text);
+
+            if ($prefs->dmWanted($person, NotificationPreferences::STANDING, $pushed)) {
                 $this->telegram->sendMessage($person->telegramChatId, DmBody::frame($person, $text));
             }
-
-            PushNotifier::notify($person, NotificationPreferences::STANDING, $text);
 
             if ($prefs->emailAllowed($person, NotificationPreferences::STANDING)) {
                 $this->mailer->toPerson(
@@ -232,17 +232,15 @@ final class StandingNotice
             ? MessageAiText::body($kind . '_dm', $context, $task->eventPostId)
             : '';
 
-        if ($dmOk) {
+        $pushed = '' === $dmText ? 0 : PushNotifier::notify($person, NotificationPreferences::STANDING, $dmText);
+
+        if ($dmOk && $prefs->dmWanted($person, NotificationPreferences::STANDING, $pushed)) {
             // Framed and signed like every DM the scan sends unasked (DmBody).
             $this->telegram->sendMessage(
                 $person->telegramChatId,
                 DmBody::frame($person, $dmText),
                 MessageActions::replyMarkup(MessageActions::of($kind . '_dm', $context, $this->mailer))
             );
-        }
-
-        if ('' !== $dmText) {
-            PushNotifier::notify($person, NotificationPreferences::STANDING, $dmText);
         }
 
         if (! $prefs->emailAllowed($person, NotificationPreferences::STANDING)) {
