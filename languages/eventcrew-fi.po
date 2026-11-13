@@ -2775,10 +2775,6 @@ msgstr "Näytä avoimet tehtävät"
 msgid "Who works a night; mark done, late or no-show"
 msgstr "Kuka on töissä illalla; merkitse tehty, myöhässä tai ei saapunut"
 
-#: src/Telegram/CommandMenu.php:305
-msgid "Open the sales desk"
-msgstr "Avaa myyntipiste"
-
 #: src/Telegram/CommandMenu.php:308
 msgid "Who may hold each role"
 msgstr "Kuka voi saada minkäkin roolin"

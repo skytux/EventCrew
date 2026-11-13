@@ -4679,10 +4679,6 @@ msgstr "Öppna gruppen"
 msgid "Open the group in Telegram"
 msgstr "Öppna gruppen i Telegram"
 
-#: templates/public/signup.php:1167
-msgid "Open the sales desk"
-msgstr "Öppna försäljningsdisken"
-
 #: src/Support/Mailer.php:447
 msgid "Open the signup page"
 msgstr "Öppna anmälningssidan"
