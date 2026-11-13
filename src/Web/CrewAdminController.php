@@ -51,8 +51,8 @@ use EventCrew\Telegram\TelegramClient;
  * and the roster with its status write (/roster), and the bot's roles for the restricted
  * roles. "Add a person to a task" is the bot's "Add someone" button: it puts
  * anyone on any upcoming task, even someone who is not a crew member yet.
- * The People screen (CrewAdminPeople) is the wp-admin People page without the
- * organizer flag and without deleting a person. The Tasks screen
+ * The People screen (CrewAdminPeople) is the wp-admin People page, with the
+ * organizer flag set as the bot's /people sets it. The Tasks screen
  * (CrewAdminTasks) is the wp-admin Tasks page, plus editing one role with the
  * fields of wp-admin Settings > Roles.
  */
@@ -73,6 +73,8 @@ final class CrewAdminController
     public const PERSON_ACTION = 'eventcrew_web_admin_person';
     public const PASS_ACTION = 'eventcrew_web_admin_pass';
     public const UNBAN_ACTION = 'eventcrew_web_admin_unban';
+    public const PERSON_REMOVE_ACTION = 'eventcrew_web_admin_person_remove';
+    public const ORGANIZER_ACTION = 'eventcrew_web_admin_organizer';
     public const TASK_ACTION = 'eventcrew_web_admin_task';
     public const TASK_DELETE_ACTION = 'eventcrew_web_admin_task_delete';
     public const TEMPLATE_ACTION = 'eventcrew_web_admin_template';
@@ -107,6 +109,8 @@ final class CrewAdminController
         self::PERSON_ACTION,
         self::PASS_ACTION,
         self::UNBAN_ACTION,
+        self::PERSON_REMOVE_ACTION,
+        self::ORGANIZER_ACTION,
         self::TASK_ACTION,
         self::TASK_DELETE_ACTION,
         self::TEMPLATE_ACTION,
@@ -199,6 +203,8 @@ final class CrewAdminController
             self::PERSON_ACTION => __('Add or edit a person', 'eventcrew'),
             self::PASS_ACTION => __('Grant a one-time pass', 'eventcrew'),
             self::UNBAN_ACTION => __('Unban', 'eventcrew'),
+            self::PERSON_REMOVE_ACTION => __('Delete a person', 'eventcrew'),
+            self::ORGANIZER_ACTION => __('Make or remove an organizer', 'eventcrew'),
             self::TASK_ACTION => __('Add or edit a task', 'eventcrew'),
             self::TASK_DELETE_ACTION => __('Delete a task', 'eventcrew'),
             self::TEMPLATE_ACTION => __('Create an event\'s tasks', 'eventcrew'),
@@ -294,6 +300,12 @@ final class CrewAdminController
             ),
             self::PASS_ACTION => $this->peopleScreen->grantPass((int) ($post['person_id'] ?? 0)),
             self::UNBAN_ACTION => $this->peopleScreen->unban((int) ($post['person_id'] ?? 0)),
+            self::PERSON_REMOVE_ACTION => $this->peopleScreen->remove($organizer, (int) ($post['person_id'] ?? 0)),
+            self::ORGANIZER_ACTION => $this->peopleScreen->setOrganizer(
+                $organizer,
+                (int) ($post['person_id'] ?? 0),
+                '1' === (string) ($post['organizer'] ?? '')
+            ),
             self::TASK_ACTION => $this->tasksScreen->save($post),
             self::TASK_DELETE_ACTION => $this->tasksScreen->delete((int) ($post['task_id'] ?? 0)),
             self::TEMPLATE_ACTION => $this->tasksScreen->applyTemplate((int) ($post['template_event'] ?? 0)),
@@ -811,6 +823,8 @@ final class CrewAdminController
             'person_action' => self::PERSON_ACTION,
             'pass_action' => self::PASS_ACTION,
             'unban_action' => self::UNBAN_ACTION,
+            'person_remove_action' => self::PERSON_REMOVE_ACTION,
+            'organizer_action' => self::ORGANIZER_ACTION,
             'people' => $this->peopleScreen->view(...self::peopleQuery()),
             // After People, so the reads the existing screens make come first.
             'task_action' => self::TASK_ACTION,
@@ -830,7 +844,7 @@ final class CrewAdminController
             // The night's status, test and stop, on Messages (Owner 2026-11-13).
             'followup_nights' => $this->rosterScreen->followupNights((string) array_key_first($dates['past'])),
             'optout_action' => self::OPTOUT_ACTION,
-            'optout' => $this->followupScreen->optOutView(),
+            'optout' => $this->followupScreen->optOutView(self::optOutPage()),
         ]) + (null === $this->aiTextScreen ? [] : [
             'ai_text_action' => self::AI_TEXT_ACTION,
             'ai_texts' => $this->aiTextScreen->view(),
@@ -877,8 +891,21 @@ final class CrewAdminController
     }
 
     /**
+     * The do-not-send list's page from the page address (?optout_page=).
+     * Read-only; nothing is written.
+     */
+    private static function optOutPage(): int
+    {
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended
+        $page = isset($_GET['optout_page']) ? absint($_GET['optout_page']) : 1;
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+        return max(1, $page);
+    }
+
+    /**
      * The restricted roles a member can be given here, slug => label. Organize
-     * is not one: it is the organizer flag, set in wp-admin or with /people in the bot.
+     * is not one: it is the organizer flag, which has its own action.
      *
      * @return array<string, string>
      */

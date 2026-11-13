@@ -14172,3 +14172,48 @@ msgstr "Ta bort %s från listan? Mejlet efter evenemanget kan gå dit igen."
 
 msgid "Add an address"
 msgstr "Lägg till en adress"
+
+msgid "Nothing was deleted: you cannot delete yourself here."
+msgstr "Inget togs bort: du kan inte ta bort dig själv här."
+
+msgid "Nothing was changed: the team needs at least one organizer."
+msgstr "Inget ändrades: teamet behöver minst en arrangör."
+
+msgid "They are now an organizer."
+msgstr "Hen är nu arrangör."
+
+msgid "They are no longer an organizer."
+msgstr "Hen är inte längre arrangör."
+
+msgid "Nothing was changed: you cannot take away your own organizer flag."
+msgstr "Inget ändrades: du kan inte ta bort din egen arrangörsmarkering."
+
+msgid "Delete a person"
+msgstr "Ta bort en person"
+
+msgid "Make or remove an organizer"
+msgstr "Lägg till eller ta bort arrangör"
+
+#. translators: %s: person's name
+#, php-format
+msgid "Remove %s as an organizer? They lose the Admin tab and the organizer commands."
+msgstr "Ta bort %s som arrangör? Hen förlorar Admin-fliken och arrangörskommandona."
+
+#. translators: %s: person's name
+#, php-format
+msgid "Make %s an organizer? They get the Admin tab and the organizer commands."
+msgstr "Göra %s till arrangör? Hen får Admin-fliken och arrangörskommandona."
+
+msgid "Remove as organizer"
+msgstr "Ta bort som arrangör"
+
+msgid "Make organizer"
+msgstr "Gör till arrangör"
+
+#. translators: %s: person's name
+#, php-format
+msgid "Delete %s and their whole task history? This cannot be undone."
+msgstr "Ta bort %s och hela hens uppgiftshistorik? Det går inte att ångra."
+
+msgid "Delete this person"
+msgstr "Ta bort den här personen"

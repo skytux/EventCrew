@@ -11246,3 +11246,48 @@ msgstr "Poistetaanko %s listalta? Tapahtuman jälkeinen viesti voidaan taas läh
 
 msgid "Add an address"
 msgstr "Lisää osoite"
+
+msgid "Nothing was deleted: you cannot delete yourself here."
+msgstr "Mitään ei poistettu: et voi poistaa itseäsi täällä."
+
+msgid "Nothing was changed: the team needs at least one organizer."
+msgstr "Mitään ei muutettu: tiimissä on oltava ainakin yksi järjestäjä."
+
+msgid "They are now an organizer."
+msgstr "Hän on nyt järjestäjä."
+
+msgid "They are no longer an organizer."
+msgstr "Hän ei ole enää järjestäjä."
+
+msgid "Nothing was changed: you cannot take away your own organizer flag."
+msgstr "Mitään ei muutettu: et voi poistaa omaa järjestäjän merkintääsi."
+
+msgid "Delete a person"
+msgstr "Poista henkilö"
+
+msgid "Make or remove an organizer"
+msgstr "Lisää tai poista järjestäjä"
+
+#. translators: %s: person's name
+#, php-format
+msgid "Remove %s as an organizer? They lose the Admin tab and the organizer commands."
+msgstr "Poistetaanko %s järjestäjistä? Hän menettää Ylläpito-välilehden ja järjestäjän komennot."
+
+#. translators: %s: person's name
+#, php-format
+msgid "Make %s an organizer? They get the Admin tab and the organizer commands."
+msgstr "Tehdäänkö %s järjestäjäksi? Hän saa Ylläpito-välilehden ja järjestäjän komennot."
+
+msgid "Remove as organizer"
+msgstr "Poista järjestäjistä"
+
+msgid "Make organizer"
+msgstr "Tee järjestäjäksi"
+
+#. translators: %s: person's name
+#, php-format
+msgid "Delete %s and their whole task history? This cannot be undone."
+msgstr "Poistetaanko %s ja koko hänen tehtävähistoriansa? Tätä ei voi perua."
+
+msgid "Delete this person"
+msgstr "Poista tämä henkilö"

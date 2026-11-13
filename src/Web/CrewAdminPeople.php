@@ -4,24 +4,30 @@ declare(strict_types=1);
 
 namespace EventCrew\Web;
 
+use EventCrew\Models\Person;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Support\AccessNotifier;
 use EventCrew\Support\Dates;
+use EventCrew\Support\PersonEraser;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\ExtraTaskCredits;
+use EventCrew\Telegram\CommandMenu;
 
 /**
  * The People screen of the crew page's Admin tab, made to match the wp-admin
  * People page: the list of people with search, adding and editing a person
- * (email, name, roles, notes), the one-time sign-up pass, Unban, and the
- * person's credit log.
+ * (email, name, roles, notes), the one-time sign-up pass, Unban, the
+ * person's credit log, the organizer flag and deleting a person.
  *
- * Two things stay in wp-admin: the organizer flag and deleting a person. The
- * save here never writes is_organizer, whatever the request holds.
+ * The save never writes is_organizer, whatever the request holds: the flag
+ * has its own action, setOrganizer(), which does what the bot's /people
+ * does. remove() is wp-admin's Delete (PersonEraser::erase()). Neither lets
+ * an organizer act on themselves, and neither leaves the team with no
+ * organizer.
  *
  * CrewAdminController guards every action (session, organizer flag, CSRF,
  * POST only) before it calls a method here. The methods only check their own
@@ -39,7 +45,8 @@ final class CrewAdminPeople
         private readonly PersonRepository $people,
         private readonly CreditGrantRepository $grants,
         private readonly RedemptionRepository $redemptions,
-        private readonly StandingCalculator $standing
+        private readonly StandingCalculator $standing,
+        private readonly ?PersonEraser $eraser = null
     ) {
     }
 
@@ -140,7 +147,7 @@ final class CrewAdminPeople
         $kept = null === $before ? [] : array_diff($before->roleSlugs, $shown);
         $roles = array_values(array_merge($kept, array_intersect($shown, $ticked)));
 
-        // No is_organizer here: that flag is set in wp-admin or with /people in the bot.
+        // No is_organizer here: that flag has its own action (setOrganizer()).
         $data = [
             'email' => $email,
             'display_name' => $name,
@@ -199,8 +206,84 @@ final class CrewAdminPeople
     }
 
     /**
+     * "Delete this person": wp-admin's Delete, the same PersonEraser::erase()
+     * (their tasks, credits, redemptions, sign-in links, push subscriptions
+     * and the rest go with them). Never the organizer themselves, and never
+     * the last organizer.
+     */
+    public function remove(Person $organizer, int $personId): string
+    {
+        $person = $personId > 0 ? $this->people->find($personId) : null;
+
+        if (null === $this->eraser || null === $person || $person->isAnonymized()) {
+            return 'admin_no_person';
+        }
+
+        if ($person->id === $organizer->id) {
+            return 'admin_person_remove_self';
+        }
+
+        if ($person->isOrganizer && $this->isLastOrganizer($person->id)) {
+            return 'admin_last_organizer';
+        }
+
+        $this->eraser->erase($person->id);
+
+        return 'admin_person_removed';
+    }
+
+    /**
+     * Makes the person an organizer ($on) or takes the flag away, as the
+     * bot's /people button does: the flag, the Telegram command menu
+     * refreshed, and the welcome to a new organizer. Never takes the flag
+     * from the organizer themselves, and never from the last organizer.
+     */
+    public function setOrganizer(Person $organizer, int $personId, bool $on): string
+    {
+        $person = $personId > 0 ? $this->people->find($personId) : null;
+
+        if (null === $person || $person->isAnonymized()) {
+            return 'admin_no_person';
+        }
+
+        if ($person->isOrganizer === $on) {
+            return $on ? 'admin_organizer_on' : 'admin_organizer_off';
+        }
+
+        if (! $on && $person->id === $organizer->id) {
+            return 'admin_organizer_self';
+        }
+
+        if (! $on && $this->isLastOrganizer($person->id)) {
+            return 'admin_last_organizer';
+        }
+
+        $this->people->setOrganizer($person->id, $on);
+        do_action(CommandMenu::ORGANIZER_CHANGED_HOOK, $person->id);
+
+        if ($on) {
+            RoleNotifier::madeOrganizer($person->id, $organizer->name());
+        }
+
+        return $on ? 'admin_organizer_on' : 'admin_organizer_off';
+    }
+
+    /** Whether $personId is the only organizer left. */
+    private function isLastOrganizer(int $personId): bool
+    {
+        foreach ($this->people->organizers() as $other) {
+            if ($other->id !== $personId) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * The text for one of this screen's notice codes, or '' when the code is
-     * not one of them. The texts are the wp-admin People page's own.
+     * not one of them. The texts are the wp-admin People page's own where it
+     * has one.
      */
     public static function noticeText(string $code): string
     {
@@ -214,6 +297,12 @@ final class CrewAdminPeople
             'admin_person_added' => __('Person added.', 'eventcrew'),
             'admin_pass_granted' => __('One-time sign-up pass granted.', 'eventcrew'),
             'admin_person_unbanned' => __('Unbanned. They can sign in and sign up again.', 'eventcrew'),
+            'admin_person_removed' => __('Person deleted.', 'eventcrew'),
+            'admin_person_remove_self' => __('Nothing was deleted: you cannot delete yourself here.', 'eventcrew'),
+            'admin_last_organizer' => __('Nothing was changed: the team needs at least one organizer.', 'eventcrew'),
+            'admin_organizer_on' => __('They are now an organizer.', 'eventcrew'),
+            'admin_organizer_off' => __('They are no longer an organizer.', 'eventcrew'),
+            'admin_organizer_self' => __('Nothing was changed: you cannot take away your own organizer flag.', 'eventcrew'),
         ];
 
         return $map[$code] ?? '';

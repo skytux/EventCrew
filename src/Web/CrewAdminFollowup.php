@@ -29,12 +29,13 @@ use EventCrew\Support\TranslatedText;
  *
  * Its own card under it manages the do-not-send list (FollowupOptOut): the
  * addresses that pressed "Don't send me these", and any an organizer adds
- * by hand. An organizer can add an address or take one off.
+ * by hand, a page at a time. An organizer can add an address or take one
+ * off.
  */
 final class CrewAdminFollowup
 {
-    /** How many addresses of the do-not-send list the card shows; the rest are counted. */
-    public const OPTOUT_SHOWN = 50;
+    /** How many addresses of the do-not-send list one page of the card shows. */
+    public const OPTOUT_PER_PAGE = 25;
 
     public function __construct(
         private readonly FollowupText $text,
@@ -156,24 +157,30 @@ final class CrewAdminFollowup
     }
 
     /**
-     * The do-not-send list card: the newest OPTOUT_SHOWN addresses with the
-     * day each was added ('' when not known), and how many more there are.
+     * The do-not-send list card: one page of OPTOUT_PER_PAGE addresses,
+     * newest first, each with the day it was added ('' when not known). A
+     * page past the end shows the last page, so removing the last address
+     * of a page lands on the page before.
      *
-     * @return array{list: list<array{email: string, added: string}>, more: int}
+     * @return array{list: list<array{email: string, added: string}>, page: int, pages: int, total: int}
      */
-    public function optOutView(): array
+    public function optOutView(int $page = 1): array
     {
         $entries = $this->optOut->entries();
+        $total = count($entries);
+        $pages = max(1, (int) ceil($total / self::OPTOUT_PER_PAGE));
+        $page = max(1, min($page, $pages));
+        $shown = array_slice($entries, ($page - 1) * self::OPTOUT_PER_PAGE, self::OPTOUT_PER_PAGE, true);
         $list = [];
 
-        foreach (array_slice($entries, 0, self::OPTOUT_SHOWN, true) as $email => $added) {
+        foreach ($shown as $email => $added) {
             $list[] = [
                 'email' => (string) $email,
                 'added' => 1 === preg_match('/^\d{4}-\d{2}-\d{2}/', $added) ? Dates::dayLabel(substr($added, 0, 10)) : '',
             ];
         }
 
-        return ['list' => $list, 'more' => max(0, count($entries) - self::OPTOUT_SHOWN)];
+        return ['list' => $list, 'page' => $page, 'pages' => $pages, 'total' => $total];
     }
 
     /**

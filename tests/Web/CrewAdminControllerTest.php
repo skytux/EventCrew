@@ -141,7 +141,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             new Logger(),
             $this->roleTasks(),
             $this->rosterScreen(),
-            new CrewAdminPeople(new PersonRepository(), new CreditGrantRepository(), new RedemptionRepository(), $this->standing()),
+            $this->peopleScreen(),
             $this->tasksScreen(),
             null,
             new CrewAdminFollowup(new FollowupText(new LlmClient(new Logger()), new Logger())),
@@ -496,6 +496,8 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             'grant a pass' => [CrewAdminController::PASS_ACTION, ['person_id' => '9']],
             'unban' => [CrewAdminController::UNBAN_ACTION, ['person_id' => '9']],
             'newcomer' => [CrewAdminController::NEWCOMER_ACTION, ['person_id' => '9', 'decision' => 'ok']],
+            'delete a person' => [CrewAdminController::PERSON_REMOVE_ACTION, ['person_id' => '9']],
+            'make an organizer' => [CrewAdminController::ORGANIZER_ACTION, ['person_id' => '9', 'organizer' => '1']],
         ];
     }
 
@@ -519,6 +521,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame(['id' => 8], $this->wpdb->updates[0]['where']);
         self::assertNotNull($this->wpdb->updates[0]['data']['banned_at']);
         self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->deletes);
     }
 
     /**
@@ -536,6 +539,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame([], $this->telegramCalls);
         self::assertSame([], $this->wpdb->updates);
         self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->deletes);
     }
 
     public function testAnOrganizerSetsAndRemovesAOneTimePostEventText(): void
@@ -699,7 +703,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         $followup = new CrewAdminFollowup(new FollowupText(new LlmClient(new Logger()), new Logger()));
         $view = $followup->optOutView();
         self::assertSame(['new@example.com', 'old@example.com'], array_column($view['list'], 'email'));
-        self::assertSame(0, $view['more']);
+        self::assertSame(1, $view['pages']);
         self::assertNotSame('', $view['list'][0]['added']);
 
         $this->signIn($this->organizerRow(1));
@@ -726,20 +730,37 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         );
     }
 
-    public function testALongDoNotSendListShowsTheNewestAndCountsTheRest(): void
+    public function testALongDoNotSendListIsShownAPageAtATime(): void
     {
         $list = [];
+        $count = CrewAdminFollowup::OPTOUT_PER_PAGE * 2 + 3;
 
-        for ($i = 1; $i <= CrewAdminFollowup::OPTOUT_SHOWN + 3; $i++) {
+        for ($i = 1; $i <= $count; $i++) {
             $list[sprintf('p%03d@example.com', $i)] = gmdate('Y-m-d H:i:s', 1767225600 + $i * 60);
         }
 
         $this->options[FollowupOptOut::OPTION] = $list;
-        $view = (new CrewAdminFollowup(new FollowupText(new LlmClient(new Logger()), new Logger())))->optOutView();
+        $screen = new CrewAdminFollowup(new FollowupText(new LlmClient(new Logger()), new Logger()));
 
-        self::assertCount(CrewAdminFollowup::OPTOUT_SHOWN, $view['list']);
-        self::assertSame(3, $view['more']);
-        self::assertSame(sprintf('p%03d@example.com', CrewAdminFollowup::OPTOUT_SHOWN + 3), $view['list'][0]['email']);
+        $first = $screen->optOutView();
+        self::assertCount(CrewAdminFollowup::OPTOUT_PER_PAGE, $first['list']);
+        self::assertSame([1, 3, $count], [$first['page'], $first['pages'], $first['total']]);
+        self::assertSame(sprintf('p%03d@example.com', $count), $first['list'][0]['email']);
+
+        $second = $screen->optOutView(2);
+        self::assertSame(2, $second['page']);
+        self::assertSame(
+            sprintf('p%03d@example.com', $count - CrewAdminFollowup::OPTOUT_PER_PAGE),
+            $second['list'][0]['email']
+        );
+
+        // Past the end (the last address of the last page was just removed):
+        // the last page.
+        $last = $screen->optOutView(9);
+        self::assertSame(3, $last['page']);
+        self::assertSame(['p003@example.com', 'p002@example.com', 'p001@example.com'], array_column($last['list'], 'email'));
+
+        self::assertSame(1, $screen->optOutView(0)['page']);
     }
 
     public function testAMemberCannotChangeTheDoNotSendList(): void
@@ -889,6 +910,8 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             'pass' => [CrewAdminController::PASS_ACTION, ['person_id' => '9']],
             'unban' => [CrewAdminController::UNBAN_ACTION, ['person_id' => '9']],
             'newcomer' => [CrewAdminController::NEWCOMER_ACTION, ['person_id' => '9', 'decision' => 'ok']],
+            'delete' => [CrewAdminController::PERSON_REMOVE_ACTION, ['person_id' => '9']],
+            'organizer' => [CrewAdminController::ORGANIZER_ACTION, ['person_id' => '9', 'organizer' => '1']],
         ];
     }
 
@@ -912,6 +935,166 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame('admin_no_person', $anonymised['notice']);
         self::assertSame([], $this->wpdb->updates);
         self::assertSame([], $this->wpdb->inserts);
+        self::assertSame([], $this->wpdb->deletes);
+    }
+
+    /**
+     * The person rows the eraser deleted, by table: wp-admin's Delete
+     * (PersonEraser::erase()) runs, the same as on the People page.
+     *
+     * @return list<string>
+     */
+    private function deletedTables(): array
+    {
+        return array_map(
+            static fn (array $d): string => (string) preg_replace('/^wp_eventcrew_/', '', $d['table']),
+            $this->wpdb->deletes
+        );
+    }
+
+    public function testAnOrganizerDeletesAPersonAsWpAdminDoes(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->personRow(8);   // find()
+
+        $result = $this->post(CrewAdminController::PERSON_REMOVE_ACTION, ['person_id' => '8']);
+
+        self::assertSame(['code' => CrewAdminController::OK, 'notice' => 'admin_person_removed'], $result);
+        self::assertContains(['table' => 'wp_eventcrew_people', 'where' => ['id' => 8]], $this->wpdb->deletes);
+        // The eraser's satellites go too: the same calls the wp-admin Delete makes.
+        $wpAdmin = $this->wpdb->deletes;
+        $this->wpdb->deletes = [];
+        $this->wpdb->nextRows[] = $this->personRow(8);
+        $this->eraserForWpAdmin()->erase(8);
+        self::assertSame($this->wpdb->deletes, $wpAdmin);
+        self::assertSame('Person deleted.', CrewAdminController::noticeText('admin_person_removed'));
+        self::assertSame('Delete a person', CrewAdminController::actionLabels()[CrewAdminController::PERSON_REMOVE_ACTION]);
+    }
+
+    private function eraserForWpAdmin(): PersonEraser
+    {
+        return new PersonEraser(
+            new PersonRepository(),
+            new AssignmentRepository(),
+            new RedemptionRepository(),
+            new CreditGrantRepository(),
+            new AuthTokenRepository(),
+            new NotificationsRepository()
+        );
+    }
+
+    public function testAnOrganizerCannotDeleteThemselves(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->organizerRow(1);   // find()
+
+        $result = $this->post(CrewAdminController::PERSON_REMOVE_ACTION, ['person_id' => '1']);
+
+        self::assertSame('admin_person_remove_self', $result['notice']);
+        self::assertSame([], $this->wpdb->deletes);
+        self::assertNotSame('', CrewAdminController::noticeText('admin_person_remove_self'));
+    }
+
+    public function testAnotherOrganizerCanBeDeletedWhileOneIsLeft(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->organizerRow(2);                              // find()
+        $this->wpdb->nextResults[] = [$this->organizerRow(1), $this->organizerRow(2)]; // organizers()
+
+        $result = $this->post(CrewAdminController::PERSON_REMOVE_ACTION, ['person_id' => '2']);
+
+        self::assertSame('admin_person_removed', $result['notice']);
+        self::assertContains(['table' => 'wp_eventcrew_people', 'where' => ['id' => 2]], $this->wpdb->deletes);
+    }
+
+    public function testTheLastOrganizerIsNeverDeleted(): void
+    {
+        // The request comes from an organizer whose flag is gone by now: the
+        // person to delete is the only organizer left.
+        $this->wpdb->nextRows[] = $this->organizerRow(2);   // find()
+        $this->wpdb->nextResults[] = [$this->organizerRow(2)];
+
+        $notice = $this->peopleScreen()->remove(Person::fromRow($this->organizerRow(1)), 2);
+
+        self::assertSame('admin_last_organizer', $notice);
+        self::assertSame([], $this->wpdb->deletes);
+        self::assertNotSame('', CrewAdminController::noticeText('admin_last_organizer'));
+    }
+
+    public function testAnOrganizerMakesSomeoneAnOrganizerAsTheBotDoes(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->personRow(8);   // find()
+        $fired = $this->recordActions();
+
+        $result = $this->post(CrewAdminController::ORGANIZER_ACTION, ['person_id' => '8', 'organizer' => '1']);
+
+        self::assertSame(['code' => CrewAdminController::OK, 'notice' => 'admin_organizer_on'], $result);
+        self::assertCount(1, $this->wpdb->updates);
+        self::assertSame('wp_eventcrew_people', $this->wpdb->updates[0]['table']);
+        self::assertSame(1, $this->wpdb->updates[0]['data']['is_organizer']);
+        self::assertSame(['id' => 8], $this->wpdb->updates[0]['where']);
+        // The Telegram menu is refreshed and the new organizer welcomed, as with /people.
+        self::assertContains([\EventCrew\Telegram\CommandMenu::ORGANIZER_CHANGED_HOOK, [8]], (array) $fired);
+        self::assertContains([\EventCrew\Support\RoleNotifier::ORGANIZER_HOOK, [8, 'Person 1']], (array) $fired);
+        self::assertSame('They are now an organizer.', CrewAdminController::noticeText('admin_organizer_on'));
+        self::assertSame(
+            'Make or remove an organizer',
+            CrewAdminController::actionLabels()[CrewAdminController::ORGANIZER_ACTION]
+        );
+    }
+
+    public function testAnOrganizerTakesTheFlagAwayWhileAnotherOrganizerIsLeft(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->organizerRow(2);                              // find()
+        $this->wpdb->nextResults[] = [$this->organizerRow(1), $this->organizerRow(2)]; // organizers()
+        $fired = $this->recordActions();
+
+        $result = $this->post(CrewAdminController::ORGANIZER_ACTION, ['person_id' => '2', 'organizer' => '0']);
+
+        self::assertSame('admin_organizer_off', $result['notice']);
+        self::assertSame(0, $this->wpdb->updates[0]['data']['is_organizer']);
+        self::assertSame(['id' => 2], $this->wpdb->updates[0]['where']);
+        self::assertContains([\EventCrew\Telegram\CommandMenu::ORGANIZER_CHANGED_HOOK, [2]], (array) $fired);
+        self::assertNotContains(\EventCrew\Support\RoleNotifier::ORGANIZER_HOOK, array_column((array) $fired, 0));
+    }
+
+    public function testAnOrganizerCannotTakeTheirOwnFlagAway(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->organizerRow(1);   // find()
+
+        $result = $this->post(CrewAdminController::ORGANIZER_ACTION, ['person_id' => '1', 'organizer' => '0']);
+
+        self::assertSame('admin_organizer_self', $result['notice']);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertNotSame('', CrewAdminController::noticeText('admin_organizer_self'));
+    }
+
+    public function testTheLastOrganizerKeepsTheFlag(): void
+    {
+        $this->wpdb->nextRows[] = $this->organizerRow(2);   // find()
+        $this->wpdb->nextResults[] = [$this->organizerRow(2)];
+
+        $notice = $this->peopleScreen()->setOrganizer(Person::fromRow($this->organizerRow(1)), 2, false);
+
+        self::assertSame('admin_last_organizer', $notice);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testSettingTheFlagItAlreadyHasChangesNothing(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->organizerRow(2);   // find()
+        $fired = $this->recordActions();
+
+        $result = $this->post(CrewAdminController::ORGANIZER_ACTION, ['person_id' => '2', 'organizer' => '1']);
+
+        self::assertSame('admin_organizer_on', $result['notice']);
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame([], (array) $fired);
+        self::assertNotSame('', CrewAdminController::noticeText('admin_organizer_off'));
     }
 
     /**
@@ -1087,7 +1270,20 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
     private function peopleScreen(): CrewAdminPeople
     {
-        return new CrewAdminPeople(new PersonRepository(), new CreditGrantRepository(), new RedemptionRepository(), $this->standing());
+        return new CrewAdminPeople(
+            new PersonRepository(),
+            new CreditGrantRepository(),
+            new RedemptionRepository(),
+            $this->standing(),
+            new PersonEraser(
+                new PersonRepository(),
+                new AssignmentRepository(),
+                new RedemptionRepository(),
+                new CreditGrantRepository(),
+                new AuthTokenRepository(),
+                new NotificationsRepository()
+            )
+        );
     }
 
     // --- the Roster screen: date picker, attendance, door, guests, buyers ---
@@ -2721,6 +2917,92 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         );
         self::assertStringNotContainsString('id="eventcrew-admin-people-list"', $html);
         self::assertStringNotContainsString('id="eventcrew-admin-people-results"', $html);
+        // The organizer flag and Delete are text links, each asking first.
+        self::assertStringContainsString('value="' . CrewAdminController::ORGANIZER_ACTION . '"', $html);
+        self::assertStringContainsString('name="organizer" value="1"', $html);
+        self::assertStringContainsString('Make organizer', $html);
+        self::assertStringContainsString('Make Person 8 an organizer?', $html);
+        self::assertStringContainsString('value="' . CrewAdminController::PERSON_REMOVE_ACTION . '"', $html);
+        self::assertStringContainsString(
+            'class="eventcrew-textlink eventcrew-textlink-danger">Delete this person</button>',
+            $html
+        );
+        self::assertStringContainsString('Delete Person 8 and their whole task history? This cannot be undone.', $html);
+    }
+
+    public function testAnOrganizerOpeningThemselvesHasNoOrganizerOrDeleteLink(): void
+    {
+        Functions\when('absint')->alias(static fn (mixed $n): int => abs((int) $n));
+        Functions\when('wp_unslash')->returnArg();
+        $_GET = ['person_id' => '1'];
+
+        try {
+            $html = $this->renderAs($this->organizerRow(1), function (): void {
+                $this->wpdb->nextRows[] = $this->organizerRow(1);
+                $this->wpdb->nextRows[] = $this->organizerRow(1);
+            });
+        } finally {
+            $_GET = [];
+        }
+
+        self::assertStringContainsString('Edit person', $html);
+        self::assertStringNotContainsString('value="' . CrewAdminController::ORGANIZER_ACTION . '"', $html);
+        self::assertStringNotContainsString('value="' . CrewAdminController::PERSON_REMOVE_ACTION . '"', $html);
+    }
+
+    public function testAnotherOrganizerOpenedHasRemoveAsOrganizer(): void
+    {
+        Functions\when('absint')->alias(static fn (mixed $n): int => abs((int) $n));
+        Functions\when('wp_unslash')->returnArg();
+        $_GET = ['person_id' => '2'];
+
+        try {
+            $html = $this->renderAs($this->organizerRow(1), function (): void {
+                $this->wpdb->nextRows[] = $this->organizerRow(1);
+                $this->wpdb->nextRows[] = $this->organizerRow(2);
+            });
+        } finally {
+            $_GET = [];
+        }
+
+        self::assertStringContainsString('name="organizer" value="0"', $html);
+        self::assertStringContainsString('Remove as organizer', $html);
+        self::assertStringContainsString('Remove Person 2 as an organizer?', $html);
+    }
+
+    public function testTheDoNotSendListHasAPagerThatKeepsItsPage(): void
+    {
+        Functions\when('absint')->alias(static fn (mixed $n): int => abs((int) $n));
+        $list = [];
+
+        for ($i = 1; $i <= CrewAdminFollowup::OPTOUT_PER_PAGE * 2 + 1; $i++) {
+            $list[sprintf('p%03d@example.com', $i)] = gmdate('Y-m-d H:i:s', 1767225600 + $i * 60);
+        }
+
+        $this->options[FollowupOptOut::OPTION] = $list;
+        $_GET = ['optout_page' => '2'];
+
+        try {
+            $card = strstr((string) strstr(
+                $this->subpanel($this->renderAs($this->organizerRow(1)), 'messages'),
+                'id="eventcrew-admin-optout"'
+            ), '</section>', true);
+        } finally {
+            $_GET = [];
+        }
+
+        self::assertIsString($card);
+        self::assertStringContainsString('Page 2 of 3', $card);
+        // (The add_query_arg stub keeps a false arg as 0; WordPress drops it.)
+        self::assertStringContainsString('optout_page=0#eventcrew-admin-optout">Previous</a>', $card);
+        self::assertStringContainsString('optout_page=3#eventcrew-admin-optout">Next</a>', $card);
+        // Removing an address comes back to this page.
+        self::assertMatchesRegularExpression(
+            '/name="redirect_to" value="[^"]*optout_page=2#eventcrew-admin-optout"/',
+            $card
+        );
+        self::assertStringContainsString(sprintf('p%03d@example.com', CrewAdminFollowup::OPTOUT_PER_PAGE + 1), $card);
+        self::assertStringNotContainsString(sprintf('p%03d@example.com', CrewAdminFollowup::OPTOUT_PER_PAGE * 2 + 1), $card);
     }
 
     public function testWithNoTasksTheRosterScreenHasNoDateCards(): void
@@ -3151,7 +3433,11 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringNotContainsString('followup_', $this->subpanel($html, 'door'));
     }
 
-    /** The do-not-send card is on Messages, right after the post-event email card, and posts back there. */
+    /**
+     * The do-not-send card is on Messages, right after the post-event email
+     * card, and posts back to itself (the crew app opens the screen that
+     * holds #eventcrew-admin-optout, which is Messages).
+     */
     public function testTheDoNotSendCardIsOnMessagesAfterThePostEventEmail(): void
     {
         $this->options[FollowupOptOut::OPTION] = ['gone@example.com' => '2026-11-01 10:00:00'];
@@ -3171,7 +3457,8 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('value="' . CrewAdminController::OPTOUT_ACTION . '"', $card);
         self::assertStringContainsString('value="remove"', $card);
         self::assertStringContainsString('return confirm(', $card);
-        self::assertStringContainsString('#eventcrew-admin-messages"', $card);
+        self::assertStringContainsString('#eventcrew-admin-optout"', $card);
+        self::assertStringNotContainsString('Page 1 of 1', $card);   // one page: no pager
         self::assertSame(1, substr_count(strstr($card, '</section>', true), 'wp-element-button'));
     }
 

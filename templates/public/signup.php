@@ -50,7 +50,7 @@ $eventcrew_manage_token = (string) ($view['manage_token'] ?? '');
  * the tab and its panel are then not in the page at all. Hiding them is only
  * tidiness - every admin action checks the organizer flag again on the server.
  */
-/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, members: array<int, string>, roster_label: string, roster: array<int, array{task_id: int, title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool, standing: string, at_risk: bool}>}>, roster_date: string, roster_upcoming: array<string, string>, roster_past: array<string, string>, roster_action: string, door_action: string, guest_action: string, buyers_action: string, mail_action: string, followup_action: string, statuses: array<string, string>, max_plus_ones: int, night: array{entrants: list<array{name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int, added_by: string}>, closed_by_hand: bool, event_reason: string, guests: list<array{id: int, name: string, plus_ones: int, note: string, email: string, added_by: string}>, buyers: list<string>, ticket_mail_buyers: string, ticket_mail_guests: string, ticket_mail_pending: string, mailbox: string, mail_last: string}, roles_action: string, add_action: string, roles: array<string, string>, add_tasks: array<int, string>, person_action: string, pass_action: string, unban_action: string, newcomer_action?: string, newcomers?: list<array{id: int, name: string, email: string, since: string, answers?: string}>, people: array{search: string, page: int, pages: int, total: int, list: list<array{id: int, name: string, email: string, verified: bool, organizer: bool, banned: bool, anonymized: bool}>, editing: ?array{person: \EventCrew\Models\Person, standing: string, at_risk: bool, credits: int, given: list<array{credits: int, note: string, granted_by: string, granted_at: string}>, spent: list<array{day: string, event: string, redeemed_at: string}>}}}|null $eventcrew_admin */
+/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, members: array<int, string>, roster_label: string, roster: array<int, array{task_id: int, title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool, standing: string, at_risk: bool}>}>, roster_date: string, roster_upcoming: array<string, string>, roster_past: array<string, string>, roster_action: string, door_action: string, guest_action: string, buyers_action: string, mail_action: string, followup_action: string, statuses: array<string, string>, max_plus_ones: int, night: array{entrants: list<array{name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int, added_by: string}>, closed_by_hand: bool, event_reason: string, guests: list<array{id: int, name: string, plus_ones: int, note: string, email: string, added_by: string}>, buyers: list<string>, ticket_mail_buyers: string, ticket_mail_guests: string, ticket_mail_pending: string, mailbox: string, mail_last: string}, roles_action: string, add_action: string, roles: array<string, string>, add_tasks: array<int, string>, person_action: string, pass_action: string, unban_action: string, person_remove_action?: string, organizer_action?: string, newcomer_action?: string, newcomers?: list<array{id: int, name: string, email: string, since: string, answers?: string}>, people: array{search: string, page: int, pages: int, total: int, list: list<array{id: int, name: string, email: string, verified: bool, organizer: bool, banned: bool, anonymized: bool}>, editing: ?array{person: \EventCrew\Models\Person, standing: string, at_risk: bool, credits: int, given: list<array{credits: int, note: string, granted_by: string, granted_at: string}>, spent: list<array{day: string, event: string, redeemed_at: string}>}}}|null $eventcrew_admin */
 $eventcrew_admin = is_array($view['admin'] ?? null) ? $view['admin'] : null;
 $eventcrew_ajax = admin_url('admin-ajax.php');
 // The URL to return to after each action: this very page. get_permalink() gives
@@ -1372,10 +1372,11 @@ if ($eventcrew_link_expired) {
             <div class="eventcrew-subpanel" id="eventcrew-admin-people" data-eventcrew-subpanel="people">
             <?php
             /*
-             * The People screen: the wp-admin People page without the organizer
-             * flag and without deleting. The search, the list page and the open
-             * person are in the page address, so every form here sends the page
-             * back to the same view.
+             * The People screen: the wp-admin People page, with the organizer
+             * flag and Delete as links under the open person's form. The
+             * search, the list page and the open person are in the page
+             * address, so every form here sends the page back to the same
+             * view.
              */
             $eventcrew_people = $eventcrew_admin['people'];
             $eventcrew_editing = $eventcrew_people['editing'];
@@ -1606,6 +1607,40 @@ if ($eventcrew_link_expired) {
                     <div class="eventcrew-card-body">
                         <?php echo $eventcrew_person_form; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped when built above. ?>
                     </div>
+                    <?php
+                    // The organizer flag and Delete, as links: never for the
+                    // organizer themselves (the server refuses those too).
+                    ?>
+                    <?php if (isset($eventcrew_admin['organizer_action'], $eventcrew_admin['person_remove_action']) && $eventcrew_edit_person->id !== (null === $eventcrew_person ? 0 : $eventcrew_person->id)) : ?>
+                        <?php
+                        $eventcrew_organizer_ask = $eventcrew_edit_person->isOrganizer
+                            /* translators: %s: person's name */
+                            ? __('Remove %s as an organizer? They lose the Admin tab and the organizer commands.', 'eventcrew')
+                            /* translators: %s: person's name */
+                            : __('Make %s an organizer? They get the Admin tab and the organizer commands.', 'eventcrew');
+                        /* translators: %s: person's name */
+                        $eventcrew_delete_ask = __('Delete %s and their whole task history? This cannot be undone.', 'eventcrew');
+                        ?>
+                        <div class="eventcrew-card-body eventcrew-me-actions">
+                            <form class="eventcrew-inline-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                                onsubmit="return confirm('<?php echo esc_js(sprintf($eventcrew_organizer_ask, $eventcrew_edit_person->name())); ?>');">
+                                <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['organizer_action']); ?>">
+                                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_people_back); ?>">
+                                <input type="hidden" name="person_id" value="<?php echo esc_attr((string) $eventcrew_edit_person->id); ?>">
+                                <input type="hidden" name="organizer" value="<?php echo $eventcrew_edit_person->isOrganizer ? '0' : '1'; ?>">
+                                <button type="submit" class="eventcrew-textlink"><?php $eventcrew_edit_person->isOrganizer ? esc_html_e('Remove as organizer', 'eventcrew') : esc_html_e('Make organizer', 'eventcrew'); ?></button>
+                            </form>
+                            <form class="eventcrew-inline-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                                onsubmit="return confirm('<?php echo esc_js(sprintf($eventcrew_delete_ask, $eventcrew_edit_person->name())); ?>');">
+                                <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['person_remove_action']); ?>">
+                                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_people_list); ?>">
+                                <input type="hidden" name="person_id" value="<?php echo esc_attr((string) $eventcrew_edit_person->id); ?>">
+                                <button type="submit" class="eventcrew-textlink eventcrew-textlink-danger"><?php esc_html_e('Delete this person', 'eventcrew'); ?></button>
+                            </form>
+                        </div>
+                    <?php endif; ?>
                 </section>
 
                 <section class="eventcrew-event eventcrew-admin-card">
@@ -2879,7 +2914,16 @@ if ($eventcrew_link_expired) {
             <?php endif; ?>
 
             <?php if (isset($eventcrew_admin['optout'])) : ?>
-                <?php $eventcrew_optout = $eventcrew_admin['optout']; ?>
+                <?php
+                $eventcrew_optout = $eventcrew_admin['optout'];
+                // The list's page stays in the address, so removing an
+                // address comes back to the same page (People's pager).
+                $eventcrew_optout_page = static fn (int $page): string => add_query_arg(
+                    ['optout_page' => $page > 1 ? $page : false],
+                    $eventcrew_here
+                ) . '#eventcrew-admin-optout';
+                $eventcrew_optout_here = $eventcrew_optout_page((int) $eventcrew_optout['page']);
+                ?>
             <div id="eventcrew-admin-optout">
             <section class="eventcrew-event eventcrew-admin-card">
                 <header class="eventcrew-event-head">
@@ -2903,24 +2947,34 @@ if ($eventcrew_link_expired) {
                                     ?>');">
                                     <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['optout_action']); ?>">
                                     <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_messages_here); ?>">
+                                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_optout_here); ?>">
                                     <input type="hidden" name="email" value="<?php echo esc_attr($eventcrew_optout_row['email']); ?>">
                                     <button type="submit" name="op" value="remove" class="eventcrew-textlink eventcrew-textlink-danger"><?php esc_html_e('Remove', 'eventcrew'); ?></button>
                                 </form>
                             </li>
                         <?php endforeach; ?>
                     </ul>
-                    <?php if ($eventcrew_optout['more'] > 0) : ?>
-                        <p class="eventcrew-card-body eventcrew-muted"><?php
-                        /* translators: %d: how many more addresses are on the list */
-                        echo esc_html(sprintf(__('and %d more', 'eventcrew'), $eventcrew_optout['more']));
-                        ?></p>
+                    <?php if ($eventcrew_optout['pages'] > 1) : ?>
+                        <p class="eventcrew-pager eventcrew-card-body">
+                            <?php if ($eventcrew_optout['page'] > 1) : ?>
+                                <a class="eventcrew-textlink" href="<?php echo esc_url($eventcrew_optout_page($eventcrew_optout['page'] - 1)); ?>"><?php esc_html_e('Previous', 'eventcrew'); ?></a>
+                            <?php endif; ?>
+                            <span class="eventcrew-muted">
+                                <?php
+                                /* translators: 1: this page of the list, 2: how many pages there are */
+                                echo esc_html(sprintf(__('Page %1$d of %2$d', 'eventcrew'), $eventcrew_optout['page'], $eventcrew_optout['pages']));
+                                ?>
+                            </span>
+                            <?php if ($eventcrew_optout['page'] < $eventcrew_optout['pages']) : ?>
+                                <a class="eventcrew-textlink" href="<?php echo esc_url($eventcrew_optout_page($eventcrew_optout['page'] + 1)); ?>"><?php esc_html_e('Next', 'eventcrew'); ?></a>
+                            <?php endif; ?>
+                        </p>
                     <?php endif; ?>
                 <?php endif; ?>
                 <form class="eventcrew-card-body eventcrew-admin-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                     <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['optout_action']); ?>">
                     <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_messages_here); ?>">
+                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_optout_page(1)); ?>">
                     <label for="eventcrew-admin-optout-email"><?php esc_html_e('Add an address', 'eventcrew'); ?></label>
                     <input id="eventcrew-admin-optout-email" type="email" name="email" required maxlength="191" autocomplete="off">
                     <p class="eventcrew-admin-actions">

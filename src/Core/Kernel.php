@@ -1166,7 +1166,8 @@ final class Kernel
                 $container->get(PersonRepository::class),
                 $container->get(CreditGrantRepository::class),
                 $container->get(RedemptionRepository::class),
-                $container->get(StandingCalculator::class)
+                $container->get(StandingCalculator::class),
+                $container->get(PersonEraser::class)
             )
         );
 
