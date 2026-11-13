@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.244
+Stable tag: 1.140.245
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.245 =
+* Crew app Admin: the Roster shows one card per task, and Roles has its own screen.
+* Post-event email: also goes to the crew who worked that night and to free-entry ticket holders (one email per address).
+* Sales desk: the top button is "Open sales desk" with a QR icon; organizers get a folded Organizer section with Close/Reopen free entry, a Holvi ticket file upload and the ticket email sends; the page is split into sections.
 
 = 1.140.244 =
 * Group chat: at the top or bottom of the messages, a swipe scrolls the page on.
@@ -2130,6 +2135,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.245 =
+No settings change.
 
 = 1.140.244 =
 No settings change.
