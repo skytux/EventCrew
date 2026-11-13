@@ -432,7 +432,7 @@ msgid_plural "%d subscribers."
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/public/signup.php:679
+#: templates/public/signup.php:680
 msgid "%d task coming"
 msgid_plural "%d tasks coming"
 msgstr[0] ""
@@ -458,7 +458,7 @@ msgid_plural "%d ticket buyers deleted."
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/public/signup.php:688
+#: templates/public/signup.php:689
 msgid "%d ticket"
 msgid_plural "%d tickets"
 msgstr[0] ""
@@ -2404,7 +2404,7 @@ msgstr ""
 msgid "Completed tasks a member works to earn one free-entry credit. Default 2."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:85 templates/public/signup.php:667
+#: src/Telegram/ProfileService.php:85 templates/public/signup.php:668
 #. translators: %d: completed tasks
 msgid "Completed tasks: %d"
 msgstr ""
@@ -3595,7 +3595,7 @@ msgstr ""
 msgid "Free-entry credits and tickets have no cash value. They can't be refunded, sold or paid out in any form; they can only be used to get a ticket for an eligible event."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:90 src/Telegram/TicketRedemptionService.php:172 templates/public/signup.php:671
+#: src/Telegram/ProfileService.php:90 src/Telegram/TicketRedemptionService.php:172 templates/public/signup.php:672
 #. translators: %d: free-entry credits
 msgid "Free-entry credits: %d"
 msgstr ""
@@ -4222,7 +4222,7 @@ msgstr ""
 msgid "How your crew signs off. It closes every notification email, and every Telegram message the person did not just ask for: reminders, calls, and news about their tasks, standing or access. Leave it blank for no sign-off."
 msgstr ""
 
-#: templates/public/signup.php:695
+#: templates/public/signup.php:696
 msgid "How your score works"
 msgstr ""
 
@@ -6817,7 +6817,7 @@ msgstr ""
 msgid "Recent tasks count for more than old ones."
 msgstr ""
 
-#: templates/public/signup.php:706
+#: templates/public/signup.php:707
 msgid "Recent tasks count for more than old ones. You’re rated once you’ve completed a few tasks, and you earn one free-entry credit for every two completed tasks."
 msgstr ""
 
@@ -8373,7 +8373,7 @@ msgstr ""
 msgid "Suggested by the AI from the description. Change it or clear it."
 msgstr ""
 
-#: templates/public/signup.php:627
+#: templates/public/signup.php:628
 msgid "Summary"
 msgstr ""
 
