@@ -907,11 +907,11 @@ msgstr ""
 msgid "A free-entry ticket can't be cancelled, but you can give it to someone else."
 msgstr ""
 
-#: src/Support/TicketRules.php:36 src/Telegram/TicketRedemptionService.php:562
+#: src/Support/TicketRules.php:36 src/Telegram/TicketRedemptionService.php:644
 msgid "A free-entry ticket can’t be cancelled."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:561
+#: src/Telegram/TicketRedemptionService.php:643
 msgid "A free-entry ticket can’t be cancelled. You can give it to someone else."
 msgstr ""
 
@@ -2648,16 +2648,16 @@ msgstr ""
 msgid "Credit redeemed — they’re on the door list."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:281
-#. translators: %s: the night, like "Sat 14 Nov · Dance Night"
+#: src/Telegram/TicketRedemptionService.php:213 src/Telegram/TicketRedemptionService.php:363
+#. translators: %s: the night, like Sat 14 Nov
 msgid "Credit spent on %s."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:294
+#: src/Telegram/TicketRedemptionService.php:376
 msgid "Credit spent — send /me tickets to see your ticket."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:293
+#: src/Telegram/TicketRedemptionService.php:375
 msgid "Credit spent — your ticket is in the next message."
 msgstr ""
 
@@ -3499,7 +3499,7 @@ msgstr ""
 msgid "First reminder (hours before)"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:1138
+#: src/Telegram/AssistantService.php:1143
 msgid "First sign up with /start."
 msgstr ""
 
@@ -3600,7 +3600,7 @@ msgstr ""
 msgid "Free entry is closed by the event itself (sold out, hidden or off). Change it in the event."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:692 src/Web/SignupController.php:1623
+#: src/Telegram/TicketRedemptionService.php:774 src/Web/SignupController.php:1623
 msgid "Free entry is closed for that date."
 msgstr ""
 
@@ -3648,12 +3648,12 @@ msgstr ""
 msgid "Free-entry credits and tickets have no cash value. They can't be refunded, sold or paid out in any form; they can only be used to get a ticket for an eligible event."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:90 src/Telegram/TicketRedemptionService.php:172 templates/public/signup.php:724
+#: src/Telegram/ProfileService.php:90 src/Telegram/TicketRedemptionService.php:254 templates/public/signup.php:724
 #. translators: %d: free-entry credits
 msgid "Free-entry credits: %d"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:208 src/Support/TicketMail.php:1976 src/Telegram/TicketRedemptionService.php:169
+#: src/Support/MessageTemplates.php:208 src/Support/TicketMail.php:1976 src/Telegram/TicketRedemptionService.php:251
 msgid "Free-entry ticket"
 msgstr ""
 
@@ -4021,7 +4021,7 @@ msgstr[1] ""
 msgid "Hi %1$s,\n\nConfirm your email to finish signing up for %2$s tasks.\n\nThe link works once and expires in a day. If you didn't ask for this, you can ignore this email."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:545
+#: src/Telegram/TicketRedemptionService.php:627
 #. translators: 1: name, 2: event date
 msgid "Hi %1$s,\n\nHere is your free-entry ticket for %2$s. Show it at the door."
 msgstr ""
@@ -4307,7 +4307,7 @@ msgstr ""
 msgid "I cannot do that for you here. Help in the top-right menu shows what you can do."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:1137
+#: src/Telegram/AssistantService.php:1142
 msgid "I cannot do that for you. /help lists what you can do."
 msgstr ""
 
@@ -4327,7 +4327,7 @@ msgstr ""
 msgid "I couldn’t find anyone by that name. Try their exact name or @mention them."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:1136
+#: src/Telegram/AssistantService.php:1141
 msgid "I do not know that. /help lists the commands, or ask an organizer."
 msgstr ""
 
@@ -4340,7 +4340,7 @@ msgstr ""
 msgid "I emailed you a transcript of my private chat with %s."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:1139
+#: src/Telegram/AssistantService.php:1144
 msgid "I have passed this chat on to the organizers."
 msgstr ""
 
@@ -4635,7 +4635,7 @@ msgstr ""
 msgid "Keep it"
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:341
+#: src/Telegram/TicketRedemptionService.php:423
 msgid "Keep my credit"
 msgstr ""
 
@@ -4664,7 +4664,7 @@ msgstr ""
 msgid "Kept: you are still on %s."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:317
+#: src/Telegram/TicketRedemptionService.php:399
 #. translators: %d: number of free-entry credits
 msgid "Kept: you have %d free-entry credit."
 msgid_plural "Kept: you have %d free-entry credits."
@@ -5620,7 +5620,7 @@ msgstr ""
 msgid "No tickets yet — sign up for a task or spend a credit."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:116
+#: src/Telegram/TicketRedemptionService.php:140
 msgid "No upcoming events to spend a credit on right now — check back when the next one is on the board."
 msgstr ""
 
@@ -6629,7 +6629,7 @@ msgstr ""
 msgid "Pick a role that still exists in Settings."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:175
+#: src/Telegram/TicketRedemptionService.php:257
 msgid "Pick an event:"
 msgstr ""
 
@@ -7141,7 +7141,7 @@ msgstr ""
 msgid "Retention period"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:1140
+#: src/Telegram/AssistantService.php:1145
 msgid "Right now I only understand commands: /help"
 msgstr ""
 
@@ -8061,7 +8061,7 @@ msgstr ""
 msgid "Settings: roles, reputation, notifications and their times, the Telegram bot, email, privacy, and the welcome message."
 msgstr ""
 
-#: src/Web/AssistantWebChanges.php:73
+#: src/Web/AssistantWebChanges.php:85
 msgid "Several match: %s. Write it more exactly."
 msgstr ""
 
@@ -8103,7 +8103,7 @@ msgstr ""
 msgid "Show the open tasks"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:470 src/Telegram/TicketRedemptionService.php:549 src/Telegram/TransferPage.php:456
+#: src/Support/MessageTemplates.php:470 src/Telegram/TicketRedemptionService.php:631 src/Telegram/TransferPage.php:456
 msgid "Show your ticket"
 msgstr ""
 
@@ -8381,8 +8381,8 @@ msgstr ""
 msgid "Spend a free-entry credit on"
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:355
-#. translators: %s: the night, like "Sat 14 Nov · Dance Night"
+#: src/Telegram/TicketRedemptionService.php:437
+#. translators: %s: the night, like Sat 14 Nov
 msgid "Spend a free-entry credit on %s?"
 msgstr ""
 
@@ -9086,8 +9086,8 @@ msgstr ""
 msgid "That button no longer works. Send /people again."
 msgstr ""
 
-#: src/Telegram/NightCommands.php:111 src/Telegram/PersonCommands.php:640 src/Telegram/TaskCommand.php:195 src/Web/AssistantWebChanges.php:36
-#: src/Web/AssistantWebChanges.php:52 src/Web/AssistantWebController.php:224 src/Web/AssistantWebController.php:229 src/Web/AssistantWebController.php:253
+#: src/Telegram/NightCommands.php:111 src/Telegram/PersonCommands.php:640 src/Telegram/TaskCommand.php:195 src/Web/AssistantWebChanges.php:44
+#: src/Web/AssistantWebChanges.php:64 src/Web/AssistantWebController.php:224 src/Web/AssistantWebController.php:229 src/Web/AssistantWebController.php:253
 msgid "That can no longer be done."
 msgstr ""
 
@@ -9156,7 +9156,7 @@ msgstr ""
 msgid "That event has no start date recorded, so its tasks cannot be scheduled. Set one on the event and try again."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:694 src/Web/SignupController.php:1625
+#: src/Telegram/TicketRedemptionService.php:776 src/Web/SignupController.php:1625
 msgid "That event is no longer available."
 msgstr ""
 
@@ -10822,7 +10822,7 @@ msgstr ""
 msgid "This ticket link is not valid."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:360
+#: src/Telegram/TicketRedemptionService.php:442
 #. translators: %d: the person's free-entry credits now
 msgid "This uses your only free-entry credit."
 msgid_plural "This uses 1 of your %d free-entry credits."
@@ -11882,6 +11882,10 @@ msgstr ""
 msgid "Which newcomer?"
 msgstr ""
 
+#: src/Telegram/TicketRedemptionService.php:174
+msgid "Which night? %s"
+msgstr ""
+
 #: src/Support/PrivacyPolicy.php:471
 msgid "Which notifications you have chosen to receive and on which channel, a record of which scheduled notices we have already sent you so we do not send them twice, and any note an organizer has added to your record."
 msgstr ""
@@ -12169,7 +12173,7 @@ msgstr ""
 msgid "Yes, delete"
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:340
+#: src/Telegram/TicketRedemptionService.php:422
 msgid "Yes, use a credit"
 msgstr ""
 
@@ -12190,7 +12194,7 @@ msgstr ""
 msgid "You already have 3 offers waiting. Cancel one first."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:693 src/Web/SignupController.php:1624
+#: src/Telegram/TicketRedemptionService.php:775 src/Web/SignupController.php:1624
 msgid "You already have a free-entry ticket for that night."
 msgstr ""
 
@@ -12401,11 +12405,11 @@ msgstr ""
 msgid "You have no coming tasks. See the open ones with /board."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:691 src/Web/SignupController.php:1622
+#: src/Telegram/TicketRedemptionService.php:773 src/Web/SignupController.php:1622
 msgid "You have no free-entry credits to spend."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:95
+#: src/Telegram/TicketRedemptionService.php:127
 #. translators: %d: tasks a person completes to earn one free-entry credit
 msgid "You have no free-entry credits yet — you earn one for every task you complete."
 msgid_plural "You have no free-entry credits yet — you earn one for every %d tasks you complete."
@@ -12567,7 +12571,7 @@ msgstr[1] ""
 msgid "Your first name (optional)"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:1881 src/Telegram/TicketRedemptionService.php:542
+#: src/Support/MessageTemplates.php:1881 src/Telegram/TicketRedemptionService.php:624
 msgid "Your free-entry ticket"
 msgstr ""
 
@@ -12699,6 +12703,10 @@ msgstr ""
 
 #: src/Support/MessageTemplates.php:2104 src/Support/TicketMail.php:1528
 msgid "Your ticket is cancelled"
+msgstr ""
+
+#: src/Telegram/TicketRedemptionService.php:215
+msgid "Your ticket is on the Tickets tab."
 msgstr ""
 
 #: src/Support/TicketMail.php:1564
@@ -13356,7 +13364,7 @@ msgid_plural "🎁 You’ve been given %d free-entry credits. Tap 🎟 Free-entr
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/MessageTemplates.php:471 src/Support/MessageTemplates.php:1233 src/Support/TicketTransferService.php:602 src/Telegram/TicketRedemptionService.php:519
+#: src/Support/MessageTemplates.php:471 src/Support/MessageTemplates.php:1233 src/Support/TicketTransferService.php:602 src/Telegram/TicketRedemptionService.php:601
 msgid "🎟 Show your ticket"
 msgstr ""
 
