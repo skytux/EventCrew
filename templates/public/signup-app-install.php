@@ -23,7 +23,7 @@
  *   the app, so the tab says plainly that the app is elsewhere now;
  * - notify: on the installed app's first opening from the Home Screen
  *   (once), Turn on notifications. It presses the
- *   Notifications card's own "Turn on notifications on this device" link
+ *   Notifications card's own "Notifications on this device" switch
  *   (signup-push.php), then opens that card so the person can choose the
  *   notices.
  *
@@ -124,7 +124,7 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
                             ?>
                         </span>
                     </li>
-                    <li><span><?php esc_html_e('In the app, turn on notifications: Menu → Settings → Notifications → Turn on notifications on this device.', 'eventcrew'); ?></span></li>
+                    <li><span><?php esc_html_e('In the app, turn on notifications: Menu → Settings → Notifications → Notifications on this device.', 'eventcrew'); ?></span></li>
                 </ol>
                 <p class="eventcrew-muted"><?php esc_html_e('On iPhone, notifications work after you add this page to your Home Screen.', 'eventcrew'); ?></p>
                 <p class="eventcrew-muted"><?php esc_html_e('No Add to Home Screen in the Share menu? Open this page in Safari and try again.', 'eventcrew'); ?></p>
@@ -143,13 +143,13 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
                             ?>
                         </span>
                     </li>
-                    <li><span><?php esc_html_e('In the app, turn on notifications: Menu → Settings → Notifications → Turn on notifications on this device.', 'eventcrew'); ?></span></li>
+                    <li><span><?php esc_html_e('In the app, turn on notifications: Menu → Settings → Notifications → Notifications on this device.', 'eventcrew'); ?></span></li>
                 </ol>
             </div>
             <div class="eventcrew-app-manual" data-eventcrew-app-how="desktop" hidden>
                 <p><?php esc_html_e('This browser does not install apps, but notifications work while this page is open in a tab.', 'eventcrew'); ?></p>
                 <ol class="eventcrew-app-how">
-                    <li><span><?php esc_html_e('Menu → Settings → Notifications → Turn on notifications on this device.', 'eventcrew'); ?></span></li>
+                    <li><span><?php esc_html_e('Menu → Settings → Notifications → Notifications on this device.', 'eventcrew'); ?></span></li>
                 </ol>
             </div>
             <div class="eventcrew-app-actions">
@@ -354,7 +354,7 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
     var notify = function () {
         var on = document.querySelector('[data-eventcrew-push-on]');
         var toggle = on && on.closest('[data-eventcrew-push-toggle]');
-        if (on && toggle && !toggle.hidden && !on.hidden && !on.disabled) { on.click(); }
+        if (on && toggle && !toggle.hidden && !on.disabled && 'true' !== on.getAttribute('aria-checked')) { on.click(); }
         close('notify');
     };
     part('notify').addEventListener('click', notify);

@@ -13666,11 +13666,8 @@ msgctxt "notification channel"
 msgid "App"
 msgstr "App"
 
-msgid "Turn on notifications on this device"
-msgstr "Slå på aviseringar på den här enheten"
-
-msgid "Turn off notifications on this device"
-msgstr "Stäng av aviseringar på den här enheten"
+msgid "Notifications on this device"
+msgstr "Aviseringar på den här enheten"
 
 msgid "Notifications are blocked for this site. Allow them in the browser settings."
 msgstr "Aviseringar är blockerade för den här webbplatsen. Tillåt dem i webbläsarens inställningar."
@@ -14053,12 +14050,12 @@ msgid "I cannot do that for you here. Help in the top-right menu shows what you 
 msgstr "Det kan jag inte göra åt dig här. Hjälp i menyn uppe till höger visar vad du kan göra."
 
 #: templates/public/signup-app-install.php:123 templates/public/signup-app-install.php:142
-msgid "In the app, turn on notifications: Menu → Settings → Notifications → Turn on notifications on this device."
-msgstr "Slå på aviseringar i appen: Meny → Inställningar → Aviseringar → Slå på aviseringar på den här enheten."
+msgid "In the app, turn on notifications: Menu → Settings → Notifications → Notifications on this device."
+msgstr "Slå på aviseringar i appen: Meny → Inställningar → Aviseringar → Aviseringar på den här enheten."
 
 #: templates/public/signup-app-install.php:148
-msgid "Menu → Settings → Notifications → Turn on notifications on this device."
-msgstr "Meny → Inställningar → Aviseringar → Slå på aviseringar på den här enheten."
+msgid "Menu → Settings → Notifications → Notifications on this device."
+msgstr "Meny → Inställningar → Aviseringar → Aviseringar på den här enheten."
 
 msgid "Hi %s"
 msgstr "Hej %s"

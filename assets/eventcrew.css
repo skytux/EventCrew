@@ -1397,6 +1397,36 @@
 .eventcrew-signup .eventcrew-app-openline[hidden] { display: none; }
 /* The error name after "Could not turn on notifications" (signup-push.php). */
 .eventcrew-signup .eventcrew-push-error { font-size: .85em; opacity: .8; }
+/* Notifications on this device: one on/off switch (signup-push.php). */
+.eventcrew-signup .eventcrew-push-row { margin: .5em 0; }
+.eventcrew-signup .eventcrew-switch {
+    display: flex; align-items: center; justify-content: space-between; gap: 1em;
+    width: 100%; min-height: 44px; margin: 0; padding: .35em 0;
+    background: none; border: 0; box-shadow: none; color: inherit;
+    font: inherit; font-size: 1em; text-align: left; text-transform: none; letter-spacing: normal;
+    cursor: pointer;
+}
+.eventcrew-signup .eventcrew-switch:hover, .eventcrew-signup .eventcrew-switch:focus { background: none; color: inherit; }
+.eventcrew-signup .eventcrew-switch-track {
+    position: relative; flex: none; width: 3em; height: 1.7em; border-radius: 1em;
+    background: color-mix(in srgb, currentColor 25%, transparent);
+    transition: background-color .2s;
+}
+.eventcrew-signup .eventcrew-switch-knob {
+    position: absolute; top: .2em; left: .2em; width: 1.3em; height: 1.3em; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+    transition: transform .2s;
+}
+.eventcrew-signup .eventcrew-switch[aria-checked="true"] .eventcrew-switch-track { background: var(--eventcrew-accent, #f9b364); }
+.eventcrew-signup .eventcrew-switch[aria-checked="true"] .eventcrew-switch-knob { transform: translateX(1.3em); }
+.eventcrew-signup .eventcrew-switch:focus-visible .eventcrew-switch-track { outline: 2px solid var(--eventcrew-accent, #f9b364); outline-offset: 2px; }
+.eventcrew-signup .eventcrew-switch:disabled { cursor: progress; opacity: 1; }
+.eventcrew-signup .eventcrew-switch.is-busy .eventcrew-switch-knob { animation: eventcrew-switch-pulse 1s ease-in-out infinite; }
+@keyframes eventcrew-switch-pulse { 50% { opacity: .4; } }
+@media (prefers-reduced-motion: reduce) {
+    .eventcrew-signup .eventcrew-switch-track, .eventcrew-signup .eventcrew-switch-knob { transition: none; }
+    .eventcrew-signup .eventcrew-switch.is-busy .eventcrew-switch-knob { animation: none; opacity: .5; }
+}
 .eventcrew-signup .tg-auth-button {
     box-sizing: border-box;
     display: flex;

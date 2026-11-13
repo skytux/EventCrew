@@ -10741,11 +10741,8 @@ msgctxt "notification channel"
 msgid "App"
 msgstr "Sovellus"
 
-msgid "Turn on notifications on this device"
-msgstr "Laita ilmoitukset päälle tällä laitteella"
-
-msgid "Turn off notifications on this device"
-msgstr "Laita ilmoitukset pois tältä laitteelta"
+msgid "Notifications on this device"
+msgstr "Ilmoitukset tällä laitteella"
 
 msgid "Notifications are blocked for this site. Allow them in the browser settings."
 msgstr "Ilmoitukset on estetty tältä sivustolta. Salli ne selaimen asetuksista."
@@ -11122,12 +11119,12 @@ msgid "I cannot do that for you here. Help in the top-right menu shows what you 
 msgstr "En voi tehdä sitä puolestasi täällä. Yläkulman valikon Ohje kertoo, mitä voit tehdä."
 
 #: templates/public/signup-app-install.php:123 templates/public/signup-app-install.php:142
-msgid "In the app, turn on notifications: Menu → Settings → Notifications → Turn on notifications on this device."
-msgstr "Laita sovelluksessa ilmoitukset päälle: Valikko → Asetukset → Ilmoitukset → Laita ilmoitukset päälle tällä laitteella."
+msgid "In the app, turn on notifications: Menu → Settings → Notifications → Notifications on this device."
+msgstr "Laita sovelluksessa ilmoitukset päälle: Valikko → Asetukset → Ilmoitukset → Ilmoitukset tällä laitteella."
 
 #: templates/public/signup-app-install.php:148
-msgid "Menu → Settings → Notifications → Turn on notifications on this device."
-msgstr "Valikko → Asetukset → Ilmoitukset → Laita ilmoitukset päälle tällä laitteella."
+msgid "Menu → Settings → Notifications → Notifications on this device."
+msgstr "Valikko → Asetukset → Ilmoitukset → Ilmoitukset tällä laitteella."
 
 msgid "Hi %s"
 msgstr "Hei %s"

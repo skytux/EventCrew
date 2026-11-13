@@ -2,24 +2,23 @@
 
 /**
  * App notifications (Web Push) for this device, in the Notifications card:
- * one text link that turns them on or off here, and the line that says why
- * it cannot when it cannot. The App column of the table above says which
+ * one switch that shows whether they are on here and turns them on or off,
+ * and the line that says why it cannot when it cannot. The App column of the table above says which
  * notices a device that turned them on gets.
  *
  * All hidden in the HTML; the script shows what fits this browser:
- * - push supported: the link, as Turn on or Turn off by whether this
- *   browser has a subscription (sent to the server again on each visit,
+ * - push supported: the switch, on when this browser has a subscription (sent to the server again on each visit,
  *   so a renewed one stays reachable);
  * - permission blocked: the line on how to allow it;
  * - an iPhone or iPad outside the Home Screen app: the line on adding it
  *   there first (Safari has push only in the installed app, iOS 16.4+).
  *
  * Every outcome of a tap shows (Owner 2026-11-13: a tap once did nothing
- * visible): the link waits disabled with "…"; a question the phone did not
+ * visible): the switch waits disabled with its knob pulsing; a question the phone did not
  * show (dismissed, Chrome's quiet permission UI, or no answer in 8 seconds)
  * says where to allow it; blocked shows the blocked line; an error shows the
  * failed line with the error's name, for a report. A service worker not
- * ready after 5 seconds still shows the link, and a tap says to reload.
+ * ready after 5 seconds still shows the switch, and a tap says to reload.
  *
  * Turning them on here with Telegram linked and the question never asked
  * also asks where notifications should come (signup-channels.php).
@@ -49,9 +48,11 @@ if ('' === $eventcrew_push_key) {
     data-action="<?php echo esc_attr(\EventCrew\Web\PushController::ACTION); ?>"
     data-csrf="<?php echo esc_attr($eventcrew_csrf); ?>"
     data-key="<?php echo esc_attr($eventcrew_push_key); ?>">
-    <p class="eventcrew-hint" data-eventcrew-push-toggle hidden>
-        <button type="button" class="eventcrew-textlink" data-eventcrew-push-on><?php esc_html_e('Turn on notifications on this device', 'eventcrew'); ?></button>
-        <button type="button" class="eventcrew-textlink" data-eventcrew-push-off hidden><?php esc_html_e('Turn off notifications on this device', 'eventcrew'); ?></button>
+    <p class="eventcrew-push-row" data-eventcrew-push-toggle hidden>
+        <button type="button" class="eventcrew-switch" role="switch" aria-checked="false" data-eventcrew-push-on>
+            <span class="eventcrew-switch-label"><?php esc_html_e('Notifications on this device', 'eventcrew'); ?></span>
+            <span class="eventcrew-switch-track" aria-hidden="true"><span class="eventcrew-switch-knob"></span></span>
+        </button>
     </p>
     <p class="eventcrew-muted" data-eventcrew-push-blocked hidden><?php esc_html_e('Notifications are blocked for this site. Allow them in the browser settings.', 'eventcrew'); ?></p>
     <p class="eventcrew-muted" data-eventcrew-push-ios hidden><?php esc_html_e('On iPhone, notifications work after you add this page to your Home Screen.', 'eventcrew'); ?></p>
@@ -65,7 +66,8 @@ if ('' === $eventcrew_push_key) {
     var box = document.querySelector('[data-eventcrew-push]');
     if (!box) { return; }
     var part = function (name) { return box.querySelector('[data-eventcrew-push-' + name + ']'); };
-    var toggle = part('toggle'), on = part('on'), off = part('off');
+    var toggle = part('toggle'), on = part('on');
+    var isOn = function () { return 'true' === on.getAttribute('aria-checked'); };
     var ua = navigator.userAgent || '';
     var ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
     var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
@@ -95,7 +97,7 @@ if ('' === $eventcrew_push_key) {
         return fetch(box.dataset.ajax, { method: 'POST', body: data, credentials: 'same-origin' })
             .then(function (r) { if (!r.ok) { throw new Error(String(r.status)); } return r; });
     };
-    // The lines under the link: at most one of these shows at a time.
+    // The lines under the switch: at most one of these shows at a time.
     var lines = ['failed', 'dismissed', 'loading', 'stuck'];
     var only = function (name) {
         lines.forEach(function (n) { part(n).hidden = n !== name; });
@@ -104,14 +106,13 @@ if ('' === $eventcrew_push_key) {
         only('');
         part('blocked').hidden = 'denied' !== Notification.permission;
         toggle.hidden = 'denied' === Notification.permission && !subscribed;
-        on.hidden = subscribed;
-        off.hidden = !subscribed;
+        on.setAttribute('aria-checked', subscribed ? 'true' : 'false');
     };
-    // Waiting: the link disabled, with "…" after its words.
+    // Waiting: the switch disabled, its knob pulsing.
     var busy = function (link, waiting) {
-        if (!link.dataset.label) { link.dataset.label = link.textContent; }
         link.disabled = waiting;
-        link.textContent = waiting ? link.dataset.label + ' …' : link.dataset.label;
+        link.classList.toggle('is-busy', waiting);
+        link.setAttribute('aria-busy', waiting ? 'true' : 'false');
     };
     // The failed line, with the error's name ("(NotAllowedError)") to report.
     var failed = function (err) {
@@ -119,13 +120,12 @@ if ('' === $eventcrew_push_key) {
         if ('Error' === name && err.message) { name += ' ' + String(err.message); }
         part('error').textContent = name ? '(' + name + ')' : '';
         busy(on, false);
-        busy(off, false);
         only('failed');
     };
 
     var reg = null;
 
-    // The Crew app's service worker. Not ready in 5 seconds: the link shows
+    // The Crew app's service worker. Not ready in 5 seconds: the switch shows
     // anyway, and a tap says to reload (below), rather than nothing at all.
     var notReady = setTimeout(function () { if (!reg) { show(false); } }, 5000);
     navigator.serviceWorker.ready.then(function (ready) {
@@ -138,10 +138,19 @@ if ('' === $eventcrew_push_key) {
         });
     });
 
+    var turnOff = function () {
+        busy(on, true);
+        reg.pushManager.getSubscription().then(function (sub) {
+            if (!sub) { return null; }
+            return post('unsubscribe', sub).catch(function () {}).then(function () { return sub.unsubscribe(); });
+        }).then(function () { busy(on, false); show(false); }).catch(failed);
+    };
+
     on.addEventListener('click', function () {
         if (on.disabled) { return; }
         if (!reg) { only('loading'); return; }
         only('');
+        if (isOn()) { turnOff(); return; }
         busy(on, true);
         // No answer in 8 seconds: the phone did not show the question.
         var answered = false;
@@ -204,15 +213,5 @@ if ('' === $eventcrew_push_key) {
         });
     });
 
-    off.addEventListener('click', function () {
-        if (off.disabled) { return; }
-        if (!reg) { only('loading'); return; }
-        only('');
-        busy(off, true);
-        reg.pushManager.getSubscription().then(function (sub) {
-            if (!sub) { return null; }
-            return post('unsubscribe', sub).catch(function () {}).then(function () { return sub.unsubscribe(); });
-        }).then(function () { busy(off, false); show(false); }).catch(failed);
-    });
 })();
 </script>

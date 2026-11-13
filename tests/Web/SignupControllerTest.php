@@ -804,6 +804,11 @@ final class SignupControllerTest extends TestCase
         $html = (string) ob_get_clean();
 
         self::assertStringContainsString('data-key="BPublicKey"', $html);
+        // One on/off switch (Owner 2026-11-13), not two links.
+        self::assertStringContainsString('role="switch" aria-checked="false" data-eventcrew-push-on>', $html);
+        self::assertStringContainsString('Notifications on this device', $html);
+        self::assertStringNotContainsString('data-eventcrew-push-off', $html);
+        self::assertStringContainsString('data-eventcrew-push-stuck hidden>', $html);
         self::assertStringContainsString('data-eventcrew-push-dismissed hidden>Your phone did not show the question. Allow notifications for this site in the browser', $html);
         self::assertStringContainsString('data-eventcrew-push-loading hidden>The app is still loading. Reload the page and try again.</p>', $html);
         self::assertStringContainsString('Could not turn on notifications. Try again. <span class="eventcrew-push-error" data-eventcrew-push-error></span>', $html);
