@@ -57,6 +57,7 @@ if ('' === $eventcrew_push_key) {
     <p class="eventcrew-muted" data-eventcrew-push-ios hidden><?php esc_html_e('On iPhone, notifications work after you add this page to your Home Screen.', 'eventcrew'); ?></p>
     <p class="eventcrew-muted" data-eventcrew-push-dismissed hidden><?php esc_html_e("Your phone did not show the question. Allow notifications for this site in the browser's site settings, then try again.", 'eventcrew'); ?></p>
     <p class="eventcrew-muted" data-eventcrew-push-loading hidden><?php esc_html_e('The app is still loading. Reload the page and try again.', 'eventcrew'); ?></p>
+    <p class="eventcrew-muted" data-eventcrew-push-stuck hidden><?php esc_html_e("The browser did not finish turning on notifications. In the phone's Settings → Apps → your browser → Notifications, allow them, then try again.", 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
     <p class="eventcrew-muted" data-eventcrew-push-failed hidden><?php esc_html_e('Could not turn on notifications. Try again.', 'eventcrew'); ?> <span class="eventcrew-push-error" data-eventcrew-push-error></span></p>
 </div>
 <script>
@@ -95,7 +96,7 @@ if ('' === $eventcrew_push_key) {
             .then(function (r) { if (!r.ok) { throw new Error(String(r.status)); } return r; });
     };
     // The lines under the link: at most one of these shows at a time.
-    var lines = ['failed', 'dismissed', 'loading'];
+    var lines = ['failed', 'dismissed', 'loading', 'stuck'];
     var only = function (name) {
         lines.forEach(function (n) { part(n).hidden = n !== name; });
     };
@@ -169,7 +170,19 @@ if ('' === $eventcrew_push_key) {
             }
             only('');
             busy(on, true);
-            return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key() })
+            // Some browsers (Samsung Internet without Android's permission for
+            // the browser app) never answer subscribe(): stop after 5 seconds.
+            return new Promise(function (resolve, reject) {
+                var stuck = setTimeout(function () {
+                    var err = new Error('subscribe');
+                    err.name = 'Timeout';
+                    reject(err);
+                }, 5000);
+                reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key() }).then(
+                    function (sub) { clearTimeout(stuck); resolve(sub); },
+                    function (err) { clearTimeout(stuck); reject(err); }
+                );
+            })
                 .then(function (sub) { return post('subscribe', sub); })
                 .then(function (r) { return r.json().catch(function () { return {}; }); })
                 .then(function (body) {
@@ -182,6 +195,11 @@ if ('' === $eventcrew_push_key) {
         }).catch(function (err) {
             answered = true;
             clearTimeout(wait);
+            if (err && 'Timeout' === err.name) {
+                busy(on, false);
+                only('stuck');
+                return;
+            }
             failed(err);
         });
     });

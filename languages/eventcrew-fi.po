@@ -11150,3 +11150,7 @@ msgid "%d ticket"
 msgid_plural "%d tickets"
 msgstr[0] "%d lippu"
 msgstr[1] "%d lippua"
+
+#: templates/public/signup-push.php
+msgid "The browser did not finish turning on notifications. In the phone's Settings → Apps → your browser → Notifications, allow them, then try again."
+msgstr "Selain ei saanut ilmoituksia päälle. Salli ne puhelimen asetuksissa: Sovellukset → selaimesi → Ilmoitukset. Yritä sitten uudelleen."

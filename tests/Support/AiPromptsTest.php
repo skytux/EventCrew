@@ -64,13 +64,21 @@ final class AiPromptsTest extends TestCase
         self::assertFalse(AiPrompts::isChanged(AiPrompts::BOARD_DJ));
     }
 
-    public function testAnEmptyTextOrTheBuiltInTextIsNotKept(): void
+    public function testAnEmptiedPromptStaysEmptyUntilReset(): void
     {
-        AiPrompts::save(AiPrompts::PRACTICAL, 'Changed.');
-        AiPrompts::save(AiPrompts::PRACTICAL, '   ');
+        AiPrompts::save(AiPrompts::RULES_FI, '   ');
 
-        self::assertFalse(AiPrompts::isChanged(AiPrompts::PRACTICAL));
+        self::assertTrue(AiPrompts::isChanged(AiPrompts::RULES_FI));
+        self::assertSame('', AiPrompts::raw(AiPrompts::RULES_FI));
+        self::assertStringNotContainsString('{rules_fi}', AiPrompts::get(AiPrompts::TRANSLATE));
 
+        AiPrompts::reset(AiPrompts::RULES_FI);
+
+        self::assertSame(AiPrompts::DEFAULTS[AiPrompts::RULES_FI], AiPrompts::raw(AiPrompts::RULES_FI));
+    }
+
+    public function testTheBuiltInTextIsNotKept(): void
+    {
         AiPrompts::save(AiPrompts::FOLLOWUP, AiPrompts::DEFAULTS[AiPrompts::FOLLOWUP]);
 
         self::assertFalse(AiPrompts::isChanged(AiPrompts::FOLLOWUP));

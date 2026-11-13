@@ -10,9 +10,9 @@ namespace EventCrew\Support;
  *
  * Each prompt has a built-in text (DEFAULTS). An administrator can replace it;
  * the replacement is kept in OPTION by the prompt's key, and "Reset to
- * built-in" removes it again. A replacement that is empty or the same as the
- * built-in text is not kept, so the built-in text stays in use and a later
- * version of the plugin can change it.
+ * built-in" removes it again. An emptied prompt is kept as empty (the model
+ * gets no text for it, e.g. no {rules_fi}). A replacement that is the same as
+ * the built-in text is not kept, so a later version of the plugin can change it.
  *
  * A prompt may contain {rules} and {rules_fi}: they become the texts of the
  * RULES and RULES_FI prompts, so the shared rules are written once. With the
@@ -165,7 +165,7 @@ final class AiPrompts
         $text = self::clean($text);
         $stored = self::stored();
 
-        if ('' === $text || $text === self::DEFAULTS[$key]) {
+        if ($text === self::DEFAULTS[$key]) {
             unset($stored[$key]);
         } else {
             $stored[$key] = $text;
@@ -247,7 +247,7 @@ final class AiPrompts
         $clean = [];
 
         foreach (is_array($stored) ? $stored : [] as $key => $text) {
-            if (isset(self::DEFAULTS[$key]) && is_string($text) && '' !== trim($text)) {
+            if (isset(self::DEFAULTS[$key]) && is_string($text)) {
                 $clean[(string) $key] = $text;
             }
         }
