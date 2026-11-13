@@ -56,6 +56,8 @@ final class AssistantWebActions
     public const ADMIN_FOLLOWUP = 'eventcrew-admin-followup-card';
     public const ADMIN_BOARD = 'eventcrew-admin-board';
     public const ADMIN_OPEN_TASK = 'eventcrew-admin-open-task';
+    public const ADMIN_OPTOUT = 'eventcrew-admin-optout';
+    public const ADMIN_AI_TEXTS = 'eventcrew-admin-aitexts';
 
     /** Hosts whose links a web answer never carries. */
     private const TELEGRAM_HOSTS = ['t.me', 'telegram.me', 'telegram.dog', 'telegram.org'];
@@ -146,6 +148,30 @@ final class AssistantWebActions
         '/deleteperson',
     ];
 
+    /**
+     * parityA: the Admin tab's other changes (AssistantWebAdmin), run after
+     * Confirm with text after the command. Alone, /optout and /aitext open
+     * their Admin card (VIEWS_PARITY_A); the others need the text.
+     */
+    private const CHANGES_PARITY_A = [
+        '/atriskpass',
+        '/addperson',
+        '/editperson',
+        '/editrole',
+        '/optout',
+        '/aitext',
+    ];
+
+    /** parityA: the Admin card each of CHANGES_PARITY_A opens alone. */
+    private const VIEWS_PARITY_A = [
+        '/atriskpass' => self::ADMIN_PEOPLE,
+        '/addperson' => self::ADMIN_PEOPLE,
+        '/editperson' => self::ADMIN_PEOPLE,
+        '/editrole' => self::ADMIN_ROLES,
+        '/optout' => self::ADMIN_OPTOUT,
+        '/aitext' => self::ADMIN_AI_TEXTS,
+    ];
+
     /** "/newcomer" runs here with OK or No; alone it opens the waiting list. */
     private const NEWCOMER_CHANGES = ['ok', 'no'];
 
@@ -230,6 +256,11 @@ final class AssistantWebActions
             return self::adminPlan($head, $rest, $today);
         }
 
+        // parityA: alone, the Admin card.
+        if ($organizer && isset(self::VIEWS_PARITY_A[$head])) {
+            return ['kind' => self::GOTO, 'targets' => [self::VIEWS_PARITY_A[$head], self::ADMIN_PANEL]];
+        }
+
         return ['kind' => self::NONE];
     }
 
@@ -250,7 +281,7 @@ final class AssistantWebActions
             return in_array(strtolower((string) strtok($rest, ' ')), self::NEWCOMER_CHANGES, true);
         }
 
-        if (in_array($head, self::CHANGES_WITH_TEXT, true)) {
+        if (in_array($head, self::CHANGES_WITH_TEXT, true) || in_array($head, self::CHANGES_PARITY_A, true)) {
             return '' !== trim($rest);
         }
 

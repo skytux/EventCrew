@@ -48,7 +48,9 @@ final class AssistantWebChanges implements WebChanges
         private readonly NewsletterCommand $newsletter,
         private readonly FollowupCommand $followup,
         private readonly MemberCommands $members,
-        private readonly AssistantWebPeople $personChanges
+        private readonly AssistantWebPeople $personChanges,
+        // parityA: the Admin tab's other changes.
+        private readonly ?AssistantWebAdmin $adminChanges = null
     ) {
     }
 
@@ -80,6 +82,10 @@ final class AssistantWebChanges implements WebChanges
             'newsletter' === $head => $this->newsletter->prepareWeb($rest),
             'followup' === $head => $this->followup->prepareWeb($rest),
             in_array($head, AssistantWebPeople::COMMANDS, true) => $this->personChanges->prepare($organizer, $head, $rest),
+            // parityA
+            in_array($head, AssistantWebAdmin::COMMANDS, true) => null === $this->adminChanges
+                ? self::gone()
+                : $this->adminChanges->prepare($organizer, $head, $rest),
             default => $this->tasks->prepareWeb($head, $rest),
         };
     }
@@ -97,6 +103,9 @@ final class AssistantWebChanges implements WebChanges
             in_array($head, PersonCommands::WEB, true) => $this->people->chooseWeb($state),
             TellCommand::COMMAND === $head => $this->tell->chooseWeb($organizer, $state),
             in_array($head, AssistantWebPeople::COMMANDS, true) => $this->personChanges->choose($organizer, $state),
+            // parityA
+            in_array($head, AssistantWebAdmin::COMMANDS, true) && null !== $this->adminChanges
+                => $this->adminChanges->choose($organizer, $state),
             default => self::gone(),
         };
     }
@@ -128,6 +137,10 @@ final class AssistantWebChanges implements WebChanges
             'newsletter' === $head => $this->newsletter->runWeb($organizer, $state),
             'followup' === $head => $this->followup->runWeb($organizer, $state),
             in_array($head, AssistantWebPeople::COMMANDS, true) => $this->personChanges->run($organizer, $state),
+            // parityA
+            in_array($head, AssistantWebAdmin::COMMANDS, true) => null === $this->adminChanges
+                ? ['changed' => false, 'text' => __('That can no longer be done.', 'eventcrew')]
+                : $this->adminChanges->run($organizer, $state),
             default => $this->tasks->runWeb($state),
         };
     }

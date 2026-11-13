@@ -889,6 +889,13 @@ final class AssistantService implements WebAssistant
                 . ' /stop email, /newboard, /sendtickets (or /sendtickets cancel) and /tell task ; message.'
                 . ' Use names as the organizer wrote them: the bot finds the person, asks with buttons when'
                 . ' unsure and confirms every change. For /tell keep the message word for word.';
+            // parityA
+            $lines[] = '- The Admin tab\'s other changes are commands too, and each asks with buttons and confirms:'
+                . ' credits (menu:gift person ; credits), roles (menu:roles add|remove role ; person), the organizer'
+                . ' role (/organizer on|off person), deleting a person (/deleteperson), the at-risk pass past the'
+                . ' sign-up gate (/atriskpass), adding or changing a person (/addperson, /editperson), a role\'s'
+                . ' settings (/editrole), the post-event email\'s do-not-send list (/optout) and the AI texts of'
+                . ' the coming events (/aitext). A language change is menu:language with the code.';
         }
 
         if (! $web) {
@@ -1044,6 +1051,12 @@ final class AssistantService implements WebAssistant
                 . ' date or name in it), and the page then says it is not done. So "reply" never says a change is'
                 . ' done, made, sent or saved, and never says "not done yet" or "open it here" for a change it'
                 . ' gives the line for: the page asks.';
+            // parityA
+            $lines[] = '- For an organizer, these also run on Confirm here: the at-risk pass past the sign-up gate'
+                . ' (/atriskpass), adding a person (/addperson), changing a person\'s name, email or notes'
+                . ' (/editperson), changing a role\'s settings (/editrole), the post-event email\'s do-not-send'
+                . ' list (/optout add or remove) and an event\'s AI text (/aitext). /optout and /aitext alone'
+                . ' open their Admin card.';
         }
 
         return $lines;

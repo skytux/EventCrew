@@ -11418,3 +11418,111 @@ msgid "Give %1$d credit to %2$s? They are told."
 msgid_plural "Give %1$d credits to %2$s? They are told."
 msgstr[0] "Annetaanko %1$d vapaalippu henkilölle %2$s? Hänelle kerrotaan."
 msgstr[1] "Annetaanko %1$d vapaalippua henkilölle %2$s? Hänelle kerrotaan."
+
+# parityA
+msgid "/gift name ; 1 ; reason – give credits; /role add role ; name – give a role"
+msgstr "/gift nimi ; 1 ; syy – anna vapaalippuja; /role add rooli ; nimi – anna rooli"
+
+# parityA
+msgid "/organizer on name – make an organizer (off ends it); /deleteperson name"
+msgstr "/organizer on nimi – tee järjestäjäksi (off lopettaa); /deleteperson nimi"
+
+# parityA
+msgid "/atriskpass name – a member at risk may sign up once more"
+msgstr "/atriskpass nimi – vaarassa oleva jäsen saa ilmoittautua vielä kerran"
+
+# parityA
+msgid "/addperson name ; email – add a person; /editperson name ; notes text"
+msgstr "/addperson nimi ; sähköposti – lisää henkilö; /editperson nimi ; notes teksti"
+
+# parityA
+msgid "/editrole role ; people 3 – change a role's settings"
+msgstr "/editrole rooli ; people 3 – muuta roolin asetuksia"
+
+# parityA
+msgid "/optout – the post-event email's do-not-send list (add, remove)"
+msgstr "/optout – jälkiviestin älä lähetä -lista (add, remove)"
+
+# parityA
+msgid "/aitext – the coming events' AI texts; write one by hand or use the AI's again"
+msgstr "/aitext – tulevien tapahtumien tekoälytekstit; kirjoita itse tai käytä taas tekoälyn tekstiä"
+
+# parityA
+msgid "Give credits: /gift name ; credits ; reason\nExample: /gift Milla ; 1 ; Helped at the bar\nThe reason is optional."
+msgstr "Anna vapaalippuja: /gift nimi ; määrä ; syy\nEsimerkki: /gift Milla ; 1 ; Auttoi baarissa\nSyy ei ole pakollinen."
+
+# parityA
+msgid "Give or take a role: /role add role ; name, /role remove role ; name\nExample: /role add DJ ; Milla"
+msgstr "Anna tai ota rooli: /role add rooli ; nimi, /role remove rooli ; nimi\nEsimerkki: /role add DJ ; Milla"
+
+# parityA
+msgid "Make someone an organizer, or stop it: /organizer on name, /organizer off name\nExample: /organizer on Milla"
+msgstr "Tee joku järjestäjäksi tai lopeta se: /organizer on nimi, /organizer off nimi\nEsimerkki: /organizer on Milla"
+
+# parityA
+msgid "Delete a person and erase their data: /deleteperson name\nExample: /deleteperson Milla\nThis cannot be undone."
+msgstr "Poista henkilö ja hänen tietonsa: /deleteperson nimi\nEsimerkki: /deleteperson Milla\nTätä ei voi perua."
+
+# parityA
+msgid "Let someone at risk sign up once more: /atriskpass name\nExample: /atriskpass Milla"
+msgstr "Anna vaarassa olevan ilmoittautua vielä kerran: /atriskpass nimi\nEsimerkki: /atriskpass Milla"
+
+# parityA
+msgid "Add a person: /addperson name ; email ; notes\nExample: /addperson Milla Virtanen ; milla@example.com\nThe notes are optional."
+msgstr "Lisää henkilö: /addperson nimi ; sähköposti ; muistiinpanot\nEsimerkki: /addperson Milla Virtanen ; milla@example.com\nMuistiinpanot eivät ole pakollisia."
+
+# parityA
+msgid "Change someone’s details: /editperson name ; name new name ; email new address ; notes text\nExample: /editperson Milla ; notes Bar on Fridays\nGive only what changes. notes - empties the notes."
+msgstr "Muuta jonkun tietoja: /editperson nimi ; name uusi nimi ; email uusi osoite ; notes teksti\nEsimerkki: /editperson Milla ; notes Baari perjantaisin\nAnna vain se, mikä muuttuu. notes - tyhjentää muistiinpanot."
+
+# parityA
+msgid "Change a role: /editrole role ; field value ; field value\nExample: /editrole Bar ; people 3 ; guestsignup off\nFields: name, emoji, people, plus, description, measured start|end, starts minutes, ends minutes, events text, minroles, timeseach, count role number, and on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous. - empties a text or time."
+msgstr "Muuta roolia: /editrole rooli ; kenttä arvo ; kenttä arvo\nEsimerkki: /editrole Baari ; people 3 ; guestsignup off\nKentät: name, emoji, people, plus, description, measured start|end, starts minuutit, ends minuutit, events teksti, minroles, timeseach, count rooli määrä, ja on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous. - tyhjentää tekstin tai ajan."
+
+# parityA
+msgid "Change the list: /optout add address, /optout remove address\nExample: /optout add milla@example.com"
+msgstr "Muuta listaa: /optout add osoite, /optout remove osoite\nEsimerkki: /optout add milla@example.com"
+
+# parityA
+msgid "Change an AI text: /aitext date text-name language ; your text\nUse the AI text again: /aitext date text-name ai\nExample: /aitext 21.11. welcome fi ; Tervetuloa!"
+msgstr "Muuta tekoälytekstiä: /aitext päivä tekstin-nimi kieli ; oma tekstisi\nKäytä taas tekoälyn tekstiä: /aitext päivä tekstin-nimi ai\nEsimerkki: /aitext 21.11. welcome fi ; Tervetuloa!"
+
+# parityA
+#, php-format
+msgid "Add %1$s (%2$s) as a new person?"
+msgstr "Lisätäänkö %1$s (%2$s) uutena henkilönä?"
+
+# parityA
+#, php-format
+msgid "“%1$s” could not be read."
+msgstr "Kohtaa ”%1$s” ei voitu lukea."
+
+# parityA
+#, php-format
+msgid "Change the role %s?"
+msgstr "Muutetaanko roolia %s?"
+
+# parityA
+#, php-format
+msgid "Put %s on the do-not-send list? That address gets no post-event email."
+msgstr "Lisätäänkö %s älä lähetä -listalle? Osoitteeseen ei lähetetä tapahtuman jälkeistä viestiä."
+
+# parityA
+#, php-format
+msgid "No coming event on %s has AI texts."
+msgstr "Millään tulevalla tapahtumalla %s ei ole tekoälytekstejä."
+
+# parityA
+#, php-format
+msgid "No AI text called “%1$s”. The texts: %2$s."
+msgstr "Tekoälytekstiä ”%1$s” ei ole. Tekstit: %2$s."
+
+# parityA
+#, php-format
+msgid "Use the AI text again for %s?"
+msgstr "Käytetäänkö taas tekoälyn tekstiä: %s?"
+
+# parityA
+#, php-format
+msgid "Send this text for %1$s (%2$s), as you wrote it?"
+msgstr "Lähetetäänkö tämä teksti kohteeseen %1$s (%2$s) niin kuin kirjoitit sen?"

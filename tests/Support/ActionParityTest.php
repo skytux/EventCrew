@@ -45,11 +45,6 @@ final class ActionParityTest extends TestCase
         'buyers_mail_test bot' => 'no test ticket email command',
         'check_mail bot' => 'no check-the-mailbox command',
         'followup_test bot' => 'no test post-event email command',
-        'person_edit bot' => 'no command to add a person or change another person\'s name, email or notes',
-        'person_remove bot' => 'no delete-a-person command',
-        'role_edit bot' => 'no command to edit a role\'s settings',
-        'optout bot' => 'no command for the post-event do-not-send list',
-        'ai_text bot' => 'no command to change an event\'s AI text',
         'desk_mark bot' => 'the door list has no check-in buttons; /roster marks crew only',
         'desk_plus bot' => 'no +1 count at the door',
         'desk_give bot' => '/ticket does it but is organizers only; the sales-desk crew has nothing',
@@ -64,7 +59,6 @@ final class ActionParityTest extends TestCase
         'desk_file bot' => 'the bot takes no file',
 
         // Missing in the helper.
-        'pass helper' => 'no helper line for the one-time pass (menu:roles gives roles only)',
         'give_ticket helper' => 'no helper line for 🎁 Give away (TransferBot)',
         'cancel_offer helper' => 'no helper line for ✖️ Cancel offer',
         'sign_out_everywhere helper' => 'no helper line for Sign out everywhere',
@@ -75,10 +69,6 @@ final class ActionParityTest extends TestCase
         'buyers_mail_test helper' => 'no helper line',
         'check_mail helper' => 'no helper line',
         'followup_test helper' => 'no helper line',
-        'person_edit helper' => 'no helper line',
-        'role_edit helper' => 'no helper line',
-        'optout helper' => 'no helper line',
-        'ai_text helper' => 'no helper line',
         'desk_mark helper' => 'no helper line',
         'desk_plus helper' => 'no helper line',
         'desk_give helper' => '/ticket is organizers only',
@@ -92,12 +82,6 @@ final class ActionParityTest extends TestCase
         'desk_new_member helper' => 'no helper line',
         'desk_file helper' => 'a file cannot go through the helper',
 
-        // The helper line runs on the Crew app page only; the Telegram helper refuses it.
-        'language tg' => 'menu:language <code> is a page-only line',
-        'roles tg' => 'menu:roles add|remove is a page-only line',
-        'gift tg' => 'menu:gift <person> ; <credits> is a page-only line',
-        'organizer tg' => '/organizer is a page-only line',
-        'person_remove tg' => '/deleteperson is a page-only line',
 
         // The helper only links on the Crew app page.
         'takeover web' => 'menu:replace opens the board',

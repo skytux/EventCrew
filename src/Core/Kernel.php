@@ -125,6 +125,7 @@ use EventCrew\Support\TranslationJob;
 use EventCrew\Support\TranslationRegistry;
 use EventCrew\Support\Turnstile;
 use EventCrew\Telegram\ActingAs;
+use EventCrew\Telegram\AdminChangeCommands;
 use EventCrew\Telegram\ReopenProfile;
 use EventCrew\Telegram\AssignCommand;
 use EventCrew\Telegram\ChatCommands;
@@ -180,6 +181,7 @@ use EventCrew\Telegram\WebLoginBot;
 use EventCrew\MailImport\MailImporter;
 use EventCrew\MailImport\MailedListImport;
 use EventCrew\Web\AppInstallController;
+use EventCrew\Web\AssistantWebAdmin;
 use EventCrew\Web\AssistantWebChanges;
 use EventCrew\Web\AssistantWebPeople;
 use EventCrew\Web\AssistantWebController;
@@ -966,7 +968,9 @@ final class Kernel
                         $container->get(PersonRepository::class),
                         $container->get(CrewAdminController::class),
                         $container->get(CrewAdminPeople::class)
-                    )
+                    ),
+                    // parityA
+                    $container->get(AssistantWebAdmin::class)
                 )
             )
         );
@@ -1814,7 +1818,35 @@ final class Kernel
                 $container->get(PersonCommands::class),
                 $container->get(NightCommands::class),
                 $container->get(TellCommand::class),
-                $container->get(MemberCommands::class)
+                $container->get(MemberCommands::class),
+                $container->get(AdminChangeCommands::class)
+            )
+        );
+
+        // parityA: the Admin tab's changes as bot commands. The changes are
+        // made at the first command: CrewAdminController reaches ChatCommands.
+        $this->container->singleton(
+            AdminChangeCommands::class,
+            fn (Container $container) => new AdminChangeCommands(
+                $container->get(PersonRepository::class),
+                fn (): AssistantWebPeople => new AssistantWebPeople(
+                    $container->get(PersonRepository::class),
+                    $container->get(CrewAdminController::class),
+                    $container->get(CrewAdminPeople::class)
+                ),
+                fn (): AssistantWebAdmin => $container->get(AssistantWebAdmin::class),
+                $container->get(TelegramClient::class)
+            )
+        );
+
+        $this->container->singleton(
+            AssistantWebAdmin::class,
+            fn (Container $container) => new AssistantWebAdmin(
+                $container->get(PersonRepository::class),
+                $container->get(CrewAdminPeople::class),
+                $container->get(CrewAdminTasks::class),
+                $container->get(CrewAdminFollowup::class),
+                $container->get(CrewAdminAiText::class)
             )
         );
 

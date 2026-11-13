@@ -430,6 +430,14 @@ final class HelpService
             __('/sendtickets – send the ticket emails now (or cancel)', 'eventcrew'),
             __('/tell task ; text – message everyone on a task', 'eventcrew'),
             __('/subscribe email – add someone to the newsletter; they confirm by email', 'eventcrew'),
+            // The Crew app Admin tab's changes (parityA).
+            __('/gift name ; 1 ; reason – give credits; /role add role ; name – give a role', 'eventcrew'),
+            __('/organizer on name – make an organizer (off ends it); /deleteperson name', 'eventcrew'),
+            __('/atriskpass name – a member at risk may sign up once more', 'eventcrew'),
+            __('/addperson name ; email – add a person; /editperson name ; notes text', 'eventcrew'),
+            __('/editrole role ; people 3 – change a role\'s settings', 'eventcrew'),
+            __('/optout – the post-event email\'s do-not-send list (add, remove)', 'eventcrew'),
+            __('/aitext – the coming events\' AI texts; write one by hand or use the AI\'s again', 'eventcrew'),
         ]);
     }
 }

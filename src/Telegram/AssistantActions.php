@@ -248,9 +248,67 @@ final class AssistantActions
 
         if (! empty($audience['web'])) {
             $list = array_merge($list, self::webEntries($audience));
+        } else {
+            // parityA: the page's lines work in the chat too, through the bot commands.
+            $list = array_merge($list, array_values(array_filter(
+                self::webEntries($audience),
+                static fn (array $entry): bool => ! str_starts_with($entry['usage'], '/newcomer')
+            )));
         }
 
-        return $list;
+        // parityA
+        return array_merge($list, self::parityAEntries($audience));
+    }
+
+    /**
+     * parityA: the Admin tab's other changes, on the page (AssistantWebAdmin,
+     * asked with Confirm) and in the chat (AdminChangeCommands, asked with
+     * ✅). Organizers only.
+     *
+     * @param array<string, mixed> $audience
+     * @return array<int, array{usage: string, what: string, confirm: bool}>
+     */
+    private static function parityAEntries(array $audience): array
+    {
+        if (empty($audience['organizer'])) {
+            return [];
+        }
+
+        return [
+            self::entry(
+                '/atriskpass <person>',
+                'give a member at risk the at-risk pass: they can sign up once past the sign-up gate; they are told'
+            ),
+            self::entry(
+                '/addperson <name> ; <email> [; <notes>]',
+                'add a new person to the crew list (not verified until they sign in themselves)'
+            ),
+            self::entry(
+                '/editperson <person> ; name <new name> ; email <new address> ; notes <text>',
+                "change another person's name, email or notes; give only the parts that change; notes - empties"
+                    . ' the notes'
+            ),
+            self::entry(
+                '/editrole <role> ; <field> <value> [; <field> <value>]',
+                "change a role's settings as on the Roles screen; fields: name, emoji, people (places), plus"
+                    . ' (+1 allowed), description, measured start|end, starts <minutes>, ends <minutes>, events'
+                    . ' <title text>, minroles, timeseach, count <role> <number>, and on|off: archived,'
+                    . ' restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous;'
+                    . ' - empties a text or time'
+            ),
+            self::entry('/optout', "show the post-event email's do-not-send list"),
+            self::entry(
+                '/optout <add|remove> <email>',
+                'put an address on the post-event email\'s do-not-send list or take it off'
+            ),
+            self::entry('/aitext', "show the coming events' AI texts, with each text's name"),
+            self::entry(
+                '/aitext <date> <text name> <language> ; <text>',
+                "write one event's AI text by hand in one language (sent as written); <language> is one of: "
+                    . implode(', ', SiteLanguages::codes())
+            ),
+            self::entry('/aitext <date> <text name> ai', "use the AI's own text again for that event"),
+        ];
     }
 
     /**
@@ -449,6 +507,13 @@ final class AssistantActions
             }
         }
 
+        // parityA: the Admin tab's other changes, and the page's lines in the chat.
+        $parityA = self::validateParityA($head, $rest, $audience);
+
+        if (null !== $parityA) {
+            return $parityA;
+        }
+
         if (isset(self::MENU[$head])) {
             if ('' !== $rest) {
                 return self::refuse(self::ERROR_INVALID);
@@ -606,6 +671,79 @@ final class AssistantActions
         $line = $head . ' ' . $rest;
 
         return self::accept($line, false, self::RUN_MESSAGE, $line);
+    }
+
+    /**
+     * parityA: the lines of parityAEntries() (page and chat), and in the
+     * chat the page's own lines (webEntries()), each run through the bot
+     * command that asks and confirms with ✅ itself (AdminChangeCommands),
+     * the language with Confirm first. Null when $head is none of them.
+     *
+     * @param array<string, mixed> $audience
+     * @return array{ok: bool, error: string, action: string, confirm: bool, run: string, payload: string}|null
+     */
+    private static function validateParityA(string $head, string $rest, array $audience): ?array
+    {
+        $commands = ['/atriskpass', '/addperson', '/editperson', '/editrole', '/optout', '/aitext'];
+
+        if (in_array($head, $commands, true)) {
+            if (empty($audience['organizer'])) {
+                return self::refuse(self::ERROR_NOT_PERMITTED);
+            }
+
+            $optional = ['/optout', '/aitext'];
+
+            if ('' === $rest && ! in_array($head, $optional, true)) {
+                return self::refuse(self::ERROR_INVALID);
+            }
+
+            if ('/optout' === $head && '' !== $rest) {
+                $words = explode(' ', $rest);
+
+                $op = strtolower($words[0]);
+                $email = $words[1] ?? '';
+
+                if (2 !== count($words) || ! in_array($op, ['add', 'remove'], true) || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    return self::refuse(self::ERROR_INVALID);
+                }
+            }
+
+            $line = trim($head . ' ' . $rest);
+
+            return self::accept($line, false, self::RUN_MESSAGE, $line);
+        }
+
+        // On the page these are validateWeb()'s.
+        if (! empty($audience['web']) || '' === $rest) {
+            return null;
+        }
+
+        if ('menu:language' === $head) {
+            $code = strtolower($rest);
+
+            if (! in_array($code, array_unique([...SiteLanguages::codes(), 'en']), true)) {
+                return self::refuse(self::ERROR_INVALID);
+            }
+
+            return self::accept('menu:language ' . $code, true, self::RUN_TAP, LanguageService::PREFIX . $code);
+        }
+
+        $commandOf = [
+            'menu:gift' => '/' . AdminChangeCommands::GIFT,
+            'menu:roles' => '/' . AdminChangeCommands::ROLE,
+            '/organizer' => '/organizer',
+            '/deleteperson' => '/deleteperson',
+        ];
+
+        if (! isset($commandOf[$head])) {
+            return null;
+        }
+
+        if (empty($audience['organizer'])) {
+            return self::refuse(self::ERROR_NOT_PERMITTED);
+        }
+
+        return self::accept($head . ' ' . $rest, false, self::RUN_MESSAGE, $commandOf[$head] . ' ' . $rest);
     }
 
     /**

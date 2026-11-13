@@ -323,6 +323,12 @@ final class AssistantKnowledge
                     . ' in their own language, or by email without Telegram; at most 5 an hour.',
                 '- Organizers: /subscribe email [fi|en|...] adds someone to the newsletter; they get a'
                     . ' confirmation email and are on the list once they open it.',
+                // parityA: the Crew app Admin tab's changes.
+                '- Organizers, as on the Crew app Admin tab: /gift name ; credits ; reason, /role add|remove'
+                    . ' role ; name, /organizer on|off name, /deleteperson name, /atriskpass name (the one-time'
+                    . ' sign-up past the gate), /addperson name ; email, /editperson name ; notes text,'
+                    . ' /editrole role ; people 3, /optout (the do-not-send list; /optout add|remove email),'
+                    . ' /aitext (the coming events\' AI texts; /aitext date text language ; own text).',
                 '- A date first (/mark 14.11. Milla ; late) picks another night. Every change is confirmed'
                     . ' with a button first.',
             ];

@@ -15,7 +15,9 @@ final class ChatCommands
         private readonly PersonCommands $person,
         private readonly NightCommands $night,
         private readonly TellCommand $tell,
-        private readonly MemberCommands $member
+        private readonly MemberCommands $member,
+        // parityA: the Admin tab's changes as commands.
+        private readonly ?AdminChangeCommands $admin = null
     ) {
     }
 
@@ -36,7 +38,9 @@ final class ChatCommands
             PersonCommands::COMMANDS,
             NightCommands::COMMANDS,
             [TellCommand::COMMAND],
-            MemberCommands::COMMANDS
+            MemberCommands::COMMANDS,
+            // parityA
+            AdminChangeCommands::COMMANDS
         );
     }
 
@@ -65,6 +69,17 @@ final class ChatCommands
             return false;
         }
 
+        // parityA: the Admin tab's changes.
+        if (in_array($command, AdminChangeCommands::COMMANDS, true)) {
+            if (null === $this->admin) {
+                return false;
+            }
+
+            $this->admin->onCommand($chatId, $fromId, $text, $isPrivate, $command);
+
+            return true;
+        }
+
         if (in_array($command, PersonCommands::COMMANDS, true)) {
             $this->person->onCommand($chatId, $fromId, $text, $isPrivate, $command);
         } elseif (in_array($command, NightCommands::COMMANDS, true)) {
@@ -80,7 +95,11 @@ final class ChatCommands
 
     public static function handlesCallback(string $data): bool
     {
-        foreach ([PersonCommands::PREFIX, NightCommands::PREFIX, TellCommand::PREFIX, MemberCommands::PREFIX] as $prefix) {
+        $prefixes = [PersonCommands::PREFIX, NightCommands::PREFIX, TellCommand::PREFIX, MemberCommands::PREFIX];
+        // parityA
+        $prefixes[] = AdminChangeCommands::PREFIX;
+
+        foreach ($prefixes as $prefix) {
             if (str_starts_with($data, $prefix)) {
                 return true;
             }
@@ -104,6 +123,9 @@ final class ChatCommands
             $this->tell->onCallback($callbackQuery);
         } elseif (str_starts_with($data, MemberCommands::PREFIX)) {
             $this->member->onCallback($callbackQuery);
+        } elseif (str_starts_with($data, AdminChangeCommands::PREFIX)) {
+            // parityA
+            $this->admin?->onCallback($callbackQuery);
         }
     }
 }

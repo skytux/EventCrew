@@ -45,6 +45,9 @@ final class BotLog
         'addtask', 'edittask', 'deletetask', 'maketasks', 'mailtasks', 'events',
         'mark', 'standing', 'newcomer', 'ticket', 'unticket', 'unban', 'freeentry', 'stop', 'newboard', 'sendtickets',
         'tell', 'crew', 'name', 'email', 'subscribe', 'appinvite',
+        // parityA: AdminChangeCommands.
+        'gift', 'role', 'organizer', 'deleteperson', 'atriskpass', 'addperson', 'editperson', 'editrole', 'optout',
+        'aitext',
     ];
 
     /** Menu button callback data, stored whole: it is a fixed word, not data. */

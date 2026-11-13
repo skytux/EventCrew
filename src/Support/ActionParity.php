@@ -355,35 +355,35 @@ final class ActionParity
                 'Admin > People: add or edit a person (name, email, notes)',
                 'CrewAdminController::PERSON_ACTION',
                 self::ORGANIZER,
-                [],
-                null
+                ['/editperson', '/addperson'],
+                '/editperson Anna ; notes Bar on Fridays'
             ),
             'roles' => self::change(
                 'Admin > People: a member\'s roles',
                 'CrewAdminController::ROLES_ACTION',
                 self::ORGANIZER,
-                ['mn:roles', 'PermissionService::PICK_PREFIX'],
+                ['mn:roles', 'PermissionService::PICK_PREFIX', '/role'],
                 'menu:roles add Crew leader ; Anna'
             ),
             'gift' => self::change(
                 'Admin > People: Give a credit',
                 'CrewAdminController::GIFT_ACTION',
                 self::ORGANIZER,
-                ['mn:gift', 'GiftService::PICK_PREFIX'],
+                ['mn:gift', 'GiftService::PICK_PREFIX', '/gift'],
                 'menu:gift Anna ; 1'
             ),
             'pass' => self::change(
                 'Admin > People: one-time pass',
                 'CrewAdminController::PASS_ACTION',
                 self::ORGANIZER,
-                ['mn:roles', 'PermissionService::PICK_PREFIX'],
-                null
+                ['mn:roles', 'PermissionService::PICK_PREFIX', '/atriskpass'],
+                '/atriskpass Anna'
             ),
             'organizer' => self::change(
                 'Admin > People: make or remove an organizer',
                 'CrewAdminController::ORGANIZER_ACTION',
                 self::ORGANIZER,
-                ['mn:roles', 'PermissionService::PICK_PREFIX'],
+                ['mn:roles', 'PermissionService::PICK_PREFIX', '/organizer'],
                 '/organizer on Anna'
             ),
             'unban' => self::change(
@@ -397,7 +397,7 @@ final class ActionParity
                 'Admin > People: Delete a person',
                 'CrewAdminController::PERSON_REMOVE_ACTION',
                 self::ORGANIZER,
-                [],
+                ['/deleteperson'],
                 '/deleteperson Anna'
             ),
             'admin_newcomers' => self::view('Admin > Newcomers', ['/newcomer'], '/newcomer', self::ORGANIZER),
@@ -444,8 +444,8 @@ final class ActionParity
                 'Admin > Tasks: Edit a role',
                 'CrewAdminController::ROLE_ACTION',
                 self::ORGANIZER,
-                [],
-                null
+                ['/editrole'],
+                '/editrole Bar ; people 3'
             ),
             'new_board' => self::change(
                 'Admin > Tasks: Post a new board in the group',
@@ -508,15 +508,15 @@ final class ActionParity
                 'Admin > Messages: post-event email do-not-send list',
                 'CrewAdminController::OPTOUT_ACTION',
                 self::ORGANIZER,
-                [],
-                null
+                ['/optout'],
+                '/optout add anna@example.com'
             ),
             'ai_text' => self::change(
                 'Admin > Messages: change an AI text for an event',
                 'CrewAdminController::AI_TEXT_ACTION',
                 self::ORGANIZER,
-                [],
-                null
+                ['/aitext'],
+                '/aitext 21.11. welcome fi ; Tervetuloa'
             ),
 
             // The sales desk (door page), for the night's sales-desk crew.

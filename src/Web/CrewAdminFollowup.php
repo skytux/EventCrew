@@ -206,6 +206,12 @@ final class CrewAdminFollowup
         return $this->optOut->add($email) ? 'admin_optout_added' : 'admin_optout_failed';
     }
 
+    /** Whether $email is on the do-not-send list (parityA: the bot and the helper ask first). */
+    public function optOutListed(string $email): bool
+    {
+        return $this->optOut->listed(NewsletterSubscriberRepository::normalize($email));
+    }
+
     public static function noticeText(string $code): string
     {
         // phpcs:disable Generic.Files.LineLength.TooLong -- gettext literals; splitting one breaks extraction.

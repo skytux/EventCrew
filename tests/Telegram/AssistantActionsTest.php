@@ -89,19 +89,38 @@ final class AssistantActionsTest extends TestCase
         self::assertSame(AssistantActions::ERROR_INVALID, self::check('menu:web now', self::member())['error']);
     }
 
-    /** The Crew app page's own lines: only there, organizers' only for organizers (Lou 2026-11-14). */
-    public function testThePagesOwnLinesAreAcceptedOnlyOnThePage(): void
+    /**
+     * The Crew app page's own lines, organizers' only for organizers (Lou 2026-11-14); in the chat
+     * they run through the bot's commands (parityA), the language with Confirm first.
+     */
+    public function testThePagesOwnLinesWorkOnThePageAndInTheChat(): void
     {
         $web = ['web' => true] + self::organizer();
-        foreach (['menu:gift Sam ; 2', 'menu:roles add DJ ; Sam', '/organizer on Heidi', '/deleteperson Sam', '/newcomer ok Sam', 'menu:language fi'] as $action) {
+        $inChat = [
+            'menu:gift Sam ; 2' => '/gift Sam ; 2',
+            'menu:roles add DJ ; Sam' => '/role add DJ ; Sam',
+            '/organizer on Heidi' => '/organizer on Heidi',
+            '/deleteperson Sam' => '/deleteperson Sam',
+            '/newcomer ok Sam' => null, // the chat's own /newcomer takes any words
+            'menu:language fi' => 'lang:fi',
+        ];
+        foreach ($inChat as $action => $payload) {
             $result = self::check($action, $web);
 
             self::assertTrue($result['ok'], $action);
             self::assertSame($action, $result['action'], $action);
-            if ('/newcomer ok Sam' !== $action) { // the chat's own /newcomer takes any words
-                self::assertFalse(self::check($action, self::organizer())['ok'], $action . ' in the chat');
+            if (null !== $payload) {
+                $chat = self::check($action, self::organizer());
+                self::assertTrue($chat['ok'], $action . ' in the chat');
+                self::assertSame($payload, $chat['payload'], $action . ' in the chat');
             }
         }
+
+        $language = self::check('menu:language fi', self::member());
+        self::assertTrue($language['confirm']);
+        self::assertSame(AssistantActions::RUN_TAP, $language['run']);
+        self::assertSame(AssistantActions::ERROR_INVALID, self::check('menu:language xx', self::member())['error']);
+        self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check('menu:gift Sam ; 2', self::member())['error']);
 
         $member = ['web' => true] + self::member();
         self::assertTrue(self::check('menu:language fi', $member)['ok']);
@@ -110,6 +129,35 @@ final class AssistantActionsTest extends TestCase
         }
 
         self::assertSame(AssistantActions::ERROR_INVALID, self::check('/organizer', $web)['error']);
+    }
+
+    /** parityA: the Admin tab's other changes, organizers only, on the page and in the chat. */
+    public function testTheAdminTabsChangesAreOrganizersOnly(): void
+    {
+        $lines = [
+            '/atriskpass Sam',
+            '/addperson Sam Example ; sam@example.com',
+            '/editperson Sam ; notes Bar',
+            '/editrole Bar ; people 3',
+            '/optout',
+            '/optout add sam@example.com',
+            '/optout remove sam@example.com',
+            '/aitext',
+            '/aitext 21.11. welcome fi ; Tervetuloa',
+        ];
+        foreach ($lines as $line) {
+            foreach ([self::organizer(), ['web' => true] + self::organizer()] as $audience) {
+                $result = self::check($line, $audience);
+                self::assertTrue($result['ok'], $line);
+                self::assertSame($line, $result['payload'], $line);
+                self::assertSame(AssistantActions::RUN_MESSAGE, $result['run'], $line);
+            }
+            self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check($line, self::member())['error'], $line);
+        }
+
+        foreach (['/atriskpass', '/editrole', '/optout add nobody', '/optout drop sam@example.com'] as $line) {
+            self::assertSame(AssistantActions::ERROR_INVALID, self::check($line, self::organizer())['error'], $line);
+        }
     }
 
     public function testStaffCommandsAreNotPermittedForAMember(): void
