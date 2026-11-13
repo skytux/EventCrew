@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.230
+Stable tag: 1.140.231
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,13 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.231 =
+* Crew app: a Hi Name menu at the top right holds Settings, Help and Sign out; the language is chosen in Settings only.
+* Crew app: the Me tab becomes Tasks, and tickets get their own Tickets tab; old links still open the right tab.
+* Crew app: the first card is the Summary, with the standing once and quick links to past tasks, free-entry credits, coming tasks and tickets.
+* Crew app: a Door scanner button at the top for organizers and the night's sales-desk crew; the Telegram group link moves to the page footer.
+* Crew app install numbers (tried, installed, success rate, active in 30 days, devices with notifications) in Settings and in the monthly report.
 
 = 1.140.230 =
 * Privacy notice: when the group chat is on, says that what you write in the Crew app's group chat is posted to the crew's Telegram group with your name and passes through Telegram.
@@ -2079,6 +2086,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.231 =
+No settings change.
 
 = 1.140.230 =
 No settings change.
