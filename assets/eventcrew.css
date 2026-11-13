@@ -646,13 +646,12 @@
 .eventcrew-signup .eventcrew-admin-tasks label {
     display: flex; gap: .5em; align-items: baseline; padding: .3em 0; line-height: 1.35;
 }
-/* Tonight's crew: each task a small heading, each person a row with a status menu that saves on change. */
-.eventcrew-signup .eventcrew-admin-task { margin: 0; padding: .7em 1em .1em; font-size: .95em; text-wrap: wrap; }
+/* Tonight's crew: each task a card, each person a row with a status menu that saves on change. */
 .eventcrew-signup .eventcrew-admin-nobody { margin: 0; padding: .2em 1em .5em; }
 .eventcrew-signup .eventcrew-admin-roster li { gap: .4em; }
 .eventcrew-signup .eventcrew-admin-crew .eventcrew-admin-roster select { width: auto; max-width: 100%; }
-/* "+ Add a person" under the crew: a text link that opens the form below it. */
-.eventcrew-signup .eventcrew-admin-add { padding: 0 1em .7em; }
+/* "+ Add a person", a card after the task cards: a text link that opens the form below it. */
+.eventcrew-signup .eventcrew-admin-add { padding: .7em 1em; }
 .eventcrew-signup .eventcrew-admin-add summary { list-style: none; }
 .eventcrew-signup .eventcrew-admin-add summary::-webkit-details-marker { display: none; }
 .eventcrew-signup .eventcrew-admin-add > form { padding-left: 0; padding-right: 0; }
@@ -721,12 +720,7 @@
 }
 .eventcrew-signup .eventcrew-admin-facts li > span:first-child { opacity: .8; }
 .eventcrew-signup .eventcrew-admin-facts li > span:last-child { font-weight: 600; text-align: right; }
-/* The roster: each task a title strip, each person a row with the status menu on the right. */
-.eventcrew-signup .eventcrew-admin-crew .eventcrew-admin-task {
-    padding: .6em 1em; border-bottom: 1px solid var(--eventcrew-line);
-    background: color-mix(in srgb, currentColor 6%, transparent);
-}
-.eventcrew-signup .eventcrew-admin-crew * + .eventcrew-admin-task { border-top: 1px solid var(--eventcrew-line); }
+/* The roster: one card per task, each person a row with the status menu on the right. */
 .eventcrew-signup .eventcrew-admin-crew .eventcrew-admin-nobody { padding: .6em 1em; }
 .eventcrew-signup .eventcrew-admin-crew .eventcrew-me-row-head { align-items: center; flex-wrap: nowrap; }
 .eventcrew-signup .eventcrew-admin-crew .eventcrew-me-row-head .eventcrew-me-day { min-width: 0; overflow-wrap: anywhere; }
@@ -735,7 +729,6 @@
 }
 .eventcrew-signup .eventcrew-me-what > span + span::before { content: " · "; }
 .eventcrew-signup .eventcrew-admin-crew .eventcrew-admin-attend { padding: 0 1em .4em; border-top: 1px solid var(--eventcrew-line); }
-.eventcrew-signup .eventcrew-admin-crew .eventcrew-admin-add { padding: .2em 1em .5em; border-top: 1px solid var(--eventcrew-line); }
 /* A status line with its text-link actions after it, wrapping between links. */
 .eventcrew-signup .eventcrew-admin-links { display: flex; flex-wrap: wrap; align-items: center; column-gap: 1.2em; }
 .eventcrew-signup .eventcrew-admin-links + .eventcrew-admin-links { margin-top: .5em; }

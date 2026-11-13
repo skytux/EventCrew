@@ -1332,6 +1332,8 @@ if ($eventcrew_link_expired) {
             $eventcrew_subtabs = [
                 'roster' => _x('Roster', 'Admin tab screen', 'eventcrew'),
                 'tasks' => __('Tasks', 'eventcrew'),
+                // A role's settings are a screen of their own (Owner 2026-11-13).
+                'roles' => __('Roles', 'eventcrew'),
                 'door' => __('Door', 'eventcrew'),
                 'people' => _x('People', 'Admin tab screen', 'eventcrew'),
                 'telegram' => __('Telegram', 'eventcrew'),
@@ -1712,15 +1714,28 @@ if ($eventcrew_link_expired) {
                 require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-admin-datebar.php';
             }
             ?>
+            <?php
+            /*
+             * One card per task, its title the card's title, and "+ Add a
+             * person" in a card of its own after them (Owner 2026-11-13): the
+             * screen reads as separate cards, like every other Admin screen.
+             */
+            ?>
+            <?php if ('' === $eventcrew_roster_date || [] === $eventcrew_admin['roster']) : ?>
             <section class="eventcrew-event eventcrew-admin-card eventcrew-admin-crew">
                 <?php if ('' === $eventcrew_roster_date) : ?>
                     <p class="eventcrew-card-body eventcrew-muted"><?php esc_html_e('No tasks have been created yet, so there is nothing to take a roster for.', 'eventcrew'); ?></p>
-                <?php elseif ([] === $eventcrew_admin['roster']) : ?>
+                <?php else : ?>
                     <p class="eventcrew-card-body eventcrew-muted"><?php esc_html_e('No tasks on that date.', 'eventcrew'); ?></p>
                 <?php endif; ?>
-                <?php foreach ($eventcrew_admin['roster'] as $eventcrew_roster_task) : ?>
-                    <?php $eventcrew_attend_form = 'eventcrew-admin-attend-' . $eventcrew_roster_task['task_id']; ?>
-                    <h4 class="eventcrew-admin-task"><?php echo esc_html($eventcrew_roster_task['title']); ?></h4>
+            </section>
+            <?php endif; ?>
+            <?php foreach ($eventcrew_admin['roster'] as $eventcrew_roster_task) : ?>
+                <?php $eventcrew_attend_form = 'eventcrew-admin-attend-' . $eventcrew_roster_task['task_id']; ?>
+            <section class="eventcrew-event eventcrew-admin-card eventcrew-admin-crew">
+                    <header class="eventcrew-event-head">
+                        <h3 class="eventcrew-event-title"><?php echo esc_html($eventcrew_roster_task['title']); ?></h3>
+                    </header>
                     <?php if ([] === $eventcrew_roster_task['people']) : ?>
                         <p class="eventcrew-admin-nobody eventcrew-muted"><?php esc_html_e('Nobody signed up.', 'eventcrew'); ?></p>
                     <?php endif; ?>
@@ -1768,8 +1783,10 @@ if ($eventcrew_link_expired) {
                             <button type="submit" name="mark_all" value="completed" class="eventcrew-textlink"><?php esc_html_e('Mark all completed', 'eventcrew'); ?></button>
                         </form>
                     <?php endif; ?>
-                <?php endforeach; ?>
+            </section>
+            <?php endforeach; ?>
             <?php if ([] !== $eventcrew_admin['add_tasks']) : ?>
+            <section class="eventcrew-event eventcrew-admin-card">
                 <details class="eventcrew-admin-add">
                     <summary class="eventcrew-textlink">+ <?php esc_html_e('Add a person', 'eventcrew'); ?></summary>
                     <form class="eventcrew-admin-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
@@ -1809,8 +1826,8 @@ if ($eventcrew_link_expired) {
                         </div>
                     </form>
                 </details>
-            <?php endif; ?>
             </section>
+            <?php endif; ?>
             </div>
 
             <div class="eventcrew-subpanel" id="eventcrew-admin-door" data-eventcrew-subpanel="door">
@@ -2186,9 +2203,10 @@ if ($eventcrew_link_expired) {
             <?php
             /*
              * The wp-admin Tasks page, for one date at a time: the date's tasks
-             * with their people, the task form, "Create an event's tasks", the
-             * open-task email, and one role's settings. Every form sends the
-             * page back here with the same date (and role) and this screen open.
+             * with their people, the task form, "Create an event's tasks" and
+             * the open-task email; one role's settings follow on the Roles
+             * screen. Every form sends the page back with the same date (and
+             * role) and its own screen open.
              */
             $eventcrew_tasks = $eventcrew_admin['tasks'];
             $eventcrew_tasks_date = (string) $eventcrew_tasks['date'];
@@ -2508,12 +2526,21 @@ if ($eventcrew_link_expired) {
                     </form>
                 </div>
             </section>
+            </div>
 
+            <?php
+            /*
+             * Roles, after Tasks (Owner 2026-11-13): it reads the Tasks
+             * screen's date and role from the page address, as before, and
+             * its forms send the page back here.
+             */
+            ?>
+            <div class="eventcrew-subpanel" id="eventcrew-admin-roles" data-eventcrew-subpanel="roles">
             <section class="eventcrew-event eventcrew-admin-card" id="eventcrew-admin-role-form">
                 <header class="eventcrew-event-head">
                     <h3 class="eventcrew-event-title"><?php esc_html_e('Roles', 'eventcrew'); ?></h3>
                 </header>
-                <form class="eventcrew-card-body eventcrew-admin-search eventcrew-admin-date" method="get" action="<?php echo esc_url($eventcrew_here . '#eventcrew-admin-tasks'); ?>">
+                <form class="eventcrew-card-body eventcrew-admin-search eventcrew-admin-date" method="get" action="<?php echo esc_url($eventcrew_here . '#eventcrew-admin-roles'); ?>">
                     <?php $eventcrew_tasks_hidden($eventcrew_tasks_query + $eventcrew_tasks_args); ?>
                     <label for="eventcrew-admin-role-pick"><?php esc_html_e('Role', 'eventcrew'); ?></label>
                     <select id="eventcrew-admin-role-pick" name="tasks_role" onchange="this.form.submit()">
@@ -2533,7 +2560,7 @@ if ($eventcrew_link_expired) {
                 </form>
                 <?php if (null !== $eventcrew_role_editing) : ?>
                     <?php
-                    $eventcrew_role_here = add_query_arg(['tasks_role' => $eventcrew_role_editing['slug']] + $eventcrew_tasks_args, $eventcrew_here) . '#eventcrew-admin-tasks';
+                    $eventcrew_role_here = add_query_arg(['tasks_role' => $eventcrew_role_editing['slug']] + $eventcrew_tasks_args, $eventcrew_here) . '#eventcrew-admin-roles';
                     $eventcrew_role_conditions = $eventcrew_role_editing['conditions'];
                     ?>
                     <form class="eventcrew-card-body eventcrew-admin-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">

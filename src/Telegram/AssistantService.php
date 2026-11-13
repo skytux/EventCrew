@@ -1001,7 +1001,9 @@ final class AssistantService implements WebAssistant
             '- This message was written in the helper box of the crew web page (the Crew app). The page has'
                 . ' the tabs Board (the open tasks, sign up), Tasks (the person\'s tasks, cancelling) and'
                 . ' Tickets (the person\'s tickets)'
-                . ($organizer ? ', and for an organizer Admin (screens Roster, Tasks, Door, People, Messages)' : '')
+                . ($organizer
+                    ? ', and for an organizer Admin (screens Roster, Tasks, Roles, Door, People, Messages)'
+                    : '')
                 . ', a Summary card with the person\'s numbers, and a menu at the top right with Settings (name'
                 . ' and email, notifications, language), Help and Sign out. "Where things are on this page" in'
                 . ' the FACTS says which tab or screen has what.',

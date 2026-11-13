@@ -277,7 +277,8 @@ final class AssistantKnowledge
                 '- Admin tab → Roster: a night\'s people by task; mark arrived, late, no-show or done; add someone'
                     . ' to a task or take them off.',
                 '- Admin tab → Tasks: add, change or delete tasks, create an event\'s tasks from the roles, the'
-                    . ' open-task email, the roles.',
+                    . ' open-task email.',
+                '- Admin tab → Roles: one role\'s settings (label, people, timing, access, conditions).',
                 '- Admin tab → Door: the sales desk, the door list (redeem a credit for someone\'s free entry, or'
                     . ' undo it), the guest list (add, change, remove guests), close or reopen free entry, the'
                     . ' ticket emails.',

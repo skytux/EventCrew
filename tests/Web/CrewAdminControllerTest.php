@@ -2370,9 +2370,14 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('id="eventcrew-tab-admin"', $html);
         self::assertStringContainsString('id="eventcrew-panel-admin"', $html);
         self::assertStringContainsString('<nav class="eventcrew-subtabs"', $html);
-        foreach (['roster', 'tasks', 'door', 'people', 'telegram', 'messages'] as $screen) {
+        foreach (['roster', 'tasks', 'roles', 'door', 'people', 'telegram', 'messages'] as $screen) {
             self::assertStringContainsString('data-eventcrew-subpanel="' . $screen . '"', $html, $screen);
         }
+        // Roles comes right after Tasks in the row of screens (Owner 2026-11-13).
+        self::assertMatchesRegularExpression(
+            '/data-eventcrew-subtab="tasks">[^<]*<\/a>\s*<a [^>]*data-eventcrew-subtab="roles">Roles</',
+            $html
+        );
         foreach (
             [
                 CrewAdminController::BOARD_ACTION,
@@ -2502,7 +2507,13 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         self::assertStringContainsString('Person 8', $roster);
         self::assertStringContainsString('signed up 2 Jul 14:05', $roster);
-        self::assertMatchesRegularExpression('/<h4 class="eventcrew-admin-task">[^<]* · 19:00–22:00 · 1 of 3<\/h4>/u', $roster);
+        // Each task is a card of its own, its title the card's title (Owner 2026-11-13).
+        self::assertMatchesRegularExpression(
+            '/<section class="eventcrew-event eventcrew-admin-card eventcrew-admin-crew">\s*'
+                . '<header class="eventcrew-event-head">\s*<h3 class="eventcrew-event-title">[^<]* · 19:00–22:00 · 1 of 3<\/h3>/u',
+            $roster
+        );
+        self::assertStringNotContainsString('<h4', $roster);
         self::assertStringContainsString('name="status[30]" form="eventcrew-admin-attend-6"', $roster);
         self::assertStringContainsString('requestSubmit', $roster);
         self::assertStringContainsString('<noscript><button type="submit" form="eventcrew-admin-attend-6"', $roster);
@@ -2512,9 +2523,12 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringNotContainsString('Update attendance', $roster);
         self::assertStringContainsString('Mark all arrived', $roster);
         self::assertStringContainsString('Mark all completed', $roster);
-        // "+ Add a person" is a text link under the crew that opens the form.
+        // "+ Add a person" is a text link in a card of its own, after the
+        // task cards, that opens the form.
         self::assertMatchesRegularExpression(
-            '/<details class="eventcrew-admin-add">\s*<summary class="eventcrew-textlink">\+ Add a person<\/summary>/',
+            '/<\/section>\s*<section class="eventcrew-event eventcrew-admin-card">\s*'
+                . '<details class="eventcrew-admin-add">\s*'
+                . '<summary class="eventcrew-textlink">\+ Add a person<\/summary>/',
             $roster
         );
         self::assertLessThan(
@@ -2522,6 +2536,16 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             strpos($roster, 'Mark all completed')
         );
         self::assertStringContainsString('value="' . CrewAdminController::ADD_ACTION . '"', $roster);
+    }
+
+    /** No tasks at all: the Roster screen is one card saying so. */
+    public function testTheRosterScreenWithoutTasksIsOneCard(): void
+    {
+        $roster = $this->subpanel($this->renderAs($this->organizerRow(1)), 'roster');
+
+        self::assertSame(1, substr_count($roster, '<section '));
+        self::assertStringContainsString('No tasks have been created yet', $roster);
+        self::assertStringNotContainsString('<h3', $roster);
     }
 
     public function testThePeopleScreenHasTheListAndTheAddForm(): void
@@ -3198,7 +3222,11 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         );
     }
 
-    public function testTheTasksScreenOpensARoleForEditing(): void
+    /**
+     * The Roles card is on its own Roles screen, not on Tasks, and its forms
+     * send the page back to Roles (Owner 2026-11-13).
+     */
+    public function testTheRolesScreenOpensARoleForEditing(): void
     {
         Functions\when('absint')->alias(static fn (mixed $n): int => abs((int) $n));
         Functions\when('wp_unslash')->returnArg();
@@ -3210,11 +3238,21 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             $_GET = [];
         }
 
-        self::assertStringContainsString('value="' . CrewAdminController::ROLE_ACTION . '"', $html);
-        self::assertMatchesRegularExpression('/name="role" value="welcome"/', $html);
-        self::assertStringContainsString('name="role_label"', $html);
-        self::assertStringContainsString('name="role_description"', $html);
-        self::assertStringContainsString('name="role_count[decorate]"', $html);
+        $roles = $this->subpanel($html, 'roles');
+        self::assertStringContainsString('id="eventcrew-admin-roles"', $html);
+        self::assertStringContainsString('id="eventcrew-admin-role-form"', $roles);
+        self::assertStringNotContainsString('id="eventcrew-admin-role-form"', $this->subpanel($html, 'tasks'));
+        self::assertStringContainsString('value="' . CrewAdminController::ROLE_ACTION . '"', $roles);
+        self::assertMatchesRegularExpression('/name="role" value="welcome"/', $roles);
+        self::assertStringContainsString('name="role_label"', $roles);
+        self::assertStringContainsString('name="role_description"', $roles);
+        self::assertStringContainsString('name="role_count[decorate]"', $roles);
+        self::assertMatchesRegularExpression(
+            '/name="redirect_to" value="[^"]*tasks_role=welcome[^"]*#eventcrew-admin-roles"/',
+            $roles
+        );
+        self::assertMatchesRegularExpression('/<form [^>]*method="get" action="[^"]*#eventcrew-admin-roles">/', $roles);
+        self::assertStringNotContainsString('#eventcrew-admin-tasks', $roles);
     }
 
     /**
