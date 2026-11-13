@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Web;
 
+use EventCrew\Models\Person;
 use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Support\DoorDesk;
 use EventCrew\Support\DoorHandoff;
@@ -49,6 +50,10 @@ final class DoorController
     public const CANCEL_SEND_ACTION = 'eventcrew_door_cancel_send';
     public const NOTE_ACTION = 'eventcrew_door_note';
     public const NOTE_REMOVE_ACTION = 'eventcrew_door_note_remove';
+    /** The organizers' night actions (DoorOrganizer::run()), picked by 'op'. */
+    public const ORGANIZER_ACTION = 'eventcrew_door_organizer';
+    /** The organizers' Holvi ticket file upload (DoorOrganizer::importUpload()). */
+    public const FILE_ACTION = 'eventcrew_door_buyers_file';
 
     /** The actions that can add people, with DoorQuota::adding()'s name for each. */
     private const QUOTA_ACTIONS = [
@@ -71,7 +76,8 @@ final class DoorController
     public function __construct(
         private readonly DoorDesk $desk,
         private readonly DoorNewMember $newMember,
-        private readonly DoorHandoff $handoff
+        private readonly DoorHandoff $handoff,
+        private readonly ?DoorOrganizer $organizer = null
     ) {
     }
 
@@ -97,6 +103,8 @@ final class DoorController
             self::CANCEL_SEND_ACTION,
             self::NOTE_ACTION,
             self::NOTE_REMOVE_ACTION,
+            self::ORGANIZER_ACTION,
+            self::FILE_ACTION,
         ];
 
         foreach ($actions as $action) {
@@ -156,7 +164,12 @@ final class DoorController
                 $this->plainPage($this->desk->closedText());
             }
 
-            $this->page($session['date'], DoorSession::csrfToken($cookie), $session['person']->name());
+            $this->page(
+                $session['date'],
+                DoorSession::csrfToken($cookie),
+                $session['person']->name(),
+                $session['person']->isOrganizer
+            );
         }
 
         // The page reloads itself on a 401, which lands on one of the two
@@ -192,6 +205,12 @@ final class DoorController
             'step' => isset($_POST['step']) && '-1' === $_POST['step'] ? -1 : 1,
             'person' => $personId,
         ]);
+
+        // The organizers' actions: refused for anyone else (the sales-desk
+        // crew) before anything runs. DoorOrganizer checks again.
+        if (self::ORGANIZER_ACTION === $action || self::FILE_ACTION === $action) {
+            $this->organizerAction($action, $session['person'], $date);
+        }
 
         switch ($action) {
             case self::MARK_ACTION:
@@ -373,6 +392,42 @@ final class DoorController
     }
 
     /**
+     * An organizer's night action or ticket file upload. Answers 403 for
+     * anyone who is not an organizer, and for a site where the organizer
+     * part is not wired.
+     */
+    private function organizerAction(string $action, Person $person, string $date): never
+    {
+        if (null === $this->organizer || ! $person->isOrganizer) {
+            $this->json([
+                'ok' => false,
+                'refused' => true,
+                'message' => __('Only organizers can do that.', 'eventcrew'),
+            ], 403);
+        }
+
+        if (self::FILE_ACTION === $action) {
+            // The uploaded file is checked in DoorOrganizer: type, size and
+            // that PHP received it in this request.
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput -- CSRF checked in dispatch(); the file entry is validated in importUpload().
+            $file = isset($_FILES['file']) && is_array($_FILES['file']) ? $_FILES['file'] : [];
+            $result = $this->organizer->importUpload($person, $date, $file);
+        } else {
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing -- CSRF checked in dispatch().
+            $op = isset($_POST['op']) ? sanitize_key(wp_unslash($_POST['op'])) : '';
+            $result = $this->organizer->run($person, $date, $op);
+        }
+
+        $this->json([
+            'ok' => $result['ok'],
+            'message' => $result['message'],
+            'added' => $result['added'] ?? 0,
+            'organizer' => $this->organizer->info($date),
+            'state' => $this->desk->state($date),
+        ], $result['refused'] ? 403 : 200);
+    }
+
+    /**
      * The max people check (DoorQuota), made before an action runs. An action
      * that would pass the max is answered with a refusal here, unless going
      * over is allowed: then it runs and its answer carries a warning.
@@ -430,8 +485,10 @@ final class DoorController
     /**
      * @param string $who The name of the person this device is logged in as,
      *                    shown next to the date.
+     * @param bool   $organizer Whether that person is an organizer: the page
+     *                          then has the Organizer section.
      */
-    private function page(string $date, string $csrf, string $who): never
+    private function page(string $date, string $csrf, string $who, bool $organizer = false): never
     {
         $eventcrew_state = $this->desk->state($date);
         $eventcrew_config = [
@@ -460,7 +517,13 @@ final class DoorController
                 'cancelSend' => self::CANCEL_SEND_ACTION,
                 'note' => self::NOTE_ACTION,
                 'noteRemove' => self::NOTE_REMOVE_ACTION,
+                'organizer' => self::ORGANIZER_ACTION,
+                'file' => self::FILE_ACTION,
             ],
+            // Organizers only: what the Organizer section shows (DoorOrganizer::info()).
+            // Null for the sales-desk crew, whose page has no such section.
+            'organizer' => $organizer && null !== $this->organizer ? $this->organizer->info($date) : null,
+            'maxFileBytes' => DoorOrganizer::MAX_FILE_BYTES,
             // The QR decoder for phones without BarcodeDetector, loaded only
             // when Scan is tapped.
             'qrDecodeUrl' => EVENTCREW_PLUGIN_URL . 'assets/vendor/qr-decode/decode.js?ver=' . EVENTCREW_VERSION,

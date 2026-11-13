@@ -2612,7 +2612,7 @@ msgstr "Fri entré är stängd för det datumet."
 
 #: templates/admin/roster.php:97 templates/public/signup.php:1192
 msgid "Free entry is closed for this date — no credits can be spent on it."
-msgstr ""
+msgstr "Fri entré är stängd för det här datumet — inga fribiljetter kan användas för det."
 "Fri entré är stängd för det här datumet — inga fribiljetter kan användas."
 
 #: src/Admin/RosterPage.php:137 src/Web/CrewAdminRoster.php:590
@@ -14007,8 +14007,8 @@ msgstr "Det är den första knappen i din anmälningsbekräftelse, och fliken Bi
 
 #: src/Support/MessageTemplates.php:2140
 #. translators: %s: link to the crew page
-msgid "Tap 🚪 Door scanner at the top of the crew page (%s)."
-msgstr "Tryck på 🚪 Dörrskanner högst upp på crew-sidan (%s)."
+msgid "Tap Open sales desk at the top of the crew page (%s)."
+msgstr "Tryck på Öppna försäljningsdisken högst upp på crew-sidan (%s)."
 
 #: src/Support/MessageTemplates.php:1178
 #. translators: %s: link to the crew page
@@ -14062,8 +14062,8 @@ msgstr "Meny"
 msgid "Summary"
 msgstr "Sammanfattning"
 
-msgid "Door scanner"
-msgstr "Dörrskanner"
+msgid "Open sales desk"
+msgstr "Öppna försäljningsdisken"
 
 msgid "%d task coming"
 msgid_plural "%d tasks coming"
@@ -14096,3 +14096,45 @@ msgstr "Titta i inkorgen och skräpposten."
 #: templates/public/signup.php
 msgid "Send a new link"
 msgstr "Skicka en ny länk"
+
+msgid "Free entry open"
+msgstr "Fri entré öppen"
+
+msgid "Free entry closed"
+msgstr "Fri entré stängd"
+
+msgid "Free entry is open: credits can be spent on this night."
+msgstr "Fri entré är öppen: fribiljetter kan användas i kväll."
+
+msgid "Pick the ticket file first."
+msgstr "Välj biljettfilen först."
+
+msgid "That file is too big for a ticket file."
+msgstr "Filen är för stor för en biljettfil."
+
+msgid "That is not an .xlsx or .csv file. Pick the ticket file exported from Holvi."
+msgstr "Det är ingen .xlsx- eller .csv-fil. Välj biljettfilen som exporterats från Holvi."
+
+msgid "The file did not arrive. Try again."
+msgstr "Filen kom inte fram. Försök igen."
+
+msgid "This file was already added for this night. Nothing changed."
+msgstr "Den här filen är redan tillagd för kvällen. Inget ändrades."
+
+msgid "Only organizers can do that."
+msgstr "Bara arrangörer kan göra det."
+
+msgid "Holvi ticket file"
+msgstr "Biljettfil från Holvi"
+
+msgid "The .xlsx or .csv file exported from Holvi. Its tickets go onto tonight’s list and are emailed to the buyers; the same file twice adds nothing."
+msgstr ".xlsx- eller .csv-filen som exporterats från Holvi. Biljetterna hamnar på kvällens lista och mejlas till köparna; samma fil två gånger lägger inte till något."
+
+msgid "Add to the list"
+msgstr "Lägg till på listan"
+
+msgid "Ticket emails"
+msgstr "Biljettmejl"
+
+msgid "Tonight’s list"
+msgstr "Kvällens lista"

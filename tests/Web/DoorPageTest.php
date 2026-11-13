@@ -305,4 +305,42 @@ final class DoorPageTest extends TestCase
         self::assertStringNotContainsString('checked', $dialog);
         self::assertStringContainsString('Both are optional. Only organizers see the email.', $dialog);
     }
+
+    public function testTheSalesDeskCrewHasNoOrganizerSection(): void
+    {
+        $html = $this->page(['organizer' => null]);
+
+        self::assertStringNotContainsString('<details class="ec-org"', $html);
+        self::assertStringNotContainsString('id="ec-org-file"', $html);
+        self::assertStringNotContainsString('Close free entry', $html);
+    }
+
+    public function testAnOrganizerHasTheFoldedOrganizerSection(): void
+    {
+        $html = $this->page([
+            'organizer' => [
+                'closed_by_hand' => false,
+                'closed_text' => '',
+                'toggle' => 'Close free entry (sold out)',
+                'buyers' => '0 people bought a ticket in Holvi for this date.',
+                'mail_buyers' => '',
+                'mail_guests' => '',
+            ],
+            'maxFileBytes' => 2097152,
+        ]);
+
+        // Folded: no open attribute; its summary says whether free entry is open.
+        self::assertStringContainsString('<details class="ec-org" id="ec-org">', $html);
+        self::assertStringContainsString('<span class="ec-org-state" id="ec-org-state"></span>', $html);
+        // Text links for the switch and the sends; the file's button is the one button.
+        self::assertStringContainsString('<button type="button" class="ec-textlink" id="ec-org-free"></button>', $html);
+        self::assertStringContainsString('<button type="button" class="ec-textlink" id="ec-org-mail-buyers-send">', $html);
+        self::assertMatchesRegularExpression('~<input type="file" id="ec-org-file" accept="\.xlsx,\.csv[^"]*">~', $html);
+        self::assertStringContainsString('<button type="submit" id="ec-org-upload">Add to the list</button>', $html);
+        // The file goes with the page's token, as multipart form data.
+        self::assertStringContainsString("body.append('action', config.actions.file);", $html);
+        self::assertStringContainsString("body.append('csrf', config.csrf);", $html);
+        self::assertStringContainsString("post('organizer', { op: op })", $html);
+        self::assertStringNotContainsString('form.action', $html);
+    }
 }

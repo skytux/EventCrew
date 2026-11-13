@@ -191,6 +191,7 @@ use EventCrew\Web\CrewAdminRoster;
 use EventCrew\Web\CrewAdminTasks;
 use EventCrew\Web\CrewAppPage;
 use EventCrew\Web\DoorController;
+use EventCrew\Web\DoorOrganizer;
 use EventCrew\Web\FollowupController;
 use EventCrew\Web\NewsletterController;
 use EventCrew\Web\PrivacyController;
@@ -1305,7 +1306,18 @@ final class Kernel
             fn (Container $container) => new DoorController(
                 $container->get(DoorDesk::class),
                 $container->get(DoorNewMember::class),
-                $container->get(DoorHandoff::class)
+                $container->get(DoorHandoff::class),
+                $container->get(DoorOrganizer::class)
+            )
+        );
+
+        $this->container->singleton(
+            DoorOrganizer::class,
+            fn (Container $container) => new DoorOrganizer(
+                $container->get(FreeEntryGate::class),
+                $container->get(BuyerImport::class),
+                $container->get(TicketBuyerRepository::class),
+                $container->get(TicketMail::class)
             )
         );
 

@@ -14,6 +14,8 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
+use EventCrew\Support\BuyerImport;
+use EventCrew\Support\DoorAccess;
 use EventCrew\Support\DoorDesk;
 use EventCrew\Support\DoorHandoff;
 use EventCrew\Support\DoorNewMember;
@@ -28,6 +30,7 @@ use EventCrew\Support\TicketMail;
 use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Tests\Support\SalesDeskTestCase;
 use EventCrew\Web\DoorController;
+use EventCrew\Web\DoorOrganizer;
 use RuntimeException;
 
 /**
@@ -107,6 +110,16 @@ final class DoorControllerTest extends SalesDeskTestCase
                 $desk,
                 new AuthTokenRepository(),
                 $this->salesDeskGate()
+            ),
+            new DoorOrganizer(
+                new FreeEntryGate(),
+                new BuyerImport(
+                    new TicketBuyerRepository(),
+                    new DoorAccess(new TaskRepository(), new AssignmentRepository())
+                ),
+                new TicketBuyerRepository(),
+                null,
+                static fn (string $path): bool => true
             )
         );
     }
@@ -115,14 +128,29 @@ final class DoorControllerTest extends SalesDeskTestCase
      * Posts $fields to $action as the organizer holding the door cookie and
      * answers the HTTP status the controller sent.
      *
+     * With $crew, the cookie is person 2's: not an organizer, on tonight's
+     * Welcome task (a sales-desk task) until 23:00, so the desk is open to them.
+     *
      * @param array<string, string> $fields
      */
-    private function post(string $action, array $fields): int
+    private function post(string $action, array $fields, bool $crew = false): int
     {
         $_POST = $fields;
         $_REQUEST = ['action' => $action] + $fields;
-        // desk->session(): the organizer behind the cookie.
-        $this->wpdb->nextRows[] = $this->personRow(1, true);
+
+        if ($crew) {
+            $this->cookie = DoorSession::mint(2, self::NIGHT);
+            $_COOKIE[DoorSession::COOKIE] = $this->cookie;
+            $_POST['csrf'] = DoorSession::csrfToken($this->cookie);
+            // desk->session(): the person, then stillOnDoor() and sessionOpen()'s tasks.
+            $this->wpdb->nextRows[] = $this->personRow(2);
+            $this->wpdb->nextResults[] = [$this->taskRow(6, 'welcome', '10:00', '23:00')];
+            $this->wpdb->nextRows[] = $this->assignmentRow(30, 6, 2, 'arrived');
+            $this->wpdb->nextResults[] = [$this->taskRow(6, 'welcome', '10:00', '23:00')];
+        } else {
+            // desk->session(): the organizer behind the cookie.
+            $this->wpdb->nextRows[] = $this->personRow(1, true);
+        }
 
         try {
             $this->controller()->dispatch();
@@ -452,5 +480,87 @@ final class DoorControllerTest extends SalesDeskTestCase
 
         self::assertSame(200, $status);
         self::assertSame(DoorDesk::SCAN_NOT_OURS, $sent['code'] ?? null);
+    }
+
+    public function testAnOrganizerClosesFreeEntryFromTheDesk(): void
+    {
+        $status = $this->post(
+            DoorController::ORGANIZER_ACTION,
+            ['csrf' => DoorSession::csrfToken($this->cookie), 'op' => DoorOrganizer::OP_FREE_ENTRY]
+        );
+
+        self::assertSame(200, $status);
+        self::assertSame([self::NIGHT], $this->options[FreeEntryGate::OPTION]);
+    }
+
+    public function testClosingFreeEntryWithABadTokenIsRefused(): void
+    {
+        $status = $this->post(
+            DoorController::ORGANIZER_ACTION,
+            ['csrf' => 'not-the-token', 'op' => DoorOrganizer::OP_FREE_ENTRY]
+        );
+
+        self::assertSame(403, $status);
+        self::assertArrayNotHasKey(FreeEntryGate::OPTION, $this->options);
+    }
+
+    /** The crew session the refusals below use is good for the desk's own actions. */
+    public function testTheSalesDeskCrewCanStillCountPeopleIn(): void
+    {
+        self::assertSame(200, $this->post(DoorController::COUNT_ACTION, [], true));
+        self::assertSame(1, $this->countChange());
+    }
+
+    public function testTheSalesDeskCrewCannotCloseFreeEntry(): void
+    {
+        $status = $this->post(DoorController::ORGANIZER_ACTION, ['op' => DoorOrganizer::OP_FREE_ENTRY], true);
+
+        self::assertSame(403, $status);
+        self::assertArrayNotHasKey(FreeEntryGate::OPTION, $this->options);
+    }
+
+    public function testTheSalesDeskCrewCannotSendTheRestOfTheTickets(): void
+    {
+        $status = $this->post(DoorController::ORGANIZER_ACTION, ['op' => DoorOrganizer::OP_MAIL_BUYERS], true);
+
+        self::assertSame(403, $status);
+        self::assertArrayNotHasKey(TicketMail::PENDING_OPTION, $this->options);
+    }
+
+    public function testTheSalesDeskCrewCannotAddATicketFile(): void
+    {
+        $path = (string) tempnam(sys_get_temp_dir(), 'ecdoor');
+        file_put_contents($path, "Etunimi,Sukunimi,Sähköposti,Tilauskoodi\nAnna,Tester,anna@example.com,A1\n");
+        $_FILES = ['file' => ['name' => 'holvi.csv', 'tmp_name' => $path, 'size' => 80, 'error' => UPLOAD_ERR_OK]];
+
+        try {
+            $status = $this->post(DoorController::FILE_ACTION, [], true);
+        } finally {
+            $_FILES = [];
+            unlink($path);
+        }
+
+        self::assertSame(403, $status);
+        self::assertSame([], $this->wpdb->inserts);
+    }
+
+    public function testAnOrganizerAddsATicketFileFromTheDesk(): void
+    {
+        Functions\when('sanitize_file_name')->returnArg(1);
+        Functions\when('wp_schedule_single_event')->justReturn(true);
+        $path = (string) tempnam(sys_get_temp_dir(), 'ecdoor');
+        file_put_contents($path, "Etunimi,Sukunimi,Sähköposti,Tilauskoodi\nAnna,Tester,anna@example.com,A1\n");
+        $_FILES = ['file' => ['name' => 'holvi.csv', 'tmp_name' => $path, 'size' => 80, 'error' => UPLOAD_ERR_OK]];
+
+        try {
+            $status = $this->post(DoorController::FILE_ACTION, ['csrf' => DoorSession::csrfToken($this->cookie)]);
+        } finally {
+            $_FILES = [];
+            unlink($path);
+        }
+
+        self::assertSame(200, $status);
+        self::assertSame('upload', $this->wpdb->inserts[0]['data']['source']);
+        self::assertSame('Anna Tester', $this->wpdb->inserts[0]['data']['name']);
     }
 }

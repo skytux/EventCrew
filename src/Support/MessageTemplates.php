@@ -2929,12 +2929,12 @@ final class MessageTemplates
         $doorHelp = self::botOrWeb(
             __('How to get another sales desk link: in the bot, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
             static fn (): string => __('Tap 💳 Sales desk below.', 'eventcrew'),
-            // The Door scanner button at the top of the crew page, for the
+            // The Open sales desk button at the top of the crew page, for the
             // sales-desk crew and organizers alike (Owner 2026-11-13;
             // templates/public/signup.php).
             static fn (string $url): string => sprintf(
                 /* translators: %s: link to the crew page */
-                __('Tap 🚪 Door scanner at the top of the crew page (%s).', 'eventcrew'),
+                __('Tap Open sales desk at the top of the crew page (%s).', 'eventcrew'),
                 $url
             )
         );

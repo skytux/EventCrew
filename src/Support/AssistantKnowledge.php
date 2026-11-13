@@ -266,7 +266,7 @@ final class AssistantKnowledge
             '- Settings (in that menu): name and email (Your details), notifications, language. The newsletter'
                 . ' (the announcement email) is turned on or off in Notifications, last row.',
             '- Help (in that menu): how this works and the FAQ.',
-            '- Door scanner button at the top, for the sales-desk crew of the next night and organizers: opens'
+            '- Open sales desk button (a QR-code icon) at the top, for the sales-desk crew of the next night and organizers: opens'
                 . ' the sales desk on this device.',
             '- Who else works a night is not shown on this page.',
         ];

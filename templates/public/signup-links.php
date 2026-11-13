@@ -4,7 +4,7 @@
  * The crew's Telegram group at the foot of the crew page, after the panels:
  * a small text link with the Telegram icon, signed in only (Owner
  * 2026-11-13: buttons stay few; it was the filled button at the top of every
- * tab, where the Door scanner is now). Nothing is drawn without a link.
+ * tab, where Open sales desk is now). Nothing is drawn without a link.
  *
  * @var string $eventcrew_group_link The Telegram group link, or '' to leave it out.
  */

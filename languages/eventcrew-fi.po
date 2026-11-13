@@ -11079,8 +11079,8 @@ msgstr "Henkilö lasketaan kerran kuussa. Aktiiviset asennukset: avattu aloitusn
 msgid "How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in Help in the Crew app. A line starting with \"## \" is a heading, lines starting with \"- \" are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing."
 msgstr "Miten tätä sivustoa ylläpidetään: missä se on hostattu, mitä kiertoteitä se tarvitsee, miten sähköposti kulkee, mitä ulkopuolisia palveluita on käytössä. Näytetään vain järjestäjille Crew-sovelluksen Ohjeessa. Merkeillä \"## \" alkava rivi on otsikko, merkeillä \"- \" alkavat rivit ovat luettelo, ja tyhjä rivi aloittaa uuden kappaleen. Älä kirjoita tähän salasanoja tai avaimia. Jätä tyhjäksi, jos et halua näyttää mitään."
 
-msgid "Tap 🚪 Door scanner at the top of the crew page (%s)."
-msgstr "Napauta 🚪 Oviskanneri crew-sivun yläosassa (%s)."
+msgid "Tap Open sales desk at the top of the crew page (%s)."
+msgstr "Napauta Avaa myyntipiste crew-sivun yläosassa (%s)."
 
 msgid "open the Tickets tab of the crew page (%s) and pick a night to get your free ticket."
 msgstr "avaa crew-sivun Liput-välilehti (%s) ja valitse ilta, niin saat ilmaisen lippusi."
@@ -11135,8 +11135,8 @@ msgstr "Valikko"
 msgid "Summary"
 msgstr "Yhteenveto"
 
-msgid "Door scanner"
-msgstr "Oviskanneri"
+msgid "Open sales desk"
+msgstr "Avaa myyntipiste"
 
 msgid "%d task coming"
 msgid_plural "%d tasks coming"
@@ -11169,3 +11169,45 @@ msgstr "Katso saapuneet ja roskaposti."
 #: templates/public/signup.php
 msgid "Send a new link"
 msgstr "Lähetä uusi linkki"
+
+msgid "Free entry open"
+msgstr "Vapaaliput käytössä"
+
+msgid "Free entry closed"
+msgstr "Vapaaliput suljettu"
+
+msgid "Free entry is open: credits can be spent on this night."
+msgstr "Vapaaliput ovat käytössä: niitä voi käyttää tänä iltana."
+
+msgid "Pick the ticket file first."
+msgstr "Valitse ensin lipputiedosto."
+
+msgid "That file is too big for a ticket file."
+msgstr "Tiedosto on liian suuri lipputiedostoksi."
+
+msgid "That is not an .xlsx or .csv file. Pick the ticket file exported from Holvi."
+msgstr "Se ei ole .xlsx- tai .csv-tiedosto. Valitse Holvista viety lipputiedosto."
+
+msgid "The file did not arrive. Try again."
+msgstr "Tiedosto ei tullut perille. Yritä uudelleen."
+
+msgid "This file was already added for this night. Nothing changed."
+msgstr "Tämä tiedosto on jo lisätty tälle illalle. Mikään ei muuttunut."
+
+msgid "Only organizers can do that."
+msgstr "Vain järjestäjät voivat tehdä sen."
+
+msgid "Holvi ticket file"
+msgstr "Holvin lipputiedosto"
+
+msgid "The .xlsx or .csv file exported from Holvi. Its tickets go onto tonight’s list and are emailed to the buyers; the same file twice adds nothing."
+msgstr "Holvista viety .xlsx- tai .csv-tiedosto. Sen liput tulevat illan listalle ja lähetetään ostajille sähköpostilla; sama tiedosto kahdesti ei lisää mitään."
+
+msgid "Add to the list"
+msgstr "Lisää listalle"
+
+msgid "Ticket emails"
+msgstr "Lippujen sähköpostit"
+
+msgid "Tonight’s list"
+msgstr "Illan lista"

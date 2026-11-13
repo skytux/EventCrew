@@ -1226,10 +1226,10 @@ final class SignupControllerTest extends TestCase
 
     /**
      * Owner 2026-11-13: the Summary links to the person's coming tasks; the
-     * Door scanner is not there for someone who may not open the sales desk,
+     * Open sales desk button is not there for someone who may not open the sales desk,
      * nor the old Me tab sales card.
      */
-    public function testTheSummaryLinksComingTasksAndHidesTheDoorScanner(): void
+    public function testTheSummaryLinksComingTasksAndHidesOpenSalesDesk(): void
     {
         $this->stubPageRender();
         Functions\when('wp_unslash')->returnArg(1);
@@ -1243,22 +1243,25 @@ final class SignupControllerTest extends TestCase
         self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card" id="eventcrew-summary">.*?</section>~s', $html, $card));
         self::assertMatchesRegularExpression('~<li class="eventcrew-summary-coming">.*?<a class="eventcrew-textlink" href="#eventcrew-my-tasks" data-eventcrew-goto="eventcrew-my-tasks">\s*1 task coming\s*</a>~s', $card[0]);
         self::assertStringNotContainsString('eventcrew-door-scanner', $html);
-        self::assertStringNotContainsString('🚪</span> Door scanner', $html);
+        self::assertStringNotContainsString('Open sales desk</button>', $html);
         self::assertStringNotContainsString('eventcrew-me-sales', $html);
     }
 
     /**
      * Owner 2026-11-13: someone who may open the sales desk for the next
-     * night gets the 🚪 Door scanner button at the top, posting the sales
-     * desk action (the server checks again when it is pressed).
+     * night gets the Open sales desk button at the top, with a QR-code icon
+     * (no emoji), posting the sales desk action (the server checks again when
+     * it is pressed).
      */
-    public function testTheDoorScannerIsAtTheTopForSalesDeskCrew(): void
+    public function testOpenSalesDeskIsAtTheTopForSalesDeskCrew(): void
     {
         $html = $this->signedInPage([], ['sales_desk' => true]);
 
         self::assertSame(1, preg_match('~<form class="eventcrew-links eventcrew-sales-desk" id="eventcrew-door-scanner".*?</form>~s', $html, $form));
         self::assertStringContainsString('value="' . SignupController::SALES_ACTION . '"', $form[0]);
-        self::assertMatchesRegularExpression('~<button type="submit" class="wp-element-button">\s*<span aria-hidden="true">🚪</span> Door scanner\s*</button>~u', $form[0]);
+        self::assertMatchesRegularExpression('~<button type="submit" class="wp-element-button"><svg class="eventcrew-link-icon"[^>]*stroke="currentColor"[^>]*aria-hidden="true"[^>]*>.*?</svg> Open sales desk\s*</button>~u', $form[0]);
+        self::assertStringNotContainsString('🚪', $form[0]);
+        self::assertStringNotContainsString('Door scanner', $html);
         self::assertLessThan(strpos($html, 'id="eventcrew-summary"'), strpos($html, 'id="eventcrew-door-scanner"'));
         self::assertSame(1, substr_count($html, 'id="eventcrew-door-scanner"'));
     }

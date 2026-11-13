@@ -239,11 +239,11 @@ final class MessageTemplatesTest extends TestCase
     }
 
     /**
-     * The 🚪 Door scanner button at the top of the crew page opens the sales
+     * The Open sales desk button at the top of the crew page opens the sales
      * desk for the sales-desk crew and organizers alike (Owner 2026-11-13),
      * so a web-only person's door help names it for both.
      */
-    public function testTheWebDoorHelpNamesTheDoorScanner(): void
+    public function testTheWebDoorHelpNamesOpenSalesDesk(): void
     {
         $this->crewPage();
         $organizer = [
@@ -251,14 +251,14 @@ final class MessageTemplatesTest extends TestCase
             'day' => 'Sat 1 Aug',
         ];
         $crew = ['person' => $this->person(), 'day' => 'Sat 1 Aug'];
-        $help = 'Tap 🚪 Door scanner at the top of the crew page (https://site.test/crew/).';
+        $help = 'Tap Open sales desk at the top of the crew page (https://site.test/crew/).';
 
         foreach (['organizer_notice', 'sales_desk_link'] as $kind) {
             foreach ([$organizer, $crew] as $context) {
                 self::assertStringContainsString($help, MessageTemplates::body($kind, $context), $kind);
                 self::assertStringNotContainsString('Me tab', MessageTemplates::body($kind, $context), $kind);
                 self::assertStringContainsString(
-                    'Napauta 🚪 Oviskanneri crew-sivun yläosassa (https://site.test/crew/).',
+                    'Napauta Avaa myyntipiste crew-sivun yläosassa (https://site.test/crew/).',
                     Language::run(Language::FINNISH, static fn (): string => MessageTemplates::body($kind, $context)),
                     $kind
                 );

@@ -190,7 +190,7 @@ if ($eventcrew_link_expired) {
 
     <?php
     /*
-     * 🚪 Door scanner at the top of every tab (Owner 2026-11-13), where the
+     * Open sales desk (a QR-code icon) at the top of every tab (Owner 2026-11-13), where the
      * Telegram group button was: it opens the sales desk on this device. For
      * the next night's sales-desk crew (SalesDeskGate, via
      * SignupController::canOpenSalesDesk()) and for organizers; the server
@@ -205,7 +205,7 @@ if ($eventcrew_link_expired) {
             <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['sales_action']); ?>">
             <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
             <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-            <button type="submit" class="wp-element-button"><span aria-hidden="true">🚪</span> <?php esc_html_e('Door scanner', 'eventcrew'); ?></button>
+            <button type="submit" class="wp-element-button"><svg class="eventcrew-link-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h3M21 17v4h-1"/></svg> <?php esc_html_e('Open sales desk', 'eventcrew'); ?></button>
         </form>
     <?php endif; ?>
 
@@ -3186,7 +3186,7 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         if (!target || !root.contains(target)) { return; }
         e.preventDefault();
         if (!holder) {
-            // Above the tabs (the Door scanner): scroll there, focus its button.
+            // Above the tabs (Open sales desk): scroll there, focus its button.
             target.scrollIntoView({ behavior: 'smooth', block: 'center' });
             var control = target.querySelector('button, a');
             if (control) { control.focus({ preventScroll: true }); }

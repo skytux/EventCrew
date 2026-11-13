@@ -48,8 +48,19 @@
  * (assets/vendor/qrcode-generator), the one file this page loads besides
  * itself.
  *
+ * The page has three parts. The header stays at the top: the day and the
+ * count, the Scan / Switch / Add buttons, the count without a name and the
+ * name search. Under it, for organizers only, the folded "Organizer"
+ * section (Web\DoorOrganizer): its one-line summary says whether free entry
+ * is open; unfolded, it has "Close free entry (sold out)" / "Reopen free
+ * entry", the Holvi ticket file (.xlsx or .csv) to add to tonight's list,
+ * and the ticket emails' "Send the rest now". The sales-desk crew's page
+ * has no such section, and the server refuses those actions to them
+ * anyway. Then tonight's list, one part per kind of entry.
+ *
  * @var array<string, mixed> $eventcrew_state  DoorDesk::state() for the night
- * @var array<string, mixed> $eventcrew_config ajaxUrl, csrf, who, pollMs, searchMin, maxPlus, actions, qrDecodeUrl, ticketDecoders
+ * @var array<string, mixed> $eventcrew_config ajaxUrl, csrf, who, pollMs, searchMin, maxPlus, actions, qrDecodeUrl,
+ *                                             ticketDecoders, organizer (DoorOrganizer::info(), or null), maxFileBytes
  */
 
 declare(strict_types=1);
@@ -109,7 +120,15 @@ $eventcrew_text = [
     'notePlus' => __('Who came with them?', 'eventcrew'),
     'emailOnly' => __('(email only)', 'eventcrew'),
     'remove' => __('Remove', 'eventcrew'),
+    'freeOpen' => __('Free entry open', 'eventcrew'),
+    'freeClosed' => __('Free entry closed', 'eventcrew'),
+    'freeOpenLong' => __('Free entry is open: credits can be spent on this night.', 'eventcrew'),
+    'pickFile' => __('Pick the ticket file first.', 'eventcrew'),
+    'tooBig' => __('That file is too big for a ticket file.', 'eventcrew'),
+    'mailBuyersAsk' => __('Email their tickets now to the buyers who have not got one?', 'eventcrew'),
+    'mailGuestsAsk' => __('Email their tickets now to the guests who have not got one?', 'eventcrew'),
 ];
+$eventcrew_organizer = is_array($eventcrew_config['organizer'] ?? null);
 ?><!doctype html>
 <html lang="<?php echo esc_attr(get_bloginfo('language')); ?>">
 <head>
@@ -200,6 +219,20 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
 #ec-scan-tickets{list-style:none;margin:8px 0 0;padding:0}
 #ec-scan-tickets li{padding:6px 0;border-bottom:1px solid var(--line)}
 #ec-scan-tickets li.is-in{color:var(--in)}
+.ec-org{margin:8px 0 0;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.ec-org>summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 12px;font-weight:600;cursor:pointer;list-style:none}
+.ec-org>summary::-webkit-details-marker{display:none}
+.ec-org>summary::after{content:"";width:8px;height:8px;margin-left:auto;border:solid var(--muted);border-width:0 2px 2px 0;transform:rotate(45deg);transition:transform .15s}
+.ec-org[open]>summary::after{transform:rotate(-135deg)}
+.ec-org-state{font-weight:400;font-size:14px;color:var(--muted)}
+.ec-org-state.is-closed{color:var(--err);font-weight:600}
+.ec-org-body{padding:0 12px 12px}
+.ec-org-part{padding:10px 0;border-top:1px solid var(--line)}
+.ec-org h3{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 4px}
+.ec-org p{margin:4px 0}
+.ec-org .ec-textlink{font-size:15px;min-height:32px}
+.ec-org input[type=file]{display:block;width:100%;font:inherit;font-size:14px;margin:8px 0}
+.ec-org .ec-msg{background:var(--bg)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -244,7 +277,40 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
     <?php /* The waiting ticket send (state.sending), shown only while it waits. */ ?>
     <p class="ec-msg ec-sending" id="ec-sending" hidden><span id="ec-sending-text"></span>
         <button type="button" class="ec-link" id="ec-sending-cancel"><?php esc_html_e('Cancel sending', 'eventcrew'); ?></button></p>
-    <div id="ec-sections"></div>
+    <?php if ($eventcrew_organizer) : ?>
+    <details class="ec-org" id="ec-org">
+        <summary><?php esc_html_e('Organizer', 'eventcrew'); ?> <span class="ec-org-state" id="ec-org-state"></span></summary>
+        <div class="ec-org-body">
+            <p class="ec-msg" id="ec-org-msg" role="status"></p>
+            <section class="ec-org-part" aria-labelledby="ec-org-free-title">
+                <h3 id="ec-org-free-title"><?php esc_html_e('Free entry', 'eventcrew'); ?></h3>
+                <p id="ec-org-closed"></p>
+                <button type="button" class="ec-textlink" id="ec-org-free"></button>
+            </section>
+            <section class="ec-org-part" aria-labelledby="ec-org-file-title">
+                <h3 id="ec-org-file-title"><?php esc_html_e('Holvi ticket file', 'eventcrew'); ?></h3>
+                <p id="ec-org-buyers"></p>
+                <form id="ec-org-file-form" enctype="multipart/form-data">
+                    <label class="ec-muted" for="ec-org-file"><?php esc_html_e('The .xlsx or .csv file exported from Holvi. Its tickets go onto tonight’s list and are emailed to the buyers; the same file twice adds nothing.', 'eventcrew'); ?></label>
+                    <input type="file" id="ec-org-file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv">
+                    <button type="submit" id="ec-org-upload"><?php esc_html_e('Add to the list', 'eventcrew'); ?></button>
+                </form>
+            </section>
+            <section class="ec-org-part" id="ec-org-mail" aria-labelledby="ec-org-mail-title">
+                <h3 id="ec-org-mail-title"><?php esc_html_e('Ticket emails', 'eventcrew'); ?></h3>
+                <p id="ec-org-mail-buyers"><strong><?php esc_html_e('Holvi tickets', 'eventcrew'); ?></strong><br>
+                    <span class="ec-muted" id="ec-org-mail-buyers-text"></span><br>
+                    <button type="button" class="ec-textlink" id="ec-org-mail-buyers-send"><?php esc_html_e('Send the rest now', 'eventcrew'); ?></button></p>
+                <p id="ec-org-mail-guests"><strong><?php esc_html_e('Guests', 'eventcrew'); ?></strong><br>
+                    <span class="ec-muted" id="ec-org-mail-guests-text"></span><br>
+                    <button type="button" class="ec-textlink" id="ec-org-mail-guests-send"><?php esc_html_e('Send the rest now', 'eventcrew'); ?></button></p>
+            </section>
+        </div>
+    </details>
+    <?php endif; ?>
+    <section id="ec-list" aria-label="<?php esc_attr_e('Tonight’s list', 'eventcrew'); ?>">
+        <div id="ec-sections"></div>
+    </section>
 </main>
 <dialog id="ec-add" aria-labelledby="ec-add-title">
     <div class="ec-dialog-head">
@@ -1668,6 +1734,124 @@ dialog input[type=text],dialog input[type=email]{width:100%;font:inherit;padding
             poll();
         }
     });
+
+    // The Organizer section: organizers only (config.organizer is null for
+    // the sales-desk crew, whose page has no such section). Each answer
+    // brings the section's fresh contents (DoorOrganizer::info()) and the
+    // list's state.
+    function drawOrganizer(info) {
+        var closed = !!info.closed_text;
+
+        el('ec-org-state').textContent = closed ? text.freeClosed : text.freeOpen;
+        el('ec-org-state').classList.toggle('is-closed', closed);
+        el('ec-org-closed').textContent = closed ? info.closed_text : text.freeOpenLong;
+        el('ec-org-free').textContent = info.toggle;
+        el('ec-org-buyers').textContent = info.buyers;
+        ['buyers', 'guests'].forEach(function (kind) {
+            el('ec-org-mail-' + kind + '-text').textContent = info['mail_' + kind] || '';
+            el('ec-org-mail-' + kind).hidden = !info['mail_' + kind];
+        });
+        el('ec-org-mail').hidden = !info.mail_buyers && !info.mail_guests;
+    }
+
+    function sayOrganizer(message, isError) {
+        el('ec-org-msg').textContent = message || '';
+        el('ec-org-msg').classList.toggle('is-error', !!message && !!isError);
+    }
+
+    function organizerDone(data) {
+        // Only the list's state: a refusal here is not the max people line's.
+        if (data && data.state) {
+            apply({ state: data.state });
+        }
+
+        if (data && data.organizer) {
+            drawOrganizer(data.organizer);
+        }
+
+        sayOrganizer(data && data.message ? data.message : (data && data.ok ? '' : text.failed), !data || !data.ok);
+
+        return data;
+    }
+
+    function organizerFailed(error) {
+        if (!error || 'session' !== error.message) {
+            sayOrganizer(text.failed, true);
+        }
+    }
+
+    function organizerOp(op) {
+        return post('organizer', { op: op }).then(organizerDone, organizerFailed);
+    }
+
+    if (config.organizer && el('ec-org')) {
+        drawOrganizer(config.organizer);
+
+        // Unfolding it reads the section fresh: someone may have changed it
+        // on another phone or in the Admin tab.
+        el('ec-org').addEventListener('toggle', function () {
+            if (el('ec-org').open) {
+                sayOrganizer('');
+                organizerOp('info');
+            }
+        });
+        el('ec-org-free').addEventListener('click', function () { organizerOp('free_entry'); });
+        el('ec-org-mail-buyers-send').addEventListener('click', function () {
+            if (window.confirm(text.mailBuyersAsk)) {
+                organizerOp('mail_buyers');
+            }
+        });
+        el('ec-org-mail-guests-send').addEventListener('click', function () {
+            if (window.confirm(text.mailGuestsAsk)) {
+                organizerOp('mail_guests');
+            }
+        });
+
+        // The ticket file goes as multipart form data, with the same token
+        // as every other post. The server checks the type and size again.
+        el('ec-org-file-form').addEventListener('submit', function (event) {
+            var input = el('ec-org-file');
+            var file = input.files && input.files[0];
+            var button = el('ec-org-upload');
+            var body = new FormData();
+            var stop;
+
+            event.preventDefault();
+
+            if (!file) {
+                sayOrganizer(text.pickFile, true);
+                return;
+            }
+
+            if (file.size > config.maxFileBytes) {
+                sayOrganizer(text.tooBig, true);
+                return;
+            }
+
+            body.append('action', config.actions.file);
+            body.append('csrf', config.csrf);
+            body.append('file', file, file.name);
+            button.disabled = true;
+            stop = busy(button);
+
+            fetch(config.ajaxUrl, { method: 'POST', body: body, credentials: 'same-origin' })
+                .then(function (response) {
+                    stop();
+                    return answer(response);
+                }, function (error) {
+                    stop();
+                    throw error;
+                })
+                .then(function (data) {
+                    organizerDone(data);
+
+                    if (data && data.ok) {
+                        input.value = '';
+                    }
+                }, organizerFailed)
+                .then(function () { button.disabled = false; });
+        });
+    }
 
     draw();
     timer = setTimeout(poll, config.pollMs);

@@ -495,7 +495,7 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
         $sent = $this->sent();
         self::assertCount(1, $sent);
         self::assertStringContainsString(
-            'Need another one? Tap 🚪 Door scanner at the top of the crew page (https://site.test/crew/).',
+            'Need another one? Tap Open sales desk at the top of the crew page (https://site.test/crew/).',
             $sent[0]
         );
         self::assertStringNotContainsString('/door', $sent[0]);
@@ -510,7 +510,7 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
         $sent = $this->sent();
         self::assertCount(1, $sent);
         self::assertStringContainsString(
-            'Tarvitsetko uuden myyntipisteen linkin? Napauta 🚪 Oviskanneri crew-sivun yläosassa'
+            'Tarvitsetko uuden myyntipisteen linkin? Napauta Avaa myyntipiste crew-sivun yläosassa'
                 . ' (https://site.test/crew/).',
             $sent[0]
         );
