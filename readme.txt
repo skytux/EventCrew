@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.253
+Stable tag: 1.140.254
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.254 =
+* Crew app helper: Open my ticket after a credit is spent; its buttons share one small style, side by side.
 
 = 1.140.253 =
 * Crew app helper: asking for a ticket for yourself asks Confirm or Cancel and spends a credit on Confirm.
@@ -2166,6 +2169,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.254 =
+No settings change.
 
 = 1.140.253 =
 No settings change.

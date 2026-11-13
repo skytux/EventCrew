@@ -907,11 +907,11 @@ msgstr ""
 msgid "A free-entry ticket can't be cancelled, but you can give it to someone else."
 msgstr ""
 
-#: src/Support/TicketRules.php:36 src/Telegram/TicketRedemptionService.php:644
+#: src/Support/TicketRules.php:36 src/Telegram/TicketRedemptionService.php:646
 msgid "A free-entry ticket can’t be cancelled."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:643
+#: src/Telegram/TicketRedemptionService.php:645
 msgid "A free-entry ticket can’t be cancelled. You can give it to someone else."
 msgstr ""
 
@@ -1779,7 +1779,7 @@ msgstr ""
 msgid "Asked only for a role task; every other task always counts."
 msgstr ""
 
-#: templates/public/signup-assistant.php:82
+#: templates/public/signup-assistant.php:83
 msgid "Assistant"
 msgstr ""
 
@@ -2055,7 +2055,7 @@ msgstr ""
 
 #: src/Telegram/AssignCommand.php:374 src/Telegram/AssignCommand.php:418 src/Telegram/AssignCommand.php:720 src/Telegram/AssistantService.php:740
 #: src/Telegram/BuyerListReset.php:155 src/Telegram/CommandFlow.php:342 src/Telegram/EventsCommand.php:98 src/Telegram/MenuButtons.php:393
-#: src/Telegram/SayCommand.php:122 src/Telegram/TaskCommand.php:898 src/Telegram/TicketController.php:917 src/Web/AssistantWebController.php:290
+#: src/Telegram/SayCommand.php:122 src/Telegram/TaskCommand.php:898 src/Telegram/TicketController.php:917 src/Web/AssistantWebController.php:299
 #: templates/admin/people.php:124 templates/admin/tasks.php:293 templates/public/signup-board.php:263 templates/public/signup-groupchat.php:85
 #: templates/public/signup.php:846 templates/public/signup.php:1486 templates/public/signup.php:2312
 msgid "Cancel"
@@ -2066,7 +2066,7 @@ msgstr ""
 msgid "Cancel %1$s, %2$s"
 msgstr ""
 
-#: src/Web/AssistantWebController.php:341
+#: src/Web/AssistantWebController.php:350
 msgid "Cancel %s"
 msgstr ""
 
@@ -2138,7 +2138,7 @@ msgstr ""
 
 #: src/Telegram/AssignCommand.php:228 src/Telegram/AssistantService.php:223 src/Telegram/AssistantService.php:224 src/Telegram/BuyerListReset.php:105
 #: src/Telegram/CommandFlow.php:199 src/Telegram/EventsCommand.php:145 src/Telegram/SayCommand.php:176 src/Telegram/TaskCommand.php:147
-#: src/Web/AssistantWebController.php:263
+#: src/Web/AssistantWebController.php:272
 msgid "Cancelled."
 msgstr ""
 
@@ -2371,7 +2371,7 @@ msgid "Clean"
 msgstr ""
 
 #: src/Telegram/NightCommands.php:316 src/Web/NewsletterController.php:505 templates/public/door.php:319 templates/public/door.php:401
-#: templates/public/door.php:422 templates/public/door.php:439 templates/public/signup-app-install.php:95 templates/public/signup-assistant.php:81
+#: templates/public/door.php:422 templates/public/door.php:439 templates/public/signup-app-install.php:95 templates/public/signup-assistant.php:82
 #: templates/public/signup-channels.php:47
 msgid "Close"
 msgstr ""
@@ -2452,7 +2452,7 @@ msgid "Conditions: the completed tasks someone needs before the organizers hear 
 msgstr ""
 
 #: src/Support/NewsletterConfirmMail.php:48 src/Telegram/AssistantService.php:739 src/Telegram/EventsCommand.php:97 src/Telegram/SayCommand.php:121
-#: src/Web/AssistantWebController.php:289
+#: src/Web/AssistantWebController.php:298
 msgid "Confirm"
 msgstr ""
 
@@ -2648,16 +2648,16 @@ msgstr ""
 msgid "Credit redeemed — they’re on the door list."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:213 src/Telegram/TicketRedemptionService.php:363
+#: src/Telegram/TicketRedemptionService.php:215 src/Telegram/TicketRedemptionService.php:365
 #. translators: %s: the night, like Sat 14 Nov
 msgid "Credit spent on %s."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:376
+#: src/Telegram/TicketRedemptionService.php:378
 msgid "Credit spent — send /me tickets to see your ticket."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:375
+#: src/Telegram/TicketRedemptionService.php:377
 msgid "Credit spent — your ticket is in the next message."
 msgstr ""
 
@@ -3600,7 +3600,7 @@ msgstr ""
 msgid "Free entry is closed by the event itself (sold out, hidden or off). Change it in the event."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:774 src/Web/SignupController.php:1623
+#: src/Telegram/TicketRedemptionService.php:776 src/Web/SignupController.php:1623
 msgid "Free entry is closed for that date."
 msgstr ""
 
@@ -3648,12 +3648,12 @@ msgstr ""
 msgid "Free-entry credits and tickets have no cash value. They can't be refunded, sold or paid out in any form; they can only be used to get a ticket for an eligible event."
 msgstr ""
 
-#: src/Telegram/ProfileService.php:90 src/Telegram/TicketRedemptionService.php:254 templates/public/signup.php:724
+#: src/Telegram/ProfileService.php:90 src/Telegram/TicketRedemptionService.php:256 templates/public/signup.php:724
 #. translators: %d: free-entry credits
 msgid "Free-entry credits: %d"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:208 src/Support/TicketMail.php:1976 src/Telegram/TicketRedemptionService.php:251
+#: src/Support/MessageTemplates.php:208 src/Support/TicketMail.php:1976 src/Telegram/TicketRedemptionService.php:253
 msgid "Free-entry ticket"
 msgstr ""
 
@@ -3828,7 +3828,7 @@ msgstr ""
 msgid "Giving tickets away is turned off."
 msgstr ""
 
-#: templates/public/signup-assistant.php:75
+#: templates/public/signup-assistant.php:76
 msgid "Go to %s"
 msgstr ""
 
@@ -4021,7 +4021,7 @@ msgstr[1] ""
 msgid "Hi %1$s,\n\nConfirm your email to finish signing up for %2$s tasks.\n\nThe link works once and expires in a day. If you didn't ask for this, you can ignore this email."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:627
+#: src/Telegram/TicketRedemptionService.php:629
 #. translators: 1: name, 2: event date
 msgid "Hi %1$s,\n\nHere is your free-entry ticket for %2$s. Show it at the door."
 msgstr ""
@@ -4635,7 +4635,7 @@ msgstr ""
 msgid "Keep it"
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:423
+#: src/Telegram/TicketRedemptionService.php:425
 msgid "Keep my credit"
 msgstr ""
 
@@ -4664,7 +4664,7 @@ msgstr ""
 msgid "Kept: you are still on %s."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:399
+#: src/Telegram/TicketRedemptionService.php:401
 #. translators: %d: number of free-entry credits
 msgid "Kept: you have %d free-entry credit."
 msgid_plural "Kept: you have %d free-entry credits."
@@ -6249,7 +6249,7 @@ msgstr ""
 msgid "Open in the app"
 msgstr ""
 
-#: src/Support/TicketMail.php:1978
+#: src/Support/TicketMail.php:1978 src/Web/AssistantWebController.php:244
 msgid "Open my ticket"
 msgstr ""
 
@@ -6629,7 +6629,7 @@ msgstr ""
 msgid "Pick a role that still exists in Settings."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:257
+#: src/Telegram/TicketRedemptionService.php:259
 msgid "Pick an event:"
 msgstr ""
 
@@ -7517,7 +7517,7 @@ msgstr ""
 msgid "See you on the dancefloor"
 msgstr ""
 
-#: src/Telegram/NightCommands.php:433 src/Telegram/TaskCommand.php:553 src/Telegram/TellCommand.php:253 templates/public/signup-assistant.php:60
+#: src/Telegram/NightCommands.php:433 src/Telegram/TaskCommand.php:553 src/Telegram/TellCommand.php:253 templates/public/signup-assistant.php:61
 #: templates/public/signup-groupchat.php:93 templates/public/signup.php:249
 msgid "Send"
 msgstr ""
@@ -8103,7 +8103,7 @@ msgstr ""
 msgid "Show the open tasks"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:470 src/Telegram/TicketRedemptionService.php:631 src/Telegram/TransferPage.php:456
+#: src/Support/MessageTemplates.php:470 src/Telegram/TicketRedemptionService.php:633 src/Telegram/TransferPage.php:456
 msgid "Show your ticket"
 msgstr ""
 
@@ -8169,7 +8169,7 @@ msgstr ""
 msgid "Sign up again"
 msgstr ""
 
-#: src/Web/AssistantWebController.php:339
+#: src/Web/AssistantWebController.php:348
 msgid "Sign up for %s"
 msgstr ""
 
@@ -8357,7 +8357,7 @@ msgstr ""
 msgid "Sorry text (missed)"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:479 templates/public/signup-assistant.php:73
+#: src/Telegram/AssistantService.php:479 templates/public/signup-assistant.php:74
 msgid "Sorry, I could not answer just now. Please try again."
 msgstr ""
 
@@ -8373,7 +8373,7 @@ msgstr ""
 msgid "Spam protection"
 msgstr ""
 
-#: templates/public/signup-assistant.php:58
+#: templates/public/signup-assistant.php:59
 msgid "Speak"
 msgstr ""
 
@@ -8381,7 +8381,7 @@ msgstr ""
 msgid "Spend a free-entry credit on"
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:437
+#: src/Telegram/TicketRedemptionService.php:439
 #. translators: %s: the night, like Sat 14 Nov
 msgid "Spend a free-entry credit on %s?"
 msgstr ""
@@ -8902,7 +8902,7 @@ msgstr ""
 msgid "Telegram’s API has no setting that stops people adding the bot to other groups. To stop it, turn off Allow Groups in BotFather: /mybots → the bot → Bot Settings → Allow Groups?"
 msgstr ""
 
-#: templates/public/signup-assistant.php:40
+#: templates/public/signup-assistant.php:41
 msgid "Tell me what you want to do…"
 msgstr ""
 
@@ -9087,7 +9087,7 @@ msgid "That button no longer works. Send /people again."
 msgstr ""
 
 #: src/Telegram/NightCommands.php:111 src/Telegram/PersonCommands.php:640 src/Telegram/TaskCommand.php:195 src/Web/AssistantWebChanges.php:44
-#: src/Web/AssistantWebChanges.php:64 src/Web/AssistantWebController.php:224 src/Web/AssistantWebController.php:229 src/Web/AssistantWebController.php:253
+#: src/Web/AssistantWebChanges.php:64 src/Web/AssistantWebController.php:224 src/Web/AssistantWebController.php:229 src/Web/AssistantWebController.php:262
 msgid "That can no longer be done."
 msgstr ""
 
@@ -9156,7 +9156,7 @@ msgstr ""
 msgid "That event has no start date recorded, so its tasks cannot be scheduled. Set one on the event and try again."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:776 src/Web/SignupController.php:1625
+#: src/Telegram/TicketRedemptionService.php:778 src/Web/SignupController.php:1625
 msgid "That event is no longer available."
 msgstr ""
 
@@ -10588,7 +10588,7 @@ msgstr ""
 msgid "They were told: unknown to the organizers."
 msgstr ""
 
-#: templates/public/signup-assistant.php:72
+#: templates/public/signup-assistant.php:73
 msgid "Thinking…"
 msgstr ""
 
@@ -10822,7 +10822,7 @@ msgstr ""
 msgid "This ticket link is not valid."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:442
+#: src/Telegram/TicketRedemptionService.php:444
 #. translators: %d: the person's free-entry credits now
 msgid "This uses your only free-entry credit."
 msgid_plural "This uses 1 of your %d free-entry credits."
@@ -12173,7 +12173,7 @@ msgstr ""
 msgid "Yes, delete"
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:422
+#: src/Telegram/TicketRedemptionService.php:424
 msgid "Yes, use a credit"
 msgstr ""
 
@@ -12194,7 +12194,7 @@ msgstr ""
 msgid "You already have 3 offers waiting. Cancel one first."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:775 src/Web/SignupController.php:1624
+#: src/Telegram/TicketRedemptionService.php:777 src/Web/SignupController.php:1624
 msgid "You already have a free-entry ticket for that night."
 msgstr ""
 
@@ -12405,7 +12405,7 @@ msgstr ""
 msgid "You have no coming tasks. See the open ones with /board."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:773 src/Web/SignupController.php:1622
+#: src/Telegram/TicketRedemptionService.php:775 src/Web/SignupController.php:1622
 msgid "You have no free-entry credits to spend."
 msgstr ""
 
@@ -12504,7 +12504,7 @@ msgstr ""
 msgid "Your account is blocked. Talk to an organizer."
 msgstr ""
 
-#: templates/public/signup-assistant.php:77
+#: templates/public/signup-assistant.php:78
 msgid "Your browser’s speech service (Google or Apple) turns your voice into text."
 msgstr ""
 
@@ -12571,7 +12571,7 @@ msgstr[1] ""
 msgid "Your first name (optional)"
 msgstr ""
 
-#: src/Support/MessageTemplates.php:1881 src/Telegram/TicketRedemptionService.php:624
+#: src/Support/MessageTemplates.php:1881 src/Telegram/TicketRedemptionService.php:626
 msgid "Your free-entry ticket"
 msgstr ""
 
@@ -12705,7 +12705,7 @@ msgstr ""
 msgid "Your ticket is cancelled"
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:215
+#: src/Telegram/TicketRedemptionService.php:217
 msgid "Your ticket is on the Tickets tab."
 msgstr ""
 
@@ -13155,7 +13155,7 @@ msgstr ""
 msgid "the ticket holder’s first name. When there is no name, it is left out with the space in front of it: “Hi {first_name},” becomes “Hi,”."
 msgstr ""
 
-#: src/Web/AssistantWebController.php:334
+#: src/Web/AssistantWebController.php:343
 msgid "this task"
 msgstr ""
 
@@ -13364,7 +13364,7 @@ msgid_plural "🎁 You’ve been given %d free-entry credits. Tap 🎟 Free-entr
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Support/MessageTemplates.php:471 src/Support/MessageTemplates.php:1233 src/Support/TicketTransferService.php:602 src/Telegram/TicketRedemptionService.php:601
+#: src/Support/MessageTemplates.php:471 src/Support/MessageTemplates.php:1233 src/Support/TicketTransferService.php:602 src/Telegram/TicketRedemptionService.php:603
 msgid "🎟 Show your ticket"
 msgstr ""
 
