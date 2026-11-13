@@ -1387,18 +1387,25 @@
 .eventcrew-signup .eventcrew-tg-wait[hidden] { display: none; }
 
 /*
- * The code from the sign-in email: a label, a field just wide enough for six
- * digits and a Sign in text link on one line. The install hint is a text
+ * The code from the sign-in email: a label, a big field for six digits, the
+ * Sign in button under it and a link back to the email form. The install hint is a text
  * link at the foot of the page. Both are shown by the page script.
  */
-.eventcrew-signup .eventcrew-signin-code { margin-top: .75em; }
-.eventcrew-signup .eventcrew-signin-code label { display: block; font-weight: 600; }
+/* Owner 2026-11-13: the code in place of the email form, big and centred. */
+.eventcrew-signup .eventcrew-signin-code {
+    display: flex; flex-direction: column; align-items: center; gap: .6em;
+    margin-top: .5em; text-align: center;
+}
+.eventcrew-signup .eventcrew-signin-code label { font-weight: 600; font-size: 1.15em; }
+.eventcrew-signup .eventcrew-signin-code .eventcrew-hint { margin: 0; }
 .eventcrew-signup .eventcrew-signin-code-row {
-    display: flex; flex-wrap: wrap; align-items: center; gap: .5em 1em; margin-top: .35em;
+    display: flex; flex-direction: column; align-items: center; gap: .8em; margin-top: .3em;
 }
 .eventcrew-signup .eventcrew-signin-code input[name="code"] {
-    width: 8ch; box-sizing: content-box; letter-spacing: .15em; font-variant-numeric: tabular-nums;
+    width: 10ch; box-sizing: content-box; padding: .35em .5em;
+    font-size: 2em; text-align: center; letter-spacing: .2em; font-variant-numeric: tabular-nums;
 }
+.eventcrew-signup .eventcrew-signin-code button { min-height: 44px; min-width: 10em; }
 .eventcrew-signup .eventcrew-install { margin-top: 1.5em; text-align: center; }
 .eventcrew-signup .eventcrew-signin-code[hidden],
 .eventcrew-signup .eventcrew-install[hidden],

@@ -427,7 +427,8 @@ if ($eventcrew_link_expired) {
                 <input type="hidden" name="action" value="<?php echo esc_attr((string) ($view['code_action'] ?? '')); ?>">
                 <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_signin_return); ?>">
                 <input type="hidden" name="email" value="">
-                <label for="eventcrew-code"><?php esc_html_e('Or type the code from the email', 'eventcrew'); ?></label>
+                <label for="eventcrew-code"><?php esc_html_e('Type the code from the email', 'eventcrew'); ?></label>
+                <p class="eventcrew-muted eventcrew-hint"><?php esc_html_e('Check your inbox, and the spam folder.', 'eventcrew'); ?></p>
                 <span class="eventcrew-signin-code-row">
                     <input
                         type="text"
@@ -440,8 +441,9 @@ if ($eventcrew_link_expired) {
                         maxlength="<?php echo (int) (\EventCrew\Support\LoginCode::LENGTH + 1); ?>"
                         size="<?php echo (int) (\EventCrew\Support\LoginCode::LENGTH + 1); ?>"
                         class="wp-element-input">
-                    <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Sign in', 'eventcrew'); ?></button>
+                    <button type="submit" class="wp-element-button"><?php esc_html_e('Sign in', 'eventcrew'); ?></button>
                 </span>
+                <a href="#eventcrew-email" class="eventcrew-textlink" data-eventcrew-code-back><?php esc_html_e('Send a new link', 'eventcrew'); ?></a>
             </form>
             <script>
             (function () {
@@ -468,11 +470,38 @@ if ($eventcrew_link_expired) {
                     try { localStorage.removeItem(WAIT_KEY); } catch (e) {}
                 }
 
+                // The code takes the email form's place (Owner 2026-11-13: bigger,
+                // centred, replacing the email area); Send a new link brings
+                // the email form back, the address still in it.
+                function codeMode(on) {
+                    var signin = document.querySelector('form[data-eventcrew-signin]');
+                    var choice = document.querySelector('[data-eventcrew-tg-login]');
+                    var back = document.querySelector('[data-eventcrew-tg-back]');
+                    var sent = document.getElementById('eventcrew-signin-sent');
+                    window.eventcrewCodeShown = on;
+                    form.hidden = !on;
+                    if (signin) { signin.hidden = on; }
+                    if (sent) { sent.hidden = true; }
+                    if (on && choice) { choice.hidden = true; }
+                    if (back) { back.hidden = on || !choice; }
+                    if (on) {
+                        try { field.focus({ preventScroll: true }); } catch (e) {}
+                    } else {
+                        var input = document.getElementById('eventcrew-email');
+                        if (input) { input.focus(); }
+                    }
+                }
+
+                form.querySelector('[data-eventcrew-code-back]').addEventListener('click', function (event) {
+                    event.preventDefault();
+                    codeMode(false);
+                });
+
                 // Called by the sign-in form's script when a link was sent.
                 window.eventcrewShowCode = function (address) {
                     if (!address) { return; }
                     email.value = address;
-                    form.hidden = false;
+                    codeMode(true);
                     try { localStorage.setItem(WAIT_KEY, String(Date.now() + WAIT_MS)); } catch (e) {}
                 };
 
@@ -483,9 +512,7 @@ if ($eventcrew_link_expired) {
                     var address = localStorage.getItem(EMAIL_KEY) || '';
                     if (until > Date.now() && address) {
                         email.value = address;
-                        form.hidden = false;
-                        var sent = document.getElementById('eventcrew-signin-sent');
-                        if (sent) { sent.hidden = false; }
+                        codeMode(true);
                     } else if (until) {
                         forget();
                     }
@@ -515,7 +542,7 @@ if ($eventcrew_link_expired) {
                             }
                             if (res && 'code_locked' === res.code) {
                                 forget();
-                                form.hidden = true;
+                                codeMode(false);
                             }
                             field.value = '';
                             toast(res && res.notice);
@@ -4232,6 +4259,12 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
     document.addEventListener('visibilitychange', onReturn);
     window.addEventListener('focus', onReturn);
 
-    showChoice();
+    // Back after a reload with the emailed code still good: the code field
+    // stays in place of the choice (the code form's script above).
+    if (window.eventcrewCodeShown) {
+        choice.hidden = true;
+    } else {
+        showChoice();
+    }
 })();
 </script>

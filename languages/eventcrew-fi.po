@@ -10702,9 +10702,6 @@ msgstr "Liian monta väärää koodia. Pyydä uusi linkki."
 msgid "Too many wrong codes from here. Wait an hour and try again."
 msgstr "Liian monta väärää koodia täältä. Odota tunti ja yritä uudelleen."
 
-#: templates/public/signup.php
-msgid "Or type the code from the email"
-msgstr "Tai kirjoita sähköpostin koodi"
 
 #: templates/public/signup.php
 msgid "Install the app"
@@ -11157,3 +11154,15 @@ msgstr "Selain ei saanut ilmoituksia päälle. Salli ne puhelimen asetuksissa: S
 #, php-format
 msgid "The app did not finish turning on notifications. In the phone's Settings → Apps → %s → Notifications, allow them. Then close the app fully, open it and try again."
 msgstr "Sovellus ei saanut ilmoituksia päälle. Salli ne puhelimen asetuksissa: Sovellukset → %s → Ilmoitukset. Sulje sovellus kokonaan, avaa se ja yritä uudelleen."
+
+#: templates/public/signup.php
+msgid "Type the code from the email"
+msgstr "Kirjoita sähköpostin koodi"
+
+#: templates/public/signup.php
+msgid "Check your inbox, and the spam folder."
+msgstr "Katso saapuneet ja roskaposti."
+
+#: templates/public/signup.php
+msgid "Send a new link"
+msgstr "Lähetä uusi linkki"

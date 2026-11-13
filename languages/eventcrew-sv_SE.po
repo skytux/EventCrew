@@ -13627,9 +13627,6 @@ msgstr "För många fel koder. Be om en ny länk."
 msgid "Too many wrong codes from here. Wait an hour and try again."
 msgstr "För många fel koder härifrån. Vänta en timme och försök igen."
 
-#: templates/public/signup.php
-msgid "Or type the code from the email"
-msgstr "Eller skriv koden från mejlet"
 
 #: templates/public/signup.php
 msgid "Install the app"
@@ -14088,3 +14085,15 @@ msgstr "Webbläsaren kunde inte slå på aviseringar. Tillåt dem i telefonens I
 #, php-format
 msgid "The app did not finish turning on notifications. In the phone's Settings → Apps → %s → Notifications, allow them. Then close the app fully, open it and try again."
 msgstr "Appen kunde inte slå på aviseringar. Tillåt dem i telefonens Inställningar → Appar → %s → Aviseringar. Stäng appen helt, öppna den och försök igen."
+
+#: templates/public/signup.php
+msgid "Type the code from the email"
+msgstr "Skriv koden från mejlet"
+
+#: templates/public/signup.php
+msgid "Check your inbox, and the spam folder."
+msgstr "Titta i inkorgen och skräpposten."
+
+#: templates/public/signup.php
+msgid "Send a new link"
+msgstr "Skicka en ny länk"
