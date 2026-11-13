@@ -5545,9 +5545,6 @@ msgstr "自分にテスト送信"
 msgid "Send me /help in a private chat for more."
 msgstr "詳しくはプライベートチャットで /help を送ってください。"
 
-#: templates/public/signup.php:1175
-msgid "Send me the link"
-msgstr "リンクを送る"
 
 #: src/Web/CrewAdminController.php:179
 msgid "Send me the sales desk link"

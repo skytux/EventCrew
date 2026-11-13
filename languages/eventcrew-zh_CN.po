@@ -5545,9 +5545,6 @@ msgstr "发送测试给我"
 msgid "Send me /help in a private chat for more."
 msgstr "在私聊中给我发 /help 了解更多。"
 
-#: templates/public/signup.php:1175
-msgid "Send me the link"
-msgstr "把链接发给我"
 
 #: src/Web/CrewAdminController.php:179
 msgid "Send me the sales desk link"

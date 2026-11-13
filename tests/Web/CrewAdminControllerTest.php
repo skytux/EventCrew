@@ -2272,7 +2272,8 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('id="eventcrew-tab-admin"', $html);
         self::assertStringContainsString('id="eventcrew-panel-admin"', $html);
         self::assertStringContainsString(CrewAdminController::PERSON_ACTION, $html);
-        self::assertStringContainsString('Send me the link', $html);
+        // No Sales desk card on Door: the top button opens it (Owner 2026-11-13).
+        self::assertStringNotContainsString('Send me the link', $html);
     }
 
     public function testTheRosterScreenShowsEveryCardForTheDate(): void
@@ -2351,7 +2352,6 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
                 CrewAdminController::PERSON_ACTION,
                 CrewAdminController::DOOR_ACTION,
                 CrewAdminController::GUEST_ACTION,
-                CrewAdminController::SALES_ACTION,
             ] as $action
         ) {
             self::assertStringContainsString('value="' . $action . '"', $html, $action);
@@ -2362,7 +2362,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
     /**
      * The Crew (was Door list), Guest list and Holvi ticket buyers cards are
-     * on the Door screen, after the Sales desk and the date bar, and every
+     * on the Door screen, after the date bar (no Sales desk card), and every
      * form there sends the page back to the Door screen. The Roster screen
      * has the crew only. No credit is redeemed there and the post-event
      * email is on Messages (Owner 2026-11-13).
@@ -2385,14 +2385,12 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             self::assertStringNotContainsString('value="' . $action . '"', $roster, $action);
         }
 
-        // Sales desk first, then the date bar, then the cards.
-        $sales = strpos($door, 'Sales desk');
+        // The date bar, then the cards; no Sales desk card (Owner 2026-11-13).
+        self::assertStringNotContainsString('>Sales desk</h3>', $door);
         $bar = strpos($door, 'eventcrew-admin-datebar');
         $list = strpos($door, '>Crew</h3>');
-        self::assertNotFalse($sales);
         self::assertNotFalse($bar);
         self::assertNotFalse($list);
-        self::assertLessThan($bar, $sales);
         self::assertLessThan($list, $bar);
 
         self::assertStringNotContainsString('#eventcrew-admin-roster"', $door);
@@ -3008,6 +3006,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             );
         }
         self::assertStringContainsString('#eventcrew-admin-messages"', $messages);
+        // Its own action, so a forged-request alert names the post-event email.
+        self::assertStringContainsString('value="' . CrewAdminController::FOLLOWUP_ACTION . '"', $messages);
+        self::assertSame('Post-event email', CrewAdminController::actionLabels()[CrewAdminController::FOLLOWUP_ACTION]);
         self::assertStringNotContainsString('followup_', $this->subpanel($html, 'door'));
     }
 

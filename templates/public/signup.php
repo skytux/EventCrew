@@ -50,7 +50,7 @@ $eventcrew_manage_token = (string) ($view['manage_token'] ?? '');
  * the tab and its panel are then not in the page at all. Hiding them is only
  * tidiness - every admin action checks the organizer flag again on the server.
  */
-/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, members: array<int, string>, roster_label: string, roster: array<int, array{task_id: int, title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool, standing: string, at_risk: bool}>}>, roster_date: string, roster_upcoming: array<string, string>, roster_past: array<string, string>, roster_action: string, door_action: string, guest_action: string, buyers_action: string, mail_action: string, statuses: array<string, string>, max_plus_ones: int, night: array{entrants: list<array{name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int, added_by: string}>, closed_by_hand: bool, event_reason: string, guests: list<array{id: int, name: string, plus_ones: int, note: string, email: string, added_by: string}>, buyers: list<string>, ticket_mail_buyers: string, ticket_mail_guests: string, ticket_mail_pending: string, mailbox: string, mail_last: string}, roles_action: string, add_action: string, roles: array<string, string>, add_tasks: array<int, string>, person_action: string, pass_action: string, unban_action: string, newcomer_action?: string, newcomers?: list<array{id: int, name: string, email: string, since: string, answers?: string}>, people: array{search: string, page: int, pages: int, total: int, list: list<array{id: int, name: string, email: string, verified: bool, organizer: bool, banned: bool, anonymized: bool}>, editing: ?array{person: \EventCrew\Models\Person, standing: string, at_risk: bool, credits: int, given: list<array{credits: int, note: string, granted_by: string, granted_at: string}>, spent: list<array{day: string, event: string, redeemed_at: string}>}}}|null $eventcrew_admin */
+/** @var array{sales_action: string, board_action: string, gift_action: string, mark_action: string, members: array<int, string>, roster_label: string, roster: array<int, array{task_id: int, title: string, people: array<int, array{assignment_id: int, name: string, status: string, status_label: string, marked_by: string, markable: bool, standing: string, at_risk: bool}>}>, roster_date: string, roster_upcoming: array<string, string>, roster_past: array<string, string>, roster_action: string, door_action: string, guest_action: string, buyers_action: string, mail_action: string, followup_action: string, statuses: array<string, string>, max_plus_ones: int, night: array{entrants: list<array{name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int, added_by: string}>, closed_by_hand: bool, event_reason: string, guests: list<array{id: int, name: string, plus_ones: int, note: string, email: string, added_by: string}>, buyers: list<string>, ticket_mail_buyers: string, ticket_mail_guests: string, ticket_mail_pending: string, mailbox: string, mail_last: string}, roles_action: string, add_action: string, roles: array<string, string>, add_tasks: array<int, string>, person_action: string, pass_action: string, unban_action: string, newcomer_action?: string, newcomers?: list<array{id: int, name: string, email: string, since: string, answers?: string}>, people: array{search: string, page: int, pages: int, total: int, list: list<array{id: int, name: string, email: string, verified: bool, organizer: bool, banned: bool, anonymized: bool}>, editing: ?array{person: \EventCrew\Models\Person, standing: string, at_risk: bool, credits: int, given: list<array{credits: int, note: string, granted_by: string, granted_at: string}>, spent: list<array{day: string, event: string, redeemed_at: string}>}}}|null $eventcrew_admin */
 $eventcrew_admin = is_array($view['admin'] ?? null) ? $view['admin'] : null;
 $eventcrew_ajax = admin_url('admin-ajax.php');
 // The URL to return to after each action: this very page. get_permalink() gives
@@ -194,7 +194,7 @@ if ($eventcrew_link_expired) {
      * Telegram group button was: it opens the sales desk on this device. For
      * the next night's sales-desk crew (SalesDeskGate, via
      * SignupController::canOpenSalesDesk()) and for organizers; the server
-     * checks again on press. The Admin tab keeps its own Sales desk card.
+     * checks again on press. The Admin Door screen has no Sales desk card.
      */
     $eventcrew_door_scanner = null !== $eventcrew_person
         && '' !== (string) ($view['sales_action'] ?? '')
@@ -1819,29 +1819,6 @@ if ($eventcrew_link_expired) {
             </div>
 
             <div class="eventcrew-subpanel" id="eventcrew-admin-door" data-eventcrew-subpanel="door">
-            <section class="eventcrew-event eventcrew-admin-card">
-                <header class="eventcrew-event-head">
-                    <h3 class="eventcrew-event-title"><?php esc_html_e('Sales desk', 'eventcrew'); ?></h3>
-                </header>
-                <div class="eventcrew-card-body eventcrew-admin-actions">
-                    <?php $eventcrew_can_open_desk = '' !== (string) ($view['sales_action'] ?? ''); ?>
-                    <?php if ($eventcrew_can_open_desk) : ?>
-                        <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                            <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['sales_action']); ?>">
-                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                            <button type="submit" class="wp-element-button"><?php esc_html_e('Open sales desk', 'eventcrew'); ?></button>
-                        </form>
-                    <?php endif; ?>
-                    <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                        <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['sales_action']); ?>">
-                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                        <button type="submit" class="<?php echo $eventcrew_can_open_desk ? 'eventcrew-textlink' : 'wp-element-button'; ?>"><?php esc_html_e('Send me the link', 'eventcrew'); ?></button>
-                    </form>
-                </div>
-            </section>
-
             <?php if ('' !== $eventcrew_roster_date) : ?>
                 <?php
                 $eventcrew_bar_screen = 'door';
@@ -2795,7 +2772,7 @@ if ($eventcrew_link_expired) {
                         <span class="eventcrew-muted eventcrew-admin-line"><?php echo esc_html($eventcrew_follow_night['line']); ?></span>
                         <?php if ($eventcrew_follow_i === $eventcrew_follow_last) : ?>
                             <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                                <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['buyers_action']); ?>">
+                                <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['followup_action']); ?>">
                                 <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                                 <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_messages_here); ?>">
                                 <input type="hidden" name="roster_date" value="<?php echo esc_attr($eventcrew_follow_night['date']); ?>">
@@ -2805,7 +2782,7 @@ if ($eventcrew_link_expired) {
                         <?php if ($eventcrew_follow_night['can_stop']) : ?>
                             <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
                                 onsubmit="return confirm('<?php echo esc_js(__('Stop this night’s post-event email? It will not be sent.', 'eventcrew')); ?>');">
-                                <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['buyers_action']); ?>">
+                                <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['followup_action']); ?>">
                                 <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                                 <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_messages_here); ?>">
                                 <input type="hidden" name="roster_date" value="<?php echo esc_attr($eventcrew_follow_night['date']); ?>">

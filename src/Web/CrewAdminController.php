@@ -69,6 +69,7 @@ final class CrewAdminController
     public const GUEST_ACTION = 'eventcrew_web_admin_guest';
     public const BUYERS_ACTION = 'eventcrew_web_admin_buyers';
     public const MAIL_ACTION = 'eventcrew_web_admin_mail';
+    public const FOLLOWUP_ACTION = 'eventcrew_web_admin_followup';
     public const PERSON_ACTION = 'eventcrew_web_admin_person';
     public const PASS_ACTION = 'eventcrew_web_admin_pass';
     public const UNBAN_ACTION = 'eventcrew_web_admin_unban';
@@ -101,6 +102,7 @@ final class CrewAdminController
         self::GUEST_ACTION,
         self::BUYERS_ACTION,
         self::MAIL_ACTION,
+        self::FOLLOWUP_ACTION,
         self::PERSON_ACTION,
         self::PASS_ACTION,
         self::UNBAN_ACTION,
@@ -186,10 +188,11 @@ final class CrewAdminController
             self::ROLES_ACTION => __('Change a member’s roles', 'eventcrew'),
             self::ADD_ACTION => __('Add a person to a task', 'eventcrew'),
             self::ROSTER_ACTION => __('Update attendance', 'eventcrew'),
-            self::DOOR_ACTION => __('Door list', 'eventcrew'),
+            self::DOOR_ACTION => __('Crew', 'eventcrew'),
             self::GUEST_ACTION => __('Guest list', 'eventcrew'),
             self::BUYERS_ACTION => __('Holvi ticket buyers', 'eventcrew'),
             self::MAIL_ACTION => __('Check the mailbox now', 'eventcrew'),
+            self::FOLLOWUP_ACTION => __('Post-event email', 'eventcrew'),
             self::PERSON_ACTION => __('Add or edit a person', 'eventcrew'),
             self::PASS_ACTION => __('Grant a one-time pass', 'eventcrew'),
             self::UNBAN_ACTION => __('Unban', 'eventcrew'),
@@ -330,8 +333,8 @@ final class CrewAdminController
                 '1' === (string) ($post['counts_credit'] ?? ''),
                 (int) ($post['person_id'] ?? 0)
             ),
-            self::ROSTER_ACTION, self::DOOR_ACTION, self::GUEST_ACTION, self::BUYERS_ACTION, self::MAIL_ACTION
-                => $this->rosterScreenAction($organizer, $action, $post),
+            self::ROSTER_ACTION, self::DOOR_ACTION, self::GUEST_ACTION, self::BUYERS_ACTION, self::MAIL_ACTION,
+            self::FOLLOWUP_ACTION => $this->rosterScreenAction($organizer, $action, $post),
             default => $this->markAttendance(
                 $organizer,
                 (int) ($post['assignment_id'] ?? 0),
@@ -590,6 +593,9 @@ final class CrewAdminController
                 'mail_test' => $this->rosterScreen->sendTicketTest($date, $organizer),
                 'mail_rest' => $this->rosterScreen->sendTicketsRest($date, 'buyers'),
                 'mail_cancel' => $this->rosterScreen->cancelTicketSend(),
+                default => 'admin_change_failed',
+            },
+            self::FOLLOWUP_ACTION => match ($op) {
                 'followup_test' => $this->rosterScreen->sendFollowupTest($date, $organizer),
                 'followup_stop' => $this->rosterScreen->stopFollowup($date),
                 default => 'admin_change_failed',
@@ -769,6 +775,7 @@ final class CrewAdminController
             'guest_action' => self::GUEST_ACTION,
             'buyers_action' => self::BUYERS_ACTION,
             'mail_action' => self::MAIL_ACTION,
+            'followup_action' => self::FOLLOWUP_ACTION,
             'statuses' => CrewAdminRoster::statusChoices(),
             'max_plus_ones' => GuestRepository::MAX_PLUS_ONES,
             'night' => $this->rosterScreen->view($date),

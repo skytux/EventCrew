@@ -5760,9 +5760,6 @@ msgstr "Skicka ett test till mig"
 msgid "Send me /help in a private chat for more."
 msgstr "Skicka /help till mig i en privat chatt för mer."
 
-#: templates/public/signup.php:1174
-msgid "Send me the link"
-msgstr "Skicka länken till mig"
 
 #: src/Web/CrewAdminController.php:178
 msgid "Send me the sales desk link"

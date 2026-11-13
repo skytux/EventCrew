@@ -5586,9 +5586,6 @@ msgstr "M’envoyer un test"
 msgid "Send me /help in a private chat for more."
 msgstr "Envoie-moi /help en privé pour en savoir plus."
 
-#: templates/public/signup.php:1175
-msgid "Send me the link"
-msgstr "Envoie-moi le lien"
 
 #: src/Web/CrewAdminController.php:179
 msgid "Send me the sales desk link"
