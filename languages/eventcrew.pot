@@ -2516,7 +2516,7 @@ msgstr ""
 msgid "Could not read “%s”. Use time 21:00-23:00, places 2, notes text or plus 1."
 msgstr ""
 
-#: templates/public/signup-push.php:62
+#: templates/public/signup-push.php:81
 msgid "Could not turn on notifications. Try again."
 msgstr ""
 
@@ -5760,11 +5760,11 @@ msgstr ""
 msgid "Notifications"
 msgstr ""
 
-#: templates/public/signup-push.php:57
+#: templates/public/signup-push.php:69
 msgid "Notifications are blocked for this site. Allow them in the browser settings."
 msgstr ""
 
-#: templates/public/signup-push.php:53
+#: templates/public/signup-push.php:65
 msgid "Notifications on this device"
 msgstr ""
 
@@ -5891,7 +5891,7 @@ msgstr ""
 msgid "On hold — talk to an organizer"
 msgstr ""
 
-#: templates/public/signup-app-install.php:129 templates/public/signup-push.php:58
+#: templates/public/signup-app-install.php:129 templates/public/signup-push.php:70
 msgid "On iPhone, notifications work after you add this page to your Home Screen."
 msgstr ""
 
@@ -9305,7 +9305,12 @@ msgstr ""
 msgid "The answer: OK or No, who gave it and when, and whether the person was told."
 msgstr ""
 
-#: templates/public/signup-push.php:60
+#: templates/public/signup-push.php:77
+#. translators: %s: the installed app's name, like "EDH Crew".
+msgid "The app did not finish turning on notifications. In the phone's Settings → Apps → %s → Notifications, allow them. Then close the app fully, open it and try again."
+msgstr ""
+
+#: templates/public/signup-push.php:72
 msgid "The app is still loading. Reload the page and try again."
 msgstr ""
 
@@ -9366,7 +9371,7 @@ msgstr ""
 msgid "The bot must read every group message: in BotFather, send /setprivacy, choose the bot, choose Disable. Then remove the bot from the group and add it back, and press Install / refresh webhook below."
 msgstr ""
 
-#: templates/public/signup-push.php:61
+#: templates/public/signup-push.php:73
 msgid "The browser did not finish turning on notifications. In the phone's Settings → Apps → your browser → Notifications, allow them, then try again."
 msgstr ""
 
@@ -12427,7 +12432,7 @@ msgstr ""
 msgid "Your past tasks:"
 msgstr ""
 
-#: templates/public/signup-push.php:59
+#: templates/public/signup-push.php:71
 msgid "Your phone did not show the question. Allow notifications for this site in the browser's site settings, then try again."
 msgstr ""
 
