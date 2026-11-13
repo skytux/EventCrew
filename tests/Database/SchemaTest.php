@@ -450,4 +450,22 @@ final class SchemaTest extends TestCase
         self::assertStringContainsString('UNIQUE KEY chat_message (chat_id,message_id)', $sql);
         self::assertStringContainsString('KEY created_at (created_at)', $sql);
     }
+
+    /**
+     * Schema 40: the crew's assignments and the free-entry tickets keep the
+     * post-event email's status, sent time and first click, as the buyers
+     * and guests do.
+     */
+    public function testAssignmentsAndRedemptionsKeepThePostEventEmailStatus(): void
+    {
+        self::assertGreaterThanOrEqual(40, (int) Schema::DB_VERSION);
+
+        foreach ([Schema::ASSIGNMENTS, Schema::REDEMPTIONS] as $table) {
+            $sql = $this->statementFor($table);
+
+            self::assertStringContainsString("followup_mail_status varchar(10) NOT NULL DEFAULT '',", $sql);
+            self::assertStringContainsString('followup_mailed_at datetime DEFAULT NULL,', $sql);
+            self::assertStringContainsString('followup_clicked_at datetime DEFAULT NULL,', $sql);
+        }
+    }
 }

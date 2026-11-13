@@ -5,40 +5,96 @@ declare(strict_types=1);
 namespace EventCrew\Repositories;
 
 use EventCrew\Database\Schema;
+use EventCrew\Models\Person;
+use EventCrew\Support\AssignmentStatus;
+use EventCrew\Support\NotificationPreferences;
 
 /**
  * The reads and writes of the post-event email (Support\FollowupMail): its
- * three columns on the ticket buyers table and on the guests table, and the
- * night's check-ins that tell who came.
+ * three columns (followup_mail_status, followup_mailed_at,
+ * followup_clicked_at) on the ticket buyers, guests, assignments and
+ * redemptions tables, and the night's check-ins that tell who came.
  *
- * A row is one ticket holder with an email address on one night. kind is
- * KIND_BUYER or KIND_GUEST, the same words the check-ins table uses.
+ * A row is one attendee of one night with an email address:
+ *
+ * - KIND_BUYER and KIND_GUEST: a ticket holder, with the email on the row,
+ *   the same words the check-ins table uses.
+ * - KIND_ASSIGNMENT: a crew member's assignment on a task filed under the
+ *   night, with the person's email. Only a task that is not deleted, and
+ *   only an assignment marked as come (arrived, arrived late, completed) or
+ *   as a no-show: one still just signed up was not marked either way, and a
+ *   cancelled or replaced one is not coming.
+ * - KIND_REDEMPTION: a free-entry ticket (credit) for the night that is not
+ *   cancelled (a ticket given away is cancelled too), with the person's
+ *   email.
+ *
+ * A person's email is used only when it is a real one (not a placeholder),
+ * confirmed by the person (email_verified_at) and the person is not erased
+ * (anonymized_at). A person who switched email off on every notification
+ * row they have (NotificationPreferences::declinesOptionalEmail()) is
+ * returned with declined true, so the email can mark them 'optout'.
  */
 final class FollowupRepository
 {
     public const KIND_BUYER = CheckinRepository::KIND_BUYER;
     public const KIND_GUEST = CheckinRepository::KIND_GUEST;
+    public const KIND_ASSIGNMENT = 'assignment';
+    public const KIND_REDEMPTION = 'redemption';
+
+    /** Every kind, in the order recipients() returns them. */
+    public const KINDS = [self::KIND_BUYER, self::KIND_GUEST, self::KIND_ASSIGNMENT, self::KIND_REDEMPTION];
+
+    /** The assignment statuses that make a crew member a recipient: marked as come, or as a no-show. */
+    public const ASSIGNMENT_STATUSES = [
+        AssignmentStatus::ARRIVED,
+        AssignmentStatus::ARRIVED_LATE,
+        AssignmentStatus::COMPLETED,
+        AssignmentStatus::NO_SHOW,
+    ];
+
+    /** The assignment statuses that count as came. */
+    public const CAME_STATUSES = [AssignmentStatus::ARRIVED, AssignmentStatus::ARRIVED_LATE, AssignmentStatus::COMPLETED];
 
     /**
-     * Every ticket holder on $date with an email address: buyers first, then
-     * guests, each in the order they were added. A row whose email was
-     * deleted (by the retention purge or an erasure request) is not among
-     * them.
+     * Every attendee on $date with an email address: buyers, guests, crew
+     * assignments and free-entry tickets, each kind in the order they were
+     * added. A row whose email was deleted (by the retention purge or an
+     * erasure request) is not among them. person_id is the person of an
+     * assignment or a free-entry ticket (0 for the others); marked is true
+     * for an assignment marked as come; declined is true for a person who
+     * switched optional email off.
      *
-     * @return array<int, array{kind: string, id: int, name: string, email: string, status: string}>
+     * @return array<int, array{kind: string, id: int, name: string, email: string, status: string, person_id: int, marked: bool, declined: bool}>
      */
     public function recipients(string $date): array
     {
         $rows = [];
 
-        foreach ([self::KIND_BUYER, self::KIND_GUEST] as $kind) {
+        $prefs = new NotificationPreferences();
+
+        foreach (self::KINDS as $kind) {
+            $person = self::isPersonKind($kind);
+
             foreach ($this->rowsOf($kind, $date) as $row) {
+                $email = trim((string) ($row['email'] ?? ''));
+
+                if ($person && Person::isPlaceholderEmail($email)) {
+                    continue;
+                }
+
                 $rows[] = [
                     'kind' => $kind,
                     'id' => (int) ($row['id'] ?? 0),
                     'name' => (string) ($row['name'] ?? ''),
-                    'email' => trim((string) ($row['email'] ?? '')),
+                    'email' => $email,
                     'status' => (string) ($row['followup_mail_status'] ?? ''),
+                    'person_id' => $person ? (int) ($row['person_id'] ?? 0) : 0,
+                    'marked' => self::KIND_ASSIGNMENT === $kind
+                        && in_array((string) ($row['status'] ?? ''), self::CAME_STATUSES, true),
+                    'declined' => $person && $prefs->declinesOptionalEmail(Person::fromRow([
+                        'notify_prefs' => $row['notify_prefs'] ?? null,
+                        'notify_muted' => $row['notify_muted'] ?? 0,
+                    ])),
                 ];
             }
         }
@@ -47,8 +103,43 @@ final class FollowupRepository
     }
 
     /**
+     * Whether a recipients() row came on the night, by $checkedIn
+     * (checkedIn()): a ticket holder checked in on their own row; a crew
+     * member marked as come on the roster or checked in at the door; a
+     * free-entry ticket checked in at the door (the person's credit row, or
+     * this ticket's own row when it was their second of the night).
+     *
+     * @param array{kind: string, id: int, person_id?: int, marked?: bool} $row
+     * @param array<string, true> $checkedIn
+     */
+    public static function came(array $row, array $checkedIn): bool
+    {
+        $kind = $row['kind'];
+        $personId = (int) ($row['person_id'] ?? 0);
+
+        if (! self::isPersonKind($kind)) {
+            return isset($checkedIn[$kind . ':' . $row['id']]);
+        }
+
+        if (! empty($row['marked'])) {
+            return true;
+        }
+
+        foreach ([CheckinRepository::KIND_CREW, CheckinRepository::KIND_CREDIT] as $entry) {
+            if (isset($checkedIn[$entry . ':' . $personId])) {
+                return true;
+            }
+        }
+
+        return self::KIND_REDEMPTION === $kind
+            && isset($checkedIn[CheckinRepository::KIND_CREDIT_EXTRA . ':' . $row['id']]);
+    }
+
+    /**
      * The nights from $from to $to (Y-m-d, both included) that have at least
-     * one ticket holder with an email address, earliest first.
+     * one attendee with an email address, earliest first. A crew member
+     * counts while still just signed up: the night's preview goes out the
+     * day before, when nobody is marked yet.
      *
      * @return array<int, string>
      */
@@ -58,6 +149,12 @@ final class FollowupRepository
 
         $buyers = Schema::table(Schema::TICKET_BUYERS);
         $guests = Schema::table(Schema::GUESTS);
+        $assignments = Schema::table(Schema::ASSIGNMENTS);
+        $tasks = Schema::table(Schema::TASKS);
+        $redemptions = Schema::table(Schema::REDEMPTIONS);
+        $people = Schema::table(Schema::PEOPLE);
+        $usable = self::usableEmail();
+        $statuses = self::inList(array_merge([AssignmentStatus::SIGNED_UP], self::ASSIGNMENT_STATUSES));
 
         // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- placeholders only; the table names come from Schema.
         $dates = $wpdb->get_col(
@@ -65,7 +162,17 @@ final class FollowupRepository
                 "SELECT event_date FROM {$buyers}"
                     . " WHERE event_date BETWEEN %s AND %s AND email IS NOT NULL AND email <> ''"
                     . " UNION SELECT event_date FROM {$guests}"
-                    . " WHERE event_date BETWEEN %s AND %s AND email IS NOT NULL AND email <> ''",
+                    . " WHERE event_date BETWEEN %s AND %s AND email IS NOT NULL AND email <> ''"
+                    . " UNION SELECT t.task_date FROM {$assignments} a"
+                    . " INNER JOIN {$tasks} t ON t.id = a.task_id INNER JOIN {$people} p ON p.id = a.person_id"
+                    . " WHERE t.task_date BETWEEN %s AND %s AND t.deleted_at IS NULL"
+                    . " AND a.status IN ({$statuses}) AND {$usable}"
+                    . " UNION SELECT r.redeemed_for FROM {$redemptions} r INNER JOIN {$people} p ON p.id = r.person_id"
+                    . " WHERE r.redeemed_for BETWEEN %s AND %s AND r.cancelled_at IS NULL AND {$usable}",
+                $from,
+                $to,
+                $from,
+                $to,
                 $from,
                 $to,
                 $from,
@@ -81,8 +188,9 @@ final class FollowupRepository
     }
 
     /**
-     * Which ticket holders on $date were checked in at the door, as
-     * "kind:id" keys.
+     * Who was checked in at the door on $date, as "kind:ref_id" keys of the
+     * check-ins table: a buyer or guest row id, the person id of crew and
+     * credit, a redemption id for a second free-entry ticket (came()).
      *
      * @return array<string, true>
      */
@@ -92,12 +200,7 @@ final class FollowupRepository
 
         $table = Schema::table(Schema::CHECKINS);
         $rows = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT kind, ref_id FROM {$table} WHERE event_date = %s AND kind IN (%s, %s)",
-                $date,
-                self::KIND_BUYER,
-                self::KIND_GUEST
-            ),
+            $wpdb->prepare("SELECT kind, ref_id FROM {$table} WHERE event_date = %s", $date),
             ARRAY_A
         );
         $keys = [];
@@ -133,15 +236,35 @@ final class FollowupRepository
 
         $changed = 0;
 
-        foreach ([self::KIND_BUYER, self::KIND_GUEST] as $kind) {
+        foreach (self::KINDS as $kind) {
             $table = self::tableOf($kind);
-            $result = $wpdb->query(
-                $wpdb->prepare(
+
+            if (self::KIND_ASSIGNMENT === $kind) {
+                $tasks = Schema::table(Schema::TASKS);
+                $statuses = self::inList(self::ASSIGNMENT_STATUSES);
+                $sql = $wpdb->prepare(
+                    "UPDATE {$table} a INNER JOIN {$tasks} t ON t.id = a.task_id SET a.followup_mail_status = %s"
+                        . " WHERE t.task_date = %s AND t.deleted_at IS NULL AND a.status IN ({$statuses})"
+                        . " AND a.followup_mail_status = ''",
+                    $status,
+                    $date
+                );
+            } elseif (self::KIND_REDEMPTION === $kind) {
+                $sql = $wpdb->prepare(
+                    "UPDATE {$table} SET followup_mail_status = %s"
+                        . " WHERE redeemed_for = %s AND cancelled_at IS NULL AND followup_mail_status = ''",
+                    $status,
+                    $date
+                );
+            } else {
+                $sql = $wpdb->prepare(
                     "UPDATE {$table} SET followup_mail_status = %s WHERE event_date = %s AND followup_mail_status = ''",
                     $status,
                     $date
-                )
-            );
+                );
+            }
+
+            $result = $wpdb->query($sql); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- prepared above.
             $changed += false === $result ? 0 : (int) $result;
         }
 
@@ -149,9 +272,10 @@ final class FollowupRepository
     }
 
     /**
-     * One ticket holder's name and email address, for the subscribe button
-     * in their post-event email. Null when there is no such row, or its email
-     * was deleted (by the retention purge or an erasure request).
+     * One row's name and email address, for the subscribe button and the
+     * "Don't send me these" link in its post-event email. Null when there is
+     * no such row, or its email was deleted (by the retention purge or an
+     * erasure request), or, for a person, is a placeholder.
      *
      * @return array{name: string, email: string}|null
      */
@@ -159,15 +283,26 @@ final class FollowupRepository
     {
         global $wpdb;
 
-        if ($id <= 0 || ! in_array($kind, [self::KIND_BUYER, self::KIND_GUEST], true)) {
+        if ($id <= 0 || ! in_array($kind, self::KINDS, true)) {
             return null;
         }
 
         $table = self::tableOf($kind);
-        $row = $wpdb->get_row(
-            $wpdb->prepare("SELECT name, email FROM {$table} WHERE id = %d", $id),
-            ARRAY_A
-        );
+
+        if (self::isPersonKind($kind)) {
+            $people = Schema::table(Schema::PEOPLE);
+            $alias = self::KIND_ASSIGNMENT === $kind ? 'a' : 'r';
+            $usable = self::usableEmail();
+            $sql = $wpdb->prepare(
+                "SELECT p.display_name AS name, p.email FROM {$table} {$alias}"
+                    . " INNER JOIN {$people} p ON p.id = {$alias}.person_id WHERE {$alias}.id = %d AND {$usable}",
+                $id
+            );
+        } else {
+            $sql = $wpdb->prepare("SELECT name, email FROM {$table} WHERE id = %d", $id);
+        }
+
+        $row = $wpdb->get_row($sql, ARRAY_A); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- prepared above.
 
         if (! is_array($row)) {
             return null;
@@ -175,7 +310,11 @@ final class FollowupRepository
 
         $email = trim((string) ($row['email'] ?? ''));
 
-        return '' === $email ? null : ['name' => (string) ($row['name'] ?? ''), 'email' => $email];
+        if ('' === $email || (self::isPersonKind($kind) && Person::isPlaceholderEmail($email))) {
+            return null;
+        }
+
+        return ['name' => (string) ($row['name'] ?? ''), 'email' => $email];
     }
 
     /**
@@ -187,7 +326,7 @@ final class FollowupRepository
     {
         global $wpdb;
 
-        if ($id <= 0 || ! in_array($kind, [self::KIND_BUYER, self::KIND_GUEST], true)) {
+        if ($id <= 0 || ! in_array($kind, self::KINDS, true)) {
             return false;
         }
 
@@ -217,15 +356,15 @@ final class FollowupRepository
 
         $counts = ['sent' => 0, 'failed' => 0, 'stopped' => 0, 'unsent' => 0, 'clicked' => 0];
 
-        foreach ([self::KIND_BUYER, self::KIND_GUEST] as $kind) {
-            $table = self::tableOf($kind);
+        foreach (self::KINDS as $kind) {
+            [$from, $where] = self::nightRows($kind);
             $rows = $wpdb->get_results(
                 $wpdb->prepare(
-                    'SELECT followup_mail_status AS status, COUNT(*) AS n,'
-                        . ' SUM(followup_clicked_at IS NOT NULL) AS clicked'
-                        . " FROM {$table} WHERE event_date = %s"
-                        . " AND (followup_mail_status <> '' OR (email IS NOT NULL AND email <> ''))"
-                        . ' GROUP BY followup_mail_status',
+                    "SELECT {$where['alias']}followup_mail_status AS status, COUNT(*) AS n,"
+                        . " SUM({$where['alias']}followup_clicked_at IS NOT NULL) AS clicked"
+                        . " FROM {$from} WHERE {$where['night']}"
+                        . " AND ({$where['alias']}followup_mail_status <> '' OR ({$where['email']}))"
+                        . " GROUP BY {$where['alias']}followup_mail_status",
                     $date
                 ),
                 ARRAY_A
@@ -254,11 +393,16 @@ final class FollowupRepository
     {
         global $wpdb;
 
-        $table = self::tableOf($kind);
+        [$from, $where] = self::nightRows($kind);
+        $alias = $where['alias'];
+        $columns = self::isPersonKind($kind)
+            ? "{$alias}id, {$alias}person_id, {$alias}followup_mail_status, p.display_name AS name, p.email,"
+                . ' p.notify_prefs, p.notify_muted'
+                . (self::KIND_ASSIGNMENT === $kind ? ', a.status' : '')
+            : 'id, name, email, followup_mail_status';
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT id, name, email, followup_mail_status FROM {$table}"
-                    . " WHERE event_date = %s AND email IS NOT NULL AND email <> '' ORDER BY id ASC",
+                "SELECT {$columns} FROM {$from} WHERE {$where['night']} AND {$where['email']} ORDER BY {$alias}id ASC",
                 $date
             ),
             ARRAY_A
@@ -267,8 +411,80 @@ final class FollowupRepository
         return is_array($rows) ? $rows : [];
     }
 
+    /**
+     * The FROM part and the WHERE parts that pick one kind's rows of a night
+     * (one %s: the date): 'night' the night's attendees of the kind, 'email'
+     * those with a usable address, and 'alias' the prefix of the kind's own
+     * columns ('a.', 'r.' or '').
+     *
+     * @return array{0: string, 1: array{night: string, email: string, alias: string}}
+     */
+    private static function nightRows(string $kind): array
+    {
+        $table = self::tableOf($kind);
+        $people = Schema::table(Schema::PEOPLE);
+
+        if (self::KIND_ASSIGNMENT === $kind) {
+            $tasks = Schema::table(Schema::TASKS);
+
+            return [
+                "{$table} a INNER JOIN {$tasks} t ON t.id = a.task_id INNER JOIN {$people} p ON p.id = a.person_id",
+                [
+                    'night' => 't.task_date = %s AND t.deleted_at IS NULL'
+                        . ' AND a.status IN (' . self::inList(self::ASSIGNMENT_STATUSES) . ')',
+                    'email' => self::usableEmail(),
+                    'alias' => 'a.',
+                ],
+            ];
+        }
+
+        if (self::KIND_REDEMPTION === $kind) {
+            return [
+                "{$table} r INNER JOIN {$people} p ON p.id = r.person_id",
+                [
+                    'night' => 'r.redeemed_for = %s AND r.cancelled_at IS NULL',
+                    'email' => self::usableEmail(),
+                    'alias' => 'r.',
+                ],
+            ];
+        }
+
+        return [$table, ['night' => 'event_date = %s', 'email' => "email IS NOT NULL AND email <> ''", 'alias' => '']];
+    }
+
+    /**
+     * The SQL condition that a person (alias p) has an address to write to:
+     * not erased, confirmed by the person, and not a placeholder.
+     */
+    private static function usableEmail(): string
+    {
+        return "p.anonymized_at IS NULL AND p.email_verified_at IS NOT NULL AND p.email <> ''"
+            . " AND RIGHT(p.email, 8) <> '.invalid'";
+    }
+
+    /**
+     * Fixed status words as a quoted SQL list. Only ever this class's own
+     * constants, never input.
+     *
+     * @param array<int, string> $values
+     */
+    private static function inList(array $values): string
+    {
+        return implode(', ', array_map(static fn (string $value): string => "'" . $value . "'", $values));
+    }
+
+    private static function isPersonKind(string $kind): bool
+    {
+        return self::KIND_ASSIGNMENT === $kind || self::KIND_REDEMPTION === $kind;
+    }
+
     private static function tableOf(string $kind): string
     {
-        return Schema::table(self::KIND_GUEST === $kind ? Schema::GUESTS : Schema::TICKET_BUYERS);
+        return Schema::table(match ($kind) {
+            self::KIND_GUEST => Schema::GUESTS,
+            self::KIND_ASSIGNMENT => Schema::ASSIGNMENTS,
+            self::KIND_REDEMPTION => Schema::REDEMPTIONS,
+            default => Schema::TICKET_BUYERS,
+        });
     }
 }

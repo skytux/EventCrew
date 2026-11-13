@@ -12,14 +12,21 @@ use EventCrew\Telegram\BoardDjText;
 use EventCrew\Web\NewsletterController;
 
 /**
- * The post-event email: one short email to every ticket holder of a night
- * (imported ticket buyers, door and desk sales, and guests) who has an email
- * address, the day after the event at 12:00 site time.
+ * The post-event email: one short email to every attendee of a night who
+ * has an email address, the day after the event at 12:00 site time
+ * (Owner, 2026-11-13: not only the ticket buyers). The attendees are the
+ * ticket holders (imported ticket buyers, door and desk sales, and guests),
+ * the crew on the night's tasks and the people with a free-entry ticket for
+ * it (FollowupRepository: which assignments and tickets count, and which
+ * person addresses are used).
  *
- * - Someone who was checked in at the door gets a thank-you and an invitation
- *   to secure their spot at the next event.
- * - Someone who was not gets a kind "sorry we missed you" that hopes to see
- *   them soon.
+ * - Someone who came gets a thank-you and an invitation to secure their spot
+ *   at the next event: a ticket holder or a free-entry ticket checked in at
+ *   the door, a crew member marked as come on the roster (arrived, arrived
+ *   late, completed) or checked in at the door.
+ * - Someone who did not (a crew member marked as a no-show) gets a kind
+ *   "sorry we missed you" that hopes to see them soon. A crew member still
+ *   just signed up, marked neither way, gets no email.
  *
  * Both are in every site language, the main language first, like the ticket
  * email; with the Hybrid tick off, only in the recipient's language
@@ -74,13 +81,18 @@ use EventCrew\Web\NewsletterController;
  * carries a signed link to the same row: pressing it puts the row's address
  * on the do-not-send list (FollowupOptOut, optOutClick()), with no sign-in.
  * The email is never sent to an address on that list, nor to one that left
- * the announcement; such a row is marked 'optout'. A preview's or a test's
- * link puts nobody on the list.
+ * the announcement, nor to a crew member who switched email off on every
+ * row of their notification settings (the email has no row of its own:
+ * NotificationPreferences::declinesOptionalEmail()); such a row is marked
+ * 'optout'. A preview's or a test's link puts nobody on the list.
  *
  * Several rows of one night with the same address (one person who bought two
- * tickets) get one email. Its row is the first of them; the others are
- * marked 'duplicate'. The person counts as came when any of the rows was
- * checked in.
+ * tickets, or worked a task and also bought one) get one email. Its row is
+ * the first of them; the others are marked 'duplicate'. The person counts as
+ * came when any of the rows came (FollowupRepository::came()). Each row keeps
+ * its own status, on the buyers, guests, assignments or redemptions table,
+ * so a night is never sent twice; the links carry the row's kind as one
+ * letter (LINK_KINDS) and its id.
  *
  * Every link in the email carries utm_source=eventcrew, utm_medium=email and
  * utm_campaign=thanks-YYYY-MM-DD or missed-YYYY-MM-DD, so the shop's and the
@@ -95,7 +107,7 @@ use EventCrew\Web\NewsletterController;
  * - From 12:00 the day before the event, each organizer gets a preview with
  *   both versions (a sample name, the events as they are then) and a Stop
  *   link. The preview goes out once per night, and only when the night has
- *   a ticket holder with an email address.
+ *   an attendee with an email address (a crew member signed up counts).
  * - From 12:00 the day after the event, the emails go out in batches of
  *   BATCH, the rest in WP-Cron events of their own. Only a night whose
  *   preview went out is sent, and only an event whose day began after the
@@ -172,6 +184,17 @@ final class FollowupMail
 
     /** The link kind of a preview's or a test's links: not counted. */
     public const KIND_SAMPLE = 't';
+
+    /**
+     * The one-letter kinds the links carry, and the row kind each stands for:
+     * a ticket buyer, a guest, a crew member's assignment, a free-entry ticket.
+     */
+    public const LINK_KINDS = [
+        'b' => FollowupRepository::KIND_BUYER,
+        'g' => FollowupRepository::KIND_GUEST,
+        'a' => FollowupRepository::KIND_ASSIGNMENT,
+        'r' => FollowupRepository::KIND_REDEMPTION,
+    ];
 
     /** How long a night stays in the state option. */
     private const KEEP_DAYS = 30;
@@ -559,8 +582,8 @@ final class FollowupMail
     }
 
     /**
-     * The counted link to $target for one row ($kind 'b' for a ticket buyer,
-     * 'g' for a guest, 't' for a preview or a test, which is not counted).
+     * The counted link to $target for one row ($kind a letter of LINK_KINDS,
+     * or 't' for a preview or a test, which is not counted).
      */
     public static function trackedUrl(string $target, string $kind, int $rowId): string
     {
@@ -596,7 +619,7 @@ final class FollowupMail
             return null;
         }
 
-        $kinds = ['b' => FollowupRepository::KIND_BUYER, 'g' => FollowupRepository::KIND_GUEST];
+        $kinds = self::LINK_KINDS;
 
         if (isset($kinds[$kind]) && (int) $id > 0) {
             $this->rows->recordClick($kinds[$kind], (int) $id);
@@ -606,8 +629,8 @@ final class FollowupMail
     }
 
     /**
-     * The subscribe button's link for one row ($kind 'b', 'g', or 't' for a
-     * preview or a test, which subscribes nobody). $campaign goes into the
+     * The subscribe button's link for one row ($kind a letter of LINK_KINDS,
+     * or 't' for a preview or a test, which subscribes nobody). $campaign goes into the
      * UTM arguments of the page it leads to.
      */
     public static function joinUrl(string $kind, int $rowId, string $campaign): string
@@ -637,7 +660,7 @@ final class FollowupMail
         }
 
         [$kind, $id, $campaign] = $parts;
-        $kinds = ['b' => FollowupRepository::KIND_BUYER, 'g' => FollowupRepository::KIND_GUEST];
+        $kinds = self::LINK_KINDS;
         $page = home_url('/');
 
         if (isset($kinds[$kind]) && (int) $id > 0) {
@@ -695,8 +718,9 @@ final class FollowupMail
     }
 
     /**
-     * The "Don't send me these" link for one row ($kind 'b', 'g', or 't' for
-     * a preview or a test, which puts nobody on the list).
+     * The "Don't send me these" link for one row ($kind a letter of
+     * LINK_KINDS, or 't' for a preview or a test, which puts nobody on the
+     * list).
      */
     public static function optOutUrl(string $kind, int $rowId): string
     {
@@ -720,7 +744,7 @@ final class FollowupMail
         }
 
         [$kind, $id] = $parts;
-        $kinds = ['b' => FollowupRepository::KIND_BUYER, 'g' => FollowupRepository::KIND_GUEST];
+        $kinds = self::LINK_KINDS;
 
         if (isset($kinds[$kind]) && $id > 0) {
             $holder = $this->rows->holder($kinds[$kind], $id);
@@ -1101,7 +1125,10 @@ final class FollowupMail
     /** The footer line, in the post-event email's languages (HybridPolicy). */
     public static function footer(): string
     {
-        $words = static fn (): string => __('You get this email because you had a ticket to this event.', 'eventcrew');
+        $words = static fn (): string => __(
+            'You get this email because you had a ticket or a task at this event.',
+            'eventcrew'
+        );
 
         return HybridPolicy::join(HybridPolicy::inEach(HybridPolicy::languagesFor(HybridPolicy::FOLLOWUP), $words));
     }
@@ -1240,8 +1267,12 @@ final class FollowupMail
                 continue;
             }
 
-            // On the do-not-send list, or left the announcement: no email.
-            if (isset($blocked[NewsletterSubscriberRepository::normalize($group[0]['email'])])) {
+            // On the do-not-send list, left the announcement, or a crew
+            // member who switched optional email off: no email.
+            if (
+                isset($blocked[NewsletterSubscriberRepository::normalize($group[0]['email'])])
+                || [] !== array_filter($group, static fn (array $row): bool => ! empty($row['declined']))
+            ) {
                 foreach ($group as $row) {
                     $this->rows->setStatus($row['kind'], $row['id'], self::STATUS_OPTOUT);
                 }
@@ -1257,7 +1288,7 @@ final class FollowupMail
             $came = false;
 
             foreach ($group as $row) {
-                $came = $came || isset($checkedIn[$row['kind'] . ':' . $row['id']]);
+                $came = $came || FollowupRepository::came($row, $checkedIn);
             }
 
             $first = $group[0];
@@ -1265,7 +1296,7 @@ final class FollowupMail
                 $date,
                 $came,
                 $first['name'],
-                FollowupRepository::KIND_GUEST === $first['kind'] ? 'g' : 'b',
+                (string) array_search($first['kind'], self::LINK_KINDS, true),
                 $first['id'],
                 isset($subscribed[NewsletterSubscriberRepository::normalize($first['email'])])
             );
@@ -1319,10 +1350,19 @@ final class FollowupMail
         $cameNext = $this->text->hasNext(FollowupText::CAME);
         $missedNext = $this->text->hasNext(FollowupText::MISSED);
         $blocked = $this->optOut->blocked();
+        $rows = $this->rows->recipients($date);
+        $declined = [];
+
+        foreach ($rows as $row) {
+            if (! empty($row['declined'])) {
+                $declined[NewsletterSubscriberRepository::normalize($row['email'])] = true;
+            }
+        }
+
         $count = count(array_diff_key(array_flip(array_map(
             static fn (array $row): string => NewsletterSubscriberRepository::normalize($row['email']),
-            $this->rows->recipients($date)
-        )), $blocked));
+            $rows
+        )), $blocked, $declined));
         $sendAt = self::sendAt($date);
         $sentTo = 0;
         $adminUrl = HelpPage::url(DoorLinkSender::ADMIN_ANCHOR);

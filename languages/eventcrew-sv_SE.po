@@ -4407,10 +4407,8 @@ msgid "Off"
 msgstr "Av"
 
 #: templates/admin/settings.php:1618
-msgid ""
-"Off by default. When it is on, everyone who had a ticket to an event and gave an email address gets a short email the day after at 12:00: a thank-you if they were checked in at the door, and a kind “sorry we missed you” if they were not. Both show the next three events. The day before the event at 12:00, every organizer gets a preview with a Stop button; the Roster page has the same button."
-msgstr ""
-"Av som standard. När det är på får alla som hade en biljett till ett evenemang och angav en e-postadress ett kort mejl dagen efter kl. 12.00: ett tack om de checkades in vid dörren, och ett vänligt ”synd att vi missade dig” om de inte gjorde det. Båda visar de tre nästa evenemangen. Dagen före evenemanget kl. 12.00 får varje arrangör en förhandsvisning med en Stoppa-knapp; sidan Närvaro har samma knapp."
+msgid "Off by default. When it is on, everyone at an event who gave an email address gets a short email the day after at 12:00: ticket buyers, guests, free-entry ticket holders and the crew on its tasks. A thank-you if they came (checked in at the door, or marked Arrived or Completed on the roster), and a kind “sorry we missed you” if they did not. Crew not yet marked get none, and nobody who said no to these emails gets one. Both show the next three events. The day before the event at 12:00, every organizer gets a preview with a Stop button; the Roster page has the same button."
+msgstr "Av som standard. När det är på får alla på ett evenemang som angav en e-postadress ett kort mejl dagen efter kl. 12.00: biljettköpare, gäster, de med fribiljett och crewet på dess uppgifter. Ett tack om de kom (checkades in vid dörren eller markerades Anlänt eller Klar på sidan Närvaro), och ett vänligt ”synd att vi missade dig” om de inte gjorde det. Crew som ännu inte markerats får inget, och ingen som tackat nej till dessa mejl får ett. Båda visar de tre nästa evenemangen. Dagen före evenemanget kl. 12.00 får varje arrangör en förhandsvisning med en Stoppa-knapp; sidan Närvaro har samma knapp."
 
 #: templates/admin/settings.php:1661
 msgid ""
@@ -9937,6 +9935,9 @@ msgid ""
 msgstr ""
 "Du får det här mejlet eftersom du är med i crew. Ändra dina kontaktuppgifter eller lämna utskicket"
 
+msgid "You get this email because you had a ticket or a task at this event."
+msgstr "Du får det här mejlet eftersom du hade en biljett eller en uppgift på det här evenemanget."
+
 #: src/Support/FollowupMail.php:892 src/Support/TicketMail.php:1062
 msgid "You get this email because you had a ticket to this event."
 msgstr ""
@@ -10779,10 +10780,8 @@ msgid "👥 People: choose what to do."
 msgstr "👥 Personer: välj vad du vill göra."
 
 #: src/Support/OrganizerGuide.php:276
-msgid ""
-"💌 The post-event email, if an administrator has switched it on, goes the day after each event at 12:00 to everyone who had a ticket and gave an email address: a thank-you to those who were checked in at the door, and a kind \"sorry we missed you\" to those who were not. Both show the next three events. At 12:00 the day before the event, each organizer gets a preview of both with a button to stop it; the Roster page and the Crew app Admin tab have the same button and a \"Send a test to me\" button. The Roster page shows how many were sent and how many people opened a link."
-msgstr ""
-"💌 Mejlet efter evenemanget, om en administratör har slagit på det, skickas dagen efter varje evenemang kl. 12:00 till alla som hade en biljett och angav en e-postadress: ett tack till dem som checkades in vid dörren, och ett vänligt \"synd att vi missade dig\" till dem som inte gjorde det. Båda visar de tre nästa evenemangen. Kl. 12:00 dagen före evenemanget får varje arrangör en förhandsvisning av båda med en knapp för att stoppa det; sidan Närvaro och Admin-fliken i crew-appen har samma knapp och en knapp \"Skicka ett test till mig\". Sidan Närvaro visar hur många som skickades och hur många personer som öppnade en länk."
+msgid "💌 The post-event email, if an administrator has switched it on, goes the day after each event at 12:00 to everyone at the event who gave an email address, the crew on its tasks too: a thank-you to those who came (checked in at the door, or marked Arrived or Completed on the roster), and a kind \"sorry we missed you\" to those who did not. Both show the next three events. At 12:00 the day before the event, each organizer gets a preview of both with a button to stop it; the Roster page and the Crew app Admin tab have the same button and a \"Send a test to me\" button. The Roster page shows how many were sent and how many people opened a link."
+msgstr "💌 Mejlet efter evenemanget, om en administratör har slagit på det, skickas dagen efter varje evenemang kl. 12:00 till alla på evenemanget som angav en e-postadress, crewet på dess uppgifter också: ett tack till dem som kom (checkades in vid dörren eller markerades Anlänt eller Klar på sidan Närvaro), och ett vänligt \"synd att vi missade dig\" till dem som inte gjorde det. Båda visar de tre nästa evenemangen. Kl. 12:00 dagen före evenemanget får varje arrangör en förhandsvisning av båda med en knapp för att stoppa det; sidan Närvaro och Admin-fliken i crew-appen har samma knapp och en knapp \"Skicka ett test till mig\". Sidan Närvaro visar hur många som skickades och hur många personer som öppnade en länk."
 
 #: src/Support/MessageTemplates.php:279
 msgid "📅 Add to calendar"

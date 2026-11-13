@@ -203,6 +203,24 @@ final class NotificationPreferences
     }
 
     /**
+     * Whether the person switched email off on every row every member has
+     * (standing, credit, ticket, permission, open tasks): they want no email
+     * they can turn off. The post-event email (FollowupMail) has no row of its
+     * own, so this is the choice it follows for a crew member: such a person
+     * does not get it.
+     */
+    public function declinesOptionalEmail(Person $person): bool
+    {
+        foreach ([self::STANDING, self::CREDIT, self::TICKET, self::PERMISSION, self::OPEN_TASK] as $type) {
+            if ($this->emailPref($person, $type)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * The toggle positions for the UIs: the DM, email and app preference of each
      * type this person sees (independent of whether a channel could actually
      * reach them). The organizer-only rows are left out for everybody else.

@@ -20,6 +20,25 @@ final class FollowupWpdb extends \FakeWpdb
     /** @var array<int, array<string, mixed>> */
     public array $guests = [];
 
+    /**
+     * The night's crew assignments, keyed by assignment id, with their
+     * person's columns joined in: id, person_id, status, event_date (the
+     * task's date), task_deleted, name, email, verified, anonymized,
+     * notify_prefs, followup_mail_status.
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    public array $assignments = [];
+
+    /**
+     * The free-entry tickets, keyed by redemption id, with their person's
+     * columns joined in: id, person_id, event_date (redeemed_for), cancelled,
+     * name, email, verified, anonymized, notify_prefs, followup_mail_status.
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    public array $redemptions = [];
+
     /** @var list<array{kind: string, ref_id: int}> */
     public array $checkins = [];
 
@@ -36,16 +55,24 @@ final class FollowupWpdb extends \FakeWpdb
     {
         $this->queries[] = $sql;
 
+        if (str_contains($sql, 'COUNT(*)')) {
+            return array_shift($this->countRows) ?? [];
+        }
+
+        if (str_contains($sql, 'eventcrew_assignments')) {
+            return $this->personRowsOf($this->assignments, $sql);
+        }
+
+        if (str_contains($sql, 'eventcrew_redemptions')) {
+            return $this->personRowsOf($this->redemptions, $sql);
+        }
+
         if (str_contains($sql, 'eventcrew_tasks') && [] !== $this->tasks) {
             return $this->tasks;
         }
 
         if (str_contains($sql, 'eventcrew_checkins')) {
             return $this->checkins;
-        }
-
-        if (str_contains($sql, 'COUNT(*)')) {
-            return array_shift($this->countRows) ?? [];
         }
 
         if (str_contains($sql, 'eventcrew_ticket_buyers')) {
@@ -79,6 +106,12 @@ final class FollowupWpdb extends \FakeWpdb
             }
         }
 
+        foreach (array_merge($this->assignments, $this->redemptions) as $row) {
+            if ($row['event_date'] >= $range[1] && $row['event_date'] <= $range[2] && self::usable($row)) {
+                $dates[] = $row['event_date'];
+            }
+        }
+
         return array_values(array_unique($dates));
     }
 
@@ -94,6 +127,10 @@ final class FollowupWpdb extends \FakeWpdb
             $this->buyers[$id] = array_merge($this->buyers[$id], $data);
         } elseif (str_ends_with($table, 'eventcrew_guests') && isset($this->guests[$id])) {
             $this->guests[$id] = array_merge($this->guests[$id], $data);
+        } elseif (str_ends_with($table, 'eventcrew_assignments') && isset($this->assignments[$id])) {
+            $this->assignments[$id] = array_merge($this->assignments[$id], $data);
+        } elseif (str_ends_with($table, 'eventcrew_redemptions') && isset($this->redemptions[$id])) {
+            $this->redemptions[$id] = array_merge($this->redemptions[$id], $data);
         }
 
         return parent::update($table, $data, $where);
@@ -101,7 +138,12 @@ final class FollowupWpdb extends \FakeWpdb
 
     public function statusOf(string $kind, int $id): string
     {
-        $rows = 'guest' === $kind ? $this->guests : $this->buyers;
+        $rows = match ($kind) {
+            'guest' => $this->guests,
+            'assignment' => $this->assignments,
+            'redemption' => $this->redemptions,
+            default => $this->buyers,
+        };
 
         return (string) ($rows[$id]['followup_mail_status'] ?? '');
     }
@@ -121,5 +163,40 @@ final class FollowupWpdb extends \FakeWpdb
             static fn (array $row): bool => ($row['event_date'] === ($date[1] ?? ''))
                 && (! $withEmail || '' !== $row['email'])
         ));
+    }
+
+    /**
+     * The person rows of the night the query asks for, filtered the way its
+     * WHERE says: the assignment statuses in its IN list, not deleted or
+     * cancelled, and a usable address.
+     *
+     * @param array<int, array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function personRowsOf(array $rows, string $sql): array
+    {
+        preg_match("/(?:task_date|redeemed_for) = '([0-9-]+)'/", $sql, $date);
+        $statuses = null;
+
+        if (1 === preg_match('/a\.status IN \(([^)]*)\)/', $sql, $in)) {
+            $statuses = array_map(static fn (string $word): string => trim($word, " '"), explode(',', $in[1]));
+        }
+
+        return array_values(array_filter(
+            $rows,
+            static fn (array $row): bool => $row['event_date'] === ($date[1] ?? '')
+                && empty($row['task_deleted'])
+                && empty($row['cancelled'])
+                && (null === $statuses || in_array($row['status'] ?? '', $statuses, true))
+                && self::usable($row)
+        ));
+    }
+
+    /** @param array<string, mixed> $row */
+    private static function usable(array $row): bool
+    {
+        return '' !== (string) $row['email']
+            && ! empty($row['verified'])
+            && empty($row['anonymized']);
     }
 }

@@ -425,11 +425,234 @@ final class FollowupMailTest extends TestCase
     {
         (new FollowupRepository())->recipients(self::NIGHT);
 
-        foreach ($this->db->queries as $sql) {
+        self::assertCount(4, $this->db->queries, 'buyers, guests, assignments and free-entry tickets');
+        [$buyers, $guests, $assignments, $redemptions] = $this->db->queries;
+
+        foreach ([$buyers, $guests] as $sql) {
             self::assertStringContainsString("email IS NOT NULL AND email <> ''", $sql);
         }
 
-        self::assertCount(2, $this->db->queries, 'buyers and guests');
+        foreach ([$assignments, $redemptions] as $sql) {
+            self::assertStringContainsString(
+                "p.anonymized_at IS NULL AND p.email_verified_at IS NOT NULL AND p.email <> ''"
+                    . " AND RIGHT(p.email, 8) <> '.invalid'",
+                $sql
+            );
+        }
+
+        self::assertStringContainsString(
+            "t.task_date = '2026-11-14' AND t.deleted_at IS NULL"
+                . " AND a.status IN ('arrived', 'arrived_late', 'completed', 'no_show')",
+            $assignments
+        );
+        self::assertStringContainsString("r.redeemed_for = '2026-11-14' AND r.cancelled_at IS NULL", $redemptions);
+    }
+
+    /**
+     * Owner, 2026-11-13: not only the ticket buyers. The crew on the night's
+     * tasks get it too (thank-you when marked as come, sorry when marked a
+     * no-show, nothing while unmarked or cancelled), and so do the free-entry
+     * tickets (thank-you when checked in at the door).
+     */
+    public function testTheCrewAndTheFreeEntryTicketsGetItToo(): void
+    {
+        $this->crew(1, 21, 'Cara Crew', 'cara@example.com', 'arrived');
+        $this->crew(2, 22, 'Dan Done', 'dan@example.com', 'completed');
+        $this->crew(3, 23, 'Nora Noshow', 'nora@example.com', 'no_show');
+        $this->crew(4, 24, 'Una Unmarked', 'una@example.com', 'signed_up');
+        $this->crew(5, 25, 'Cal Cancelled', 'cal@example.com', 'cancelled');
+        $this->crew(6, 26, 'Del Deleted', 'del@example.com', 'arrived', ['task_deleted' => true]);
+        $this->crew(7, 27, 'Ola Otherday', 'ola@example.com', 'arrived', ['event_date' => '2026-11-07']);
+        $this->credit(31, 41, 'Ivy In', 'ivy@example.com');
+        $this->credit(32, 42, 'Max Missed', 'max@example.com');
+        $this->credit(33, 43, 'Xan Extra', 'xan@example.com');
+        $this->credit(34, 44, 'Gil Given', 'gil@example.com', ['cancelled' => true]);
+        $this->db->checkins = [
+            ['kind' => 'credit', 'ref_id' => 41],
+            // A second free-entry ticket of the night is checked in by its own id.
+            ['kind' => 'credit_x', 'ref_id' => 33],
+            // A buyer row with a person's id does not make the person come.
+            ['kind' => FollowupRepository::KIND_BUYER, 'ref_id' => 42],
+        ];
+        $this->previewed();
+
+        $this->followup()->run($this->at('2026-11-15 12:00'));
+
+        $subjects = array_column($this->mails, 'subject', 'to');
+
+        self::assertSame(
+            ['cara@example.com', 'dan@example.com', 'nora@example.com', 'ivy@example.com', 'max@example.com', 'xan@example.com'],
+            array_keys($subjects)
+        );
+
+        foreach (['cara@example.com', 'dan@example.com', 'ivy@example.com', 'xan@example.com'] as $to) {
+            self::assertStringContainsString('Thank you for dancing with us', $subjects[$to], $to);
+        }
+
+        foreach (['nora@example.com', 'max@example.com'] as $to) {
+            self::assertStringContainsString('We missed you this time', $subjects[$to], $to);
+        }
+
+        self::assertStringContainsString('Hi Cara,', array_column($this->mails, 'body', 'to')['cara@example.com']);
+
+        foreach ([1, 2, 3] as $id) {
+            self::assertSame(FollowupMail::STATUS_SENT, $this->db->statusOf('assignment', $id));
+        }
+
+        foreach ([4, 5, 6, 7] as $id) {
+            self::assertSame('', $this->db->statusOf('assignment', $id));
+        }
+
+        foreach ([31, 32, 33] as $id) {
+            self::assertSame(FollowupMail::STATUS_SENT, $this->db->statusOf('redemption', $id));
+        }
+
+        self::assertSame('', $this->db->statusOf('redemption', 34));
+
+        // The crew's links carry their own kind: an assignment is 'a', a free-entry ticket 'r'.
+        $cara = array_column($this->mails, 'body', 'to')['cara@example.com'];
+        $optOut = $this->optOutTokenIn($cara);
+        self::assertSame(["a\n1"], [$this->payloadOf($optOut)]);
+
+        // A second run sends nothing again.
+        $this->followup()->run($this->at('2026-11-15 13:00'));
+        self::assertCount(6, $this->mails);
+    }
+
+    /** A night with only crew on it gets the preview: the crew are signed up the day before. */
+    public function testANightWithOnlyCrewIsPreviewed(): void
+    {
+        $this->crew(1, 21, 'Cara Crew', 'cara@example.com', 'signed_up');
+        $this->organizer();
+
+        $this->followup()->run($this->at('2026-11-13 12:00'));
+
+        self::assertSame(['org@example.test'], array_column($this->mails, 'to'));
+    }
+
+    /**
+     * Nobody who cannot or would not want it: an address that is not
+     * confirmed, an erased person, a placeholder address, a person who
+     * switched every optional email off, and an address on the do-not-send
+     * list. The ones with an address are marked optout; a crew member who
+     * switched only some email off still gets it.
+     */
+    public function testCrewWhoCannotOrWouldNotWantItAreSkipped(): void
+    {
+        $allOff = (string) json_encode(array_fill_keys(
+            ['standing', 'credit', 'ticket', 'permission', 'open_task'],
+            ['email' => false]
+        ));
+        $someOff = (string) json_encode(['open_task' => ['email' => false], 'standing' => ['email' => false]]);
+        $this->crew(1, 21, 'Una Unverified', 'una@example.com', 'arrived', ['verified' => false]);
+        $this->crew(2, 22, 'Era Erased', 'era@example.com', 'arrived', ['anonymized' => true]);
+        $this->crew(3, 23, 'Pia Placeholder', 'person-23@crew.invalid', 'arrived');
+        $this->crew(4, 24, 'Dee Declined', 'dee@example.com', 'arrived', ['notify_prefs' => $allOff]);
+        $this->credit(31, 25, 'Lis Listed', 'LIS@example.com');
+        $this->crew(5, 26, 'Sam Some', 'sam@example.com', 'completed', ['notify_prefs' => $someOff]);
+        $this->options[FollowupOptOut::OPTION] = ['lis@example.com' => '2026-11-01 10:00:00'];
+        $this->previewed();
+
+        $this->followup()->run($this->at('2026-11-15 12:00'));
+
+        self::assertSame(['sam@example.com'], array_column($this->mails, 'to'));
+        self::assertSame(FollowupMail::STATUS_OPTOUT, $this->db->statusOf('assignment', 4));
+        self::assertSame(FollowupMail::STATUS_OPTOUT, $this->db->statusOf('redemption', 31));
+        self::assertSame(FollowupMail::STATUS_SENT, $this->db->statusOf('assignment', 5));
+
+        foreach ([1, 2, 3] as $id) {
+            self::assertSame('', $this->db->statusOf('assignment', $id));
+        }
+    }
+
+    /**
+     * One address with rows of several kinds (bought a ticket, worked a task,
+     * had a free-entry ticket) gets one email, a thank-you when any row came.
+     */
+    public function testOneEmailForAnAddressAcrossKinds(): void
+    {
+        $this->buyer(1, 'Cara Buyer', 'cara@example.com');
+        $this->crew(2, 21, 'Cara Crew', 'Cara@Example.com', 'arrived');
+        $this->credit(3, 21, 'Cara Crew', 'cara@example.com');
+        $this->previewed();
+
+        $this->followup()->run($this->at('2026-11-15 12:00'));
+
+        self::assertSame(['cara@example.com'], array_column($this->mails, 'to'));
+        self::assertStringContainsString('Thank you for dancing with us', $this->mails[0]['subject']);
+        self::assertSame(FollowupMail::STATUS_SENT, $this->db->statusOf('buyer', 1));
+        self::assertSame(FollowupMail::STATUS_DUPLICATE, $this->db->statusOf('assignment', 2));
+        self::assertSame(FollowupMail::STATUS_DUPLICATE, $this->db->statusOf('redemption', 3));
+    }
+
+    /** A person declining optional email keeps the whole address out, its ticket too. */
+    public function testADecliningPersonsTicketRowIsSkippedToo(): void
+    {
+        $allOff = (string) json_encode(array_fill_keys(
+            ['standing', 'credit', 'ticket', 'permission', 'open_task'],
+            ['email' => false]
+        ));
+        $this->buyer(1, 'Dee Buyer', 'dee@example.com');
+        $this->crew(2, 21, 'Dee Crew', 'dee@example.com', 'arrived', ['notify_prefs' => $allOff]);
+        $this->previewed();
+
+        $this->followup()->run($this->at('2026-11-15 12:00'));
+
+        self::assertSame([], $this->mails);
+        self::assertSame(FollowupMail::STATUS_OPTOUT, $this->db->statusOf('buyer', 1));
+        self::assertSame(FollowupMail::STATUS_OPTOUT, $this->db->statusOf('assignment', 2));
+    }
+
+    /** The links of a crew row count, subscribe and opt out through the assignments and redemptions tables. */
+    public function testTheCrewRowsLinksWorkOnTheirOwnTables(): void
+    {
+        $url = FollowupMail::trackedUrl('https://shop.test/p/1', 'a', 7);
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+        $this->db->nextQueryResults = [1];
+
+        self::assertSame('https://shop.test/p/1', $this->followup()->clickTarget((string) $query[FollowupMail::GO_ARG]));
+        self::assertStringContainsString(
+            'wp_eventcrew_assignments SET followup_clicked_at',
+            $this->db->lastQuery()
+        );
+
+        $url = FollowupMail::optOutUrl('r', 9);
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+        $this->db->nextRows[] = ['name' => 'Ivy In', 'email' => ' Ivy@Example.com '];
+
+        self::assertTrue($this->followup()->optOutClick((string) $query[FollowupMail::OPTOUT_ARG]));
+        $sql = $this->db->lastQuery();
+        self::assertStringContainsString(
+            'SELECT p.display_name AS name, p.email FROM wp_eventcrew_redemptions r'
+                . ' INNER JOIN wp_eventcrew_people p ON p.id = r.person_id WHERE r.id = 9 AND p.anonymized_at IS NULL',
+            $sql
+        );
+        self::assertSame(['ivy@example.com'], array_keys($this->options[FollowupOptOut::OPTION]));
+
+        // A placeholder address is no holder.
+        $this->db->nextRows[] = ['name' => 'Pia', 'email' => 'person-1@crew.invalid'];
+        self::assertNull((new FollowupRepository())->holder(FollowupRepository::KIND_ASSIGNMENT, 3));
+    }
+
+    /** Stop marks the crew's and the free-entry tickets' rows too. */
+    public function testStopMarksTheCrewRowsToo(): void
+    {
+        $this->buyer(1, 'Anna Example', 'anna@example.test');
+        $this->previewed();
+
+        self::assertSame(FollowupMail::STOPPED, $this->followup()->stop(self::NIGHT));
+
+        $sql = implode("\n", $this->db->queries);
+        self::assertStringContainsString(
+            "UPDATE wp_eventcrew_assignments a INNER JOIN wp_eventcrew_tasks t ON t.id = a.task_id"
+                . " SET a.followup_mail_status = 'stopped' WHERE t.task_date = '2026-11-14'",
+            $sql
+        );
+        self::assertStringContainsString(
+            "UPDATE wp_eventcrew_redemptions SET followup_mail_status = 'stopped'"
+                . " WHERE redeemed_for = '2026-11-14' AND cancelled_at IS NULL",
+            $sql
+        );
     }
 
     public function testMoreThanABatchContinuesInACronEvent(): void
@@ -2151,6 +2374,43 @@ EN: {$english}", $both);
     private function guest(int $id, string $name, string $email, string $date = self::NIGHT): void
     {
         $this->db->guests[$id] = self::row($id, $name, $email, $date);
+    }
+
+    /**
+     * A crew member's assignment on a task of the night, with a confirmed
+     * address unless $extra says otherwise.
+     *
+     * @param array<string, mixed> $extra
+     */
+    private function crew(int $id, int $personId, string $name, string $email, string $status, array $extra = []): void
+    {
+        $this->db->assignments[$id] = $extra + self::row($id, $name, $email, self::NIGHT)
+            + ['person_id' => $personId, 'status' => $status, 'verified' => true, 'notify_prefs' => null];
+    }
+
+    /**
+     * A free-entry ticket for the night, with a confirmed address unless
+     * $extra says otherwise.
+     *
+     * @param array<string, mixed> $extra
+     */
+    private function credit(int $id, int $personId, string $name, string $email, array $extra = []): void
+    {
+        $this->db->redemptions[$id] = $extra + self::row($id, $name, $email, self::NIGHT)
+            + ['person_id' => $personId, 'verified' => true, 'notify_prefs' => null];
+    }
+
+    /** The "Don't send me these" token in an email's body. */
+    private function optOutTokenIn(string $body): string
+    {
+        self::assertSame(1, preg_match('/' . FollowupMail::OPTOUT_ARG . '=([A-Za-z0-9_.\-]+)/', $body, $match));
+
+        return $match[1];
+    }
+
+    private function payloadOf(string $token): string
+    {
+        return (string) SignedLink::verifyPayload(FollowupMail::PURPOSE_OPTOUT, $token);
     }
 
     /** @return array<string, mixed> */

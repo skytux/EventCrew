@@ -23,7 +23,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '39';
+    public const DB_VERSION = '40';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -165,6 +165,10 @@ final class Schema
 
         // Schema 39: the group messages table (the group chat on the web).
         // dbDelta adds it; nothing to copy.
+
+        // Schema 40: the post-event email's three columns on the assignments
+        // and redemptions tables (the crew and the free-entry tickets get it
+        // too). dbDelta adds them with their defaults; nothing to copy.
 
         update_option(self::VERSION_OPTION, self::DB_VERSION);
     }
@@ -680,6 +684,9 @@ final class Schema
             // ticket_mailed_at (schema 26) is when the "Your ticket" email
             // (TicketMail) was sent for this sign-up. NULL means none was
             // sent, so a cancellation sends no "ticket cancelled" email.
+            //
+            // followup_mail_status, followup_mailed_at and followup_clicked_at
+            // (schema 40) are the post-event email, as on the guests table.
             "CREATE TABLE {$assignments} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 task_id bigint(20) unsigned NOT NULL,
@@ -692,6 +699,9 @@ final class Schema
                 reminded_at datetime DEFAULT NULL,
                 counts_credit tinyint(1) NOT NULL DEFAULT 1,
                 ticket_mailed_at datetime DEFAULT NULL,
+                followup_mail_status varchar(10) NOT NULL DEFAULT '',
+                followup_mailed_at datetime DEFAULT NULL,
+                followup_clicked_at datetime DEFAULT NULL,
                 PRIMARY KEY  (id),
                 UNIQUE KEY task_person (task_id,person_id),
                 KEY person_id (person_id),
@@ -712,6 +722,9 @@ final class Schema
             //
             // ticket_mailed_at (schema 26) is when the "Your ticket" email
             // (TicketMail) was sent for this credit, as on assignments.
+            //
+            // followup_mail_status, followup_mailed_at and followup_clicked_at
+            // (schema 40) are the post-event email, as on the guests table.
             "CREATE TABLE {$redemptions} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 person_id bigint(20) unsigned NOT NULL,
@@ -723,6 +736,9 @@ final class Schema
                 cancelled_at datetime DEFAULT NULL,
                 ticket_mailed_at datetime DEFAULT NULL,
                 transferred_to bigint(20) unsigned DEFAULT NULL,
+                followup_mail_status varchar(10) NOT NULL DEFAULT '',
+                followup_mailed_at datetime DEFAULT NULL,
+                followup_clicked_at datetime DEFAULT NULL,
                 PRIMARY KEY  (id),
                 KEY person_id (person_id),
                 KEY redeemed_for (redeemed_for)
