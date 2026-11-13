@@ -13,6 +13,12 @@ namespace EventCrew\Web;
  *   replaces the older on the lock screen, renotify so it still sounds).
  * - notificationclick: brings an open Crew app window forward and takes it
  *   to the address, else opens a new one.
+ * - message "eventcrew-push-subscribe": subscribes with the key the page
+ *   sends and answers on the message's port ({ok, sub} or {ok: false, name,
+ *   message}). A worker's subscribe() only checks the permission, where a
+ *   page's asks for it again; in an app installed from Samsung Internet that
+ *   question never gets an answer, so the page subscribe() hangs
+ *   (signup-push.php asks here when it does).
  *
  * Static script text, no user data: what varies arrives in the push.
  */
@@ -29,6 +35,23 @@ final class PushServiceWorker
             if (d.icon) { o.icon = d.icon; }
             if (d.tag) { o.tag = d.tag; o.renotify = true; }
             e.waitUntil(self.registration.showNotification(d.title || '', o));
+        });
+        self.addEventListener('message', function (e) {
+            var d = e.data || {};
+            var port = e.ports && e.ports[0];
+            if ('eventcrew-push-subscribe' !== d.type || !port) { return; }
+            e.waitUntil(
+                self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: d.key }).then(
+                    function (sub) { port.postMessage({ ok: true, sub: sub.toJSON() }); },
+                    function (err) {
+                        port.postMessage({
+                            ok: false,
+                            name: (err && err.name) || 'Error',
+                            message: (err && err.message) || ''
+                        });
+                    }
+                )
+            );
         });
         self.addEventListener('notificationclick', function (e) {
             e.notification.close();

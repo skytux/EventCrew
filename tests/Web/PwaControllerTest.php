@@ -117,6 +117,8 @@ final class PwaControllerTest extends TestCase
 
         self::assertStringContainsString('rel="manifest"', $tags);
         self::assertStringContainsString('apple-mobile-web-app-capable', $tags);
+        // signup-push.php reads the app's name from it for the stuck line.
+        self::assertStringContainsString('<meta name="apple-mobile-web-app-title" content="', $tags);
         self::assertStringContainsString('apple-touch-icon', $tags);
         self::assertStringContainsString('serviceWorker', $tags);
     }

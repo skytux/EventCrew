@@ -14082,3 +14082,9 @@ msgstr[1] "%d biljetter"
 #: templates/public/signup-push.php
 msgid "The browser did not finish turning on notifications. In the phone's Settings → Apps → your browser → Notifications, allow them, then try again."
 msgstr "Webbläsaren kunde inte slå på aviseringar. Tillåt dem i telefonens Inställningar → Appar → din webbläsare → Aviseringar och försök igen."
+
+#. translators: %s: the installed app's name, like "EDH Crew".
+#: templates/public/signup-push.php
+#, php-format
+msgid "The app did not finish turning on notifications. In the phone's Settings → Apps → %s → Notifications, allow them. Then close the app fully, open it and try again."
+msgstr "Appen kunde inte slå på aviseringar. Tillåt dem i telefonens Inställningar → Appar → %s → Aviseringar. Stäng appen helt, öppna den och försök igen."

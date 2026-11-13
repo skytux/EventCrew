@@ -17,8 +17,20 @@
  * visible): the switch waits disabled with its knob pulsing; a question the phone did not
  * show (dismissed, Chrome's quiet permission UI, or no answer in 8 seconds)
  * says where to allow it; blocked shows the blocked line; an error shows the
- * failed line with the error's name, for a report. A service worker not
- * ready after 5 seconds still shows the switch, and a tap says to reload.
+ * failed line with the error's name and the step, for a report. A service
+ * worker not ready after 5 seconds still shows the switch, and a tap says to
+ * reload.
+ *
+ * Samsung Internet (Owner 2026-11-13, Android 16): in the app installed from
+ * it, the permission is granted but the page's subscribe() never answers.
+ * A page's subscribe() asks for the permission again and the installed
+ * app's answer never comes; the service worker's subscribe() only checks it,
+ * so the page asks the worker too after 2 seconds (PushServiceWorker). No
+ * subscription in 5 seconds: the stuck line, in the installed app with the
+ * app's name (Settings → Apps → EDH Crew → Notifications, then reopen the
+ * app: the browser reads the app's permission when it opens), with the step
+ * and the push permission state for a report. A subscription that still
+ * arrives later turns the switch on.
  *
  * Turning them on here with Telegram linked and the question never asked
  * also asks where notifications should come (signup-channels.php).
@@ -58,7 +70,14 @@ if ('' === $eventcrew_push_key) {
     <p class="eventcrew-muted" data-eventcrew-push-ios hidden><?php esc_html_e('On iPhone, notifications work after you add this page to your Home Screen.', 'eventcrew'); ?></p>
     <p class="eventcrew-muted" data-eventcrew-push-dismissed hidden><?php esc_html_e("Your phone did not show the question. Allow notifications for this site in the browser's site settings, then try again.", 'eventcrew'); ?></p>
     <p class="eventcrew-muted" data-eventcrew-push-loading hidden><?php esc_html_e('The app is still loading. Reload the page and try again.', 'eventcrew'); ?></p>
-    <p class="eventcrew-muted" data-eventcrew-push-stuck hidden><?php esc_html_e("The browser did not finish turning on notifications. In the phone's Settings → Apps → your browser → Notifications, allow them, then try again.", 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></p>
+    <p class="eventcrew-muted" data-eventcrew-push-stuck hidden><?php esc_html_e("The browser did not finish turning on notifications. In the phone's Settings → Apps → your browser → Notifications, allow them, then try again.", 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?> <span class="eventcrew-push-error" data-eventcrew-push-why></span></p>
+    <p class="eventcrew-muted" data-eventcrew-push-stuckapp hidden><?php
+        echo sprintf(
+            /* translators: %s: the installed app's name, like "EDH Crew". */
+            esc_html__('The app did not finish turning on notifications. In the phone\'s Settings → Apps → %s → Notifications, allow them. Then close the app fully, open it and try again.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            '<span data-eventcrew-push-appname></span>'
+        );
+        ?> <span class="eventcrew-push-error" data-eventcrew-push-why></span></p>
     <p class="eventcrew-muted" data-eventcrew-push-failed hidden><?php esc_html_e('Could not turn on notifications. Try again.', 'eventcrew'); ?> <span class="eventcrew-push-error" data-eventcrew-push-error></span></p>
 </div>
 <script>
@@ -86,7 +105,8 @@ if ('' === $eventcrew_push_key) {
         return out;
     };
     var post = function (op, sub) {
-        var j = sub.toJSON();
+        // A PushSubscription here, or its JSON from the service worker.
+        var j = sub.toJSON ? sub.toJSON() : sub;
         var data = new FormData();
         data.append('action', box.dataset.action);
         data.append('csrf', box.dataset.csrf);
@@ -98,7 +118,7 @@ if ('' === $eventcrew_push_key) {
             .then(function (r) { if (!r.ok) { throw new Error(String(r.status)); } return r; });
     };
     // The lines under the switch: at most one of these shows at a time.
-    var lines = ['failed', 'dismissed', 'loading', 'stuck'];
+    var lines = ['failed', 'dismissed', 'loading', 'stuck', 'stuckapp'];
     var only = function (name) {
         lines.forEach(function (n) { part(n).hidden = n !== name; });
     };
@@ -114,10 +134,14 @@ if ('' === $eventcrew_push_key) {
         link.classList.toggle('is-busy', waiting);
         link.setAttribute('aria-busy', waiting ? 'true' : 'false');
     };
-    // The failed line, with the error's name ("(NotAllowedError)") to report.
+    // Where turning them on got to, for a report ("subscribe", "worker").
+    var step = '';
+    // The failed line, with the error's name and the step
+    // ("(NotAllowedError, subscribe)") to report.
     var failed = function (err) {
         var name = err && err.name ? String(err.name) : '';
         if ('Error' === name && err.message) { name += ' ' + String(err.message); }
+        if (step) { name += (name ? ', ' : '') + step; }
         part('error').textContent = name ? '(' + name + ')' : '';
         busy(on, false);
         only('failed');
@@ -146,10 +170,120 @@ if ('' === $eventcrew_push_key) {
         }).then(function () { busy(on, false); show(false); }).catch(failed);
     };
 
+    // The installed app's name ("EDH Crew"), from the head tag
+    // PwaController adds; '' when there is none.
+    var appName = function () {
+        var m = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+        return m ? String(m.getAttribute('content') || '') : '';
+    };
+    var sameKey = function (sub, want) {
+        var k = sub && sub.options && sub.options.applicationServerKey;
+        if (!k) { return true; }
+        var have = new Uint8Array(k);
+        if (have.length !== want.length) { return false; }
+        for (var i = 0; i < have.length; i++) { if (have[i] !== want[i]) { return false; } }
+        return true;
+    };
+    // The service worker subscribes (PushServiceWorker): from a worker the
+    // browser only checks the permission and asks nothing, where a page's
+    // subscribe() asks again, and in an app installed from Samsung Internet
+    // that question never gets an answer.
+    var askWorker = function (want) {
+        return new Promise(function (resolve, reject) {
+            if (!reg.active || !window.MessageChannel) { reject(new Error('no worker')); return; }
+            var ch = new MessageChannel();
+            ch.port1.onmessage = function (e) {
+                var d = e.data || {};
+                if (d.ok && d.sub) { resolve(d.sub); return; }
+                var err = new Error(String(d.message || ''));
+                err.name = String(d.name || 'Error');
+                reject(err);
+            };
+            reg.active.postMessage({ type: 'eventcrew-push-subscribe', key: want }, [ch.port2]);
+        });
+    };
+    // Permission granted: reuse a subscription with this key (one with an
+    // older key is dropped first), else subscribe from the page, and from the
+    // service worker too when the page has no answer in 2 seconds or refuses. No answer
+    // in 5 seconds shows the stuck line; a subscription that still arrives
+    // later turns the switch on and hides it.
+    var subscribe = function () {
+        var want = key();
+        var done = false, late = false, why = [];
+        var pushState = '', workerError = '';
+        try {
+            reg.pushManager.permissionState({ userVisibleOnly: true, applicationServerKey: want })
+                .then(function (s) { pushState = String(s); }, function () {});
+        } catch (e) { /* not in this browser */ }
+        var finish = function (sub) {
+            if (done) { return; }
+            done = true;
+            clearTimeout(stuck);
+            clearTimeout(viaWorker);
+            busy(on, true);
+            step = 'save';
+            post('subscribe', sub)
+                .then(function (r) { return r.json().catch(function () { return {}; }); })
+                .then(function (body) {
+                    busy(on, false);
+                    show(true);
+                    // Telegram linked, not asked yet: "Where do you want
+                    // them?" (signup-channels.php).
+                    if (body && body.ask_channels) { document.dispatchEvent(new CustomEvent('eventcrew:ask-channels')); }
+                })
+                .catch(failed);
+        };
+        var fail = function (err) {
+            if (done) { return; }
+            done = true;
+            clearTimeout(stuck);
+            clearTimeout(viaWorker);
+            failed(err);
+        };
+        var viaWorker = setTimeout(function () {
+            if (done) { return; }
+            askWorker(want).then(finish, function (err) {
+                workerError = err && err.name ? String(err.name) : 'Error';
+            });
+        }, 2000);
+        var stuck = setTimeout(function () {
+            if (done) { return; }
+            late = true;
+            busy(on, false);
+            why.push('Timeout ' + step);
+            if (pushState) { why.push('push: ' + pushState); }
+            if (workerError) { why.push('worker: ' + workerError); }
+            Array.prototype.forEach.call(box.querySelectorAll('[data-eventcrew-push-why]'), function (el) {
+                el.textContent = '(' + why.join('; ') + ')';
+            });
+            var name = standalone ? appName() : '';
+            if (name) {
+                part('appname').textContent = name;
+                only('stuckapp');
+            } else {
+                only('stuck');
+            }
+        }, 5000);
+        step = 'existing';
+        reg.pushManager.getSubscription().then(function (old) {
+            if (old && sameKey(old, want)) { return old; }
+            step = 'unsubscribe';
+            return (old ? old.unsubscribe().catch(function () {}) : Promise.resolve()).then(function () {
+                step = 'subscribe';
+                return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: want });
+            });
+        }).then(finish, function (err) {
+            // The page's subscribe() refused: the service worker may still
+            // manage. After the stuck line, a late error leaves that line.
+            askWorker(want).then(finish, function () { if (!late) { fail(err); } });
+        });
+    };
+
     on.addEventListener('click', function () {
         if (on.disabled) { return; }
         if (!reg) { only('loading'); return; }
         only('');
+        step = '';
         if (isOn()) { turnOff(); return; }
         busy(on, true);
         // No answer in 8 seconds: the phone did not show the question.
@@ -179,36 +313,10 @@ if ('' === $eventcrew_push_key) {
             }
             only('');
             busy(on, true);
-            // Some browsers (Samsung Internet without Android's permission for
-            // the browser app) never answer subscribe(): stop after 5 seconds.
-            return new Promise(function (resolve, reject) {
-                var stuck = setTimeout(function () {
-                    var err = new Error('subscribe');
-                    err.name = 'Timeout';
-                    reject(err);
-                }, 5000);
-                reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key() }).then(
-                    function (sub) { clearTimeout(stuck); resolve(sub); },
-                    function (err) { clearTimeout(stuck); reject(err); }
-                );
-            })
-                .then(function (sub) { return post('subscribe', sub); })
-                .then(function (r) { return r.json().catch(function () { return {}; }); })
-                .then(function (body) {
-                    busy(on, false);
-                    show(true);
-                    // Telegram linked, not asked yet: "Where do you want
-                    // them?" (signup-channels.php).
-                    if (body && body.ask_channels) { document.dispatchEvent(new CustomEvent('eventcrew:ask-channels')); }
-                });
+            return subscribe();
         }).catch(function (err) {
             answered = true;
             clearTimeout(wait);
-            if (err && 'Timeout' === err.name) {
-                busy(on, false);
-                only('stuck');
-                return;
-            }
             failed(err);
         });
     });

@@ -13,6 +13,7 @@ use EventCrew\Support\WebPush;
 use EventCrew\Support\WebSession;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\PushController;
+use EventCrew\Web\PushServiceWorker;
 use EventCrew\Web\SessionPerson;
 
 /**
@@ -127,5 +128,23 @@ final class PushControllerTest extends TestCase
         self::assertSame('Linux Chrome', PushController::deviceLabel('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36'));
         // phpcs:enable Generic.Files.LineLength.TooLong
         self::assertSame('', PushController::deviceLabel(''));
+    }
+
+    /**
+     * Samsung Internet's installed app (Owner 2026-11-13): the page's
+     * subscribe() never answers, so signup-push.php asks the service worker,
+     * whose subscribe() only checks the permission, and it answers on the port.
+     */
+    public function testTheServiceWorkerSubscribesWhenThePageAsks(): void
+    {
+        $js = PushServiceWorker::js();
+
+        self::assertStringContainsString("self.addEventListener('message'", $js);
+        self::assertStringContainsString("'eventcrew-push-subscribe' !== d.type", $js);
+        self::assertStringContainsString(
+            'self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: d.key })',
+            $js
+        );
+        self::assertStringContainsString('port.postMessage({ ok: true, sub: sub.toJSON() })', $js);
     }
 }

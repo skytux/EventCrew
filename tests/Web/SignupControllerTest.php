@@ -816,6 +816,20 @@ final class SignupControllerTest extends TestCase
         self::assertStringContainsString('}, 5000);', $html);
         // After subscribing it may still ask where notifications go.
         self::assertStringContainsString("new CustomEvent('eventcrew:ask-channels')", $html);
+        // Samsung Internet's installed app (Owner 2026-11-13): the page's
+        // subscribe() never answers, so the service worker is asked too after
+        // 2 seconds; stuck in the app names the app's own notification setting,
+        // and both stuck lines carry the step for a report.
+        self::assertStringContainsString("postMessage({ type: 'eventcrew-push-subscribe', key: want }", $html);
+        self::assertStringContainsString('}, 2000);', $html);
+        self::assertStringContainsString(
+            'Apps → <span data-eventcrew-push-appname></span> → Notifications, allow them. Then close the app',
+            $html
+        );
+        self::assertStringContainsString("only('stuckapp');", $html);
+        self::assertSame(2, substr_count($html, 'data-eventcrew-push-why></span></p>'));
+        // A subscription with an older key is dropped before subscribing.
+        self::assertStringContainsString('if (old && sameKey(old, want)) { return old; }', $html);
     }
 
     /** The signed-in person 7 (Sam), on task 5 (2026-08-01), through MeTabWpdb. */

@@ -11151,3 +11151,9 @@ msgstr[1] "%d lippua"
 #: templates/public/signup-push.php
 msgid "The browser did not finish turning on notifications. In the phone's Settings → Apps → your browser → Notifications, allow them, then try again."
 msgstr "Selain ei saanut ilmoituksia päälle. Salli ne puhelimen asetuksissa: Sovellukset → selaimesi → Ilmoitukset. Yritä sitten uudelleen."
+
+#. translators: %s: the installed app's name, like "EDH Crew".
+#: templates/public/signup-push.php
+#, php-format
+msgid "The app did not finish turning on notifications. In the phone's Settings → Apps → %s → Notifications, allow them. Then close the app fully, open it and try again."
+msgstr "Sovellus ei saanut ilmoituksia päälle. Salli ne puhelimen asetuksissa: Sovellukset → %s → Ilmoitukset. Sulje sovellus kokonaan, avaa se ja yritä uudelleen."
