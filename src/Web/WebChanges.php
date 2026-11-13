@@ -26,10 +26,12 @@ interface WebChanges
 
     /**
      * Runs the change prepare() gave $state for. "changed" only when it went
-     * through; "text" is the outcome in the bot's words.
+     * through; "text" is the outcome in the bot's words. "ticket", after a
+     * person's own ticket, is its address for the page's Open my ticket
+     * button: never put in the text or any log.
      *
      * @param array<string, mixed> $state
-     * @return array{changed: bool, text: string}
+     * @return array{changed: bool, text: string, ticket?: string}
      */
     public function run(Person $organizer, string $action, array $state): array;
 }

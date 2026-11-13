@@ -193,11 +193,13 @@ final class TicketRedemptionService
 
     /**
      * Confirm in the helper box: redeem() with the tickets held when asked,
-     * so a double tap cannot buy two. The answer never carries the ticket
-     * link (it goes on the person's channels, and the Tickets tab has it).
+     * so a double tap cannot buy two. The text never carries the ticket
+     * link (it goes on the person's channels, and the Tickets tab has it);
+     * "ticket" has it for the page's Open my ticket button only, never for
+     * a log or the conversation record.
      *
      * @param array<string, mixed> $state
-     * @return array{changed: bool, text: string}
+     * @return array{changed: bool, text: string, ticket?: string}
      */
     public function runWeb(Person $person, array $state): array
     {
@@ -212,7 +214,7 @@ final class TicketRedemptionService
             /* translators: %s: the night, like Sat 14 Nov */
             __('Credit spent on %s.', 'eventcrew'),
             $this->dateLabel($date)
-        ) . "\n" . __('Your ticket is on the Tickets tab.', 'eventcrew')];
+        ) . "\n" . __('Your ticket is on the Tickets tab.', 'eventcrew'), 'ticket' => $result['url']];
     }
 
     /**

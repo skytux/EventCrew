@@ -11,7 +11,8 @@
  * token. What the model wrote is shown with textContent and link hrefs
  * only, never as HTML. Signing up for or cancelling a task shows Confirm
  * and Cancel first; something the page has opens that tab (and Admin
- * screen, for an organizer); anything else gets no button. The page never
+ * screen, for an organizer); a credit spent here gets one Open my ticket
+ * button (Lou 2026-11-14); anything else gets no button. The page never
  * offers to go to Telegram (Owner 2026-11-13).
  *
  * Speaking uses the browser's own speech recognition (the mic is shown only
@@ -158,7 +159,7 @@ $eventcrew_ai_line = static function (string $where) use ($eventcrew_ai_placehol
             var target = null;
             (action.targets || []).some(function (id) { target = document.getElementById(id); return !!target; });
             if (!target) { return; }
-            var go = el('button', 'eventcrew-settings-btn', box.dataset['goto'].replace('%s', tabName(target)));
+            var go = el('button', 'eventcrew-ai-choice', box.dataset['goto'].replace('%s', tabName(target)));
             go.type = 'button';
             var query = action.query && 'object' === typeof action.query ? action.query : null;
             if (query && window.URL) {
@@ -181,8 +182,8 @@ $eventcrew_ai_line = static function (string $where) use ($eventcrew_ai_placehol
             if (action.summary) {
                 holder.appendChild(el('p', 'eventcrew-ai-summary', '➡️ ' + action.summary));
             }
-            var yes = el('button', 'wp-element-button eventcrew-linkbtn', action.confirm);
-            var no = el('button', 'eventcrew-settings-btn', action.cancel);
+            var yes = el('button', 'eventcrew-ai-choice', action.confirm);
+            var no = el('button', 'eventcrew-ai-choice', action.cancel);
             yes.type = no.type = 'button';
             var answer = function (op) {
                 yes.disabled = no.disabled = true;
@@ -193,6 +194,20 @@ $eventcrew_ai_line = static function (string $where) use ($eventcrew_ai_placehol
                     reply.classList.remove('is-thinking');
                     fill(reply, json.reply);
                     if (json.changed) { reload = true; }
+                    var t = json.action;
+                    // A credit just spent: one button that opens the ticket,
+                    // as the Tickets tab's Ticket link does (a new tab).
+                    if (t && 'ticket' === t.kind && 'string' === typeof t.url && /^https?:\/\//i.test(t.url)) {
+                        var show = el('button', 'eventcrew-ai-choice', String(t.label || ''));
+                        show.type = 'button';
+                        show.addEventListener('click', function () {
+                            var opened = window.open(t.url, '_blank');
+                            if (opened) { opened.opener = null; } else { window.location.assign(t.url); }
+                        });
+                        var line = el('div', 'eventcrew-ai-actions');
+                        line.appendChild(show);
+                        reply.appendChild(line);
+                    }
                 }, function () { failed(reply); });
             };
             yes.addEventListener('click', function () { answer('confirm'); });

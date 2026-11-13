@@ -235,7 +235,16 @@ final class AssistantWebController
                 $this->assistant->noteWeb($person, $checked['action'], true);
             }
 
-            return [200, $this->told($done['text'], $done['changed'] ? 'changed' : 'unchanged', $done['changed'])];
+            $body = $this->told($done['text'], $done['changed'] ? 'changed' : 'unchanged', $done['changed']);
+            $ticket = (string) ($done['ticket'] ?? '');
+
+            // Lou 2026-11-14: one button that opens the ticket just spent. The
+            // address is only in this answer, never in the text or a log.
+            if ($done['changed'] && 1 === preg_match('#^https?://#i', $ticket)) {
+                $body['action'] = ['kind' => 'ticket', 'label' => __('Open my ticket', 'eventcrew'), 'url' => $ticket];
+            }
+
+            return [200, $body];
         }
 
         $taskId = (int) ($plan['task'] ?? 0);

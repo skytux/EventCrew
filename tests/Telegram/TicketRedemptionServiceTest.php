@@ -740,6 +740,8 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         self::assertStringContainsString('Your ticket is on the Tickets tab.', $done['text']);
         self::assertStringNotContainsString('http', $done['text']);
         self::assertStringNotContainsString('token', $done['text']);
+        // The address is only for the page's Open my ticket button.
+        self::assertStringContainsString('wp-json/eventcrew/v1/ticket?token=', $done['ticket'] ?? '');
     }
 
     public function testConfirmInTheHelperBoxReportsARefusal(): void
@@ -754,6 +756,7 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
 
         self::assertFalse($done['changed']);
         self::assertStringStartsWith('⚠️ ', $done['text']);
+        self::assertArrayNotHasKey('ticket', $done);
         self::assertSame([], $this->wpdb->inserts);
     }
 }

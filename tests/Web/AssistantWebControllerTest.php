@@ -446,4 +446,32 @@ final class AssistantWebControllerTest extends TestCase
         self::assertTrue($body['changed']);
         self::assertSame([[7, 'menu:ticket 2026-11-14', ['person' => 9]]], $this->changes->ran);
     }
+
+    /** Lou 2026-11-14: one Open my ticket button after a credit is spent; the address is in no text or note. */
+    public function testASpentCreditGetsOneOpenTicketButton(): void
+    {
+        $url = 'https://site.test/wp-json/eventcrew/v1/ticket?token=abc';
+        $this->changes->outcome = ['changed' => true, 'text' => '✅ Credit spent on Sat 14 Nov.', 'ticket' => $url];
+        $this->assistant->next = FakeWebAssistant::answer('Sure.', 'menu:ticket 2026-11-14');
+        [, $asked] = $this->post(['op' => 'ask', 'text' => 'give myself a ticket'], $this->person());
+        $this->assistant->recheck = 'menu:ticket 2026-11-14';
+
+        [, $body] = $this->post(['op' => 'confirm', 'id' => $asked['action']['id']], $this->person());
+
+        self::assertSame(['kind' => 'ticket', 'label' => 'Open my ticket', 'url' => $url], $body['action']);
+        self::assertStringNotContainsString('token', self::text($body));
+        self::assertStringNotContainsString('token', (string) json_encode($this->assistant->noted));
+    }
+
+    public function testAChangeWithoutATicketHasNoButton(): void
+    {
+        $this->changes->outcome = ['changed' => false, 'text' => '⚠️ No credit.', 'ticket' => 'https://site.test/x'];
+        $this->assistant->next = FakeWebAssistant::answer('Sure.', 'menu:ticket 2026-11-14');
+        [, $asked] = $this->post(['op' => 'ask', 'text' => 'give myself a ticket'], $this->person());
+        $this->assistant->recheck = 'menu:ticket 2026-11-14';
+
+        [, $body] = $this->post(['op' => 'confirm', 'id' => $asked['action']['id']], $this->person());
+
+        self::assertArrayNotHasKey('action', $body);
+    }
 }
