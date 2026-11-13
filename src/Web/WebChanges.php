@@ -7,10 +7,11 @@ namespace EventCrew\Web;
 use EventCrew\Models\Person;
 
 /**
- * An organizer change asked in the Crew app's helper box (an action
- * AssistantWebActions plans as op "change"): first the question shown with
- * Confirm and Cancel, then, on Confirm, the change itself with its real
- * outcome. AssistantWebChanges is the one implementation; tests fake it.
+ * A change asked in the Crew app's helper box (an action AssistantWebActions
+ * plans as op "change": an organizer's, or a person's own ticket): first
+ * the question shown with Confirm and Cancel, then, on Confirm, the change
+ * itself with its real outcome. $organizer is the person asking (an
+ * organizer for every change but their own ticket). AssistantWebChanges is the one implementation; tests fake it.
  */
 interface WebChanges
 {

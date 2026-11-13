@@ -428,4 +428,22 @@ final class AssistantWebControllerTest extends TestCase
         self::assertSame(AssistantWebActions::GOTO, $body['action']['kind']);
         self::assertSame("Not done yet: open it here.\nMarked.", self::text($body));
     }
+
+    /** Lou 2026-11-14: "give myself a ticket" is asked and spent on the page, for any member. */
+    public function testAMemberSpendsTheirOwnCreditOnConfirm(): void
+    {
+        $this->assistant->next = FakeWebAssistant::answer('You can get one on the Tickets tab.', 'menu:ticket 2026-11-14');
+
+        [, $asked] = $this->post(['op' => 'ask', 'text' => 'give myself a ticket'], $this->person());
+
+        self::assertSame(AssistantWebActions::CONFIRM, $asked['action']['kind']);
+        self::assertStringNotContainsString('Tickets tab', self::text($asked));
+        self::assertSame([], $this->changes->ran);
+
+        $this->assistant->recheck = 'menu:ticket 2026-11-14';
+        [, $body] = $this->post(['op' => 'confirm', 'id' => $asked['action']['id']], $this->person());
+
+        self::assertTrue($body['changed']);
+        self::assertSame([[7, 'menu:ticket 2026-11-14', ['person' => 9]]], $this->changes->ran);
+    }
 }

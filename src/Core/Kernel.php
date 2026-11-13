@@ -952,7 +952,8 @@ final class Kernel
                     $container->get(PersonCommands::class),
                     $container->get(NightCommands::class),
                     $container->get(TaskCommand::class),
-                    $container->get(GuestListService::class)
+                    $container->get(GuestListService::class),
+                    $container->get(TicketRedemptionService::class)
                 )
             )
         );

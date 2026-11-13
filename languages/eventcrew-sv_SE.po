@@ -14246,3 +14246,11 @@ msgstr "Inte gjort än: öppna det här."
 
 msgid "Not done: this page cannot do that."
 msgstr "Inte gjort: sidan kan inte göra det."
+
+#. translators: %s: the nights, like "Fri 13 Nov · Dance Night, Sat 14 Nov".
+#, php-format
+msgid "Which night? %s"
+msgstr "Vilken kväll? %s"
+
+msgid "Your ticket is on the Tickets tab."
+msgstr "Din biljett finns under fliken Biljetter."

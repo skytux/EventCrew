@@ -11320,3 +11320,11 @@ msgstr "Ei vielä tehty: avaa se tästä."
 
 msgid "Not done: this page cannot do that."
 msgstr "Ei tehty: tämä sivu ei osaa sitä."
+
+#. translators: %s: the nights, like "Fri 13 Nov · Dance Night, Sat 14 Nov".
+#, php-format
+msgid "Which night? %s"
+msgstr "Mikä ilta? %s"
+
+msgid "Your ticket is on the Tickets tab."
+msgstr "Lippusi on Liput-välilehdellä."

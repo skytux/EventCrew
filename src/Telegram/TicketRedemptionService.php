@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Models\Person;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -86,23 +87,7 @@ final class TicketRedemptionService
         $balance = $this->standing->for($person->id)->creditBalance;
 
         if ($balance < 1) {
-            $perCredit = (new ReputationSettings())->tasksPerCredit();
-            // phpcs:disable WordPress.WP.I18n.MissingSingularPlaceholder -- the singular is only used for 1.
-            $this->telegram->sendMessage(
-                $telegramUserId,
-                sprintf(
-                    /* translators: %d: tasks a person completes to earn one free-entry credit */
-                    _n(
-                        'You have no free-entry credits yet — you earn one for every task you complete.',
-                        'You have no free-entry credits yet — you earn one for every %d tasks you complete.',
-                        $perCredit,
-                        'eventcrew'
-                    ),
-                    $perCredit
-                ),
-                MenuButtons::back(MenuButtons::TICKETS)
-            );
-            // phpcs:enable WordPress.WP.I18n.MissingSingularPlaceholder
+            $this->telegram->sendMessage($telegramUserId, self::noCreditYetText(), MenuButtons::back(MenuButtons::TICKETS));
             $this->sentDmNote($chatId, $isPrivate);
 
             return;
@@ -111,11 +96,7 @@ final class TicketRedemptionService
         $dates = $this->eligibleDatesFor($person->id);
 
         if ([] === $dates) {
-            $this->telegram->sendMessage(
-                $telegramUserId,
-                __('No upcoming events to spend a credit on right now — check back when the next one is on the board.', 'eventcrew'),
-                MenuButtons::back(MenuButtons::TICKETS)
-            );
+            $this->telegram->sendMessage($telegramUserId, self::noNightText(), MenuButtons::back(MenuButtons::TICKETS));
             $this->sentDmNote($chatId, $isPrivate);
 
             return;
@@ -131,6 +112,107 @@ final class TicketRedemptionService
 
         $this->telegram->sendMessage($telegramUserId, self::pickerText($balance), ['inline_keyboard' => $keyboard]);
         $this->sentDmNote($chatId, $isPrivate);
+    }
+
+    /**
+     * "You have no free-entry credits yet", with how they are earned.
+     */
+    private static function noCreditYetText(): string
+    {
+        $perCredit = (new ReputationSettings())->tasksPerCredit();
+
+        // phpcs:disable WordPress.WP.I18n.MissingSingularPlaceholder -- the singular is only used for 1.
+        return sprintf(
+            /* translators: %d: tasks a person completes to earn one free-entry credit */
+            _n(
+                'You have no free-entry credits yet — you earn one for every task you complete.',
+                'You have no free-entry credits yet — you earn one for every %d tasks you complete.',
+                $perCredit,
+                'eventcrew'
+            ),
+            $perCredit
+        );
+        // phpcs:enable WordPress.WP.I18n.MissingSingularPlaceholder
+    }
+
+    private static function noNightText(): string
+    {
+        return __('No upcoming events to spend a credit on right now — check back when the next one is on the board.', 'eventcrew');
+    }
+
+    /**
+     * The Crew app's helper box (menu:ticket [date]): the same question as
+     * the bot's (creditQuestion()) for one night, or (ok false) why not. No
+     * date: the one night a credit can go to, or "Which night?" with the
+     * nights named when there are several. Nothing is spent here.
+     *
+     * @return array{ok: bool, text: string, state: array<string, mixed>}
+     */
+    public function prepareWeb(Person $person, string $date): array
+    {
+        $refuse = static fn (string $text): array => ['ok' => false, 'text' => $text, 'state' => []];
+
+        if (! $person->isEmailVerified()) {
+            return $refuse($this->noticeText(self::NOT_ELIGIBLE));
+        }
+
+        $balance = $this->standing->for($person->id)->creditBalance;
+
+        if ($balance < 1) {
+            return $refuse(self::noCreditYetText());
+        }
+
+        if ('' === $date) {
+            $dates = $this->eligibleDatesFor($person->id);
+
+            if ([] === $dates) {
+                return $refuse(self::noNightText());
+            }
+
+            if (count($dates) > 1) {
+                /* translators: %s: the nights, like "Fri 13 Nov · Dance Night, Sat 14 Nov". */
+                return $refuse(sprintf(__('Which night? %s', 'eventcrew'), implode(', ', $dates)));
+            }
+
+            $date = (string) array_key_first($dates);
+        }
+
+        $held = $this->heldFor($person->id, $date);
+        $refusal = $this->refusal($date, $balance, $held);
+
+        if ('' !== $refusal) {
+            return $refuse($this->noticeText($refusal));
+        }
+
+        return [
+            'ok' => true,
+            'text' => self::creditQuestion($this->dateLabel($date), $balance),
+            'state' => ['date' => $date, 'held' => $held],
+        ];
+    }
+
+    /**
+     * Confirm in the helper box: redeem() with the tickets held when asked,
+     * so a double tap cannot buy two. The answer never carries the ticket
+     * link (it goes on the person's channels, and the Tickets tab has it).
+     *
+     * @param array<string, mixed> $state
+     * @return array{changed: bool, text: string}
+     */
+    public function runWeb(Person $person, array $state): array
+    {
+        $date = (string) ($state['date'] ?? '');
+        $result = $this->redeem($person->id, $date, 'self-service', (int) ($state['held'] ?? 0));
+
+        if (self::TICKET_READY !== $result['code']) {
+            return ['changed' => false, 'text' => '⚠️ ' . $this->noticeText($result['code'])];
+        }
+
+        return ['changed' => true, 'text' => '✅ ' . sprintf(
+            /* translators: %s: the night, like Sat 14 Nov */
+            __('Credit spent on %s.', 'eventcrew'),
+            $this->dateLabel($date)
+        ) . "\n" . __('Your ticket is on the Tickets tab.', 'eventcrew')];
     }
 
     /**
@@ -277,7 +359,7 @@ final class TicketRedemptionService
         }
 
         $this->closeQuestion($chatId, $messageId, '✅ ' . sprintf(
-            /* translators: %s: the night, like "Sat 14 Nov · Dance Night" */
+            /* translators: %s: the night, like Sat 14 Nov */
             __('Credit spent on %s.', 'eventcrew'),
             $this->dateLabel($date)
         ));
@@ -351,7 +433,7 @@ final class TicketRedemptionService
     public static function creditQuestion(string $night, int $balance): string
     {
         return sprintf(
-            /* translators: %s: the night, like "Sat 14 Nov · Dance Night" */
+            /* translators: %s: the night, like Sat 14 Nov */
             __('Spend a free-entry credit on %s?', 'eventcrew'),
             $night
         ) . "\n\n" . sprintf(

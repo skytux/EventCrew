@@ -83,7 +83,12 @@ final class AssistantActions
             ),
             self::entry('/join <task>', 'sign the person up for a task; <task> is a task number from Open tasks', true),
             self::entry('/leave <task>', 'take the person off a task they signed up for; <task> as above', true),
-            self::entry('menu:ticket', 'get the free-entry ticket for a night'),
+            self::entry(
+                'menu:ticket [date]',
+                'get a free-entry ticket for a night by spending one of the person\'s own credits ("give me a'
+                    . ' ticket", "give myself a ticket for Saturday"); with [date], for that night. Nothing is spent'
+                    . ' until the person confirms. A member cannot cancel a free-entry ticket'
+            ),
             self::entry('menu:replace', "take over someone else's task (the bot then asks whose)"),
             self::entry('menu:web', 'a sign-in link for the crew web page'),
             self::entry('menu:notifications', 'choose which notifications the person gets'),
@@ -373,6 +378,16 @@ final class AssistantActions
         $head = strtolower($parts[0]);
         $rest = trim($parts[1] ?? '');
         $staff = $audience['organizer'] || $audience['welcomeCrew'];
+
+        // menu:ticket <date>: that night's button of the free-entry picker
+        // (TicketRedemptionService::onSelect() asks before it spends).
+        if ('menu:ticket' === $head && '' !== $rest) {
+            $date = Dates::parseUserDate($rest, $today);
+
+            return '' === $date
+                ? self::refuse(self::ERROR_INVALID)
+                : self::accept('menu:ticket ' . $date, false, self::RUN_TAP, 'tkt:' . $date);
+        }
 
         if (isset(self::MENU[$head])) {
             if ('' !== $rest) {

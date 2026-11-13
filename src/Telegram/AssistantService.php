@@ -1013,8 +1013,12 @@ final class AssistantService implements WebAssistant
                 . ' When the FACTS, the guide or CONVERSATION name a bot command or a button of the bot, say'
                 . ' where the same thing is on this page; when this page has no place for it, say only what it'
                 . ' is, or that an organizer can help. Never suggest using Telegram or the bot.',
-            '- Still give "action" lines from ACTIONS as usual. The page signs up or cancels after the person'
-                . ' confirms, or opens the matching tab or screen; for anything else it shows only your reply.'
+            '- Still give "action" lines from ACTIONS as usual. The page signs up, cancels or spends a credit on'
+                . ' a ticket (menu:ticket, with the night\'s date when the person named one) after the person'
+                . ' confirms, and then shows the real outcome; or it opens the matching tab or screen; for anything'
+                . ' else it shows only your reply. So "reply" never says a sign-up, ticket or other change is done:'
+                . ' the page asks first. "Give me a ticket" or "give myself a ticket" is menu:ticket, never a link'
+                . ' to the Tickets tab. A free-entry ticket cannot be cancelled by its holder.'
                 . ' Bot lines in CONVERSATION may come from Telegram or from this page.',
         ];
 
@@ -1022,7 +1026,8 @@ final class AssistantService implements WebAssistant
             $lines[] = '- For an organizer, these action lines are asked with Confirm and Cancel and run on Confirm,'
                 . ' with the real outcome shown after: a ticket, a ticket removal, an unblock, free entry, stopping'
                 . ' an announcement or post-event email, a new board, sending tickets, adding, changing, deleting'
-                . ' or creating tasks, the open-task email, and adding, changing or removing a guest. The page'
+                . ' or creating tasks, the open-task email, and adding, changing or removing a guest. An'
+                . ' organizer removes their own free-entry ticket with /unticket and their own name. The page'
                 . ' shows its own question for these, not your reply. Any other action line only opens the'
                 . ' matching Admin screen (with the date or name in it), and the page then says it is not done.'
                 . ' So "reply" never says a change is done, made, sent or saved: for those other lines it says'

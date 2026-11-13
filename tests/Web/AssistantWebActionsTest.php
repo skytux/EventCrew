@@ -76,6 +76,20 @@ final class AssistantWebActionsTest extends TestCase
         self::assertSame(['kind' => AssistantWebActions::NONE], AssistantWebActions::plan('/unticket Lou'));
     }
 
+    /** Lou 2026-11-14: "give myself a ticket" spends the person's own credit on Confirm. */
+    public function testAnyoneSpendsTheirOwnCreditOnConfirm(): void
+    {
+        foreach (['menu:ticket', 'menu:ticket 2026-11-14'] as $line) {
+            self::assertSame(
+                ['kind' => AssistantWebActions::CONFIRM, 'op' => AssistantWebActions::CHANGE, 'command' => AssistantWebActions::OWN_TICKET],
+                AssistantWebActions::plan($line),
+                $line
+            );
+        }
+
+        self::assertFalse(AssistantWebActions::leavesUndone('menu:ticket'));
+    }
+
     public function testWhatThePageLeavesUndoneIsKnown(): void
     {
         self::assertTrue(AssistantWebActions::leavesUndone('/mark 14.11. Sam'));

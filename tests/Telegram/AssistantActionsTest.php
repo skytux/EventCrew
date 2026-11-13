@@ -70,6 +70,18 @@ final class AssistantActionsTest extends TestCase
         self::assertSame(MenuButtons::TICKET, $ticket['payload']);
     }
 
+    /** menu:ticket with a night opens that night's credit question; nothing is spent before Yes. */
+    public function testATicketForANightOpensItsQuestion(): void
+    {
+        $ticket = self::check('menu:ticket 14.11.', self::member());
+        self::assertTrue($ticket['ok']);
+        self::assertSame(AssistantActions::RUN_TAP, $ticket['run']);
+        self::assertSame('tkt:2026-11-14', $ticket['payload']);
+        self::assertSame('menu:ticket 2026-11-14', $ticket['action']);
+
+        self::assertSame(AssistantActions::ERROR_INVALID, self::check('menu:ticket someday', self::member())['error']);
+    }
+
     public function testExtraWordsAfterAFixedCommandAreRefused(): void
     {
         self::assertSame(AssistantActions::ERROR_INVALID, self::check('/help me now', self::member())['error']);

@@ -641,4 +641,119 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         self::assertSame(TicketRedemptionService::NOT_ELIGIBLE, $result['code']);
         self::assertSame([], $this->wpdb->inserts);
     }
+    /** A verified person 7 for the Crew app's helper box. */
+    private static function webPerson(): \EventCrew\Models\Person
+    {
+        return \EventCrew\Models\Person::fromRow([
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+        ]);
+    }
+
+    /** @return list<array<string, mixed>> $completed completions of person 7 */
+    private static function completions(int $completed): array
+    {
+        $rows = [];
+        for ($i = 0; $i < $completed; $i++) {
+            $rows[] = ['id' => $i + 1, 'task_id' => $i + 1, 'person_id' => 7, 'status' => 'completed', 'task_date' => '2026-07-01'];
+        }
+
+        return $rows;
+    }
+
+    /** Lou 2026-11-14: "give myself a ticket" in the helper box asks before it spends. */
+    public function testTheHelperBoxAsksTheCreditQuestionForANight(): void
+    {
+        $this->wpdb->nextResults[] = self::completions(4); // historyFor -> two credits
+        $this->wpdb->nextVars[] = 0;
+        $this->wpdb->nextVars[] = 0;
+        $this->wpdb->nextResults[] = [];                    // forPerson -> nothing held
+        $this->wpdb->nextCols[] = ['2026-08-01'];           // upcomingDates
+        $this->wpdb->nextResults[] = [                      // forDate
+            ['id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'clean', 'capacity' => 3, 'event_post_id' => null, 'event_label' => 'Party'],
+        ];
+
+        $asked = $this->service()->prepareWeb(self::webPerson(), '2026-08-01');
+
+        self::assertTrue($asked['ok']);
+        self::assertStringContainsString('Spend a free-entry credit on', $asked['text']);
+        self::assertStringContainsString('This uses 1 of your 2 free-entry credits.', $asked['text']);
+        self::assertSame(['date' => '2026-08-01', 'held' => 0], $asked['state']);
+        self::assertStringNotContainsString('INSERT', implode("\n", $this->wpdb->queries));
+    }
+
+    public function testTheHelperBoxSaysThereIsNoCreditYet(): void
+    {
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextVars[] = 0;
+        $this->wpdb->nextVars[] = 0;
+
+        $asked = $this->service()->prepareWeb(self::webPerson(), '');
+
+        self::assertFalse($asked['ok']);
+        self::assertStringContainsString('You have no free-entry credits yet', $asked['text']);
+    }
+
+    public function testTheHelperBoxAsksWhichNightWhenThereAreSeveral(): void
+    {
+        $this->wpdb->nextResults[] = self::completions(2);
+        $this->wpdb->nextVars[] = 0;
+        $this->wpdb->nextVars[] = 0;
+        $this->wpdb->nextResults[] = [];                          // forPerson
+        $this->wpdb->nextCols[] = ['2026-08-01', '2026-08-08'];   // upcomingDates
+
+        $asked = $this->service()->prepareWeb(self::webPerson(), '');
+
+        self::assertFalse($asked['ok']);
+        self::assertStringStartsWith('Which night? ', $asked['text']);
+        self::assertStringContainsString('Sat 1 Aug', $asked['text']);
+        self::assertStringContainsString('Sat 8 Aug', $asked['text']);
+    }
+
+    public function testTheHelperBoxRefusesAClosedNight(): void
+    {
+        $this->options[FreeEntryGate::OPTION] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = self::completions(2);
+        $this->wpdb->nextVars[] = 0;
+        $this->wpdb->nextVars[] = 0;
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+
+        $asked = $this->service()->prepareWeb(self::webPerson(), '2026-08-01');
+
+        self::assertFalse($asked['ok']);
+        self::assertSame([], $asked['state']);
+    }
+
+    /** Confirm spends the credit; the answer says where the ticket is, with no link. */
+    public function testConfirmInTheHelperBoxSpendsTheCreditWithoutALink(): void
+    {
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [];
+        $this->queueBalanceAndEvent(2);
+        $this->wpdb->nextQueryResults[] = 1;
+
+        $done = $this->service()->runWeb(self::webPerson(), ['date' => '2026-08-01', 'held' => 0]);
+
+        self::assertTrue($done['changed']);
+        self::assertStringStartsWith('✅ Credit spent on Sat 1 Aug', $done['text']);
+        self::assertStringContainsString('Your ticket is on the Tickets tab.', $done['text']);
+        self::assertStringNotContainsString('http', $done['text']);
+        self::assertStringNotContainsString('token', $done['text']);
+    }
+
+    public function testConfirmInTheHelperBoxReportsARefusal(): void
+    {
+        $this->wpdb->nextCols[] = ['2026-08-01'];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextResults[] = [];
+        $this->wpdb->nextVars[] = 0;
+        $this->wpdb->nextVars[] = 0;
+
+        $done = $this->service()->runWeb(self::webPerson(), ['date' => '2026-08-01', 'held' => 0]);
+
+        self::assertFalse($done['changed']);
+        self::assertStringStartsWith('⚠️ ', $done['text']);
+        self::assertSame([], $this->wpdb->inserts);
+    }
 }

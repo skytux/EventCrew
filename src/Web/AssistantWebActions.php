@@ -19,7 +19,8 @@ use EventCrew\Support\HelpPage;
  *   An organizer change the bot confirms first (op "change": CHANGES, such
  *   as /unticket) is asked the same way and runs on Confirm through the
  *   bot command's own checks and services (AssistantWebChanges), with the
- *   real outcome as the answer (Owner 2026-11-13).
+ *   real outcome as the answer (Owner 2026-11-13). So is spending one's
+ *   own credit on a night (menu:ticket [date], OWN_TICKET), for anyone.
  * - goto: what the bot would show or do, the page has a place for: the page
  *   opens that tab (and Admin screen) and scrolls to the card ("targets":
  *   element ids, the first one on the page wins). "query" (optional) are
@@ -39,6 +40,9 @@ final class AssistantWebActions
     public const JOIN = 'join';
     public const LEAVE = 'leave';
     public const CHANGE = 'change';
+
+    /** A person's own free-entry ticket for a night: "menu:ticket [Y-m-d]". */
+    public const OWN_TICKET = 'menu:ticket';
 
     /** The Admin tab's screens and cards (templates/public/signup.php). */
     public const ADMIN_PANEL = 'eventcrew-panel-admin';
@@ -64,7 +68,6 @@ final class AssistantWebActions
         '/me tickets' => ['eventcrew-my-tickets', 'eventcrew-panel-tickets'],
         '/tasks' => ['eventcrew-my-tasks', 'eventcrew-panel-tasks'],
         '/tickets' => ['eventcrew-my-tickets', 'eventcrew-get-ticket', 'eventcrew-panel-tickets'],
-        'menu:ticket' => ['eventcrew-get-ticket', 'eventcrew-my-tickets', 'eventcrew-panel-tickets'],
         // Taking over a task is a button on the full task, on the board.
         'menu:replace' => ['eventcrew-panel-board'],
         '/settings' => ['eventcrew-panel-settings'],
@@ -141,7 +144,6 @@ final class AssistantWebActions
         '/tell',
         'menu:gift',
         'menu:roles',
-        'menu:ticket',
         'menu:replace',
         'menu:notifications',
         'menu:language',
@@ -180,6 +182,11 @@ final class AssistantWebActions
         $words = explode(' ', $original, 2);
         $head = strtolower($words[0]);
         $rest = trim($words[1] ?? '');
+
+        // Spending one's own credit on a night: anyone, asked and run here.
+        if (self::OWN_TICKET === $head) {
+            return ['kind' => self::CONFIRM, 'op' => self::CHANGE, 'command' => $head];
+        }
 
         if ($organizer && self::isChange($head, $rest)) {
             return ['kind' => self::CONFIRM, 'op' => self::CHANGE, 'command' => $head];
