@@ -2516,7 +2516,7 @@ msgstr ""
 msgid "Could not read “%s”. Use time 21:00-23:00, places 2, notes text or plus 1."
 msgstr ""
 
-#: templates/public/signup-push.php:61
+#: templates/public/signup-push.php:62
 msgid "Could not turn on notifications. Try again."
 msgstr ""
 
@@ -4423,7 +4423,7 @@ msgid "In short"
 msgstr ""
 
 #: templates/public/signup-app-install.php:127 templates/public/signup-app-install.php:146
-msgid "In the app, turn on notifications: Menu → Settings → Notifications → Turn on notifications on this device."
+msgid "In the app, turn on notifications: Menu → Settings → Notifications → Notifications on this device."
 msgstr ""
 
 #: templates/admin/settings.php:1405
@@ -4984,7 +4984,7 @@ msgid "Menu"
 msgstr ""
 
 #: templates/public/signup-app-install.php:152
-msgid "Menu → Settings → Notifications → Turn on notifications on this device."
+msgid "Menu → Settings → Notifications → Notifications on this device."
 msgstr ""
 
 #: src/Support/NewsletterConfirmMail.php:86 templates/admin/diagnostics.php:125 templates/admin/settings.php:1799 templates/public/signup-groupchat.php:87
@@ -5760,8 +5760,12 @@ msgstr ""
 msgid "Notifications"
 msgstr ""
 
-#: templates/public/signup-push.php:56
+#: templates/public/signup-push.php:57
 msgid "Notifications are blocked for this site. Allow them in the browser settings."
+msgstr ""
+
+#: templates/public/signup-push.php:53
+msgid "Notifications on this device"
 msgstr ""
 
 #: src/Telegram/CommandMenu.php:287
@@ -5887,7 +5891,7 @@ msgstr ""
 msgid "On hold — talk to an organizer"
 msgstr ""
 
-#: templates/public/signup-app-install.php:129 templates/public/signup-push.php:57
+#: templates/public/signup-app-install.php:129 templates/public/signup-push.php:58
 msgid "On iPhone, notifications work after you add this page to your Home Screen."
 msgstr ""
 
@@ -9301,7 +9305,7 @@ msgstr ""
 msgid "The answer: OK or No, who gave it and when, and whether the person was told."
 msgstr ""
 
-#: templates/public/signup-push.php:59
+#: templates/public/signup-push.php:60
 msgid "The app is still loading. Reload the page and try again."
 msgstr ""
 
@@ -9362,7 +9366,7 @@ msgstr ""
 msgid "The bot must read every group message: in BotFather, send /setprivacy, choose the bot, choose Disable. Then remove the bot from the group and add it back, and press Install / refresh webhook below."
 msgstr ""
 
-#: templates/public/signup-push.php:60
+#: templates/public/signup-push.php:61
 msgid "The browser did not finish turning on notifications. In the phone's Settings → Apps → your browser → Notifications, allow them, then try again."
 msgstr ""
 
@@ -11074,16 +11078,8 @@ msgstr ""
 msgid "Turn it off if you can: expand “Test the endpoint by hand” below and send the header-only request first. A 200 means your host keeps the header and it is safe to untick this. Saving re-installs the webhook either way, and if the bot goes quiet, tick it again and save."
 msgstr ""
 
-#: templates/public/signup-push.php:54
-msgid "Turn off notifications on this device"
-msgstr ""
-
 #: templates/public/signup-app-install.php:158 templates/public/signup-app-install.php:175 templates/public/signup-app-install.php:179
 msgid "Turn on notifications"
-msgstr ""
-
-#: templates/public/signup-push.php:53
-msgid "Turn on notifications on this device"
 msgstr ""
 
 #: templates/admin/settings.php:1203
@@ -12431,7 +12427,7 @@ msgstr ""
 msgid "Your past tasks:"
 msgstr ""
 
-#: templates/public/signup-push.php:58
+#: templates/public/signup-push.php:59
 msgid "Your phone did not show the question. Allow notifications for this site in the browser's site settings, then try again."
 msgstr ""
 
