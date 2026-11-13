@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.255
+Stable tag: 1.140.256
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.256 =
+* Bot and helper: everything the Crew app does can now be done in the bot and the helper too: credits, roles, organizers, add, edit or delete a person, one more sign-up, role settings, the do-not-send list and AI texts (/gift, /role, /organizer, /addperson, /editperson, /deleteperson, /oncemore, /editrole, /optout, /aitext); give away a ticket, take over a task, notifications, sign out everywhere, the sales desk link, mark a whole task, ticket buyers, test mails, mailbox check and the Holvi file sent to the bot (/giveaway, /notify, /markall, /buyers, /testmail, /checkmail). A test keeps the app, bot and helper in step.
 
 = 1.140.255 =
 * Crew app helper: assign, unassign, mark, group and personal messages, newsletter and post-event texts, subscribe, credits, roles, organizer on or off, delete a person, newcomers, own name and language now run on Confirm; several matches give choice buttons.
@@ -2172,6 +2175,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.256 =
+No settings change.
 
 = 1.140.255 =
 No settings change.
