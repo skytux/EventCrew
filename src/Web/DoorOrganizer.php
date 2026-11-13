@@ -209,7 +209,33 @@ final class DoorOrganizer
         }
 
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local upload, not a URL.
-        $bytes = (string) file_get_contents($path);
+        return $this->importBytes($person, $date, $name, (string) file_get_contents($path));
+    }
+
+    /**
+     * The ticket file's bytes added for $date, as the upload adds them: the
+     * upload above, and a file sent to the bot (ParityCommands, parityB).
+     *
+     * @return array{ok: bool, refused: bool, added: int, message: string, code: string}
+     */
+    public function importBytes(Person $person, string $date, string $name, string $bytes): array
+    {
+        if (! $person->isOrganizer) {
+            return self::refused() + ['added' => 0, 'code' => 'admin_buyers_file_failed'];
+        }
+
+        if (! TicketFile::isTicketFile($name)) {
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            return self::failed(__('That is not an .xlsx or .csv file. Pick the ticket file exported from Holvi.', 'eventcrew'));
+        }
+
+        if ('' === $bytes) {
+            return self::failed(__('The file did not arrive. Try again.', 'eventcrew'));
+        }
+
+        if (strlen($bytes) > self::MAX_FILE_BYTES) {
+            return self::failed(__('That file is too big for a ticket file.', 'eventcrew'));
+        }
 
         try {
             $result = $this->import->importFile(

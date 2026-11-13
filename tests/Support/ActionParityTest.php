@@ -39,12 +39,6 @@ final class ActionParityTest extends TestCase
      */
     private const KNOWN_GAPS = [
         // Missing in the bot.
-        'roster_mark_all bot' => 'the roster marks one person at a time; no mark-a-whole-task button',
-        'buyers_import bot' => 'buyer names come by email (MailedListImport), not by a bot message',
-        'buyers_upload bot' => 'the bot takes no file',
-        'buyers_mail_test bot' => 'no test ticket email command',
-        'check_mail bot' => 'no check-the-mailbox command',
-        'followup_test bot' => 'no test post-event email command',
         'desk_mark bot' => 'the door list has no check-in buttons; /roster marks crew only',
         'desk_plus bot' => 'no +1 count at the door',
         'desk_give bot' => '/ticket does it but is organizers only; the sales-desk crew has nothing',
@@ -59,16 +53,7 @@ final class ActionParityTest extends TestCase
         'desk_file bot' => 'the bot takes no file',
 
         // Missing in the helper.
-        'give_ticket helper' => 'no helper line for 🎁 Give away (TransferBot)',
-        'cancel_offer helper' => 'no helper line for ✖️ Cancel offer',
-        'sign_out_everywhere helper' => 'no helper line for Sign out everywhere',
-        'roster_mark_all helper' => 'no helper line (and no bot command)',
-        'buyers_import helper' => 'no helper line',
         'buyers_upload helper' => 'a file cannot go through the helper',
-        'buyers_reset helper' => 'only the button under the import message',
-        'buyers_mail_test helper' => 'no helper line',
-        'check_mail helper' => 'no helper line',
-        'followup_test helper' => 'no helper line',
         'desk_mark helper' => 'no helper line',
         'desk_plus helper' => 'no helper line',
         'desk_give helper' => '/ticket is organizers only',
@@ -84,12 +69,7 @@ final class ActionParityTest extends TestCase
 
 
         // The helper only links on the Crew app page.
-        'takeover web' => 'menu:replace opens the board',
-        'notifications web' => 'menu:notifications opens Settings',
-        'channel_choice web' => 'menu:notifications opens Settings',
         'profile_email web' => '/email opens Settings: the link goes to the new address (Owner 2026-11-14)',
-        'sales_link web' => 'menu:sales opens the Door scanner button instead of sending the link',
-        'sales_link_organizer web' => 'menu:sales opens Admin > Door instead of sending the link',
         'desk_view web' => 'menu:doorlist has no place on the page for the sales-desk crew',
     ];
 

@@ -810,6 +810,44 @@ final class TelegramClient
     }
 
     /**
+     * The bytes of a file someone sent the bot (a document), at most
+     * $maxBytes, or null when it is bigger, gone or cannot be fetched
+     * (parityB: the ticket file sent in the chat). The download address holds
+     * the bot token, so it is never logged.
+     */
+    public function downloadFile(string $fileId, int $maxBytes): ?string
+    {
+        $token = self::token();
+
+        if ('' === $token || '' === $fileId) {
+            return null;
+        }
+
+        $file = $this->call('getFile', ['file_id' => $fileId]);
+        $path = is_array($file) ? (string) ($file['file_path'] ?? '') : '';
+
+        if ('' === $path || (int) ($file['file_size'] ?? 0) > $maxBytes) {
+            return null;
+        }
+
+        $response = $this->post(
+            'https://' . self::API_HOST . '/file/bot' . $token . '/' . ltrim($path, '/'),
+            ['timeout' => 30, 'limit_response_size' => $maxBytes + 1],
+            true
+        );
+
+        if (is_wp_error($response) || 200 !== (int) wp_remote_retrieve_response_code($response)) {
+            $this->logger->warning('Telegram file download failed.');
+
+            return null;
+        }
+
+        $body = (string) wp_remote_retrieve_body($response);
+
+        return '' === $body || strlen($body) > $maxBytes ? null : $body;
+    }
+
+    /**
      * The bot token, read from the EVENTCREW_TELEGRAM_TOKEN constant first so it
      * can live in wp-config.php and stay out of the database (and its backups and
      * exports), falling back to the option the Settings page writes.
@@ -840,17 +878,19 @@ final class TelegramClient
      *
      * @param array<string, mixed> $args
      */
-    private function post(string $url, array $args): mixed
+    private function post(string $url, array $args, bool $get = false): mixed
     {
+        $send = static fn (): mixed => $get ? wp_remote_get($url, $args) : wp_remote_post($url, $args);
+
         if (! (bool) get_option(self::DNS_BYPASS_OPTION, false)) {
-            return wp_remote_post($url, $args);
+            return $send();
         }
 
         $ip = $this->resolver->resolve(self::API_HOST);
 
         if (null === $ip) {
             // DoH itself failed; let the normal path run and report its error.
-            return wp_remote_post($url, $args);
+            return $send();
         }
 
         $pin = static function ($handle) use ($ip): void {
@@ -874,7 +914,7 @@ final class TelegramClient
         add_action('http_api_curl', $filter, 10, 3);
 
         try {
-            return wp_remote_post($url, $args);
+            return $send();
         } finally {
             remove_action('http_api_curl', $filter, 10);
         }

@@ -23,7 +23,7 @@ use EventCrew\Telegram\TicketRedemptionService;
  * (AssistantWebActions::CHANGES, CHANGES_WITH_TEXT with their text and
  * /door add, edit or remove; the person changes of AssistantWebPeople),
  * and anyone's own (menu:ticket [date], and /name or menu:language with
- * the new value). Each goes to the bot
+ * the new value; the parityB lines of AssistantWebParity). Each goes to the bot
  * command that does it in the chat, with the same checks, question and
  * services, so the page and the bot never differ. Where the bot would show
  * choice buttons (several people, tasks or marks match), the page shows
@@ -50,13 +50,19 @@ final class AssistantWebChanges implements WebChanges
         private readonly MemberCommands $members,
         private readonly AssistantWebPeople $personChanges,
         // parityA: the Admin tab's other changes.
-        private readonly ?AssistantWebAdmin $adminChanges = null
+        private readonly ?AssistantWebAdmin $adminChanges = null,
+        private readonly ?AssistantWebParity $parity = null
     ) {
     }
 
     public function prepare(Person $organizer, string $action): array
     {
         [$head, $rest] = self::split($action);
+
+        // parityB
+        if (null !== $this->parity && AssistantWebParity::handles(self::command($head), $rest, $organizer->isOrganizer)) {
+            return $this->parity->prepare($organizer, self::command($head), $rest);
+        }
 
         // Anyone's own ticket, name, email or language: not organizer commands.
         if (AssistantWebActions::OWN_TICKET === $head) {
@@ -94,6 +100,11 @@ final class AssistantWebChanges implements WebChanges
     {
         [$head, $rest] = self::split($action);
 
+        // parityB
+        if (null !== $this->parity && AssistantWebParity::handles(self::command($head), $rest, $organizer->isOrganizer)) {
+            return $this->parity->choose($organizer, self::command($head), $state);
+        }
+
         if (! $organizer->isOrganizer || ! AssistantWebActions::isChange(self::command($head), $rest)) {
             return self::gone();
         }
@@ -113,6 +124,11 @@ final class AssistantWebChanges implements WebChanges
     public function run(Person $organizer, string $action, array $state): array
     {
         [$head, $rest] = self::split($action);
+
+        // parityB
+        if (null !== $this->parity && AssistantWebParity::handles(self::command($head), $rest, $organizer->isOrganizer)) {
+            return $this->parity->run($organizer, self::command($head), $state);
+        }
 
         if (AssistantWebActions::OWN_TICKET === $head) {
             return $this->tickets->runWeb($organizer, $state);

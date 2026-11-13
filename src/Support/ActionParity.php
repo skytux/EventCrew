@@ -98,7 +98,7 @@ final class ActionParity
                 'SignupController::TAKEOVER_ACTION',
                 self::MEMBER,
                 ['mn:replace', 'ReplacementService::TASK_PREFIX'],
-                'menu:replace'
+                'menu:replace 12'
             ),
             'redeem' => self::change(
                 'Tickets tab: Get my free-entry ticket',
@@ -111,15 +111,15 @@ final class ActionParity
                 'Tickets tab: Give away a ticket',
                 'SignupController::GIVE_ACTION',
                 self::MEMBER,
-                ['TransferBot::PREFIX'],
-                null
+                ['TransferBot::PREFIX', '/giveaway'],
+                '/giveaway 21.11. anna@example.com ; Anna'
             ),
             'cancel_offer' => self::change(
                 'Tickets tab: Cancel offer',
                 'SignupController::CANCEL_OFFER_ACTION',
                 self::MEMBER,
-                ['TransferBot::PREFIX'],
-                null
+                ['TransferBot::PREFIX', '/giveaway'],
+                '/giveaway cancel 21.11.'
             ),
             'profile_name' => self::change(
                 'Settings tab: change my name',
@@ -141,15 +141,15 @@ final class ActionParity
                 'Settings tab: Notifications',
                 'SignupController::PREFS_ACTION',
                 self::MEMBER,
-                ['mn:notif'],
-                'menu:notifications'
+                ['mn:notif', '/notify'],
+                'menu:notifications ticket telegram off'
             ),
             'channel_choice' => self::change(
                 'Settings tab: "Where do you want them?" (app, Telegram, both)',
                 'ChannelChoiceController::ACTION',
                 self::MEMBER,
-                ['NotificationSettingsService::CHOICE_PREFIX'],
-                'menu:notifications',
+                ['NotificationSettingsService::CHOICE_PREFIX', '/notify'],
+                'menu:notifications app',
                 'choose'
             ),
             'language' => self::change(
@@ -164,7 +164,7 @@ final class ActionParity
                 'SignupController::REVOKE_ACTION',
                 self::MEMBER,
                 ['mn:signout'],
-                null
+                'menu:signout'
             ),
             'sales_link' => self::change(
                 'Top of the page: sales desk link (sales-desk crew)',
@@ -195,8 +195,8 @@ final class ActionParity
                 'Admin > Roster: mark everyone on a task',
                 'CrewAdminController::ROSTER_ACTION',
                 self::ORGANIZER,
-                [],
-                null,
+                ['/markall'],
+                '/markall 21.11. Host ; done',
                 'mark_all'
             ),
             'add_to_task' => self::change(
@@ -280,15 +280,15 @@ final class ActionParity
                 'Admin > Door: paste Holvi ticket buyers',
                 'CrewAdminController::BUYERS_ACTION',
                 self::ORGANIZER,
-                [],
-                null,
+                ['/buyers'],
+                '/buyers 21.11. add Anna ; Ben',
                 'import'
             ),
             'buyers_upload' => self::change(
                 'Admin > Door: upload the Holvi ticket file',
                 'CrewAdminController::BUYERS_ACTION',
                 self::ORGANIZER,
-                [],
+                ['/buyers'],
                 null,
                 'upload'
             ),
@@ -296,16 +296,16 @@ final class ActionParity
                 'Admin > Door: Reset import',
                 'CrewAdminController::BUYERS_ACTION',
                 self::ORGANIZER,
-                ['BuyerListReset::PREFIX'],
-                null,
+                ['BuyerListReset::PREFIX', '/buyers'],
+                '/buyers 21.11. reset',
                 'reset'
             ),
             'buyers_mail_test' => self::change(
                 'Admin > Door: send me a test ticket email',
                 'CrewAdminController::BUYERS_ACTION',
                 self::ORGANIZER,
-                [],
-                null,
+                ['/testmail'],
+                '/testmail tickets 21.11.',
                 'mail_test'
             ),
             'buyers_tickets' => self::change(
@@ -328,15 +328,15 @@ final class ActionParity
                 'Admin > Door: Check the mailbox now',
                 'CrewAdminController::MAIL_ACTION',
                 self::ORGANIZER,
-                [],
-                null
+                ['/checkmail'],
+                '/checkmail'
             ),
             'followup_test' => self::change(
                 'Admin > Door: send me a test post-event email',
                 'CrewAdminController::FOLLOWUP_ACTION',
                 self::ORGANIZER,
-                [],
-                null,
+                ['/testmail'],
+                '/testmail followup 21.11.',
                 'followup_test'
             ),
             'followup_stop' => self::change(

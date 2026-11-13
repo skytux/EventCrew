@@ -45,7 +45,8 @@ final class AssistantWebActionsTest extends TestCase
     public function testAMemberNeverGetsAnAdminScreen(): void
     {
         self::assertSame(['kind' => AssistantWebActions::NONE], AssistantWebActions::plan('/standing Lou'));
-        self::assertSame(['eventcrew-door-scanner'], AssistantWebActions::plan('menu:sales')['targets'] ?? null);
+        // The sales desk link is sent on Confirm, for anyone (parityB); the page checks who may have it.
+        self::assertSame(AssistantWebActions::CONFIRM, AssistantWebActions::plan('menu:sales')['kind']);
     }
 
     public function testAnOrganizerGetsTheAdminScreenWithTheDateOrName(): void

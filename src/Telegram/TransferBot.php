@@ -132,22 +132,77 @@ final class TransferBot
     /** 🎁 Give away: checks the ticket, then asks who gets it. */
     private function start(Person $giver, int $chatId, int $redemptionId): void
     {
-        $this->cancelPending($chatId);
-        $redemption = $this->transfers->redemption($redemptionId);
-        $refusal = $this->transfers->refusal($redemption, $giver->id);
-
-        if ('' !== $refusal) {
-            $this->telegram->sendMessage(
-                $chatId,
-                TicketTransferService::message($refusal),
-                TicketTransferService::PENDING === $refusal ? ['inline_keyboard' => [self::cancelRow($redemptionId)]] : null
-            );
-
+        if (! $this->opens($giver, $chatId, $redemptionId)) {
             return;
         }
 
         set_transient(self::AWAIT_PREFIX . $chatId, $redemptionId, 15 * MINUTE_IN_SECONDS);
         $this->telegram->sendMessage($chatId, TransferPage::askText(), MenuButtons::cancel());
+    }
+
+    /**
+     * Whether ticket $redemptionId can be given now; when not, says why
+     * (with ✖️ Cancel offer while an offer waits). Forgets a give half done.
+     */
+    private function opens(Person $giver, int $chatId, int $redemptionId): bool
+    {
+        $this->cancelPending($chatId);
+        $redemption = $this->transfers->redemption($redemptionId);
+        $refusal = $this->transfers->refusal($redemption, $giver->id);
+
+        if ('' === $refusal) {
+            return true;
+        }
+
+        $this->telegram->sendMessage(
+            $chatId,
+            TicketTransferService::message($refusal),
+            TicketTransferService::PENDING === $refusal ? ['inline_keyboard' => [self::cancelRow($redemptionId)]] : null
+        );
+
+        return false;
+    }
+
+    // parityB: /giveaway (ParityCommands), the typed form of 🎁 Give away.
+
+    /**
+     * /giveaway with the receiver already written: as 🎁 Give away and then
+     * the answer to "Who gets your ticket?". An email address of someone who
+     * is not a member, with $theirName, goes straight to the ✅ / ✖️
+     * confirm. Without $who the bot asks, as the button does.
+     */
+    public function begin(Person $giver, int $chatId, int $redemptionId, string $who, string $theirName = ''): void
+    {
+        if (! $this->opens($giver, $chatId, $redemptionId)) {
+            return;
+        }
+
+        $who = trim($who);
+
+        if ('' === $who) {
+            set_transient(self::AWAIT_PREFIX . $chatId, $redemptionId, 15 * MINUTE_IN_SECONDS);
+            $this->telegram->sendMessage($chatId, TransferPage::askText(), MenuButtons::cancel());
+
+            return;
+        }
+
+        $email = strtolower($who);
+
+        if ('' !== trim($theirName) && is_email($email) && null === $this->people->findByEmail($email)) {
+            self::awaitName($chatId, $redemptionId, $email);
+            $this->capture($chatId, $chatId, $theirName);
+
+            return;
+        }
+
+        set_transient(self::AWAIT_PREFIX . $chatId, $redemptionId, 15 * MINUTE_IN_SECONDS);
+        $this->capture($chatId, $chatId, $who);
+    }
+
+    /** /giveaway cancel: takes back the waiting offer of ticket $redemptionId. */
+    public function cancelFor(Person $giver, int $chatId, int $redemptionId): void
+    {
+        $this->cancelOffer($giver, $chatId, $redemptionId);
     }
 
     /**
@@ -356,13 +411,19 @@ final class TransferBot
     /** The short confirmation after ✅. */
     private function doneText(TicketTransfer $transfer): string
     {
-        $night = $this->transfers->nightLabel($transfer->eventDate);
+        return self::doneFor($this->transfers, $transfer);
+    }
+
+    /** The confirmation after ✅, also for the Crew app's helper box (parityB). */
+    public static function doneFor(TicketTransferService $transfers, TicketTransfer $transfer): string
+    {
+        $night = $transfers->nightLabel($transfer->eventDate);
 
         if ($transfer->isIssued()) {
             return sprintf(
                 /* translators: 1: the receiver's name, 2: the night, like "Sat 14 Nov · Dance Night" */
                 __('Done. %1$s has your ticket for %2$s now. Your own ticket no longer works.', 'eventcrew'),
-                $this->transfers->receiverName($transfer),
+                $transfers->receiverName($transfer),
                 $night
             );
         }

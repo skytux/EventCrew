@@ -4550,7 +4550,6 @@ msgstr "Perumisen takaraja (minuuttia ennen alkua)"
 msgid "From this many minutes before a task starts, and after the start, crew members can no longer sign themselves out of it. Organizers can still take them off. Tasks without a start time are never locked. 0 turns this off. Default 5."
 msgstr "Näin monta minuuttia ennen tehtävän alkua ja alun jälkeen crew'n jäsenet eivät voi enää perua tehtävää itse. Järjestäjät voivat silti poistaa heidät. Tehtäviä ilman alkamisaikaa ei lukita koskaan. 0 poistaa tämän käytöstä. Oletus 5."
 
-
 msgid "Sent. Check your email, or Telegram if you use the bot."
 msgstr "Lähetetty. Katso sähköpostisi tai Telegram, jos käytät bottia."
 
@@ -10699,7 +10698,6 @@ msgstr "Liian monta väärää koodia. Pyydä uusi linkki."
 msgid "Too many wrong codes from here. Wait an hour and try again."
 msgstr "Liian monta väärää koodia täältä. Odota tunti ja yritä uudelleen."
 
-
 #: templates/public/signup.php
 msgid "Install the app"
 msgstr "Asenna sovellus"
@@ -11540,3 +11538,100 @@ msgstr "Saako %s ilmoittautua vielä kerran ilmoittautumisrajasta huolimatta? H�
 # parityA
 msgid "Done. They may sign up once more."
 msgstr "Valmis. Hän saa ilmoittautua vielä kerran."
+
+#, php-format
+msgid "Add the ticket buyers in %1$s to the list of %2$s?"
+msgstr "Lisätäänkö tiedoston %1$s lipunostajat päivän %2$s listalle?"
+
+msgid "Send the file with a date as its caption (21.11.) for another night."
+msgstr "Toiselle illalle: lähetä tiedosto päivämäärä kuvatekstinä (21.11.)."
+
+#, php-format
+msgid "Get your notifications here: %s?"
+msgstr "Ilmoitukset tänne: %s?"
+
+msgid "Turn this notification on?"
+msgstr "Laitetaanko tämä ilmoitus päälle?"
+
+msgid "Turn this notification off?"
+msgstr "Laitetaanko tämä ilmoitus pois?"
+
+msgid "Mark everyone on a task: /markall Bar ; done (or arrived)\nA date first picks another night: /markall 21.11. Bar ; done"
+msgstr "Merkitse kaikki tehtävällä: /markall Baari ; done (tai arrived)\nPäivämäärä ensin valitsee toisen illan: /markall 21.11. Baari ; done"
+
+msgid "Add ticket buyers by name: /buyers add Anna ; Ben\nEmpty the list: /buyers reset (a date first picks another night)\nOr send the ticket file from Holvi here."
+msgstr "Lisää lipunostajia nimellä: /buyers add Anna ; Ben\nTyhjennä lista: /buyers reset (päivämäärä ensin valitsee toisen illan)\nTai lähetä Holvin lipputiedosto tänne."
+
+msgid "A test email to you: /testmail tickets or /testmail followup\nA date after it picks another night: /testmail tickets 21.11."
+msgstr "Testisähköposti sinulle: /testmail tickets tai /testmail followup\nPäivämäärä perään valitsee toisen illan: /testmail tickets 21.11."
+
+msgid "Turn one notification on or off: /notify ticket email off\nChannels: telegram, email, app. Where they go: /notify app (or telegram, both)"
+msgstr "Yksi ilmoitus päälle tai pois: /notify ticket email off\nKanavat: telegram, email, app. Minne ne tulevat: /notify app (tai telegram, both)"
+
+msgid "Check the mailbox for ticket and guest lists now?"
+msgstr "Tarkistetaanko postilaatikko lippu- ja vieraslistojen varalta nyt?"
+
+msgid "Check the mailbox now: /checkmail"
+msgstr "Tarkista postilaatikko nyt: /checkmail"
+
+#, php-format
+msgid "Mark everyone still on %1$s as %2$s?"
+msgstr "Merkitäänkö kaikki tehtävällä %1$s yhä olevat: %2$s?"
+
+#, php-format
+msgid "Delete every imported ticket buyer of %s? Ticket emails already sent stay sent."
+msgstr "Poistetaanko päivän %s kaikki tuodut lipunostajat? Jo lähetetyt lippusähköpostit pysyvät lähetettyinä."
+
+#, php-format
+msgid "Add %1$d ticket buyer to the list of %2$s?"
+msgid_plural "Add %1$d ticket buyers to the list of %2$s?"
+msgstr[0] "Lisätäänkö %1$d lipunostaja päivän %2$s listalle?"
+msgstr[1] "Lisätäänkö %1$d lipunostajaa päivän %2$s listalle?"
+
+#, php-format
+msgid "Send a test ticket email for %s to your own address?"
+msgstr "Lähetetäänkö päivän %s testilippusähköposti omaan osoitteeseesi?"
+
+#, php-format
+msgid "Send a test of the post-event email for %s to your own address?"
+msgstr "Lähetetäänkö päivän %s jälkiviestin testi omaan osoitteeseesi?"
+
+msgid "No offer of your tickets is waiting."
+msgstr "Lippujesi tarjouksia ei ole odottamassa."
+
+msgid "Which night?"
+msgstr "Mikä ilta?"
+
+#, php-format
+msgid "Cancel the offer of your ticket for %s? It is yours again."
+msgstr "Perutaanko lippusi tarjous päivälle %s? Lippu on taas sinun."
+
+#, php-format
+msgid "Ask %1$s to let you take over their task %2$s? They decide."
+msgstr "Pyydetäänkö henkilöltä %1$s lupaa ottaa hänen tehtävänsä %2$s? Hän päättää."
+
+#, php-format
+msgid "Write it after a semicolon: %s ; Their Name"
+msgstr "Kirjoita se puolipisteen jälkeen: %s ; Hänen Nimensä"
+
+#, php-format
+msgid "Send you the sales desk link for %s by email (and Telegram if you use the bot)?"
+msgstr "Lähetetäänkö sinulle myyntipisteen linkki päivälle %s sähköpostilla (ja Telegramiin, jos käytät bottia)?"
+
+msgid "/giveaway name or email – give your ticket away (/giveaway cancel takes an offer back)"
+msgstr "/giveaway nimi tai sähköposti – anna lippusi pois (/giveaway cancel peruu tarjouksen)"
+
+msgid "/notify ticket email off – turn one notification on or off"
+msgstr "/notify ticket email off – yksi ilmoitus päälle tai pois"
+
+msgid "/markall task ; done – mark everyone on a task (or arrived)"
+msgstr "/markall tehtävä ; done – merkitse kaikki tehtävällä (tai arrived)"
+
+msgid "/buyers add name ; name – add ticket buyers (/buyers reset empties the list); or send the Holvi file"
+msgstr "/buyers add nimi ; nimi – lisää lipunostajia (/buyers reset tyhjentää listan); tai lähetä Holvin tiedosto"
+
+msgid "/testmail tickets or /testmail followup – a test email to you"
+msgstr "/testmail tickets tai /testmail followup – testisähköposti sinulle"
+
+msgid "/checkmail – check the mailbox for ticket and guest lists now"
+msgstr "/checkmail – tarkista postilaatikko lippu- ja vieraslistojen varalta nyt"

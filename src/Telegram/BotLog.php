@@ -48,6 +48,8 @@ final class BotLog
         // parityA: AdminChangeCommands.
         'gift', 'role', 'organizer', 'deleteperson', 'oncemore', 'addperson', 'editperson', 'editrole', 'optout',
         'aitext',
+        // parityB
+        'markall', 'buyers', 'testmail', 'checkmail', 'giveaway', 'notify',
     ];
 
     /** Menu button callback data, stored whole: it is a fixed word, not data. */

@@ -77,7 +77,8 @@ final class UpdateRouter
         private readonly ?SubscribeCommand $subscribe = null,
         private readonly ?ActingAs $acting = null,
         private readonly ?ReopenProfile $reopen = null,
-        private readonly ?GroupRelay $groupRelay = null
+        private readonly ?GroupRelay $groupRelay = null,
+        private readonly ?ParityCommands $parity = null
     ) {
     }
 
@@ -295,6 +296,8 @@ final class UpdateRouter
                 $this->assign->onCallback($callbackQuery);
             } elseif (null !== $this->taskCommand && str_starts_with($data, TaskCommand::PREFIX)) {
                 $this->taskCommand->onCallback($callbackQuery);
+            } elseif (null !== $this->parity && str_starts_with($data, ParityCommands::PREFIX)) {
+                $this->parity->onCallback($callbackQuery);
             } elseif (null !== $this->chatCommands && ChatCommands::handlesCallback($data)) {
                 $this->chatCommands->onCallback($callbackQuery);
             } elseif (null !== $this->say && str_starts_with($data, SayCommand::PREFIX)) {
@@ -347,6 +350,18 @@ final class UpdateRouter
         $chatId = (int) ($message['chat']['id'] ?? 0);
         $fromId = (int) ($message['from']['id'] ?? 0);
         $isPrivate = 'private' === ($message['chat']['type'] ?? '');
+
+        // A file sent in a private chat: an organizer's Holvi ticket file,
+        // added to the ticket list after ✅ (ParityCommands).
+        if (
+            null !== $this->parity
+            && $isPrivate
+            && '' === $text
+            && is_array($message['document'] ?? null)
+            && $this->parity->onDocument($chatId, $fromId, $message)
+        ) {
+            return;
+        }
 
         // Someone who has not chosen a language yet is asked before their first
         // private command runs; the command waits behind the question and runs
@@ -579,6 +594,23 @@ final class UpdateRouter
         // /stop, /newboard, /sendtickets, /tell (organizers) and /crew, /name,
         // /email (members), all in a private chat, writes confirmed first.
         if (null !== $this->chatCommands && $this->chatCommands->onCommand($chatId, $fromId, $text, $isPrivate)) {
+            return;
+        }
+
+        // /markall, /buyers, /testmail, /checkmail (organizers) and
+        // /giveaway, /notify (members), in a private chat (ParityCommands).
+        if (
+            null !== $this->parity
+            && (
+                $this->isCommand($text, 'markall')
+                || $this->isCommand($text, 'buyers')
+                || $this->isCommand($text, 'testmail')
+                || $this->isCommand($text, 'checkmail')
+                || $this->isCommand($text, 'giveaway')
+                || $this->isCommand($text, 'notify')
+            )
+            && $this->parity->onCommand($chatId, $fromId, $text, $isPrivate)
+        ) {
             return;
         }
 

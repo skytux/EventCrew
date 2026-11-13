@@ -5760,7 +5760,6 @@ msgstr "Skicka ett test till mig"
 msgid "Send me /help in a private chat for more."
 msgstr "Skicka /help till mig i en privat chatt för mer."
 
-
 #: src/Web/CrewAdminController.php:178
 msgid "Send me the sales desk link"
 msgstr "Skicka länken till försäljningsdisken till mig"
@@ -13619,7 +13618,6 @@ msgstr "För många fel koder. Be om en ny länk."
 msgid "Too many wrong codes from here. Wait an hour and try again."
 msgstr "För många fel koder härifrån. Vänta en timme och försök igen."
 
-
 #: templates/public/signup.php
 msgid "Install the app"
 msgstr "Installera appen"
@@ -14466,3 +14464,100 @@ msgstr "Får %s anmäla sig en gång till trots anmälningsspärren? Hen får ve
 # parityA
 msgid "Done. They may sign up once more."
 msgstr "Klart. Hen får anmäla sig en gång till."
+
+#, php-format
+msgid "Add the ticket buyers in %1$s to the list of %2$s?"
+msgstr "Lägga till biljettköparna i %1$s på listan för %2$s?"
+
+msgid "Send the file with a date as its caption (21.11.) for another night."
+msgstr "För en annan kväll: skicka filen med ett datum som bildtext (21.11.)."
+
+#, php-format
+msgid "Get your notifications here: %s?"
+msgstr "Få dina aviseringar här: %s?"
+
+msgid "Turn this notification on?"
+msgstr "Slå på den här aviseringen?"
+
+msgid "Turn this notification off?"
+msgstr "Stänga av den här aviseringen?"
+
+msgid "Mark everyone on a task: /markall Bar ; done (or arrived)\nA date first picks another night: /markall 21.11. Bar ; done"
+msgstr "Markera alla på en uppgift: /markall Bar ; done (eller arrived)\nEtt datum först väljer en annan kväll: /markall 21.11. Bar ; done"
+
+msgid "Add ticket buyers by name: /buyers add Anna ; Ben\nEmpty the list: /buyers reset (a date first picks another night)\nOr send the ticket file from Holvi here."
+msgstr "Lägg till biljettköpare med namn: /buyers add Anna ; Ben\nTöm listan: /buyers reset (ett datum först väljer en annan kväll)\nEller skicka biljettfilen från Holvi hit."
+
+msgid "A test email to you: /testmail tickets or /testmail followup\nA date after it picks another night: /testmail tickets 21.11."
+msgstr "Ett testmejl till dig: /testmail tickets eller /testmail followup\nEtt datum efteråt väljer en annan kväll: /testmail tickets 21.11."
+
+msgid "Turn one notification on or off: /notify ticket email off\nChannels: telegram, email, app. Where they go: /notify app (or telegram, both)"
+msgstr "Slå på eller av en avisering: /notify ticket email off\nKanaler: telegram, email, app. Vart de går: /notify app (eller telegram, both)"
+
+msgid "Check the mailbox for ticket and guest lists now?"
+msgstr "Kontrollera brevlådan efter biljett- och gästlistor nu?"
+
+msgid "Check the mailbox now: /checkmail"
+msgstr "Kontrollera brevlådan nu: /checkmail"
+
+#, php-format
+msgid "Mark everyone still on %1$s as %2$s?"
+msgstr "Markera alla som fortfarande är på %1$s som %2$s?"
+
+#, php-format
+msgid "Delete every imported ticket buyer of %s? Ticket emails already sent stay sent."
+msgstr "Radera alla importerade biljettköpare för %s? Biljettmejl som redan skickats förblir skickade."
+
+#, php-format
+msgid "Add %1$d ticket buyer to the list of %2$s?"
+msgid_plural "Add %1$d ticket buyers to the list of %2$s?"
+msgstr[0] "Lägga till %1$d biljettköpare på listan för %2$s?"
+msgstr[1] "Lägga till %1$d biljettköpare på listan för %2$s?"
+
+#, php-format
+msgid "Send a test ticket email for %s to your own address?"
+msgstr "Skicka ett testbiljettmejl för %s till din egen adress?"
+
+#, php-format
+msgid "Send a test of the post-event email for %s to your own address?"
+msgstr "Skicka ett test av mejlet efter evenemanget för %s till din egen adress?"
+
+msgid "No offer of your tickets is waiting."
+msgstr "Inget erbjudande av dina biljetter väntar."
+
+msgid "Which night?"
+msgstr "Vilken kväll?"
+
+#, php-format
+msgid "Cancel the offer of your ticket for %s? It is yours again."
+msgstr "Ta tillbaka erbjudandet av din biljett för %s? Den är din igen."
+
+#, php-format
+msgid "Ask %1$s to let you take over their task %2$s? They decide."
+msgstr "Be %1$s att låta dig ta över uppgiften %2$s? Hen bestämmer."
+
+#, php-format
+msgid "Write it after a semicolon: %s ; Their Name"
+msgstr "Skriv det efter ett semikolon: %s ; Hens Namn"
+
+#, php-format
+msgid "Send you the sales desk link for %s by email (and Telegram if you use the bot)?"
+msgstr "Skicka länken till försäljningsdisken för %s till dig via mejl (och Telegram om du använder boten)?"
+
+msgid "/giveaway name or email – give your ticket away (/giveaway cancel takes an offer back)"
+msgstr "/giveaway namn eller mejl – ge bort din biljett (/giveaway cancel tar tillbaka ett erbjudande)"
+
+msgid "/notify ticket email off – turn one notification on or off"
+msgstr "/notify ticket email off – slå på eller av en avisering"
+
+msgid "/markall task ; done – mark everyone on a task (or arrived)"
+msgstr "/markall uppgift ; done – markera alla på en uppgift (eller arrived)"
+
+msgid "/buyers add name ; name – add ticket buyers (/buyers reset empties the list); or send the Holvi file"
+msgstr "/buyers add namn ; namn – lägg till biljettköpare (/buyers reset tömmer listan); eller skicka Holvi-filen"
+
+msgid "/testmail tickets or /testmail followup – a test email to you"
+msgstr "/testmail tickets eller /testmail followup – ett testmejl till dig"
+
+msgid "/checkmail – check the mailbox for ticket and guest lists now"
+msgstr "/checkmail – kontrollera brevlådan efter biljett- och gästlistor nu"

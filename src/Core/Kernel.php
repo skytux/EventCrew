@@ -131,6 +131,7 @@ use EventCrew\Telegram\AssignCommand;
 use EventCrew\Telegram\ChatCommands;
 use EventCrew\Telegram\MemberCommands;
 use EventCrew\Telegram\NightCommands;
+use EventCrew\Telegram\ParityCommands;
 use EventCrew\Telegram\PersonCommands;
 use EventCrew\Telegram\TellCommand;
 use EventCrew\Telegram\AssistantService;
@@ -183,6 +184,7 @@ use EventCrew\MailImport\MailedListImport;
 use EventCrew\Web\AppInstallController;
 use EventCrew\Web\AssistantWebAdmin;
 use EventCrew\Web\AssistantWebChanges;
+use EventCrew\Web\AssistantWebParity;
 use EventCrew\Web\AssistantWebPeople;
 use EventCrew\Web\AssistantWebController;
 use EventCrew\Web\ChannelChoiceController;
@@ -970,7 +972,17 @@ final class Kernel
                         $container->get(CrewAdminPeople::class)
                     ),
                     // parityA
-                    $container->get(AssistantWebAdmin::class)
+                    $container->get(AssistantWebAdmin::class),
+                    // parityB
+                    new AssistantWebParity(
+                        $container->get(PersonRepository::class),
+                        $container->get(TaskRepository::class),
+                        $container->get(TakeoverService::class),
+                        $container->get(TicketTransferService::class),
+                        $container->get(SalesDeskGate::class),
+                        $container->get(DoorLinkSender::class),
+                        $container->get(ParityCommands::class)
+                    )
                 )
             )
         );
@@ -1713,7 +1725,8 @@ final class Kernel
                 subscribe: $container->get(SubscribeCommand::class),
                 acting: $container->get(ActingAs::class),
                 reopen: $container->get(ReopenProfile::class),
-                groupRelay: $container->get(GroupRelay::class)
+                groupRelay: $container->get(GroupRelay::class),
+                parity: $container->get(ParityCommands::class)
             )
         );
 
@@ -1809,6 +1822,21 @@ final class Kernel
                 $container->get(SignupController::class),
                 $container->get(TelegramClient::class),
                 $container->get(ManageController::class)
+            )
+        );
+
+        // parityB: the Crew app actions the bot had no typed form for.
+        $this->container->singleton(
+            ParityCommands::class,
+            fn (Container $container) => new ParityCommands(
+                $container->get(PersonRepository::class),
+                $container->get(TaskRepository::class),
+                $container->get(CrewAdminRoster::class),
+                $container->get(DoorOrganizer::class),
+                $container->get(RedemptionRepository::class),
+                $container->get(TicketTransferService::class),
+                $container->get(TransferBot::class),
+                $container->get(TelegramClient::class)
             )
         );
 

@@ -285,6 +285,8 @@ final class AssistantActionsTest extends TestCase
                 '/newsletter reset',
                 '/followup <came|missed> <text>',
                 '/followup [came|missed] reset',
+                'menu:notifications <type> <telegram|email|app> <on|off>',
+                'menu:notifications <app|telegram|both>',
             ],
             array_values($confirm)
         );

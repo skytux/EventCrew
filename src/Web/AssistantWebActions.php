@@ -96,7 +96,6 @@ final class AssistantWebActions
         '/door' => [self::ADMIN_DOOR, 'roster_date'],
         'menu:doorlist' => [self::ADMIN_DOOR, 'roster_date'],
         'menu:guestlist' => [self::ADMIN_DOOR, 'roster_date'],
-        'menu:sales' => [self::ADMIN_DOOR, ''],
         '/people' => [self::ADMIN_PEOPLE, ''],
         'menu:gift' => [self::ADMIN_PEOPLE, ''],
         'menu:roles' => [self::ADMIN_PEOPLE, ''],
@@ -242,14 +241,13 @@ final class AssistantWebActions
             return ['kind' => self::CONFIRM, 'op' => self::CHANGE, 'command' => $head];
         }
 
-        if (in_array($head, self::SETTINGS_COMMANDS, true)) {
-            return ['kind' => self::GOTO, 'targets' => ['eventcrew-panel-settings']];
+        // parityB: run here on Confirm (AssistantWebParity).
+        if (AssistantWebParity::handles($head, $rest, $organizer)) {
+            return ['kind' => self::CONFIRM, 'op' => self::CHANGE, 'command' => $head];
         }
 
-        // The sales desk of someone on tonight's sales-desk task is the Door
-        // scanner button at the top of the page (Owner 2026-11-13).
-        if ('menu:sales' === $head && ! $organizer) {
-            return ['kind' => self::GOTO, 'targets' => ['eventcrew-door-scanner']];
+        if (in_array($head, self::SETTINGS_COMMANDS, true)) {
+            return ['kind' => self::GOTO, 'targets' => ['eventcrew-panel-settings']];
         }
 
         if ($organizer && isset(self::ADMIN[$head])) {
@@ -301,7 +299,8 @@ final class AssistantWebActions
 
         // menu:gift, menu:roles and menu:language with their value run here.
         if (in_array($head, self::LEFT_UNDONE, true)) {
-            return '' === $rest || ! in_array($head, [...self::CHANGES_WITH_TEXT, ...self::OWN_CHANGES], true);
+            return '' === $rest
+                || ! in_array($head, [...self::CHANGES_WITH_TEXT, ...self::OWN_CHANGES, ...AssistantWebParity::WITH_VALUE], true);
         }
 
         return '' !== $rest && in_array($head, self::LEFT_UNDONE_WITH_TEXT, true);

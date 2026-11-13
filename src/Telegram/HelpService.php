@@ -209,6 +209,9 @@ final class HelpService
             // Private-chat commands for members (ag-people).
             __('/crew – who works with you on your next nights', 'eventcrew'),
             __('/name, /email – change your name or email', 'eventcrew'),
+            // parityB
+            __('/giveaway name or email – give your ticket away (/giveaway cancel takes an offer back)', 'eventcrew'),
+            __('/notify ticket email off – turn one notification on or off', 'eventcrew'),
             __('/help – how this works, commands and FAQ', 'eventcrew'),
         ];
     }
@@ -438,6 +441,11 @@ final class HelpService
             __('/editrole role ; people 3 – change a role\'s settings', 'eventcrew'),
             __('/optout – the post-event email\'s do-not-send list (add, remove)', 'eventcrew'),
             __('/aitext – the coming events\' AI texts; write one by hand or use the AI\'s again', 'eventcrew'),
+            // parityB
+            __('/markall task ; done – mark everyone on a task (or arrived)', 'eventcrew'),
+            __('/buyers add name ; name – add ticket buyers (/buyers reset empties the list); or send the Holvi file', 'eventcrew'),
+            __('/testmail tickets or /testmail followup – a test email to you', 'eventcrew'),
+            __('/checkmail – check the mailbox for ticket and guest lists now', 'eventcrew'),
         ]);
     }
 }

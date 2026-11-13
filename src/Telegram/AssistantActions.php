@@ -246,6 +246,9 @@ final class AssistantActions
         // Private-chat commands for organizers and members (ag-people).
         $list = array_merge($list, self::chatCommandEntries($audience));
 
+        // parityB
+        $list = array_merge($list, AssistantParityLines::entries($audience));
+
         if (! empty($audience['web'])) {
             $list = array_merge($list, self::webEntries($audience));
         } else {
@@ -496,6 +499,13 @@ final class AssistantActions
             return '' === $date
                 ? self::refuse(self::ERROR_INVALID)
                 : self::accept('menu:ticket ' . $date, false, self::RUN_TAP, 'tkt:' . $date);
+        }
+
+        // parityB: the app actions that had no helper line (AssistantParityLines).
+        $parity = AssistantParityLines::validate($head, $rest, $audience);
+
+        if (null !== $parity) {
+            return $parity;
         }
 
         // The Crew app page's own lines (webEntries()).
