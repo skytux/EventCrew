@@ -1421,7 +1421,7 @@ msgstr ""
 msgid "Add with extra people: /door add Name +2 ; note  (the guest and 2 more)"
 msgstr ""
 
-#: templates/public/signup-groupchat.php:45
+#: templates/public/signup-groupchat.php:46
 msgid "Add your name in Settings first: the group sees it with your message."
 msgstr ""
 
@@ -2038,7 +2038,7 @@ msgstr ""
 #: src/Telegram/AssignCommand.php:374 src/Telegram/AssignCommand.php:418 src/Telegram/AssignCommand.php:720 src/Telegram/AssistantService.php:740
 #: src/Telegram/BuyerListReset.php:155 src/Telegram/CommandFlow.php:342 src/Telegram/EventsCommand.php:98 src/Telegram/MenuButtons.php:393
 #: src/Telegram/SayCommand.php:122 src/Telegram/TaskCommand.php:807 src/Telegram/TicketController.php:917 src/Web/AssistantWebController.php:172
-#: templates/admin/people.php:124 templates/admin/tasks.php:293 templates/public/signup-board.php:263 templates/public/signup-groupchat.php:84
+#: templates/admin/people.php:124 templates/admin/tasks.php:293 templates/public/signup-board.php:263 templates/public/signup-groupchat.php:85
 #: templates/public/signup.php:794 templates/public/signup.php:1447 templates/public/signup.php:2278
 msgid "Cancel"
 msgstr ""
@@ -3555,7 +3555,7 @@ msgstr ""
 msgid "Free entry is closed by the event itself (sold out, hidden or off). Change it in the event."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:677 src/Web/SignupController.php:1574
+#: src/Telegram/TicketRedemptionService.php:685 src/Web/SignupController.php:1574
 msgid "Free entry is closed for that date."
 msgstr ""
 
@@ -3816,7 +3816,7 @@ msgstr ""
 msgid "Granted by"
 msgstr ""
 
-#: templates/public/signup-groupchat.php:60 templates/public/signup-groupchat.php:63
+#: templates/public/signup-groupchat.php:61 templates/public/signup-groupchat.php:64
 msgid "Group chat"
 msgstr ""
 
@@ -4817,7 +4817,7 @@ msgstr ""
 msgid "Listen to the DJ"
 msgstr ""
 
-#: templates/public/door.php:94 templates/public/door.php:238
+#: templates/public/door.php:94 templates/public/door.php:238 templates/public/signup-groupchat.php:44 templates/public/signup-groupchat.php:71
 msgid "Loading…"
 msgstr ""
 
@@ -4987,8 +4987,8 @@ msgstr ""
 msgid "Menu → Settings → Notifications → Notifications on this device."
 msgstr ""
 
-#: src/Support/NewsletterConfirmMail.php:86 templates/admin/diagnostics.php:125 templates/admin/settings.php:1799 templates/public/signup-groupchat.php:87
-#: templates/public/signup-groupchat.php:89
+#: src/Support/NewsletterConfirmMail.php:86 templates/admin/diagnostics.php:125 templates/admin/settings.php:1799 templates/public/signup-groupchat.php:88
+#: templates/public/signup-groupchat.php:90
 msgid "Message"
 msgstr ""
 
@@ -5129,7 +5129,7 @@ msgstr ""
 msgid "New member added at the door (email)"
 msgstr ""
 
-#: templates/public/signup-groupchat.php:72
+#: templates/public/signup-groupchat.php:73
 msgid "New messages"
 msgstr ""
 
@@ -7388,7 +7388,7 @@ msgid "See you on the dancefloor"
 msgstr ""
 
 #: src/Telegram/NightCommands.php:425 src/Telegram/TaskCommand.php:480 src/Telegram/TellCommand.php:253 templates/public/signup-assistant.php:60
-#: templates/public/signup-groupchat.php:92
+#: templates/public/signup-groupchat.php:93
 msgid "Send"
 msgstr ""
 
@@ -8215,7 +8215,7 @@ msgstr ""
 msgid "Something else"
 msgstr ""
 
-#: src/Telegram/NotificationSettingsService.php:264 templates/public/signup-groupchat.php:50
+#: src/Telegram/NotificationSettingsService.php:264 templates/public/signup-groupchat.php:51
 msgid "Something went wrong. Please try again."
 msgstr ""
 
@@ -9017,7 +9017,7 @@ msgstr ""
 msgid "That event has no start date recorded, so its tasks cannot be scheduled. Set one on the event and try again."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:679 src/Web/SignupController.php:1576
+#: src/Telegram/TicketRedemptionService.php:687 src/Web/SignupController.php:1576
 msgid "That event is no longer available."
 msgstr ""
 
@@ -9037,7 +9037,7 @@ msgstr ""
 msgid "That is already your name."
 msgstr ""
 
-#: templates/public/signup-groupchat.php:46
+#: templates/public/signup-groupchat.php:47
 msgid "That is many messages in a short time. Wait a few minutes."
 msgstr ""
 
@@ -9053,7 +9053,7 @@ msgstr ""
 msgid "That is not the code on the crew app, so this sign-in is cancelled. Press Telegram on the crew app to start again."
 msgstr ""
 
-#: templates/public/signup-groupchat.php:48
+#: templates/public/signup-groupchat.php:49
 msgid "That is too long: at most %d characters."
 msgstr ""
 
@@ -9423,7 +9423,7 @@ msgstr ""
 msgid "The connection test failed: %s."
 msgstr ""
 
-#: templates/public/signup-groupchat.php:65
+#: templates/public/signup-groupchat.php:66
 msgid "The crew’s Telegram group. What you send here, the bot posts to the group with your name."
 msgstr ""
 
@@ -9576,7 +9576,7 @@ msgstr ""
 msgid "The group board: the DJs and description of the next event, for two sentences under its picture. This text has no preview and no switch of its own."
 msgstr ""
 
-#: templates/public/signup-groupchat.php:66
+#: templates/public/signup-groupchat.php:67
 msgid "The group chat needs JavaScript."
 msgstr ""
 
@@ -9709,7 +9709,7 @@ msgstr ""
 msgid "The message uses its built-in text again."
 msgstr ""
 
-#: templates/public/signup-groupchat.php:44
+#: templates/public/signup-groupchat.php:45
 msgid "The messages could not be loaded. Trying again soon."
 msgstr ""
 
@@ -11994,7 +11994,7 @@ msgstr ""
 msgid "You already have 3 offers waiting. Cancel one first."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:678 src/Web/SignupController.php:1575
+#: src/Telegram/TicketRedemptionService.php:686 src/Web/SignupController.php:1575
 msgid "You already have a free-entry ticket for that night."
 msgstr ""
 
@@ -12062,7 +12062,7 @@ msgstr ""
 msgid "You are organizing on %s"
 msgstr ""
 
-#: templates/public/signup-groupchat.php:49
+#: templates/public/signup-groupchat.php:50
 msgid "You are signed out. Reload the page."
 msgstr ""
 
@@ -12201,7 +12201,7 @@ msgstr ""
 msgid "You have no coming tasks. See the open ones with /board."
 msgstr ""
 
-#: src/Telegram/TicketRedemptionService.php:676 src/Web/SignupController.php:1573
+#: src/Telegram/TicketRedemptionService.php:684 src/Web/SignupController.php:1573
 msgid "You have no free-entry credits to spend."
 msgstr ""
 
