@@ -20,6 +20,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\NewcomerApproval;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\PageLanguage;
 use EventCrew\Support\Roles;
@@ -1605,67 +1606,12 @@ final class SignupControllerTest extends TestCase
         return $writes;
     }
 
-    /** The join questions' answers are kept on a new person, for the organizers' notice. */
-    public function testANewPersonsJoinAnswersAreStored(): void
-    {
-        $this->wpdb->nextRows[] = null; // findByEmail -> not found -> create
-        $this->wpdb->nextRows[] = ['id' => 1, 'email' => 'new@example.com', 'approval' => 'waiting'];
-
-        $answers = ['newcomer:before' => 'yes', 'newcomer:times' => '4', 'newcomer:tickets' => '2'];
-        $this->controller()->loginByEmail('new@example.com', '', $answers);
-
-        self::assertSame([$answers], $this->noticeWrites());
-        self::assertCount(1, $this->mails);
-    }
-
-    /** A waiting newcomer whose link was not opened yet may change the answers. */
-    public function testAnUnconfirmedNewcomerMayChangeTheAnswers(): void
-    {
-        $row = [
-            'id' => 7,
-            'email' => 'sam@example.com',
-            'approval' => 'waiting',
-            'role_notices' => '{"newcomer:before":"yes","newcomer:times":"4"}',
-        ];
-        $this->wpdb->nextRows[] = $row;
-        $this->wpdb->nextRows[] = $row;
-
-        $this->controller()->loginByEmail('sam@example.com', '', ['newcomer:before' => 'no']);
-
-        self::assertSame([['newcomer:before' => 'no']], $this->noticeWrites());
-    }
-
-    /** Someone confirmed already (the organizers were asked) keeps what they said. */
-    public function testAConfirmedPersonsAnswersAreNotChanged(): void
-    {
-        $this->wpdb->nextRows[] = [
-            'id' => 7,
-            'email' => 'sam@example.com',
-            'email_verified_at' => '2026-07-01 00:00:00',
-            'approval' => 'waiting',
-        ];
-
-        $this->controller()->loginByEmail('sam@example.com', '', ['newcomer:before' => 'no']);
-
-        self::assertSame([], $this->noticeWrites());
-        self::assertCount(1, $this->mails);
-    }
-
-    public function testNoAnswersWriteNothing(): void
-    {
-        $this->wpdb->nextRows[] = null; // findByEmail -> not found -> create
-
-        $this->controller()->loginByEmail('new@example.com', '', []);
-
-        self::assertSame([], $this->noticeWrites());
-    }
-
     /**
-     * The crew page's sign-up form asks every question the bot asks a
-     * newcomer, in the bot's words, with the same ranges, posted under the
-     * names JoinAnswers::fromPost() reads.
+     * Owner 2026-11-13: the sign-in form no longer asks the join questions,
+     * so a returning member never sees them; a newcomer gets them on the
+     * crew page after the account link (testANewcomerSeesTheJoinCard...).
      */
-    public function testTheSignUpFormAsksTheBotsJoinQuestions(): void
+    public function testTheSignInFormHasNoJoinQuestions(): void
     {
         $this->stubPageRender();
         $this->wpdb->nextResults[] = [];   // upcoming dates: an empty board is enough
@@ -1673,9 +1619,23 @@ final class SignupControllerTest extends TestCase
 
         $html = $this->controller()->renderShortcode();
 
-        // The bot: "... Have you worked on the crew here before?", "About how
-        // many times? Tap a number or type one.", "How many free-entry
-        // tickets do you think you should have? Tap a number or type one."
+        self::assertStringContainsString('data-eventcrew-signin method="post"', $html);
+        self::assertStringNotContainsString('Have you worked on the crew here before?', $html);
+        self::assertStringNotContainsString('name="' . JoinAnswers::FIELD_BEFORE . '"', $html);
+        self::assertStringNotContainsString('eventcrew-join', $html);
+    }
+
+    /**
+     * A newcomer signed in for the first time, the organizers not asked yet:
+     * a card at the top asks every question the bot asks, in the bot's
+     * words and ranges, with one Send button and a Skip text link.
+     */
+    public function testANewcomerSeesTheJoinCardAtTheTop(): void
+    {
+        $html = $this->signedInPage(['approval' => Person::APPROVAL_WAITING]);
+
+        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-join-card" id="eventcrew-join">.*?</section>~s', $html, $card));
+        $card = $card[0];
         foreach (
             [
                 'Have you worked on the crew here before?',
@@ -1683,24 +1643,151 @@ final class SignupControllerTest extends TestCase
                 'How many free-entry tickets do you think you should have?',
             ] as $question
         ) {
-            self::assertStringContainsString($question, $html);
+            self::assertStringContainsString($question, $card);
         }
-        self::assertStringContainsString('name="' . JoinAnswers::FIELD_BEFORE . '" value="yes"', $html);
-        self::assertStringContainsString('name="' . JoinAnswers::FIELD_BEFORE . '" value="no"', $html);
+        self::assertStringContainsString('name="action" value="' . SignupController::JOIN_ACTION . '"', $card);
+        self::assertStringContainsString('name="csrf" value="' . WebSession::csrfToken(7) . '"', $card);
+        self::assertStringContainsString('name="' . JoinAnswers::FIELD_BEFORE . '" value="yes"', $card);
+        self::assertStringContainsString('name="' . JoinAnswers::FIELD_BEFORE . '" value="no"', $card);
         self::assertStringContainsString(
             'name="' . JoinAnswers::FIELD_TIMES . '" min="' . JoinAnswers::MIN_TIMES . '" max="' . JoinAnswers::MAX_TIMES . '"',
-            $html
+            $card
         );
         self::assertStringContainsString(
             'name="' . JoinAnswers::FIELD_TICKETS . '" min="' . JoinAnswers::MIN_TICKETS . '" max="'
                 . JoinAnswers::MAX_TICKETS . '"',
-            $html
+            $card
         );
-        // The yes/no and both numbers are in the sign-in form, before its email field.
-        $form = (int) strpos($html, 'data-eventcrew-signin method="post"');
-        self::assertGreaterThan(0, $form);
-        self::assertGreaterThan($form, strpos($html, 'name="' . JoinAnswers::FIELD_TICKETS . '"'));
-        self::assertLessThan(strpos($html, 'id="eventcrew-email"'), strpos($html, 'name="' . JoinAnswers::FIELD_TICKETS . '"'));
+        // One button; Skip is a text link that posts the skip field.
+        self::assertSame(1, substr_count($card, 'class="wp-element-button"'));
+        self::assertStringContainsString(
+            '<button type="submit" class="eventcrew-textlink" name="' . SignupController::JOIN_SKIP_FIELD . '" value="1">Skip</button>',
+            $card
+        );
+        // At the top, above the Summary card.
+        self::assertLessThan(strpos($html, 'id="eventcrew-summary"'), strpos($html, 'id="eventcrew-join"'));
+    }
+
+    /** No card once the organizers were asked, nor for anyone who is not waiting. */
+    public function testTheJoinCardIsOnlyForANewcomerNotYetAskedAbout(): void
+    {
+        self::assertStringNotContainsString('id="eventcrew-join"', $this->signedInPage());
+        self::assertStringNotContainsString('id="eventcrew-join"', $this->signedInPage([
+            'approval' => Person::APPROVAL_WAITING,
+            'role_notices' => '{"newcomer:put_off":"x","newcomer:asked":"y"}',
+        ]));
+        self::assertStringNotContainsString('id="eventcrew-join"', $this->signedInPage(['approval' => Person::APPROVAL_NO]));
+    }
+
+    /** Records every do_action() call as [hook, first argument]. */
+    private function captureActions(): \stdClass
+    {
+        $done = new \stdClass();
+        $done->calls = [];
+        Functions\when('do_action')->alias(
+            static function (string $hook, mixed $arg = null) use ($done): void {
+                $done->calls[] = [$hook, $arg];
+            }
+        );
+
+        return $done;
+    }
+
+    /** @return array<string, mixed> */
+    private static function newcomerRow(array $extra = []): array
+    {
+        return $extra + [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-11-13 10:00:00',
+            'approval' => Person::APPROVAL_WAITING,
+            'role_notices' => '{"newcomer:put_off":"2026-11-13 10:00:00"}',
+        ];
+    }
+
+    /** Send keeps the answers and asks the organizers now (once: NewcomerApproval::onAskDue()). */
+    public function testAnsweringTheJoinCardSavesTheAnswersAndAsksTheOrganizers(): void
+    {
+        $this->wpdb->nextRows[] = self::newcomerRow(); // replaceRoleNotices find
+        $done = $this->captureActions();
+
+        $answers = JoinAnswers::fromPost(['join_before' => 'yes', 'join_times' => '4', 'join_tickets' => '2']);
+        $code = $this->controller()->answerJoinQuestions(Person::fromRow(self::newcomerRow()), $answers);
+
+        self::assertSame('waiting_ok', $code);
+        self::assertSame(
+            [[
+                'newcomer:put_off' => '2026-11-13 10:00:00',
+                'newcomer:before' => 'yes',
+                'newcomer:times' => '4',
+                'newcomer:tickets' => '2',
+            ]],
+            $this->noticeWrites()
+        );
+        self::assertSame([[NewcomerApproval::ASK_HOOK, 7]], $done->calls);
+    }
+
+    /** Skip keeps nothing and asks the organizers now. */
+    public function testSkippingTheJoinCardAsksTheOrganizers(): void
+    {
+        $done = $this->captureActions();
+
+        self::assertSame('waiting_ok', $this->controller()->answerJoinQuestions(Person::fromRow(self::newcomerRow()), []));
+        self::assertSame([], $this->noticeWrites());
+        self::assertSame([[NewcomerApproval::ASK_HOOK, 7]], $done->calls);
+    }
+
+    /** A card posted again after the organizers were asked changes nothing and asks nobody. */
+    public function testTheJoinCardAfterTheRequestWentChangesNothing(): void
+    {
+        $done = $this->captureActions();
+
+        $asked = Person::fromRow(self::newcomerRow(['role_notices' => '{"newcomer:asked":"2026-11-13 10:05:00"}']));
+        self::assertSame('waiting_ok', $this->controller()->answerJoinQuestions($asked, ['newcomer:before' => 'no']));
+        self::assertSame(
+            'join_closed',
+            $this->controller()->answerJoinQuestions(Person::fromRow(self::newcomerRow(['approval' => ''])), [])
+        );
+        self::assertSame([], $this->noticeWrites());
+        self::assertSame([], $done->calls);
+    }
+
+    /**
+     * A newcomer's first sign-in from the account link holds the
+     * organizers' request back for the card, with the 10-minute event.
+     */
+    public function testANewcomersFirstSignInPutsTheRequestOff(): void
+    {
+        $scheduled = [];
+        Functions\when('wp_schedule_single_event')->alias(
+            static function (int $at, string $hook, array $args = []) use (&$scheduled): bool {
+                $scheduled[] = [$hook, $args];
+
+                return true;
+            }
+        );
+        $row = self::newcomerRow(['email_verified_at' => null, 'role_notices' => null]);
+        $this->wpdb->nextRows[] = self::liveSignInToken();
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = $row; // find(7)
+        $this->wpdb->nextRows[] = $row; // markRoleNotice find
+
+        self::assertSame('signed_in', $this->controller()->magicLinkSignIn('rawtoken')['notice']);
+
+        self::assertSame([[NewcomerApproval::ASK_HOOK, [7]]], $scheduled);
+        self::assertArrayHasKey('newcomer:put_off', $this->noticeWrites()[0] ?? []);
+    }
+
+    /** A returning member's sign-in puts nothing off. */
+    public function testAReturningMembersSignInPutsNothingOff(): void
+    {
+        $this->wpdb->nextRows[] = self::liveSignInToken();
+        $this->wpdb->nextQueryResults[] = 1;
+        $this->wpdb->nextRows[] = self::samRow();
+
+        self::assertSame('signed_in', $this->controller()->magicLinkSignIn('rawtoken')['notice']);
+        self::assertSame([], $this->noticeWrites());
     }
 
     /**

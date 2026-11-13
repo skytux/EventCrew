@@ -209,6 +209,50 @@ if ($eventcrew_link_expired) {
         </form>
     <?php endif; ?>
 
+    <?php if (null !== $eventcrew_person && ! empty($view['join_questions'])) : ?>
+        <?php
+        /*
+         * The join questions (JoinAnswers, Owner 2026-11-13), at the top for a
+         * newcomer whose first sign-in came from the account link: asked here
+         * instead of on the sign-in form, so a returning member never sees
+         * them. The organizers' request waits until Send or Skip, or 10
+         * minutes (NewcomerApproval::putOff()). The numbers show once Yes is
+         * ticked (:has(); a browser without it shows them all the time). One
+         * button; Skip is a text link. Signed in only: never in the cached
+         * signed-out page.
+         */
+        ?>
+        <section class="eventcrew-event eventcrew-me-card eventcrew-join-card" id="eventcrew-join">
+            <form class="eventcrew-card-body" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                <input type="hidden" name="action" value="<?php echo esc_attr((string) ($view['join_action'] ?? '')); ?>">
+                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                <fieldset class="eventcrew-join">
+                    <legend><?php esc_html_e('Have you worked on the crew here before?', 'eventcrew'); ?></legend>
+                    <p class="eventcrew-muted eventcrew-hint"><?php esc_html_e('Not required. Your answers help the organizers OK your account.', 'eventcrew'); ?></p>
+                    <div class="eventcrew-join-choice">
+                        <label><input type="radio" name="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::FIELD_BEFORE); ?>" value="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::YES); ?>"> <?php esc_html_e('Yes', 'eventcrew'); ?></label>
+                        <label><input type="radio" name="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::FIELD_BEFORE); ?>" value="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::NO); ?>"> <?php esc_html_e('No', 'eventcrew'); ?></label>
+                    </div>
+                    <div class="eventcrew-join-more">
+                        <label>
+                            <?php esc_html_e('About how many times?', 'eventcrew'); ?>
+                            <input type="number" class="wp-element-input" inputmode="numeric" name="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::FIELD_TIMES); ?>" min="<?php echo (int) \EventCrew\Support\JoinAnswers::MIN_TIMES; ?>" max="<?php echo (int) \EventCrew\Support\JoinAnswers::MAX_TIMES; ?>" step="1">
+                        </label>
+                        <label>
+                            <?php esc_html_e('How many free-entry tickets do you think you should have?', 'eventcrew'); ?>
+                            <input type="number" class="wp-element-input" inputmode="numeric" name="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::FIELD_TICKETS); ?>" min="<?php echo (int) \EventCrew\Support\JoinAnswers::MIN_TICKETS; ?>" max="<?php echo (int) \EventCrew\Support\JoinAnswers::MAX_TICKETS; ?>" step="1">
+                        </label>
+                    </div>
+                </fieldset>
+                <p class="eventcrew-join-actions">
+                    <button type="submit" class="wp-element-button"><?php esc_html_e('Send', 'eventcrew'); ?></button>
+                    <button type="submit" class="eventcrew-textlink" name="<?php echo esc_attr(\EventCrew\Web\SignupController::JOIN_SKIP_FIELD); ?>" value="1"><?php esc_html_e('Skip', 'eventcrew'); ?></button>
+                </p>
+            </form>
+        </section>
+    <?php endif; ?>
+
     <?php if (null === $eventcrew_person) :
         // Signed out there are only two things - sign in, and look at the board
         // - so there is nothing to tab between and no tab strip is drawn.
@@ -318,34 +362,6 @@ if ($eventcrew_link_expired) {
                  * order reads the way the form is filled in.
                  */
                 ?>
-                <?php
-                /*
-                 * The newcomer's questions (JoinAnswers, Owner 2026-11-07), for
-                 * the organizers who say OK to a new account. All optional and
-                 * kept only when the address has no account yet. The numbers
-                 * show once Yes is ticked (:has(); a browser without it shows
-                 * them all the time, so every question the bot asks can still
-                 * be answered, and a No drops them).
-                 */
-                ?>
-                <fieldset class="eventcrew-join<?php echo '' !== $eventcrew_turnstile_site_key ? ' has-captcha' : ''; ?>">
-                    <legend><?php esc_html_e('Have you worked on the crew here before?', 'eventcrew'); ?></legend>
-                    <p class="eventcrew-muted eventcrew-hint"><?php esc_html_e('Only for a new account, and optional.', 'eventcrew'); ?></p>
-                    <div class="eventcrew-join-choice">
-                        <label><input type="radio" name="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::FIELD_BEFORE); ?>" value="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::YES); ?>"> <?php esc_html_e('Yes', 'eventcrew'); ?></label>
-                        <label><input type="radio" name="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::FIELD_BEFORE); ?>" value="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::NO); ?>"> <?php esc_html_e('No', 'eventcrew'); ?></label>
-                    </div>
-                    <div class="eventcrew-join-more">
-                        <label>
-                            <?php esc_html_e('About how many times?', 'eventcrew'); ?>
-                            <input type="number" class="wp-element-input" inputmode="numeric" name="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::FIELD_TIMES); ?>" min="<?php echo (int) \EventCrew\Support\JoinAnswers::MIN_TIMES; ?>" max="<?php echo (int) \EventCrew\Support\JoinAnswers::MAX_TIMES; ?>" step="1">
-                        </label>
-                        <label>
-                            <?php esc_html_e('How many free-entry tickets do you think you should have?', 'eventcrew'); ?>
-                            <input type="number" class="wp-element-input" inputmode="numeric" name="<?php echo esc_attr(\EventCrew\Support\JoinAnswers::FIELD_TICKETS); ?>" min="<?php echo (int) \EventCrew\Support\JoinAnswers::MIN_TICKETS; ?>" max="<?php echo (int) \EventCrew\Support\JoinAnswers::MAX_TICKETS; ?>" step="1">
-                        </label>
-                    </div>
-                </fieldset>
                 <div class="eventcrew-signin-row<?php echo '' !== $eventcrew_turnstile_site_key ? ' has-captcha' : ''; ?>">
                     <label for="eventcrew-email" class="screen-reader-text"><?php esc_html_e('Email', 'eventcrew'); ?></label>
                     <input

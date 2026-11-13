@@ -312,6 +312,116 @@ final class NewcomerApprovalTest extends TelegramTestCase
         self::assertSame([], $this->mails);
     }
 
+    // ---- The crew page's join questions first (Owner 2026-11-13) ---------
+
+    /** A request put off for the crew page's join questions does not go at the confirmation. */
+    public function testARequestPutOffForTheJoinQuestionsWaitsAtTheConfirmation(): void
+    {
+        $this->wpdb->nextRows[] = self::sam(['role_notices' => '{"newcomer:put_off":"2026-11-13 10:00:00"}']);
+        $this->wpdb->nextResults[] = [self::kim()];
+
+        $this->approval()->onEmailVerified(8);
+
+        self::assertNull($this->lastCallTo('sendMessage'));
+        self::assertSame([], $this->mails);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    /** The answer, the Skip or the WP-Cron event 10 minutes later sends it, with the answers. */
+    public function testThePutOffRequestGoesWhenItIsDue(): void
+    {
+        $sam = self::sam(['role_notices' => '{"newcomer:put_off":"2026-11-13 10:00:00","newcomer:before":"no"}']);
+        $this->wpdb->nextRows[] = $sam; // find
+        $this->wpdb->nextRows[] = $sam; // markRoleNotice find
+        $this->wpdb->nextRows[] = $sam; // addRoleNotices find
+        $this->wpdb->nextResults[] = [self::kim()];
+
+        // WP-Cron passes the args back as they were stored.
+        $this->approval()->onAskDue('8');
+
+        self::assertNotNull($this->lastCallTo('sendMessage'));
+        self::assertSame(['kim@example.com'], array_column($this->mails, 'to'));
+        self::assertStringContainsString('First time on the crew.', $this->mails[0]['body']);
+        $asked = json_decode((string) $this->wpdb->updates[0]['data']['role_notices'], true);
+        self::assertArrayHasKey('newcomer:asked', $asked);
+    }
+
+    /** Once asked (an answer came first), the 10-minute event asks nobody again. */
+    public function testTheDueEventAfterAnAnswerAsksNobodyAgain(): void
+    {
+        $this->wpdb->nextRows[] = self::sam([
+            'role_notices' => '{"newcomer:put_off":"2026-11-13 10:00:00","newcomer:asked":"2026-11-13 10:02:00"}',
+        ]);
+        $this->wpdb->nextResults[] = [self::kim()];
+
+        $this->approval()->onAskDue(8);
+
+        self::assertNull($this->lastCallTo('sendMessage'));
+        self::assertSame([], $this->mails);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testBootListensForTheDueRequest(): void
+    {
+        $approval = $this->approval();
+        $approval->boot();
+
+        self::assertNotFalse(has_action(NewcomerApproval::ASK_HOOK, [$approval, 'onAskDue']));
+    }
+
+    /** putOff() records it and schedules the request 10 minutes ahead. */
+    public function testPutOffSchedulesTheRequestTenMinutesAhead(): void
+    {
+        $scheduled = [];
+        Functions\when('wp_schedule_single_event')->alias(
+            static function (int $at, string $hook, array $args = []) use (&$scheduled): bool {
+                $scheduled[] = [$at, $hook, $args];
+
+                return true;
+            }
+        );
+        $this->wpdb->nextRows[] = self::sam(['email_verified_at' => null]); // markRoleNotice find
+
+        $before = time();
+        self::assertTrue(NewcomerApproval::putOff(new PersonRepository(), Person::fromRow(self::sam(['email_verified_at' => null]))));
+
+        self::assertCount(1, $scheduled);
+        self::assertSame(NewcomerApproval::ASK_HOOK, $scheduled[0][1]);
+        self::assertSame([8], $scheduled[0][2]);
+        self::assertGreaterThanOrEqual($before + 600, $scheduled[0][0]);
+        self::assertLessThanOrEqual(time() + 600, $scheduled[0][0]);
+        $notices = json_decode((string) $this->wpdb->updates[0]['data']['role_notices'], true);
+        self::assertArrayHasKey('newcomer:put_off', $notices);
+    }
+
+    /**
+     * Nothing to hold back for someone already asked, already put off, who
+     * answered in the bot, or who is not waiting.
+     */
+    public function testPutOffLeavesOthersAlone(): void
+    {
+        $scheduled = 0;
+        Functions\when('wp_schedule_single_event')->alias(static function () use (&$scheduled): bool {
+            $scheduled++;
+
+            return true;
+        });
+
+        foreach (
+            [
+                ['role_notices' => '{"newcomer:asked":"x"}'],
+                ['role_notices' => '{"newcomer:put_off":"x"}'],
+                ['role_notices' => '{"newcomer:before":"yes"}'],
+                ['approval' => ''],
+            ] as $extra
+        ) {
+            self::assertFalse(NewcomerApproval::putOff(new PersonRepository(), Person::fromRow(self::sam($extra))));
+        }
+
+        self::assertSame(0, $scheduled);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
     public function testSomeoneWhoIsOkAsksNobody(): void
     {
         $this->wpdb->nextRows[] = self::sam(['approval' => '']);

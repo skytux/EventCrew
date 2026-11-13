@@ -8599,8 +8599,8 @@ msgid "How many free-entry tickets do you think you should have? Tap a number or
 msgstr "Montako vapaalippua sinulla mielestäsi pitäisi olla? Napauta numeroa tai kirjoita se."
 
 #: templates/public/signup.php:233
-msgid "Only for a new account, and optional."
-msgstr "Vain uudelle tilille. Voit jättää vastaamatta."
+msgid "Not required. Your answers help the organizers OK your account."
+msgstr "Ei pakollinen. Vastauksesi auttavat järjestäjiä hyväksymään tilisi."
 
 #: src/Support/PrivacyExporter.php:148
 msgid "Said when joining"

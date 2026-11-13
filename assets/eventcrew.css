@@ -1309,13 +1309,13 @@
 }
 
 /*
- * The newcomer's questions above the email field (JoinAnswers): Yes and No
- * on one line, and the two numbers only once Yes is ticked. Centred with the
- * column when the captcha stacks the row.
+ * The newcomer's join questions card at the top after the first sign-in
+ * (JoinAnswers): Yes and No on one line, the two numbers only once Yes is
+ * ticked, then Send and a Skip text link on one row.
  */
 .eventcrew-signup .eventcrew-join { border: 0; margin: 0 0 .9em; padding: 0; min-width: 0; }
-.eventcrew-signup .eventcrew-join.has-captcha { max-width: 22em; margin-inline: auto; }
 .eventcrew-signup .eventcrew-join legend { padding: 0; font-weight: 600; }
+.eventcrew-signup .eventcrew-join-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .6em 1.4em; margin: 0; }
 .eventcrew-signup .eventcrew-join .eventcrew-hint { margin: .1em 0 .3em; }
 .eventcrew-signup .eventcrew-join-choice { display: flex; flex-wrap: wrap; gap: .4em 1.4em; }
 .eventcrew-signup .eventcrew-join-choice label { display: inline-flex; align-items: center; gap: .35em; cursor: pointer; }

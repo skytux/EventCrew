@@ -22,6 +22,7 @@ use EventCrew\Support\Language;
 use EventCrew\Support\Mailer;
 use EventCrew\Support\MessageActions;
 use EventCrew\Support\MessageTemplates;
+use EventCrew\Support\NewcomerApproval;
 use EventCrew\Support\TakeoverService;
 use EventCrew\Support\TicketTransferService;
 use EventCrew\Support\NotificationPreferences;
@@ -83,6 +84,10 @@ final class SignupController implements WebTaskSignup
     public const TG_STATUS_ACTION = 'eventcrew_web_tg_status';
     /** The sign-in email's code typed on the page (Support\LoginCode). */
     public const CODE_ACTION = 'eventcrew_web_login_code';
+    /** The join questions' card, shown to a newcomer after their first sign-in (JoinAnswers). */
+    public const JOIN_ACTION = 'eventcrew_web_join';
+    /** The join card's Skip: a submit button with this name. */
+    public const JOIN_SKIP_FIELD = 'join_skip';
 
     private const LOGIN_PURPOSE = 'web_login';
     private const LOGIN_TTL = 30 * MINUTE_IN_SECONDS;
@@ -173,6 +178,7 @@ final class SignupController implements WebTaskSignup
             self::TG_START_ACTION,
             self::TG_STATUS_ACTION,
             self::CODE_ACTION,
+            self::JOIN_ACTION,
             TelegramLogin::RETURN_ACTION,
         ];
 
@@ -463,6 +469,11 @@ final class SignupController implements WebTaskSignup
             'takeover_action' => self::TAKEOVER_ACTION,
             'give_action' => self::GIVE_ACTION,
             'cancel_offer_action' => self::CANCEL_OFFER_ACTION,
+            // The join questions' card: only for a newcomer the organizers
+            // were not asked about yet (JoinAnswers::canAnswer()). Signed in
+            // only, so never in the cached signed-out page.
+            'join_action' => self::JOIN_ACTION,
+            'join_questions' => null !== $person && JoinAnswers::canAnswer($person),
             'language' => null === $person ? null : ($person->language ?? Language::ENGLISH),
             'language_choices' => SiteLanguages::choices(),
             'telegram_login' => null === $person ? $this->telegramLoginView() : null,
@@ -689,13 +700,10 @@ final class SignupController implements WebTaskSignup
      * the last hour (LOGIN_LIMIT_PER_IP, LOGIN_LIMIT_PER_EMAIL); then nothing
      * is looked up, made or mailed.
      *
-     * $answers are the newcomer's answers from the form (JoinAnswers::fromPost()):
-     * kept for a new person, or one still waiting who has not confirmed the
-     * address yet (they may ask for a second link); ignored for everyone else.
-     *
-     * @param array<string, string> $answers
+     * A newcomer answers the join questions on the crew page after the link
+     * signs them in (answerJoinQuestions()), not on this form.
      */
-    public function loginByEmail(string $email, string $clientIp = '', array $answers = []): string
+    public function loginByEmail(string $email, string $clientIp = ''): string
     {
         $email = sanitize_email($email);
 
@@ -734,12 +742,6 @@ final class SignupController implements WebTaskSignup
 
         if ($isNew && null !== $language && Language::ENGLISH !== $language) {
             $this->people->setLanguage($personId, $language);
-        }
-
-        // What they said about working here before, for the organizers'
-        // "wants to join" notice. A blank form changes nothing.
-        if ([] !== $answers && ($isNew || JoinAnswers::canAnswer($person))) {
-            $this->people->replaceRoleNotices($personId, JoinAnswers::KEYS, $answers);
         }
 
         // No account yet: nobody has ever confirmed this address, by a link or
@@ -796,6 +798,30 @@ final class SignupController implements WebTaskSignup
             $body,
             $actions
         );
+    }
+
+    /**
+     * The join card's Send or Skip ($answers from JoinAnswers::fromPost(), []
+     * for a skip): keeps the answers while the organizers were not asked
+     * yet, then asks them now (NewcomerApproval::ASK_HOOK, which sends the
+     * request once, also when the card is posted twice or the 10-minute
+     * WP-Cron event comes later). Returns the notice code.
+     *
+     * @param array<string, string> $answers
+     */
+    public function answerJoinQuestions(Person $person, array $answers): string
+    {
+        if (! JoinAnswers::canAnswer($person)) {
+            return $person->isWaitingForOk() ? 'waiting_ok' : 'join_closed';
+        }
+
+        if ([] !== $answers) {
+            $this->people->replaceRoleNotices($person->id, JoinAnswers::KEYS, $answers);
+        }
+
+        do_action(NewcomerApproval::ASK_HOOK, $person->id);
+
+        return 'waiting_ok';
     }
 
     /**
@@ -1004,6 +1030,12 @@ final class SignupController implements WebTaskSignup
 
         if (null !== $person && $person->isBanned()) {
             return ['person_id' => null, 'notice' => 'blocked'];
+        }
+
+        // A newcomer's first confirmation: the organizers' request waits for
+        // the join questions on the crew page (NewcomerApproval::putOff()).
+        if (null !== $person && ! $person->isEmailVerified()) {
+            NewcomerApproval::putOff($this->people, $person);
         }
 
         $this->people->markEmailVerified($personId);
@@ -1383,19 +1415,7 @@ final class SignupController implements WebTaskSignup
             }
 
             $email = isset($_POST['email']) ? sanitize_text_field(wp_unslash($_POST['email'])) : '';
-            // The newcomer's optional answers (JoinAnswers), kept only for a
-            // new account.
-            $answers = JoinAnswers::fromPost(array_map(
-                static fn (string $field): string => isset($_POST[$field]) && is_string($_POST[$field])
-                    ? sanitize_text_field(wp_unslash($_POST[$field]))
-                    : '',
-                [
-                    JoinAnswers::FIELD_BEFORE => JoinAnswers::FIELD_BEFORE,
-                    JoinAnswers::FIELD_TIMES => JoinAnswers::FIELD_TIMES,
-                    JoinAnswers::FIELD_TICKETS => JoinAnswers::FIELD_TICKETS,
-                ]
-            ));
-            $this->finish($redirect, $this->loginByEmail($email, $this->clientIp(), $answers), $isAjax);
+            $this->finish($redirect, $this->loginByEmail($email, $this->clientIp()), $isAjax);
         }
 
         // Everything past here needs an authenticated, CSRF-checked person -
@@ -1418,6 +1438,21 @@ final class SignupController implements WebTaskSignup
         if (self::LANGUAGE_ACTION === $action) {
             $chosen = isset($_POST['language']) ? sanitize_key(wp_unslash($_POST['language'])) : '';
             $this->redirect($redirect, $this->chooseLanguage($person->id, $chosen));
+        }
+
+        if (self::JOIN_ACTION === $action) {
+            // The join card's Send, or its Skip: nothing is kept on a skip.
+            $answers = isset($_POST[self::JOIN_SKIP_FIELD]) ? [] : JoinAnswers::fromPost(array_map(
+                static fn (string $field): string => isset($_POST[$field]) && is_string($_POST[$field])
+                    ? sanitize_text_field(wp_unslash($_POST[$field]))
+                    : '',
+                [
+                    JoinAnswers::FIELD_BEFORE => JoinAnswers::FIELD_BEFORE,
+                    JoinAnswers::FIELD_TIMES => JoinAnswers::FIELD_TIMES,
+                    JoinAnswers::FIELD_TICKETS => JoinAnswers::FIELD_TICKETS,
+                ]
+            ));
+            $this->redirect($redirect, $this->answerJoinQuestions($person, $answers));
         }
 
         if (self::PROFILE_ACTION === $action) {
@@ -1589,6 +1624,8 @@ final class SignupController implements WebTaskSignup
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             'tg_started' => __('Open Telegram, press Start, then press the code shown on this page. This page signs you in by itself.', 'eventcrew'),
             'tg_pending' => '',
+            // The join card posted by someone no longer waiting: nothing to say.
+            'join_closed' => '',
             'tg_expired' => __('The link expired. Press Telegram again.', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
             'tg_return_failed' => __('You are not signed in in this browser. Go back to the browser where you pressed Telegram, or press Telegram again here.', 'eventcrew'),

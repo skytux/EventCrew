@@ -11,8 +11,10 @@ use EventCrew\Models\Person;
  * whether they have worked on the crew here before, about how many times,
  * and how many free-entry tickets they think they should have.
  *
- * Asked on the crew page's email form and in the bot after the email, before
- * the confirmation link goes out. Every answer is optional: a skipped or
+ * Asked in the bot after the email, before the confirmation link goes out,
+ * and on the crew page once a newcomer signs in from the account link (a
+ * card at the top, Owner 2026-11-13; the organizers' request waits for it,
+ * NewcomerApproval::putOff()). Every answer is optional: a skipped or
  * out-of-range one is left out and the person joins all the same. The
  * organizers read the answers in the "wants to join" notice
  * ({join_answers}, NewcomerApproval).
@@ -43,7 +45,7 @@ final class JoinAnswers
     public const MIN_TICKETS = 0;
     public const MAX_TICKETS = 50;
 
-    /** The posted names of the crew page's fields. */
+    /** The posted names of the crew page's fields (its join card). */
     public const FIELD_BEFORE = 'join_before';
     public const FIELD_TIMES = 'join_times';
     public const FIELD_TICKETS = 'join_tickets';
@@ -176,13 +178,13 @@ final class JoinAnswers
 
     /**
      * Whether $person may still give or change their answers: a newcomer
-     * waiting for the OK whose email is not confirmed yet, so the organizers
-     * have not been asked.
+     * waiting for the OK about whom the organizers have not been asked yet
+     * (before the bot's confirmation link is opened, or while the crew page's
+     * card holds the request back).
      */
     public static function canAnswer(Person $person): bool
     {
         return $person->isWaitingForOk()
-            && ! $person->isEmailVerified()
             && ! $person->isAnonymized()
             && ! NewcomerApproval::wasAsked($person);
     }

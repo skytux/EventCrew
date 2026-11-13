@@ -17,7 +17,11 @@ use EventCrew\Telegram\TelegramClient;
  * says OK.
  *
  * - When they confirm their email the first time, the organizers get
- *   "New: <name> wants to join": by Telegram with OK and No buttons
+ *   "New: <name> wants to join". A sign-up through the crew page's email
+ *   link first sees the join questions on the crew page (JoinAnswers,
+ *   Owner 2026-11-13): the request waits until they answer or skip them,
+ *   or QUESTIONS_MINUTES go by (putOff(), ASK_HOOK). It goes by Telegram
+ *   with OK and No buttons
  *   (organizers with Telegram) and by email with a button to the Admin
  *   tab. Each organizer's NotificationPreferences::NEWCOMER row switches
  *   either route off; both are on by default.
@@ -79,8 +83,22 @@ final class NewcomerApproval
     /** How long the organizers have to answer before the request times out. */
     public const TIMEOUT_HOURS = 48;
 
+    /**
+     * The action that asks the organizers about a person whose request was
+     * put off (putOff()): the WP-Cron event QUESTIONS_MINUTES after their
+     * first sign-in, and the crew page once they answer or skip the join
+     * questions. Arg: the person id. Asks only once, whichever comes first.
+     */
+    public const ASK_HOOK = 'eventcrew_newcomer_ask';
+
+    /** How long the crew page's join questions hold the request back at most. */
+    public const QUESTIONS_MINUTES = 10;
+
     /** The role_notices key that records the organizers were asked. */
     private const ASKED_KEY = 'newcomer:asked';
+
+    /** role_notices: when the request was put off for the crew page's questions (putOff()). */
+    private const PUT_OFF_KEY = 'newcomer:put_off';
 
     /** role_notices: when the request was decided. */
     private const DECIDED_KEY = 'newcomer:decided';
@@ -111,6 +129,7 @@ final class NewcomerApproval
     public function boot(): void
     {
         add_action('eventcrew/email_verified', [$this, 'onEmailVerified']);
+        add_action(self::ASK_HOOK, [$this, 'onAskDue']);
 
         // Before the person's own role and pass messages (priority 10).
         add_action(RoleNotifier::GIVEN_HOOK, [$this, 'approveByAccess'], 5);
@@ -157,14 +176,71 @@ final class NewcomerApproval
 
     /**
      * A confirmed address. A waiting newcomer's first one asks the
-     * organizers; every later one (each web sign-in re-confirms) does
-     * nothing.
+     * organizers, unless the request was put off for the crew page's join
+     * questions (putOff()); every later one (each web sign-in re-confirms)
+     * does nothing.
      */
     public function onEmailVerified(int $personId): void
     {
         $person = $this->people->find($personId);
 
-        if (null === $person || ! $person->isWaitingForOk() || $person->hasRoleNotice(self::ASKED_KEY)) {
+        if (null === $person || $person->hasRoleNotice(self::PUT_OFF_KEY)) {
+            return;
+        }
+
+        $this->askOrganizers($person);
+    }
+
+    /**
+     * ASK_HOOK: the put-off request is due (the WP-Cron event), or the
+     * person answered or skipped the join questions. Asks the organizers
+     * once: a request already sent is not sent again.
+     */
+    public function onAskDue(int|string $personId): void
+    {
+        $person = (int) $personId > 0 ? $this->people->find((int) $personId) : null;
+
+        if (null !== $person) {
+            $this->askOrganizers($person);
+        }
+    }
+
+    /**
+     * Holds back the request of a waiting newcomer at their first web
+     * sign-in, so they can answer the join questions on the crew page
+     * first (JoinAnswers). Records it, and schedules ASK_HOOK
+     * QUESTIONS_MINUTES ahead in case they neither answer nor skip. Nothing
+     * for someone already asked or put off, or who answered already (in the
+     * bot): their request goes at once. True when it was put off.
+     */
+    public static function putOff(PersonRepository $people, Person $person): bool
+    {
+        if (
+            ! $person->isWaitingForOk()
+            || $person->isAnonymized()
+            || self::wasAsked($person)
+            || $person->hasRoleNotice(self::PUT_OFF_KEY)
+            || null !== JoinAnswers::of($person)['before']
+        ) {
+            return false;
+        }
+
+        $people->markRoleNotice($person->id, self::PUT_OFF_KEY);
+
+        if (function_exists('wp_schedule_single_event')) {
+            wp_schedule_single_event(time() + self::QUESTIONS_MINUTES * MINUTE_IN_SECONDS, self::ASK_HOOK, [$person->id]);
+        }
+
+        return true;
+    }
+
+    /**
+     * Sends "<name> wants to join" to every organizer, once: nothing for
+     * someone who is not waiting or was asked already.
+     */
+    private function askOrganizers(Person $person): void
+    {
+        if (! $person->isWaitingForOk() || $person->isAnonymized() || $person->hasRoleNotice(self::ASKED_KEY)) {
             return;
         }
 

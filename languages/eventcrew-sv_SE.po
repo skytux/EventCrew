@@ -11482,8 +11482,8 @@ msgid "How many free-entry tickets do you think you should have? Tap a number or
 msgstr "Hur många fribiljetter tycker du att du borde ha? Tryck på en siffra eller skriv en."
 
 #: templates/public/signup.php:233
-msgid "Only for a new account, and optional."
-msgstr "Bara för ett nytt konto, och du kan hoppa över det."
+msgid "Not required. Your answers help the organizers OK your account."
+msgstr "Inte obligatoriskt. Dina svar hjälper arrangörerna att godkänna ditt konto."
 
 #: src/Support/PrivacyExporter.php:148
 msgid "Said when joining"

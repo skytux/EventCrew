@@ -95,11 +95,20 @@ final class JoinAnswersTest extends TestCase
         );
     }
 
-    public function testOnlyAnUnconfirmedNewcomerMayAnswer(): void
+    /**
+     * A waiting newcomer may answer until the organizers are asked: also
+     * after confirming the email, while the crew page's card holds the
+     * request back (Owner 2026-11-13).
+     */
+    public function testOnlyANewcomerNotYetAskedAboutMayAnswer(): void
     {
         self::assertTrue(JoinAnswers::canAnswer(self::person([])));
         self::assertFalse(JoinAnswers::canAnswer(self::person(['approval' => ''])));
-        self::assertFalse(JoinAnswers::canAnswer(self::person(['email_verified_at' => '2026-11-01 00:00:00'])));
+        self::assertTrue(JoinAnswers::canAnswer(self::person(['email_verified_at' => '2026-11-01 00:00:00'])));
+        self::assertTrue(JoinAnswers::canAnswer(self::person([
+            'email_verified_at' => '2026-11-01 00:00:00',
+            'role_notices' => '{"newcomer:put_off":"x"}',
+        ])));
         self::assertFalse(JoinAnswers::canAnswer(self::person(['anonymized_at' => '2026-11-01 00:00:00'])));
         self::assertFalse(JoinAnswers::canAnswer(self::person(['role_notices' => '{"newcomer:asked":"x"}'])));
     }
