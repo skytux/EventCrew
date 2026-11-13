@@ -161,6 +161,23 @@ final class PrivacyPolicyTest extends TestCase
         self::assertSame(1, substr_count($text, 'messages the bot sends you pass through their service'));
     }
 
+    /** The web group chat is relayed to the Telegram group: the notice says so only when it is on. */
+    public function testTheGroupChatRelayIsDescribedOnlyWhenItIsOn(): void
+    {
+        $options = [
+            PrivacyPolicy::CONTROLLER_OPTION => 'Dance Club',
+            PrivacyPolicy::CONTACT_OPTION => 'privacy@example.test',
+            TelegramClient::TOKEN_OPTION => '123:abc',
+        ];
+        $relay = 'The Group chat in the Crew app is relayed to the crew’s Telegram group.';
+
+        $this->withOptions($options);
+        self::assertStringNotContainsString($relay, $this->flatten(PrivacyPolicy::sections()));
+
+        $this->withOptions($options + [\EventCrew\Telegram\GroupRelay::ENABLED_OPTION => '1']);
+        self::assertStringContainsString($relay, $this->flatten(PrivacyPolicy::sections()));
+    }
+
     /**
      * The published retention period has to match the one the purge enforces,
      * and an out-of-range option must not silently become a shorter one.

@@ -11093,3 +11093,7 @@ msgstr "Painikkeella: %s"
 #: src/Telegram/SayCommand.php:307
 msgid "📱 The Crew app is here: tasks, tickets and notifications, no Telegram needed. Tap the button and I send you a sign-in link."
 msgstr "📱 Crew-sovellus on täällä: tehtävät, liput ja ilmoitukset ilman Telegramia. Napauta painiketta, niin lähetän sinulle kirjautumislinkin."
+
+#: src/Support/PrivacyPolicy.php
+msgid "The Group chat in the Crew app is relayed to the crew’s Telegram group. What you write there the bot posts to the Telegram group with your name, so everyone in that group can read it, also those who do not use the Crew app, and it passes through Telegram (https://telegram.org/privacy) even if you have not linked a Telegram account."
+msgstr "Crew-sovelluksen ryhmächatti välitetään crew’n Telegram-ryhmään. Botti julkaisee sinne kirjoittamasi viestin Telegram-ryhmässä nimelläsi, joten kaikki ryhmän jäsenet voivat lukea sen, myös ne, jotka eivät käytä Crew-sovellusta, ja viesti kulkee Telegramin kautta (https://telegram.org/privacy), vaikka et olisi yhdistänyt Telegram-tiliä."

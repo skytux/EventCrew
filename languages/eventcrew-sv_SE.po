@@ -14033,3 +14033,7 @@ msgstr "Med knappen: %s"
 #: src/Telegram/SayCommand.php:307
 msgid "📱 The Crew app is here: tasks, tickets and notifications, no Telegram needed. Tap the button and I send you a sign-in link."
 msgstr "📱 Crew-appen är här: uppgifter, biljetter och aviseringar, utan Telegram. Tryck på knappen så skickar jag en inloggningslänk."
+
+#: src/Support/PrivacyPolicy.php
+msgid "The Group chat in the Crew app is relayed to the crew’s Telegram group. What you write there the bot posts to the Telegram group with your name, so everyone in that group can read it, also those who do not use the Crew app, and it passes through Telegram (https://telegram.org/privacy) even if you have not linked a Telegram account."
+msgstr "Gruppchatten i Crew-appen vidarebefordras till crewets Telegram-grupp. Det du skriver där publicerar boten i Telegram-gruppen med ditt namn, så alla i gruppen kan läsa det, även de som inte använder Crew-appen, och det går via Telegram (https://telegram.org/privacy) även om du inte har kopplat ett Telegram-konto."

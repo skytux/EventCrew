@@ -594,6 +594,14 @@ final class PrivacyPolicy
                 );
         }
 
+        // The web group chat is relayed both ways (Owner, 2026-11-13).
+        if (self::telegramEnabled() && GroupRelay::isEnabled()) {
+            $paragraphs[] = __(
+                'The Group chat in the Crew app is relayed to the crew’s Telegram group. What you write there the bot posts to the Telegram group with your name, so everyone in that group can read it, also those who do not use the Crew app, and it passes through Telegram (https://telegram.org/privacy) even if you have not linked a Telegram account.',
+                'eventcrew'
+            );
+        }
+
         $paragraphs[] = __(
             'We do not sell your data, we do not use it for advertising, and we do not profile you for anything beyond deciding whether you can claim a task.',
             'eventcrew'
