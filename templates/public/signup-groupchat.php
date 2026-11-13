@@ -63,7 +63,7 @@ $eventcrew_chat_text = [
         <header class="eventcrew-event-head">
             <h3 class="eventcrew-event-title" id="eventcrew-chat-title"><?php esc_html_e('Group chat', 'eventcrew'); ?></h3>
         </header>
-        <p class="eventcrew-chat-intro" data-eventcrew-chat-intro><?php esc_html_e('The crew’s Telegram group. What you send here, the bot posts to the group with your name.', 'eventcrew'); ?></p>
+        <p class="eventcrew-chat-intro" data-eventcrew-chat-intro><?php esc_html_e('Chat with the crew. What you send here also goes to the crew’s Telegram group, with your name.', 'eventcrew'); ?></p>
         <noscript><p class="eventcrew-chat-intro"><?php esc_html_e('The group chat needs JavaScript.', 'eventcrew'); ?></p></noscript>
         <div class="eventcrew-chat-viewport">
             <ol class="eventcrew-chat-list" data-eventcrew-chat-list role="log" aria-live="polite"

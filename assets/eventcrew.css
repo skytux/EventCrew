@@ -235,7 +235,7 @@
 .eventcrew-signup .eventcrew-chat-list {
     flex: 1 1 auto; min-width: 0;
     list-style: none; margin: 0; padding: .6em .75em .4em;
-    overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+    overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: auto;
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, currentColor 25%, transparent) transparent;
 }

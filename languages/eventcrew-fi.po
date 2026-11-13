@@ -10877,8 +10877,8 @@ msgstr "Botti säilyttää kopion crew’n Telegram-ryhmään kirjoitetuista vie
 msgid "The bot must read every group message: in BotFather, send /setprivacy, choose the bot, choose Disable. Then remove the bot from the group and add it back, and press Install / refresh webhook below."
 msgstr "Botin täytyy lukea kaikki ryhmän viestit: lähetä BotFatherissa /setprivacy, valitse botti ja valitse Disable. Poista sitten botti ryhmästä, lisää se takaisin ja paina alla Asenna / päivitä webhook."
 
-msgid "The crew’s Telegram group. What you send here, the bot posts to the group with your name."
-msgstr "Crew’n Telegram-ryhmä. Minkä lähetät täältä, botti julkaisee ryhmässä nimelläsi."
+msgid "Chat with the crew. What you send here also goes to the crew’s Telegram group, with your name."
+msgstr "Juttele crew’n kanssa. Minkä lähetät täältä, menee myös crew’n Telegram-ryhmään nimelläsi."
 
 msgid "The group chat needs JavaScript."
 msgstr "Ryhmächat tarvitsee JavaScriptin."

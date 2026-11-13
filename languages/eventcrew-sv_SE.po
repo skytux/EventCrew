@@ -13802,8 +13802,8 @@ msgstr "Boten sparar en kopia av meddelandena i crewets Telegramgrupp, så att i
 msgid "The bot must read every group message: in BotFather, send /setprivacy, choose the bot, choose Disable. Then remove the bot from the group and add it back, and press Install / refresh webhook below."
 msgstr "Boten måste läsa alla meddelanden i gruppen: skicka /setprivacy i BotFather, välj boten, välj Disable. Ta sedan bort boten ur gruppen och lägg till den igen, och tryck på Installera / uppdatera webhook nedan."
 
-msgid "The crew’s Telegram group. What you send here, the bot posts to the group with your name."
-msgstr "Crewets Telegramgrupp. Det du skickar här publicerar boten i gruppen med ditt namn."
+msgid "Chat with the crew. What you send here also goes to the crew’s Telegram group, with your name."
+msgstr "Chatta med crewet. Det du skickar här går också till crewets Telegramgrupp, med ditt namn."
 
 msgid "The group chat needs JavaScript."
 msgstr "Gruppchatten kräver JavaScript."

@@ -542,6 +542,7 @@ final class SignupControllerTest extends TestCase
         self::assertSame(1, preg_match('~<p class="eventcrew-grouplink">.*?</p>~s', $html, $links));
         self::assertStringContainsString('https://t.me/+secretcrew', $links[0]);
         self::assertStringContainsString('class="eventcrew-textlink"', $links[0]);
+        self::assertStringContainsString('Join the Telegram group', $links[0]);
         self::assertStringNotContainsString('Crew guide', $links[0]);
         self::assertGreaterThan(strrpos($html, 'data-eventcrew-panel='), strpos($html, 'eventcrew-grouplink'));
         // The Summary is on the Board tab only, at its top (Owner 2026-11-13).
