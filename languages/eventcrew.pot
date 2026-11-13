@@ -38,7 +38,7 @@ msgstr ""
 msgid "%1$d guests were added to the guest list for %2$s."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:1103 templates/public/signup-board.php:114
+#: src/Web/CrewAdminController.php:1112 templates/public/signup-board.php:114
 msgid "%1$d of %2$d"
 msgstr ""
 
@@ -422,7 +422,7 @@ msgid_plural "%d people updated."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Telegram/BoardRenderer.php:512 src/Web/CrewAdminController.php:1101 templates/public/signup-board.php:118
+#: src/Telegram/BoardRenderer.php:512 src/Web/CrewAdminController.php:1110 templates/public/signup-board.php:118
 msgid "%d signed up"
 msgstr ""
 
@@ -684,7 +684,7 @@ msgstr ""
 msgid "(+%d pending)"
 msgstr ""
 
-#: templates/admin/messages-tab-events.php:330 templates/public/signup.php:2900 templates/public/signup.php:2922
+#: templates/admin/messages-tab-events.php:330 templates/public/signup.php:2953 templates/public/signup.php:2975
 msgid "(changed by hand)"
 msgstr ""
 
@@ -958,7 +958,7 @@ msgstr ""
 msgid "A member’s recency-weighted score runs from 0 to 1. At or above this they are in good standing, below it they are at risk. People with fewer than three finished tasks are unrated. Default 0.6."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:919
+#: src/Web/CrewAdminController.php:928
 msgid "A new board is posted in the Telegram group."
 msgstr ""
 
@@ -1181,7 +1181,7 @@ msgstr ""
 msgid "AI text for each event"
 msgstr ""
 
-#: templates/public/signup.php:2885 templates/public/signup.php:2886
+#: templates/public/signup.php:2938 templates/public/signup.php:2939
 msgid "AI texts"
 msgstr ""
 
@@ -1312,6 +1312,7 @@ msgid "Active → signed up → completed"
 msgstr ""
 
 #: src/Telegram/AssignCommand.php:431 src/Telegram/TaskCommand.php:476 templates/public/door.php:259 templates/public/door.php:318
+#: templates/public/signup.php:2927
 msgid "Add"
 msgstr ""
 
@@ -1344,7 +1345,7 @@ msgstr ""
 msgid "Add a person"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:190
+#: src/Web/CrewAdminController.php:192
 msgid "Add a person to a task"
 msgstr ""
 
@@ -1354,6 +1355,10 @@ msgstr ""
 
 #: src/Telegram/TaskCommand.php:187
 msgid "Add a task: /addtask role ; time 21:00-23:00 ; places 2\nAlso: notes text, plus 1. A date first picks another night: /addtask 21.11. Host ; time 21:00"
+msgstr ""
+
+#: templates/public/signup.php:2924
+msgid "Add an address"
 msgstr ""
 
 #: templates/public/door.php:336 templates/public/door.php:348 templates/public/door.php:366
@@ -1372,11 +1377,11 @@ msgstr ""
 msgid "Add new member"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:197
+#: src/Web/CrewAdminController.php:199
 msgid "Add or edit a person"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:200
+#: src/Web/CrewAdminController.php:202
 msgid "Add or edit a task"
 msgstr ""
 
@@ -1442,7 +1447,7 @@ msgstr ""
 msgid "Add: /door add Name ; note  (just the guest)"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:732
+#: src/Web/CrewAdminController.php:739
 #. translators: 1: tasks the person was added to, 2: tasks ticked
 msgid "Added to %1$d of %2$d tasks."
 msgstr ""
@@ -1453,6 +1458,10 @@ msgstr ""
 
 #: src/Support/RoleTaskService.php:321
 msgid "Added to the task. They got an email with their ticket."
+msgstr ""
+
+#: src/Web/CrewAdminFollowup.php:212
+msgid "Added. That address gets no post-event email."
 msgstr ""
 
 #: templates/admin/settings.php:919
@@ -1649,7 +1658,7 @@ msgstr ""
 msgid "Another night: put the date first, e.g. /door add 1.8. Name"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:930
+#: src/Web/CrewAdminController.php:939
 msgid "Another organizer already answered for this person."
 msgstr ""
 
@@ -1787,7 +1796,7 @@ msgstr ""
 msgid "At the door we also note whether you came in."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:924
+#: src/Web/CrewAdminController.php:933
 msgid "Attendance saved."
 msgstr ""
 
@@ -2195,7 +2204,7 @@ msgstr ""
 msgid "Change %s?"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:189
+#: src/Web/CrewAdminController.php:191
 msgid "Change a member’s roles"
 msgstr ""
 
@@ -2203,7 +2212,7 @@ msgstr ""
 msgid "Change a task: /edittask task ; places 3\nFields: time 21:00-02:00, places, notes, plus. A date first picks another night: /edittask 21.11. Host ; time 22:00"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:208
+#: src/Web/CrewAdminController.php:211
 msgid "Change an AI text for an event"
 msgstr ""
 
@@ -2264,7 +2273,7 @@ msgstr ""
 msgid "Check it"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:195 templates/admin/settings.php:2795 templates/public/signup.php:2112
+#: src/Web/CrewAdminController.php:197 templates/admin/settings.php:2795 templates/public/signup.php:2112
 msgid "Check the mailbox now"
 msgstr ""
 
@@ -2276,7 +2285,7 @@ msgstr ""
 msgid "Check them in first."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:210
+#: src/Web/CrewAdminController.php:213
 msgid "Check whether a text is translated"
 msgstr ""
 
@@ -2313,7 +2322,7 @@ msgstr ""
 msgid "Checked in at %s"
 msgstr ""
 
-#: templates/public/signup.php:3619
+#: templates/public/signup.php:3672
 msgid "Checking you’re human…"
 msgstr ""
 
@@ -2562,7 +2571,7 @@ msgstr ""
 msgid "Create a night's tasks from the roles: /maketasks\nA date picks another night: /maketasks 21.11."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:202 templates/admin/tasks.php:84 templates/public/signup.php:2414
+#: src/Web/CrewAdminController.php:204 templates/admin/tasks.php:84 templates/public/signup.php:2414
 msgid "Create an event's tasks"
 msgstr ""
 
@@ -2611,7 +2620,7 @@ msgstr ""
 msgid "Credit for extra tasks on the same night"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:921
+#: src/Web/CrewAdminController.php:930
 msgid "Credit given. The member is told."
 msgstr ""
 
@@ -2673,7 +2682,7 @@ msgstr ""
 msgid "Credits: members earn 1 free-entry credit per %d completed tasks. /people, then 🎁 Give credits, gives credits by hand."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:192 templates/public/signup.php:1827 templates/public/signup.php:1828
+#: src/Web/CrewAdminController.php:194 templates/public/signup.php:1827 templates/public/signup.php:1828
 msgid "Crew"
 msgstr ""
 
@@ -2819,7 +2828,7 @@ msgstr ""
 msgid "Delete %s?"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:201
+#: src/Web/CrewAdminController.php:203
 msgid "Delete a task"
 msgstr ""
 
@@ -2918,7 +2927,7 @@ msgstr ""
 msgid "Do not send the post-event email"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:206 src/Web/NewsletterController.php:1424
+#: src/Web/CrewAdminController.php:208 src/Web/NewsletterController.php:1424
 msgid "Do not send this announcement"
 msgstr ""
 
@@ -3016,11 +3025,11 @@ msgid "Each organizer gets the last 24 hours of that chat by email, and a short 
 msgstr ""
 
 #: src/Admin/PeopleListTable.php:127 src/Admin/TasksListTable.php:128 templates/public/signup.php:1929 templates/public/signup.php:2392
-#: templates/public/signup.php:2908
+#: templates/public/signup.php:2961
 msgid "Edit"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:204
+#: src/Web/CrewAdminController.php:206
 msgid "Edit a role"
 msgstr ""
 
@@ -3717,7 +3726,7 @@ msgstr ""
 msgid "Give"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:187
+#: src/Web/CrewAdminController.php:189
 msgid "Give a credit"
 msgstr ""
 
@@ -3828,7 +3837,7 @@ msgstr ""
 msgid "Good-standing threshold"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:198 templates/admin/people.php:247 templates/public/signup.php:1673
+#: src/Web/CrewAdminController.php:200 templates/admin/people.php:247 templates/public/signup.php:1673
 msgid "Grant a one-time pass"
 msgstr ""
 
@@ -3876,7 +3885,7 @@ msgstr ""
 msgid "Guest display: people without this role see its tasks"
 msgstr ""
 
-#: src/Telegram/MenuButtons.php:359 src/Telegram/TicketController.php:512 src/Web/CrewAdminController.php:193 templates/admin/roster.php:189
+#: src/Telegram/MenuButtons.php:359 src/Telegram/TicketController.php:512 src/Web/CrewAdminController.php:195 templates/admin/roster.php:189
 #: templates/public/signup.php:1899 templates/public/signup.php:1900
 msgid "Guest list"
 msgstr ""
@@ -4073,7 +4082,7 @@ msgstr ""
 msgid "Holvi buyer added and checked in."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:194 templates/admin/roster.php:295 templates/public/signup.php:2009 templates/public/signup.php:2014
+#: src/Web/CrewAdminController.php:196 templates/admin/roster.php:295 templates/public/signup.php:2009 templates/public/signup.php:2014
 msgid "Holvi ticket buyers"
 msgstr ""
 
@@ -4479,7 +4488,7 @@ msgstr ""
 msgid "Install / refresh webhook"
 msgstr ""
 
-#: templates/public/signup-app-install.php:156 templates/public/signup.php:2977
+#: templates/public/signup-app-install.php:156 templates/public/signup.php:3030
 msgid "Install the app"
 msgstr ""
 
@@ -4924,7 +4933,7 @@ msgstr ""
 msgid "Mark as “%s”?"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:188
+#: src/Web/CrewAdminController.php:190
 msgid "Mark attendance"
 msgstr ""
 
@@ -5293,12 +5302,16 @@ msgstr ""
 msgid "No Site Icon set; a lettered icon is generated with GD."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:920
+#: src/Web/CrewAdminController.php:929
 msgid "No Telegram group is set up for the board yet."
 msgstr ""
 
 #: templates/admin/diagnostics.php:112
 msgid "No Telegram update has reached the site yet."
+msgstr ""
+
+#: templates/public/signup.php:2890
+msgid "No addresses on the list."
 msgstr ""
 
 #: templates/admin/messages-tab-events.php:138
@@ -5362,7 +5375,7 @@ msgstr ""
 msgid "No event was found on %s."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:929
+#: src/Web/CrewAdminController.php:938
 msgid "No given. They are not told."
 msgstr ""
 
@@ -5555,7 +5568,7 @@ msgstr ""
 msgid "No text matches."
 msgstr ""
 
-#: templates/public/signup.php:2889
+#: templates/public/signup.php:2942
 msgid "No texts are written yet for the coming events."
 msgstr ""
 
@@ -5732,6 +5745,10 @@ msgstr ""
 msgid "Nothing was added. Start again with /board."
 msgstr ""
 
+#: src/Web/CrewAdminFollowup.php:216
+msgid "Nothing was added: that is not an email address."
+msgstr ""
+
 #: src/Web/SignupController.php:1628
 msgid "Nothing was changed."
 msgstr ""
@@ -5748,7 +5765,11 @@ msgstr ""
 msgid "Nothing was saved."
 msgstr ""
 
-#: src/Web/CrewAdminFollowup.php:155
+#: src/Web/CrewAdminFollowup.php:217
+msgid "Nothing was saved. Try again."
+msgstr ""
+
+#: src/Web/CrewAdminFollowup.php:210
 msgid "Nothing was saved: choose the thank-you text or the sorry text."
 msgstr ""
 
@@ -5760,7 +5781,7 @@ msgstr ""
 msgid "Nothing was saved: that text was not found."
 msgstr ""
 
-#: src/Web/CrewAdminFollowup.php:154
+#: src/Web/CrewAdminFollowup.php:209
 msgid "Nothing was saved: there is already a one-time text. Tick “Replace the current text” to replace it."
 msgstr ""
 
@@ -5839,7 +5860,7 @@ msgstr ""
 msgid "OK"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:928
+#: src/Web/CrewAdminController.php:937
 msgid "OK given. They can take tasks now, and they are told."
 msgstr ""
 
@@ -6540,7 +6561,7 @@ msgstr ""
 msgid "Photo"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:922
+#: src/Web/CrewAdminController.php:931
 msgid "Pick a number of credits, 1 or more."
 msgstr ""
 
@@ -6634,7 +6655,7 @@ msgstr ""
 msgid "Post"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:186 templates/public/signup.php:2602
+#: src/Web/CrewAdminController.php:188 templates/public/signup.php:2602
 msgid "Post a new board in the Telegram group"
 msgstr ""
 
@@ -6646,7 +6667,7 @@ msgstr ""
 msgid "Post the board in the group"
 msgstr ""
 
-#: src/Support/HybridPolicy.php:336 src/Support/OwnTextNotice.php:96 src/Support/OwnTextNotice.php:97 src/Web/CrewAdminController.php:196
+#: src/Support/HybridPolicy.php:336 src/Support/OwnTextNotice.php:96 src/Support/OwnTextNotice.php:97 src/Web/CrewAdminController.php:198
 #: src/Web/FollowupController.php:322 templates/admin/messages-tab-events.php:47 templates/admin/settings.php:1827 templates/public/signup.php:2763
 #: templates/public/signup.php:2764
 msgid "Post-event email"
@@ -6660,6 +6681,10 @@ msgstr ""
 #: src/Support/FollowupMail.php:473
 #. translators: 1: emails sent, 2: emails that failed, 3: emails with a link opened
 msgid "Post-event email: %1$d sent · %2$d failed · %3$d clicked"
+msgstr ""
+
+#: src/Web/CrewAdminController.php:210 templates/public/signup.php:2886 templates/public/signup.php:2887
+msgid "Post-event email: do not send"
 msgstr ""
 
 #: src/Support/FollowupMail.php:486
@@ -6922,8 +6947,12 @@ msgid "Reminders and the open-task call ran %s ago."
 msgstr ""
 
 #: src/Telegram/AssignCommand.php:373 templates/admin/roster.php:158 templates/admin/roster.php:231 templates/public/door.php:122
-#: templates/public/signup.php:1876 templates/public/signup.php:1956
+#: templates/public/signup.php:1876 templates/public/signup.php:1956 templates/public/signup.php:2908
 msgid "Remove"
+msgstr ""
+
+#: templates/public/signup.php:2902
+msgid "Remove %s from the list? The post-event email can go to it again."
 msgstr ""
 
 #: templates/admin/settings.php:2038
@@ -6948,6 +6977,10 @@ msgstr ""
 
 #: src/Telegram/GuestListService.php:366
 msgid "Remove: /door remove 2"
+msgstr ""
+
+#: src/Web/CrewAdminFollowup.php:214
+msgid "Removed from the list."
 msgstr ""
 
 #: src/Telegram/NightCommands.php:276
@@ -7002,12 +7035,12 @@ msgstr ""
 msgid "Required: a text without it is not saved."
 msgstr ""
 
-#: templates/public/signup.php:3608
+#: templates/public/signup.php:3661
 #. translators: %s: whole seconds remaining before the link can be sent again
 msgid "Resend in %ss"
 msgstr ""
 
-#: templates/public/signup.php:4022
+#: templates/public/signup.php:4075
 msgid "Resend link"
 msgstr ""
 
@@ -7090,7 +7123,7 @@ msgstr ""
 msgid "Roles given and new organizers"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:926
+#: src/Web/CrewAdminController.php:935
 msgid "Roles saved."
 msgstr ""
 
@@ -7219,7 +7252,7 @@ msgstr ""
 #: templates/admin/messages-tab-events.php:159 templates/admin/messages-tab-events.php:204 templates/admin/messages-tab-events.php:232 templates/admin/messages-tab-events.php:339
 #: templates/admin/roster.php:224 templates/admin/translations.php:217 templates/admin/translations.php:304 templates/public/door.php:415
 #: templates/public/signup.php:1756 templates/public/signup.php:1955 templates/public/signup.php:2575 templates/public/signup.php:2738
-#: templates/public/signup.php:2866 templates/public/signup.php:2931
+#: templates/public/signup.php:2866 templates/public/signup.php:2984
 msgid "Save"
 msgstr ""
 
@@ -7267,11 +7300,11 @@ msgstr ""
 msgid "Save this message"
 msgstr ""
 
-#: src/Web/CrewAdminFollowup.php:152
+#: src/Web/CrewAdminFollowup.php:207
 msgid "Saved for the next post-event email only, but the text could not be translated, so every language shows it as you wrote it."
 msgstr ""
 
-#: src/Web/CrewAdminFollowup.php:151
+#: src/Web/CrewAdminFollowup.php:206
 msgid "Saved for the next post-event email only. The text is translated; every language’s version is shown below."
 msgstr ""
 
@@ -7308,7 +7341,7 @@ msgstr ""
 msgid "Saved. The next announcement carries this text:"
 msgstr ""
 
-#: src/Web/CrewAdminFollowup.php:170
+#: src/Web/CrewAdminFollowup.php:231
 msgid "Saved. The text is being translated; every language appears here when that is done."
 msgstr ""
 
@@ -7346,7 +7379,7 @@ msgstr ""
 msgid "Saving to Telegram…"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:209
+#: src/Web/CrewAdminController.php:212
 msgid "Say OK or No to a newcomer"
 msgstr ""
 
@@ -7466,7 +7499,7 @@ msgstr ""
 msgid "Send me /help in a private chat for more."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:185
+#: src/Web/CrewAdminController.php:187
 msgid "Send me the sales desk link"
 msgstr ""
 
@@ -7478,7 +7511,7 @@ msgstr ""
 msgid "Send notifications as HTML"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:203 templates/admin/tasks.php:344 templates/public/signup.php:2610
+#: src/Web/CrewAdminController.php:205 templates/admin/tasks.php:344 templates/public/signup.php:2610
 msgid "Send open-task email now"
 msgstr ""
 
@@ -7589,7 +7622,7 @@ msgstr ""
 msgid "Sent a day after an organizer marks a person's task as completed or arrived late."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:991
+#: src/Web/CrewAdminController.php:1000
 #. translators: 1: the admin action's name, 2: date and time
 msgid "Sent an admin request from the Crew app without being an organizer (%1$s, %2$s)."
 msgstr ""
@@ -7890,7 +7923,7 @@ msgstr ""
 msgid "Sent."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:918
+#: src/Web/CrewAdminController.php:927
 msgid "Sent. Check your email, or Telegram if you use the bot."
 msgstr ""
 
@@ -8550,7 +8583,7 @@ msgstr ""
 msgid "Tap Share in the browser bar."
 msgstr ""
 
-#: templates/public/signup.php:2978
+#: templates/public/signup.php:3031
 msgid "Tap Share, then Add to Home Screen."
 msgstr ""
 
@@ -8830,11 +8863,11 @@ msgstr ""
 msgid "Text"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:205 templates/admin/messages-tab-events.php:153 templates/public/signup.php:2716 templates/public/signup.php:2723
+#: src/Web/CrewAdminController.php:207 templates/admin/messages-tab-events.php:153 templates/public/signup.php:2716 templates/public/signup.php:2723
 msgid "Text for the next announcement"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:207
+#: src/Web/CrewAdminController.php:209
 msgid "Text for the next post-event email"
 msgstr ""
 
@@ -8967,6 +9000,14 @@ msgstr ""
 
 #: src/Telegram/OnboardingService.php:288
 msgid "Thanks, the organizers will see your answers."
+msgstr ""
+
+#: src/Web/CrewAdminFollowup.php:215
+msgid "That address is not on the list."
+msgstr ""
+
+#: src/Web/CrewAdminFollowup.php:213
+msgid "That address is on the list already."
 msgstr ""
 
 #: src/Admin/RosterPage.php:379 src/Web/CrewAdminRoster.php:606
@@ -9110,7 +9151,7 @@ msgstr ""
 msgid "That list could not be imported."
 msgstr ""
 
-#: src/Support/RoleTaskService.php:325 src/Web/CrewAdminController.php:923
+#: src/Support/RoleTaskService.php:325 src/Web/CrewAdminController.php:932
 msgid "That member was not found."
 msgstr ""
 
@@ -9164,7 +9205,7 @@ msgstr ""
 msgid "That role was not found."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:925
+#: src/Web/CrewAdminController.php:934
 msgid "That roster entry was not found."
 msgstr ""
 
@@ -9232,7 +9273,7 @@ msgstr[1] ""
 msgid "The AI could not write the text. Check that the AI is set up in EventCrew > Settings."
 msgstr ""
 
-#: templates/admin/messages-tab-events.php:322 templates/public/signup.php:2904
+#: templates/admin/messages-tab-events.php:322 templates/public/signup.php:2957
 msgid "The AI could not write this text. The normal message text is used, unless you write one here."
 msgstr ""
 
@@ -9255,7 +9296,7 @@ msgstr ""
 msgid "The AI text is used again."
 msgstr ""
 
-#: templates/admin/messages-tab-events.php:172 templates/public/signup.php:2886
+#: templates/admin/messages-tab-events.php:172 templates/public/signup.php:2939
 msgid "The AI writes these the day before each event. A text nobody changes is sent as the AI wrote it. A text you change is sent as you wrote it. When the AI failed, the normal message text is used."
 msgstr ""
 
@@ -9872,7 +9913,7 @@ msgstr ""
 msgid "The next post-event email is for: %s"
 msgstr ""
 
-#: src/Telegram/FollowupCommand.php:245 src/Web/CrewAdminFollowup.php:153
+#: src/Telegram/FollowupCommand.php:245 src/Web/CrewAdminFollowup.php:208
 msgid "The one-time text is removed. The next post-event email uses the text on the Messages page."
 msgstr ""
 
@@ -9910,7 +9951,7 @@ msgstr ""
 msgid "The organizers of our events, and the crew working the door on the night, can see your name on the door list."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:740
+#: src/Web/CrewAdminController.php:747
 msgid "The others were skipped: they were already on the task, the task was full, or it is no longer available."
 msgstr ""
 
@@ -9964,6 +10005,10 @@ msgstr ""
 #: templates/admin/translations.php:77
 #. translators: %s: a language name, e.g. Svenska
 msgid "The plugin’s own texts (buttons, menus, built-in messages) are not translated into %s. People who choose it read them in English. The texts in the table below are translated."
+msgstr ""
+
+#: templates/public/signup.php:2887
+msgid "The post-event email is not sent to these addresses. An address is put here when its owner presses “Don't send me these” in the email, or when you add it. Addresses that left the announcement get no post-event email either."
 msgstr ""
 
 #: src/Admin/RosterPage.php:746 src/Web/FollowupController.php:300
@@ -10128,7 +10173,7 @@ msgstr ""
 msgid "The site sends an empty update to its own webhook, with the real secret, and shows the HTTP status. The bot sends no message."
 msgstr ""
 
-#: templates/public/signup.php:3611
+#: templates/public/signup.php:3664
 msgid "The spam check hasn’t finished yet — give it a moment, then try again."
 msgstr ""
 
@@ -10430,7 +10475,7 @@ msgstr ""
 msgid "They get an email to confirm their address and join the Telegram group."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:744
+#: src/Web/CrewAdminController.php:751
 msgid "They got an email with the ticket for each task they were added to."
 msgstr ""
 
@@ -10442,7 +10487,7 @@ msgstr ""
 msgid "They have no credit left."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:746
+#: src/Web/CrewAdminController.php:753
 msgid "They have no email address here, so nothing was sent."
 msgstr ""
 
@@ -10721,7 +10766,7 @@ msgctxt "weekday name"
 msgid "Thursday"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:927
+#: src/Web/CrewAdminController.php:936
 msgid "Tick at least one task."
 msgstr ""
 
@@ -11180,7 +11225,7 @@ msgstr ""
 msgid "Type the code from the email"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:199 templates/admin/people.php:271 templates/public/signup.php:1603
+#: src/Web/CrewAdminController.php:201 templates/admin/people.php:271 templates/public/signup.php:1603
 msgid "Unban"
 msgstr ""
 
@@ -11233,7 +11278,7 @@ msgstr ""
 msgid "Upcoming:"
 msgstr ""
 
-#: src/Web/CrewAdminController.php:191 templates/admin/roster.php:421 templates/admin/roster.php:505
+#: src/Web/CrewAdminController.php:193 templates/admin/roster.php:421 templates/admin/roster.php:505
 msgid "Update attendance"
 msgstr ""
 
@@ -11273,7 +11318,7 @@ msgstr ""
 msgid "Use a credit (%d left)"
 msgstr ""
 
-#: templates/admin/messages-tab-events.php:342 templates/public/signup.php:2935
+#: templates/admin/messages-tab-events.php:342 templates/public/signup.php:2988
 msgid "Use the AI text again"
 msgstr ""
 
@@ -12101,11 +12146,11 @@ msgstr ""
 msgid "You are not acting as anyone."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:382
+#: src/Web/CrewAdminController.php:389
 msgid "You are not allowed to do this."
 msgstr ""
 
-#: src/Web/CrewAdminController.php:375
+#: src/Web/CrewAdminController.php:382
 msgid "You are not allowed to do this. Your account is blocked. Talk to an organizer."
 msgstr ""
 
@@ -12709,7 +12754,7 @@ msgstr ""
 msgid "an organizer who has it"
 msgstr ""
 
-#: src/Support/MonthlyReport.php:588
+#: src/Support/MonthlyReport.php:588 templates/public/signup.php:2916
 msgid "and %d more"
 msgstr ""
 
