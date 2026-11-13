@@ -7,7 +7,6 @@ namespace EventCrew\Repositories;
 use EventCrew\Database\Schema;
 use EventCrew\Models\Person;
 use EventCrew\Support\AssignmentStatus;
-use EventCrew\Support\NotificationPreferences;
 
 /**
  * The reads and writes of the post-event email (Support\FollowupMail): its
@@ -30,9 +29,10 @@ use EventCrew\Support\NotificationPreferences;
  *
  * A person's email is used only when it is a real one (not a placeholder),
  * confirmed by the person (email_verified_at) and the person is not erased
- * (anonymized_at). A person who switched email off on every notification
- * row they have (NotificationPreferences::declinesOptionalEmail()) is
- * returned with declined true, so the email can mark them 'optout'.
+ * (anonymized_at). The person's notification switches play no part: the
+ * post-event email has no switch of its own, and a person who switched
+ * every email off still gets it (Owner, 2026-11-13). The do-not-send list
+ * is what keeps an address out.
  */
 final class FollowupRepository
 {
@@ -61,16 +61,13 @@ final class FollowupRepository
      * added. A row whose email was deleted (by the retention purge or an
      * erasure request) is not among them. person_id is the person of an
      * assignment or a free-entry ticket (0 for the others); marked is true
-     * for an assignment marked as come; declined is true for a person who
-     * switched optional email off.
+     * for an assignment marked as come.
      *
-     * @return array<int, array{kind: string, id: int, name: string, email: string, status: string, person_id: int, marked: bool, declined: bool}>
+     * @return array<int, array{kind: string, id: int, name: string, email: string, status: string, person_id: int, marked: bool}>
      */
     public function recipients(string $date): array
     {
         $rows = [];
-
-        $prefs = new NotificationPreferences();
 
         foreach (self::KINDS as $kind) {
             $person = self::isPersonKind($kind);
@@ -91,10 +88,6 @@ final class FollowupRepository
                     'person_id' => $person ? (int) ($row['person_id'] ?? 0) : 0,
                     'marked' => self::KIND_ASSIGNMENT === $kind
                         && in_array((string) ($row['status'] ?? ''), self::CAME_STATUSES, true),
-                    'declined' => $person && $prefs->declinesOptionalEmail(Person::fromRow([
-                        'notify_prefs' => $row['notify_prefs'] ?? null,
-                        'notify_muted' => $row['notify_muted'] ?? 0,
-                    ])),
                 ];
             }
         }
@@ -396,8 +389,7 @@ final class FollowupRepository
         [$from, $where] = self::nightRows($kind);
         $alias = $where['alias'];
         $columns = self::isPersonKind($kind)
-            ? "{$alias}id, {$alias}person_id, {$alias}followup_mail_status, p.display_name AS name, p.email,"
-                . ' p.notify_prefs, p.notify_muted'
+            ? "{$alias}id, {$alias}person_id, {$alias}followup_mail_status, p.display_name AS name, p.email"
                 . (self::KIND_ASSIGNMENT === $kind ? ', a.status' : '')
             : 'id, name, email, followup_mail_status';
         $rows = $wpdb->get_results(

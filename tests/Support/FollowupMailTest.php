@@ -532,22 +532,16 @@ final class FollowupMailTest extends TestCase
 
     /**
      * Nobody who cannot or would not want it: an address that is not
-     * confirmed, an erased person, a placeholder address, a person who
-     * switched every optional email off, and an address on the do-not-send
-     * list. The ones with an address are marked optout; a crew member who
-     * switched only some email off still gets it.
+     * confirmed, an erased person, a placeholder address, and an address on
+     * the do-not-send list. The listed one is marked optout; a crew member
+     * who switched only some email off still gets it.
      */
     public function testCrewWhoCannotOrWouldNotWantItAreSkipped(): void
     {
-        $allOff = (string) json_encode(array_fill_keys(
-            ['standing', 'credit', 'ticket', 'permission', 'open_task'],
-            ['email' => false]
-        ));
         $someOff = (string) json_encode(['open_task' => ['email' => false], 'standing' => ['email' => false]]);
         $this->crew(1, 21, 'Una Unverified', 'una@example.com', 'arrived', ['verified' => false]);
         $this->crew(2, 22, 'Era Erased', 'era@example.com', 'arrived', ['anonymized' => true]);
         $this->crew(3, 23, 'Pia Placeholder', 'person-23@crew.invalid', 'arrived');
-        $this->crew(4, 24, 'Dee Declined', 'dee@example.com', 'arrived', ['notify_prefs' => $allOff]);
         $this->credit(31, 25, 'Lis Listed', 'LIS@example.com');
         $this->crew(5, 26, 'Sam Some', 'sam@example.com', 'completed', ['notify_prefs' => $someOff]);
         $this->options[FollowupOptOut::OPTION] = ['lis@example.com' => '2026-11-01 10:00:00'];
@@ -556,13 +550,36 @@ final class FollowupMailTest extends TestCase
         $this->followup()->run($this->at('2026-11-15 12:00'));
 
         self::assertSame(['sam@example.com'], array_column($this->mails, 'to'));
-        self::assertSame(FollowupMail::STATUS_OPTOUT, $this->db->statusOf('assignment', 4));
         self::assertSame(FollowupMail::STATUS_OPTOUT, $this->db->statusOf('redemption', 31));
         self::assertSame(FollowupMail::STATUS_SENT, $this->db->statusOf('assignment', 5));
 
         foreach ([1, 2, 3] as $id) {
             self::assertSame('', $this->db->statusOf('assignment', $id));
         }
+    }
+
+    /**
+     * A person who switched every email off in their notification settings
+     * still gets the post-event email, on a task and on a free-entry ticket
+     * alike: the email has no switch of its own, and turning everything off
+     * is not a way out of it (Owner, 2026-11-13). Only the do-not-send list
+     * keeps an address out.
+     */
+    public function testEveryEmailSwitchedOffStillGetsIt(): void
+    {
+        $allOff = (string) json_encode(array_fill_keys(
+            ['standing', 'credit', 'ticket', 'permission', 'open_task'],
+            ['dm' => false, 'email' => false, 'push' => false]
+        ));
+        $this->crew(4, 24, 'Dee Crew', 'dee@example.com', 'arrived', ['notify_prefs' => $allOff]);
+        $this->credit(31, 27, 'Rea Credit', 'rea@example.com', ['notify_prefs' => $allOff]);
+        $this->previewed();
+
+        $this->followup()->run($this->at('2026-11-15 12:00'));
+
+        self::assertSame(['dee@example.com', 'rea@example.com'], array_column($this->mails, 'to'));
+        self::assertSame(FollowupMail::STATUS_SENT, $this->db->statusOf('assignment', 4));
+        self::assertSame(FollowupMail::STATUS_SENT, $this->db->statusOf('redemption', 31));
     }
 
     /**
@@ -623,24 +640,6 @@ final class FollowupMailTest extends TestCase
         self::assertSame(FollowupMail::STATUS_SENT, $this->db->statusOf('buyer', 1));
         self::assertSame(FollowupMail::STATUS_DUPLICATE, $this->db->statusOf('assignment', 2));
         self::assertSame(FollowupMail::STATUS_DUPLICATE, $this->db->statusOf('redemption', 3));
-    }
-
-    /** A person declining optional email keeps the whole address out, its ticket too. */
-    public function testADecliningPersonsTicketRowIsSkippedToo(): void
-    {
-        $allOff = (string) json_encode(array_fill_keys(
-            ['standing', 'credit', 'ticket', 'permission', 'open_task'],
-            ['email' => false]
-        ));
-        $this->buyer(1, 'Dee Buyer', 'dee@example.com');
-        $this->crew(2, 21, 'Dee Crew', 'dee@example.com', 'arrived', ['notify_prefs' => $allOff]);
-        $this->previewed();
-
-        $this->followup()->run($this->at('2026-11-15 12:00'));
-
-        self::assertSame([], $this->mails);
-        self::assertSame(FollowupMail::STATUS_OPTOUT, $this->db->statusOf('buyer', 1));
-        self::assertSame(FollowupMail::STATUS_OPTOUT, $this->db->statusOf('assignment', 2));
     }
 
     /** The links of a crew row count, subscribe and opt out through the assignments and redemptions tables. */
@@ -2425,7 +2424,7 @@ EN: {$english}", $both);
     private function crew(int $id, int $personId, string $name, string $email, string $status, array $extra = []): void
     {
         $this->db->assignments[$id] = $extra + self::row($id, $name, $email, self::NIGHT)
-            + ['person_id' => $personId, 'status' => $status, 'verified' => true, 'notify_prefs' => null];
+            + ['person_id' => $personId, 'status' => $status, 'verified' => true];
     }
 
     /**
@@ -2437,7 +2436,7 @@ EN: {$english}", $both);
     private function credit(int $id, int $personId, string $name, string $email, array $extra = []): void
     {
         $this->db->redemptions[$id] = $extra + self::row($id, $name, $email, self::NIGHT)
-            + ['person_id' => $personId, 'verified' => true, 'notify_prefs' => null];
+            + ['person_id' => $personId, 'verified' => true];
     }
 
     /** The "Don't send me these" token in an email's body. */

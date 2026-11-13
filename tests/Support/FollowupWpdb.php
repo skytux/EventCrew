@@ -24,7 +24,7 @@ final class FollowupWpdb extends \FakeWpdb
      * The night's crew assignments, keyed by assignment id, with their
      * person's columns joined in: id, person_id, status, event_date (the
      * task's date), task_deleted, name, email, verified, anonymized,
-     * notify_prefs, followup_mail_status.
+     * followup_mail_status.
      *
      * @var array<int, array<string, mixed>>
      */
@@ -33,7 +33,7 @@ final class FollowupWpdb extends \FakeWpdb
     /**
      * The free-entry tickets, keyed by redemption id, with their person's
      * columns joined in: id, person_id, event_date (redeemed_for), cancelled,
-     * name, email, verified, anonymized, notify_prefs, followup_mail_status.
+     * name, email, verified, anonymized, followup_mail_status.
      *
      * @var array<int, array<string, mixed>>
      */

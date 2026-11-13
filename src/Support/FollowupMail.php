@@ -81,10 +81,9 @@ use EventCrew\Web\NewsletterController;
  * carries a signed link to the same row: pressing it puts the row's address
  * on the do-not-send list (FollowupOptOut, optOutClick()), with no sign-in.
  * The email is never sent to an address on that list, nor to one that left
- * the announcement, nor to a crew member who switched email off on every
- * row of their notification settings (the email has no row of its own:
- * NotificationPreferences::declinesOptionalEmail()); such a row is marked
- * 'optout'. A preview's or a test's link puts nobody on the list.
+ * the announcement; such a row is marked 'optout'. A crew member's
+ * notification switches play no part: the email has no switch of its own,
+ * and one who switched every email off still gets it (Owner, 2026-11-13). A preview's or a test's link puts nobody on the list.
  *
  * Several rows of one night with the same address (one person who bought two
  * tickets, or worked a task and also bought one) get one email. Its row is
@@ -1267,12 +1266,8 @@ final class FollowupMail
                 continue;
             }
 
-            // On the do-not-send list, left the announcement, or a crew
-            // member who switched optional email off: no email.
-            if (
-                isset($blocked[NewsletterSubscriberRepository::normalize($group[0]['email'])])
-                || [] !== array_filter($group, static fn (array $row): bool => ! empty($row['declined']))
-            ) {
+            // On the do-not-send list or left the announcement: no email.
+            if (isset($blocked[NewsletterSubscriberRepository::normalize($group[0]['email'])])) {
                 foreach ($group as $row) {
                     $this->rows->setStatus($row['kind'], $row['id'], self::STATUS_OPTOUT);
                 }
@@ -1351,18 +1346,10 @@ final class FollowupMail
         $missedNext = $this->text->hasNext(FollowupText::MISSED);
         $blocked = $this->optOut->blocked();
         $rows = $this->rows->recipients($date);
-        $declined = [];
-
-        foreach ($rows as $row) {
-            if (! empty($row['declined'])) {
-                $declined[NewsletterSubscriberRepository::normalize($row['email'])] = true;
-            }
-        }
-
         $count = count(array_diff_key(array_flip(array_map(
             static fn (array $row): string => NewsletterSubscriberRepository::normalize($row['email']),
             $rows
-        )), $blocked, $declined));
+        )), $blocked));
         $sendAt = self::sendAt($date);
         $sentTo = 0;
         $adminUrl = HelpPage::url(DoorLinkSender::ADMIN_ANCHOR);
