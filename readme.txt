@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.248
+Stable tag: 1.140.249
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.249 =
+* Crew app Admin: Messages comes right after Roster.
+* Crew app Admin: the Door screen's Holvi ticket buyers card takes the Holvi ticket file (.xlsx or .csv), as the sales desk does.
 
 = 1.140.248 =
 * Crew app Admin: the Door screen no longer has the Sales desk card; the Open sales desk button at the top opens it.
@@ -2147,6 +2151,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.249 =
+No settings change.
 
 = 1.140.248 =
 No settings change.
