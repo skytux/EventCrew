@@ -3071,7 +3071,23 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
 
     root.classList.add('is-tabbed');
     show(initialKey(), false);
-    if (hashTarget) { hashTarget.scrollIntoView(); }
+    if (hashTarget) {
+        hashTarget.scrollIntoView();
+    } else if (/^#eventcrew-panel-/.test(window.location.hash || '')) {
+        // A tab hash (#eventcrew-panel-board, kept in the address by show())
+        // only picks the tab. The browser would still jump to the panel on
+        // load, after sign-in and when the app reopens, skipping the top of
+        // the page (Owner 2026-11-13): start at the top instead, unless the
+        // visitor has already scrolled by hand.
+        var touched = false;
+        var mark = function () { touched = true; };
+        ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(function (n) {
+            window.addEventListener(n, mark, { once: true, passive: true });
+        });
+        var top = function () { if (!touched) { window.scrollTo(0, 0); } };
+        top();
+        window.addEventListener('load', function () { top(); setTimeout(top, 0); }, { once: true });
+    }
 })();
 
 /*
