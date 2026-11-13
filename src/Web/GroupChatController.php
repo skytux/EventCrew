@@ -86,7 +86,13 @@ final class GroupChatController
         $op = (string) ($posted['op'] ?? '');
 
         if ('list' === $op) {
-            return [200, ['ok' => true, 'messages' => $this->relay->view($person)]];
+            // today: the site's date, so Today and Yesterday follow the site's
+            // clock like the messages' own days, not the device's.
+            return [200, [
+                'ok' => true,
+                'messages' => $this->relay->view($person),
+                'today' => (string) current_time('Y-m-d'),
+            ]];
         }
 
         if ('post' === $op) {

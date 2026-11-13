@@ -10827,6 +10827,18 @@ msgstr "Sijainti"
 msgid "No messages in the last 30 days."
 msgstr "Ei viestejä viimeisen 30 päivän aikana."
 
+msgid "Today"
+msgstr "Tänään"
+
+msgid "Yesterday"
+msgstr "Eilen"
+
+msgid "New messages"
+msgstr "Uusia viestejä"
+
+msgid "The messages could not be loaded. Trying again soon."
+msgstr "Viestejä ei voitu ladata. Yritetään pian uudelleen."
+
 msgid "Now: not known yet. Press Install / refresh webhook to check."
 msgstr "Nyt: ei vielä tiedossa. Tarkista painamalla Asenna / päivitä webhook."
 

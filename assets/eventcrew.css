@@ -200,32 +200,247 @@
 }
 
 /*
- * The Group chat tab (signup-groupchat.php): the group's messages in a box
- * that scrolls on its own, newest at the bottom, the person's own messages
- * set in a little; a quoted message under a line on the left.
+ * The Group chat tab (signup-groupchat.php): a card like the Tasks cards that
+ * reads like a messaging app. The card has a fixed height and the list
+ * scrolls inside it, newest at the bottom, the composer pinned under it.
+ * dvh where known, so the card follows the page when the on-screen keyboard
+ * shrinks it (interactive-widget=resizes-content); the floor keeps a few
+ * messages and the composer usable then.
+ *
+ * Bubbles: others' on the left in the page's text colour at a few percent,
+ * the person's own on the right in the accent colour mixed into the card, so
+ * the text stays the page's own colour and readable whatever the accent is
+ * (the live gold under white text would not be). A run of messages from the
+ * same writer shows the name once and tucks the bubbles together.
  */
-.eventcrew-signup .eventcrew-chat-list {
-    list-style: none; margin: 0 0 1em; padding: 0;
-    max-height: 60vh; overflow-y: auto; overscroll-behavior: contain;
+.eventcrew-signup .eventcrew-chat-card {
+    display: flex; flex-direction: column;
+    height: min(70vh, 640px); height: min(70dvh, 640px); min-height: 20rem;
 }
+.eventcrew-signup .eventcrew-chat-card > .eventcrew-event-head { flex: none; }
+.eventcrew-signup .eventcrew-chat-intro {
+    flex: none; margin: 0; padding: .5em 1em;
+    font-size: .8em; line-height: 1.4; opacity: .75;
+    border-bottom: 1px solid var(--eventcrew-line);
+}
+.eventcrew-signup .eventcrew-chat-intro[hidden] { display: none; }
+/* The same words at the top of the list once there are messages. */
+.eventcrew-signup .eventcrew-chat-note {
+    margin: .2em auto .4em; max-width: 22em; padding: .4em .9em;
+    border-radius: .8em; text-align: center;
+    font-size: .72em; line-height: 1.4; opacity: .75;
+    background: color-mix(in srgb, currentColor 7%, transparent);
+}
+.eventcrew-signup .eventcrew-chat-viewport { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
+.eventcrew-signup .eventcrew-chat-list {
+    flex: 1 1 auto; min-width: 0;
+    list-style: none; margin: 0; padding: .6em .75em .4em;
+    overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, currentColor 25%, transparent) transparent;
+}
+.eventcrew-signup .eventcrew-chat-list:focus { outline: none; }
+.eventcrew-signup .eventcrew-chat-list:focus-visible { outline: 2px solid var(--eventcrew-accent); outline-offset: -2px; }
+
+/* The day line: a small rounded label between two hairlines. */
+.eventcrew-signup .eventcrew-chat-day {
+    display: flex; align-items: center; gap: .75em;
+    margin: .9em 0 .6em; font-size: .72em; font-weight: 600;
+    letter-spacing: .02em; opacity: .8;
+}
+.eventcrew-signup .eventcrew-chat-day:first-child { margin-top: .2em; }
+.eventcrew-signup .eventcrew-chat-day::before,
+.eventcrew-signup .eventcrew-chat-day::after {
+    content: ""; flex: 1; border-top: 1px solid var(--eventcrew-line);
+}
+.eventcrew-signup .eventcrew-chat-day span {
+    padding: .2em .8em; border-radius: 999px;
+    background: color-mix(in srgb, currentColor 9%, transparent);
+}
+
 .eventcrew-signup .eventcrew-chat-msg {
-    margin: 0 0 .6em; padding: .5em .7em;
-    border: 1px solid var(--eventcrew-line);
-    border-radius: var(--eventcrew-radius);
+    display: flex; flex-direction: column; align-items: flex-start;
+    margin: 0; padding: 0; max-width: 100%;
+}
+.eventcrew-signup .eventcrew-chat-msg.is-first { margin-top: .55em; }
+.eventcrew-signup .eventcrew-chat-msg.is-cont { margin-top: .15em; }
+.eventcrew-signup .eventcrew-chat-msg.is-mine { align-items: flex-end; }
+.eventcrew-signup .eventcrew-chat-msg p { margin: 0; }
+.eventcrew-signup .eventcrew-chat-name {
+    margin: 0 0 .15em .9em; font-size: .75em; line-height: 1.3;
+    color: var(--eventcrew-accent);
+    max-width: 85%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.eventcrew-signup .eventcrew-chat-web { font-weight: 400; opacity: .75; color: var(--eventcrew-ink); }
+
+.eventcrew-signup .eventcrew-chat-bubble {
+    position: relative; box-sizing: border-box;
+    max-width: min(85%, 26em); min-width: 4.5em;
+    padding: .45em .75em .35em;
+    border-radius: 1.1em;
+    background: color-mix(in srgb, currentColor 10%, transparent);
+    font-size: .9em; line-height: 1.4;
+}
+.eventcrew-signup .eventcrew-chat-msg:not(.is-mine).is-cont .eventcrew-chat-bubble { border-top-left-radius: .35em; }
+.eventcrew-signup .eventcrew-chat-msg:not(.is-mine):not(.is-last) .eventcrew-chat-bubble { border-bottom-left-radius: .35em; }
+.eventcrew-signup .eventcrew-chat-msg.is-mine .eventcrew-chat-bubble {
+    background: color-mix(in srgb, var(--eventcrew-accent) 30%, transparent);
+    border: 1px solid color-mix(in srgb, var(--eventcrew-accent) 40%, transparent);
+}
+.eventcrew-signup .eventcrew-chat-msg.is-mine.is-cont .eventcrew-chat-bubble { border-top-right-radius: .35em; }
+.eventcrew-signup .eventcrew-chat-msg.is-mine:not(.is-last) .eventcrew-chat-bubble { border-bottom-right-radius: .35em; }
+.eventcrew-signup .eventcrew-chat-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.eventcrew-signup .eventcrew-chat-text a { color: inherit; text-decoration: underline; text-underline-offset: .15em; }
+/* The time in the bubble's bottom corner; its invisible twin at the end of
+   the last line makes the room for it, so a short message stays one line. */
+.eventcrew-signup .eventcrew-chat-time,
+.eventcrew-signup .eventcrew-chat-time-pad {
+    font-size: .72em; line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.eventcrew-signup .eventcrew-chat-time { position: absolute; right: .9rem; bottom: .3rem; opacity: .7; }
+.eventcrew-signup .eventcrew-chat-time-pad { display: inline-block; visibility: hidden; padding-left: .9em; }
+
+/* The answered message: a small strip with a bar in the accent colour. */
+.eventcrew-signup .eventcrew-chat-quote {
+    display: flex; flex-direction: column;
+    margin: .1em 0 .35em; padding: .25em .6em;
+    border: 0; border-left: 3px solid var(--eventcrew-accent); border-radius: .4em;
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    font-size: .85em; line-height: 1.35; font-style: normal; quotes: none;
+}
+.eventcrew-signup .eventcrew-chat-quote::before,
+.eventcrew-signup .eventcrew-chat-quote::after { content: none; }
+.eventcrew-signup .eventcrew-chat-quote strong { color: var(--eventcrew-accent); font-size: .92em; }
+.eventcrew-signup .eventcrew-chat-msg.is-mine .eventcrew-chat-quote strong { color: inherit; }
+.eventcrew-signup .eventcrew-chat-quote span {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .85;
+}
+
+/* A photo, a file and the rest: named only, never stored. */
+.eventcrew-signup .eventcrew-chat-chip {
+    display: inline-flex; align-items: center; gap: .4em;
+    margin: .1em 0 .2em; padding: .1em .6em;
+    border-radius: 999px; font-size: .85em; opacity: .85;
+    background: color-mix(in srgb, currentColor 10%, transparent);
+}
+.eventcrew-signup .eventcrew-chat-chip + .eventcrew-chat-text { margin-top: .15em; }
+
+/* Reply and Hide: folded away under the bubble until it is hovered, tapped or
+   reached with the keyboard (folded, not display: none, so Tab finds them). */
+.eventcrew-signup .eventcrew-chat-actions {
+    display: flex; gap: .2em; margin: 0 .5em;
+    max-height: 0; overflow: hidden; opacity: 0;
+    transition: max-height .15s ease, opacity .15s ease;
+}
+.eventcrew-signup .eventcrew-chat-msg:hover .eventcrew-chat-actions,
+.eventcrew-signup .eventcrew-chat-msg:focus-within .eventcrew-chat-actions,
+.eventcrew-signup .eventcrew-chat-msg.is-open .eventcrew-chat-actions { max-height: 2.5em; opacity: 1; overflow: visible; }
+.eventcrew-signup .eventcrew-chat-bubble { cursor: default; }
+.eventcrew-signup .eventcrew-chat-action {
+    margin: 0; padding: .15em .4em; min-height: 0;
+    background: none; border: 0; border-radius: .4em; box-shadow: none;
+    font: inherit; font-size: .7em; line-height: 1.4; color: inherit;
+    letter-spacing: normal; text-transform: none;
+    cursor: pointer; opacity: .8;
+}
+@media (pointer: coarse) {
+    .eventcrew-signup .eventcrew-chat-action { padding: .5em .8em; }
+    .eventcrew-signup .eventcrew-chat-msg.is-open .eventcrew-chat-actions { max-height: 3.5em; }
+}
+.eventcrew-signup .eventcrew-chat-action:hover,
+.eventcrew-signup .eventcrew-chat-action:focus-visible {
+    opacity: 1; background: color-mix(in srgb, currentColor 10%, transparent);
+}
+.eventcrew-signup .eventcrew-chat-action:focus-visible { outline: 2px solid var(--eventcrew-accent); outline-offset: 1px; }
+
+/* Nothing yet, or nothing loaded: a quiet note in the middle of the card. */
+.eventcrew-signup .eventcrew-chat-empty {
+    position: absolute; inset: 0; margin: auto; height: fit-content;
+    padding: 1em 2em; text-align: center; font-size: .9em; opacity: .8;
+}
+.eventcrew-signup .eventcrew-chat-empty small { display: block; max-width: 22em; margin: .6em auto 0; font-size: .8em; opacity: .85; }
+.eventcrew-signup .eventcrew-chat-empty::before {
+    content: "💬"; display: block; margin-bottom: .3em; font-size: 2em; opacity: .8;
+}
+.eventcrew-signup .eventcrew-chat-empty.is-error::before { content: "⚠️"; }
+.eventcrew-signup .eventcrew-chat-empty[hidden] { display: none; }
+
+.eventcrew-signup .eventcrew-chat-newpill {
+    position: absolute; left: 50%; bottom: .6em; transform: translateX(-50%);
+    margin: 0; padding: .35em 1em; min-height: 0;
+    border: 0; border-radius: 999px; box-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+    background: var(--eventcrew-accent); color: var(--eventcrew-on-accent);
+    color: oklch(from var(--eventcrew-accent) clamp(.2, (.65 - l) * 1000, 1) 0 0);
+    font: inherit; font-size: .8em; font-weight: 600; letter-spacing: normal; text-transform: none;
+    white-space: nowrap; cursor: pointer;
+}
+.eventcrew-signup .eventcrew-chat-newpill[hidden] { display: none; }
+.eventcrew-signup .eventcrew-chat-newpill:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+/* The composer, pinned to the card's bottom. */
+.eventcrew-signup .eventcrew-chat-form {
+    flex: none; padding: .55em .75em .65em;
+    border-top: 1px solid var(--eventcrew-line);
     background: color-mix(in srgb, currentColor 4%, transparent);
 }
-.eventcrew-signup .eventcrew-chat-msg.is-mine { margin-left: 1.5em; background: color-mix(in srgb, currentColor 8%, transparent); }
-.eventcrew-signup .eventcrew-chat-msg p { margin: 0; }
-.eventcrew-signup .eventcrew-chat-meta { font-size: .88em; }
-.eventcrew-signup .eventcrew-chat-text { white-space: pre-wrap; overflow-wrap: anywhere; }
-.eventcrew-signup .eventcrew-chat-quote {
-    margin: .3em 0; padding: 0 0 0 .6em; font-size: .9em; opacity: .8;
-    border-left: 3px solid var(--eventcrew-line);
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.eventcrew-signup .eventcrew-chat-form p { margin: 0; }
+.eventcrew-signup .eventcrew-chat-error {
+    margin: 0 0 .45em; padding: .35em .7em; border-radius: .6em;
+    font-size: .8em; line-height: 1.4;
+    background: color-mix(in srgb, #e53935 22%, transparent);
+    border-left: 3px solid #e53935;
 }
-.eventcrew-signup .eventcrew-chat-actions { font-size: .88em; }
-.eventcrew-signup .eventcrew-chat-form textarea { width: 100%; box-sizing: border-box; }
-.eventcrew-signup .eventcrew-chat-error { color: var(--eventcrew-danger, #b32d2e); }
+.eventcrew-signup .eventcrew-chat-replying {
+    display: flex; align-items: center; gap: .5em;
+    margin: 0 0 .45em; padding: .2em .2em .2em .7em;
+    border-left: 3px solid var(--eventcrew-accent); border-radius: .4em;
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    font-size: .8em;
+}
+.eventcrew-signup .eventcrew-chat-replying[hidden] { display: none; }
+.eventcrew-signup .eventcrew-chat-replying-to { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eventcrew-signup .eventcrew-chat-replying-to strong { color: var(--eventcrew-accent); }
+.eventcrew-signup .eventcrew-chat-compose { display: flex; align-items: flex-end; gap: .5em; }
+.eventcrew-signup .eventcrew-chat-field {
+    flex: 1 1 auto; min-width: 0; box-sizing: border-box;
+    min-height: 2.6rem; max-height: 9rem; margin: 0;
+    padding: .55em 1em; resize: none; overflow-y: auto;
+    border: 1px solid var(--eventcrew-line); border-radius: 1.3rem;
+    background: color-mix(in srgb, currentColor 7%, transparent); color: inherit;
+    font: inherit; font-size: .9em; line-height: 1.4; box-shadow: none;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, currentColor 25%, transparent) transparent;
+}
+.eventcrew-signup .eventcrew-chat-field::placeholder { color: inherit; opacity: .55; }
+.eventcrew-signup .eventcrew-chat-field:focus { outline: none; border-color: var(--eventcrew-accent); }
+.eventcrew-signup .eventcrew-chat-field:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--eventcrew-accent) 45%, transparent); }
+/* The send button: the accent filled, its arrow dark on a light accent and
+   white on a dark one (relative colour; on-accent where that is unknown). */
+.eventcrew-signup .eventcrew-chat-send {
+    flex: none; display: inline-grid; place-items: center;
+    width: 2.6rem; height: 2.6rem; min-height: 0; margin: 0; padding: 0;
+    border: 0; border-radius: 50%; box-shadow: none;
+    background: var(--eventcrew-accent); color: var(--eventcrew-on-accent);
+    color: oklch(from var(--eventcrew-accent) clamp(.2, (.65 - l) * 1000, 1) 0 0);
+    cursor: pointer; transition: transform .12s ease, filter .12s ease;
+}
+.eventcrew-signup .eventcrew-chat-send:hover { filter: brightness(1.08); }
+.eventcrew-signup .eventcrew-chat-send:active { transform: scale(.94); }
+.eventcrew-signup .eventcrew-chat-send:disabled { opacity: .5; cursor: default; }
+.eventcrew-signup .eventcrew-chat-send:focus-visible { outline: 2px solid var(--eventcrew-accent); outline-offset: 2px; }
+.eventcrew-signup .eventcrew-chat-send svg { display: block; margin-left: .15em; }
+.eventcrew-signup .eventcrew-chat-unreply {
+    flex: none; display: inline-grid; place-items: center;
+    width: 2em; height: 2em; min-height: 0; margin: 0; padding: 0;
+    border: 0; border-radius: 50%; background: none; box-shadow: none;
+    color: inherit; font: inherit; font-size: 1.1em; line-height: 1; cursor: pointer; opacity: .7;
+}
+.eventcrew-signup .eventcrew-chat-unreply:hover,
+.eventcrew-signup .eventcrew-chat-unreply:focus-visible { opacity: 1; background: color-mix(in srgb, currentColor 10%, transparent); }
+@media (prefers-reduced-motion: reduce) {
+    .eventcrew-signup .eventcrew-chat-send,
+    .eventcrew-signup .eventcrew-chat-actions { transition: none; }
+}
 
 /* The board list. Scoped to the board so ticket and task lists elsewhere in the
    panels keep the theme's own list styling. */

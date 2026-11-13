@@ -226,10 +226,14 @@ final class GroupRelayTest extends TelegramTestCase
         self::assertTrue($view[0]['mine']);
         self::assertTrue($view[0]['web']);
         self::assertSame('20.7. 09:05', $view[0]['time']);
+        self::assertSame('2026-07-20', $view[0]['day']);
+        self::assertSame('09:05', $view[0]['clock']);
+        self::assertSame('', $view[0]['type']);
         self::assertNull($view[0]['reply']);
         self::assertFalse($view[1]['mine']);
         self::assertSame('Someone', $view[1]['name']);
         self::assertSame('Sticker', $view[1]['kind']);
+        self::assertSame('sticker', $view[1]['type']);
         self::assertTrue($view[1]['edited']);
         self::assertSame(['name' => 'Sam', 'text' => 'Mine'], $view[1]['reply']);
     }
@@ -267,7 +271,7 @@ final class GroupRelayTest extends TelegramTestCase
         self::assertSame([401, ['ok' => false, 'error' => 'session']], $controller->handle(null, ['op' => 'list']));
         self::assertSame(403, $controller->handle($this->person(), ['op' => 'list', 'csrf' => 'x'])[0]);
         self::assertSame(
-            [200, ['ok' => true, 'messages' => []]],
+            [200, ['ok' => true, 'messages' => [], 'today' => '2026-07-20']],
             $controller->handle($this->person(), ['op' => 'list', 'csrf' => $csrf])
         );
         self::assertSame(

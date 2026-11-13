@@ -276,12 +276,15 @@ final class GroupRelay
 
     /**
      * The newest SHOWN messages for the web, oldest first, as the page
-     * shows them: name, time (j.n. H:i, site time), text, what was sent
-     * instead of text, the quote of the answered message, whether it came
-     * from the web, whether it is the viewer's own.
+     * shows them: name, time (j.n. H:i, site time), its day (Y-m-d) and
+     * clock (H:i) apart for the day separators, text, what was sent instead
+     * of text (kind the word, type Telegram's own, for the chip's icon), the
+     * quote of the answered message, whether it came from the web, whether
+     * it is the viewer's own.
      *
-     * @return list<array{id: int, name: string, time: string, text: string, kind: string, edited: bool,
-     *     web: bool, mine: bool, reply: array{name: string, text: string}|null}>
+     * @return list<array{id: int, name: string, time: string, day: string, clock: string, text: string,
+     *     kind: string, type: string, edited: bool, web: bool, mine: bool,
+     *     reply: array{name: string, text: string}|null}>
      */
     public function view(Person $viewer): array
     {
@@ -291,13 +294,17 @@ final class GroupRelay
             $replyName = (string) ($row['reply_name'] ?? '');
             $replyText = (string) ($row['reply_text'] ?? '');
             $name = (string) $row['sender_name'];
+            $at = (string) $row['created_at'];
 
             $out[] = [
                 'id' => (int) $row['id'],
                 'name' => '' !== $name ? $name : __('Someone', 'eventcrew'),
-                'time' => self::time((string) $row['created_at']),
+                'time' => self::time($at),
+                'day' => self::time($at, 'Y-m-d'),
+                'clock' => self::time($at, 'H:i'),
                 'text' => (string) $row['text'],
                 'kind' => self::kindLabel((string) $row['kind']),
+                'type' => (string) $row['kind'],
                 'edited' => ! empty($row['edited_at']),
                 'web' => 'web' === (string) $row['source'],
                 'mine' => (int) ($row['person_id'] ?? 0) === $viewer->id,
@@ -457,12 +464,12 @@ final class GroupRelay
         return mb_strlen($text) > self::QUOTE_LENGTH ? rtrim(mb_substr($text, 0, self::QUOTE_LENGTH - 1)) . '…' : $text;
     }
 
-    /** "j.n. H:i" from a stored site time. */
-    private static function time(string $at): string
+    /** A stored site time in $format, "j.n. H:i" by default; '' when unreadable. */
+    private static function time(string $at, string $format = 'j.n. H:i'): string
     {
         $date = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $at);
 
-        return false === $date ? '' : $date->format('j.n. H:i');
+        return false === $date ? '' : $date->format($format);
     }
 
     /**

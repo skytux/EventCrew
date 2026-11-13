@@ -13752,6 +13752,18 @@ msgstr "Plats"
 msgid "No messages in the last 30 days."
 msgstr "Inga meddelanden de senaste 30 dagarna."
 
+msgid "Today"
+msgstr "I dag"
+
+msgid "Yesterday"
+msgstr "I går"
+
+msgid "New messages"
+msgstr "Nya meddelanden"
+
+msgid "The messages could not be loaded. Trying again soon."
+msgstr "Meddelandena kunde inte laddas. Försöker igen snart."
+
 msgid "Now: not known yet. Press Install / refresh webhook to check."
 msgstr "Nu: inte känt än. Tryck på Installera / uppdatera webhook för att kontrollera."
 
