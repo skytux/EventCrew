@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.229
+Stable tag: 1.140.230
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.230 =
+* Privacy notice: when the group chat is on, says that what you write in the Crew app's group chat is posted to the crew's Telegram group with your name and passes through Telegram.
 
 = 1.140.229 =
 * Bot: organizers post a Get the app invitation in the group with /appinvite (preview and confirm first). Tapping its button DMs a one-time sign-in link that opens the install pop-in.
@@ -2076,6 +2079,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.230 =
+No settings change.
 
 = 1.140.229 =
 No settings change.
