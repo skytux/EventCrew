@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.237
+Stable tag: 1.140.238
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.238 =
+* Crew app: the links at the top of the Help tab sit on one line that wraps, instead of a column with a gap around every link and dot.
 
 = 1.140.237 =
 * Crew app: when the browser does not answer turning on notifications, the app's service worker subscribes instead; the installed app says where to allow notifications for it, with a short note on where it stopped.
@@ -2106,6 +2109,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.238 =
+No settings change.
 
 = 1.140.237 =
 No settings change.
