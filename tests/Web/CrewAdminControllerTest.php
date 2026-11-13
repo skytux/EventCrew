@@ -1599,6 +1599,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
     {
         $this->signIn($this->organizerRow(1));
         $this->wpdb->nextRows[] = ['id' => 40, 'person_id' => 8, 'redeemed_for' => self::NIGHT];
+        $this->wpdb->nextQueryResults[] = 1;
 
         $result = $this->post(CrewAdminController::DOOR_ACTION, ['roster_date' => self::NIGHT, 'op' => 'unredeem', 'redemption_id' => '40']);
 
@@ -1609,6 +1610,18 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         ));
         self::assertCount(1, $cancels);
         self::assertStringContainsString('WHERE id = 40', $cancels[0]);
+    }
+
+    /** A ticket the cancel did not change (already cancelled) is not reported as handed back. */
+    public function testRemovingARedemptionThatWasNotCancelledSaysItFailed(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['id' => 40, 'person_id' => 8, 'redeemed_for' => self::NIGHT];
+        $this->wpdb->nextQueryResults[] = 0;
+
+        $result = $this->post(CrewAdminController::DOOR_ACTION, ['roster_date' => self::NIGHT, 'op' => 'unredeem', 'redemption_id' => '40']);
+
+        self::assertSame('admin_change_failed', $result['notice']);
     }
 
     public function testRemovingARedemptionThatIsGoneChangesNothing(): void

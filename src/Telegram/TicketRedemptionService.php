@@ -572,24 +572,29 @@ final class TicketRedemptionService
      * cancels the receiver's ticket (TicketTransferService::cancelIssued())
      * and the giver's credit stays spent. An offer waiting on the ticket
      * ends with it.
+     *
+     * True only when the database changed: the row was cancelled now (or,
+     * for a given-away ticket, the receiver's ticket). A row that is gone or
+     * already cancelled gives false, and nobody is emailed.
      */
-    public function cancelRedemption(int $redemptionId): void
+    public function cancelRedemption(int $redemptionId): bool
     {
         $redemption = null === $this->ticketMail && null === $this->transfers
             ? null
             : $this->redemptions->find($redemptionId);
 
         if (null !== $this->transfers && null !== $redemption && $redemption->isTransferred()) {
-            $this->transfers->cancelIssued((int) $redemption->transferredTo);
-
-            return;
+            return $this->transfers->cancelIssued((int) $redemption->transferredTo);
         }
 
-        $this->redemptions->cancel($redemptionId);
+        if (! $this->redemptions->cancel($redemptionId)) {
+            return false;
+        }
+
         $this->transfers?->dropOffer($redemptionId);
 
         if (null === $redemption || $redemption->isCancelled() || null === $redemption->ticketMailedAt) {
-            return;
+            return true;
         }
 
         $person = $this->people->find($redemption->personId);
@@ -601,6 +606,8 @@ final class TicketRedemptionService
                 (string) $redemption->redeemedFor
             );
         }
+
+        return true;
     }
 
     /**

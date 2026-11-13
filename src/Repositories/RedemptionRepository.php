@@ -223,9 +223,11 @@ final class RedemptionRepository
 
     /**
      * Undoes a redemption without deleting it: the credit is handed back and
-     * the ticket link stays, showing DISABLED.
+     * the ticket link stays, showing DISABLED. True only when this call
+     * cancelled the row: false when it is gone or was already cancelled, so
+     * no caller reports a removal that did not happen.
      */
-    public function cancel(int $id): void
+    public function cancel(int $id): bool
     {
         global $wpdb;
 
@@ -240,7 +242,11 @@ final class RedemptionRepository
         if (is_int($changed) && $changed > 0) {
             History::record(History::REDEMPTION_CANCELLED, ['redemption_id' => $id]);
             $this->reslotCheckins($id);
+
+            return true;
         }
+
+        return false;
     }
 
     /**

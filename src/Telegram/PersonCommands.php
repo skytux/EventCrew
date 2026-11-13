@@ -683,9 +683,10 @@ final class PersonCommands
                     return;
                 }
 
+                // ✅ only when the row really changed (CrewAdminRoster::unredeem()).
                 $code = $this->roster->unredeem($ticket->id);
                 $telegram->sendMessage($chatId, CommandFlow::result(
-                    'admin_door_returned' === $code,
+                    in_array($code, ['admin_door_returned', 'admin_door_transfer_cancelled'], true),
                     $person->name() . ' · ' . $day,
                     CrewAdminRoster::noticeText($code)
                 ));

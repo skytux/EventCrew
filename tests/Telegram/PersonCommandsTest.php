@@ -270,6 +270,54 @@ final class PersonCommandsTest extends TelegramTestCase
         self::assertStringStartsWith('Milla Virtanen has no free-entry ticket for ', $this->lastText());
     }
 
+    /**
+     * ✅ on /unticket only when the ticket row was really cancelled: the
+     * credit goes back and the bot says so.
+     */
+    public function testUnticketCancelsTheTicketAfterTheTap(): void
+    {
+        $this->unticketTapped(1);
+
+        $cancels = array_values(array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_contains($sql, 'SET cancelled_at')
+        ));
+        self::assertCount(1, $cancels);
+        self::assertStringContainsString('WHERE id = 40', $cancels[0]);
+        self::assertStringStartsWith('✅ Milla Virtanen · ', $this->lastText());
+        self::assertStringEndsWith('Credit handed back.', $this->lastText());
+    }
+
+    /**
+     * The bug (Owner 2026-11-13): the bot said the ticket was removed while
+     * the database kept it. When the cancel changes no row, the bot says it
+     * could not be done instead of ✅.
+     */
+    public function testUnticketSaysItFailedWhenTheTicketWasNotCancelled(): void
+    {
+        $this->unticketTapped(0);
+
+        self::assertStringStartsWith('⚠️ Milla Virtanen · ', $this->lastText());
+        self::assertStringEndsWith('That change could not be applied.', $this->lastText());
+        self::assertStringNotContainsString('Credit handed back.', $this->lastText());
+    }
+
+    /** Taps ✅ on a waiting /unticket for Milla's ticket 40; $rows is what the cancel UPDATE changes. */
+    private function unticketTapped(int $rows): void
+    {
+        $this->transients[PersonCommands::STATE_PREFIX . 'aaaaaaaaaaaaaaaa'] = [
+            'user' => 555, 'op' => 'unticket', 'date' => '2026-07-25', 'person' => 7, 'people' => [7], 'redemption' => 40,
+        ];
+        $ticket = ['id' => 40, 'person_id' => 7, 'redeemed_for' => '2026-07-25', 'cancelled_at' => null];
+        $this->wpdb->nextRows[] = $this->organizer();
+        $this->wpdb->nextRows[] = $this->person(7, 'Milla Virtanen');
+        $this->wpdb->nextRows[] = $ticket;
+        $this->wpdb->nextRows[] = $ticket;
+        $this->wpdb->nextQueryResults[] = $rows;
+
+        $this->command()->onCallback($this->tap('pc:y:aaaaaaaaaaaaaaaa'));
+    }
+
     public function testNoNewcomerWaiting(): void
     {
         $this->wpdb->nextRows[] = $this->organizer();

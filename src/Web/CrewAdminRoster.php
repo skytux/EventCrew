@@ -355,7 +355,11 @@ final class CrewAdminRoster
         }
 
         // Also emails "Your ticket is cancelled" when the ticket was emailed.
-        $this->tickets->cancelRedemption($redemption->id);
+        // Says it worked only when the row really changed: a ticket already
+        // cancelled (a second tap, a resubmitted form) is not "handed back".
+        if (! $this->tickets->cancelRedemption($redemption->id)) {
+            return 'admin_change_failed';
+        }
 
         // A ticket that was given away: the receiver's ticket is cancelled,
         // and the giver's credit stays spent.

@@ -198,13 +198,18 @@ final class RosterPage
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         $transferred = false;
+        $cancelled = false;
 
         if ($redemptionId > 0) {
             // A ticket that was given away: the receiver's ticket is
             // cancelled, and the giver's credit stays spent.
             $transferred = (bool) $this->redemptions->find($redemptionId)?->isTransferred();
             // Also emails "Your ticket is cancelled" when the ticket was emailed.
-            $this->tickets->cancelRedemption($redemptionId);
+            $cancelled = $this->tickets->cancelRedemption($redemptionId);
+        }
+
+        if (! $cancelled) {
+            Admin::redirectTo(self::PAGE_SLUG, __('That change could not be applied.', 'eventcrew'), 'error', $this->dateArg($date));
         }
 
         Admin::redirectTo(

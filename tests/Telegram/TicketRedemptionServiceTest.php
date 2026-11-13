@@ -307,9 +307,11 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
             'id' => 44, 'person_id' => 7, 'redeemed_for' => '2026-08-01', 'cancelled_at' => null,
             'ticket_mailed_at' => '2026-07-19 10:00:00',
         ];
+        $this->wpdb->nextQueryResults[] = 1; // the cancel changed the row
+        $this->wpdb->nextRows[] = ['person_id' => 7, 'redeemed_for' => '2026-08-01', 'first_live' => null]; // no check-in to move
         $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam'];
 
-        $this->serviceWithTicketMail()->cancelRedemption(44);
+        self::assertTrue($this->serviceWithTicketMail()->cancelRedemption(44));
 
         self::assertStringContainsString('SET cancelled_at', implode("\n", $this->wpdb->queries));
         self::assertCount(1, $subjects);
