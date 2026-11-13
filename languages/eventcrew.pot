@@ -1745,7 +1745,7 @@ msgstr ""
 msgid "Asked only for a role task; every other task always counts."
 msgstr ""
 
-#: templates/public/signup-assistant.php:81
+#: templates/public/signup-assistant.php:82
 msgid "Assistant"
 msgstr ""
 
@@ -2019,9 +2019,9 @@ msgstr ""
 msgid "Can I cancel a free-entry ticket?"
 msgstr ""
 
-#: src/Telegram/AssignCommand.php:374 src/Telegram/AssignCommand.php:418 src/Telegram/AssignCommand.php:720 src/Telegram/AssistantService.php:733
+#: src/Telegram/AssignCommand.php:374 src/Telegram/AssignCommand.php:418 src/Telegram/AssignCommand.php:720 src/Telegram/AssistantService.php:734
 #: src/Telegram/BuyerListReset.php:155 src/Telegram/CommandFlow.php:342 src/Telegram/EventsCommand.php:98 src/Telegram/MenuButtons.php:384
-#: src/Telegram/SayCommand.php:95 src/Telegram/TaskCommand.php:807 src/Telegram/TicketController.php:917 src/Web/AssistantWebController.php:173
+#: src/Telegram/SayCommand.php:95 src/Telegram/TaskCommand.php:807 src/Telegram/TicketController.php:917 src/Web/AssistantWebController.php:172
 #: templates/admin/people.php:124 templates/admin/tasks.php:293 templates/public/signup-board.php:263 templates/public/signup-groupchat.php:64
 #: templates/public/signup.php:896 templates/public/signup.php:1426 templates/public/signup.php:2257
 msgid "Cancel"
@@ -2032,7 +2032,7 @@ msgstr ""
 msgid "Cancel %1$s, %2$s"
 msgstr ""
 
-#: src/Web/AssistantWebController.php:287
+#: src/Web/AssistantWebController.php:276
 msgid "Cancel %s"
 msgstr ""
 
@@ -2104,7 +2104,7 @@ msgstr ""
 
 #: src/Telegram/AssignCommand.php:228 src/Telegram/AssistantService.php:223 src/Telegram/AssistantService.php:224 src/Telegram/BuyerListReset.php:105
 #: src/Telegram/CommandFlow.php:199 src/Telegram/EventsCommand.php:145 src/Telegram/SayCommand.php:145 src/Telegram/TaskCommand.php:146
-#: src/Web/AssistantWebController.php:243
+#: src/Web/AssistantWebController.php:232
 msgid "Cancelled."
 msgstr ""
 
@@ -2284,7 +2284,7 @@ msgstr ""
 msgid "Checked in at %s"
 msgstr ""
 
-#: templates/public/signup.php:3403
+#: templates/public/signup.php:3423
 msgid "Checking you’re human…"
 msgstr ""
 
@@ -2321,7 +2321,7 @@ msgid "Clean"
 msgstr ""
 
 #: src/Telegram/NightCommands.php:270 src/Web/NewsletterController.php:505 templates/public/door.php:253 templates/public/door.php:335
-#: templates/public/door.php:356 templates/public/door.php:373 templates/public/signup-app-install.php:77 templates/public/signup-assistant.php:80
+#: templates/public/door.php:356 templates/public/door.php:373 templates/public/signup-app-install.php:77 templates/public/signup-assistant.php:81
 #: templates/public/signup-channels.php:47
 msgid "Close"
 msgstr ""
@@ -2401,8 +2401,8 @@ msgstr ""
 msgid "Conditions: the completed tasks someone needs before the organizers hear about them. Set a number for any of the named roles, or a number of different roles each done a number of times, or both. Meeting them lets nobody sign up. The organizers get a Telegram message and an email the first time someone meets them, and the first time someone is given the role. The People page, Role conditions tab, and the bot’s /people show who meets them."
 msgstr ""
 
-#: src/Support/NewsletterConfirmMail.php:48 src/Telegram/AssistantService.php:732 src/Telegram/EventsCommand.php:97 src/Telegram/SayCommand.php:94
-#: src/Web/AssistantWebController.php:172
+#: src/Support/NewsletterConfirmMail.php:48 src/Telegram/AssistantService.php:733 src/Telegram/EventsCommand.php:97 src/Telegram/SayCommand.php:94
+#: src/Web/AssistantWebController.php:171
 msgid "Confirm"
 msgstr ""
 
@@ -3418,7 +3418,7 @@ msgstr ""
 msgid "Finnish"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:470
+#: src/Telegram/AssistantService.php:471
 msgid "First confirm your email address in Settings."
 msgstr ""
 
@@ -3426,7 +3426,7 @@ msgstr ""
 msgid "First reminder (hours before)"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:1071
+#: src/Telegram/AssistantService.php:1122
 msgid "First sign up with /start."
 msgstr ""
 
@@ -3739,7 +3739,7 @@ msgstr ""
 msgid "Giving tickets away is turned off."
 msgstr ""
 
-#: templates/public/signup-assistant.php:74
+#: templates/public/signup-assistant.php:75
 msgid "Go to %s"
 msgstr ""
 
@@ -4202,11 +4202,11 @@ msgstr ""
 msgid "I am not in the crew group yet."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:469
+#: src/Telegram/AssistantService.php:470
 msgid "I cannot do that for you here. The Help tab shows what you can do."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:1070
+#: src/Telegram/AssistantService.php:1121
 msgid "I cannot do that for you. /help lists what you can do."
 msgstr ""
 
@@ -4226,11 +4226,11 @@ msgstr ""
 msgid "I couldn’t find anyone by that name. Try their exact name or @mention them."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:1069
+#: src/Telegram/AssistantService.php:1120
 msgid "I do not know that. /help lists the commands, or ask an organizer."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:468
+#: src/Telegram/AssistantService.php:469
 msgid "I do not know that. The Help tab has more, or ask an organizer."
 msgstr ""
 
@@ -4239,7 +4239,7 @@ msgstr ""
 msgid "I emailed you a transcript of my private chat with %s."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:1072
+#: src/Telegram/AssistantService.php:1123
 msgid "I have passed this chat on to the organizers."
 msgstr ""
 
@@ -6054,8 +6054,8 @@ msgstr ""
 msgid "Open a private chat with the bot and tap Start first, then tap the task again."
 msgstr ""
 
-#: src/Support/MessageTemplates.php:366 src/Support/MessageTemplates.php:1289 src/Support/WelcomeSender.php:269 src/Web/AssistantWebController.php:184
-#: templates/public/signup.php:1111 templates/public/signup.php:1208
+#: src/Support/MessageTemplates.php:366 src/Support/MessageTemplates.php:1289 src/Support/WelcomeSender.php:269 templates/public/signup.php:1111
+#: templates/public/signup.php:1208
 msgid "Open in Telegram"
 msgstr ""
 
@@ -6876,12 +6876,12 @@ msgstr ""
 msgid "Required: a text without it is not saved."
 msgstr ""
 
-#: templates/public/signup.php:3392
+#: templates/public/signup.php:3412
 #. translators: %s: whole seconds remaining before the link can be sent again
 msgid "Resend in %ss"
 msgstr ""
 
-#: templates/public/signup.php:3806
+#: templates/public/signup.php:3826
 msgid "Resend link"
 msgstr ""
 
@@ -6918,7 +6918,7 @@ msgstr ""
 msgid "Retention period"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:1073
+#: src/Telegram/AssistantService.php:1124
 msgid "Right now I only understand commands: /help"
 msgstr ""
 
@@ -7295,7 +7295,7 @@ msgstr ""
 msgid "See you on the dancefloor"
 msgstr ""
 
-#: src/Telegram/NightCommands.php:425 src/Telegram/TaskCommand.php:480 src/Telegram/TellCommand.php:253 templates/public/signup-assistant.php:59
+#: src/Telegram/NightCommands.php:425 src/Telegram/TaskCommand.php:480 src/Telegram/TellCommand.php:253 templates/public/signup-assistant.php:60
 #: templates/public/signup-groupchat.php:70
 msgid "Send"
 msgstr ""
@@ -7942,7 +7942,7 @@ msgstr ""
 msgid "Sign up again"
 msgstr ""
 
-#: src/Web/AssistantWebController.php:285
+#: src/Web/AssistantWebController.php:274
 msgid "Sign up for %s"
 msgstr ""
 
@@ -8136,7 +8136,7 @@ msgstr ""
 msgid "Sorry text (missed)"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:472 templates/public/signup-assistant.php:72
+#: src/Telegram/AssistantService.php:473 templates/public/signup-assistant.php:73
 msgid "Sorry, I could not answer just now. Please try again."
 msgstr ""
 
@@ -8152,7 +8152,7 @@ msgstr ""
 msgid "Spam protection"
 msgstr ""
 
-#: templates/public/signup-assistant.php:57
+#: templates/public/signup-assistant.php:58
 msgid "Speak"
 msgstr ""
 
@@ -8677,7 +8677,7 @@ msgstr ""
 msgid "Telegram’s API has no setting that stops people adding the bot to other groups. To stop it, turn off Allow Groups in BotFather: /mybots → the bot → Bot Settings → Allow Groups?"
 msgstr ""
 
-#: templates/public/signup-assistant.php:39
+#: templates/public/signup-assistant.php:40
 msgid "Tell me what you want to do…"
 msgstr ""
 
@@ -8853,7 +8853,7 @@ msgstr ""
 msgid "That button no longer works. Send /people again."
 msgstr ""
 
-#: src/Web/AssistantWebController.php:218 src/Web/AssistantWebController.php:233
+#: src/Web/AssistantWebController.php:207 src/Web/AssistantWebController.php:222
 msgid "That can no longer be done."
 msgstr ""
 
@@ -8930,7 +8930,7 @@ msgstr ""
 msgid "That is all I can answer this hour. Commands still work: /help"
 msgstr ""
 
-#: src/Telegram/AssistantService.php:471
+#: src/Telegram/AssistantService.php:472
 msgid "That is all I can answer this hour. The page works as usual."
 msgstr ""
 
@@ -8956,10 +8956,6 @@ msgstr ""
 
 #: src/Telegram/WebLoginBot.php:226
 msgid "That is not the code on the crew app, so this sign-in is cancelled. Press Telegram on the crew app to start again."
-msgstr ""
-
-#: src/Web/AssistantWebController.php:190
-msgid "That is only in the Telegram bot."
 msgstr ""
 
 #: templates/public/signup-groupchat.php:40
@@ -9976,7 +9972,7 @@ msgstr ""
 msgid "The site sends an empty update to its own webhook, with the real secret, and shows the HTTP status. The bot sends no message."
 msgstr ""
 
-#: templates/public/signup.php:3395
+#: templates/public/signup.php:3415
 msgid "The spam check hasn’t finished yet — give it a moment, then try again."
 msgstr ""
 
@@ -10310,7 +10306,7 @@ msgstr ""
 msgid "They were told: unknown to the organizers."
 msgstr ""
 
-#: templates/public/signup-assistant.php:71
+#: templates/public/signup-assistant.php:72
 msgid "Thinking…"
 msgstr ""
 
@@ -10474,7 +10470,7 @@ msgstr ""
 msgid "This preview has expired. Please send /events again."
 msgstr ""
 
-#: src/Telegram/AssistantService.php:212 src/Web/AssistantWebController.php:210
+#: src/Telegram/AssistantService.php:212 src/Web/AssistantWebController.php:199
 msgid "This question has expired. Please write again."
 msgstr ""
 
@@ -12180,7 +12176,7 @@ msgstr ""
 msgid "Your account is blocked. Talk to an organizer."
 msgstr ""
 
-#: templates/public/signup-assistant.php:76
+#: templates/public/signup-assistant.php:77
 msgid "Your browser’s speech service (Google or Apple) turns your voice into text."
 msgstr ""
 
@@ -12827,7 +12823,7 @@ msgstr ""
 msgid "the ticket holder’s first name. When there is no name, it is left out with the space in front of it: “Hi {first_name},” becomes “Hi,”."
 msgstr ""
 
-#: src/Web/AssistantWebController.php:280
+#: src/Web/AssistantWebController.php:269
 msgid "this task"
 msgstr ""
 
