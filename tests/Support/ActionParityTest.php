@@ -35,6 +35,7 @@ final class ActionParityTest extends TestCase
      * bot: no bot command or button. helper: no helper action line that
      * passes validate() for that person. web: on the Crew app page the
      * helper only links (or does nothing) instead of running the change.
+     * tg: the helper line works on the Crew app page only, not in Telegram.
      */
     private const KNOWN_GAPS = [
         // Missing in the bot.
@@ -62,10 +63,8 @@ final class ActionParityTest extends TestCase
         'desk_new_member bot' => 'Add someone creates a member only onto a task, organizers only',
         'desk_file bot' => 'the bot takes no file',
 
-        // Missing in the helper (the other agent's list, webconfirm4-1113: delete person).
-        'person_remove helper' => 'no helper line yet (in progress: delete person)',
-
-        // Missing in the helper, not on that list.
+        // Missing in the helper.
+        'pass helper' => 'no helper line for the one-time pass (menu:roles gives roles only)',
         'give_ticket helper' => 'no helper line for 🎁 Give away (TransferBot)',
         'cancel_offer helper' => 'no helper line for ✖️ Cancel offer',
         'sign_out_everywhere helper' => 'no helper line for Sign out everywhere',
@@ -93,27 +92,18 @@ final class ActionParityTest extends TestCase
         'desk_new_member helper' => 'no helper line',
         'desk_file helper' => 'a file cannot go through the helper',
 
-        // The helper only links on the Crew app page (the other agent's list).
-        'takeover web' => 'menu:replace opens the board (in progress: replace)',
-        'profile_name web' => '/name opens Settings (in progress: /name)',
-        'notifications web' => 'menu:notifications opens Settings (in progress: notifications)',
-        'channel_choice web' => 'menu:notifications opens Settings (in progress: notifications)',
-        'language web' => 'menu:language opens Settings (in progress: language)',
-        'mark web' => '/mark opens the Roster (in progress: mark)',
-        'roster_save web' => '/mark opens the Roster (in progress: mark)',
-        'add_to_task web' => '/assign opens the Roster (in progress: assign)',
-        'roles web' => 'menu:roles opens People (in progress: roles)',
-        'gift web' => 'menu:gift opens People (in progress: gift)',
-        'pass web' => 'menu:roles opens People (in progress: roles)',
-        'organizer web' => 'menu:roles opens People (in progress: organizer on/off)',
-        'newcomer web' => '/newcomer opens Newcomers (in progress: /newcomer)',
-        'newsletter_text web' => '/newsletter <text> opens Messages (in progress: /newsletter text)',
-        'newsletter_reset web' => '/newsletter reset opens Messages (in progress: /newsletter text)',
-        'followup_text web' => '/followup <text> opens Messages (in progress: /followup text)',
-        'followup_reset web' => '/followup reset opens Messages (in progress: /followup text)',
+        // The helper line runs on the Crew app page only; the Telegram helper refuses it.
+        'language tg' => 'menu:language <code> is a page-only line',
+        'roles tg' => 'menu:roles add|remove is a page-only line',
+        'gift tg' => 'menu:gift <person> ; <credits> is a page-only line',
+        'organizer tg' => '/organizer is a page-only line',
+        'person_remove tg' => '/deleteperson is a page-only line',
 
-        // The helper only links on the Crew app page, not on that list.
-        'profile_email web' => '/email opens Settings',
+        // The helper only links on the Crew app page.
+        'takeover web' => 'menu:replace opens the board',
+        'notifications web' => 'menu:notifications opens Settings',
+        'channel_choice web' => 'menu:notifications opens Settings',
+        'profile_email web' => '/email opens Settings: the link goes to the new address (Owner 2026-11-14)',
         'sales_link web' => 'menu:sales opens the Door scanner button instead of sending the link',
         'sales_link_organizer web' => 'menu:sales opens Admin > Door instead of sending the link',
         'desk_view web' => 'menu:doorlist has no place on the page for the sales-desk crew',
@@ -239,12 +229,19 @@ final class ActionParityTest extends TestCase
             return $gaps;
         }
 
-        $checked = AssistantActions::validate($row['helper'], self::AUDIENCES[$row['audience']], null, self::TODAY, [12]);
+        $audience = self::AUDIENCES[$row['audience']];
+        $checked = AssistantActions::validate($row['helper'], ['web' => true] + $audience, null, self::TODAY, [12]);
 
         if (! $checked['ok']) {
             $gaps['helper'] = $checked['error'];
 
             return $gaps;
+        }
+
+        $inChat = AssistantActions::validate($row['helper'], $audience, null, self::TODAY, [12]);
+
+        if (! $inChat['ok']) {
+            $gaps['tg'] = $inChat['error'];
         }
 
         $plan = AssistantWebActions::plan($checked['action'], ActionParity::ORGANIZER === $row['audience'], self::TODAY);

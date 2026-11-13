@@ -157,7 +157,7 @@ final class ActionParity
                 'SignupController::LANGUAGE_ACTION',
                 self::MEMBER,
                 ['mn:lang', 'LanguageService::PREFIX'],
-                'menu:language'
+                'menu:language fi'
             ),
             'sign_out_everywhere' => self::change(
                 'Settings tab: Sign out everywhere',
@@ -363,28 +363,28 @@ final class ActionParity
                 'CrewAdminController::ROLES_ACTION',
                 self::ORGANIZER,
                 ['mn:roles', 'PermissionService::PICK_PREFIX'],
-                'menu:roles'
+                'menu:roles add Crew leader ; Anna'
             ),
             'gift' => self::change(
                 'Admin > People: Give a credit',
                 'CrewAdminController::GIFT_ACTION',
                 self::ORGANIZER,
                 ['mn:gift', 'GiftService::PICK_PREFIX'],
-                'menu:gift'
+                'menu:gift Anna ; 1'
             ),
             'pass' => self::change(
                 'Admin > People: one-time pass',
                 'CrewAdminController::PASS_ACTION',
                 self::ORGANIZER,
                 ['mn:roles', 'PermissionService::PICK_PREFIX'],
-                'menu:roles'
+                null
             ),
             'organizer' => self::change(
                 'Admin > People: make or remove an organizer',
                 'CrewAdminController::ORGANIZER_ACTION',
                 self::ORGANIZER,
                 ['mn:roles', 'PermissionService::PICK_PREFIX'],
-                'menu:roles'
+                '/organizer on Anna'
             ),
             'unban' => self::change(
                 'Admin > People: Unban',
@@ -398,7 +398,7 @@ final class ActionParity
                 'CrewAdminController::PERSON_REMOVE_ACTION',
                 self::ORGANIZER,
                 [],
-                null
+                '/deleteperson Anna'
             ),
             'admin_newcomers' => self::view('Admin > Newcomers', ['/newcomer'], '/newcomer', self::ORGANIZER),
             'newcomer' => self::change(
@@ -406,7 +406,7 @@ final class ActionParity
                 'CrewAdminController::NEWCOMER_ACTION',
                 self::ORGANIZER,
                 ['/newcomer', 'NewcomerApproval::PREFIX'],
-                '/newcomer Anna'
+                '/newcomer ok Anna'
             ),
 
             // Organizer: Admin tab, Tasks screen.
