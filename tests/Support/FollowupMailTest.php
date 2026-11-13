@@ -566,6 +566,46 @@ final class FollowupMailTest extends TestCase
     }
 
     /**
+     * The do-not-send list holds for the crew's rows as for the buyers': an
+     * assignment and a free-entry ticket on the list get nothing. Those not on
+     * it get the "Don't send me these" link and the List-Unsubscribe headers
+     * of their own row, and pressing it puts their address on the list.
+     */
+    public function testTheDoNotSendListHoldsForTheCrewRows(): void
+    {
+        $this->crew(1, 21, 'Ali Listed', 'Ali@example.com', 'arrived');
+        $this->credit(31, 22, 'Ria Listed', 'ria@example.com');
+        $this->crew(2, 23, 'Cara Crew', 'cara@example.com', 'arrived');
+        $this->credit(32, 24, 'Rex Credit', 'rex@example.com');
+        $this->options[FollowupOptOut::OPTION] = [
+            'ali@example.com' => '2026-11-01 10:00:00',
+            'ria@example.com' => '2026-11-02 10:00:00',
+        ];
+        $this->previewed();
+
+        $this->followup()->run($this->at('2026-11-15 12:00'));
+
+        self::assertSame(['cara@example.com', 'rex@example.com'], array_column($this->mails, 'to'));
+        self::assertSame(FollowupMail::STATUS_OPTOUT, $this->db->statusOf('assignment', 1));
+        self::assertSame(FollowupMail::STATUS_OPTOUT, $this->db->statusOf('redemption', 31));
+
+        foreach (['cara@example.com' => ['a', 2], 'rex@example.com' => ['r', 32]] as $to => [$kind, $id]) {
+            $mail = array_values(array_filter($this->mails, static fn (array $m): bool => $to === $m['to']))[0];
+            self::assertSame($kind . "\n" . $id, $this->payloadOf($this->optOutTokenIn($mail['body'])), $to);
+            self::assertContains(
+                'List-Unsubscribe: <' . FollowupMail::optOutUrl($kind, $id) . '>',
+                $mail['headers'],
+                $to
+            );
+        }
+
+        $this->db->nextRows[] = ['name' => 'Rex Credit', 'email' => 'rex@example.com'];
+        parse_str((string) parse_url(FollowupMail::optOutUrl('r', 32), PHP_URL_QUERY), $query);
+        self::assertTrue($this->followup()->optOutClick((string) $query[FollowupMail::OPTOUT_ARG]));
+        self::assertTrue((new FollowupOptOut())->listed('rex@example.com'));
+    }
+
+    /**
      * One address with rows of several kinds (bought a ticket, worked a task,
      * had a free-entry ticket) gets one email, a thank-you when any row came.
      */

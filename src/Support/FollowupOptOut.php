@@ -50,6 +50,48 @@ final class FollowupOptOut
         return (bool) update_option(self::OPTION, $list, false);
     }
 
+    /**
+     * Takes $email off the list. Returns false only when it was not on it or
+     * the list could not be saved.
+     */
+    public function remove(string $email): bool
+    {
+        $email = NewsletterSubscriberRepository::normalize($email);
+        $list = self::stored();
+
+        if ('' === $email || ! isset($list[$email])) {
+            return false;
+        }
+
+        unset($list[$email]);
+
+        return (bool) update_option(self::OPTION, $list, false);
+    }
+
+    /**
+     * The list itself, newest first: address => when it was added (site
+     * time, Y-m-d H:i:s; '' when not known).
+     *
+     * @return array<string, string>
+     */
+    public function entries(): array
+    {
+        $list = [];
+
+        foreach (self::stored() as $email => $added) {
+            $list[(string) $email] = is_string($added) ? $added : '';
+        }
+
+        // Newest first; addresses added at the same moment keep their order.
+        $order = array_flip(array_keys($list));
+        uksort(
+            $list,
+            static fn (string $a, string $b): int => [$list[$b], $order[$a]] <=> [$list[$a], $order[$b]]
+        );
+
+        return $list;
+    }
+
     /** Whether $email is on the list itself (not counting the announcement). */
     public function listed(string $email): bool
     {

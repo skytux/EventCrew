@@ -33,6 +33,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Repositories\FollowupRepository;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupText;
+use EventCrew\Support\FollowupOptOut;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
@@ -665,6 +666,91 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         self::assertSame(CrewAdminController::FORGED, $result['code']);
         self::assertArrayNotHasKey(FollowupText::NEXT_OPTIONS[FollowupText::CAME], $this->options);
+    }
+
+    /**
+     * The Messages screen's do-not-send card: an organizer adds an address
+     * (normalized, checked) and removes one; the list shows newest first.
+     */
+    public function testAnOrganizerManagesThePostEventDoNotSendList(): void
+    {
+        $this->options[FollowupOptOut::OPTION] = ['old@example.com' => '2026-11-01 10:00:00'];
+        $this->signIn($this->organizerRow(1));
+
+        self::assertSame(
+            ['code' => CrewAdminController::OK, 'notice' => 'admin_optout_added'],
+            $this->post(CrewAdminController::OPTOUT_ACTION, ['op' => 'add', 'email' => ' New@Example.com '])
+        );
+        self::assertArrayHasKey('new@example.com', $this->options[FollowupOptOut::OPTION]);
+
+        $this->signIn($this->organizerRow(1));
+        self::assertSame('admin_optout_already', $this->post(
+            CrewAdminController::OPTOUT_ACTION,
+            ['op' => 'add', 'email' => 'OLD@example.com']
+        )['notice']);
+
+        $this->signIn($this->organizerRow(1));
+        self::assertSame('admin_optout_bad_email', $this->post(
+            CrewAdminController::OPTOUT_ACTION,
+            ['op' => 'add', 'email' => 'not an address']
+        )['notice']);
+
+        $this->options[FollowupOptOut::OPTION]['new@example.com'] = '2026-11-12 09:00:00';
+        $followup = new CrewAdminFollowup(new FollowupText(new LlmClient(new Logger()), new Logger()));
+        $view = $followup->optOutView();
+        self::assertSame(['new@example.com', 'old@example.com'], array_column($view['list'], 'email'));
+        self::assertSame(0, $view['more']);
+        self::assertNotSame('', $view['list'][0]['added']);
+
+        $this->signIn($this->organizerRow(1));
+        self::assertSame('admin_optout_removed', $this->post(
+            CrewAdminController::OPTOUT_ACTION,
+            ['op' => 'remove', 'email' => 'old@example.com']
+        )['notice']);
+        self::assertSame(['new@example.com'], array_keys($this->options[FollowupOptOut::OPTION]));
+        self::assertFalse((new FollowupOptOut())->listed('old@example.com'));
+
+        $this->signIn($this->organizerRow(1));
+        self::assertSame('admin_optout_not_listed', $this->post(
+            CrewAdminController::OPTOUT_ACTION,
+            ['op' => 'remove', 'email' => 'old@example.com']
+        )['notice']);
+
+        foreach (['added', 'already', 'removed', 'not_listed', 'bad_email', 'failed'] as $code) {
+            self::assertNotSame('', CrewAdminController::noticeText('admin_optout_' . $code), $code);
+        }
+
+        self::assertSame(
+            'Post-event email: do not send',
+            CrewAdminController::actionLabels()[CrewAdminController::OPTOUT_ACTION]
+        );
+    }
+
+    public function testALongDoNotSendListShowsTheNewestAndCountsTheRest(): void
+    {
+        $list = [];
+
+        for ($i = 1; $i <= CrewAdminFollowup::OPTOUT_SHOWN + 3; $i++) {
+            $list[sprintf('p%03d@example.com', $i)] = gmdate('Y-m-d H:i:s', 1767225600 + $i * 60);
+        }
+
+        $this->options[FollowupOptOut::OPTION] = $list;
+        $view = (new CrewAdminFollowup(new FollowupText(new LlmClient(new Logger()), new Logger())))->optOutView();
+
+        self::assertCount(CrewAdminFollowup::OPTOUT_SHOWN, $view['list']);
+        self::assertSame(3, $view['more']);
+        self::assertSame(sprintf('p%03d@example.com', CrewAdminFollowup::OPTOUT_SHOWN + 3), $view['list'][0]['email']);
+    }
+
+    public function testAMemberCannotChangeTheDoNotSendList(): void
+    {
+        $this->signIn($this->personRow(8));
+        $this->wpdb->nextResults[] = [$this->organizerRow(1)];   // organizers() for the alert
+
+        $result = $this->post(CrewAdminController::OPTOUT_ACTION, ['op' => 'add', 'email' => 'x@example.com'], 8);
+
+        self::assertSame(CrewAdminController::FORGED, $result['code']);
+        self::assertArrayNotHasKey(FollowupOptOut::OPTION, $this->options);
     }
 
     public function testAnOrganizerEditsAPersonAndTheOrganizerFlagIsNeverWritten(): void
@@ -3063,6 +3149,30 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('value="' . CrewAdminController::FOLLOWUP_ACTION . '"', $messages);
         self::assertSame('Post-event email', CrewAdminController::actionLabels()[CrewAdminController::FOLLOWUP_ACTION]);
         self::assertStringNotContainsString('followup_', $this->subpanel($html, 'door'));
+    }
+
+    /** The do-not-send card is on Messages, right after the post-event email card, and posts back there. */
+    public function testTheDoNotSendCardIsOnMessagesAfterThePostEventEmail(): void
+    {
+        $this->options[FollowupOptOut::OPTION] = ['gone@example.com' => '2026-11-01 10:00:00'];
+
+        $messages = $this->subpanel($this->renderAs($this->organizerRow(1)), 'messages');
+        $followupAt = strpos($messages, 'id="eventcrew-admin-followup"');
+        $optOutAt = strpos($messages, 'id="eventcrew-admin-optout"');
+
+        self::assertNotFalse($followupAt);
+        self::assertNotFalse($optOutAt);
+        self::assertGreaterThan($followupAt, $optOutAt);
+        self::assertFalse(strpos(substr($messages, $followupAt, $optOutAt - $followupAt), 'id="eventcrew-admin-aitexts"'));
+
+        $card = substr($messages, $optOutAt);
+        self::assertStringContainsString('Post-event email: do not send', $card);
+        self::assertStringContainsString('gone@example.com', $card);
+        self::assertStringContainsString('value="' . CrewAdminController::OPTOUT_ACTION . '"', $card);
+        self::assertStringContainsString('value="remove"', $card);
+        self::assertStringContainsString('return confirm(', $card);
+        self::assertStringContainsString('#eventcrew-admin-messages"', $card);
+        self::assertSame(1, substr_count(strstr($card, '</section>', true), 'wp-element-button'));
     }
 
     public function testTheOpenTaskEmailIsSentAndTheNoticeCountsThePeople(): void

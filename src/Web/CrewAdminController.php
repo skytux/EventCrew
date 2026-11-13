@@ -81,6 +81,7 @@ final class CrewAdminController
     public const NEWSLETTER_TEXT_ACTION = 'eventcrew_web_admin_newsletter_text';
     public const NEWSLETTER_STOP_ACTION = 'eventcrew_web_admin_newsletter_stop';
     public const FOLLOWUP_TEXT_ACTION = 'eventcrew_web_admin_followup_text';
+    public const OPTOUT_ACTION = 'eventcrew_web_admin_optout';
     public const AI_TEXT_ACTION = 'eventcrew_web_admin_ai_text';
     public const NEWCOMER_ACTION = 'eventcrew_web_admin_newcomer';
     public const TEXT_STATUS_ACTION = 'eventcrew_web_admin_text_status';
@@ -114,6 +115,7 @@ final class CrewAdminController
         self::NEWSLETTER_TEXT_ACTION,
         self::NEWSLETTER_STOP_ACTION,
         self::FOLLOWUP_TEXT_ACTION,
+        self::OPTOUT_ACTION,
         self::AI_TEXT_ACTION,
         self::NEWCOMER_ACTION,
         self::TEXT_STATUS_ACTION,
@@ -205,6 +207,7 @@ final class CrewAdminController
             self::NEWSLETTER_TEXT_ACTION => __('Text for the next announcement', 'eventcrew'),
             self::NEWSLETTER_STOP_ACTION => __('Do not send this announcement', 'eventcrew'),
             self::FOLLOWUP_TEXT_ACTION => __('Text for the next post-event email', 'eventcrew'),
+            self::OPTOUT_ACTION => __('Post-event email: do not send', 'eventcrew'),
             self::AI_TEXT_ACTION => __('Change an AI text for an event', 'eventcrew'),
             self::NEWCOMER_ACTION => __('Say OK or No to a newcomer', 'eventcrew'),
             self::TEXT_STATUS_ACTION => __('Check whether a text is translated', 'eventcrew'),
@@ -313,6 +316,10 @@ final class CrewAdminController
                 sanitize_textarea_field((string) ($post['followup_text'] ?? '')),
                 true,
                 ! empty($post['replace'])
+            ),
+            self::OPTOUT_ACTION => null === $this->followupScreen ? '' : $this->followupScreen->saveOptOut(
+                sanitize_key((string) ($post['op'] ?? '')),
+                sanitize_email((string) ($post['email'] ?? ''))
             ),
             self::AI_TEXT_ACTION => null === $this->aiTextScreen ? '' : $this->aiTextScreen->save($organizer, $post),
             self::NEWCOMER_ACTION => $this->decideNewcomer(
@@ -822,6 +829,8 @@ final class CrewAdminController
             'followup' => $this->followupScreen->view(),
             // The night's status, test and stop, on Messages (Owner 2026-11-13).
             'followup_nights' => $this->rosterScreen->followupNights((string) array_key_first($dates['past'])),
+            'optout_action' => self::OPTOUT_ACTION,
+            'optout' => $this->followupScreen->optOutView(),
         ]) + (null === $this->aiTextScreen ? [] : [
             'ai_text_action' => self::AI_TEXT_ACTION,
             'ai_texts' => $this->aiTextScreen->view(),

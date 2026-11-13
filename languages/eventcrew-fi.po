@@ -11211,3 +11211,38 @@ msgstr "Tiedostoa ei voitu lisätä. Valitse Holvista viety .xlsx- tai .csv-lipp
 
 msgid "The .xlsx or .csv file exported from Holvi. Its tickets go onto the list of the date shown above; the same file twice adds nothing."
 msgstr "Holvista viety .xlsx- tai .csv-tiedosto. Sen liput menevät yllä näkyvän päivän listaan; sama tiedosto toiseen kertaan ei lisää mitään."
+
+msgid "Post-event email: do not send"
+msgstr "Jälkiviesti: älä lähetä"
+
+msgid "Added. That address gets no post-event email."
+msgstr "Lisätty. Osoitteeseen ei lähetetä tapahtuman jälkeistä viestiä."
+
+msgid "That address is on the list already."
+msgstr "Osoite on jo listalla."
+
+msgid "Removed from the list."
+msgstr "Poistettu listalta."
+
+msgid "That address is not on the list."
+msgstr "Osoite ei ole listalla."
+
+msgid "Nothing was added: that is not an email address."
+msgstr "Mitään ei lisätty: tämä ei ole sähköpostiosoite."
+
+msgid "Nothing was saved. Try again."
+msgstr "Mitään ei tallennettu. Yritä uudelleen."
+
+msgid "The post-event email is not sent to these addresses. An address is put here when its owner presses “Don't send me these” in the email, or when you add it. Addresses that left the announcement get no post-event email either."
+msgstr "Tapahtuman jälkeistä viestiä ei lähetetä näihin osoitteisiin. Osoite tulee tänne, kun sen omistaja painaa viestissä “Älä lähetä minulle näitä”, tai kun lisäät sen. Tiedotteen tilauksen lopettaneet eivät myöskään saa tapahtuman jälkeistä viestiä."
+
+msgid "No addresses on the list."
+msgstr "Listalla ei ole osoitteita."
+
+#. translators: %s: an email address
+#, php-format
+msgid "Remove %s from the list? The post-event email can go to it again."
+msgstr "Poistetaanko %s listalta? Tapahtuman jälkeinen viesti voidaan taas lähettää siihen."
+
+msgid "Add an address"
+msgstr "Lisää osoite"

@@ -2878,6 +2878,59 @@ if ($eventcrew_link_expired) {
             </div>
             <?php endif; ?>
 
+            <?php if (isset($eventcrew_admin['optout'])) : ?>
+                <?php $eventcrew_optout = $eventcrew_admin['optout']; ?>
+            <div id="eventcrew-admin-optout">
+            <section class="eventcrew-event eventcrew-admin-card">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Post-event email: do not send', 'eventcrew'); ?></h3>
+                    <?php $eventcrew_admin_about('eventcrew-admin-about-optout', __('Post-event email: do not send', 'eventcrew'), __('The post-event email is not sent to these addresses. An address is put here when its owner presses “Don\'t send me these” in the email, or when you add it. Addresses that left the announcement get no post-event email either.', 'eventcrew')); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                </header>
+                <?php if ([] === $eventcrew_optout['list']) : ?>
+                    <p class="eventcrew-card-body eventcrew-muted"><?php esc_html_e('No addresses on the list.', 'eventcrew'); ?></p>
+                <?php else : ?>
+                    <ul class="eventcrew-plain-list eventcrew-me-list">
+                        <?php foreach ($eventcrew_optout['list'] as $eventcrew_optout_row) : ?>
+                            <li class="eventcrew-me-row">
+                                <span class="eventcrew-me-day"><?php echo esc_html($eventcrew_optout_row['email']); ?></span>
+                                <?php if ('' !== $eventcrew_optout_row['added']) : ?>
+                                    <span class="eventcrew-me-what eventcrew-muted"><?php echo esc_html($eventcrew_optout_row['added']); ?></span>
+                                <?php endif; ?>
+                                <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" class="eventcrew-me-actions"
+                                    onsubmit="return confirm('<?php
+                                    /* translators: %s: an email address */
+                                    echo esc_js(sprintf(__('Remove %s from the list? The post-event email can go to it again.', 'eventcrew'), $eventcrew_optout_row['email']));
+                                    ?>');">
+                                    <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['optout_action']); ?>">
+                                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_messages_here); ?>">
+                                    <input type="hidden" name="email" value="<?php echo esc_attr($eventcrew_optout_row['email']); ?>">
+                                    <button type="submit" name="op" value="remove" class="eventcrew-textlink eventcrew-textlink-danger"><?php esc_html_e('Remove', 'eventcrew'); ?></button>
+                                </form>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php if ($eventcrew_optout['more'] > 0) : ?>
+                        <p class="eventcrew-card-body eventcrew-muted"><?php
+                        /* translators: %d: how many more addresses are on the list */
+                        echo esc_html(sprintf(__('and %d more', 'eventcrew'), $eventcrew_optout['more']));
+                        ?></p>
+                    <?php endif; ?>
+                <?php endif; ?>
+                <form class="eventcrew-card-body eventcrew-admin-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                    <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['optout_action']); ?>">
+                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_messages_here); ?>">
+                    <label for="eventcrew-admin-optout-email"><?php esc_html_e('Add an address', 'eventcrew'); ?></label>
+                    <input id="eventcrew-admin-optout-email" type="email" name="email" required maxlength="191" autocomplete="off">
+                    <p class="eventcrew-admin-actions">
+                        <button type="submit" name="op" value="add" class="wp-element-button"><?php esc_html_e('Add', 'eventcrew'); ?></button>
+                    </p>
+                </form>
+            </section>
+            </div>
+            <?php endif; ?>
+
             <?php if (isset($eventcrew_admin['ai_texts'])) : ?>
             <div id="eventcrew-admin-aitexts">
             <section class="eventcrew-event eventcrew-admin-card">

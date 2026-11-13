@@ -14137,3 +14137,38 @@ msgstr "Filen kunde inte läggas till. Välj biljettfilen (.xlsx eller .csv) som
 
 msgid "The .xlsx or .csv file exported from Holvi. Its tickets go onto the list of the date shown above; the same file twice adds nothing."
 msgstr "Filen (.xlsx eller .csv) som exporterats från Holvi. Biljetterna hamnar på listan för datumet ovan; samma fil två gånger lägger inte till något."
+
+msgid "Post-event email: do not send"
+msgstr "Mejl efteråt: skicka inte"
+
+msgid "Added. That address gets no post-event email."
+msgstr "Tillagd. Adressen får inget mejl efter evenemanget."
+
+msgid "That address is on the list already."
+msgstr "Adressen finns redan på listan."
+
+msgid "Removed from the list."
+msgstr "Borttagen från listan."
+
+msgid "That address is not on the list."
+msgstr "Adressen finns inte på listan."
+
+msgid "Nothing was added: that is not an email address."
+msgstr "Inget lades till: det är ingen e-postadress."
+
+msgid "Nothing was saved. Try again."
+msgstr "Inget sparades. Försök igen."
+
+msgid "The post-event email is not sent to these addresses. An address is put here when its owner presses “Don't send me these” in the email, or when you add it. Addresses that left the announcement get no post-event email either."
+msgstr "Mejlet efter evenemanget skickas inte till dessa adresser. En adress hamnar här när dess ägare trycker på “Skicka inte dessa till mig” i mejlet, eller när du lägger till den. Adresser som lämnat utskicket får inte heller mejlet efter evenemanget."
+
+msgid "No addresses on the list."
+msgstr "Inga adresser på listan."
+
+#. translators: %s: an email address
+#, php-format
+msgid "Remove %s from the list? The post-event email can go to it again."
+msgstr "Ta bort %s från listan? Mejlet efter evenemanget kan gå dit igen."
+
+msgid "Add an address"
+msgstr "Lägg till en adress"

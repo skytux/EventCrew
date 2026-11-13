@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace EventCrew\Web;
 
 use EventCrew\Admin\AiPromptsPage;
+use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Support\BackgroundJobs;
+use EventCrew\Support\Dates;
 use EventCrew\Support\FollowupMail;
+use EventCrew\Support\FollowupOptOut;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\OwnTextNotice;
 use EventCrew\Support\SiteLanguages;
@@ -23,12 +26,20 @@ use EventCrew\Support\TranslatedText;
  * "Replace the current text" (which shows who set it and when), the reset
  * button puts the default back, and the other organizers are told
  * (OwnTextNotice).
+ *
+ * Its own card under it manages the do-not-send list (FollowupOptOut): the
+ * addresses that pressed "Don't send me these", and any an organizer adds
+ * by hand. An organizer can add an address or take one off.
  */
 final class CrewAdminFollowup
 {
+    /** How many addresses of the do-not-send list the card shows; the rest are counted. */
+    public const OPTOUT_SHOWN = 50;
+
     public function __construct(
         private readonly FollowupText $text,
-        private readonly ?OwnTextNotice $notice = null
+        private readonly ?OwnTextNotice $notice = null,
+        private readonly FollowupOptOut $optOut = new FollowupOptOut()
     ) {
     }
 
@@ -144,6 +155,50 @@ final class CrewAdminFollowup
         return $result['translated'] ? 'admin_followup_saved' : 'admin_followup_saved_untranslated';
     }
 
+    /**
+     * The do-not-send list card: the newest OPTOUT_SHOWN addresses with the
+     * day each was added ('' when not known), and how many more there are.
+     *
+     * @return array{list: list<array{email: string, added: string}>, more: int}
+     */
+    public function optOutView(): array
+    {
+        $entries = $this->optOut->entries();
+        $list = [];
+
+        foreach (array_slice($entries, 0, self::OPTOUT_SHOWN, true) as $email => $added) {
+            $list[] = [
+                'email' => (string) $email,
+                'added' => 1 === preg_match('/^\d{4}-\d{2}-\d{2}/', $added) ? Dates::dayLabel(substr($added, 0, 10)) : '',
+            ];
+        }
+
+        return ['list' => $list, 'more' => max(0, count($entries) - self::OPTOUT_SHOWN)];
+    }
+
+    /**
+     * Puts $email on the do-not-send list ($op 'add') or takes it off
+     * ('remove'). Returns the notice code.
+     */
+    public function saveOptOut(string $op, string $email): string
+    {
+        $email = NewsletterSubscriberRepository::normalize($email);
+
+        if ('remove' === $op) {
+            return $this->optOut->remove($email) ? 'admin_optout_removed' : 'admin_optout_not_listed';
+        }
+
+        if ('' === $email || ! is_email($email)) {
+            return 'admin_optout_bad_email';
+        }
+
+        if ($this->optOut->listed($email)) {
+            return 'admin_optout_already';
+        }
+
+        return $this->optOut->add($email) ? 'admin_optout_added' : 'admin_optout_failed';
+    }
+
     public static function noticeText(string $code): string
     {
         // phpcs:disable Generic.Files.LineLength.TooLong -- gettext literals; splitting one breaks extraction.
@@ -154,6 +209,12 @@ final class CrewAdminFollowup
             'admin_followup_exists' => __('Nothing was saved: there is already a one-time text. Tick “Replace the current text” to replace it.', 'eventcrew'),
             'admin_followup_unknown' => __('Nothing was saved: choose the thank-you text or the sorry text.', 'eventcrew'),
             'admin_followup_queued' => self::queuedNotice(),
+            'admin_optout_added' => __('Added. That address gets no post-event email.', 'eventcrew'),
+            'admin_optout_already' => __('That address is on the list already.', 'eventcrew'),
+            'admin_optout_removed' => __('Removed from the list.', 'eventcrew'),
+            'admin_optout_not_listed' => __('That address is not on the list.', 'eventcrew'),
+            'admin_optout_bad_email' => __('Nothing was added: that is not an email address.', 'eventcrew'),
+            'admin_optout_failed' => __('Nothing was saved. Try again.', 'eventcrew'),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong
 
