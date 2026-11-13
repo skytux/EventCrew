@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.246
+Stable tag: 1.140.247
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.247 =
+* Crew app Admin: the board repost, the open-task email and the post-event email controls are on the Messages screen.
+* Crew app Admin: the Door screen's "Door list" card is now "Crew", without the credit redeeming (done at the sales desk).
+* Crew app Admin: People opens one person with a Back link, and the search updates as you type.
 
 = 1.140.246 =
 * Crew app Admin: "Post a new board in the Telegram group" is now a link at the top of the Open-task email card on the Tasks screen; the Telegram screen is gone.
@@ -2138,6 +2143,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.247 =
+No settings change.
 
 = 1.140.246 =
 No settings change.
