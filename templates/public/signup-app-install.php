@@ -7,9 +7,16 @@
  * due; the script below shows it only in a browser tab that can install
  * the app (an iPhone or iPad, or a browser that offered to install it).
  *
- * Four steps in one card, one shown at a time:
- * - offer: the pitch and the two buttons;
- * - ios: on an iPhone or iPad, how to add the app to the Home Screen;
+ * Three steps in one card, one shown at a time:
+ * - offer: the pitch, its size, and how to install here (Owner
+ *   2026-11-13): Install the app where the browser offers one-tap install
+ *   (beforeinstallprompt: Chrome, Edge, Samsung Internet, Brave); a short
+ *   numbered list where it does not: on an iPhone or iPad (any browser
+ *   there is Safari inside) Share, Add to Home Screen; in Firefox on
+ *   Android, and any other browser with no offer, the browser menu; on a
+ *   computer in Firefox or Safari, no install, notifications in this tab.
+ *   Each list ends with how to turn on notifications. Remind me later
+ *   under it;
  * - installed (Owner 2026-11-13): once the browser says it installed the
  *   app (appinstalled, or Install accepted in its prompt), "Installed",
  *   where to find it, and Open the app. Chrome cannot move this tab into
@@ -31,6 +38,12 @@
  * and Safari offers it again once it has not been opened for a while
  * (ios_due). The installed app offers notifications once per install, and
  * only where this device has no push subscription yet.
+ *
+ * The bot's "📱 Get the app" DM link (Owner 2026-11-13) lands here with
+ * AppInstallPrompt::INVITE_PARAM: the pop-in then opens once on load, even
+ * when it was closed or put off, and the argument leaves the address. In
+ * the installed app it opens Turn on notifications instead, where this
+ * device has no push subscription yet. It stores nothing by itself.
  *
  * The page is only shown signed in, which is never cached (the CSRF token),
  * so the due-or-not answer is this person's, now.
@@ -63,7 +76,8 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
     data-popin="<?php echo $eventcrew_app_install['popin'] ? '1' : '0'; ?>"
     data-ios-due="<?php echo $eventcrew_app_install['ios_due'] ? '1' : '0'; ?>"
     data-record-open="<?php echo $eventcrew_app_install['record_open'] ? '1' : '0'; ?>"
-    data-offer-notify="<?php echo $eventcrew_app_install['offer_notify'] ? '1' : '0'; ?>">
+    data-offer-notify="<?php echo $eventcrew_app_install['offer_notify'] ? '1' : '0'; ?>"
+    data-invite-param="<?php echo esc_attr(\EventCrew\Support\AppInstallPrompt::INVITE_PARAM); ?>">
 <p class="eventcrew-app-openline" data-eventcrew-app-open hidden>
     <a href="<?php echo esc_url('' !== $eventcrew_app_start ? $eventcrew_app_start : '#'); ?>" target="_blank" rel="noopener">
         <img src="<?php echo esc_url($eventcrew_app_install['icon']); ?>" width="24" height="24" alt="" loading="lazy">
@@ -86,32 +100,60 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
                 ?>
             </h2>
             <p><?php esc_html_e('Useful notifications you choose. No need for Telegram.', 'eventcrew'); ?></p>
+            <p class="eventcrew-app-size" data-eventcrew-app-size><?php esc_html_e('Tiny: smaller than one photo.', 'eventcrew'); ?></p>
+            <div class="eventcrew-app-manual" data-eventcrew-app-how="ios" hidden>
+                <ol class="eventcrew-app-how">
+                    <li>
+                        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M8 10H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-2"/></svg>
+                        <span><?php esc_html_e('Tap Share in the browser bar.', 'eventcrew'); ?></span>
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/></svg>
+                        <span><?php esc_html_e('Choose Add to Home Screen.', 'eventcrew'); ?></span>
+                    </li>
+                    <li>
+                        <img src="<?php echo esc_url($eventcrew_app_install['icon']); ?>" width="24" height="24" alt="" loading="lazy">
+                        <span>
+                            <?php
+                            /* translators: %s: the app's short name, like "EDH Crew". */
+                            echo esc_html(sprintf(__('Open %s from your Home Screen.', 'eventcrew'), $eventcrew_app_install['name']));
+                            ?>
+                        </span>
+                    </li>
+                    <li><span><?php esc_html_e('In the app, turn on notifications: Settings tab → Notifications → Turn on notifications on this device.', 'eventcrew'); ?></span></li>
+                </ol>
+                <p class="eventcrew-muted"><?php esc_html_e('On iPhone, notifications work after you add this page to your Home Screen.', 'eventcrew'); ?></p>
+                <p class="eventcrew-muted"><?php esc_html_e('No Add to Home Screen in the Share menu? Open this page in Safari and try again.', 'eventcrew'); ?></p>
+            </div>
+            <div class="eventcrew-app-manual" data-eventcrew-app-how="menu" hidden>
+                <ol class="eventcrew-app-how">
+                    <li data-eventcrew-app-inapp hidden><span><?php esc_html_e('Opened inside Telegram or another app? Open this page in your browser first.', 'eventcrew'); ?></span></li>
+                    <li><span><?php esc_html_e('Open the browser menu ⋮.', 'eventcrew'); ?></span></li>
+                    <li><span><?php esc_html_e('Choose Install or Add to Home screen.', 'eventcrew'); ?></span></li>
+                    <li>
+                        <img src="<?php echo esc_url($eventcrew_app_install['icon']); ?>" width="24" height="24" alt="" loading="lazy">
+                        <span>
+                            <?php
+                            /* translators: %s: the app's short name, like "EDH Crew". */
+                            echo esc_html(sprintf(__('Open %s from your home screen.', 'eventcrew'), $eventcrew_app_install['name']));
+                            ?>
+                        </span>
+                    </li>
+                    <li><span><?php esc_html_e('In the app, turn on notifications: Settings tab → Notifications → Turn on notifications on this device.', 'eventcrew'); ?></span></li>
+                </ol>
+            </div>
+            <div class="eventcrew-app-manual" data-eventcrew-app-how="desktop" hidden>
+                <p><?php esc_html_e('This browser does not install apps, but notifications work while this page is open in a tab.', 'eventcrew'); ?></p>
+                <ol class="eventcrew-app-how">
+                    <li><span><?php esc_html_e('Settings tab → Notifications → Turn on notifications on this device.', 'eventcrew'); ?></span></li>
+                </ol>
+            </div>
             <div class="eventcrew-app-actions">
-                <button type="button" class="wp-element-button eventcrew-linkbtn" data-eventcrew-app-install><?php esc_html_e('Install the app', 'eventcrew'); ?></button>
+                <button type="button" class="wp-element-button eventcrew-linkbtn" data-eventcrew-app-install hidden><?php esc_html_e('Install the app', 'eventcrew'); ?></button>
+                <button type="button" class="wp-element-button eventcrew-linkbtn" data-eventcrew-app-notify-here
+                    data-eventcrew-goto="eventcrew-notifications" hidden><?php esc_html_e('Turn on notifications', 'eventcrew'); ?></button>
                 <button type="button" class="eventcrew-settings-btn" data-eventcrew-app-later><?php esc_html_e('Remind me later', 'eventcrew'); ?></button>
             </div>
-        </div>
-        <div class="eventcrew-app-step" data-eventcrew-app-step="ios" hidden>
-            <h2 class="eventcrew-app-title" id="eventcrew-app-title-ios"><?php esc_html_e('Add it to your Home Screen', 'eventcrew'); ?></h2>
-            <ol class="eventcrew-app-how">
-                <li>
-                    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M8 10H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-2"/></svg>
-                    <span><?php esc_html_e('Tap Share in the browser bar.', 'eventcrew'); ?></span>
-                </li>
-                <li>
-                    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/></svg>
-                    <span><?php esc_html_e('Choose Add to Home Screen.', 'eventcrew'); ?></span>
-                </li>
-                <li>
-                    <img src="<?php echo esc_url($eventcrew_app_install['icon']); ?>" width="24" height="24" alt="" loading="lazy">
-                    <span>
-                        <?php
-                        /* translators: %s: the app's short name, like "EDH Crew". */
-                        echo esc_html(sprintf(__('Open %s from your Home Screen.', 'eventcrew'), $eventcrew_app_install['name']));
-                        ?>
-                    </span>
-                </li>
-            </ol>
         </div>
         <div class="eventcrew-app-step" data-eventcrew-app-step="installed" hidden>
             <h2 class="eventcrew-app-title" id="eventcrew-app-title-installed"><?php esc_html_e('Installed', 'eventcrew'); ?></h2>
@@ -143,12 +185,38 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
     if (!dialog || 'function' !== typeof dialog.showModal) { return; }
     var part = function (name) { return box.querySelector('[data-eventcrew-app-' + name + ']'); };
     var ua = navigator.userAgent || '';
-    // iPadOS Safari says it is a Mac; a Mac has no touch screen.
+    // iPadOS Safari says it is a Mac; a Mac has no touch screen. Chrome,
+    // Firefox and Edge on an iPhone (CriOS, FxiOS, EdgiOS) are Safari
+    // inside: the same Share steps.
     var ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    var android = /Android/.test(ua);
+    var desktopFirefox = /Firefox\//.test(ua) && !android && !/Mobile|Tablet/.test(ua);
+    var desktopSafari = !ios && /Macintosh/.test(ua) && /Version\/[\d.]+.*Safari\//.test(ua)
+        && !/Chrome|Chromium|CriOS|Edg\/|OPR\/|Firefox\//.test(ua);
+    // No one-tap install here: the steps by hand. Firefox on Android has
+    // Install in its menu; any other browser with no offer is shown the
+    // same menu steps when it was asked for (the invite link).
+    var manual = ios ? 'ios' : (android && /Firefox\//.test(ua)) ? 'menu' : (desktopFirefox || desktopSafari) ? 'desktop' : '';
+    // An app's own browser (Telegram's, an Android WebView): open the page
+    // in the real browser first.
+    var inApp = /Telegram/i.test(ua) || (android && /; wv\)/.test(ua));
     var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
         || true === window.navigator.standalone;
     var offer = null, returnTo = null, step = 'offer', closing = '', queue = Promise.resolve();
     var start = box.dataset.start || location.pathname;
+
+    // The invite link (the bot's Get the app): opens the pop-in once, then
+    // leaves the address, so a reload does not open it again.
+    var invited = false;
+    try {
+        var url = new URL(location.href);
+        var param = box.dataset.inviteParam || 'eventcrew_app_invite';
+        if (url.searchParams.has(param)) {
+            invited = true;
+            url.searchParams.delete(param);
+            history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+        }
+    } catch (err) {}
 
     // One at a time, in order: a new install clears the notifications
     // offer, which must not overtake the offer's own "seen".
@@ -168,7 +236,23 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
             s.hidden = s.getAttribute('data-eventcrew-app-step') !== name;
         });
         dialog.setAttribute('aria-labelledby', 'eventcrew-app-title-' + name);
-        if (dialog.open) { var b = box.querySelector('[data-eventcrew-app-step="' + name + '"] button'); if (b) { b.focus(); } }
+        if (dialog.open) {
+            var b = [].filter.call(box.querySelectorAll('[data-eventcrew-app-step="' + name + '"] button'), function (x) { return !x.hidden; })[0];
+            if (b) { b.focus(); }
+        }
+    };
+    // How to install here: 'oneclick' (the Install button), 'ios',
+    // 'menu' or 'desktop' (steps by hand).
+    var method = function (v) {
+        [].forEach.call(box.querySelectorAll('[data-eventcrew-app-how]'), function (el) {
+            el.hidden = el.getAttribute('data-eventcrew-app-how') !== v;
+        });
+        part('install').hidden = 'oneclick' !== v;
+        part('notify-here').hidden = 'desktop' !== v;
+        part('size').hidden = 'desktop' === v;
+        part('inapp').hidden = !inApp;
+        // The next opening from the Home Screen is a new install.
+        if ('ios' === v) { post('installing'); }
     };
     var open = function (name) {
         show(name);
@@ -178,6 +262,10 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
         // (signup-channels.php) waits for another visit.
         box.dataset.shown = '1';
         dialog.showModal();
+    };
+    var openOffer = function (v) {
+        method(v);
+        open('offer');
     };
     // How it was closed decides what is stored: × and Esc close it until
     // the next sign-in; the notifications step, once seen, is done; the
@@ -203,8 +291,6 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
         b.addEventListener('click', function () { post('later'); close('later'); });
     });
     part('install').addEventListener('click', function () {
-        // The next opening from the Home Screen is a new install.
-        if (ios) { post('installing'); show('ios'); return; }
         if (!offer) { return; }
         var asked = offer;
         offer = null;
@@ -258,12 +344,14 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
     // same tap, which the browser's permission question needs; then the
     // click goes on to the page's [data-eventcrew-goto] handler, which opens
     // Settings at the Notifications card.
-    part('notify').addEventListener('click', function () {
+    var notify = function () {
         var on = document.querySelector('[data-eventcrew-push-on]');
         var toggle = on && on.closest('[data-eventcrew-push-toggle]');
         if (on && toggle && !toggle.hidden && !on.hidden && !on.disabled) { on.click(); }
         close('notify');
-    });
+    };
+    part('notify').addEventListener('click', notify);
+    part('notify-here').addEventListener('click', notify);
 
     window.addEventListener('appinstalled', function () {
         post('installed');
@@ -272,7 +360,7 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
 
     if (standalone) {
         if ('1' === box.dataset.recordOpen) { post('opened'); }
-        if ('1' !== box.dataset.offerNotify) { return; }
+        if (!invited && '1' !== box.dataset.offerNotify) { return; }
         // Blocked, or this device gets them already: nothing to offer.
         var sw = navigator.serviceWorker;
         (sw && 'PushManager' in window
@@ -295,15 +383,36 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
         openLine();
     });
 
-    if ('1' !== box.dataset.popin) { return; }
+    if (!invited && '1' !== box.dataset.popin) { return; }
 
-    if (ios) { if ('1' === box.dataset.iosDue) { open('offer'); } return; }
+    // No one-tap install in this browser: the steps, when due (an iPhone
+    // only once it has not opened the app for a while) or invited.
+    if (manual) {
+        if (invited || 'ios' !== manual || '1' === box.dataset.iosDue) { openOffer(manual); }
+        return;
+    }
 
     // Offered only where the app is not installed: after an uninstall too.
+    // Steps by hand shown while waiting give way to the button.
     window.addEventListener('beforeinstallprompt', function (event) {
         event.preventDefault();
         offer = event;
-        installed.then(function (apps) { if (!(apps && apps.length) && !dialog.open) { open('offer'); } });
+        installed.then(function (apps) {
+            if (apps && apps.length) { return; }
+            if (!dialog.open) { openOffer('oneclick'); } else if ('offer' === step) { method('oneclick'); }
+        });
     });
+
+    // Invited, and the browser offers no install after a moment: installed
+    // here already (Open the app), or the menu steps.
+    if (invited) {
+        setTimeout(function () {
+            if (offer || dialog.open) { return; }
+            installed.then(function (apps) {
+                if (offer || dialog.open) { return; }
+                if (apps && apps.length) { open('installed'); } else { openOffer('menu'); }
+            });
+        }, 2500);
+    }
 })();
 </script>

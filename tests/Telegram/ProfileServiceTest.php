@@ -8,6 +8,8 @@ use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\AppInstallPrompt;
+use EventCrew\Telegram\DmNote;
 use EventCrew\Telegram\ProfileService;
 
 final class ProfileServiceTest extends TelegramTestCase
@@ -344,6 +346,49 @@ final class ProfileServiceTest extends TelegramTestCase
         $this->service()->onWeb(999, 999);
 
         self::assertStringContainsString('/start', (string) $this->lastCallTo('sendMessage')['text']);
+    }
+
+    public function testAppInviteDmsASignInLinkThatOpensTheGetTheAppPopIn(): void
+    {
+        Functions\when('get_permalink')->justReturn('https://site.test/signup/');
+        Functions\when('add_query_arg')->alias(
+            static fn (array $args, string $url): string => $url . '?' . http_build_query($args)
+        );
+        $this->options['eventcrew_signup_page_id'] = 42;
+
+        $this->wpdb->nextRows[] = [
+            'id' => 7,
+            'email' => 'sam@example.com',
+            'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+            'telegram_user_id' => 555,
+        ];
+
+        // A group tap: the DM goes to the person, the tap gets the toast.
+        DmNote::holdTap('cbq');
+        $this->service()->onAppInvite(555, -100, false);
+
+        $dm = $this->lastCallTo('sendMessage');
+        self::assertSame(555, $dm['chat_id']);
+        self::assertStringContainsString('Chrome-based browsers', (string) $dm['text']);
+        self::assertStringNotContainsString('eventcrew_login', (string) $dm['text']);
+
+        $url = (string) $dm['reply_markup']['inline_keyboard'][0][0]['url'];
+        self::assertStringContainsString('https://site.test/signup/?eventcrew_login=', $url);
+        self::assertStringContainsString(AppInstallPrompt::INVITE_PARAM . '=1', $url);
+        self::assertNotEmpty($this->wpdb->inserts, 'a single-use token was issued');
+
+        self::assertSame('📬 Sent you a DM.', (string) $this->lastCallTo('answerCallbackQuery')['text']);
+        self::assertSame('', DmNote::takeTap());
+    }
+
+    public function testAppInviteAsksAnUnknownTapperToSetUpFirstInTheGroup(): void
+    {
+        $this->service()->onAppInvite(999, -100, false);
+
+        $sent = $this->lastCallTo('sendMessage');
+        self::assertSame(-100, $sent['chat_id']);
+        self::assertStringContainsString('/start', (string) $sent['text']);
     }
 
     public function testMyHistoryListsPastTasksInTheDm(): void

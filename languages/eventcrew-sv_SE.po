@@ -13759,9 +13759,6 @@ msgstr "Nyttiga aviseringar som du väljer. Telegram behövs inte."
 msgid "Remind me later"
 msgstr "Påminn mig senare"
 
-msgid "Add it to your Home Screen"
-msgstr "Lägg till den på hemskärmen"
-
 msgid "Tap Share in the browser bar."
 msgstr "Tryck på Dela i webbläsarfältet."
 
@@ -13972,3 +13969,67 @@ msgstr "Telefonen visade inte frågan. Tillåt aviseringar för den här webbpla
 
 msgid "The app is still loading. Reload the page and try again."
 msgstr "Appen laddas fortfarande. Ladda om sidan och försök igen."
+
+#: src/Telegram/HelpService.php:419
+msgid "/appinvite text – post it in the group with a 📱 Get the app button; you see it first"
+msgstr "/appinvite text – publicera den i gruppen med knappen 📱 Skaffa appen; du ser den först"
+
+#: templates/public/signup-app-install.php:132
+msgid "Choose Install or Add to Home screen."
+msgstr "Välj Installera eller Lägg till på hemskärmen."
+
+#: src/Telegram/MenuButtons.php:419 src/Telegram/MenuButtons.php:422
+msgid "Get the app"
+msgstr "Skaffa appen"
+
+#: src/Telegram/ProfileService.php:391
+msgid "Here’s your link to the Crew app — good for 30 minutes, one use. After you sign in, the page shows how to install the app."
+msgstr "Här är din länk till Crew-appen — gäller i 30 minuter, en gång. När du har loggat in visar sidan hur du installerar appen."
+
+#: src/Telegram/ProfileService.php:393
+msgid "If the link opens inside Telegram, open it in your browser first."
+msgstr "Om länken öppnas i Telegram, öppna den i webbläsaren först."
+
+#: templates/public/signup-app-install.php:123 templates/public/signup-app-install.php:142
+msgid "In the app, turn on notifications: Settings tab → Notifications → Turn on notifications on this device."
+msgstr "Slå på aviseringar i appen: fliken Inställningar → Aviseringar → Slå på aviseringar på den här enheten."
+
+#: templates/public/signup-app-install.php:126
+msgid "No Add to Home Screen in the Share menu? Open this page in Safari and try again."
+msgstr "Inget Lägg till på hemskärmen i Dela-menyn? Öppna sidan i Safari och försök igen."
+
+#: src/Telegram/ProfileService.php:392
+msgid "One-tap install works in Chrome-based browsers (Chrome, Edge, Samsung Internet, Brave). In Safari and Firefox it takes a few manual steps, which the page shows."
+msgstr "Installation med ett tryck fungerar i Chrome-baserade webbläsare (Chrome, Edge, Samsung Internet, Brave). I Safari och Firefox krävs några manuella steg, som sidan visar."
+
+#: src/Telegram/ProfileService.php:396
+msgid "Open the Crew app"
+msgstr "Öppna Crew-appen"
+
+#: templates/public/signup-app-install.php:131
+msgid "Open the browser menu ⋮."
+msgstr "Öppna webbläsarens meny ⋮."
+
+#: templates/public/signup-app-install.php:130
+msgid "Opened inside Telegram or another app? Open this page in your browser first."
+msgstr "Öppnades sidan i Telegram eller en annan app? Öppna den i webbläsaren först."
+
+#: templates/public/signup-app-install.php:148
+msgid "Settings tab → Notifications → Turn on notifications on this device."
+msgstr "Fliken Inställningar → Aviseringar → Slå på aviseringar på den här enheten."
+
+#: templates/public/signup-app-install.php:146
+msgid "This browser does not install apps, but notifications work while this page is open in a tab."
+msgstr "Den här webbläsaren installerar inte appar, men aviseringar fungerar medan sidan är öppen i en flik."
+
+#: templates/public/signup-app-install.php:103
+msgid "Tiny: smaller than one photo."
+msgstr "Liten: mindre än ett foto."
+
+#: src/Telegram/SayCommand.php:112
+msgid "With the button: %s"
+msgstr "Med knappen: %s"
+
+#: src/Telegram/SayCommand.php:307
+msgid "📱 The Crew app is here: tasks, tickets and notifications, no Telegram needed. Tap the button and I send you a sign-in link."
+msgstr "📱 Crew-appen är här: uppgifter, biljetter och aviseringar, utan Telegram. Tryck på knappen så skickar jag en inloggningslänk."

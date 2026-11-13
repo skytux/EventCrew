@@ -78,6 +78,7 @@ final class ActingAs
         MenuButtons::SIGN_OUT,
         MenuButtons::DELETE,
         MenuButtons::WEB,
+        MenuButtons::APP,
     ];
 
     /** The person's own screens and actions, run as the person. */

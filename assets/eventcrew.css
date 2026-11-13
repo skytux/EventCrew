@@ -1460,12 +1460,27 @@
 /* "Where do you want them?" (signup-channels.php): no hero, room for the ×. */
 .eventcrew-signup .eventcrew-channels-card { padding-top: 3em; }
 .eventcrew-signup .eventcrew-channels-card [data-eventcrew-channels-done] { margin: 0; font-weight: 600; }
-.eventcrew-signup .eventcrew-app-how { margin: 0; padding: 0; list-style: none; text-align: left; }
+/*
+ * The pop-in's steps by hand (Owner 2026-11-13): a numbered list, the
+ * number first, then the icon where there is one. [hidden] wins over the
+ * theme's button display, so only the right variant and button show.
+ */
+.eventcrew-signup .eventcrew-app-dialog [hidden] { display: none !important; }
+.eventcrew-signup .eventcrew-app-step > .eventcrew-app-size { margin-top: -.6em; font-size: .9em; opacity: .8; }
+.eventcrew-signup .eventcrew-app-manual { margin: 0 0 1em; }
+.eventcrew-signup .eventcrew-app-manual > p { margin: .6em 0 0; text-align: left; }
+.eventcrew-signup .eventcrew-app-manual > p:first-child { margin: 0 0 .6em; text-align: center; }
+.eventcrew-signup .eventcrew-app-how { margin: 0; padding: 0; list-style: none; text-align: left; counter-reset: eventcrew-app-step; }
 .eventcrew-signup .eventcrew-app-how li {
     display: flex; align-items: center; gap: .75em; padding: .55em 0;
     border-top: 1px solid var(--eventcrew-line);
+    counter-increment: eventcrew-app-step;
 }
-.eventcrew-signup .eventcrew-app-how li:first-child { border-top: 0; }
+.eventcrew-signup .eventcrew-app-how li::before {
+    content: counter(eventcrew-app-step) "."; flex: none; min-width: 1.4em; font-weight: 600;
+}
+.eventcrew-signup .eventcrew-app-how li:first-child,
+.eventcrew-signup .eventcrew-app-how li[hidden] + li { border-top: 0; }
 .eventcrew-signup .eventcrew-app-how svg,
 .eventcrew-signup .eventcrew-app-how img { flex: none; width: 24px; height: 24px; border-radius: 6px; }
 .eventcrew-signup .eventcrew-app-how svg {

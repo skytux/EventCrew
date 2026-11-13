@@ -546,6 +546,15 @@ final class UpdateRouterTest extends TelegramTestCase
         self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
     }
 
+    public function testTheGetTheAppButtonReachesTheProfileService(): void
+    {
+        // Unlinked sender -> the app invite answers with the set-up nudge.
+        $this->router()->dispatch($this->tap('mn:app'));
+
+        self::assertSame('cbq', $this->lastCallTo('answerCallbackQuery')['callback_query_id']);
+        self::assertStringContainsString('Set yourself up first', $this->lastCallTo('sendMessage')['text']);
+    }
+
     public function testTheWhoMayHoldButtonReachesThePermissionService(): void
     {
         $this->router()->dispatch($this->tap('mn:elig'));

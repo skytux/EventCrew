@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Support\Language;
 use EventCrew\Support\RoleGuide;
+use EventCrew\Support\SiteLanguages;
 
 /**
  * The buttons that replace the bot's old one-purpose commands: under /me
@@ -76,6 +78,13 @@ final class MenuButtons
     public const DELETE = 'mn:delete';
     public const ROSTER = 'mn:roster';
     public const DOOR = 'mn:door';
+
+    /**
+     * "📱 Get the app" under an organizer's /appinvite post in the group
+     * (Owner 2026-11-13): DMs the tapper a sign-in link that opens the Crew
+     * app page with its install pop-in (ProfileService::onAppInvite()).
+     */
+    public const APP = 'mn:app';
 
     /**
      * The bot verbs a message can offer (MessageAction::$verb): the verb is
@@ -395,6 +404,26 @@ final class MenuButtons
     /**
      * @return array{text: string, callback_data: string}
      */
+    /**
+     * The group post's one button, "📱 Hae sovellus · Get the app": a group
+     * button names itself in the site's first two languages, on one line
+     * (Owner 2026-11-06), once when both read the same.
+     *
+     * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
+     */
+    public static function appInvite(): array
+    {
+        $labels = [];
+
+        foreach (array_slice(SiteLanguages::codes(), 0, 2) as $code) {
+            $labels[] = (string) Language::run($code, static fn (): string => __('Get the app', 'eventcrew'));
+        }
+
+        $labels = array_values(array_unique([] === $labels ? [__('Get the app', 'eventcrew')] : $labels));
+
+        return ['inline_keyboard' => [[self::button('📱 ' . implode(' · ', $labels), self::APP)]]];
+    }
+
     private static function button(string $text, string $data): array
     {
         return ['text' => $text, 'callback_data' => $data];

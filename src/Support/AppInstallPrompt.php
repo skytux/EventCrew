@@ -75,6 +75,15 @@ final class AppInstallPrompt
         self::KEY_INSTALL_PENDING,
     ];
 
+    /**
+     * The query argument that opens the pop-in once on load (the bot's
+     * "📱 Get the app" DM link, Owner 2026-11-13), even when it was closed
+     * or put off before; the page's script reads it and takes it out of the
+     * address. It changes nothing stored: a close after it is recorded as
+     * any close.
+     */
+    public const INVITE_PARAM = 'eventcrew_app_invite';
+
     /** The ops the page posts (AppInstallController). */
     public const OP_CLOSE = 'close';
     public const OP_LATER = 'later';

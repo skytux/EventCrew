@@ -755,6 +755,14 @@ final class SignupControllerTest extends TestCase
         self::assertStringContainsString('data-eventcrew-app-launch>Open the app</button>', $html);
         self::assertMatchesRegularExpression('/data-start="https?:[^"]*eventcrew_app=[^"]*"/', $html);
         self::assertStringContainsString('<p class="eventcrew-app-openline" data-eventcrew-app-open hidden>', $html);
+        // Owner 2026-11-13: the group's Get the app link opens the pop-in
+        // (data-invite-param), which says how small the app is and has the
+        // manual steps for Safari, Firefox and desktop browsers.
+        self::assertStringContainsString('data-invite-param="eventcrew_app_invite"', $html);
+        self::assertStringContainsString('Tiny: smaller than one photo.', $html);
+        self::assertStringContainsString('data-eventcrew-app-how="ios"', $html);
+        self::assertStringContainsString('data-eventcrew-app-how="menu"', $html);
+        self::assertStringContainsString('data-eventcrew-app-how="desktop"', $html);
 
         unset($_COOKIE[WebSession::COOKIE]);
         $this->wpdb = new \FakeWpdb();

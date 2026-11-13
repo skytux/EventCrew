@@ -583,9 +583,16 @@ final class UpdateRouter
         }
 
         // /say (organizers, private chat): a message for the group, shown
-        // first with Confirm and Cancel.
+        // first with Confirm and Cancel. /appinvite is the same with the
+        // "📱 Get the app" button under the post.
         if (null !== $this->say && $this->isCommand($text, 'say')) {
             $this->say->onCommand($message, $isPrivate);
+
+            return;
+        }
+
+        if (null !== $this->say && $this->isCommand($text, SayCommand::APP_INVITE)) {
+            $this->say->onCommand($message, $isPrivate, true);
 
             return;
         }
@@ -804,6 +811,7 @@ final class UpdateRouter
             MenuButtons::TICKET => $this->tickets->onTicketCommand($fromId, $chatId, $isPrivate),
             MenuButtons::REPLACE => $this->replacement->start($fromId, $chatId, $isPrivate),
             MenuButtons::WEB => $this->profile->onWeb($fromId, $chatId, $isPrivate),
+            MenuButtons::APP => $this->profile->onAppInvite($fromId, $chatId, $isPrivate),
             MenuButtons::NOTIFICATIONS => $this->notifications->start($fromId, $chatId, $isPrivate),
             MenuButtons::LANGUAGE => $this->language?->ask($fromId, $chatId, null, true),
             MenuButtons::SALES => $this->salesLink->onSalesCommand($fromId, $chatId, $isPrivate),

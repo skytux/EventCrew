@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace EventCrew\Telegram;
 
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\Language;
+use EventCrew\Support\SiteLanguages;
 
 /**
  * /say: an organizer has the bot post a message in the crew group.
@@ -14,6 +16,12 @@ use EventCrew\Repositories\PersonRepository;
  *   links, quotes and line breaks are kept.
  * - Confirm posts it in the group the board lives in; Cancel drops it.
  * - "/say" alone says how to use it.
+ *
+ * /appinvite (Owner 2026-11-13) is the same, with the "📱 Get the app" button
+ * under the post (MenuButtons::appInvite()): a tap DMs the crew member a
+ * sign-in link that opens the Crew app page with its install pop-in.
+ * "/appinvite" alone posts a short default text in the site's first two
+ * languages.
  *
  * In a group the command is refused, so a draft is never shown to the whole
  * crew. Anyone who is not an organizer is refused, at the command and again at
@@ -30,6 +38,9 @@ final class SayCommand
     /** How long a draft waits for Confirm. */
     public const DRAFT_TTL = DAY_IN_SECONDS;
 
+    /** The command that posts with the "📱 Get the app" button. */
+    public const APP_INVITE = 'appinvite';
+
     /** Telegram's limit for one message is 4096 characters. */
     public const MAX_LENGTH = 4000;
 
@@ -41,25 +52,36 @@ final class SayCommand
 
     /**
      * @param array<string, mixed> $message The whole message, for its formatting.
+     * @param bool $app /appinvite: the post gets the "📱 Get the app" button.
      */
-    public function onCommand(array $message, bool $isPrivate): void
+    public function onCommand(array $message, bool $isPrivate, bool $app = false): void
     {
         $chatId = (int) ($message['chat']['id'] ?? 0);
         $fromId = (int) ($message['from']['id'] ?? 0);
 
         if (! $isPrivate) {
-            $this->telegram->sendMessage($chatId, __('Use /say in a private chat with me.', 'eventcrew'));
+            $this->telegram->sendMessage($chatId, $app
+                /* translators: %s: a bot command, /assign or /unassign. */
+                ? sprintf(__('Use %s in a private chat with me.', 'eventcrew'), '/' . self::APP_INVITE)
+                : __('Use /say in a private chat with me.', 'eventcrew'));
 
             return;
         }
 
         if (! $this->isOrganizer($fromId)) {
-            $this->telegram->sendMessage($chatId, __('Only organizers can use /say.', 'eventcrew'));
+            $this->telegram->sendMessage($chatId, $app
+                /* translators: %s: a bot command, like /mark. */
+                ? sprintf(__('Only organizers can use %s.', 'eventcrew'), '/' . self::APP_INVITE)
+                : __('Only organizers can use /say.', 'eventcrew'));
 
             return;
         }
 
         $html = self::body($message);
+
+        if ('' === $html && $app) {
+            $html = self::defaultInvite();
+        }
 
         if ('' === $html) {
             $this->telegram->sendMessage(
@@ -83,12 +105,17 @@ final class SayCommand
         }
 
         $id = bin2hex(random_bytes(8));
-        set_transient(self::DRAFT_PREFIX . $id, ['user' => $fromId, 'html' => $html], self::DRAFT_TTL);
+        set_transient(self::DRAFT_PREFIX . $id, ['user' => $fromId, 'html' => $html, 'app' => $app], self::DRAFT_TTL);
+
+        $under = $app
+            /* translators: %s: the button's label, like "📱 Get the app". */
+            ? "\n\n" . htmlspecialchars(sprintf(__('With the button: %s', 'eventcrew'), self::appButtonLabel()), ENT_NOQUOTES, 'UTF-8')
+            : '';
 
         $sent = $this->telegram->call('sendMessage', [
             'chat_id' => $chatId,
             'text' => htmlspecialchars(__('This goes to the group:', 'eventcrew'), ENT_NOQUOTES, 'UTF-8')
-                . "\n\n" . $html,
+                . "\n\n" . $html . $under,
             'parse_mode' => 'HTML',
             'reply_markup' => ['inline_keyboard' => [[
                 ['text' => '✅ ' . __('Confirm', 'eventcrew'), 'callback_data' => self::PREFIX . 'ok:' . $id],
@@ -130,12 +157,16 @@ final class SayCommand
         if (! is_array($draft) || 0 === $fromId || (int) ($draft['user'] ?? 0) !== $fromId) {
             $this->telegram->answerCallbackQuery(
                 $callbackId,
-                __('This draft has expired. Please send /say again.', 'eventcrew'),
+                is_array($draft) && ! empty($draft['app'])
+                    ? __('This request has expired. Please send it again.', 'eventcrew')
+                    : __('This draft has expired. Please send /say again.', 'eventcrew'),
                 true
             );
 
             return;
         }
+
+        $app = ! empty($draft['app']);
 
         // Used once, whichever button it was.
         delete_transient($key);
@@ -149,23 +180,33 @@ final class SayCommand
         }
 
         if (! $this->isOrganizer($fromId)) {
-            $this->telegram->answerCallbackQuery($callbackId, __('Only organizers can use /say.', 'eventcrew'), true);
+            $this->telegram->answerCallbackQuery($callbackId, $app
+                ? __('Only organizers can answer this.', 'eventcrew')
+                : __('Only organizers can use /say.', 'eventcrew'), true);
 
             return;
         }
 
         $group = $this->groupChatId();
-        $sent = 0 === $group ? null : $this->telegram->call('sendMessage', [
+        $post = [
             'chat_id' => $group,
             'text' => (string) ($draft['html'] ?? ''),
             'parse_mode' => 'HTML',
-        ]);
+        ];
+
+        if ($app) {
+            $post['reply_markup'] = MenuButtons::appInvite();
+        }
+
+        $sent = 0 === $group ? null : $this->telegram->call('sendMessage', $post);
 
         if (null === $sent) {
             $this->telegram->answerCallbackQuery($callbackId);
             $this->telegram->sendMessage(
                 $chatId,
-                __('The message could not be posted in the group. Please send /say again.', 'eventcrew')
+                $app
+                    ? __('Telegram did not accept this message. Please try again.', 'eventcrew')
+                    : __('The message could not be posted in the group. Please send /say again.', 'eventcrew')
             );
 
             return;
@@ -229,7 +270,7 @@ final class SayCommand
     {
         $text = (string) ($message['text'] ?? '');
 
-        if (1 !== preg_match('#^\s*/say(?:@\w+)?(?=\s|$)\s*#u', $text, $m)) {
+        if (1 !== preg_match('#^\s*/(?:say|' . self::APP_INVITE . ')(?:@\w+)?(?=\s|$)\s*#u', $text, $m)) {
             return '';
         }
 
@@ -252,6 +293,29 @@ final class SayCommand
         }
 
         return EntityHtml::render($body, $entities);
+    }
+
+    /**
+     * "/appinvite" with no text: a short invitation, one paragraph in each of
+     * the site's first two languages (a group message, Owner 2026-11-06).
+     */
+    public static function defaultInvite(): string
+    {
+        $texts = [];
+
+        foreach (array_slice(SiteLanguages::codes(), 0, 2) as $code) {
+            $texts[] = (string) Language::run($code, static fn (): string => __('📱 The Crew app is here: tasks, tickets and notifications, no Telegram needed. Tap the button and I send you a sign-in link.', 'eventcrew')); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        }
+
+        return implode("\n\n", array_map(
+            static fn (string $text): string => htmlspecialchars($text, ENT_NOQUOTES, 'UTF-8'),
+            array_values(array_unique($texts))
+        ));
+    }
+
+    private static function appButtonLabel(): string
+    {
+        return (string) (MenuButtons::appInvite()['inline_keyboard'][0][0]['text'] ?? '');
     }
 
     private function isOrganizer(int $telegramUserId): bool

@@ -416,6 +416,7 @@ final class HelpService
             __('/edittask task ; places 3 – change a task (also /addtask, /deletetask)', 'eventcrew'),
             __('/maketasks – a night\'s tasks from the roles; /mailtasks – the open-task email now', 'eventcrew'),
             __('/say text – post a message in the group; you see it first', 'eventcrew'),
+            __('/appinvite text – post it in the group with a 📱 Get the app button; you see it first', 'eventcrew'),
             __('/events – post the coming events in the group as picture cards; you see them first', 'eventcrew'),
             // Private-chat commands for organizers (ag-people).
             __('/mark name ; late – arrived, late, noshow or done', 'eventcrew'),

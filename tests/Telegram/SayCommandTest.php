@@ -6,7 +6,9 @@ namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\MenuButtons;
 use EventCrew\Telegram\SayCommand;
 
 /**
@@ -223,5 +225,53 @@ final class SayCommandTest extends TelegramTestCase
         $original = self::message('Post this: Hi all', [['type' => 'bold', 'offset' => 11, 'length' => 2]]);
 
         self::assertSame([], SayCommand::carryEntities('/say Hello all', $original));
+    }
+
+    public function testAppInviteIsRefusedInAGroupAndToNonOrganizers(): void
+    {
+        $this->command()->onCommand(self::message('/appinvite Hi', [], 'supergroup'), false, true);
+        self::assertStringContainsString('/appinvite', (string) $this->lastCallTo('sendMessage')['text']);
+        self::assertStringContainsString('private chat', (string) $this->lastCallTo('sendMessage')['text']);
+
+        $this->queuePerson(false);
+        $this->command()->onCommand(self::message('/appinvite Hi'), true, true);
+        self::assertStringContainsString('Only organizers', (string) $this->lastCallTo('sendMessage')['text']);
+        self::assertSame([], $this->transients);
+    }
+
+    public function testAppInviteWithoutTextPreviewsTheDefaultTextAndNamesTheButton(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['en'];
+        $this->queuePerson(true);
+
+        $this->command()->onCommand(self::message('/appinvite'), true, true);
+
+        $preview = (string) $this->lastCallTo('sendMessage')['text'];
+        self::assertStringContainsString('The Crew app is here', $preview);
+        self::assertStringContainsString('With the button: 📱 Get the app', $preview);
+        self::assertSame(16, strlen($this->draftId()));
+    }
+
+    public function testAppInviteConfirmPostsTheTextWithTheGetTheAppButton(): void
+    {
+        $this->options[SiteLanguages::OPTION] = ['en'];
+        $this->queuePerson(true);
+        $this->command()->onCommand(self::message('/appinvite Install it today'), true, true);
+        $id = $this->draftId();
+
+        $this->queuePerson(true);
+        $this->command()->onConfirm(self::tap(SayCommand::PREFIX . 'ok:' . $id));
+
+        $posted = array_values(array_filter(
+            $this->telegramCalls,
+            static fn (array $call): bool => -100777 === ($call['body']['chat_id'] ?? null)
+        ));
+
+        self::assertCount(1, $posted);
+        self::assertSame('Install it today', $posted[0]['body']['text']);
+        $button = $posted[0]['body']['reply_markup']['inline_keyboard'][0][0];
+        self::assertSame(MenuButtons::APP, $button['callback_data']);
+        self::assertSame('📱 Get the app', $button['text']);
+        self::assertStringContainsString('Sent to the group', (string) $this->lastCallTo('sendMessage')['text']);
     }
 }

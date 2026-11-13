@@ -11,6 +11,7 @@ use EventCrew\Repositories\CheckinRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
+use EventCrew\Support\AppInstallPrompt;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\Dates;
 use EventCrew\Support\EmailBody;
@@ -336,28 +337,13 @@ final class ProfileService
             return;
         }
 
-        // The web sign-in lands on the public signup page. Option name mirrors
-        // Web\PwaController::PAGE_OPTION, kept literal so this Telegram service
-        // does not reach into the Web layer.
-        $pageId = (int) get_option('eventcrew_signup_page_id', 0);
-        $pageUrl = $pageId > 0 ? get_permalink($pageId) : false;
+        $url = $this->signInUrl($person->id);
 
-        if (! is_string($pageUrl) || '' === $pageUrl) {
-            $this->telegram->sendMessage(
-                $telegramUserId,
-                __('There’s no public sign-up page set up yet, so there’s nothing to sign in to on the web.', 'eventcrew'),
-                MenuButtons::back(MenuButtons::SETTINGS)
-            );
-            $this->sentDmNote($chatId, $isPrivate);
+        if (null === $url) {
+            $this->noSignupPage($telegramUserId, $chatId, $isPrivate);
 
             return;
         }
-
-        // A single-use, 30-minute token - the same magic link the web sign-in
-        // form and the email footer issue (SignupController LOGIN_PURPOSE /
-        // LOGIN_TTL), consumed on the signup page via ?eventcrew_login.
-        $token = (new AuthTokenRepository())->issue($person->id, 'web_login', 30 * MINUTE_IN_SECONDS);
-        $url = add_query_arg(['eventcrew_login' => $token], $pageUrl);
 
         $this->deliver(
             $telegramUserId,
@@ -369,6 +355,82 @@ final class ProfileService
                 MenuButtons::backRow(MenuButtons::SETTINGS),
             ]]
         );
+    }
+
+    /**
+     * The group post's "📱 Get the app" button (AppInviteButton, Owner
+     * 2026-11-13): DMs the person the same one-time sign-in link as onWeb(),
+     * landing on the Crew app page with AppInstallPrompt::INVITE_PARAM, so the
+     * "Get the app" pop-in opens after the sign-in. The tap's toast is "Sent
+     * you a DM."; someone not set up gets the same answer as the other
+     * buttons. The DM is in the person's own language.
+     */
+    public function onAppInvite(int $telegramUserId, int $chatId, bool $isPrivate = true): void
+    {
+        $person = $this->people->findByTelegramUserId($telegramUserId);
+
+        if (null === $person || ! $person->isEmailVerified() || $person->isAnonymized()) {
+            $this->telegram->sendMessage($chatId, SetupNudge::text(! $isPrivate));
+
+            return;
+        }
+
+        $url = $this->signInUrl($person->id, [AppInstallPrompt::INVITE_PARAM => '1']);
+
+        if (null === $url) {
+            $this->noSignupPage($telegramUserId, $chatId, $isPrivate);
+
+            return;
+        }
+
+        $this->deliver(
+            $telegramUserId,
+            $chatId,
+            $isPrivate,
+            implode("\n\n", [
+                '📱 ' . __('Here’s your link to the Crew app — good for 30 minutes, one use. After you sign in, the page shows how to install the app.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('One-tap install works in Chrome-based browsers (Chrome, Edge, Samsung Internet, Brave). In Safari and Firefox it takes a few manual steps, which the page shows.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('If the link opens inside Telegram, open it in your browser first.', 'eventcrew'),
+            ]),
+            ['inline_keyboard' => [
+                [['text' => '📱 ' . __('Open the Crew app', 'eventcrew'), 'url' => $url]],
+            ]]
+        );
+    }
+
+    /**
+     * A single-use, 30-minute sign-in link to the public signup page (the
+     * Crew app page) - the same magic link the web sign-in form and the email
+     * footer issue (SignupController LOGIN_PURPOSE / LOGIN_TTL), consumed on
+     * the page via ?eventcrew_login, which keeps the other arguments ($args)
+     * through the sign-in. Null when no page is set up.
+     *
+     * @param array<string, string> $args
+     */
+    private function signInUrl(int $personId, array $args = []): ?string
+    {
+        // Option name mirrors Web\PwaController::PAGE_OPTION, kept literal so
+        // this Telegram service does not reach into the Web layer.
+        $pageId = (int) get_option('eventcrew_signup_page_id', 0);
+        $pageUrl = $pageId > 0 ? get_permalink($pageId) : false;
+
+        if (! is_string($pageUrl) || '' === $pageUrl) {
+            return null;
+        }
+
+        $token = (new AuthTokenRepository())->issue($personId, 'web_login', 30 * MINUTE_IN_SECONDS);
+
+        return add_query_arg(['eventcrew_login' => $token] + $args, $pageUrl);
+    }
+
+    private function noSignupPage(int $telegramUserId, int $chatId, bool $isPrivate): void
+    {
+        $this->telegram->sendMessage(
+            $telegramUserId,
+            __('There’s no public sign-up page set up yet, so there’s nothing to sign in to on the web.', 'eventcrew'),
+            MenuButtons::back(MenuButtons::SETTINGS)
+        );
+        $this->sentDmNote($chatId, $isPrivate);
     }
 
     /**

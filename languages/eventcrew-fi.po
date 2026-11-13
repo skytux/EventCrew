@@ -10819,9 +10819,6 @@ msgstr "Hyödyllisiä ilmoituksia, jotka valitset itse. Telegramia ei tarvita."
 msgid "Remind me later"
 msgstr "Muistuta myöhemmin"
 
-msgid "Add it to your Home Screen"
-msgstr "Lisää se Koti-valikkoon"
-
 msgid "Tap Share in the browser bar."
 msgstr "Napauta selainpalkin Jaa-painiketta."
 
@@ -11032,3 +11029,67 @@ msgstr "Puhelin ei näyttänyt kysymystä. Salli ilmoitukset tälle sivustolle s
 
 msgid "The app is still loading. Reload the page and try again."
 msgstr "Sovellus latautuu vielä. Lataa sivu uudelleen ja yritä taas."
+
+#: src/Telegram/HelpService.php:419
+msgid "/appinvite text – post it in the group with a 📱 Get the app button; you see it first"
+msgstr "/appinvite teksti – julkaise se ryhmässä 📱 Hae sovellus -painikkeen kanssa; näet sen ensin"
+
+#: templates/public/signup-app-install.php:132
+msgid "Choose Install or Add to Home screen."
+msgstr "Valitse Asenna tai Lisää aloitusnäyttöön."
+
+#: src/Telegram/MenuButtons.php:419 src/Telegram/MenuButtons.php:422
+msgid "Get the app"
+msgstr "Hae sovellus"
+
+#: src/Telegram/ProfileService.php:391
+msgid "Here’s your link to the Crew app — good for 30 minutes, one use. After you sign in, the page shows how to install the app."
+msgstr "Tässä linkkisi Crew-sovellukseen — voimassa 30 minuuttia, kertakäyttöinen. Kirjautumisen jälkeen sivu näyttää, miten sovellus asennetaan."
+
+#: src/Telegram/ProfileService.php:393
+msgid "If the link opens inside Telegram, open it in your browser first."
+msgstr "Jos linkki aukeaa Telegramin sisällä, avaa se ensin selaimessa."
+
+#: templates/public/signup-app-install.php:123 templates/public/signup-app-install.php:142
+msgid "In the app, turn on notifications: Settings tab → Notifications → Turn on notifications on this device."
+msgstr "Laita sovelluksessa ilmoitukset päälle: Asetukset-välilehti → Ilmoitukset → Laita ilmoitukset päälle tällä laitteella."
+
+#: templates/public/signup-app-install.php:126
+msgid "No Add to Home Screen in the Share menu? Open this page in Safari and try again."
+msgstr "Eikö Jaa-valikossa ole Lisää Koti-valikkoon? Avaa sivu Safarissa ja yritä uudelleen."
+
+#: src/Telegram/ProfileService.php:392
+msgid "One-tap install works in Chrome-based browsers (Chrome, Edge, Samsung Internet, Brave). In Safari and Firefox it takes a few manual steps, which the page shows."
+msgstr "Yhden napautuksen asennus toimii Chrome-pohjaisissa selaimissa (Chrome, Edge, Samsung Internet, Brave). Safarissa ja Firefoxissa tarvitaan muutama käsin tehtävä vaihe, jotka sivu näyttää."
+
+#: src/Telegram/ProfileService.php:396
+msgid "Open the Crew app"
+msgstr "Avaa Crew-sovellus"
+
+#: templates/public/signup-app-install.php:131
+msgid "Open the browser menu ⋮."
+msgstr "Avaa selaimen valikko ⋮."
+
+#: templates/public/signup-app-install.php:130
+msgid "Opened inside Telegram or another app? Open this page in your browser first."
+msgstr "Avautuiko sivu Telegramissa tai muussa sovelluksessa? Avaa se ensin selaimessa."
+
+#: templates/public/signup-app-install.php:148
+msgid "Settings tab → Notifications → Turn on notifications on this device."
+msgstr "Asetukset-välilehti → Ilmoitukset → Laita ilmoitukset päälle tällä laitteella."
+
+#: templates/public/signup-app-install.php:146
+msgid "This browser does not install apps, but notifications work while this page is open in a tab."
+msgstr "Tämä selain ei asenna sovelluksia, mutta ilmoitukset toimivat, kun sivu on auki välilehdellä."
+
+#: templates/public/signup-app-install.php:103
+msgid "Tiny: smaller than one photo."
+msgstr "Pieni: vähemmän kuin yksi valokuva."
+
+#: src/Telegram/SayCommand.php:112
+msgid "With the button: %s"
+msgstr "Painikkeella: %s"
+
+#: src/Telegram/SayCommand.php:307
+msgid "📱 The Crew app is here: tasks, tickets and notifications, no Telegram needed. Tap the button and I send you a sign-in link."
+msgstr "📱 Crew-sovellus on täällä: tehtävät, liput ja ilmoitukset ilman Telegramia. Napauta painiketta, niin lähetän sinulle kirjautumislinkin."
