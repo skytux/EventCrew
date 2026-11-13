@@ -7,16 +7,18 @@ namespace EventCrew\Web;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\AppInstallPrompt;
+use EventCrew\Support\AppStats;
 use EventCrew\Support\WebSession;
 
 /**
  * Stores what the person did with the "Get the app" pop-in of the Crew app
- * page (AppInstallPrompt): closed it, Remind me later, installed the app,
- * saw the iPhone steps, opened the app from the Home Screen, or saw the
- * installed app's offer to turn on notifications.
+ * page (AppInstallPrompt): closed it, Remind me later, tapped Install the
+ * app, installed the app, saw the steps by hand, opened the app from the
+ * Home Screen, or saw the installed app's offer to turn on notifications.
+ * Tries and installs are also counted for the install numbers (AppStats).
  *
  * One admin-ajax action, ACTION, with
- * op=close|later|installed|installing|opened|offered, for
+ * op=close|later|tapped|installed|installing|opened|offered, for
  * the signed-in person only (the web session cookie and its CSRF token, as
  * the page's own forms).
  */
@@ -84,18 +86,22 @@ final class AppInstallController
             return [403, ['ok' => false, 'error' => 'csrf']];
         }
 
+        $op = (string) ($posted['op'] ?? '');
+        $siteNow = (string) current_time('mysql');
         $entries = AppInstallPrompt::entriesFor(
-            (string) ($posted['op'] ?? ''),
+            $op,
             $person,
             $sessionIssuedAt,
             $now,
-            (string) current_time('mysql'),
+            $siteNow,
             AppInstallPrompt::remindDays()
         );
 
         if (null === $entries) {
             return [400, ['ok' => false, 'error' => 'op']];
         }
+
+        $entries += AppStats::record($op, $person, $entries, $siteNow);
 
         if ([] !== $entries) {
             $this->people->addRoleNotices($person->id, $entries);

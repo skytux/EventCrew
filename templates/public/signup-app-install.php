@@ -45,6 +45,10 @@
  * the installed app it opens Turn on notifications instead, where this
  * device has no push subscription yet. It stores nothing by itself.
  *
+ * For the install numbers (AppStats, Owner 2026-11-13) the script posts
+ * op tapped when Install the app is tapped, and op installing when the
+ * steps by hand are shown (iPhone or iPad, and the browser menu).
+ *
  * The page is only shown signed in, which is never cached (the CSRF token),
  * so the due-or-not answer is this person's, now.
  *
@@ -251,8 +255,9 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
         part('notify-here').hidden = 'desktop' !== v;
         part('size').hidden = 'desktop' === v;
         part('inapp').hidden = !inApp;
-        // The next opening from the Home Screen is a new install.
-        if ('ios' === v) { post('installing'); }
+        // The next opening from the Home Screen is a new install (no
+        // appinstalled event there); also counted as a try (AppStats).
+        if ('ios' === v || 'menu' === v) { post('installing'); }
     };
     var open = function (name) {
         show(name);
@@ -294,6 +299,8 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
         if (!offer) { return; }
         var asked = offer;
         offer = null;
+        // A try, counted for the install numbers (AppStats).
+        post('tapped');
         asked.prompt();
         asked.userChoice.then(function (choice) {
             if ('accepted' === choice.outcome) { installedHere(); } else { close('close'); }

@@ -14037,3 +14037,39 @@ msgstr "📱 Crew-appen är här: uppgifter, biljetter och aviseringar, utan Tel
 #: src/Support/PrivacyPolicy.php
 msgid "The Group chat in the Crew app is relayed to the crew’s Telegram group. What you write there the bot posts to the Telegram group with your name, so everyone in that group can read it, also those who do not use the Crew app, and it passes through Telegram (https://telegram.org/privacy) even if you have not linked a Telegram account."
 msgstr "Gruppchatten i Crew-appen vidarebefordras till crewets Telegram-grupp. Det du skriver där publicerar boten i Telegram-gruppen med ditt namn, så alla i gruppen kan läsa det, även de som inte använder Crew-appen, och det går via Telegram (https://telegram.org/privacy) även om du inte har kopplat ett Telegram-konto."
+
+#: src/Support/MonthlyReport.php
+msgid "Crew app"
+msgstr "Crew-appen"
+
+#: templates/admin/settings.php
+msgid "This month"
+msgstr "Denna månad"
+
+#: templates/admin/settings.php
+msgid "Last month"
+msgstr "Förra månaden"
+
+#: src/Support/MonthlyReport.php
+msgid "Tried to install"
+msgstr "Försökte installera"
+
+#: src/Support/MonthlyReport.php
+msgid "Success rate"
+msgstr "Andel lyckade"
+
+#: src/Support/MonthlyReport.php
+msgid "Active installs, last 30 days"
+msgstr "Aktiva installationer, 30 dagar"
+
+#: src/Support/MonthlyReport.php
+msgid "Devices with notifications, reached in 30 days / all"
+msgstr "Enheter med aviseringar, nådda på 30 dagar / alla"
+
+#: src/Support/MonthlyReport.php
+msgid "People count once a month. Active installs: opened from the home screen. The 30 days end when this report was sent."
+msgstr "En person räknas en gång i månaden. Aktiva installationer: öppnade från hemskärmen. De 30 dagarna slutar när rapporten skickades."
+
+#: templates/admin/settings.php
+msgid "People count once a month. Active installs: opened from the home screen. Devices with notifications are devices, not people."
+msgstr "En person räknas en gång i månaden. Aktiva installationer: öppnade från hemskärmen. Enheter med aviseringar räknas per enhet, inte per person."

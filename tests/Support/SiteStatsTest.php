@@ -52,11 +52,37 @@ final class SiteStatsTest extends TestCase
         SiteStats::addVisit('newsletter', $now);
 
         self::assertSame(
-            ['clicks' => ['ticket' => ['open' => 2]], 'campaigns' => ['newsletter' => 1], 'visits' => 1],
+            [
+                'clicks' => ['ticket' => ['open' => 2]],
+                'campaigns' => ['newsletter' => 1],
+                'visits' => 1,
+                'app' => ['tried' => 0, 'installed' => 0],
+            ],
             SiteStats::month('2026-11')
         );
         self::assertFalse($this->autoload['eventcrew_stats_2026_11']);
-        self::assertSame(['clicks' => [], 'campaigns' => [], 'visits' => 0], SiteStats::month('2026-10'));
+        self::assertSame(
+            ['clicks' => [], 'campaigns' => [], 'visits' => 0, 'app' => ['tried' => 0, 'installed' => 0]],
+            SiteStats::month('2026-10')
+        );
+    }
+
+    public function testTheCrewAppCountersAddUpPerMonthBesideTheClicks(): void
+    {
+        $now = new \DateTimeImmutable('2026-11-08 12:00', new \DateTimeZone('Europe/Helsinki'));
+
+        SiteStats::addClick('ticket', 'open', $now);
+        SiteStats::addApp('tried', '2026-11');
+        SiteStats::addApp('tried', '2026-11');
+        SiteStats::addApp('installed', '2026-11');
+        SiteStats::addApp('anything else', '2026-11');
+        // A click after them keeps them.
+        SiteStats::addClick('ticket', 'open', $now);
+
+        $month = SiteStats::month('2026-11');
+        self::assertSame(['tried' => 2, 'installed' => 1], $month['app']);
+        self::assertSame(['ticket' => ['open' => 2]], $month['clicks']);
+        self::assertFalse($this->autoload['eventcrew_stats_2026_11']);
     }
 
     public function testCampaignsBeyondTheCapGoUnderOther(): void

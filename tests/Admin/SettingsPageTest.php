@@ -998,6 +998,26 @@ final class SettingsPageTest extends TelegramTestCase
         }
     }
 
+    /** The Crew app install numbers at the top of the Mobile app section (Owner 2026-11-13). */
+    public function testTheMobileAppSectionStartsWithTheCrewAppNumbers(): void
+    {
+        $html = $this->renderSettingsPage();
+        $box = (string) strstr((string) strstr($html, 'class="eventcrew-app-stats"'), '</div>', true);
+
+        self::assertGreaterThan(
+            (int) strpos($html, '>Mobile app</h2>'),
+            (int) strpos($html, 'class="eventcrew-app-stats"')
+        );
+
+        foreach (['Tried to install', 'Installed', 'Success rate', 'This month', 'Last month'] as $label) {
+            self::assertStringContainsString($label, $box);
+        }
+
+        // Nobody tried yet: no rate; no devices.
+        self::assertStringContainsString('>–</td>', $box);
+        self::assertMatchesRegularExpression('#>\s*0 / 0\s*</td>#', $box);
+    }
+
     public function testTheTelegramPartRendersWithoutABotToken(): void
     {
         unset($this->options[TelegramClient::TOKEN_OPTION]);

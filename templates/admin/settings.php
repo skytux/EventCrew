@@ -66,6 +66,7 @@
  * @var string $app_theme_color The app's theme colour, as a hex string.
  * @var string $app_accent_color The Crew app's accent colour, as a hex string.
  * @var int $app_remind_days How many days Remind me later hides the Crew app's "Get the app" pop-in.
+ * @var array<string, mixed> $app_stats The Crew app install numbers, AppStats::summary().
  * @var array<string, mixed> $signature The crew's sign-off, a TranslatedText value, shared by the emails and the broadcast DMs.
  * @var bool $email_html Whether notifications go out as HTML rather than plain text.
  * @var string $email_logo An explicit logo URL for emails; blank uses the site's own logo.
@@ -1145,6 +1146,59 @@ if (! defined('ABSPATH')) {
         </table>
 
         <h2><?php esc_html_e('Mobile app', 'eventcrew'); ?></h2>
+        <?php
+        $eventcrew_app_months = [$app_stats['this_month'], $app_stats['last_month']];
+        $eventcrew_app_rows = [
+            [__('Tried to install', 'eventcrew'), array_column($eventcrew_app_months, 'tried')],
+            [__('Installed', 'eventcrew'), array_column($eventcrew_app_months, 'installed')],
+            [
+                __('Success rate', 'eventcrew'),
+                array_map(
+                    static fn (array $m): string
+                        => \EventCrew\Support\MonthlyReport::percent($m['installed'], $m['tried']),
+                    $eventcrew_app_months
+                ),
+            ],
+        ];
+        ?>
+        <style>.eventcrew-app-stats .num{text-align:right}</style>
+        <div class="eventcrew-app-stats"
+            style="max-width:640px;margin:1em 0;padding:8px 12px;background:#fff;border:1px solid #c3c4c7">
+            <h3 style="margin:.5em 0"><?php esc_html_e('Crew app', 'eventcrew'); ?></h3>
+            <table class="widefat striped" style="border:0;box-shadow:none">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th class="num"><?php esc_html_e('This month', 'eventcrew'); ?></th>
+                        <th class="num"><?php esc_html_e('Last month', 'eventcrew'); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($eventcrew_app_rows as [$eventcrew_app_label, $eventcrew_app_values]) : ?>
+                        <tr>
+                            <td><?php echo esc_html($eventcrew_app_label); ?></td>
+                            <td class="num"><?php echo esc_html((string) $eventcrew_app_values[0]); ?></td>
+                            <td class="num"><?php echo esc_html((string) $eventcrew_app_values[1]); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    <tr>
+                        <td><?php esc_html_e('Active installs, last 30 days', 'eventcrew'); ?></td>
+                        <td class="num" colspan="2"><?php echo esc_html((string) $app_stats['active']); ?></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <?php esc_html_e('Devices with notifications, reached in 30 days / all', 'eventcrew'); ?>
+                        </td>
+                        <td class="num" colspan="2">
+                            <?php echo esc_html(implode(' / ', $app_stats['devices'])); ?>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="description">
+                <?php esc_html_e('People count once a month. Active installs: opened from the home screen. Devices with notifications are devices, not people.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+            </p>
+        </div>
         <p class="description">
             <?php esc_html_e('Turn the signup page into an installable app. Pick the page with the shortcode, then open it on a phone and choose “Add to Home Screen” (iPhone) or “Install app” (Android).', 'eventcrew'); ?>
         </p>

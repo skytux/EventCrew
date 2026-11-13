@@ -5,17 +5,19 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 /**
- * The two counters behind the monthly report's click and campaign rows
- * (Owner, Q385 + Q386): how often each email button was clicked
- * (EmailClicks) and how many page views came in from a campaign link
- * (CampaignVisits). Counts only: no names, no addresses, no IP addresses,
- * no cookies.
+ * The counters behind the monthly report's click, campaign and Crew app
+ * rows (Owner, Q385 + Q386): how often each email button was clicked
+ * (EmailClicks), how many page views came in from a campaign link
+ * (CampaignVisits), and how many people tried to install the Crew app and
+ * installed it (AppStats, Owner 2026-11-13). Counts only: no names, no
+ * addresses, no IP addresses, no cookies.
  *
  * One option per month (site time), never autoloaded:
  * eventcrew_stats_2026_11 => [
  *     'clicks' => [email key => [button key => n]],
  *     'campaigns' => [campaign => n],
  *     'visits' => n,
+ *     'app' => ['tried' => n, 'installed' => n],
  * ]
  * A plain read, add one, write: two clicks in the same instant can lose
  * one, which a monthly count can live with. The number of different
@@ -58,7 +60,12 @@ final class SiteStats
     /**
      * The counts of $month (Y-m), empty when nothing was counted.
      *
-     * @return array{clicks: array<string, array<string, int>>, campaigns: array<string, int>, visits: int}
+     * @return array{
+     *     clicks: array<string, array<string, int>>,
+     *     campaigns: array<string, int>,
+     *     visits: int,
+     *     app: array{tried: int, installed: int}
+     * }
      */
     public static function month(string $month): array
     {
@@ -78,11 +85,32 @@ final class SiteStats
             $campaigns[(string) $name] = (int) $count;
         }
 
+        $app = is_array($stored['app'] ?? null) ? $stored['app'] : [];
+
         return [
             'clicks' => $clicks,
             'campaigns' => $campaigns,
             'visits' => (int) ($stored['visits'] ?? 0),
+            'app' => [
+                'tried' => (int) ($app['tried'] ?? 0),
+                'installed' => (int) ($app['installed'] ?? 0),
+            ],
         ];
+    }
+
+    /**
+     * Adds one to the Crew app counter $counter ('tried' or 'installed') of
+     * $month (Y-m). AppStats decides when a person counts.
+     */
+    public static function addApp(string $counter, string $month): void
+    {
+        if (! in_array($counter, ['tried', 'installed'], true)) {
+            return;
+        }
+
+        $data = self::month($month);
+        $data['app'][$counter]++;
+        self::save($month, $data);
     }
 
     /** Counts one click on $button of the email $mail. */
@@ -155,7 +183,7 @@ final class SiteStats
         }
     }
 
-    /** @param array{clicks: array<string, array<string, int>>, campaigns: array<string, int>, visits: int} $data */
+    /** @param array<string, mixed> $data As month() gives it. */
     private static function save(string $month, array $data): void
     {
         // Not autoloaded: read only when counting and by the monthly report.

@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace EventCrew\Tests\Web;
 
+use Brain\Monkey\Functions;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\AppInstallPrompt;
+use EventCrew\Support\AppStats;
+use EventCrew\Support\SiteStats;
 use EventCrew\Support\WebSession;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\AppInstallController;
@@ -102,7 +105,13 @@ final class AppInstallControllerTest extends TestCase
         $this->post('installed');
 
         self::assertSame(
-            ['newcomer:before' => 'yes', AppInstallPrompt::KEY_INSTALLED => '2026-07-20 12:00:00'],
+            [
+                'newcomer:before' => 'yes',
+                AppInstallPrompt::KEY_INSTALLED => '2026-07-20 12:00:00',
+                // Counted as a try and an install this month (AppStats).
+                AppInstallPrompt::KEY_TRIED_MONTH => '2026-07',
+                AppInstallPrompt::KEY_INSTALLED_MONTH => '2026-07',
+            ],
             $this->written()
         );
     }
@@ -127,6 +136,8 @@ final class AppInstallControllerTest extends TestCase
                 AppInstallPrompt::KEY_NOTIFY_OFFERED => '',
                 AppInstallPrompt::KEY_INSTALL_PENDING => '',
                 AppInstallPrompt::KEY_LAST_OPEN => '2026-07-20 12:00:00',
+                AppInstallPrompt::KEY_TRIED_MONTH => '2026-07',
+                AppInstallPrompt::KEY_INSTALLED_MONTH => '2026-07',
             ],
             $this->written()
         );
@@ -150,7 +161,109 @@ final class AppInstallControllerTest extends TestCase
 
         $this->post('installing');
 
-        self::assertSame([AppInstallPrompt::KEY_INSTALL_PENDING => '2026-07-20 12:00:00'], $this->written());
+        self::assertSame(
+            [
+                AppInstallPrompt::KEY_INSTALL_PENDING => '2026-07-20 12:00:00',
+                AppInstallPrompt::KEY_TRIED_MONTH => '2026-07',
+            ],
+            $this->written()
+        );
+    }
+
+    /**
+     * Options kept in $options for the test: the monthly counters and when
+     * counting began.
+     *
+     * @param array<string, mixed> $options
+     */
+    private function keepOptions(array &$options): void
+    {
+        Functions\when('get_option')->alias(
+            static function (string $name, mixed $default = false) use (&$options): mixed {
+                return $options[$name] ?? $default;
+            }
+        );
+        Functions\when('update_option')->alias(static function (string $name, mixed $value) use (&$options): bool {
+            $options[$name] = $value;
+
+            return true;
+        });
+        Functions\when('add_option')->alias(static function (string $name, mixed $value) use (&$options): bool {
+            if (isset($options[$name])) {
+                return false;
+            }
+
+            $options[$name] = $value;
+
+            return true;
+        });
+    }
+
+    public function testTriesAndInstallsAreCountedOncePerPersonAMonth(): void
+    {
+        $options = [];
+        $this->keepOptions($options);
+
+        // Install the app tapped: a try; the first count notes when counting began.
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com'];
+        self::assertSame([200, ['ok' => true]], $this->post('tapped'));
+        self::assertSame([AppInstallPrompt::KEY_TRIED_MONTH => '2026-07'], $this->written());
+        self::assertSame('2026-07-20 12:00:00', $options[AppStats::SINCE_OPTION]);
+
+        // Tapped again, or the steps by hand shown, the same month: not again.
+        $tried = [AppInstallPrompt::KEY_TRIED_MONTH => '2026-07'];
+        $this->wpdb->updates = [];
+        self::assertSame([200, ['ok' => true]], $this->post('tapped', $tried));
+        self::assertSame([], $this->wpdb->updates);
+
+        // Installed: an install, and no second try.
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com'];
+        $this->post('installed', $tried);
+        self::assertSame('2026-07', $this->written()[AppInstallPrompt::KEY_INSTALLED_MONTH]);
+
+        // A try in an earlier month counts again now.
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com'];
+        $this->post('installing', [AppInstallPrompt::KEY_TRIED_MONTH => '2026-06']);
+
+        // Closing, Remind me later and the notifications offer count nothing.
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com'];
+        $this->post('later');
+        self::assertArrayNotHasKey(AppInstallPrompt::KEY_TRIED_MONTH, $this->written());
+
+        self::assertSame(['tried' => 2, 'installed' => 1], SiteStats::month('2026-07')['app']);
+    }
+
+    public function testTheFirstOpeningAfterTheStepsIsAnInstall(): void
+    {
+        $options = [AppStats::SINCE_OPTION => '2026-07-01 00:00:00'];
+        $this->keepOptions($options);
+        $pending = [AppInstallPrompt::KEY_INSTALL_PENDING => '2026-07-20 11:00:00'];
+
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com'];
+        $this->post('opened', $pending);
+        self::assertSame(['tried' => 1, 'installed' => 1], SiteStats::month('2026-07')['app']);
+
+        // An ordinary opening of the app, a day later, counts nothing.
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com'];
+        $this->post('opened', [
+            AppInstallPrompt::KEY_INSTALLED => '2026-07-10 10:00:00',
+            AppInstallPrompt::KEY_LAST_OPEN => '2026-07-19 10:00:00',
+        ]);
+        self::assertSame(['tried' => 1, 'installed' => 1], SiteStats::month('2026-07')['app']);
+    }
+
+    public function testAnInstallFromBeforeCountingIsNotCountedTwice(): void
+    {
+        // Installed on 5.7., counting began on 10.7.: the monthly numbers
+        // count them from the install time already (AppStats::month()).
+        $options = [AppStats::SINCE_OPTION => '2026-07-10 00:00:00'];
+        $this->keepOptions($options);
+
+        $this->wpdb->nextRows[] = ['id' => 7, 'email' => 'sam@example.com'];
+        $this->post('installed', [AppInstallPrompt::KEY_INSTALLED => '2026-07-05 10:00:00']);
+
+        self::assertSame('2026-07', $this->written()[AppInstallPrompt::KEY_INSTALLED_MONTH]);
+        self::assertSame(['tried' => 0, 'installed' => 0], SiteStats::month('2026-07')['app']);
     }
 
     public function testRefusals(): void

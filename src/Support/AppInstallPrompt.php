@@ -30,7 +30,7 @@ use EventCrew\Models\Person;
  *   offers the app again once it has not been opened for remindDays() days.
  * Once installed, the app offers "Turn on notifications" once per install
  * (KEY_NOTIFY_OFFERED): a new install (appinstalled, or the first opening
- * after the iPhone steps were shown, KEY_INSTALL_PENDING) clears it again.
+ * after the steps by hand were shown, KEY_INSTALL_PENDING) clears it again.
  * The script offers it only where this device has no push subscription.
  *
  * Whether this browser can install the app at all only the page's script
@@ -63,8 +63,14 @@ final class AppInstallPrompt
     /** role_notices: when the app was last opened from the Home Screen (site time). */
     public const KEY_LAST_OPEN = 'app:last_open';
 
-    /** role_notices: when the pop-in showed the iPhone steps; the next opening is a new install. */
+    /** role_notices: when the pop-in showed the steps by hand; the next opening is a new install. */
     public const KEY_INSTALL_PENDING = 'app:install_pending';
+
+    /** role_notices: the last month (Y-m) they were counted as trying to install (AppStats). */
+    public const KEY_TRIED_MONTH = 'app:tried_month';
+
+    /** role_notices: the last month (Y-m) they were counted as installing (AppStats). */
+    public const KEY_INSTALLED_MONTH = 'app:installed_month';
 
     public const KEYS = [
         self::KEY_INSTALLED,
@@ -73,6 +79,8 @@ final class AppInstallPrompt
         self::KEY_NOTIFY_OFFERED,
         self::KEY_LAST_OPEN,
         self::KEY_INSTALL_PENDING,
+        self::KEY_TRIED_MONTH,
+        self::KEY_INSTALLED_MONTH,
     ];
 
     /**
@@ -91,6 +99,8 @@ final class AppInstallPrompt
     public const OP_OFFERED = 'offered';
     public const OP_INSTALLING = 'installing';
     public const OP_OPENED = 'opened';
+    /** Install the app tapped (the browser's own prompt opens): counted only (AppStats). */
+    public const OP_TAPPED = 'tapped';
 
     /** How many closed sessions are remembered: a few devices at once. */
     private const CLOSED_KEEP = 5;
@@ -187,7 +197,7 @@ final class AppInstallPrompt
                 return self::newInstall($person, $siteNow);
 
             case self::OP_INSTALLING:
-                // The iPhone steps were shown: the next opening is a new install.
+                // The steps by hand (iPhone, browser menu) were shown: the next opening is a new install.
                 return [self::KEY_INSTALL_PENDING => $siteNow];
 
             case self::OP_OPENED:
@@ -204,6 +214,10 @@ final class AppInstallPrompt
                 }
 
                 return $entries;
+
+            case self::OP_TAPPED:
+                // Nothing of the pop-in's own; AppStats counts the try.
+                return [];
 
             case self::OP_OFFERED:
                 return self::has($person, self::KEY_NOTIFY_OFFERED)

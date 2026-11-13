@@ -7,6 +7,8 @@ namespace EventCrew\Tests\Support;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\MonthlyReportRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Support\AppInstallPrompt;
+use EventCrew\Support\AppStats;
 use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
@@ -101,7 +103,14 @@ final class MonthlyReportTest extends TestCase
 
         // In the email, after the funnel.
         $mail = $this->report()->compose($this->stats('2026-10', 1.0), $this->stats('2026-09', 1.0), $actions);
-        self::assertStringContainsString("share of the row above\n\nDONE FOR OTHERS\n\nKim · 2", $mail['text']);
+        self::assertStringContainsString(
+            "share of the row above\n\nCREW APP\n",
+            $mail['text']
+        );
+        self::assertStringContainsString(
+            "when this report was sent.\n\nDONE FOR OTHERS\n\nKim · 2",
+            $mail['text']
+        );
     }
 
     public function testDoneForOthersListsAtMostAHundredPerActor(): void
@@ -138,6 +147,7 @@ final class MonthlyReportTest extends TestCase
 
     public function testTheReportReadsTheMonthsActionsOnceForAllOrganizers(): void
     {
+        $this->queueApp();
         $this->queueMonth();
         $this->queueMonth();
         $this->wpdb->nextResults[] = [
@@ -164,6 +174,7 @@ final class MonthlyReportTest extends TestCase
 
     public function testItCountsTheMonthFromTheTables(): void
     {
+        $this->queueApp();
         $this->queueMonth();
 
         $stats = $this->report()->stats('2026-10');
@@ -193,6 +204,12 @@ final class MonthlyReportTest extends TestCase
                     'signed_up' => 3,
                     'completed' => 2,
                 ],
+                // No app entries, no devices.
+                'app_tried' => 0,
+                'app_installed' => 0,
+                'app_active' => 0,
+                'push_recent' => 0,
+                'push_total' => 0,
                 // Nothing counted, and no Burst table.
                 'clicks' => 0,
                 'visits' => 0,
@@ -285,6 +302,7 @@ final class MonthlyReportTest extends TestCase
             'campaigns' => ['newsletter' => 5, 'flyer' => 2],
             'visits' => 7,
         ];
+        $this->queueApp();
         $this->queueMonth();
         $this->wpdb->nextVars[3] = 'wp_burst_statistics';
         $this->wpdb->nextRows[] = ['views' => '120', 'visitors' => '45'];
@@ -327,6 +345,75 @@ final class MonthlyReportTest extends TestCase
         self::assertStringNotContainsString('ticket offer', $text);
     }
 
+    public function testItCountsTheCrewAppNumbers(): void
+    {
+        // Counted since 15.10.: 3 tries and 2 installs.
+        $this->options['eventcrew_stats_2026_10'] = ['app' => ['tried' => 3, 'installed' => 2]];
+        $this->options[AppStats::SINCE_OPTION] = '2026-10-15 00:00:00';
+        $this->queueApp(
+            [
+                // Installed before counting began: counted from the install time.
+                [
+                    AppInstallPrompt::KEY_INSTALLED => '2026-10-02 10:00:00',
+                    AppInstallPrompt::KEY_LAST_OPEN => '2026-10-02 08:00:00',
+                ],
+                // Installed after: in the counters already; opened 2 days ago.
+                [
+                    AppInstallPrompt::KEY_INSTALLED => '2026-10-20 10:00:00',
+                    AppInstallPrompt::KEY_LAST_OPEN => '2026-10-30 10:00:00',
+                ],
+                // Installed in September.
+                [AppInstallPrompt::KEY_INSTALLED => '2026-09-20 10:00:00'],
+            ],
+            4,
+            6
+        );
+        $this->queueMonth();
+
+        $stats = $this->report()->stats('2026-10', $this->at('2026-11-01 09:00'));
+
+        self::assertSame(4, $stats['app_tried']);
+        self::assertSame(3, $stats['app_installed']);
+        // Opened in the 30 days before 1.11. 09:00 (from 2.10. 09:00 on).
+        self::assertSame(1, $stats['app_active']);
+        self::assertSame(4, $stats['push_recent']);
+        self::assertSame(6, $stats['push_total']);
+
+        $queries = implode("\n", $this->wpdb->queries);
+        self::assertStringContainsString('SELECT role_notices FROM', $queries);
+        self::assertStringContainsString("last_ok_at >= '2026-10-02 09:00:00'", $queries);
+    }
+
+    public function testTheCrewAppBlockFollowsTheFunnel(): void
+    {
+        $stats = $this->stats('2026-10', 1.0) + [
+            'app_tried' => 4,
+            'app_installed' => 3,
+            'app_active' => 7,
+            'push_recent' => 4,
+            'push_total' => 6,
+        ];
+        $before = $this->stats('2026-09', 1.0) + ['app_tried' => 2, 'app_active' => 99, 'push_total' => 99];
+
+        $mail = $this->report()->compose($stats, $before);
+
+        // The month before in brackets; the 30-day numbers without.
+        self::assertStringContainsString(
+            "CREW APP\nTried to install: 4 (2)\nInstalled: 3 (0)\nSuccess rate: 75% (0%)\n"
+            . "Active installs, last 30 days: 7\n"
+            . "Devices with notifications, reached in 30 days / all: 4 / 6\nPeople count once a month.",
+            $mail['text']
+        );
+        self::assertStringContainsString('>Crew app</p>', $mail['html']);
+
+        // Nobody tried: no rate.
+        $none = $this->report()->compose($this->stats('2026-10', 1.0), $this->stats('2026-09', 1.0));
+        self::assertStringContainsString(
+            "Tried to install: 0 (0)\nInstalled: 0 (0)\nSuccess rate: – (–)",
+            $none['text']
+        );
+    }
+
     public function testNoBurstTableMeansNoBurstRows(): void
     {
         $text = $this->report()->compose($this->stats('2026-10', 1.0), $this->stats('2026-09', 1.0))['text'];
@@ -347,6 +434,7 @@ final class MonthlyReportTest extends TestCase
 
     public function testItGoesToEveryOrganizerOnceOnThe1st(): void
     {
+        $this->queueApp();
         $this->queueMonth();
         $this->queueMonth();
         $this->wpdb->nextResults[] = [
@@ -373,6 +461,7 @@ final class MonthlyReportTest extends TestCase
         self::assertSame(0, $this->report()->run($this->at('2026-11-08 09:00')));
         self::assertSame([], $this->wpdb->queries);
 
+        $this->queueApp();
         $this->queueMonth();
         $this->queueMonth();
         $this->wpdb->nextResults[] = [self::organizerRow(1, 'one@example.test')];
@@ -399,6 +488,7 @@ final class MonthlyReportTest extends TestCase
 
     public function testTheTestReportGoesToTheGivenAddressOnly(): void
     {
+        $this->queueApp();
         $this->queueMonth();
         $this->queueMonth();
 
@@ -434,6 +524,18 @@ final class MonthlyReportTest extends TestCase
             null,
             static fn (string $date): string => 'Night ' . $date
         );
+    }
+
+    /**
+     * The Crew app reads (AppStats), done once, by the first stats(): the
+     * people's app entries, then the notification devices.
+     *
+     * @param list<array<string, string>> $notices
+     */
+    private function queueApp(array $notices = [], int $recent = 0, int $total = 0): void
+    {
+        $this->wpdb->nextCols[] = array_map(static fn (array $one): string => (string) json_encode($one), $notices);
+        $this->wpdb->nextRows[] = ['total' => (string) $total, 'recent' => (string) $recent];
     }
 
     /** One month's query results, in the order stats() reads them. */

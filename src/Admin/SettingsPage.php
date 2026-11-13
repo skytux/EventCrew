@@ -7,6 +7,7 @@ namespace EventCrew\Admin;
 use EventCrew\Models\Task;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\AppInstallPrompt;
+use EventCrew\Support\AppStats;
 use EventCrew\Support\AssistantKnowledge;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\BackgroundJobs;
@@ -234,6 +235,8 @@ final class SettingsPage
                     ?: get_option(PwaController::COLOR_OPTION, PwaController::DEFAULT_COLOR)
                 ),
                 'app_remind_days' => AppInstallPrompt::remindDays(),
+                // Site time as a plain clock: only its date and time are read.
+                'app_stats' => (new AppStats())->summary(new \DateTimeImmutable((string) current_time('mysql'))),
                 'signature' => SiteTexts::value('signature'),
                 'email_html' => EmailTemplate::enabled(),
                 'email_logo' => (string) get_option(EmailTemplate::LOGO_OPTION, ''),

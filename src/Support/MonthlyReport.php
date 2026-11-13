@@ -53,6 +53,13 @@ use EventCrew\Repositories\TaskRepository;
  *   campaigns under it;
  * - page views and visitors (Burst): read from the Burst Statistics plugin's
  *   table when it is there; the rows are left out when it is not;
+ * - Crew app (Owner 2026-11-13): tried to install, installed and the
+ *   success rate (installed / tried) of the month, people once each
+ *   (AppStats::month()); and, as of the report's sending, active installs
+ *   (people who opened the app from the home screen in the last 30 days)
+ *   and devices with notifications (reached in the last 30 days / all).
+ *   Its own block after the funnel (appBlock()), since a rate and a pair
+ *   are not plain counts; the 30-day numbers have no month before;
  * - done for others (Owner, 2026-11-11): the history rows of the month where
  *   an organizer acted for someone else (the bot's Act as included) or a
  *   WordPress user acted in wp-admin, settings and the task list included;
@@ -116,6 +123,9 @@ final class MonthlyReport
     /** @var \Closure(string): string */
     private readonly \Closure $nightName;
 
+    /** The Crew app install numbers. */
+    private readonly AppStats $app;
+
     /**
      * $nightName gives a night's event name in the current language; by
      * default the first named task of that night (as the post-event email).
@@ -127,8 +137,10 @@ final class MonthlyReport
         private readonly PersonRepository $people,
         private readonly Mailer $mailer,
         ?TaskRepository $tasks = null,
-        ?\Closure $nightName = null
+        ?\Closure $nightName = null,
+        ?AppStats $app = null
     ) {
+        $this->app = $app ?? new AppStats($this->data);
         $tasks ??= new TaskRepository();
         $this->nightName = $nightName ?? static function (string $date) use ($tasks): string {
             foreach ($tasks->forDate($date) as $task) {
@@ -183,8 +195,8 @@ final class MonthlyReport
         // organizers without it rather than mailing the others twice.
         update_option(self::SENT_OPTION, $month);
 
-        $stats = $this->stats($month);
-        $before = $this->stats(self::previousMonth(self::firstDay($month)));
+        $stats = $this->stats($month, $now);
+        $before = $this->stats(self::previousMonth(self::firstDay($month)), $now);
         $sent = 0;
 
         // The click and campaign counts are kept for KEEP_MONTHS months.
@@ -222,8 +234,8 @@ final class MonthlyReport
         return $this->sendTo(
             $to,
             $person,
-            $this->stats($month),
-            $this->stats(self::previousMonth(self::firstDay($month))),
+            $this->stats($month, $now),
+            $this->stats(self::previousMonth(self::firstDay($month)), $now),
             $this->adminActions($month)
         );
     }
@@ -285,16 +297,25 @@ final class MonthlyReport
      *     funnel: array{active: int, signed_up: int, completed: int},
      *     clicks: int,
      *     visits: int,
+     *     app_tried: int,
+     *     app_installed: int,
+     *     app_active: int,
+     *     push_recent: int,
+     *     push_total: int,
      *     burst_views?: int,
      *     burst_visitors?: int
      * }
      *
      * Besides these, one int per email · button pair ("click:<email>:<button>")
      * and per campaign ("campaign:<name>"); burst_views and burst_visitors
-     * only when the Burst Statistics plugin's table is there.
+     * only when the Burst Statistics plugin's table is there. The app_active
+     * and push_ numbers are as of $now (default: now), whatever the month.
      */
-    public function stats(string $month): array
+    public function stats(string $month, ?\DateTimeImmutable $now = null): array
     {
+        $now ??= new \DateTimeImmutable('now', self::timezone());
+        $app = $this->app->month($month);
+        $devices = $this->app->devices($now);
         $start = self::firstDay($month);
         $end = $start->modify('first day of next month');
         $from = $start->format('Y-m-d H:i:s');
@@ -336,6 +357,14 @@ final class MonthlyReport
                 'signed_up' => count($tasks),
                 'completed' => count($completedPeople),
             ],
+        ];
+
+        $stats += [
+            'app_tried' => $app['tried'],
+            'app_installed' => $app['installed'],
+            'app_active' => $this->app->active($now),
+            'push_recent' => $devices['recent'],
+            'push_total' => $devices['total'],
         ];
 
         return $stats + $this->siteStats($month) + $this->burst($start, $end);
@@ -453,6 +482,7 @@ final class MonthlyReport
         $noBuyers = __('No ticket buyers.', 'eventcrew');
 
         $done = $this->doneForOthers($actions);
+        $app = self::appBlock($stats, $before);
 
         $html = self::table($countRows)
             . self::heading($buyersHeading)
@@ -460,11 +490,13 @@ final class MonthlyReport
             . self::heading($funnelHeading)
             . self::table($funnelCells)
             . self::note($percentNote)
+            . $app['html']
             . $done['html'];
 
         $text = self::textRows($countRows) . "\n\n" . mb_strtoupper($buyersHeading) . "\n"
             . ([] === $nightRows ? $noBuyers : self::textRows($nightRows)) . "\n\n"
             . mb_strtoupper($funnelHeading) . "\n" . self::textRows($funnelCells) . "\n" . $percentNote
+            . "\n\n" . $app['text']
             . "\n\n" . $done['text'];
 
         return [
@@ -478,6 +510,41 @@ final class MonthlyReport
             ),
             'html' => $html,
             'text' => $text,
+        ];
+    }
+
+    /**
+     * The "Crew app" section of the email, as HTML and as text: tried to
+     * install, installed and the success rate with the month before in
+     * brackets, then the 30-day numbers as of sending (no brackets).
+     *
+     * @param array<string, mixed> $stats From stats().
+     * @param array<string, mixed> $before From stats().
+     * @return array{html: string, text: string}
+     */
+    public static function appBlock(array $stats, array $before): array
+    {
+        $n = static fn (array $from, string $key): int => (int) ($from[$key] ?? 0);
+        $rate = static fn (array $from): string
+            => self::percent($n($from, 'app_installed'), $n($from, 'app_tried'));
+        $rows = [
+            [__('Tried to install', 'eventcrew'), (string) $n($stats, 'app_tried'), (string) $n($before, 'app_tried')],
+            [__('Installed', 'eventcrew'), (string) $n($stats, 'app_installed'), (string) $n($before, 'app_installed')],
+            [__('Success rate', 'eventcrew'), $rate($stats), $rate($before)],
+            [__('Active installs, last 30 days', 'eventcrew'), (string) $n($stats, 'app_active'), ''],
+            [
+                __('Devices with notifications, reached in 30 days / all', 'eventcrew'),
+                $n($stats, 'push_recent') . ' / ' . $n($stats, 'push_total'),
+                '',
+            ],
+        ];
+        $heading = __('Crew app', 'eventcrew');
+        // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+        $note = __('People count once a month. Active installs: opened from the home screen. The 30 days end when this report was sent.', 'eventcrew');
+
+        return [
+            'html' => self::heading($heading) . self::table($rows) . self::note($note),
+            'text' => mb_strtoupper($heading) . "\n" . self::textRows($rows) . "\n" . $note,
         ];
     }
 

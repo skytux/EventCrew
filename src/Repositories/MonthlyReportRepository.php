@@ -318,6 +318,52 @@ final class MonthlyReportRepository
     }
 
     /**
+     * The role_notices records (JSON, as stored) of the people with a Crew
+     * app entry in them (AppInstallPrompt's "app:" keys), for AppStats.
+     * Only that column: no names, no addresses.
+     *
+     * @return list<string>
+     */
+    public function appNotices(): array
+    {
+        global $wpdb;
+
+        $people = Schema::table(Schema::PEOPLE);
+        $column = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT role_notices FROM {$people} WHERE role_notices LIKE %s",
+                '%' . $wpdb->esc_like('"app:') . '%'
+            )
+        );
+
+        return array_values(array_map('strval', is_array($column) ? $column : []));
+    }
+
+    /**
+     * The devices with app notifications turned on: all of them, and those
+     * a notification reached (last_ok_at) at or after $since (site time).
+     *
+     * @return array{recent: int, total: int}
+     */
+    public function pushDevices(string $since): array
+    {
+        global $wpdb;
+
+        $table = Schema::table(Schema::PUSH_SUBSCRIPTIONS);
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT COUNT(*) AS total, COALESCE(SUM(last_ok_at >= %s), 0) AS recent FROM {$table}",
+                $since
+            ),
+            ARRAY_A
+        );
+
+        return is_array($row)
+            ? ['recent' => (int) ($row['recent'] ?? 0), 'total' => (int) ($row['total'] ?? 0)]
+            : ['recent' => 0, 'total' => 0];
+    }
+
+    /**
      * @param mixed $column
      * @return list<int>
      */

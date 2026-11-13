@@ -11097,3 +11097,39 @@ msgstr "📱 Crew-sovellus on täällä: tehtävät, liput ja ilmoitukset ilman 
 #: src/Support/PrivacyPolicy.php
 msgid "The Group chat in the Crew app is relayed to the crew’s Telegram group. What you write there the bot posts to the Telegram group with your name, so everyone in that group can read it, also those who do not use the Crew app, and it passes through Telegram (https://telegram.org/privacy) even if you have not linked a Telegram account."
 msgstr "Crew-sovelluksen ryhmächatti välitetään crew’n Telegram-ryhmään. Botti julkaisee sinne kirjoittamasi viestin Telegram-ryhmässä nimelläsi, joten kaikki ryhmän jäsenet voivat lukea sen, myös ne, jotka eivät käytä Crew-sovellusta, ja viesti kulkee Telegramin kautta (https://telegram.org/privacy), vaikka et olisi yhdistänyt Telegram-tiliä."
+
+#: src/Support/MonthlyReport.php
+msgid "Crew app"
+msgstr "Crew-sovellus"
+
+#: templates/admin/settings.php
+msgid "This month"
+msgstr "Tässä kuussa"
+
+#: templates/admin/settings.php
+msgid "Last month"
+msgstr "Viime kuussa"
+
+#: src/Support/MonthlyReport.php
+msgid "Tried to install"
+msgstr "Yritti asentaa"
+
+#: src/Support/MonthlyReport.php
+msgid "Success rate"
+msgstr "Onnistumisaste"
+
+#: src/Support/MonthlyReport.php
+msgid "Active installs, last 30 days"
+msgstr "Aktiiviset asennukset, 30 pv"
+
+#: src/Support/MonthlyReport.php
+msgid "Devices with notifications, reached in 30 days / all"
+msgstr "Laitteet ilmoituksin, tavoitettu 30 pv / kaikki"
+
+#: src/Support/MonthlyReport.php
+msgid "People count once a month. Active installs: opened from the home screen. The 30 days end when this report was sent."
+msgstr "Henkilö lasketaan kerran kuussa. Aktiiviset asennukset: avattu aloitusnäytöltä. 30 päivää päättyvät raportin lähetykseen."
+
+#: templates/admin/settings.php
+msgid "People count once a month. Active installs: opened from the home screen. Devices with notifications are devices, not people."
+msgstr "Henkilö lasketaan kerran kuussa. Aktiiviset asennukset: avattu aloitusnäytöltä. Laitteet ilmoituksin ovat laitteita, eivät henkilöitä."
