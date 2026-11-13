@@ -79,7 +79,8 @@ final class AssistantKnowledge
      * an organizer, and $personId's own tasks, tickets and credits as "This
      * person" (0 = none: a group chat or an unknown person). For an organizer,
      * $question (their message) picks the people and nights whose history goes
-     * in as "History asked about".
+     * in as "History asked about". $web: the helper box of the Crew app page,
+     * whose facts name the page's tabs instead of bot commands.
      *
      * @param array<int, string> $roleSlugs
      * @return array{facts: string, tasks: array<int, int>}
@@ -91,7 +92,8 @@ final class AssistantKnowledge
         bool $organizer = false,
         bool $member = false,
         int $personId = 0,
-        string $question = ''
+        string $question = '',
+        bool $web = false
     ): array {
         [$taskText, $taskIds] = $this->tasksText($member, $organizer);
 
@@ -132,8 +134,12 @@ final class AssistantKnowledge
 
         $parts = [...$parts, ...$this->statusParts($organizer, $personId, $question)];
 
+        $parts[] = '## How standing works' . "\n" . self::standingRulesText();
+
         // Private-chat commands for organizers and members (ag-people).
-        $parts[] = '## Private-chat commands' . "\n" . self::chatCommandsText($organizer);
+        $parts[] = $web
+            ? '## Where things are on this page' . "\n" . self::webPlacesText($organizer)
+            : '## Private-chat commands' . "\n" . self::chatCommandsText($organizer);
 
         return ['facts' => implode("\n\n", $parts), 'tasks' => $taskIds];
     }
@@ -163,6 +169,122 @@ final class AssistantKnowledge
         }
 
         return $parts;
+    }
+
+    /**
+     * How standing works, from the live settings (ReputationSettings, the
+     * cancel notice and sign-out lock of SignupService, the second thoughts
+     * window), never from numbers written here: the same rules Reputation,
+     * StandingCalculator and SignupService apply.
+     */
+    public static function standingRulesText(): string
+    {
+        $settings = new ReputationSettings();
+        $percents = $settings->weightPercents();
+        $outcome = static fn (string $status): int => $percents[$status] ?? 0;
+        $threshold = (int) round($settings->threshold() * 100);
+        $noticeHours = max(0, (int) get_option(SignupService::NOTICE_HOURS_OPTION, 48));
+        $lockMinutes = SignupService::signoutLockMinutes();
+        $window = SecondThoughts::minutes();
+        $gate = (bool) get_option(SignupService::GATE_OPTION, true);
+
+        $lines = [
+            sprintf(
+                '- Standing is a percentage: the average of how each finished task went, where completed counts'
+                    . ' %d%%, arrived late (but did the task) %d%%, replaced (someone else took the task over)'
+                    . ' %d%%, cancelled late %d%% and no-show %d%%.',
+                $outcome(AssignmentStatus::COMPLETED),
+                $outcome(AssignmentStatus::ARRIVED_LATE),
+                $outcome(AssignmentStatus::REPLACED),
+                $outcome(AssignmentStatus::LATE_CANCEL),
+                $outcome(AssignmentStatus::NO_SHOW)
+            ),
+            sprintf(
+                '- Recent tasks count more: a task counts half as much after %d days, a quarter after %d days.',
+                $settings->halfLifeDays(),
+                2 * $settings->halfLifeDays()
+            ),
+            '- Only finished tasks count. Coming tasks and a cancel with enough notice count for nothing, and so'
+                . ' does a task an organizer set not to count toward free-entry credit.',
+            sprintf(
+                '- A cancel is late when it is less than %d hours before the task starts. Taking the same task'
+                    . ' back afterwards removes that late cancel.',
+                $noticeHours
+            ),
+        ];
+
+        if ($window > 0) {
+            $lines[] = sprintf(
+                '- Changing one\'s mind within %d minute(s) of taking a task is free: that cancel is never late.',
+                $window
+            );
+        }
+
+        if ($lockMinutes > 0) {
+            $lines[] = sprintf(
+                '- Less than %d minutes before a task starts, people cannot cancel it themselves any more: they'
+                    . ' tell an organizer.',
+                $lockMinutes
+            );
+        }
+
+        $lines[] = sprintf(
+            '- Levels: not rated yet until %d tasks are finished (any outcome counts toward that); then good at'
+                . ' %d%% or more, at risk below %d%%.',
+            $settings->minRatedTasks(),
+            $threshold,
+            $threshold
+        );
+        $lines[] = $gate
+            ? '- Someone at risk cannot sign up for tasks themselves until their standing is good again; an'
+                . ' organizer can still put them on a task, or let them sign up once anyway.'
+            : '- Being at risk does not stop anyone from signing up; organizers see it on the roster and the'
+                . ' door list.';
+        $lines[] = sprintf(
+            '- Free-entry credits are separate: one credit for every %d completed tasks.',
+            $settings->tasksPerCredit()
+        );
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * Where the things the bot's commands do are on the Crew app page, for
+     * the helper box there: the page's tabs and cards, never a command. The
+     * Admin tab's screens only for an organizer.
+     */
+    public static function webPlacesText(bool $organizer): string
+    {
+        $lines = [
+            '- Board tab: the open tasks; sign up there. Taking over someone\'s task is on the task too.',
+            '- Me tab: the person\'s own coming tasks (cancel there), tickets, the free-entry ticket and past tasks.',
+            '- Settings tab: name and email (Your details), notifications, language. The newsletter (the'
+                . ' announcement email) is turned on or off in Notifications, last row.',
+            '- Help tab: how this works and the FAQ.',
+            '- Who else works a night is not shown on this page.',
+        ];
+
+        if ($organizer) {
+            $lines = [
+                ...$lines,
+                '- Admin tab → Roster: a night\'s people by task; mark arrived, late, no-show or done; add someone'
+                    . ' to a task or take them off.',
+                '- Admin tab → Tasks: add, change or delete tasks, create an event\'s tasks from the roles, the'
+                    . ' open-task email, the roles.',
+                '- Admin tab → Door: the sales desk, the door list (redeem a credit for someone\'s free entry, or'
+                    . ' undo it), the guest list (add, change, remove guests), close or reopen free entry, the'
+                    . ' ticket emails.',
+                '- Admin tab → People: find a person: their standing, credits, credit log, give a credit,'
+                    . ' let an at-risk member sign up once, lift a block; newcomers waiting for an OK are at the top.',
+                '- Admin tab → Messages: the next events announcement (its text, stop it) and the post-event email'
+                    . ' (its one-time texts, stop it).',
+                '- The Admin tab also has a screen with a button to post a new board in the crew group.',
+                '- Writing a message to the crew group or to everyone on a task, the event cards and a newsletter'
+                    . ' subscription for someone else are not on this page.',
+            ];
+        }
+
+        return implode("\n", $lines);
     }
 
     /**

@@ -169,12 +169,14 @@ final class AssistantStatus
         }
 
         if (null !== $this->standing) {
-            $standing = $this->standing->for($personId);
+            $whatIf = $this->standing->whatIf($personId, [AssignmentStatus::LATE_CANCEL, AssignmentStatus::COMPLETED]);
+            $standing = $whatIf['now'];
             $lines[] = sprintf(
                 '- Completed tasks: %d. Free-entry credits to spend: %d.',
                 $standing->completedCount,
                 $standing->creditBalance
             );
+            $lines = [...$lines, ...self::standingLines($whatIf, new ReputationSettings())];
         }
 
         if ([] !== $past) {
@@ -182,6 +184,46 @@ final class AssistantStatus
         }
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * The person's own standing and two what-ifs, for "This person": one
+     * late cancellation today, one more completed task today
+     * (StandingCalculator::whatIf()). Only their own figures.
+     *
+     * @param array<string, Standing> $whatIf 'now' and by status
+     * @return list<string>
+     */
+    public static function standingLines(array $whatIf, ReputationSettings $settings): array
+    {
+        $min = $settings->minRatedTasks();
+        $threshold = (int) round($settings->threshold() * 100);
+        $say = static function (Standing $standing) use ($min, $threshold): string {
+            if (! $standing->isRated()) {
+                return sprintf('not rated yet (%d of the %d finished tasks needed)', $standing->scoredCount, $min);
+            }
+
+            return sprintf(
+                '%d%%, %s (good is %d%% or more)',
+                $standing->scorePercent(),
+                $standing->isAtRisk() ? 'at risk' : 'good',
+                $threshold
+            );
+        };
+
+        $lines = ['- Standing now: ' . $say($whatIf['now']) . '.'];
+
+        if (isset($whatIf[AssignmentStatus::LATE_CANCEL])) {
+            $lines[] = '- If they cancelled one task late today, their standing would be '
+                . $say($whatIf[AssignmentStatus::LATE_CANCEL]) . '.';
+        }
+
+        if (isset($whatIf[AssignmentStatus::COMPLETED])) {
+            $lines[] = '- With one more completed task today, their standing would be '
+                . $say($whatIf[AssignmentStatus::COMPLETED]) . '.';
+        }
+
+        return $lines;
     }
 
     /**

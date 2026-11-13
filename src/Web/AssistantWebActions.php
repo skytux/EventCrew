@@ -4,29 +4,51 @@ declare(strict_types=1);
 
 namespace EventCrew\Web;
 
+use EventCrew\Support\Dates;
 use EventCrew\Support\HelpPage;
 
 /**
  * How an action the helper chose (AssistantActions, the bot's own list)
- * runs on the Crew app page instead of in Telegram.
+ * runs on the Crew app page instead of in Telegram. The page is the
+ * alternative to Telegram (Owner 2026-11-13): it never sends anyone there.
  *
  * - confirm: signing up for a task or cancelling one. The page asks with
  *   Confirm and Cancel first, then runs the page's own sign-up or cancel
  *   (SignupController), with the same checks. Cancelling asks too: on the
  *   page there is no second question about what the cancel costs.
- * - goto: what the bot would show, the page already has: the page opens
- *   that tab and scrolls to the card ("targets": element ids, the first one
- *   on the page wins; the last is always a tab).
- * - telegram: only the bot does it; the page offers to open the bot.
+ * - goto: what the bot would show or do, the page has a place for: the page
+ *   opens that tab (and Admin screen) and scrolls to the card ("targets":
+ *   element ids, the first one on the page wins). "query" (optional) are
+ *   page-address values the screen reads, such as the Roster's date or the
+ *   People search: the page then loads with them.
+ * - none: the page has no place for it; the answer text stands alone.
+ *
+ * The Admin tab's places are for an organizer only; anyone else gets none
+ * for those actions (the Admin tab is not on their page either).
  */
 final class AssistantWebActions
 {
     public const CONFIRM = 'confirm';
     public const GOTO = 'goto';
-    public const TELEGRAM = 'telegram';
+    public const NONE = 'none';
 
     public const JOIN = 'join';
     public const LEAVE = 'leave';
+
+    /** The Admin tab's screens and cards (templates/public/signup.php). */
+    public const ADMIN_PANEL = 'eventcrew-panel-admin';
+    public const ADMIN_ROSTER = 'eventcrew-admin-roster';
+    public const ADMIN_DOOR = 'eventcrew-admin-door';
+    public const ADMIN_TASKS = 'eventcrew-admin-tasks';
+    public const ADMIN_PEOPLE = 'eventcrew-admin-people';
+    public const ADMIN_NEWCOMERS = 'eventcrew-admin-newcomers';
+    public const ADMIN_ROLES = 'eventcrew-admin-role-form';
+    public const ADMIN_NEWSLETTER = 'eventcrew-admin-newsletter-card';
+    public const ADMIN_FOLLOWUP = 'eventcrew-admin-followup-card';
+    public const ADMIN_BOARD = 'eventcrew-admin-telegram';
+
+    /** Hosts whose links a web answer never carries. */
+    private const TELEGRAM_HOSTS = ['t.me', 'telegram.me', 'telegram.dog', 'telegram.org'];
 
     /** @var array<string, list<string>> action line => element ids */
     private const PLACES = [
@@ -52,14 +74,55 @@ final class AssistantWebActions
     private const SETTINGS_COMMANDS = ['/name', '/email'];
 
     /**
-     * What the page does with a checked action line ("/join 12", "/me history",
-     * "menu:ticket", "/roster 14.11.").
+     * Organizer commands => the Admin screen or card, and which page-address
+     * value a date in the line sets ('' = none).
      *
-     * @return array{kind: string, op?: string, task?: int, targets?: list<string>}
+     * @var array<string, array{0: string, 1: string}>
      */
-    public static function plan(string $action): array
+    private const ADMIN = [
+        '/roster' => [self::ADMIN_ROSTER, 'roster_date'],
+        '/mark' => [self::ADMIN_ROSTER, 'roster_date'],
+        '/assign' => [self::ADMIN_ROSTER, 'roster_date'],
+        '/unassign' => [self::ADMIN_ROSTER, 'roster_date'],
+        '/door' => [self::ADMIN_DOOR, 'roster_date'],
+        'menu:doorlist' => [self::ADMIN_DOOR, 'roster_date'],
+        'menu:guestlist' => [self::ADMIN_DOOR, 'roster_date'],
+        'menu:sales' => [self::ADMIN_DOOR, ''],
+        '/freeentry' => [self::ADMIN_DOOR, 'roster_date'],
+        '/sendtickets' => [self::ADMIN_DOOR, 'roster_date'],
+        '/ticket' => [self::ADMIN_DOOR, 'roster_date'],
+        '/unticket' => [self::ADMIN_DOOR, 'roster_date'],
+        '/addtask' => [self::ADMIN_TASKS, 'tasks_date'],
+        '/edittask' => [self::ADMIN_TASKS, 'tasks_date'],
+        '/deletetask' => [self::ADMIN_TASKS, 'tasks_date'],
+        '/maketasks' => [self::ADMIN_TASKS, 'tasks_date'],
+        '/mailtasks' => [self::ADMIN_TASKS, ''],
+        '/people' => [self::ADMIN_PEOPLE, ''],
+        'menu:gift' => [self::ADMIN_PEOPLE, ''],
+        'menu:roles' => [self::ADMIN_PEOPLE, ''],
+        'menu:eligible' => [self::ADMIN_ROLES, ''],
+        '/standing' => [self::ADMIN_PEOPLE, ''],
+        '/unban' => [self::ADMIN_PEOPLE, ''],
+        '/newcomer' => [self::ADMIN_NEWCOMERS, ''],
+        '/newsletter' => [self::ADMIN_NEWSLETTER, ''],
+        '/followup' => [self::ADMIN_FOLLOWUP, ''],
+        '/newboard' => [self::ADMIN_BOARD, ''],
+    ];
+
+    /** Organizer commands whose line is "[date] <person>": the person is searched on People. */
+    private const PERSON_SEARCH = ['/standing', '/unban'];
+
+    /**
+     * What the page does with a checked action line ("/join 12", "/me history",
+     * "menu:ticket", "/roster 14.11.") for someone who is an organizer or not.
+     * $today (Y-m-d) reads a date like 14.11.
+     *
+     * @return array{kind: string, op?: string, task?: int, targets?: list<string>, query?: array<string, string>}
+     */
+    public static function plan(string $action, bool $organizer = false, string $today = ''): array
     {
-        $line = strtolower(trim((string) preg_replace('/\s+/u', ' ', $action)));
+        $original = trim((string) preg_replace('/\s+/u', ' ', $action));
+        $line = strtolower($original);
 
         if (1 === preg_match('#^/(join|leave) (\d{1,10})$#', $line, $m)) {
             return [
@@ -73,19 +136,79 @@ final class AssistantWebActions
             return ['kind' => self::GOTO, 'targets' => self::PLACES[$line]];
         }
 
-        $head = explode(' ', $line, 2)[0];
+        $words = explode(' ', $original, 2);
+        $head = strtolower($words[0]);
+        $rest = trim($words[1] ?? '');
 
         if (in_array($head, self::SETTINGS_COMMANDS, true)) {
             return ['kind' => self::GOTO, 'targets' => ['eventcrew-panel-settings']];
         }
 
-        return ['kind' => self::TELEGRAM];
+        // The sales desk of someone on tonight's sales-desk task is on their Me tab.
+        if ('menu:sales' === $head && ! $organizer) {
+            return ['kind' => self::GOTO, 'targets' => ['eventcrew-me-sales']];
+        }
+
+        // "/stop announcement" is the announcement's card, "/stop email" the post-event email's.
+        if ($organizer && '/stop' === $head) {
+            $card = str_starts_with(strtolower($rest), 'email') ? self::ADMIN_FOLLOWUP : self::ADMIN_NEWSLETTER;
+
+            return ['kind' => self::GOTO, 'targets' => [$card, self::ADMIN_PANEL]];
+        }
+
+        if ($organizer && isset(self::ADMIN[$head])) {
+            return self::adminPlan($head, $rest, $today);
+        }
+
+        return ['kind' => self::NONE];
+    }
+
+    /**
+     * An organizer command's Admin place, with the date or person of the
+     * line as the screen's page-address value where the screen reads one.
+     *
+     * @return array{kind: string, targets: list<string>, query?: array<string, string>}
+     */
+    private static function adminPlan(string $head, string $rest, string $today): array
+    {
+        [$target, $dateArg] = self::ADMIN[$head];
+        $query = [];
+
+        $words = '' === $rest ? [] : explode(' ', $rest);
+
+        // "/door add 14.11. Anna": the date follows the door command's own word.
+        if ('/door' === $head && in_array(strtolower($words[0] ?? ''), ['add', 'edit', 'remove'], true)) {
+            array_shift($words);
+        }
+
+        if ('' !== $dateArg && [] !== $words) {
+            $date = Dates::parseUserDate($words[0], '' !== $today ? $today : (string) current_time('Y-m-d'));
+
+            if ('' !== $date) {
+                $query[$dateArg] = $date;
+                array_shift($words);
+            }
+        }
+
+        if (in_array($head, self::PERSON_SEARCH, true)) {
+            $who = trim((string) preg_replace('/[^\p{L}\p{N}\s\'.-]/u', '', implode(' ', $words)));
+
+            if ('' !== $who) {
+                $query['people_q'] = mb_substr($who, 0, 100);
+            }
+        }
+
+        $plan = ['kind' => self::GOTO, 'targets' => [$target, self::ADMIN_PANEL]];
+
+        return [] === $query ? $plan : $plan + ['query' => $query];
     }
 
     /**
      * The answer split into plain text and web links, for the page to put
      * together with textContent and href, never as HTML: what the model
      * wrote is never markup. Only http and https addresses become links.
+     * A Telegram address (t.me and the like) is left out altogether: the
+     * page never sends anyone to Telegram.
      *
      * @return list<array{t: string, u?: string}>
      */
@@ -104,7 +227,10 @@ final class AssistantWebActions
             // A full stop or bracket after an address ends the sentence.
             $url = rtrim($part, '.,;:!?)]}');
             $tail = substr($part, strlen($url));
-            $segments[] = ['t' => $url, 'u' => $url];
+
+            if (! self::isTelegram($url)) {
+                $segments[] = ['t' => $url, 'u' => $url];
+            }
 
             if ('' !== $tail) {
                 $segments[] = ['t' => $tail];
@@ -112,5 +238,20 @@ final class AssistantWebActions
         }
 
         return $segments;
+    }
+
+    /** Whether $url is a Telegram address (t.me, telegram.me, telegram.dog, telegram.org). */
+    public static function isTelegram(string $url): bool
+    {
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- pure, no WordPress needed.
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+
+        foreach (self::TELEGRAM_HOSTS as $telegram) {
+            if ($host === $telegram || str_ends_with($host, '.' . $telegram)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

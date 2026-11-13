@@ -68,6 +68,26 @@ final class StandingCalculatorTest extends TestCase
     }
 
     /**
+     * The helper's what-ifs: one more late cancel or one more completed task
+     * today, next to the standing now, from one read of the history.
+     */
+    public function testWhatIfAddsOneTaskOfEachOutcomeToday(): void
+    {
+        $this->queueHistory(array_fill(0, 3, AssignmentStatus::COMPLETED));
+
+        $whatIf = $this->calculator()->whatIf(9, [AssignmentStatus::LATE_CANCEL, AssignmentStatus::COMPLETED]);
+
+        self::assertSame(1.0, $whatIf['now']->score);
+        self::assertSame(3, $whatIf['now']->scoredCount);
+        // Three completions (1.0) and a late cancel (0.4), all today: 3.4 / 4.
+        self::assertEqualsWithDelta(0.85, $whatIf[AssignmentStatus::LATE_CANCEL]->score, 0.0001);
+        self::assertSame(4, $whatIf[AssignmentStatus::LATE_CANCEL]->scoredCount);
+        self::assertSame(3, $whatIf[AssignmentStatus::LATE_CANCEL]->completedCount);
+        self::assertSame(1.0, $whatIf[AssignmentStatus::COMPLETED]->score);
+        self::assertSame(4, $whatIf[AssignmentStatus::COMPLETED]->completedCount);
+    }
+
+    /**
      * A task someone was put on with "Count toward free-entry credit?" answered
      * No is left out of everything: completions, credit and rating.
      */

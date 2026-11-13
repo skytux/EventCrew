@@ -34,10 +34,48 @@ final class AssistantWebActionsTest extends TestCase
         self::assertSame(['eventcrew-panel-settings'], AssistantWebActions::plan('/name Sam')['targets'] ?? null);
     }
 
-    public function testTheRestIsForTheTelegramBot(): void
+    public function testWhatThePageDoesNotHaveIsNoAction(): void
     {
-        self::assertSame(['kind' => AssistantWebActions::TELEGRAM], AssistantWebActions::plan('/roster 14.11.'));
-        self::assertSame(['kind' => AssistantWebActions::TELEGRAM], AssistantWebActions::plan('/join twelve'));
+        self::assertSame(['kind' => AssistantWebActions::NONE], AssistantWebActions::plan('/roster 14.11.'));
+        self::assertSame(['kind' => AssistantWebActions::NONE], AssistantWebActions::plan('/join twelve'));
+        self::assertSame(['kind' => AssistantWebActions::NONE], AssistantWebActions::plan('/crew'));
+    }
+
+    public function testAMemberNeverGetsAnAdminScreen(): void
+    {
+        self::assertSame(['kind' => AssistantWebActions::NONE], AssistantWebActions::plan('/standing Lou'));
+        self::assertSame(['eventcrew-me-sales'], AssistantWebActions::plan('menu:sales')['targets'] ?? null);
+    }
+
+    public function testAnOrganizerGetsTheAdminScreenWithTheDateOrName(): void
+    {
+        $roster = AssistantWebActions::plan('/roster 14.11.', true, '2026-11-13');
+        self::assertSame(AssistantWebActions::GOTO, $roster['kind']);
+        self::assertSame(['eventcrew-admin-roster', 'eventcrew-panel-admin'], $roster['targets']);
+        self::assertSame(['roster_date' => '2026-11-14'], $roster['query'] ?? null);
+
+        $standing = AssistantWebActions::plan('/standing Lou H', true, '2026-11-13');
+        self::assertSame(['eventcrew-admin-people', 'eventcrew-panel-admin'], $standing['targets']);
+        self::assertSame(['people_q' => 'Lou H'], $standing['query'] ?? null);
+
+        self::assertSame(
+            ['eventcrew-admin-tasks', 'eventcrew-panel-admin'],
+            AssistantWebActions::plan('/addtask', true, '2026-11-13')['targets'] ?? null
+        );
+        self::assertSame(
+            ['eventcrew-admin-telegram', 'eventcrew-panel-admin'],
+            AssistantWebActions::plan('/newboard', true, '2026-11-13')['targets'] ?? null
+        );
+    }
+
+    public function testTelegramLinksAreDropped(): void
+    {
+        self::assertSame(
+            [['t' => 'Ask '], ['t' => ' or read '], ['t' => 'https://a.test/', 'u' => 'https://a.test/']],
+            AssistantWebActions::segments('Ask https://t.me/crew_bot or read https://a.test/')
+        );
+        self::assertTrue(AssistantWebActions::isTelegram('https://t.me/crew_bot'));
+        self::assertFalse(AssistantWebActions::isTelegram('https://a.test/t.me'));
     }
 
     public function testOnlyWebAddressesBecomeLinks(): void

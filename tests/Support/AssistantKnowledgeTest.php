@@ -224,4 +224,35 @@ final class AssistantKnowledgeTest extends TestCase
         self::assertStringContainsString('/tell task ; message', $organizer);
         self::assertStringContainsString('/crew', $organizer);
     }
+
+    /** The standing rules follow the live settings (Owner 2026-11-13: "I do not have the exact formula"). */
+    public function testTheStandingRulesFollowTheSettings(): void
+    {
+        $this->options['eventcrew_notice_hours'] = 24;
+        $this->options['eventcrew_reputation_gate'] = false;
+
+        $rules = AssistantKnowledge::standingRulesText();
+
+        self::assertStringContainsString('completed counts 100%', $rules);
+        self::assertStringContainsString('cancelled late 40% and no-show 0%', $rules);
+        self::assertStringContainsString('less than 24 hours before the task starts', $rules);
+        self::assertStringContainsString('good at 60% or more, at risk below 60%', $rules);
+        self::assertStringContainsString('Being at risk does not stop anyone from signing up', $rules);
+    }
+
+    /** The page's helper names the page's tabs, never Telegram (Owner 2026-11-13). */
+    public function testThePagePlacesNeverNameTelegramOrACommand(): void
+    {
+        $member = AssistantKnowledge::webPlacesText(false);
+        $organizer = AssistantKnowledge::webPlacesText(true);
+
+        self::assertStringContainsString('Me tab', $member);
+        self::assertStringNotContainsString('Admin tab', $member);
+        self::assertStringContainsString('Admin tab → People', $organizer);
+
+        foreach ([$member, $organizer] as $text) {
+            self::assertStringNotContainsString('Telegram', $text);
+            self::assertStringNotContainsString(' /', $text);
+        }
+    }
 }

@@ -10957,9 +10957,6 @@ msgstr "En voi vastata enempää tämän tunnin aikana. Sivu toimii kuten ennenk
 msgid "Sorry, I could not answer just now. Please try again."
 msgstr "Valitettavasti en pystynyt vastaamaan juuri nyt. Yritä uudelleen."
 
-msgid "That is only in the Telegram bot."
-msgstr "Se onnistuu vain Telegram-botissa."
-
 msgid "That can no longer be done."
 msgstr "Sitä ei voi enää tehdä."
 

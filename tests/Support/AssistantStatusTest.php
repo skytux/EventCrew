@@ -15,10 +15,13 @@ use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Repositories\TicketBuyerRepository;
 use EventCrew\Support\AssistantKnowledge;
+use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\AssistantStatus;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\Newsletter;
+use EventCrew\Support\ReputationSettings;
+use EventCrew\Support\Standing;
 use EventCrew\Tests\TestCase;
 use FakeWpdb;
 
@@ -505,5 +508,27 @@ final class AssistantStatusTest extends TestCase
 
         self::assertStringContainsString('Cancellations (the last 14 days', $facts);
         self::assertStringContainsString('Anna cancelled: bar 2026-08-01 (Saturday)', $facts);
+    }
+
+    /** The person's what-if numbers, said plainly for the helper. */
+    public function testTheStandingLinesSayNowAndTheWhatIfs(): void
+    {
+        $lines = AssistantStatus::standingLines(
+            [
+                'now' => new Standing(Standing::GOOD, 0.7, 4, 0, 4),
+                AssignmentStatus::LATE_CANCEL => new Standing(Standing::AT_RISK, 0.55, 4, 0, 5),
+                AssignmentStatus::COMPLETED => new Standing(Standing::GOOD, 0.76, 5, 0, 5),
+            ],
+            new ReputationSettings()
+        );
+
+        self::assertSame(
+            [
+                '- Standing now: 70%, good (good is 60% or more).',
+                '- If they cancelled one task late today, their standing would be 55%, at risk (good is 60% or more).',
+                '- With one more completed task today, their standing would be 76%, good (good is 60% or more).',
+            ],
+            $lines
+        );
     }
 }

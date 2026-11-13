@@ -327,24 +327,25 @@ final class AssistantWebControllerTest extends TestCase
         self::assertSame([[7, '/me tickets', false]], $this->assistant->noted);
     }
 
-    public function testWhatOnlyTheBotDoesOffersTelegramToSomeoneWithTelegram(): void
+    public function testWhatThePageDoesNotHaveGetsNoActionAndNoTelegram(): void
     {
-        $this->assistant->next = FakeWebAssistant::answer('Here is the roster.', '/roster');
+        $this->assistant->next = FakeWebAssistant::answer('The roster is not on your page.', '/roster');
 
         [, $body] = $this->post(['op' => 'ask', 'text' => 'who works on Saturday?']);
 
-        self::assertSame(AssistantWebActions::TELEGRAM, $body['action']['kind']);
-        self::assertSame('https://t.me/crew_bot', $body['action']['url']);
-        self::assertSame('Here is the roster.', self::text($body));
+        self::assertNull($body['action']);
+        self::assertSame('The roster is not on your page.', self::text($body));
     }
 
-    public function testWithoutTelegramTheAnswerSaysItIsOnlyInTheBot(): void
+    public function testAnOrganizerIsTakenToTheAdminScreen(): void
     {
-        $this->assistant->next = FakeWebAssistant::answer('Here is the roster.', '/roster');
+        $this->assistant->next = FakeWebAssistant::answer('On the roster.', '/roster');
+        $organizer = Person::fromRow(['id' => 7, 'email' => 'sam@example.com', 'is_organizer' => 1]);
 
-        [, $body] = $this->post(['op' => 'ask', 'text' => 'who works on Saturday?'], $this->person(7, null));
+        [, $body] = $this->post(['op' => 'ask', 'text' => 'who works on Saturday?'], $organizer);
 
-        self::assertSame('', $body['action']['url']);
-        self::assertStringEndsWith('That is only in the Telegram bot.', self::text($body));
+        self::assertSame(AssistantWebActions::GOTO, $body['action']['kind']);
+        self::assertSame(['eventcrew-admin-roster', 'eventcrew-panel-admin'], $body['action']['targets']);
+        self::assertStringNotContainsString('Telegram', self::text($body));
     }
 }

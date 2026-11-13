@@ -10,8 +10,9 @@
  * Asked through admin-ajax (AssistantWebController) with the page's CSRF
  * token. What the model wrote is shown with textContent and link hrefs
  * only, never as HTML. Signing up for or cancelling a task shows Confirm
- * and Cancel first; something the page already has opens that tab; what
- * only the bot does offers Open in Telegram.
+ * and Cancel first; something the page has opens that tab (and Admin
+ * screen, for an organizer); anything else gets no button. The page never
+ * offers to go to Telegram (Owner 2026-11-13).
  *
  * Speaking uses the browser's own speech recognition (the mic is shown only
  * where there is one); the browser's speech service turns the voice into
@@ -139,10 +140,14 @@ $eventcrew_ai_line = static function (string $where) use ($eventcrew_ai_placehol
     };
     var failed = function (holder) { holder.textContent = box.dataset.error; holder.classList.remove('is-thinking'); };
 
+    // "Admin → Roster" for a card on one of the Admin tab's screens.
     var tabName = function (target) {
         var panel = target.closest('[data-eventcrew-panel]');
         var tab = panel && document.getElementById('eventcrew-tab-' + panel.getAttribute('data-eventcrew-panel'));
-        return tab ? tab.textContent.trim() : '';
+        var name = tab ? tab.textContent.trim() : '';
+        var sub = target.closest('[data-eventcrew-subpanel]');
+        var subTab = sub && document.querySelector('[data-eventcrew-subtab="' + sub.getAttribute('data-eventcrew-subpanel') + '"]');
+        return subTab ? name + ' → ' + subTab.textContent.trim() : name;
     };
     var act = function (holder, action) {
         if (!action) { return; }
@@ -153,17 +158,23 @@ $eventcrew_ai_line = static function (string $where) use ($eventcrew_ai_placehol
             if (!target) { return; }
             var go = el('button', 'eventcrew-settings-btn', box.dataset['goto'].replace('%s', tabName(target)));
             go.type = 'button';
-            go.setAttribute('data-eventcrew-goto', target.id);
-            // Closes first; the click then reaches the page's own handler,
-            // which opens the tab and scrolls to the card.
-            go.addEventListener('click', function () { returnTo = null; dialog.close(); });
+            var query = action.query && 'object' === typeof action.query ? action.query : null;
+            if (query && window.URL) {
+                // A screen that reads the page address (the Roster's date, the
+                // People search): the page loads again with it, on that card.
+                go.addEventListener('click', function () {
+                    var to = new URL(window.location.href);
+                    Object.keys(query).forEach(function (k) { to.searchParams.set(k, String(query[k])); });
+                    to.hash = target.id;
+                    window.location.assign(to.toString());
+                });
+            } else {
+                go.setAttribute('data-eventcrew-goto', target.id);
+                // Closes first; the click then reaches the page's own handler,
+                // which opens the tab and scrolls to the card.
+                go.addEventListener('click', function () { returnTo = null; dialog.close(); });
+            }
             row.appendChild(go);
-        } else if ('telegram' === action.kind && action.url) {
-            var tg = el('a', 'eventcrew-settings-btn', action.label);
-            tg.href = action.url;
-            tg.target = '_blank';
-            tg.rel = 'noopener noreferrer';
-            row.appendChild(tg);
         } else if ('confirm' === action.kind) {
             holder.appendChild(el('p', 'eventcrew-ai-summary', '➡️ ' + action.summary));
             var yes = el('button', 'wp-element-button eventcrew-linkbtn', action.confirm);

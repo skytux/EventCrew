@@ -13897,9 +13897,6 @@ msgstr "Mer kan jag inte svara den här timmen. Sidan fungerar som vanligt."
 msgid "Sorry, I could not answer just now. Please try again."
 msgstr "Tyvärr kunde jag inte svara just nu. Försök igen."
 
-msgid "That is only in the Telegram bot."
-msgstr "Det finns bara i Telegram-botten."
-
 msgid "That can no longer be done."
 msgstr "Det går inte längre att göra."
 

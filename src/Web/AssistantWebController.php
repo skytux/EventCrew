@@ -11,7 +11,6 @@ use EventCrew\Support\Dates;
 use EventCrew\Support\Language;
 use EventCrew\Support\WebSession;
 use EventCrew\Telegram\AssistantService;
-use EventCrew\Telegram\BoardService;
 
 /**
  * The helper box of the Crew app page: the bot's language-model helper
@@ -155,7 +154,7 @@ final class AssistantWebController
         $checked = $answer['action'];
 
         if (null !== $checked) {
-            $plan = AssistantWebActions::plan($checked['action']);
+            $plan = AssistantWebActions::plan($checked['action'], $person->isOrganizer, (string) current_time('Y-m-d'));
             $language = $answer['lang'];
 
             if (AssistantWebActions::CONFIRM === $plan['kind']) {
@@ -175,23 +174,13 @@ final class AssistantWebController
             } elseif (AssistantWebActions::GOTO === $plan['kind']) {
                 $this->assistant->noteWeb($person, $checked['action'], false);
                 $body['action'] = ['kind' => AssistantWebActions::GOTO, 'targets' => $plan['targets'] ?? []];
-            } else {
-                $url = self::botUrl();
-                $linked = $person->hasTelegram() && '' !== $url;
-                $body['action'] = [
-                    'kind' => AssistantWebActions::TELEGRAM,
-                    'url' => $linked ? $url : '',
-                    'label' => (string) Language::run($language, static fn (): string => __('Open in Telegram', 'eventcrew')),
-                ];
 
-                if (! $linked) {
-                    $only = (string) Language::run(
-                        $language,
-                        static fn (): string => __('That is only in the Telegram bot.', 'eventcrew')
-                    );
-                    $reply = trim($reply . "\n\n" . $only);
+                if (isset($plan['query'])) {
+                    $body['action']['query'] = $plan['query'];
                 }
             }
+            // Anything else has no place on the page: no button, and never
+            // an offer to go to Telegram. The answer text stands alone.
         }
 
         $body['reply'] = AssistantWebActions::segments($reply);
@@ -299,13 +288,5 @@ final class AssistantWebController
             'changed' => $changed,
             'reply' => AssistantWebActions::segments($text),
         ];
-    }
-
-    /** https://t.me/<the bot's username>, or '' when it is not known. */
-    public static function botUrl(): string
-    {
-        $username = ltrim(trim((string) get_option(BoardService::USERNAME_OPTION, '')), '@');
-
-        return 1 === preg_match('/^[A-Za-z0-9_]{3,64}$/', $username) ? 'https://t.me/' . $username : '';
     }
 }

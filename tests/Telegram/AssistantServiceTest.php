@@ -1703,6 +1703,27 @@ final class AssistantServiceTest extends TelegramTestCase
         self::assertSame([], $this->telegramCalls, 'Nothing goes to Telegram from the page.');
     }
 
+    /**
+     * The page is the alternative to Telegram: its helper names the page's
+     * tabs, never the bot or a command (Owner 2026-11-13), and both helpers
+     * know how standing is counted.
+     */
+    public function testTheWebPromptNamesThePageNotTheBot(): void
+    {
+        $this->reply(true, true, 'The Help tab.');
+        $this->service()->answerWeb(self::webPerson(), 'how does a late cancel change my standing?');
+        $web = $this->systemPrompt(0);
+
+        self::assertStringContainsString('You are the helper of the crew web page', $web);
+        self::assertStringNotContainsString('You are the Telegram bot', $web);
+        self::assertStringNotContainsString('points to /help', $web);
+        self::assertStringContainsString('never mention Telegram', $web);
+        self::assertStringContainsString('## Where things are on this page', $web);
+        self::assertStringNotContainsString('## Private-chat commands', $web);
+        self::assertStringContainsString('## How standing works', $web);
+        self::assertStringContainsString('explain it with "How standing works"', $web);
+    }
+
     public function testTheWebConversationIsTheBotsOneForSomeoneWithTelegram(): void
     {
         $this->reply(true, true, 'Hi Sam.');

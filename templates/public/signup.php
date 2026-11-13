@@ -715,7 +715,7 @@ if ($eventcrew_link_expired) {
              */
             ?>
             <?php if (! empty($view['sales_desk']) && null === $eventcrew_admin) : ?>
-                <section class="eventcrew-event eventcrew-me-card">
+                <section class="eventcrew-event eventcrew-me-card" id="eventcrew-me-sales">
                     <header class="eventcrew-event-head">
                         <h3 class="eventcrew-event-title"><?php esc_html_e('Sales desk', 'eventcrew'); ?></h3>
                     </header>
@@ -3066,6 +3066,10 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         if (!holder) { return; }
         e.preventDefault();
         show(holder.getAttribute('data-eventcrew-panel'), false);
+        // A card on one of the Admin tab's screens: that screen opens too.
+        var sub = target.closest('[data-eventcrew-subpanel]');
+        var subLink = sub && root.querySelector('[data-eventcrew-subtab="' + sub.getAttribute('data-eventcrew-subpanel') + '"]');
+        if (subLink) { subLink.click(); }
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 

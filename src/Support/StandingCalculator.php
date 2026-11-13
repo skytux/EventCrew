@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Models\Assignment;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CreditGrantRepository;
 use EventCrew\Repositories\RedemptionRepository;
@@ -52,6 +53,28 @@ final class StandingCalculator
         ));
 
         return [$this->fromHistory($personId, $without), $this->fromHistory($personId, $history)];
+    }
+
+    /**
+     * What-ifs for the helper's facts: the standing now, and with one more
+     * finished task of each $statuses dated today, from one read of the
+     * history. Keyed 'now' and by status.
+     *
+     * @param list<string> $statuses AssignmentStatus values
+     * @return array<string, Standing>
+     */
+    public function whatIf(int $personId, array $statuses): array
+    {
+        $history = $this->history($personId);
+        $today = (string) current_time('Y-m-d');
+        $result = ['now' => $this->fromHistory($personId, $history)];
+
+        foreach ($statuses as $status) {
+            $extra = ['assignment' => new Assignment(0, 0, $personId, $status), 'task_date' => $today];
+            $result[$status] = $this->fromHistory($personId, [...$history, $extra]);
+        }
+
+        return $result;
     }
 
     /**

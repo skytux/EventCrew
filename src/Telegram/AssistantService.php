@@ -358,7 +358,8 @@ final class AssistantService implements WebAssistant
             (bool) $audience['organizer'],
             true,
             $person->id,
-            $audience['organizer'] ? $text : ''
+            $audience['organizer'] ? $text : '',
+            true
         );
         // Read before this message is added: the message goes as the user turn.
         $history = ConversationLog::forPrompt($logKey);
@@ -781,10 +782,17 @@ final class AssistantService implements WebAssistant
         $forward = ! $web && $isPrivate && null !== $this->forwarder && AssistantSettings::forwardEnabled();
         $yes = static fn (bool $value): string => $value ? 'yes' : 'no';
 
+        // On the page, the help, a command and the place that shows a thing
+        // are the page's tabs, never the bot's commands (Owner 2026-11-13).
+        $helpPlace = $web ? 'the Help tab' : '/help';
         $lines = [
-            'You are the Telegram bot of EventCrew, the crew of a recurring event. People earn free entry'
-                . ' by doing tasks at the event; the bot shows the tasks, signs people up and gives tickets.'
-                . $this->ownName(),
+            $web
+                ? 'You are the helper of the crew web page (the Crew app) of EventCrew, the crew of a recurring'
+                    . ' event. People earn free entry by doing tasks at the event; the page shows the tasks,'
+                    . ' signs people up and gives tickets.'
+                : 'You are the Telegram bot of EventCrew, the crew of a recurring event. People earn free entry'
+                    . ' by doing tasks at the event; the bot shows the tasks, signs people up and gives tickets.'
+                    . $this->ownName(),
             'Answer the person\'s message with ONE JSON object and nothing else:',
             '{"aimed": true or false, "known": true or false, "lang": "<two-letter code of the language'
                 . ' the message is written in>", "reply": "<your answer>", "action": "<one action line>" or null'
@@ -794,12 +802,14 @@ final class AssistantService implements WebAssistant
             '- "reply" is in the language the message is written in. Plain text, no Markdown, at most 600 characters.',
             '- Use only the FACTS below. Never make up dates, times, prices, codes, names, links or numbers.',
             '- "known" is true when the FACTS answer the message, or when it needs no facts (a greeting, thanks).'
-                . ' Otherwise "known" is false and "reply" says you do not know and points to /help or an organizer.',
+                . ' Otherwise "known" is false and "reply" says you do not know and points to ' . $helpPlace
+                . ' or an organizer.',
             '- "This person" in the FACTS, when present, is the person\'s own coming tasks, tickets, completed'
                 . ' tasks and free-entry credits, read just now: answer questions about them from it.',
             '- Never say you have no access to something that is in the FACTS, and never tell the person to look'
                 . ' in the bot log, the scheduled jobs or wp-admin for it. When something truly is not in the FACTS,'
-                . ' say so in one short sentence and name the bot command that shows or changes it, if there is one.'
+                . ' say so in one short sentence and name the ' . ($web ? 'tab of this page' : 'bot command')
+                . ' that shows or changes it, if there is one.'
                 . ' Never claim access you do not have, and never make up a status.',
             '- "action" is null, or exactly one line from ACTIONS with its <...> and [...] parts filled in from'
                 . ' the message or the FACTS. Never use a command, task number or guest number that is not'
@@ -812,8 +822,12 @@ final class AssistantService implements WebAssistant
                 . ' for the person.',
             '- When the message is a greeting, "reply" greets back and says the person can simply write'
                 . ' what they want in their own words, with one or two short examples (like "sign me up'
-                . ' for a task on Saturday"), and that /help lists the commands. Do not answer a greeting'
-                . ' with only a list of commands.',
+                . ' for a task on Saturday"), and that ' . ($web ? 'the Help tab explains how it all works' : '/help'
+                . ' lists the commands') . '. Do not answer a greeting with only a list of commands.',
+            '- When the person asks how something affects their standing (a late cancel, a no-show, a missed'
+                . ' or replaced task), explain it with "How standing works" in the FACTS and their own numbers in'
+                . ' "This person" (standing now, and after one late cancel or one more completed task), in plain'
+                . ' words and short. Never say you do not know how standing is counted.',
             '- Dates in actions are written like 1.8. or 2026-08-01.',
             '- Answer only with what fits this person: their roles, and whether they are an organizer or'
                 . ' welcome crew (see "The person" below). Leave out completely every task, command and'
@@ -823,7 +837,7 @@ final class AssistantService implements WebAssistant
                 . ' task and command.',
         ];
 
-        if ($audience['organizer']) {
+        if ($audience['organizer'] && ! $web) {
             $lines[] = '- This person is an organizer. When they ask to put someone on a task, or to take'
                 . ' someone off one, give /assign or /unassign with the task name and the person\'s name as'
                 . ' they wrote them, even when the name is partial or several people or tasks could fit: the'
@@ -831,6 +845,9 @@ final class AssistantService implements WebAssistant
                 . ' for every task, also for a role the person does not hold. The Organize task takes only'
                 . ' someone who is an organizer: you do not know who is, so give /assign anyway and the bot'
                 . ' checks and says so if they are not. Never say you cannot add someone to a task.';
+        }
+
+        if ($audience['organizer']) {
             $lines[] = '- For an organizer, "Current status" in the FACTS is live, read just now: the announcement'
                 . ' email (newsletter), the post-event email, the ticket emails, the coming nights (tasks, who is on'
                 . ' Organize, free-entry tickets, guest list, ticket holders, free entry open or closed, stopped'
@@ -846,6 +863,9 @@ final class AssistantService implements WebAssistant
                 . ' there are more, say the answer may not be complete and that asking about one person or one'
                 . ' night by name or date shows more. Never send the organizer to the bot log, the task list or'
                 . ' wp-admin for any of this.';
+        }
+
+        if ($audience['organizer'] && ! $web) {
             $lines[] = '- An organizer can also manage tasks in a private chat: /addtask, /edittask (time, places,'
                 . ' notes, plus-ones), /deletetask, /maketasks (a night\'s tasks from the roles) and /mailtasks'
                 . ' (the open-task email now). When they ask for one of these, give that command with the task'
@@ -854,7 +874,7 @@ final class AssistantService implements WebAssistant
         }
 
         // Private-chat commands for organizers and members (ag-people).
-        if ($audience['organizer']) {
+        if ($audience['organizer'] && ! $web) {
             $lines[] = '- For an organizer, these commands do the work themselves; give the matching one instead'
                 . ' of sending them to the web page: /mark (arrived, late, no-show or done), /standing,'
                 . ' /newcomer, /ticket and /unticket, /unban, /freeentry close|open, /stop announcement or'
@@ -863,9 +883,11 @@ final class AssistantService implements WebAssistant
                 . ' unsure and confirms every change. For /tell keep the message word for word.';
         }
 
-        $lines[] = '- Anyone can see the crew of their own coming nights with /crew, and change their own name'
-            . ' with /name new name or their email with /email new address (a link goes to the new address'
-            . ' first). Give these when they ask who else works with them or want their name or email changed.';
+        if (! $web) {
+            $lines[] = '- Anyone can see the crew of their own coming nights with /crew, and change their own name'
+                . ' with /name new name or their email with /email new address (a link goes to the new address'
+                . ' first). Give these when they ask who else works with them or want their name or email changed.';
+        }
 
         if ($isPrivate) {
             $lines[] = '- This is a private chat with one person: "aimed" is true.';
@@ -879,13 +901,7 @@ final class AssistantService implements WebAssistant
                 . ' refer back to what was said.';
 
             if ($web) {
-                $lines[] = '- This message was written in the helper box of the crew web page (the Crew app),'
-                    . ' not in Telegram. The page has the tabs Board (the open tasks, sign up), Me (the'
-                    . ' person\'s tasks and tickets), Settings (notifications, language, name and email) and'
-                    . ' Help. In "reply", name the tab instead of a bot command: say "the Help tab", never'
-                    . ' "/help". Still give "action" lines from ACTIONS as usual: the page opens the matching'
-                    . ' part of the page, or asks to confirm, or offers to open the Telegram bot for what'
-                    . ' only the bot does. Bot lines in CONVERSATION may come from Telegram or from this page.';
+                $lines = [...$lines, ...self::webLines((bool) $audience['organizer'])];
             }
 
             if ($forward) {
@@ -963,6 +979,41 @@ final class AssistantService implements WebAssistant
         $lines[] = '' !== $history ? $history : '(nothing yet)';
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * The prompt lines of the Crew app page's helper box: the page is the
+     * alternative to Telegram, so the answer names the page's tabs and
+     * cards, never the bot, a command or a Telegram link.
+     *
+     * @return list<string>
+     */
+    private static function webLines(bool $organizer): array
+    {
+        $lines = [
+            '- This message was written in the helper box of the crew web page (the Crew app). The page has'
+                . ' the tabs Board (the open tasks, sign up), Me (the person\'s tasks, tickets, cancelling),'
+                . ' Settings (name and email, notifications, language) and Help'
+                . ($organizer ? ', and for an organizer Admin (screens Roster, Tasks, Door, People, Messages)' : '')
+                . '. "Where things are on this page" in the FACTS says which tab or screen has what.',
+            '- In "reply", never mention Telegram, the bot, a chat, a t.me link or a command starting with "/":'
+                . ' name the tab or screen of this page instead ("the Help tab", "the Admin tab, People screen").'
+                . ' When the FACTS, the guide or CONVERSATION name a bot command or a button of the bot, say'
+                . ' where the same thing is on this page; when this page has no place for it, say only what it'
+                . ' is, or that an organizer can help. Never suggest using Telegram or the bot.',
+            '- Still give "action" lines from ACTIONS as usual. The page signs up or cancels after the person'
+                . ' confirms, or opens the matching tab or screen; for anything else it shows only your reply.'
+                . ' Bot lines in CONVERSATION may come from Telegram or from this page.',
+        ];
+
+        if ($organizer) {
+            $lines[] = '- For an organizer, an action line other than signing up or cancelling only opens the'
+                . ' matching Admin screen (with the date or name in it): the page does not do the change itself.'
+                . ' So "reply" says where on that screen to do it (like "Admin tab → Roster, + Add a person"),'
+                . ' never that it is done or that someone will confirm.';
+        }
+
+        return $lines;
     }
 
     /**
