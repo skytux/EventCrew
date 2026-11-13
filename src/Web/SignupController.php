@@ -774,11 +774,22 @@ final class SignupController implements WebTaskSignup
         // screen, which does not share the cookies of the browser the link
         // opens in. Spending either spends both.
         $code = LoginCode::issue($email, $raw, self::LOGIN_TTL);
-        $body .= "\n\n" . sprintf(
-            /* translators: %s: the 6-digit sign-in code */
-            __('Sign-in code for the app: %s', 'eventcrew'),
-            $code
-        );
+        // Under the button, big and centred, in two groups ("123 456") to
+        // read and type; LoginCode::normalize() drops the space again.
+        $spaced = 6 === strlen($code) ? substr($code, 0, 3) . ' ' . substr($code, 3) : $code;
+        /* translators: %s: the 6-digit sign-in code */
+        $codeLine = __('Sign-in code for the app: %s', 'eventcrew');
+        $picture = [
+            'html' => '<p style="margin:24px 0 0;text-align:center;font-size:14px;color:#555">'
+                . sprintf(
+                    esc_html($codeLine),
+                    '<br><span style="display:inline-block;margin-top:8px;font-size:36px;font-weight:bold;'
+                        . 'letter-spacing:6px;color:#111;font-family:Menlo,Consolas,monospace;white-space:nowrap">'
+                        . esc_html($spaced) . '</span>'
+                )
+                . '</p>',
+            'text' => sprintf($codeLine, $spaced),
+        ];
         $label = $hasAccount ? __('Sign in', 'eventcrew') : __('Create my account', 'eventcrew');
         $actions = [['label' => $label, 'url' => $this->loginUrl($raw)]];
 
@@ -796,7 +807,10 @@ final class SignupController implements WebTaskSignup
             $email,
             MessageTemplates::subject($kind),
             $body,
-            $actions
+            $actions,
+            null,
+            null,
+            $picture
         );
     }
 

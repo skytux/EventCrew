@@ -2022,7 +2022,7 @@ final class SignupControllerTest extends TestCase
     private function sentMail(int $index = 0): string
     {
         // The sign-in code is random: CODE stands for it.
-        $body = (string) preg_replace('/(code for the app: )\d{6}/', '$1CODE', $this->mails[$index]);
+        $body = (string) preg_replace('/(code for the app: )\d{3} \d{3}/', '$1CODE', $this->mails[$index]);
 
         return $this->sent[$index]['subject'] . "\n---\n"
             . (string) preg_replace('/token=[A-Za-z0-9_-]+/', 'token=TOKEN', $body);
@@ -2066,9 +2066,8 @@ final class SignupControllerTest extends TestCase
             "Your Test Site sign-in link\n---\nHi Sam,\n\n"
                 . "Use the button below to sign in and manage your tasks.\n\n"
                 . "The link is good for 30 minutes, and works once.\n\n"
-                . "Sign-in code for the app: CODE\n\n"
                 . 'Sign in: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_web_login&token=TOKEN'
-                . "&redirect_to=https%253A%252F%252Fsite.test%252F\n\n—\nManage your account or stop these emails:"
+                . "&redirect_to=https%253A%252F%252Fsite.test%252F\n\nSign-in code for the app: CODE\n\n—\nManage your account or stop these emails:"
                 . ' https://site.test/wp-json/eventcrew/v1/manage?token=TOKEN.2e7412c689f539f6489b9a1e298151a2431bfc264f90e62776a73bce4d9e9398',
             $this->sentMail()
         );
@@ -2084,10 +2083,10 @@ final class SignupControllerTest extends TestCase
             "Create your crew account\n---\nHi,\n\n"
                 . "There is no crew account for this email address yet. The button below"
                 . " creates your account and signs you in.\n\nThe link is good for 30 minutes, and works once. If you"
-                . " did not ask for this, ignore this email.\n\nSign-in code for the app: CODE\n\n"
+                . " did not ask for this, ignore this email.\n\n"
                 . "We store your email to run the crew.\n\n"
                 . 'Create my account: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_web_login&token=TOKEN'
-                . "&redirect_to=https%253A%252F%252Fsite.test%252F\n\n—\nManage your account or stop these emails:"
+                . "&redirect_to=https%253A%252F%252Fsite.test%252F\n\nSign-in code for the app: CODE\n\n—\nManage your account or stop these emails:"
                 . ' https://site.test/wp-json/eventcrew/v1/manage?token=TOKEN.12c6aa29e718d0f450ae312aadd7b4a5574cbd732e15063ef00e534d9e56e15b',
             $this->sentMail()
         );
@@ -2145,7 +2144,7 @@ final class SignupControllerTest extends TestCase
         $this->controller()->loginByEmail('sam@example.com');
 
         self::assertStringStartsWith(
-            "Sign in, please\n---\nHi Sam,\n\nPress the button.\n\nSign-in code for the app: CODE\n\n"
+            "Sign in, please\n---\nHi Sam,\n\nPress the button.\n\n"
                 . 'Sign in: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_web_login&token=TOKEN',
             $this->sentMail()
         );
@@ -2162,7 +2161,7 @@ final class SignupControllerTest extends TestCase
         $this->controller()->loginByEmail('new@example.com');
 
         self::assertStringStartsWith(
-            "Welcome\n---\nHi,\n\nPress the button to join.\n\nSign-in code for the app: CODE\n\n"
+            "Welcome\n---\nHi,\n\nPress the button to join.\n\n"
                 . "We store your email to run the crew.\n\n"
                 . 'Create my account: https://site.test/wp-admin/admin-ajax.php?action=eventcrew_web_login&token=TOKEN',
             $this->sentMail()
@@ -2332,7 +2331,7 @@ final class SignupControllerTest extends TestCase
 
         $this->controller()->loginByEmail('sam@example.com');
 
-        self::assertMatchesRegularExpression('/Sign-in code for the app: \d{6}\b/', $this->mails[0]);
+        self::assertMatchesRegularExpression('/Sign-in code for the app: \d{3} \d{3}\b/', $this->mails[0]);
     }
 
     public function testTheEmailedCodeSignsInAndSpendsTheLinkToo(): void
