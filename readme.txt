@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.251
+Stable tag: 1.140.252
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.252 =
+* Crew app helper: a change it offers asks Confirm or Cancel and runs on Confirm, saying what really changed; a change it cannot make says Not done yet.
 
 = 1.140.251 =
 * Crew app Admin: People can delete a person and make or remove an organizer (never yourself or the last organizer).
@@ -2160,6 +2163,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.252 =
+No settings change.
 
 = 1.140.251 =
 No settings change.
