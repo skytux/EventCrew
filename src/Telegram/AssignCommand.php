@@ -10,6 +10,8 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Dates;
 use EventCrew\Support\RoleTaskService;
+use EventCrew\Web\AssistantWebChanges;
+use EventCrew\Web\WebChanges;
 
 /**
  * /assign and /unassign: an organizer puts a named member on a task, or takes
@@ -86,91 +88,16 @@ final class AssignCommand
             return;
         }
 
-        [$date, $args] = self::takeDate($args);
-        $pool = $this->tasks->upcoming();
+        $found = $this->find($mode, $args);
 
-        if (self::ADD === $mode) {
-            $pool = RoleTaskService::addableOf($pool);
-        }
-
-        if ('' !== $date) {
-            $pool = array_values(array_filter($pool, static fn (Task $t): bool => $t->taskDate === $date));
-
-            if ([] === $pool) {
-                $this->telegram->sendMessage(
-                    $chatId,
-                    /* translators: %s: a short day label, like "Sat 14 Nov". */
-                    sprintf(__('There are no tasks on %s.', 'eventcrew'), Dates::dayLabel($date))
-                );
-
-                return;
-            }
-        }
-
-        [$taskQuery, $personQuery] = self::split($args, $pool);
-
-        if ('' === $taskQuery || '' === $personQuery) {
-            $this->telegram->sendMessage($chatId, self::usage($mode));
+        if ('' !== $found['error']) {
+            $this->telegram->sendMessage($chatId, $found['error']);
 
             return;
         }
 
-        $tasks = self::matchTasks($taskQuery, $pool);
-
-        if ([] === $tasks) {
-            $this->telegram->sendMessage($chatId, $this->noTask($taskQuery, $pool));
-
-            return;
-        }
-
-        $members = $this->members();
-        $organizersOnly = self::ADD === $mode
-            && [] === array_filter($tasks, static fn (Task $t): bool => ! $t->isOrganizersOnly());
-
-        if ($organizersOnly) {
-            $organizers = array_values(array_filter($members, static fn (Person $p): bool => $p->isOrganizer));
-            $people = self::matchPeople($personQuery, $organizers);
-
-            $found = [] === $people ? self::matchPeople($personQuery, $members) : [];
-
-            if ([] !== $found) {
-                $this->telegram->sendMessage(
-                    $chatId,
-                    RoleTaskService::text(
-                        RoleTaskService::NOT_ORGANIZER,
-                        false,
-                        1 === count($found) ? $found[0]->name() : $personQuery
-                    )
-                );
-
-                return;
-            }
-        } else {
-            $people = self::matchPeople($personQuery, $members);
-        }
-
-        if ([] === $people) {
-            $this->telegram->sendMessage(
-                $chatId,
-                self::ADD === $mode
-                    /* translators: %s: the name the organizer typed. */
-                    ? sprintf(__('No member called “%s” was found. Someone who is not a member yet: ➕ Add someone under /board.', 'eventcrew'), $personQuery)
-                    /* translators: %s: the name the organizer typed. */
-                    : sprintf(__('No member called “%s” was found.', 'eventcrew'), $personQuery)
-            );
-
-            return;
-        }
-
-        if (count($people) > self::MAX_CHOICES) {
-            $this->telegram->sendMessage(
-                $chatId,
-                /* translators: %s: the name the organizer typed. */
-                sprintf(__('Many members match “%s”. Write more of the name.', 'eventcrew'), $personQuery)
-            );
-
-            return;
-        }
+        $tasks = $found['tasks'];
+        $people = $found['people'];
 
         $state = [
             'user' => $fromId,
@@ -289,6 +216,212 @@ final class AssignCommand
     }
 
     /**
+     * The tasks and members "[date] <task> ; <person>" names, read as the
+     * command reads them, or (error) what to tell the organizer instead: no
+     * such task or member, a non-organizer for an Organize task, too many.
+     *
+     * @return array{error: string, tasks: list<Task>, people: list<Person>}
+     */
+    private function find(string $mode, string $args): array
+    {
+        $fail = static fn (string $text): array => ['error' => $text, 'tasks' => [], 'people' => []];
+        [$date, $args] = self::takeDate($args);
+        $pool = $this->tasks->upcoming();
+
+        if (self::ADD === $mode) {
+            $pool = RoleTaskService::addableOf($pool);
+        }
+
+        if ('' !== $date) {
+            $pool = array_values(array_filter($pool, static fn (Task $t): bool => $t->taskDate === $date));
+
+            if ([] === $pool) {
+                /* translators: %s: a short day label, like "Sat 14 Nov". */
+                return $fail(sprintf(__('There are no tasks on %s.', 'eventcrew'), Dates::dayLabel($date)));
+            }
+        }
+
+        [$taskQuery, $personQuery] = self::split($args, $pool);
+
+        if ('' === $taskQuery || '' === $personQuery) {
+            return $fail(self::usage($mode));
+        }
+
+        $tasks = self::matchTasks($taskQuery, $pool);
+
+        if ([] === $tasks) {
+            return $fail($this->noTask($taskQuery, $pool));
+        }
+
+        $members = $this->members();
+        $organizersOnly = self::ADD === $mode
+            && [] === array_filter($tasks, static fn (Task $t): bool => ! $t->isOrganizersOnly());
+
+        if ($organizersOnly) {
+            $organizers = array_values(array_filter($members, static fn (Person $p): bool => $p->isOrganizer));
+            $people = self::matchPeople($personQuery, $organizers);
+
+            $found = [] === $people ? self::matchPeople($personQuery, $members) : [];
+
+            if ([] !== $found) {
+                return $fail(RoleTaskService::text(
+                    RoleTaskService::NOT_ORGANIZER,
+                    false,
+                    1 === count($found) ? $found[0]->name() : $personQuery
+                ));
+            }
+        } else {
+            $people = self::matchPeople($personQuery, $members);
+        }
+
+        if ([] === $people) {
+            return $fail(
+                self::ADD === $mode
+                    /* translators: %s: the name the organizer typed. */
+                    ? sprintf(__('No member called “%s” was found. Someone who is not a member yet: ➕ Add someone under /board.', 'eventcrew'), $personQuery)
+                    /* translators: %s: the name the organizer typed. */
+                    : sprintf(__('No member called “%s” was found.', 'eventcrew'), $personQuery)
+            );
+        }
+
+        if (count($people) > self::MAX_CHOICES) {
+            /* translators: %s: the name the organizer typed. */
+            return $fail(sprintf(__('Many members match “%s”. Write more of the name.', 'eventcrew'), $personQuery));
+        }
+
+        return ['error' => '', 'tasks' => $tasks, 'people' => $people];
+    }
+
+    /**
+     * The Crew app's helper box (AssistantWebChanges): "/assign" or
+     * "/unassign" with its line, found as the command finds it. The
+     * question to show with Confirm, the task or member to choose first
+     * (choices, at most WebChanges::MAX_CHOICES, each one leading on
+     * through chooseWeb()), or (ok false) why not.
+     *
+     * @return array{ok: bool, text: string, state: array<string, mixed>, choices?: list<array{label: string, state: array<string, mixed>}>}
+     */
+    public function prepareWeb(string $mode, string $args): array
+    {
+        if (! in_array($mode, [self::ADD, self::REMOVE], true)) {
+            return ['ok' => false, 'text' => __('That can no longer be done.', 'eventcrew'), 'state' => []];
+        }
+
+        $found = $this->find($mode, $args);
+
+        if ('' !== $found['error']) {
+            return ['ok' => false, 'text' => $found['error'], 'state' => []];
+        }
+
+        $tasks = $found['tasks'];
+        $people = $found['people'];
+
+        return $this->chooseWeb([
+            'user' => 0,
+            'mode' => $mode,
+            'tasks' => array_map(static fn (Task $t): int => $t->id, $tasks),
+            'people' => array_map(static fn (Person $p): int => $p->id, $people),
+            'task' => 1 === count($tasks) ? $tasks[0]->id : 0,
+            'person' => 1 === count($people) ? $people[0]->id : 0,
+        ]);
+    }
+
+    /**
+     * The next step of a helper-box request: the task to choose, then the
+     * member, then the question (the bot's own checks first).
+     *
+     * @param array<string, mixed> $state
+     * @return array{ok: bool, text: string, state: array<string, mixed>, choices?: list<array{label: string, state: array<string, mixed>}>}
+     */
+    public function chooseWeb(array $state): array
+    {
+        $open = 0 === (int) ($state['task'] ?? 0) ? 'task' : (0 === (int) ($state['person'] ?? 0) ? 'person' : '');
+
+        if ('' !== $open) {
+            $options = [];
+
+            if ('task' === $open) {
+                foreach ($this->findTasks((array) ($state['tasks'] ?? [])) as $task) {
+                    $options[$task->id] = $this->taskLabel($task);
+                }
+            } else {
+                $people = $this->findPeople((array) ($state['people'] ?? []));
+
+                foreach ($people as $person) {
+                    $options[$person->id] = self::personLabel($person, $people);
+                }
+            }
+
+            if (count($options) > WebChanges::MAX_CHOICES) {
+                return ['ok' => false, 'text' => AssistantWebChanges::several(array_values($options)), 'state' => []];
+            }
+
+            $choices = [];
+
+            foreach ($options as $id => $label) {
+                $choices[] = ['label' => $label, 'state' => [$open => $id] + $state];
+            }
+
+            return [
+                'ok' => false,
+                'text' => 'task' === $open ? __('Which task?', 'eventcrew') : __('Which member?', 'eventcrew'),
+                'state' => [],
+                'choices' => $choices,
+            ];
+        }
+
+        $asked = $this->question($state);
+
+        if (null === $asked['person']) {
+            return ['ok' => false, 'text' => $asked['text'], 'state' => []];
+        }
+
+        $text = $asked['text'];
+
+        if ($asked['restricted']) {
+            $text .= "\n" . __('It counts toward free-entry credit.', 'eventcrew');
+        }
+
+        return $asked['ok'] ? ['ok' => true, 'text' => $text, 'state' => $state] : ['ok' => false, 'text' => $text, 'state' => []];
+    }
+
+    /**
+     * Confirm in the helper box: the write ✅ makes (a restricted task
+     * counts toward free-entry credit). "changed" only when it went through.
+     *
+     * @param array<string, mixed> $state
+     * @return array{changed: bool, text: string}
+     */
+    public function runWeb(Person $organizer, array $state): array
+    {
+        $taskId = (int) ($state['task'] ?? 0);
+        $personId = (int) ($state['person'] ?? 0);
+
+        if (0 === $taskId || 0 === $personId || ! $organizer->isOrganizer) {
+            return ['changed' => false, 'text' => '⚠️ ' . __('That can no longer be done.', 'eventcrew')];
+        }
+
+        $task = $this->tasks->find($taskId);
+
+        if (self::REMOVE === ($state['mode'] ?? '')) {
+            $result = $this->roleTasks->removePerson($organizer, $taskId, $personId);
+            $done = RoleTaskService::REMOVED === $result['code'];
+
+            return ['changed' => $done, 'text' => $this->result($done, $result['person'], $task, RoleTaskService::text($result['code']))];
+        }
+
+        $result = $this->roleTasks->addPerson($organizer, $taskId, '', '', true, $personId);
+        $done = RoleTaskService::ADDED === $result['code'];
+
+        return ['changed' => $done, 'text' => $this->result(
+            $done,
+            $result['person'],
+            $task,
+            RoleTaskService::text($result['code'], $result['emailed'], $result['person']?->name() ?? '')
+        )];
+    }
+
+    /**
      * How to use the command, with an example.
      */
     public static function usage(string $mode): string
@@ -343,82 +476,24 @@ final class AssignCommand
      */
     private function confirm(int $chatId, string $id, array $state): void
     {
-        $task = $this->tasks->find((int) $state['task']);
-        $person = $this->people->find((int) $state['person']);
+        $asked = $this->question($state);
 
-        if (null === $task || null === $person) {
+        if (! $asked['ok']) {
             delete_transient(self::STATE_PREFIX . $id);
-            $this->telegram->sendMessage($chatId, RoleTaskService::text(RoleTaskService::NOT_RESTRICTED));
+            $this->telegram->sendMessage($chatId, $asked['text']);
 
             return;
-        }
-
-        $name = $person->name();
-        $label = $this->taskLabel($task);
-        $isOn = $this->roleTasks->isOn($task->id, $person->id);
-
-        if (self::REMOVE === $state['mode']) {
-            if (! $isOn) {
-                delete_transient(self::STATE_PREFIX . $id);
-                $this->telegram->sendMessage($chatId, $name . ' · ' . $label . "\n" . RoleTaskService::text(RoleTaskService::NOT_ON));
-
-                return;
-            }
-
-            $this->telegram->sendMessage(
-                $chatId,
-                /* translators: 1: a person's name, 2: a task with its day and time. */
-                sprintf(__('Take %1$s off %2$s?', 'eventcrew'), $name, $label),
-                ['inline_keyboard' => [[
-                    ['text' => '✅ ' . __('Remove', 'eventcrew'), 'callback_data' => self::PREFIX . 'y:' . $id],
-                    ['text' => '✖️ ' . __('Cancel', 'eventcrew'), 'callback_data' => self::PREFIX . 'x:' . $id],
-                ]]]
-            );
-
-            return;
-        }
-
-        $stop = null;
-
-        if ($task->isOrganizersOnly() && ! $person->isOrganizer) {
-            $stop = RoleTaskService::text(RoleTaskService::NOT_ORGANIZER, false, $name);
-        } elseif ($person->isBanned()) {
-            /* translators: %s: a person's name. */
-            $stop = sprintf(__('%s is blocked from sign-ups. An organizer can lift it on the People page.', 'eventcrew'), $name);
-        } elseif ($isOn) {
-            $stop = RoleTaskService::text(RoleTaskService::ALREADY_ON);
-        } elseif (! $task->hasNoLimit()) {
-            $taken = (int) ($this->tasks->occupancyFor([$task->id])[$task->id] ?? 0);
-
-            if ($taken >= $task->capacity) {
-                /* translators: 1: places taken, 2: all places. */
-                $stop = sprintf(__('That task is full (%1$d of %2$d places taken). Nothing was added.', 'eventcrew'), $taken, $task->capacity);
-            }
-        }
-
-        if (null !== $stop) {
-            delete_transient(self::STATE_PREFIX . $id);
-            $this->telegram->sendMessage($chatId, $name . ' · ' . $label . "\n" . $stop);
-
-            return;
-        }
-
-        /* translators: 1: a person's name, 2: a task with its day and time. */
-        $text = sprintf(__('Add %1$s to %2$s?', 'eventcrew'), $name, $label);
-
-        if ($task->isRestricted() && ! $person->hasRole($task->roleSlug)) {
-            $text .= "\n⚠️ " . sprintf(
-                /* translators: 1: a person's name, 2: a role name. */
-                __('%1$s does not have the %2$s role. As an organizer you can still add them; they get the role.', 'eventcrew'),
-                $name,
-                $task->roleLabel()
-            );
         }
 
         $cancel = ['text' => '✖️ ' . __('Cancel', 'eventcrew'), 'callback_data' => self::PREFIX . 'x:' . $id];
 
-        if ($task->isRestricted()) {
-            $text .= "\n" . __('Count toward free-entry credit?', 'eventcrew');
+        if (self::REMOVE === $state['mode']) {
+            $rows = [[
+                ['text' => '✅ ' . __('Remove', 'eventcrew'), 'callback_data' => self::PREFIX . 'y:' . $id],
+                $cancel,
+            ]];
+        } elseif ($asked['restricted']) {
+            $asked['text'] .= "\n" . __('Count toward free-entry credit?', 'eventcrew');
             $rows = [
                 [
                     ['text' => '✅ ' . __('Add, counts', 'eventcrew'), 'callback_data' => self::PREFIX . 'y:' . $id],
@@ -433,7 +508,82 @@ final class AssignCommand
             ]];
         }
 
-        $this->telegram->sendMessage($chatId, $text, ['inline_keyboard' => $rows]);
+        $this->telegram->sendMessage($chatId, $asked['text'], ['inline_keyboard' => $rows]);
+    }
+
+    /**
+     * The question for a known task and member, or (ok false) why it cannot
+     * be: blocked, already on, not on, full, an Organize task for someone who
+     * is not an organizer. "restricted": the task's role is restricted, so
+     * the add asks about free-entry credit. "person" is null when the task or
+     * member is gone.
+     *
+     * @param array<string, mixed> $state
+     * @return array{ok: bool, text: string, restricted: bool, person: ?Person}
+     */
+    private function question(array $state): array
+    {
+        $task = $this->tasks->find((int) ($state['task'] ?? 0));
+        $person = $this->people->find((int) ($state['person'] ?? 0));
+
+        if (null === $task || null === $person) {
+            return ['ok' => false, 'text' => RoleTaskService::text(RoleTaskService::NOT_RESTRICTED), 'restricted' => false, 'person' => null];
+        }
+
+        $name = $person->name();
+        $label = $this->taskLabel($task);
+        $isOn = $this->roleTasks->isOn($task->id, $person->id);
+        $stop = static fn (string $why): array => ['ok' => false, 'text' => $name . ' · ' . $label . "\n" . $why, 'restricted' => false, 'person' => $person];
+
+        if (self::REMOVE === ($state['mode'] ?? '')) {
+            if (! $isOn) {
+                return $stop(RoleTaskService::text(RoleTaskService::NOT_ON));
+            }
+
+            return [
+                'ok' => true,
+                /* translators: 1: a person's name, 2: a task with its day and time. */
+                'text' => sprintf(__('Take %1$s off %2$s?', 'eventcrew'), $name, $label),
+                'restricted' => false,
+                'person' => $person,
+            ];
+        }
+
+        if ($task->isOrganizersOnly() && ! $person->isOrganizer) {
+            return $stop(RoleTaskService::text(RoleTaskService::NOT_ORGANIZER, false, $name));
+        }
+
+        if ($person->isBanned()) {
+            /* translators: %s: a person's name. */
+            return $stop(sprintf(__('%s is blocked from sign-ups. An organizer can lift it on the People page.', 'eventcrew'), $name));
+        }
+
+        if ($isOn) {
+            return $stop(RoleTaskService::text(RoleTaskService::ALREADY_ON));
+        }
+
+        if (! $task->hasNoLimit()) {
+            $taken = (int) ($this->tasks->occupancyFor([$task->id])[$task->id] ?? 0);
+
+            if ($taken >= $task->capacity) {
+                /* translators: 1: places taken, 2: all places. */
+                return $stop(sprintf(__('That task is full (%1$d of %2$d places taken). Nothing was added.', 'eventcrew'), $taken, $task->capacity));
+            }
+        }
+
+        /* translators: 1: a person's name, 2: a task with its day and time. */
+        $text = sprintf(__('Add %1$s to %2$s?', 'eventcrew'), $name, $label);
+
+        if ($task->isRestricted() && ! $person->hasRole($task->roleSlug)) {
+            $text .= "\n⚠️ " . sprintf(
+                /* translators: 1: a person's name, 2: a role name. */
+                __('%1$s does not have the %2$s role. As an organizer you can still add them; they get the role.', 'eventcrew'),
+                $name,
+                $task->roleLabel()
+            );
+        }
+
+        return ['ok' => true, 'text' => $text, 'restricted' => $task->isRestricted(), 'person' => $person];
     }
 
     private function result(bool $done, ?Person $person, ?Task $task, string $sentence): string

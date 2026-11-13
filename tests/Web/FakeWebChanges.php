@@ -10,8 +10,14 @@ use EventCrew\Web\WebChanges;
 /** An organizer's change, answering what the test set. */
 final class FakeWebChanges implements WebChanges
 {
-    /** @var array{ok: bool, text: string, state: array<string, mixed>} */
+    /** @var array{ok: bool, text: string, state: array<string, mixed>, choices?: list<array{label: string, state: array<string, mixed>}>} */
     public array $prepared = ['ok' => true, 'text' => 'Take the ticket away?', 'state' => ['person' => 9]];
+
+    /** @var array{ok: bool, text: string, state: array<string, mixed>, choices?: list<array{label: string, state: array<string, mixed>}>} */
+    public array $chosen = ['ok' => true, 'text' => 'Mark Sam as no-show?', 'state' => ['person' => 5]];
+
+    /** @var list<array<string, mixed>> */
+    public array $choseStates = [];
 
     /** @var array{changed: bool, text: string} */
     public array $outcome = ['changed' => true, 'text' => '✅ Ticket taken away.'];
@@ -22,6 +28,13 @@ final class FakeWebChanges implements WebChanges
     public function prepare(Person $organizer, string $action): array
     {
         return $this->prepared;
+    }
+
+    public function choose(Person $organizer, string $action, array $state): array
+    {
+        $this->choseStates[] = $state;
+
+        return $this->chosen;
     }
 
     public function run(Person $organizer, string $action, array $state): array

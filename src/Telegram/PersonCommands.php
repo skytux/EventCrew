@@ -20,6 +20,7 @@ use EventCrew\Support\StandingCalculator;
 use EventCrew\Web\AssistantWebChanges;
 use EventCrew\Web\CrewAdminPeople;
 use EventCrew\Web\CrewAdminRoster;
+use EventCrew\Web\WebChanges;
 use EventCrew\Support\ExtraTaskCredits;
 
 /**
@@ -53,7 +54,7 @@ final class PersonCommands
     public const COMMANDS = [self::MARK, self::STANDING, self::NEWCOMER, self::TICKET, self::UNTICKET, self::UNBAN];
 
     /** The commands the Crew app's helper box runs (prepareWeb(), runWeb()). */
-    public const WEB = [self::TICKET, self::UNTICKET, self::UNBAN];
+    public const WEB = [self::MARK, self::TICKET, self::UNTICKET, self::UNBAN];
 
     /** The marks /mark sets, by button number. */
     private const MARKS = [
@@ -624,13 +625,14 @@ final class PersonCommands
     }
 
     /**
-     * The Crew app's helper box (AssistantWebChanges): /ticket, /unticket or
-     * /unban with its arguments, read as the bot reads them, for exactly one
-     * member. The question to show with Confirm and the state to run, or (ok
-     * false) the answer why not: no such member, several (the page has no
-     * buttons to choose with), or the bot's own refusal.
+     * The Crew app's helper box (AssistantWebChanges): /mark, /ticket,
+     * /unticket or /unban with its arguments, read as the bot reads them.
+     * The question to show with Confirm and the state to run; the member,
+     * task or mark to choose first ("choices", each leading on through
+     * chooseWeb()) where the bot would show buttons; or (ok false) the
+     * answer why not: no such member, too many, or the bot's own refusal.
      *
-     * @return array{ok: bool, text: string, state: array<string, mixed>}
+     * @return array{ok: bool, text: string, state: array<string, mixed>, choices?: list<array{label: string, state: array<string, mixed>}>}
      */
     public function prepareWeb(string $command, string $args): array
     {
@@ -641,9 +643,15 @@ final class PersonCommands
         }
 
         $date = '';
+        $status = '';
 
         if (self::UNBAN !== $command) {
             [$date, $args] = CommandFlow::takeDate($args);
+        }
+
+        if (self::MARK === $command) {
+            [$args, $status] = self::markWord($args);
+        } elseif (self::UNBAN !== $command) {
             $date = '' !== $date ? $date : (string) ($this->tasks->upcomingDates(1)[0] ?? '');
 
             if ('' === $date) {
@@ -671,19 +679,157 @@ final class PersonCommands
             return $refuse($none);
         }
 
-        if (count($found) > 1) {
-            return $refuse(AssistantWebChanges::several(array_values(CommandFlow::personOptions($found))));
+        $state = ['user' => 0, 'op' => $command, 'date' => $date, 'person' => 0];
+
+        if (self::MARK === $command) {
+            $state += ['status' => $status, 'assignment' => 0];
         }
 
-        $state = ['user' => 0, 'op' => $command, 'date' => $date, 'person' => $found[0]->id];
-        $asked = $this->question($state, $found[0]);
+        if (count($found) > 1) {
+            $options = CommandFlow::personOptions($found);
 
-        return ['ok' => $asked['ok'], 'text' => $asked['text'], 'state' => $asked['state']];
+            if (count($options) > WebChanges::MAX_CHOICES) {
+                return $refuse(AssistantWebChanges::several(array_values($options)));
+            }
+
+            return self::choices(__('Which member?', 'eventcrew'), $options, $state, 'person');
+        }
+
+        $state['person'] = $found[0]->id;
+
+        return $this->chooseWeb($state);
     }
 
     /**
-     * Confirm in the helper box: the state prepareWeb() gave, run as ✅ runs
-     * it. "changed" only when the change really happened.
+     * The next step of a helper-box request once the member is known: for
+     * /mark the task and the mark to choose, then the question.
+     *
+     * @param array<string, mixed> $state
+     * @return array{ok: bool, text: string, state: array<string, mixed>, choices?: list<array{label: string, state: array<string, mixed>}>}
+     */
+    public function chooseWeb(array $state): array
+    {
+        $refuse = static fn (string $text): array => ['ok' => false, 'text' => $text, 'state' => []];
+        $person = $this->people->find((int) ($state['person'] ?? 0));
+
+        if (! in_array($state['op'] ?? '', self::WEB, true)) {
+            return $refuse(__('That can no longer be done.', 'eventcrew'));
+        }
+
+        if (null === $person || $person->isAnonymized()) {
+            return $refuse(__('That person was not found.', 'eventcrew'));
+        }
+
+        if (self::MARK === $state['op']) {
+            return $this->markWeb($state, $person);
+        }
+
+        $asked = $this->question($state, $person);
+
+        return ['ok' => $asked['ok'], 'text' => $asked['text'], 'state' => $asked['ok'] ? $asked['state'] : []];
+    }
+
+    /**
+     * /mark on the page, as nextMark() in the chat: the task of the day (or
+     * the latest one), the mark, then "Mark as …?".
+     *
+     * @param array<string, mixed> $state
+     * @return array{ok: bool, text: string, state: array<string, mixed>, choices?: list<array{label: string, state: array<string, mixed>}>}
+     */
+    private function markWeb(array $state, Person $person): array
+    {
+        $refuse = static fn (string $text): array => ['ok' => false, 'text' => $text, 'state' => []];
+        $today = (string) current_time('Y-m-d');
+        $date = (string) ($state['date'] ?? '');
+
+        if (0 === (int) ($state['assignment'] ?? 0)) {
+            if ('' !== $date && $date > $today) {
+                return $refuse(__('A task can be marked on its day or later.', 'eventcrew'));
+            }
+
+            $rows = $this->markable($person->id, $date, $today);
+
+            if ([] === $rows) {
+                return $refuse(
+                    '' === $date
+                        /* translators: 1: a person's name, 2: number of days. */
+                        ? sprintf(__('%1$s has no task in the last %2$d days. Put the date first: /mark 14.11. name', 'eventcrew'), $person->name(), self::MARK_DAYS)
+                        /* translators: 1: a person's name, 2: a short day label, like "Sat 14 Nov". */
+                        : sprintf(__('%1$s has no task on %2$s.', 'eventcrew'), $person->name(), Dates::dayLabel($date))
+                );
+            }
+
+            if (count($rows) > 1) {
+                $options = [];
+
+                foreach ($rows as $row) {
+                    $task = $this->tasks->find($row->taskId);
+                    $options[$row->id] = null === $task ? '#' . $row->id : CommandFlow::taskLabel($task);
+                }
+
+                if (count($options) > WebChanges::MAX_CHOICES) {
+                    return $refuse(AssistantWebChanges::several(array_values($options)));
+                }
+
+                return self::choices($person->name() . "\n" . __('Which task?', 'eventcrew'), $options, $state, 'assignment');
+            }
+
+            $state['assignment'] = $rows[0]->id;
+        }
+
+        $assignment = $this->assignments->find((int) $state['assignment']);
+        $task = null === $assignment ? null : $this->tasks->find($assignment->taskId);
+
+        if (null === $assignment || null === $task || $assignment->personId !== $person->id) {
+            return $refuse(__('That sign-up no longer exists. Send /roster again to see the current list.', 'eventcrew'));
+        }
+
+        $head = $person->name() . ' · ' . CommandFlow::taskLabel($task);
+        $status = (string) ($state['status'] ?? '');
+
+        if (! in_array($status, self::MARKS, true)) {
+            $options = [];
+
+            foreach (self::MARKS as $mark) {
+                $options[$mark] = AssignmentStatus::label($mark);
+            }
+
+            /* translators: %s: the mark the task has now, like "Signed up". */
+            $now = sprintf(__('Now: %s', 'eventcrew'), $assignment->statusLabel());
+
+            return self::choices($head . "\n" . $now, $options, $state, 'status');
+        }
+
+        return [
+            'ok' => true,
+            /* translators: %s: a mark, like "Arrived late". */
+            'text' => $head . "\n" . sprintf(__('Mark as “%s”?', 'eventcrew'), AssignmentStatus::label($status)),
+            'state' => $state,
+        ];
+    }
+
+    /**
+     * A question with one choice button per option, each carrying $state
+     * with $key set to that option's key.
+     *
+     * @param array<int|string, string> $options key => label
+     * @param array<string, mixed> $state
+     * @return array{ok: bool, text: string, state: array<string, mixed>, choices: list<array{label: string, state: array<string, mixed>}>}
+     */
+    private static function choices(string $text, array $options, array $state, string $key): array
+    {
+        $choices = [];
+
+        foreach ($options as $value => $label) {
+            $choices[] = ['label' => $label, 'state' => [$key => $value] + $state];
+        }
+
+        return ['ok' => false, 'text' => $text, 'state' => [], 'choices' => $choices];
+    }
+
+    /**
+     * Confirm in the helper box: the state prepareWeb() or chooseWeb() gave,
+     * run as ✅ runs it. "changed" only when the change really happened.
      *
      * @param array<string, mixed> $state
      * @return array{changed: bool, text: string}
@@ -700,7 +846,7 @@ final class PersonCommands
             return ['changed' => false, 'text' => __('That person was not found.', 'eventcrew')];
         }
 
-        $done = $this->change($state, $person, $organizer);
+        $done = self::MARK === $state['op'] ? $this->mark($state, $person, $organizer) : $this->change($state, $person, $organizer);
 
         return ['changed' => $done['done'], 'text' => CommandFlow::result($done['done'], $done['head'], $done['text'])];
     }
@@ -723,27 +869,15 @@ final class PersonCommands
 
         switch ($state['op']) {
             case self::MARK:
-                $assignment = $this->assignments->find((int) ($state['assignment'] ?? 0));
-                $task = null === $assignment ? null : $this->tasks->find($assignment->taskId);
-                $status = (string) ($state['status'] ?? '');
+                $done = $this->mark($state, $person, $organizer);
 
-                if (null === $assignment || null === $task || $assignment->personId !== $person->id || ! isset(array_flip(self::MARKS)[$status])) {
-                    $telegram->sendMessage($chatId, __('That sign-up no longer exists. Send /roster again to see the current list.', 'eventcrew'));
+                if ('' === $done['head']) {
+                    $telegram->sendMessage($chatId, $done['text']);
 
                     return;
                 }
 
-                $this->assignments->setStatus($assignment->id, $status, $organizer->id, MarkedBy::PERSON);
-                $telegram->sendMessage($chatId, CommandFlow::result(
-                    true,
-                    $person->name() . ' · ' . CommandFlow::taskLabel($task),
-                    match ($status) {
-                        AssignmentStatus::ARRIVED => __('Marked arrived.', 'eventcrew'),
-                        AssignmentStatus::COMPLETED => __('Marked completed.', 'eventcrew'),
-                        AssignmentStatus::ARRIVED_LATE => __('Marked arrived late.', 'eventcrew'),
-                        default => __('Marked no-show.', 'eventcrew'),
-                    }
-                ));
+                $telegram->sendMessage($chatId, CommandFlow::result(true, $done['head'], $done['text']));
 
                 return;
 
@@ -755,6 +889,37 @@ final class PersonCommands
 
                 return;
         }
+    }
+
+    /**
+     * ✅ on /mark: the sign-up's new mark, as the roster buttons set it. On
+     * a sign-up that is gone, "done" false and "head" ''.
+     *
+     * @param array<string, mixed> $state
+     * @return array{done: bool, head: string, text: string}
+     */
+    private function mark(array $state, Person $person, Person $organizer): array
+    {
+        $assignment = $this->assignments->find((int) ($state['assignment'] ?? 0));
+        $task = null === $assignment ? null : $this->tasks->find($assignment->taskId);
+        $status = (string) ($state['status'] ?? '');
+
+        if (null === $assignment || null === $task || $assignment->personId !== $person->id || ! in_array($status, self::MARKS, true)) {
+            return ['done' => false, 'head' => '', 'text' => __('That sign-up no longer exists. Send /roster again to see the current list.', 'eventcrew')];
+        }
+
+        $this->assignments->setStatus($assignment->id, $status, $organizer->id, MarkedBy::PERSON);
+
+        return [
+            'done' => true,
+            'head' => $person->name() . ' · ' . CommandFlow::taskLabel($task),
+            'text' => match ($status) {
+                AssignmentStatus::ARRIVED => __('Marked arrived.', 'eventcrew'),
+                AssignmentStatus::COMPLETED => __('Marked completed.', 'eventcrew'),
+                AssignmentStatus::ARRIVED_LATE => __('Marked arrived late.', 'eventcrew'),
+                default => __('Marked no-show.', 'eventcrew'),
+            },
+        ];
     }
 
     /**

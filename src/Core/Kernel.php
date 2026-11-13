@@ -181,6 +181,7 @@ use EventCrew\MailImport\MailImporter;
 use EventCrew\MailImport\MailedListImport;
 use EventCrew\Web\AppInstallController;
 use EventCrew\Web\AssistantWebChanges;
+use EventCrew\Web\AssistantWebPeople;
 use EventCrew\Web\AssistantWebController;
 use EventCrew\Web\ChannelChoiceController;
 use EventCrew\Web\CrewAdminAiText;
@@ -953,7 +954,19 @@ final class Kernel
                     $container->get(NightCommands::class),
                     $container->get(TaskCommand::class),
                     $container->get(GuestListService::class),
-                    $container->get(TicketRedemptionService::class)
+                    $container->get(TicketRedemptionService::class),
+                    $container->get(AssignCommand::class),
+                    $container->get(SayCommand::class),
+                    $container->get(TellCommand::class),
+                    $container->get(SubscribeCommand::class),
+                    $container->get(NewsletterCommand::class),
+                    $container->get(FollowupCommand::class),
+                    $container->get(MemberCommands::class),
+                    new AssistantWebPeople(
+                        $container->get(PersonRepository::class),
+                        $container->get(CrewAdminController::class),
+                        $container->get(CrewAdminPeople::class)
+                    )
                 )
             )
         );

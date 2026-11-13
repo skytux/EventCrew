@@ -11328,3 +11328,93 @@ msgstr "Mikä ilta? %s"
 
 msgid "Your ticket is on the Tickets tab."
 msgstr "Lippusi on Liput-välilehdellä."
+
+msgid "It counts toward free-entry credit."
+msgstr "Se kerryttää vapaalippuja."
+
+msgid "There is no one-time text to remove."
+msgstr "Poistettavaa kertatekstiä ei ole."
+
+msgid "Remove both one-time texts of the next post-event email?"
+msgstr "Poistetaanko seuraavan jälkiviestin molemmat kertatekstit?"
+
+msgid "Remove the one-time text?"
+msgstr "Poistetaanko kertateksti?"
+
+msgid "Use this text in the next post-event email only?"
+msgstr "Käytetäänkö tätä tekstiä vain seuraavassa jälkiviestissä?"
+
+#, php-format
+msgid "Choose one of these languages: %s."
+msgstr "Valitse jokin näistä kielistä: %s."
+
+msgid "That is already your language."
+msgstr "Se on jo kielesi."
+
+#, php-format
+msgid "Change your language to %s?"
+msgstr "Vaihdetaanko kieleksesi %s?"
+
+msgid "Remove the text for the next announcement?"
+msgstr "Poistetaanko seuraavan tiedotteen teksti?"
+
+msgid "Set this as the text for the next announcement?"
+msgstr "Asetetaanko tämä seuraavan tiedotteen tekstiksi?"
+
+#, php-format
+msgid "Add %s to the newsletter? They get a confirmation email first."
+msgstr "Lisätäänkö %s tiedotteen tilaajaksi? Hän saa ensin vahvistusviestin."
+
+#, php-format
+msgid "Choose one of these roles: %s."
+msgstr "Valitse jokin näistä rooleista: %s."
+
+#, php-format
+msgid "%1$s already has the role %2$s."
+msgstr "Henkilöllä %1$s on jo rooli %2$s."
+
+#, php-format
+msgid "Give %1$s the role %2$s? They are told."
+msgstr "Annetaanko henkilölle %1$s rooli %2$s? Hänelle kerrotaan."
+
+#, php-format
+msgid "Take the role %1$s from %2$s? They are told."
+msgstr "Poistetaanko rooli %1$s henkilöltä %2$s? Hänelle kerrotaan."
+
+#, php-format
+msgid "%1$s does not have the role %2$s."
+msgstr "Henkilöllä %1$s ei ole roolia %2$s."
+
+#, php-format
+msgid "%s is already an organizer."
+msgstr "%s on jo järjestäjä."
+
+#, php-format
+msgid "%s is not an organizer."
+msgstr "%s ei ole järjestäjä."
+
+#, php-format
+msgid "Make %s an organizer? They are told."
+msgstr "Tehdäänkö henkilöstä %s järjestäjä? Hänelle kerrotaan."
+
+#, php-format
+msgid "Take the organizer role from %s?"
+msgstr "Poistetaanko järjestäjän rooli henkilöltä %s?"
+
+#, php-format
+msgid "Delete %s? Their data and history are erased. This cannot be undone."
+msgstr "Poistetaanko %s? Hänen tietonsa ja historiansa poistetaan. Tätä ei voi perua."
+
+#, php-format
+msgid "Give %s the OK? They can take tasks then, and they are told."
+msgstr "Hyväksytäänkö %s? Hän voi sitten ottaa tehtäviä, ja hänelle kerrotaan."
+
+#, php-format
+msgid "Say No to %s? They are not told."
+msgstr "Hylätäänkö %s? Hänelle ei kerrota."
+
+#, php-format
+msgid "Give %1$d credit to %2$s? They are told."
+msgid_plural "Give %1$d credits to %2$s? They are told."
+msgstr[0] "Annetaanko %1$d vapaalippu henkilölle %2$s? Hänelle kerrotaan."
+msgstr[1] "Annetaanko %1$d vapaalippua henkilölle %2$s? Hänelle kerrotaan."

@@ -217,6 +217,57 @@ final class SayCommand
     }
 
     /**
+     * The helper box on the Crew app page: "/say <text>" as the question
+     * shown with Confirm and Cancel, or (ok false) why it cannot be posted.
+     * The text is plain: the page has no Telegram formatting to carry.
+     * The caller has checked the person is an organizer.
+     *
+     * @return array{ok: bool, text: string, state: array<string, mixed>}
+     */
+    public function prepareWeb(string $text): array
+    {
+        $text = trim($text);
+        $refused = match (true) {
+            '' === $text => __('Send /say followed by the message for the group. I show it to you first.', 'eventcrew'),
+            mb_strlen($text) > self::MAX_LENGTH => __('This message is too long for Telegram.', 'eventcrew'),
+            0 === $this->groupChatId() => __('I am not in the crew group yet.', 'eventcrew'),
+            default => '',
+        };
+
+        if ('' !== $refused) {
+            return ['ok' => false, 'text' => $refused, 'state' => []];
+        }
+
+        return [
+            'ok' => true,
+            'text' => __('This goes to the group:', 'eventcrew') . "\n\n" . $text,
+            'state' => ['text' => $text],
+        ];
+    }
+
+    /**
+     * Confirm in the helper box: posts the text prepareWeb() showed in the
+     * crew group. "changed" only when Telegram took it.
+     *
+     * @param array<string, mixed> $state
+     * @return array{changed: bool, text: string}
+     */
+    public function runWeb(array $state): array
+    {
+        $text = trim((string) ($state['text'] ?? ''));
+        $group = $this->groupChatId();
+        $sent = '' === $text || 0 === $group ? null : $this->telegram->call('sendMessage', [
+            'chat_id' => $group,
+            'text' => htmlspecialchars($text, ENT_NOQUOTES, 'UTF-8'),
+            'parse_mode' => 'HTML',
+        ]);
+
+        return null === $sent
+            ? ['changed' => false, 'text' => __('Telegram did not accept this message. Please try again.', 'eventcrew')]
+            : ['changed' => true, 'text' => __('Sent to the group.', 'eventcrew')];
+    }
+
+    /**
      * The formatting of the original message, moved onto the text of a
      * "/say <text>" line the language-model helper made from it. Only when
      * <text> appears word for word in the original; otherwise none.

@@ -15,14 +15,28 @@ use EventCrew\Models\Person;
  */
 interface WebChanges
 {
+    /** Choice buttons the page shows at most; more is "Several match". */
+    public const MAX_CHOICES = 4;
+
     /**
      * The question for $action ("/unticket 14.11. Anna"), or (ok false) the
      * answer why it cannot be done. "state" is what run() needs; nothing is
-     * changed yet.
+     * changed yet. "choices" (ok false), when several people, tasks or marks
+     * match: the page shows one button each (at most MAX_CHOICES) and passes
+     * the chosen one's state to choose().
      *
-     * @return array{ok: bool, text: string, state: array<string, mixed>}
+     * @return array{ok: bool, text: string, state: array<string, mixed>, choices?: list<array{label: string, state: array<string, mixed>}>}
      */
     public function prepare(Person $organizer, string $action): array;
+
+    /**
+     * The step after a choice button: the next choice or the question, as
+     * prepare() answers.
+     *
+     * @param array<string, mixed> $state
+     * @return array{ok: bool, text: string, state: array<string, mixed>, choices?: list<array{label: string, state: array<string, mixed>}>}
+     */
+    public function choose(Person $organizer, string $action, array $state): array;
 
     /**
      * Runs the change prepare() gave $state for. "changed" only when it went

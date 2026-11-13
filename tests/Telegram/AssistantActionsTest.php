@@ -89,6 +89,29 @@ final class AssistantActionsTest extends TestCase
         self::assertSame(AssistantActions::ERROR_INVALID, self::check('menu:web now', self::member())['error']);
     }
 
+    /** The Crew app page's own lines: only there, organizers' only for organizers (Lou 2026-11-14). */
+    public function testThePagesOwnLinesAreAcceptedOnlyOnThePage(): void
+    {
+        $web = ['web' => true] + self::organizer();
+        foreach (['menu:gift Sam ; 2', 'menu:roles add DJ ; Sam', '/organizer on Heidi', '/deleteperson Sam', '/newcomer ok Sam', 'menu:language fi'] as $action) {
+            $result = self::check($action, $web);
+
+            self::assertTrue($result['ok'], $action);
+            self::assertSame($action, $result['action'], $action);
+            if ('/newcomer ok Sam' !== $action) { // the chat's own /newcomer takes any words
+                self::assertFalse(self::check($action, self::organizer())['ok'], $action . ' in the chat');
+            }
+        }
+
+        $member = ['web' => true] + self::member();
+        self::assertTrue(self::check('menu:language fi', $member)['ok']);
+        foreach (['menu:gift Sam ; 2', '/organizer on Sam', '/deleteperson Sam', '/newcomer ok'] as $action) {
+            self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check($action, $member)['error'], $action);
+        }
+
+        self::assertSame(AssistantActions::ERROR_INVALID, self::check('/organizer', $web)['error']);
+    }
+
     public function testStaffCommandsAreNotPermittedForAMember(): void
     {
         foreach (['/door', 'menu:doorlist', 'menu:guestlist', 'menu:sales', '/people', 'menu:gift', 'menu:roles', 'menu:eligible', '/door add Anna'] as $action) {

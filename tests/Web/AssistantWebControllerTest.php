@@ -421,12 +421,61 @@ final class AssistantWebControllerTest extends TestCase
 
     public function testAChangeThePageOnlyOpensSaysItIsNotDone(): void
     {
-        $this->assistant->next = FakeWebAssistant::answer('Marked.', '/mark 14.11. Sam');
+        $this->assistant->next = FakeWebAssistant::answer('Given.', 'menu:gift');
 
-        [, $body] = $this->post(['op' => 'ask', 'text' => 'mark Sam'], $this->organizer());
+        [, $body] = $this->post(['op' => 'ask', 'text' => 'give Sam credit'], $this->organizer());
 
         self::assertSame(AssistantWebActions::GOTO, $body['action']['kind']);
-        self::assertSame("Not done yet: open it here.\nMarked.", self::text($body));
+        self::assertSame("Not done yet: open it here.\nGiven.", self::text($body));
+    }
+
+    /** Lou 2026-11-14: several matches get one button each, then the question with Confirm. */
+    public function testSeveralMatchesAreChoiceButtonsThenTheQuestion(): void
+    {
+        $this->changes->prepared = ['ok' => false, 'text' => 'Which Sam?', 'state' => [], 'choices' => [
+            ['label' => 'Sam K', 'state' => ['person' => 5]],
+            ['label' => 'Sam L', 'state' => ['person' => 6]],
+        ]];
+        $this->assistant->next = FakeWebAssistant::answer('Sure.', '/mark 14.11. Sam');
+
+        [, $asked] = $this->post(['op' => 'ask', 'text' => 'mark Sam no-show'], $this->organizer());
+
+        self::assertSame('choose', $asked['action']['kind']);
+        self::assertSame(['Sam K', 'Sam L'], $asked['action']['choices']);
+        self::assertSame('Which Sam?', self::text($asked));
+
+        // Choice buttons are never a Confirm.
+        $this->assistant->recheck = '/mark 14.11. Sam';
+        [, $refused] = $this->post(['op' => 'confirm', 'id' => $asked['action']['id']], $this->organizer());
+        self::assertSame('refused', $refused['code']);
+        self::assertSame([], $this->changes->ran);
+
+        [, $again] = $this->post(['op' => 'ask', 'text' => 'mark Sam no-show'], $this->organizer());
+        $this->assistant->next = FakeWebAssistant::answer('Sure.', '/mark 14.11. Sam');
+        [, $chosen] = $this->post(['op' => 'choose', 'id' => $again['action']['id'], 'choice' => '1'], $this->organizer());
+
+        self::assertSame([['person' => 6]], $this->changes->choseStates);
+        self::assertSame(AssistantWebActions::CONFIRM, $chosen['action']['kind']);
+        self::assertSame('Mark Sam as no-show?', self::text($chosen));
+
+        [, $done] = $this->post(['op' => 'confirm', 'id' => $chosen['action']['id']], $this->organizer());
+        self::assertTrue($done['changed']);
+        self::assertSame([[7, '/mark 14.11. Sam', ['person' => 5]]], $this->changes->ran);
+    }
+
+    public function testAChoiceOfSomeoneElseOrOutOfRangeIsRefused(): void
+    {
+        $this->changes->prepared = ['ok' => false, 'text' => 'Which Sam?', 'state' => [], 'choices' => [
+            ['label' => 'Sam K', 'state' => ['person' => 5]],
+        ]];
+        $this->assistant->next = FakeWebAssistant::answer('Sure.', '/mark 14.11. Sam');
+        [, $asked] = $this->post(['op' => 'ask', 'text' => 'mark Sam'], $this->organizer());
+        $this->assistant->recheck = '/mark 14.11. Sam';
+
+        [, $body] = $this->post(['op' => 'choose', 'id' => $asked['action']['id'], 'choice' => '3'], $this->organizer());
+
+        self::assertSame('refused', $body['code']);
+        self::assertSame([], $this->changes->choseStates);
     }
 
     /** Lou 2026-11-14: "give myself a ticket" is asked and spent on the page, for any member. */

@@ -246,6 +246,57 @@ final class AssistantActions
         // Private-chat commands for organizers and members (ag-people).
         $list = array_merge($list, self::chatCommandEntries($audience));
 
+        if (! empty($audience['web'])) {
+            $list = array_merge($list, self::webEntries($audience));
+        }
+
+        return $list;
+    }
+
+    /**
+     * Lines only the Crew app page's helper box runs (AssistantWebChanges),
+     * each asked with Confirm and Cancel there.
+     *
+     * @param array<string, mixed> $audience
+     * @return array<int, array{usage: string, what: string, confirm: bool}>
+     */
+    private static function webEntries(array $audience): array
+    {
+        $list = [
+            self::entry(
+                'menu:language <code>',
+                "change the person's own language; <code> is one of: "
+                    . implode(', ', array_unique([...SiteLanguages::codes(), 'en']))
+            ),
+        ];
+
+        if (! $audience['organizer']) {
+            return $list;
+        }
+
+        $list[] = self::entry(
+            'menu:gift <person> ; <credits> [; <reason>]',
+            'give a member free-entry credits (a whole number, 1 or more); the member is told'
+        );
+        $list[] = self::entry(
+            'menu:roles <add|remove> <role> ; <person>',
+            'give a member a restricted role or take it away (role name as on the Roles screen); the member is told'
+        );
+        $list[] = self::entry(
+            '/organizer <on|off> <person>',
+            'make a member an organizer (on) or take the organizer role away (off); "make Anna organizer" is'
+                . ' /organizer on Anna, never /assign. Never one\'s own off, never the last organizer'
+        );
+        $list[] = self::entry(
+            '/deleteperson <person>',
+            'delete a person and erase their data and history; cannot be undone; never oneself'
+        );
+        $list[] = self::entry(
+            '/newcomer <ok|no> [person]',
+            'give a waiting newcomer the OK (they can take tasks, and are told) or say No; without a name the one'
+                . ' waiting'
+        );
+
         return $list;
     }
 
@@ -389,6 +440,15 @@ final class AssistantActions
                 : self::accept('menu:ticket ' . $date, false, self::RUN_TAP, 'tkt:' . $date);
         }
 
+        // The Crew app page's own lines (webEntries()).
+        if (! empty($audience['web'])) {
+            $web = self::validateWeb($head, $rest, $audience);
+
+            if (null !== $web) {
+                return $web;
+            }
+        }
+
         if (isset(self::MENU[$head])) {
             if ('' !== $rest) {
                 return self::refuse(self::ERROR_INVALID);
@@ -502,6 +562,50 @@ final class AssistantActions
         }
 
         return self::refuse(self::ERROR_UNKNOWN);
+    }
+
+    /**
+     * A line of webEntries(), or null when $head is not one of them (or
+     * has no value, as the bot's own forms are checked as usual).
+     *
+     * @param array<string, mixed> $audience
+     * @return array{ok: bool, error: string, action: string, confirm: bool, run: string, payload: string}|null
+     */
+    private static function validateWeb(string $head, string $rest, array $audience): ?array
+    {
+        $organizerOnly = ['menu:gift', 'menu:roles', '/organizer', '/deleteperson'];
+
+        if ('menu:language' === $head) {
+            if ('' === $rest) {
+                return null;
+            }
+        } elseif ('/newcomer' === $head) {
+            if (! in_array(strtolower((string) strtok($rest, ' ')), ['ok', 'no'], true)) {
+                return null;
+            }
+
+            if (! $audience['organizer']) {
+                return self::refuse(self::ERROR_NOT_PERMITTED);
+            }
+        } elseif (in_array($head, $organizerOnly, true)) {
+            if ('' === $rest && str_starts_with($head, 'menu:')) {
+                return null;
+            }
+
+            if (! $audience['organizer']) {
+                return self::refuse(self::ERROR_NOT_PERMITTED);
+            }
+
+            if ('' === $rest) {
+                return self::refuse(self::ERROR_INVALID);
+            }
+        } else {
+            return null;
+        }
+
+        $line = $head . ' ' . $rest;
+
+        return self::accept($line, false, self::RUN_MESSAGE, $line);
     }
 
     /**

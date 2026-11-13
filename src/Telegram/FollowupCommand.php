@@ -209,6 +209,95 @@ final class FollowupCommand
         return null === $next ? '' : $this->earlier($variant, $next) . "\n\n" . __('Confirm replaces it.', 'eventcrew');
     }
 
+    /**
+     * The Crew app's helper box: "/followup <came|missed> <text>", "/followup
+     * <came|missed> reset" or "/followup reset" as the question shown with
+     * Confirm (with the one-time text it replaces), or (ok false) why not.
+     * The caller has checked the person is an organizer.
+     *
+     * @return array{ok: bool, text: string, state: array<string, mixed>}
+     */
+    public function prepareWeb(string $arguments): array
+    {
+        $arguments = trim($arguments);
+
+        if ('' === $arguments) {
+            return ['ok' => false, 'text' => $this->current(), 'state' => []];
+        }
+
+        if (self::isReset($arguments)) {
+            return [] === $this->ownVariants()
+                ? ['ok' => false, 'text' => __('There is no one-time text to remove.', 'eventcrew'), 'state' => []]
+                : ['ok' => true, 'text' => __('Remove both one-time texts of the next post-event email?', 'eventcrew'), 'state' => ['variant' => self::ALL, 'reset' => true]];
+        }
+
+        $parts = preg_split('/\s+/u', $arguments, 2);
+        $variant = strtolower((string) ($parts[0] ?? ''));
+        $text = trim((string) ($parts[1] ?? ''));
+
+        if (! FollowupText::isVariant($variant) || '' === $text) {
+            return ['ok' => false, 'text' => self::usage(), 'state' => []];
+        }
+
+        if (self::isReset($text)) {
+            return null === $this->text->next($variant)
+                ? ['ok' => false, 'text' => __('There is no one-time text to remove.', 'eventcrew'), 'state' => []]
+                : ['ok' => true, 'text' => self::label($variant) . "\n" . __('Remove the one-time text?', 'eventcrew'), 'state' => ['variant' => $variant, 'reset' => true]];
+        }
+
+        $warning = $this->replaceWarning($arguments);
+
+        return [
+            'ok' => true,
+            'text' => self::label($variant) . "\n" . __('Use this text in the next post-event email only?', 'eventcrew')
+                . "\n\n" . $text . ('' === $warning ? '' : "\n\n" . $warning),
+            'state' => ['variant' => $variant, 'text' => $text],
+        ];
+    }
+
+    /**
+     * Confirm in the helper box: saves or removes the one-time text as the
+     * command does and tells the other organizers. The translation runs
+     * after the page has its answer.
+     *
+     * @param array<string, mixed> $state
+     * @return array{changed: bool, text: string}
+     */
+    public function runWeb(Person $organizer, array $state): array
+    {
+        $variant = (string) ($state['variant'] ?? '');
+
+        if (! empty($state['reset'])) {
+            if (self::ALL !== $variant && ! FollowupText::isVariant($variant)) {
+                return ['changed' => false, 'text' => __('That can no longer be done.', 'eventcrew')];
+            }
+
+            return ['changed' => true, 'text' => $this->resetText($organizer, self::ALL === $variant ? null : $variant)];
+        }
+
+        $text = trim((string) ($state['text'] ?? ''));
+
+        if (! FollowupText::isVariant($variant) || '' === $text) {
+            return ['changed' => false, 'text' => __('That can no longer be done.', 'eventcrew')];
+        }
+
+        if (! TranslatedText::modelReady()) {
+            $result = $this->text->setNext($variant, $text, $organizer->id);
+            $this->notice?->changed($variant, $organizer->id, $text);
+
+            return ['changed' => true, 'text' => self::saved($variant, $result['translated'], $result['texts'])];
+        }
+
+        $this->text->setNext($variant, $text, $organizer->id, false);
+        $this->notice?->changed($variant, $organizer->id, $text);
+        $this->later(function () use ($variant): void {
+            $this->text->translateNext($variant);
+        });
+
+        return ['changed' => true, 'text' => self::label($variant) . "\n"
+            . __('Saved for the next post-event email only:', 'eventcrew') . "\n\n" . $text];
+    }
+
     private static function isReset(string $word): bool
     {
         return in_array(strtolower(trim($word)), [self::RESET, self::CLEAR], true);
@@ -216,6 +305,12 @@ final class FollowupCommand
 
     /** Resets $variant (null: both) to the default and tells the other organizers. */
     private function reset(Person $person, int $chatId, ?string $variant): void
+    {
+        $this->telegram->sendMessage($chatId, $this->resetText($person, $variant));
+    }
+
+    /** Resets $variant (null: both), tells the other organizers and gives the answer. */
+    private function resetText(Person $person, ?string $variant): string
     {
         $had = array_values(array_filter(
             null === $variant ? FollowupText::VARIANTS : [$variant],
@@ -228,25 +323,17 @@ final class FollowupCommand
         }
 
         if (null === $variant) {
-            $this->telegram->sendMessage(
-                $chatId,
-                __(
-                    'Both one-time texts are removed. The next post-event email uses the texts on the Messages page.',
-                    'eventcrew'
-                )
+            return __(
+                'Both one-time texts are removed. The next post-event email uses the texts on the Messages page.',
+                'eventcrew'
             );
-
-            return;
         }
 
-        $this->telegram->sendMessage(
-            $chatId,
-            self::label($variant) . "\n"
-                . __(
-                    'The one-time text is removed. The next post-event email uses the text on the Messages page.',
-                    'eventcrew'
-                )
-        );
+        return self::label($variant) . "\n"
+            . __(
+                'The one-time text is removed. The next post-event email uses the text on the Messages page.',
+                'eventcrew'
+            );
     }
 
     /** Asks before $text replaces the earlier one-time text of $variant. */

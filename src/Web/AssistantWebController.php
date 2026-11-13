@@ -102,6 +102,7 @@ final class AssistantWebController
             'csrf' => isset($_POST['csrf']) ? sanitize_text_field(wp_unslash($_POST['csrf'])) : '',
             'id' => isset($_POST['id']) ? sanitize_key(wp_unslash($_POST['id'])) : '',
             'text' => isset($_POST['text']) ? sanitize_textarea_field(wp_unslash($_POST['text'])) : '',
+            'choice' => isset($_POST['choice']) ? (string) absint(wp_unslash($_POST['choice'])) : '',
         ];
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
@@ -132,6 +133,7 @@ final class AssistantWebController
         return match ((string) ($posted['op'] ?? '')) {
             'ask' => $this->ask($person, (string) ($posted['text'] ?? '')),
             'confirm' => $this->confirm($person, (string) ($posted['id'] ?? '')),
+            'choose' => $this->choose($person, (string) ($posted['id'] ?? ''), (string) ($posted['choice'] ?? '')),
             'cancel' => $this->cancel($person, (string) ($posted['id'] ?? '')),
             default => [400, ['ok' => false, 'error' => 'op']],
         };
@@ -173,10 +175,7 @@ final class AssistantWebController
                 $changes = $this->changes;
                 $asked = Language::run($language, static fn (): array => $changes->prepare($person, $checked['action']));
                 $reply = (string) $asked['text'];
-
-                if ($asked['ok']) {
-                    $body['action'] = $this->confirmAction($person, $checked['action'], (array) $asked['state'], '', $language);
-                }
+                $body['action'] = $this->askedAction($person, $checked['action'], $asked, $language);
             } elseif (AssistantWebActions::CONFIRM === $plan['kind']) {
                 $body['action'] = $this->confirmAction($person, $checked['action'], [], $this->summary($plan, $language), $language);
             } elseif (AssistantWebActions::GOTO === $plan['kind']) {
@@ -214,6 +213,11 @@ final class AssistantWebController
 
         if (null === $pending) {
             return [200, $this->told(__('This question has expired. Please write again.', 'eventcrew'), 'expired')];
+        }
+
+        // Choice buttons are never a Confirm.
+        if (isset($pending['choices'])) {
+            return [200, $this->told(__('That can no longer be done.', 'eventcrew'), 'refused')];
         }
 
         // Checked again: the person's roles and the open tasks may have changed.
@@ -263,6 +267,70 @@ final class AssistantWebController
     }
 
     /**
+     * One of the choice buttons: the next choice, or the question with
+     * Confirm, from the bot command's own lookups (WebChanges::choose()).
+     *
+     * @return array{0: int, 1: array<string, mixed>}
+     */
+    private function choose(Person $person, string $id, string $choice): array
+    {
+        $pending = $this->takePending($person, $id);
+        $states = $pending['choices'] ?? [];
+        $state = '' === $choice ? null : ($states[(int) $choice] ?? null);
+
+        if (null === $pending) {
+            return [200, $this->told(__('This question has expired. Please write again.', 'eventcrew'), 'expired')];
+        }
+
+        $checked = $this->assistant->recheckWeb($person, $pending['action']);
+        $plan = $checked['ok'] ? AssistantWebActions::plan($checked['action'], $person->isOrganizer) : ['kind' => ''];
+
+        if (! is_array($state) || null === $this->changes || AssistantWebActions::CHANGE !== ($plan['op'] ?? '')) {
+            return [200, $this->told(__('That can no longer be done.', 'eventcrew'), 'refused')];
+        }
+
+        $asked = $this->changes->choose($person, $checked['action'], $state);
+        $body = $this->told((string) $asked['text'], 'asked');
+        $body['action'] = $this->askedAction($person, $checked['action'], $asked, null);
+
+        return [200, $body];
+    }
+
+    /**
+     * What the page shows under a change's question (WebChanges::prepare()
+     * or choose()): Confirm and Cancel when it can run, one button per
+     * choice when something must be chosen first, else nothing.
+     *
+     * @param array{ok: bool, text: string, state: array<string, mixed>, choices?: list<array{label: string, state: array<string, mixed>}>} $asked
+     * @return array<string, mixed>|null
+     */
+    private function askedAction(Person $person, string $action, array $asked, ?string $language): ?array
+    {
+        if ($asked['ok']) {
+            return $this->confirmAction($person, $action, (array) $asked['state'], '', $language);
+        }
+
+        $choices = array_slice((array) ($asked['choices'] ?? []), 0, WebChanges::MAX_CHOICES);
+
+        if ([] === $choices) {
+            return null;
+        }
+
+        $id = bin2hex(random_bytes(8));
+        set_transient(self::PENDING_PREFIX . $id, [
+            'person' => $person->id,
+            'action' => $action,
+            'choices' => array_map(static fn (array $c): array => (array) $c['state'], $choices),
+        ], AssistantService::PENDING_TTL);
+
+        return [
+            'kind' => 'choose',
+            'id' => $id,
+            'choices' => array_map(static fn (array $c): string => (string) $c['label'], $choices),
+        ];
+    }
+
+    /**
      * @return array{0: int, 1: array<string, mixed>}
      */
     private function cancel(Person $person, string $id): array
@@ -304,7 +372,7 @@ final class AssistantWebController
      * The kept action under $id when it is this person's, removed so it runs
      * at most once; null when it expired, is someone else's or never was.
      *
-     * @return array{action: string, state: array<string, mixed>}|null
+     * @return array{action: string, state: array<string, mixed>, choices?: list<array<string, mixed>>}|null
      */
     private function takePending(Person $person, string $id): ?array
     {
@@ -325,7 +393,13 @@ final class AssistantWebController
             return null;
         }
 
-        return ['action' => $pending['action'], 'state' => is_array($pending['state'] ?? null) ? $pending['state'] : []];
+        $kept = ['action' => $pending['action'], 'state' => is_array($pending['state'] ?? null) ? $pending['state'] : []];
+
+        if (is_array($pending['choices'] ?? null)) {
+            $kept['choices'] = array_values(array_filter($pending['choices'], 'is_array'));
+        }
+
+        return $kept;
     }
 
     /**

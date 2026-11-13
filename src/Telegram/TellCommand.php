@@ -17,6 +17,8 @@ use EventCrew\Support\Mailer;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\PushNotifier;
 use EventCrew\Support\RoleTaskService;
+use EventCrew\Web\AssistantWebChanges;
+use EventCrew\Web\WebChanges;
 
 /**
  * /tell [date] <task> ; <message>: an organizer writes to everyone on one
@@ -207,6 +209,143 @@ final class TellCommand
                 $sent['email']
             )
         ));
+    }
+
+    /**
+     * The Crew app's helper box: "/tell [date] <task> ; <message>", found as
+     * the command finds it. The question with the message as it goes out,
+     * the task to choose first (choices, leading on through chooseWeb()),
+     * or (ok false) why not. The caller has checked $organizer is one.
+     *
+     * @return array{ok: bool, text: string, state: array<string, mixed>, choices?: list<array{label: string, state: array<string, mixed>}>}
+     */
+    public function prepareWeb(Person $organizer, string $args): array
+    {
+        $fail = static fn (string $text): array => ['ok' => false, 'text' => $text, 'state' => []];
+        [$date, $args] = CommandFlow::takeDate($args);
+        [$taskQuery, $message] = array_map('trim', array_pad(explode(';', $args, 2), 2, ''));
+
+        if ('' === $taskQuery || '' === $message) {
+            return $fail(self::usage());
+        }
+
+        if (mb_strlen($message) > self::MAX_LENGTH) {
+            /* translators: %d: the most characters a message may have. */
+            return $fail(sprintf(__('That message is too long. At most %d characters.', 'eventcrew'), self::MAX_LENGTH));
+        }
+
+        if (! $this->underLimit($organizer)) {
+            return $fail(self::limitText());
+        }
+
+        $pool = $this->tasks->upcoming();
+
+        if ('' !== $date) {
+            $pool = array_values(array_filter($pool, static fn (Task $t): bool => $t->taskDate === $date));
+        }
+
+        $found = AssignCommand::matchTasks($taskQuery, $pool);
+
+        if ([] === $found) {
+            return $fail(
+                '' !== $date && [] === $pool
+                    /* translators: %s: a short day label, like "Sat 14 Nov". */
+                    ? sprintf(__('There are no tasks on %s.', 'eventcrew'), Dates::dayLabel($date))
+                    /* translators: %s: the task name the organizer typed. */
+                    : sprintf(__('No task called “%s” was found.', 'eventcrew'), $taskQuery)
+            );
+        }
+
+        $state = ['task' => 0, 'message' => $message];
+
+        if (1 === count($found)) {
+            return $this->chooseWeb($organizer, ['task' => $found[0]->id] + $state);
+        }
+
+        if (count($found) > WebChanges::MAX_CHOICES) {
+            return $fail(AssistantWebChanges::several(array_map(
+                static fn (Task $t): string => CommandFlow::taskLabel($t),
+                $found
+            )));
+        }
+
+        $choices = [];
+
+        foreach ($found as $task) {
+            $choices[] = ['label' => CommandFlow::taskLabel($task), 'state' => ['task' => $task->id] + $state];
+        }
+
+        return ['ok' => false, 'text' => __('Which task?', 'eventcrew'), 'state' => [], 'choices' => $choices];
+    }
+
+    /**
+     * The question once the task is known: who gets the message, and the
+     * message as they see it.
+     *
+     * @param array<string, mixed> $state
+     * @return array{ok: bool, text: string, state: array<string, mixed>}
+     */
+    public function chooseWeb(Person $organizer, array $state): array
+    {
+        $task = $this->tasks->find((int) ($state['task'] ?? 0));
+
+        if (null === $task) {
+            return ['ok' => false, 'text' => RoleTaskService::text(RoleTaskService::NOT_RESTRICTED), 'state' => []];
+        }
+
+        $count = count($this->recipients($task, $organizer));
+
+        if (0 === $count) {
+            /* translators: %s: a task with its day and time. */
+            return ['ok' => false, 'text' => sprintf(__('Nobody else is on %s.', 'eventcrew'), CommandFlow::taskLabel($task)), 'state' => []];
+        }
+
+        return [
+            'ok' => true,
+            'text' => sprintf(
+                /* translators: 1: number of people, 2: a task with its day and time. */
+                _n('Send this to %1$d person on %2$s?', 'Send this to %1$d people on %2$s?', $count, 'eventcrew'),
+                $count,
+                CommandFlow::taskLabel($task)
+            ) . "\n\n" . self::header($organizer, $task) . "\n" . (string) ($state['message'] ?? ''),
+            'state' => ['task' => $task->id, 'message' => (string) ($state['message'] ?? '')],
+        ];
+    }
+
+    /**
+     * Confirm in the helper box: sends the message as ✅ sends it.
+     *
+     * @param array<string, mixed> $state
+     * @return array{changed: bool, text: string}
+     */
+    public function runWeb(Person $organizer, array $state): array
+    {
+        $task = $this->tasks->find((int) ($state['task'] ?? 0));
+        $message = trim((string) ($state['message'] ?? ''));
+
+        if (null === $task || '' === $message) {
+            return ['changed' => false, 'text' => RoleTaskService::text(RoleTaskService::NOT_RESTRICTED)];
+        }
+
+        if (! $this->underLimit($organizer)) {
+            return ['changed' => false, 'text' => self::limitText()];
+        }
+
+        $this->countSend($organizer);
+        $sent = $this->send($task, $organizer, $message);
+        $total = $sent['dm'] + $sent['email'];
+
+        return ['changed' => $total > 0, 'text' => CommandFlow::result(
+            $total > 0,
+            CommandFlow::taskLabel($task),
+            sprintf(
+                /* translators: 1: people the message went to, 2: of them on Telegram, 3: of them by email. */
+                _n('Sent to %1$d person (Telegram %2$d, email %3$d).', 'Sent to %1$d people (Telegram %2$d, email %3$d).', $total, 'eventcrew'),
+                $total,
+                $sent['dm'],
+                $sent['email']
+            )
+        )];
     }
 
     public static function usage(): string

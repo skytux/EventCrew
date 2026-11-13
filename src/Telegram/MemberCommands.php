@@ -9,6 +9,8 @@ use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Dates;
+use EventCrew\Support\Language;
+use EventCrew\Support\SiteLanguages;
 use EventCrew\Web\SignupController;
 
 /**
@@ -34,6 +36,9 @@ final class MemberCommands
     public const CREW = 'crew';
     public const NAME = 'name';
     public const EMAIL = 'email';
+
+    /** The helper box's "menu:language <code>" (Settings' Change language). */
+    public const LANGUAGE = 'menu:language';
 
     /** Settings' buttons, not typed commands: their ops in a waiting request. */
     public const SIGN_OUT = 'signout';
@@ -304,6 +309,127 @@ final class MemberCommands
                 /* translators: %s: the new email address. */
                 : sprintf(__('A link is on its way to %s. Your email changes when you open it.', 'eventcrew'), $value)
         ));
+    }
+
+    /**
+     * The Crew app's helper box: the person's own "/name <new name>" or
+     * "menu:language <code>" as the question shown with Confirm, or (ok
+     * false) why not, with the checks the chat makes. Not /email: its link
+     * goes to the new address, so it stays on the Settings card.
+     *
+     * @return array{ok: bool, text: string, state: array<string, mixed>}
+     */
+    public function prepareWeb(Person $member, string $command, string $value): array
+    {
+        $fail = static fn (string $text): array => ['ok' => false, 'text' => $text, 'state' => []];
+        $value = trim((string) preg_replace('/\s+/u', ' ', $value));
+
+        if ('' === $value) {
+            return $fail(__('That can no longer be done.', 'eventcrew'));
+        }
+
+        if (self::NAME === $command) {
+            $value = mb_substr($value, 0, 191);
+
+            if ($value === $member->displayName) {
+                return $fail(__('That is already your name.', 'eventcrew'));
+            }
+
+            return [
+                'ok' => true,
+                /* translators: 1: the current name, 2: the new name. */
+                'text' => sprintf(__('Change your name from %1$s to %2$s?', 'eventcrew'), $member->name(), $value),
+                'state' => ['op' => self::NAME, 'value' => $value],
+            ];
+        }
+
+        if (self::LANGUAGE !== $command) {
+            return $fail(__('That can no longer be done.', 'eventcrew'));
+        }
+
+        $language = self::language($value);
+
+        if ('' === $language) {
+            /* translators: %s: language codes, like "fi, en". */
+            return $fail(sprintf(__('Choose one of these languages: %s.', 'eventcrew'), implode(', ', self::languages())));
+        }
+
+        if ($language === $member->language) {
+            return $fail(__('That is already your language.', 'eventcrew'));
+        }
+
+        return [
+            'ok' => true,
+            /* translators: %s: a language's name, like "Finnish". */
+            'text' => sprintf(__('Change your language to %s?', 'eventcrew'), SiteLanguages::label($language)),
+            'state' => ['op' => self::LANGUAGE, 'value' => $language],
+        ];
+    }
+
+    /**
+     * Confirm in the helper box: the change prepareWeb() asked about, as
+     * ✅ makes it in the chat. "changed" only when it went through.
+     *
+     * @param array<string, mixed> $state
+     * @return array{changed: bool, text: string}
+     */
+    public function runWeb(Person $member, array $state): array
+    {
+        $op = (string) ($state['op'] ?? '');
+        $value = (string) ($state['value'] ?? '');
+
+        if ('' === $value) {
+            return ['changed' => false, 'text' => __('That can no longer be done.', 'eventcrew')];
+        }
+
+        if (self::NAME === $op) {
+            $code = $this->signup->updateProfile($member, $value, '');
+
+            return 'profile_saved' === $code
+                /* translators: %s: the new name. */
+                ? ['changed' => true, 'text' => sprintf(__('Your name is now %s.', 'eventcrew'), $value)]
+                : ['changed' => false, 'text' => SignupController::noticeText($code)];
+        }
+
+        if (self::LANGUAGE === $op) {
+            $code = $this->signup->chooseLanguage($member->id, $value);
+
+            return 'language_saved' === $code
+                ? ['changed' => true, 'text' => SignupController::noticeText($code)]
+                : ['changed' => false, 'text' => __('That can no longer be done.', 'eventcrew')];
+        }
+
+        return ['changed' => false, 'text' => __('That can no longer be done.', 'eventcrew')];
+    }
+
+    /**
+     * The languages a person can choose: the site's, and English.
+     *
+     * @return list<string>
+     */
+    private static function languages(): array
+    {
+        return array_values(array_unique(array_merge(SiteLanguages::codes(), [Language::ENGLISH])));
+    }
+
+    /** The language code $value names ("fi", "Finnish", "suomi"), or ''. */
+    private static function language(string $value): string
+    {
+        $code = Language::normalize($value);
+
+        if (null !== $code) {
+            return $code;
+        }
+
+        $value = mb_strtolower(trim($value));
+
+        foreach (self::languages() as $code) {
+            if (in_array($value, [mb_strtolower(SiteLanguages::name($code)), mb_strtolower(SiteLanguages::label($code))], true)) {
+                return $code;
+            }
+        }
+
+        return '';
     }
 
     /**

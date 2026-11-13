@@ -91,9 +91,6 @@ final class AssistantWebActions
      */
     private const ADMIN = [
         '/roster' => [self::ADMIN_ROSTER, 'roster_date'],
-        '/mark' => [self::ADMIN_ROSTER, 'roster_date'],
-        '/assign' => [self::ADMIN_ROSTER, 'roster_date'],
-        '/unassign' => [self::ADMIN_ROSTER, 'roster_date'],
         '/door' => [self::ADMIN_DOOR, 'roster_date'],
         'menu:doorlist' => [self::ADMIN_DOOR, 'roster_date'],
         'menu:guestlist' => [self::ADMIN_DOOR, 'roster_date'],
@@ -114,6 +111,9 @@ final class AssistantWebActions
      * every form the bot takes.
      */
     public const CHANGES = [
+        '/assign',
+        '/unassign',
+        '/mark',
         '/ticket',
         '/unticket',
         '/unban',
@@ -126,7 +126,36 @@ final class AssistantWebActions
         '/deletetask',
         '/maketasks',
         '/mailtasks',
+        '/say',
+        '/tell',
+        '/subscribe',
     ];
+
+    /**
+     * Organizer changes the page runs after Confirm only with text after
+     * the command: alone, each opens its Admin card (show the text, choose
+     * the person there).
+     */
+    private const CHANGES_WITH_TEXT = [
+        '/newsletter',
+        '/followup',
+        'menu:gift',
+        'menu:roles',
+        // Web-only lines (AssistantWebPeople): a person's organizer flag, deleting a person.
+        '/organizer',
+        '/deleteperson',
+    ];
+
+    /** "/newcomer" runs here with OK or No; alone it opens the waiting list. */
+    private const NEWCOMER_CHANGES = ['ok', 'no'];
+
+    /**
+     * A person's own changes the page runs after Confirm, for anyone, with
+     * the new value after the command: alone, each opens its Settings card.
+     * Not /email: its link goes to the new address, so it stays on the
+     * Settings card (Owner 2026-11-14).
+     */
+    public const OWN_CHANGES = ['/name', 'menu:language'];
 
     /** The /door words that change the guest list. */
     private const DOOR_CHANGES = ['add', 'edit', 'remove'];
@@ -136,12 +165,6 @@ final class AssistantWebActions
      * opens the place where the person does it, or has no place for it.
      */
     private const LEFT_UNDONE = [
-        '/mark',
-        '/assign',
-        '/unassign',
-        '/subscribe',
-        '/say',
-        '/tell',
         'menu:gift',
         'menu:roles',
         'menu:replace',
@@ -150,7 +173,7 @@ final class AssistantWebActions
     ];
 
     /** Actions that change something only with text after the command. */
-    private const LEFT_UNDONE_WITH_TEXT = ['/newsletter', '/followup', '/name', '/email'];
+    private const LEFT_UNDONE_WITH_TEXT = ['/email'];
 
     /** Organizer commands whose line is "[date] <person>": the person is searched on People. */
     private const PERSON_SEARCH = ['/standing'];
@@ -183,8 +206,9 @@ final class AssistantWebActions
         $head = strtolower($words[0]);
         $rest = trim($words[1] ?? '');
 
-        // Spending one's own credit on a night: anyone, asked and run here.
-        if (self::OWN_TICKET === $head) {
+        // Spending one's own credit on a night, or one's own name, email or
+        // language: anyone, asked and run here.
+        if (self::OWN_TICKET === $head || ('' !== $rest && in_array($head, self::OWN_CHANGES, true))) {
             return ['kind' => self::CONFIRM, 'op' => self::CHANGE, 'command' => $head];
         }
 
@@ -211,7 +235,8 @@ final class AssistantWebActions
 
     /**
      * Whether the page runs this organizer action line itself after Confirm
-     * (CHANGES, and /door add, edit or remove).
+     * (CHANGES, CHANGES_WITH_TEXT with its text, and /door add, edit or
+     * remove).
      */
     public static function isChange(string $head, string $rest): bool
     {
@@ -219,6 +244,14 @@ final class AssistantWebActions
 
         if ('/door' === $head) {
             return in_array(strtolower((string) strtok($rest, ' ')), self::DOOR_CHANGES, true);
+        }
+
+        if ('/newcomer' === $head) {
+            return in_array(strtolower((string) strtok($rest, ' ')), self::NEWCOMER_CHANGES, true);
+        }
+
+        if (in_array($head, self::CHANGES_WITH_TEXT, true)) {
+            return '' !== trim($rest);
         }
 
         return in_array($head, self::CHANGES, true);
@@ -235,8 +268,9 @@ final class AssistantWebActions
         $head = strtolower($words[0]);
         $rest = trim($words[1] ?? '');
 
+        // menu:gift, menu:roles and menu:language with their value run here.
         if (in_array($head, self::LEFT_UNDONE, true)) {
-            return true;
+            return '' === $rest || ! in_array($head, [...self::CHANGES_WITH_TEXT, ...self::OWN_CHANGES], true);
         }
 
         return '' !== $rest && in_array($head, self::LEFT_UNDONE_WITH_TEXT, true);

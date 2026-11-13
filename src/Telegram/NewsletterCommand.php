@@ -182,6 +182,57 @@ final class NewsletterCommand
         return $this->earlier($stored) . "\n\n" . __('Confirm replaces it.', 'eventcrew');
     }
 
+    /**
+     * The Crew app's helper box: "/newsletter <text>" or "/newsletter reset"
+     * as the question shown with Confirm (with the text it replaces), or
+     * (ok false) why not. The caller has checked the person is an organizer.
+     *
+     * @return array{ok: bool, text: string, state: array<string, mixed>}
+     */
+    public function prepareWeb(string $arguments): array
+    {
+        $arguments = trim($arguments);
+
+        if ('' === $arguments) {
+            return ['ok' => false, 'text' => $this->current(), 'state' => []];
+        }
+
+        if (self::isReset($arguments)) {
+            return null === $this->text->get()
+                ? ['ok' => false, 'text' => __('There is no text for the next announcement.', 'eventcrew'), 'state' => []]
+                : ['ok' => true, 'text' => __('Remove the text for the next announcement?', 'eventcrew'), 'state' => ['reset' => true]];
+        }
+
+        $warning = $this->replaceWarning($arguments);
+
+        return [
+            'ok' => true,
+            'text' => __('Set this as the text for the next announcement?', 'eventcrew') . "\n\n" . $arguments
+                . ('' === $warning ? '' : "\n\n" . $warning),
+            'state' => ['text' => $arguments],
+        ];
+    }
+
+    /**
+     * Confirm in the helper box: saves or removes the text as the command
+     * does, and tells the other organizers.
+     *
+     * @param array<string, mixed> $state
+     * @return array{changed: bool, text: string}
+     */
+    public function runWeb(Person $organizer, array $state): array
+    {
+        if (! empty($state['reset'])) {
+            return ['changed' => true, 'text' => $this->resetText($organizer)];
+        }
+
+        $text = trim((string) ($state['text'] ?? ''));
+
+        return '' === $text
+            ? ['changed' => false, 'text' => __('That can no longer be done.', 'eventcrew')]
+            : ['changed' => true, 'text' => $this->saveText($organizer, $text)];
+    }
+
     private static function isReset(string $word): bool
     {
         return in_array(strtolower(trim($word)), [self::RESET, self::CLEAR], true);
@@ -190,6 +241,12 @@ final class NewsletterCommand
     /** Resets the text to the default and tells the other organizers. */
     private function reset(Person $person, int $chatId): void
     {
+        $this->telegram->sendMessage($chatId, $this->resetText($person));
+    }
+
+    /** Resets the text, tells the other organizers and gives the answer. */
+    private function resetText(Person $person): string
+    {
         $had = null !== $this->text->get();
         $this->text->clear();
 
@@ -197,7 +254,7 @@ final class NewsletterCommand
             $this->notice?->changed(OwnTextNotice::NEWSLETTER, $person->id, '');
         }
 
-        $this->telegram->sendMessage($chatId, __('The text for the next announcement is removed.', 'eventcrew'));
+        return __('The text for the next announcement is removed.', 'eventcrew');
     }
 
     /** Asks before $text replaces the earlier text. */
@@ -234,6 +291,12 @@ final class NewsletterCommand
     /** Saves $text, answers and tells the other organizers. */
     private function save(Person $person, int $chatId, string $text): void
     {
+        $this->telegram->sendMessage($chatId, $this->saveText($person, $text), self::resetButton());
+    }
+
+    /** Saves $text, tells the other organizers and gives the answer. */
+    private function saveText(Person $person, string $text): string
+    {
         $result = $this->text->set($text, $person->id);
         $this->notice?->changed(OwnTextNotice::NEWSLETTER, $person->id, $text);
         $reply = __('Saved. The next announcement carries this text:', 'eventcrew')
@@ -244,7 +307,7 @@ final class NewsletterCommand
                 . __('The text could not be translated, so every language shows it as you wrote it.', 'eventcrew');
         }
 
-        $this->telegram->sendMessage($chatId, $reply, self::resetButton());
+        return $reply;
     }
 
     /**

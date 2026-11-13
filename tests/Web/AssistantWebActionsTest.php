@@ -31,7 +31,8 @@ final class AssistantWebActionsTest extends TestCase
             AssistantWebActions::plan('/me history')['targets'] ?? null
         );
         self::assertSame([HelpPage::PANEL_ANCHOR], AssistantWebActions::plan('/help')['targets'] ?? null);
-        self::assertSame(['eventcrew-panel-settings'], AssistantWebActions::plan('/name Sam')['targets'] ?? null);
+        self::assertSame(['eventcrew-panel-settings'], AssistantWebActions::plan('/name')['targets'] ?? null);
+        self::assertSame(['eventcrew-panel-settings'], AssistantWebActions::plan('/email sam@example.test')['targets'] ?? null);
     }
 
     public function testWhatThePageDoesNotHaveIsNoAction(): void
@@ -63,7 +64,7 @@ final class AssistantWebActionsTest extends TestCase
 
     public function testAnOrganizersChangeIsConfirmedAndRunOnThePage(): void
     {
-        foreach (['/unticket 14.11. Lou H', '/ticket Sam', '/unban Sam', '/freeentry close', '/stop email', '/newboard', '/sendtickets', '/addtask DJ 14.11.', '/edittask 12 +2', '/deletetask 12', '/maketasks', '/mailtasks', '/door add Anna', '/door remove 2'] as $line) {
+        foreach (['/assign 14.11. Bar Sam', '/unassign 14.11. Bar Sam', '/mark 14.11. Sam', '/say Hello all', '/tell 14.11. Bar Doors at 8', '/subscribe Sam', '/newsletter Hello all', '/followup Thanks', '/newcomer ok Sam', '/newcomer no', '/organizer on Heidi', '/organizer off Heidi', '/deleteperson Sam', 'menu:gift Sam ; 2', 'menu:roles add DJ ; Sam', '/unticket 14.11. Lou H', '/ticket Sam', '/unban Sam', '/freeentry close', '/stop email', '/newboard', '/sendtickets', '/addtask DJ 14.11.', '/edittask 12 +2', '/deletetask 12', '/maketasks', '/mailtasks', '/door add Anna', '/door remove 2'] as $line) {
             $head = (string) strtok($line, ' ');
             self::assertSame(
                 ['kind' => AssistantWebActions::CONFIRM, 'op' => AssistantWebActions::CHANGE, 'command' => $head],
@@ -74,6 +75,25 @@ final class AssistantWebActionsTest extends TestCase
 
         // A member never: those are organizer commands.
         self::assertSame(['kind' => AssistantWebActions::NONE], AssistantWebActions::plan('/unticket Lou'));
+        self::assertNotSame(AssistantWebActions::CHANGE, AssistantWebActions::plan('/organizer on Sam')['op'] ?? '');
+        self::assertNotSame(AssistantWebActions::CHANGE, AssistantWebActions::plan('/deleteperson Sam')['op'] ?? '');
+
+        // Without the person or text there is nothing to confirm.
+        self::assertNotSame(AssistantWebActions::CHANGE, AssistantWebActions::plan('/organizer', true)['op'] ?? '');
+        self::assertNotSame(AssistantWebActions::CHANGE, AssistantWebActions::plan('/newcomer', true)['op'] ?? '');
+        self::assertNotSame(AssistantWebActions::CHANGE, AssistantWebActions::plan('/newcomer Sam', true)['op'] ?? '');
+    }
+
+    /** Anyone changes their own name and language on Confirm. */
+    public function testAnyoneChangesTheirOwnNameAndLanguageOnConfirm(): void
+    {
+        foreach (['/name Sam K' => '/name', 'menu:language fi' => 'menu:language'] as $line => $head) {
+            self::assertSame(
+                ['kind' => AssistantWebActions::CONFIRM, 'op' => AssistantWebActions::CHANGE, 'command' => $head],
+                AssistantWebActions::plan($line),
+                $line
+            );
+        }
     }
 
     /** Lou 2026-11-14: "give myself a ticket" spends the person's own credit on Confirm. */
@@ -92,8 +112,13 @@ final class AssistantWebActionsTest extends TestCase
 
     public function testWhatThePageLeavesUndoneIsKnown(): void
     {
-        self::assertTrue(AssistantWebActions::leavesUndone('/mark 14.11. Sam'));
-        self::assertTrue(AssistantWebActions::leavesUndone('/newsletter Hello all'));
+        self::assertTrue(AssistantWebActions::leavesUndone('/email sam@example.test'));
+        self::assertTrue(AssistantWebActions::leavesUndone('menu:gift'));
+        self::assertTrue(AssistantWebActions::leavesUndone('menu:notifications'));
+        self::assertFalse(AssistantWebActions::leavesUndone('menu:gift Sam ; 2'));
+        self::assertFalse(AssistantWebActions::leavesUndone('menu:language fi'));
+        self::assertFalse(AssistantWebActions::leavesUndone('/mark 14.11. Sam'));
+        self::assertFalse(AssistantWebActions::leavesUndone('/newsletter Hello all'));
         self::assertFalse(AssistantWebActions::leavesUndone('/newsletter'));
         self::assertFalse(AssistantWebActions::leavesUndone('/roster 14.11.'));
         self::assertFalse(AssistantWebActions::leavesUndone('/unticket Sam'));

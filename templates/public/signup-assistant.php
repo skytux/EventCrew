@@ -12,7 +12,9 @@
  * only, never as HTML. Signing up for or cancelling a task shows Confirm
  * and Cancel first; something the page has opens that tab (and Admin
  * screen, for an organizer); a credit spent here gets one Open my ticket
- * button (Lou 2026-11-14); anything else gets no button. The page never
+ * button (Lou 2026-11-14); when several people, tasks or marks match, one
+ * button each (at most four), leading on to Confirm and Cancel; anything
+ * else gets no button. The page never
  * offers to go to Telegram (Owner 2026-11-13).
  *
  * Speaking uses the browser's own speech recognition (the mic is shown only
@@ -214,6 +216,27 @@ $eventcrew_ai_line = static function (string $where) use ($eventcrew_ai_placehol
             no.addEventListener('click', function () { answer('cancel'); });
             row.appendChild(yes);
             row.appendChild(no);
+        } else if ('choose' === action.kind && action.choices && action.choices.length) {
+            // Several people, tasks or marks match: one button each; the
+            // chosen one leads on to the next choice or the question.
+            var picks = action.choices.map(function (c, i) {
+                var b = el('button', 'eventcrew-ai-choice', String(c));
+                b.type = 'button';
+                b.addEventListener('click', function () {
+                    picks.forEach(function (p) { p.disabled = true; });
+                    var reply = bubble('bot', box.dataset.thinking);
+                    reply.classList.add('is-thinking');
+                    post({ op: 'choose', id: action.id, choice: String(i) }).then(function (json) {
+                        reply.textContent = '';
+                        reply.classList.remove('is-thinking');
+                        fill(reply, json.reply);
+                        act(reply, json.action);
+                        reply.scrollIntoView({ block: 'nearest' });
+                    }, function () { failed(reply); });
+                });
+                row.appendChild(b);
+                return b;
+            });
         } else {
             return;
         }

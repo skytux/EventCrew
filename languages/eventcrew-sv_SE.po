@@ -14254,3 +14254,93 @@ msgstr "Vilken kväll? %s"
 
 msgid "Your ticket is on the Tickets tab."
 msgstr "Din biljett finns under fliken Biljetter."
+
+msgid "It counts toward free-entry credit."
+msgstr "Den räknas mot fribiljetter."
+
+msgid "There is no one-time text to remove."
+msgstr "Det finns ingen engångstext att ta bort."
+
+msgid "Remove both one-time texts of the next post-event email?"
+msgstr "Ta bort båda engångstexterna i nästa mejl efter evenemanget?"
+
+msgid "Remove the one-time text?"
+msgstr "Ta bort engångstexten?"
+
+msgid "Use this text in the next post-event email only?"
+msgstr "Använda den här texten bara i nästa mejl efter evenemanget?"
+
+#, php-format
+msgid "Choose one of these languages: %s."
+msgstr "Välj ett av de här språken: %s."
+
+msgid "That is already your language."
+msgstr "Det är redan ditt språk."
+
+#, php-format
+msgid "Change your language to %s?"
+msgstr "Byta ditt språk till %s?"
+
+msgid "Remove the text for the next announcement?"
+msgstr "Ta bort texten för nästa utskick?"
+
+msgid "Set this as the text for the next announcement?"
+msgstr "Använda det här som text för nästa utskick?"
+
+#, php-format
+msgid "Add %s to the newsletter? They get a confirmation email first."
+msgstr "Lägga till %s i nyhetsbrevet? Hen får först ett bekräftelsemejl."
+
+#, php-format
+msgid "Choose one of these roles: %s."
+msgstr "Välj en av de här rollerna: %s."
+
+#, php-format
+msgid "%1$s already has the role %2$s."
+msgstr "%1$s har redan rollen %2$s."
+
+#, php-format
+msgid "Give %1$s the role %2$s? They are told."
+msgstr "Ge %1$s rollen %2$s? Hen får veta det."
+
+#, php-format
+msgid "Take the role %1$s from %2$s? They are told."
+msgstr "Ta rollen %1$s från %2$s? Hen får veta det."
+
+#, php-format
+msgid "%1$s does not have the role %2$s."
+msgstr "%1$s har inte rollen %2$s."
+
+#, php-format
+msgid "%s is already an organizer."
+msgstr "%s är redan arrangör."
+
+#, php-format
+msgid "%s is not an organizer."
+msgstr "%s är inte arrangör."
+
+#, php-format
+msgid "Make %s an organizer? They are told."
+msgstr "Göra %s till arrangör? Hen får veta det."
+
+#, php-format
+msgid "Take the organizer role from %s?"
+msgstr "Ta arrangörsrollen från %s?"
+
+#, php-format
+msgid "Delete %s? Their data and history are erased. This cannot be undone."
+msgstr "Ta bort %s? Hens uppgifter och historik raderas. Det går inte att ångra."
+
+#, php-format
+msgid "Give %s the OK? They can take tasks then, and they are told."
+msgstr "Ge %s OK? Hen kan då ta uppgifter och får veta det."
+
+#, php-format
+msgid "Say No to %s? They are not told."
+msgstr "Säga nej till %s? Hen får inte veta det."
+
+#, php-format
+msgid "Give %1$d credit to %2$s? They are told."
+msgid_plural "Give %1$d credits to %2$s? They are told."
+msgstr[0] "Ge %1$d fribiljett till %2$s? Hen får veta det."
+msgstr[1] "Ge %1$d fribiljetter till %2$s? Hen får veta det."

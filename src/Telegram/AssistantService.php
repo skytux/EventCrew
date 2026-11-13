@@ -341,7 +341,8 @@ final class AssistantService implements WebAssistant
     {
         $text = mb_substr(trim($text), 0, self::MAX_INPUT_CHARS);
         $logKey = ConversationLog::keyFor($person->telegramUserId, $person->id);
-        $audience = $this->help->audienceForPerson($person);
+        // The page's own lines too (AssistantActions::webEntries()).
+        $audience = ['web' => true] + $this->help->audienceForPerson($person);
         $chosen = $person->language;
 
         if (! $this->withinWebLimit($logKey, (bool) $audience['organizer'])) {
@@ -422,7 +423,7 @@ final class AssistantService implements WebAssistant
      */
     public function recheckWeb(Person $person, string $action): array
     {
-        $audience = $this->help->audienceForPerson($person);
+        $audience = ['web' => true] + $this->help->audienceForPerson($person);
 
         return AssistantActions::validate(
             $action,
@@ -1013,25 +1014,36 @@ final class AssistantService implements WebAssistant
                 . ' When the FACTS, the guide or CONVERSATION name a bot command or a button of the bot, say'
                 . ' where the same thing is on this page; when this page has no place for it, say only what it'
                 . ' is, or that an organizer can help. Never suggest using Telegram or the bot.',
-            '- Still give "action" lines from ACTIONS as usual. The page signs up, cancels or spends a credit on'
-                . ' a ticket (menu:ticket, with the night\'s date when the person named one) after the person'
+            '- Still give "action" lines from ACTIONS as usual. The page signs up, cancels, spends a credit on'
+                . ' a ticket (menu:ticket, with the night\'s date when the person named one), changes the'
+                . ' person\'s own name (/name <new name>) or language (menu:language <code>) after the person'
                 . ' confirms, and then shows the real outcome; or it opens the matching tab or screen; for anything'
                 . ' else it shows only your reply. So "reply" never says a sign-up, ticket or other change is done:'
                 . ' the page asks first. "Give me a ticket" or "give myself a ticket" is menu:ticket, never a link'
-                . ' to the Tickets tab. A free-entry ticket cannot be cancelled by its holder.'
+                . ' to the Tickets tab. A free-entry ticket cannot be cancelled by its holder. A new email address'
+                . ' is changed in Settings (a link goes to the new address), so /email only opens Settings.'
                 . ' Bot lines in CONVERSATION may come from Telegram or from this page.',
+            '- Never ask "Shall I do that?" or offer to do something without giving its action line: when you'
+                . ' propose a change, "action" is that change, and the page asks Confirm or Cancel itself.'
+                . ' Never send the person to a page or screen for something an action line does.',
         ];
 
         if ($organizer) {
             $lines[] = '- For an organizer, these action lines are asked with Confirm and Cancel and run on Confirm,'
-                . ' with the real outcome shown after: a ticket, a ticket removal, an unblock, free entry, stopping'
-                . ' an announcement or post-event email, a new board, sending tickets, adding, changing, deleting'
-                . ' or creating tasks, the open-task email, and adding, changing or removing a guest. An'
-                . ' organizer removes their own free-entry ticket with /unticket and their own name. The page'
-                . ' shows its own question for these, not your reply. Any other action line only opens the'
-                . ' matching Admin screen (with the date or name in it), and the page then says it is not done.'
-                . ' So "reply" never says a change is done, made, sent or saved: for those other lines it says'
-                . ' where on that screen to do it (like "Admin tab → Roster, + Add a person").';
+                . ' with the real outcome shown after: putting a member on or taking them off a task (/assign,'
+                . ' /unassign), marks (/mark), a ticket, a ticket removal, an unblock, free entry, stopping an'
+                . ' announcement or post-event email, a new board, sending tickets, adding, changing, deleting or'
+                . ' creating tasks, the open-task email, adding, changing or removing a guest, a group post (/say),'
+                . ' a message to a task\'s crew (/tell), a newsletter sign-up (/subscribe), the newsletter text and'
+                . ' the post-event email texts (/newsletter, /followup with the text or reset), credits'
+                . ' (menu:gift with the person), roles (menu:roles add or remove), the organizer role (/organizer on'
+                . ' or off), deleting a person (/deleteperson) and a newcomer\'s OK or No (/newcomer ok or no).'
+                . ' When several people or tasks match, the page shows them as buttons. An organizer removes their'
+                . ' own free-entry ticket with /unticket and their own name. The page shows its own question for'
+                . ' these, not your reply. Any other action line only opens the matching Admin screen (with the'
+                . ' date or name in it), and the page then says it is not done. So "reply" never says a change is'
+                . ' done, made, sent or saved, and never says "not done yet" or "open it here" for a change it'
+                . ' gives the line for: the page asks.';
         }
 
         return $lines;

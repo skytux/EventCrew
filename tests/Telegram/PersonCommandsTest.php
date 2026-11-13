@@ -317,15 +317,20 @@ final class PersonCommandsTest extends TelegramTestCase
         self::assertSame('', $this->lastText());
     }
 
-    public function testTheWebHelperRefusesSeveralMatches(): void
+    /** Lou 2026-11-14: several matches are choice buttons on the page, each carrying its person. */
+    public function testTheWebHelperOffersSeveralMatchesAsChoices(): void
     {
         $this->wpdb->nextResults[] = [$this->person(7, 'Milla Virtanen'), $this->person(8, 'Milla Koski')];
 
         $asked = $this->command()->prepareWeb(PersonCommands::UNTICKET, '25.7. Milla');
 
         self::assertFalse($asked['ok']);
-        self::assertStringStartsWith('Several match: ', $asked['text']);
-        self::assertStringContainsString('Milla Koski', $asked['text']);
+        self::assertSame('Which member?', $asked['text']);
+        $people = array_map(static fn (array $c): int => (int) $c['state']['person'], $asked['choices'] ?? []);
+        sort($people);
+        self::assertSame([7, 8], $people);
+        self::assertStringContainsString('Milla Koski', implode(' ', array_column($asked['choices'], 'label')));
+        self::assertSame('', $this->lastText());
     }
 
     /** Confirm in the helper box: changed only when the ticket row was cancelled (Owner 2026-11-13). */
