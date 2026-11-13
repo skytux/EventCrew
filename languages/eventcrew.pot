@@ -2243,6 +2243,10 @@ msgstr ""
 msgid "Chat"
 msgstr ""
 
+#: templates/public/signup-groupchat.php:66
+msgid "Chat with the crew. What you send here also goes to the crew’s Telegram group, with your name."
+msgstr ""
+
 #: templates/admin/diagnostics.php:29 templates/admin/diagnostics.php:86
 msgid "Check"
 msgstr ""
@@ -4533,7 +4537,7 @@ msgstr ""
 msgid "Join on the web"
 msgstr ""
 
-#: src/Support/DoorNewMember.php:117 src/Support/MessageTemplates.php:1333
+#: src/Support/DoorNewMember.php:117 src/Support/MessageTemplates.php:1333 templates/public/signup-links.php:25
 msgid "Join the Telegram group"
 msgstr ""
 
@@ -8712,7 +8716,7 @@ msgstr ""
 msgid "Telegram gets the same answer, so the bot does not receive messages."
 msgstr ""
 
-#: src/Support/WelcomeSender.php:510 templates/public/signup-links.php:25
+#: src/Support/WelcomeSender.php:510
 msgid "Telegram group"
 msgstr ""
 
@@ -9429,10 +9433,6 @@ msgstr ""
 
 #: src/Admin/SettingsPage.php:1140
 msgid "The connection test failed: %s."
-msgstr ""
-
-#: templates/public/signup-groupchat.php:66
-msgid "The crew’s Telegram group. What you send here, the bot posts to the group with your name."
 msgstr ""
 
 #: src/Support/PrivacyPolicy.php:399
