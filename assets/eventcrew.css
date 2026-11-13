@@ -927,7 +927,15 @@
     background: color-mix(in srgb, currentColor 12%, transparent);
 }
 /* A centred outlined button, like the crew guide button under the board. */
-.eventcrew-signup .eventcrew-links.eventcrew-help-orglink { margin: 0 0 1.2em; }
+/*
+ * The Help tab's links: one centred line that wraps, not the button column
+ * .eventcrew-links is for, which put every link and every "·" on a row of
+ * its own with a gap (Owner 2026-11-13: "weird spacing").
+ */
+.eventcrew-signup .eventcrew-links.eventcrew-help-orglink {
+    display: flex; flex-flow: row wrap; justify-content: center; align-items: baseline;
+    gap: 0 .5em; margin: 0 0 1.2em; line-height: 1.6;
+}
 .eventcrew-signup .eventcrew-help-organizer { margin-top: 2em; scroll-margin-top: 1em; }
 .eventcrew-signup .eventcrew-help-organizer > h2 { margin: 0 0 .8em; }
 /* The Help tab's parts, named as in the bot's Help menu (Owner 2026-11-08). */
