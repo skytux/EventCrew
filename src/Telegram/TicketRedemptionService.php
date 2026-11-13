@@ -622,6 +622,9 @@ final class TicketRedemptionService
      * eligibleDatesFor() with how many tickets the person already holds for
      * each night, which the web page sends back with Get a ticket (redeem()).
      *
+     * The label carries the event's DJs (EventName::djLine()) after the day
+     * and name, as the bot's picker does (Owner 2026-11-13).
+     *
      * @return array<string, array{label: string, held: int}>
      */
     public function eligibleNights(int $personId): array
@@ -637,7 +640,12 @@ final class TicketRedemptionService
                 continue;
             }
 
-            $nights[$date] = ['label' => $this->dateLabel($date), 'held' => $count];
+            // One lookup for both the name and the DJs (the tests script it).
+            [$eventId, $eventLabel] = $this->eventContext($date);
+            $djs = null === $eventId ? '' : EventName::djLine((int) $eventId);
+            $label = $this->shortDate($date) . ('' === $eventLabel ? '' : ' · ' . $eventLabel)
+                . ('' === $djs ? '' : ' · ' . $djs);
+            $nights[$date] = ['label' => $label, 'held' => $count];
         }
 
         return $nights;

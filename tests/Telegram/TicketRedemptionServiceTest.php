@@ -537,6 +537,22 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         self::assertSame([], $this->service()->eligibleDatesFor(7));
     }
 
+    /** Owner 2026-11-13: the web page's Get a ticket options name the DJs too. */
+    public function testTheWebTicketOptionsNameTheDjs(): void
+    {
+        $this->fakeEventNames([42 => ['en' => 'Ecstatic Dance']], [42 => ['Esimerkki']]);
+        $this->wpdb->nextResults[] = [];          // forPerson -> nothing held
+        $this->wpdb->nextCols[] = ['2026-08-01']; // upcomingDates
+        $this->wpdb->nextResults[] = [[
+            'id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'clean', 'capacity' => 3,
+            'event_post_id' => 42, 'event_label' => 'Party',
+        ]];                                       // forDate
+
+        $nights = $this->service()->eligibleNights(7);
+
+        self::assertSame('Sat 1 Aug · Ecstatic Dance · Esimerkki', $nights['2026-08-01']['label']);
+    }
+
     /** The bot's Yes button carries the tickets held, and the tap sends it back. */
     public function testTheBotQuestionCarriesTheTicketsHeldForTheNight(): void
     {

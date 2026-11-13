@@ -363,6 +363,15 @@
     content: "💬"; display: block; margin-bottom: .3em; font-size: 2em; opacity: .8;
 }
 .eventcrew-signup .eventcrew-chat-empty.is-error::before { content: "⚠️"; }
+/* Loading: a turning ring instead of the speech bubble. */
+.eventcrew-signup .eventcrew-chat-empty.is-loading::before {
+    content: ""; width: 1.6em; height: 1.6em; margin: 0 auto .6em; font-size: 1em;
+    border: 3px solid color-mix(in srgb, currentColor 25%, transparent);
+    border-top-color: var(--eventcrew-accent); border-radius: 50%;
+    animation: eventcrew-chat-spin .8s linear infinite;
+}
+@keyframes eventcrew-chat-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .eventcrew-signup .eventcrew-chat-empty.is-loading::before { animation-duration: 2.4s; } }
 .eventcrew-signup .eventcrew-chat-empty[hidden] { display: none; }
 
 .eventcrew-signup .eventcrew-chat-newpill {
@@ -1155,8 +1164,8 @@
  */
 .eventcrew-signup .eventcrew-redeem {
     display: flex; flex-direction: column; gap: .5em;
-    margin: 1em 0; padding: 1em;
-    border: 1px solid var(--eventcrew-line); border-radius: var(--eventcrew-radius);
+    /* No frame of its own: the Get a ticket card already draws one (Owner 2026-11-13). */
+    margin: 0; padding: 0;
 }
 .eventcrew-signup .eventcrew-redeem label { font-weight: 600; }
 .eventcrew-signup .eventcrew-redeem select {

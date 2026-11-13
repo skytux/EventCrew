@@ -41,6 +41,7 @@ $eventcrew_chat_text = [
     'empty' => __('No messages in the last 30 days.', 'eventcrew'),
     'today' => __('Today', 'eventcrew'),
     'yesterday' => __('Yesterday', 'eventcrew'),
+    'loading' => __('Loading…', 'eventcrew'),
     'loadFailed' => __('The messages could not be loaded. Trying again soon.', 'eventcrew'),
     'name' => __('Add your name in Settings first: the group sees it with your message.', 'eventcrew'),
     'rate' => __('That is many messages in a short time. Wait a few minutes.', 'eventcrew'),
@@ -67,7 +68,7 @@ $eventcrew_chat_text = [
         <div class="eventcrew-chat-viewport">
             <ol class="eventcrew-chat-list" data-eventcrew-chat-list role="log" aria-live="polite"
                 aria-labelledby="eventcrew-chat-title" tabindex="0"></ol>
-            <p class="eventcrew-chat-empty" data-eventcrew-chat-empty hidden></p>
+            <p class="eventcrew-chat-empty is-loading" data-eventcrew-chat-empty role="status"><?php esc_html_e('Loading…', 'eventcrew'); ?></p>
             <button type="button" class="eventcrew-chat-newpill" data-eventcrew-chat-new hidden>
                 <?php esc_html_e('New messages', 'eventcrew'); ?> <span aria-hidden="true">↓</span>
             </button>
@@ -124,6 +125,7 @@ $eventcrew_chat_text = [
     var lastId = 0;
     var timer = null;
     var busy = false;
+    var unseen = false;
     // What a photo, a file and the rest show in their chip (Telegram's own kinds).
     var ICONS = {
         photo: '📷', video: '🎬', video_note: '🎬', animation: '🎞️', sticker: '🏷️',
@@ -330,7 +332,7 @@ $eventcrew_chat_text = [
         });
         empty.textContent = text.empty;
         if (note) { empty.appendChild(el('small', '', note)); }
-        empty.classList.remove('is-error');
+        empty.classList.remove('is-error', 'is-loading');
         empty.hidden = messages.length > 0;
 
         if (first || bottom || (arrived && newest.mine)) {
@@ -360,6 +362,7 @@ $eventcrew_chat_text = [
             // Nothing shown yet: say so where the messages would be.
             if ('' === shown) {
                 empty.textContent = text.loadFailed;
+                empty.classList.remove('is-loading');
                 empty.classList.add('is-error');
                 empty.hidden = false;
             }
@@ -371,8 +374,20 @@ $eventcrew_chat_text = [
 
     function tick() {
         clearTimeout(timer);
-        if (open()) { load(); }
+        if (open()) {
+            // Fetched before the tab was open: the list could not scroll then.
+            if (unseen) { unseen = false; toBottom(false); }
+            load();
+        }
         timer = setTimeout(tick, POLL);
+    }
+
+    // Fetched once when the page has loaded, so the tab opens with the
+    // messages already there instead of waiting for the server then.
+    function prefetch() {
+        if ('' !== shown || open()) { return; }
+        unseen = true;
+        load();
     }
 
     form.addEventListener('submit', function (e) {
@@ -428,6 +443,11 @@ $eventcrew_chat_text = [
         document.addEventListener('DOMContentLoaded', tick);
     } else {
         tick();
+    }
+    if (document.readyState === 'complete') {
+        setTimeout(prefetch, 500);
+    } else {
+        window.addEventListener('load', function () { setTimeout(prefetch, 500); });
     }
 }());
 </script>
