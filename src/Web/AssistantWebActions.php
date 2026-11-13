@@ -45,7 +45,7 @@ final class AssistantWebActions
     public const ADMIN_ROLES = 'eventcrew-admin-role-form';
     public const ADMIN_NEWSLETTER = 'eventcrew-admin-newsletter-card';
     public const ADMIN_FOLLOWUP = 'eventcrew-admin-followup-card';
-    public const ADMIN_BOARD = 'eventcrew-admin-telegram';
+    public const ADMIN_BOARD = 'eventcrew-admin-board';
 
     /** Hosts whose links a web answer never carries. */
     private const TELEGRAM_HOSTS = ['t.me', 'telegram.me', 'telegram.dog', 'telegram.org'];

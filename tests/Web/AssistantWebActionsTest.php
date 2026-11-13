@@ -63,7 +63,7 @@ final class AssistantWebActionsTest extends TestCase
             AssistantWebActions::plan('/addtask', true, '2026-11-13')['targets'] ?? null
         );
         self::assertSame(
-            ['eventcrew-admin-telegram', 'eventcrew-panel-admin'],
+            ['eventcrew-admin-board', 'eventcrew-panel-admin'],
             AssistantWebActions::plan('/newboard', true, '2026-11-13')['targets'] ?? null
         );
     }

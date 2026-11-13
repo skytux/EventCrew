@@ -984,10 +984,6 @@ msgstr "Vähennä yksi henkilö laskusta ilman nimeä"
 msgid "Telegram"
 msgstr "Telegram"
 
-#: templates/public/signup.php:497
-msgid "Telegram board"
-msgstr "Telegram-taulu"
-
 #: src/Support/ClaimNotifier.php:153
 msgid "Thanks for the notice."
 msgstr "Kiitos ilmoituksesta."

@@ -2370,9 +2370,16 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('id="eventcrew-tab-admin"', $html);
         self::assertStringContainsString('id="eventcrew-panel-admin"', $html);
         self::assertStringContainsString('<nav class="eventcrew-subtabs"', $html);
-        foreach (['roster', 'tasks', 'roles', 'door', 'people', 'telegram', 'messages'] as $screen) {
+        foreach (['roster', 'tasks', 'roles', 'door', 'people', 'messages'] as $screen) {
             self::assertStringContainsString('data-eventcrew-subpanel="' . $screen . '"', $html, $screen);
         }
+        // The board repost is the first thing in the Open-task email card on
+        // Tasks; there is no Telegram screen any more (Owner 2026-11-13).
+        self::assertStringNotContainsString('data-eventcrew-subpanel="telegram"', $html);
+        self::assertMatchesRegularExpression(
+            '~Open-task email</h3>.*?<div class="eventcrew-card-body eventcrew-admin-links">\s*(<\?php[^>]*>)?\s*<form id="eventcrew-admin-board"~s',
+            $html
+        );
         // Roles comes right after Tasks in the row of screens (Owner 2026-11-13).
         self::assertMatchesRegularExpression(
             '/data-eventcrew-subtab="tasks">[^<]*<\/a>\s*<a [^>]*data-eventcrew-subtab="roles">Roles</',

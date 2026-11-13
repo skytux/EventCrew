@@ -6847,10 +6847,6 @@ msgid ""
 msgstr ""
 "Telegram frågar vilken grupp. Ladda om sidan efteråt för att se tavlans grupp här."
 
-#: templates/public/signup.php:727
-msgid "Telegram board"
-msgstr "Telegram-tavlan"
-
 #: src/Support/AiPrompts.php:228
 msgid "Telegram board: the text about the DJ"
 msgstr "Telegram-tavlan: texten om DJ:n"

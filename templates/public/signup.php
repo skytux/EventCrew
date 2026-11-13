@@ -1336,7 +1336,6 @@ if ($eventcrew_link_expired) {
                 'roles' => __('Roles', 'eventcrew'),
                 'door' => __('Door', 'eventcrew'),
                 'people' => _x('People', 'Admin tab screen', 'eventcrew'),
-                'telegram' => __('Telegram', 'eventcrew'),
             ];
 
             // The texts sent to people (the announcement, the post-event
@@ -1377,22 +1376,6 @@ if ($eventcrew_link_expired) {
                         data-eventcrew-subtab="<?php echo esc_attr($eventcrew_sub_key); ?>"><?php echo esc_html($eventcrew_sub_label); ?></a>
                 <?php endforeach; ?>
             </nav>
-
-            <div class="eventcrew-subpanel" id="eventcrew-admin-telegram" data-eventcrew-subpanel="telegram">
-            <section class="eventcrew-event eventcrew-admin-card">
-                <header class="eventcrew-event-head">
-                    <h3 class="eventcrew-event-title"><?php esc_html_e('Telegram board', 'eventcrew'); ?></h3>
-                </header>
-                <div class="eventcrew-card-body">
-                    <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                        <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['board_action']); ?>">
-                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                        <button type="submit" class="wp-element-button"><?php esc_html_e('Post a new board in the Telegram group', 'eventcrew'); ?></button>
-                    </form>
-                </div>
-            </section>
-            </div>
 
             <div class="eventcrew-subpanel" id="eventcrew-admin-people" data-eventcrew-subpanel="people">
             <?php
@@ -2516,6 +2499,13 @@ if ($eventcrew_link_expired) {
                     <?php $eventcrew_admin_about('eventcrew-admin-about-open-task', __('Open-task email', 'eventcrew'), __('Sends to everyone with a verified, switched-on account, skipping anyone already signed up for that date. It only sends when there are open tasks, and never mails the same person twice for the same date. People switch it off by disabling their account (in the bot with /stop, or the link in any email).', 'eventcrew')); ?>
                 </header>
                 <div class="eventcrew-card-body eventcrew-admin-links">
+                    <?php // The Telegram board repost, at the top of this card (Owner 2026-11-13); it had a screen of its own. ?>
+                    <form id="eventcrew-admin-board" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                        <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['board_action']); ?>">
+                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_tasks_here); ?>">
+                        <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Post a new board in the Telegram group', 'eventcrew'); ?></button>
+                    </form>
                     <span class="eventcrew-admin-line"><?php echo esc_html($eventcrew_open_task_count); ?></span>
                     <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
                         onsubmit="return confirm('<?php echo esc_js($eventcrew_open_task_count); ?>');">

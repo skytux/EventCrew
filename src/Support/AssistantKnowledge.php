@@ -286,7 +286,7 @@ final class AssistantKnowledge
                     . ' let an at-risk member sign up once, lift a block; newcomers waiting for an OK are at the top.',
                 '- Admin tab → Messages: the next events announcement (its text, stop it) and the post-event email'
                     . ' (its one-time texts, stop it).',
-                '- The Admin tab also has a screen with a button to post a new board in the crew group.',
+                '- Admin tab → Tasks, top of the Open-task email card: a link to post a new board in the crew group.',
                 '- Writing a message to the crew group or to everyone on a task, the event cards and a newsletter'
                     . ' subscription for someone else are not on this page.',
             ];
