@@ -543,6 +543,8 @@ final class SignupControllerTest extends TestCase
         self::assertStringContainsString('class="eventcrew-textlink"', $links[0]);
         self::assertStringNotContainsString('Crew guide', $links[0]);
         self::assertGreaterThan(strrpos($html, 'data-eventcrew-panel='), strpos($html, 'eventcrew-grouplink'));
+        // The Summary is on the Board tab only, at its top (Owner 2026-11-13).
+        self::assertMatchesRegularExpression('~data-eventcrew-panel="board"[^>]*>\s*<section class="eventcrew-event eventcrew-me-card eventcrew-header-card" id="eventcrew-summary">~', $html);
         self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card" id="eventcrew-summary">.*?</section>~s', $html, $card));
         self::assertStringContainsString('class="eventcrew-card-body eventcrew-header-guide"', $card[0]);
         self::assertStringContainsString('href="https://docs.example/guide"', $card[0]);

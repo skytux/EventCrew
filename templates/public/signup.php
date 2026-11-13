@@ -610,7 +610,7 @@ if ($eventcrew_link_expired) {
         ?>
         <?php
         /*
-         * The Summary card, under the tab bar on every tab (Owner 2026-11-13):
+         * The Summary card, at the top of the Board tab only (Owner 2026-11-13):
          * the person's standing, once - the bar and its "85% · Good standing"
          * when rated, else how many tasks to go - then the completed tasks, the
          * free-entry credits and what is coming, each a text link to its card
@@ -622,6 +622,7 @@ if ($eventcrew_link_expired) {
         $eventcrew_coming_tasks = (int) ($view['my_upcoming_total'] ?? count($eventcrew_my_upcoming));
         $eventcrew_coming_tickets = count($eventcrew_my_tickets['upcoming']);
         ?>
+        <section class="eventcrew-panel" id="eventcrew-panel-board" data-eventcrew-panel="board" aria-labelledby="eventcrew-tab-board">
         <section class="eventcrew-event eventcrew-me-card eventcrew-header-card" id="eventcrew-summary">
             <header class="eventcrew-event-head">
                 <h2 class="eventcrew-event-title"><?php esc_html_e('Summary', 'eventcrew'); ?></h2>
@@ -724,7 +725,6 @@ if ($eventcrew_link_expired) {
             <?php endif; ?>
         </section>
 
-        <section class="eventcrew-panel" id="eventcrew-panel-board" data-eventcrew-panel="board" aria-labelledby="eventcrew-tab-board">
             <h2 class="eventcrew-panel-title"><?php esc_html_e('Board', 'eventcrew'); ?></h2>
             <div id="eventcrew-board" class="eventcrew-board">
                 <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-board.php'; ?>
