@@ -178,7 +178,9 @@ $eventcrew_ai_line = static function (string $where) use ($eventcrew_ai_placehol
             }
             row.appendChild(go);
         } else if ('confirm' === action.kind) {
-            holder.appendChild(el('p', 'eventcrew-ai-summary', '➡️ ' + action.summary));
+            if (action.summary) {
+                holder.appendChild(el('p', 'eventcrew-ai-summary', '➡️ ' + action.summary));
+            }
             var yes = el('button', 'wp-element-button eventcrew-linkbtn', action.confirm);
             var no = el('button', 'eventcrew-settings-btn', action.cancel);
             yes.type = no.type = 'button';

@@ -180,6 +180,7 @@ use EventCrew\Telegram\WebLoginBot;
 use EventCrew\MailImport\MailImporter;
 use EventCrew\MailImport\MailedListImport;
 use EventCrew\Web\AppInstallController;
+use EventCrew\Web\AssistantWebChanges;
 use EventCrew\Web\AssistantWebController;
 use EventCrew\Web\ChannelChoiceController;
 use EventCrew\Web\CrewAdminAiText;
@@ -946,7 +947,13 @@ final class Kernel
                 $container->get(AssistantService::class),
                 $container->get(SignupController::class),
                 $container->get(TaskRepository::class),
-                new SessionPerson($container->get(PersonRepository::class))
+                new SessionPerson($container->get(PersonRepository::class)),
+                new AssistantWebChanges(
+                    $container->get(PersonCommands::class),
+                    $container->get(NightCommands::class),
+                    $container->get(TaskCommand::class),
+                    $container->get(GuestListService::class)
+                )
             )
         );
 

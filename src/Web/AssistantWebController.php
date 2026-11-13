@@ -20,10 +20,13 @@ use EventCrew\Telegram\AssistantService;
  * One admin-ajax action, ACTION, for the signed-in person only (the web
  * session cookie and its CSRF token, as the page's own forms):
  * - op=ask, text: the answer, and what the page can do with its action
- *   (AssistantWebActions). Signing up for or cancelling a task is kept
- *   here for ten minutes under a random id, bound to the person, and comes
- *   back with Confirm or Cancel;
- * - op=confirm, id: checks the kept action again and runs it once;
+ *   (AssistantWebActions). Signing up for or cancelling a task, and an
+ *   organizer's change (WebChanges: the bot command's own question), is
+ *   kept here for ten minutes under a random id, bound to the person, and
+ *   comes back with Confirm or Cancel. A change the page only opens the
+ *   place for, or has no place for, says it is not done;
+ * - op=confirm, id: checks the kept action again and runs it once, with
+ *   the real outcome as the answer;
  * - op=cancel, id: drops it.
  *
  * The message text is never logged. It goes to the configured model and
@@ -43,7 +46,8 @@ final class AssistantWebController
         private readonly WebAssistant $assistant,
         private readonly WebTaskSignup $signup,
         private readonly TaskRepository $tasks,
-        private readonly SessionPerson $session
+        private readonly SessionPerson $session,
+        private readonly ?WebChanges $changes = null
     ) {
     }
 
@@ -157,20 +161,24 @@ final class AssistantWebController
             $plan = AssistantWebActions::plan($checked['action'], $person->isOrganizer, (string) current_time('Y-m-d'));
             $language = $answer['lang'];
 
-            if (AssistantWebActions::CONFIRM === $plan['kind']) {
-                $id = bin2hex(random_bytes(8));
-                set_transient(
-                    self::PENDING_PREFIX . $id,
-                    ['person' => $person->id, 'action' => $checked['action']],
-                    AssistantService::PENDING_TTL
-                );
-                $body['action'] = [
-                    'kind' => AssistantWebActions::CONFIRM,
-                    'id' => $id,
-                    'summary' => $this->summary($plan, $language),
-                    'confirm' => (string) Language::run($language, static fn (): string => __('Confirm', 'eventcrew')),
-                    'cancel' => (string) Language::run($language, static fn (): string => __('Cancel', 'eventcrew')),
-                ];
+            $change = AssistantWebActions::CHANGE === ($plan['op'] ?? '');
+
+            if ($change && null === $this->changes) {
+                $plan = ['kind' => AssistantWebActions::NONE];
+            }
+
+            if (AssistantWebActions::CONFIRM === $plan['kind'] && $change) {
+                // The bot command's own question, or its answer why not; the
+                // model's words are not shown, so they cannot claim it done.
+                $changes = $this->changes;
+                $asked = Language::run($language, static fn (): array => $changes->prepare($person, $checked['action']));
+                $reply = (string) $asked['text'];
+
+                if ($asked['ok']) {
+                    $body['action'] = $this->confirmAction($person, $checked['action'], (array) $asked['state'], '', $language);
+                }
+            } elseif (AssistantWebActions::CONFIRM === $plan['kind']) {
+                $body['action'] = $this->confirmAction($person, $checked['action'], [], $this->summary($plan, $language), $language);
             } elseif (AssistantWebActions::GOTO === $plan['kind']) {
                 $this->assistant->noteWeb($person, $checked['action'], false);
                 $body['action'] = ['kind' => AssistantWebActions::GOTO, 'targets' => $plan['targets'] ?? []];
@@ -179,6 +187,15 @@ final class AssistantWebController
                     $body['action']['query'] = $plan['query'];
                 }
             }
+
+            if (AssistantWebActions::CONFIRM !== $plan['kind'] && ($change || AssistantWebActions::leavesUndone($checked['action']))) {
+                $goto = AssistantWebActions::GOTO === $plan['kind'];
+                $undone = (string) Language::run($language, static fn (): string => $goto
+                    ? __('Not done yet: open it here.', 'eventcrew')
+                    : __('Not done: this page cannot do that.', 'eventcrew'));
+                $reply = $undone . "\n" . $reply;
+            }
+
             // Anything else has no place on the page: no button, and never
             // an offer to go to Telegram. The answer text stands alone.
         }
@@ -200,11 +217,25 @@ final class AssistantWebController
         }
 
         // Checked again: the person's roles and the open tasks may have changed.
-        $checked = $this->assistant->recheckWeb($person, $pending);
-        $plan = $checked['ok'] ? AssistantWebActions::plan($checked['action']) : ['kind' => ''];
+        $checked = $this->assistant->recheckWeb($person, $pending['action']);
+        $plan = $checked['ok'] ? AssistantWebActions::plan($checked['action'], $person->isOrganizer) : ['kind' => ''];
 
         if (AssistantWebActions::CONFIRM !== $plan['kind']) {
             return [200, $this->told(__('That can no longer be done.', 'eventcrew'), 'refused')];
+        }
+
+        if (AssistantWebActions::CHANGE === ($plan['op'] ?? '')) {
+            if (null === $this->changes || [] === $pending['state']) {
+                return [200, $this->told(__('That can no longer be done.', 'eventcrew'), 'refused')];
+            }
+
+            $done = $this->changes->run($person, $checked['action'], $pending['state']);
+
+            if ($done['changed']) {
+                $this->assistant->noteWeb($person, $checked['action'], true);
+            }
+
+            return [200, $this->told($done['text'], $done['changed'] ? 'changed' : 'unchanged', $done['changed'])];
         }
 
         $taskId = (int) ($plan['task'] ?? 0);
@@ -233,10 +264,40 @@ final class AssistantWebController
     }
 
     /**
+     * Keeps $action (and a change's state) under a new id for this person,
+     * and the confirm body the page shows: $summary above the buttons ('' for
+     * none: a change's question is the answer itself).
+     *
+     * @param array<string, mixed> $state
+     * @return array<string, mixed>
+     */
+    private function confirmAction(Person $person, string $action, array $state, string $summary, ?string $language): array
+    {
+        $id = bin2hex(random_bytes(8));
+        $kept = ['person' => $person->id, 'action' => $action];
+
+        if ([] !== $state) {
+            $kept['state'] = $state;
+        }
+
+        set_transient(self::PENDING_PREFIX . $id, $kept, AssistantService::PENDING_TTL);
+
+        return [
+            'kind' => AssistantWebActions::CONFIRM,
+            'id' => $id,
+            'summary' => $summary,
+            'confirm' => (string) Language::run($language, static fn (): string => __('Confirm', 'eventcrew')),
+            'cancel' => (string) Language::run($language, static fn (): string => __('Cancel', 'eventcrew')),
+        ];
+    }
+
+    /**
      * The kept action under $id when it is this person's, removed so it runs
      * at most once; null when it expired, is someone else's or never was.
+     *
+     * @return array{action: string, state: array<string, mixed>}|null
      */
-    private function takePending(Person $person, string $id): ?string
+    private function takePending(Person $person, string $id): ?array
     {
         if (1 !== preg_match('/^[0-9a-f]{16}$/', $id)) {
             return null;
@@ -251,7 +312,11 @@ final class AssistantWebController
 
         delete_transient($key);
 
-        return is_string($pending['action'] ?? null) ? $pending['action'] : null;
+        if (! is_string($pending['action'] ?? null)) {
+            return null;
+        }
+
+        return ['action' => $pending['action'], 'state' => is_array($pending['state'] ?? null) ? $pending['state'] : []];
     }
 
     /**

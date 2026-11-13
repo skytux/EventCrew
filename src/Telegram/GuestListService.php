@@ -130,6 +130,124 @@ final class GuestListService
     }
 
     /**
+     * The Crew app's helper box (AssistantWebChanges): what follows "/door",
+     * an add, edit or remove only, read as the bot reads it. The question to
+     * show with Confirm and the state to run, or (ok false) why not. Edit and
+     * remove keep the guest's id, so Confirm changes that guest or nobody.
+     *
+     * @return array{ok: bool, text: string, state: array<string, mixed>}
+     */
+    public function prepareWeb(Person $organizer, string $arguments): array
+    {
+        $refuse = static fn (string $text): array => ['ok' => false, 'text' => $text, 'state' => []];
+        $command = GuestCommand::parse($arguments, current_time('Y-m-d'));
+
+        if ('' !== $command['error']) {
+            return $refuse($this->errorMessage($command['error']));
+        }
+
+        if (GuestCommand::SHOW === $command['action'] || ! $organizer->isOrganizer) {
+            return $refuse(__('Only organizers can change the guest list.', 'eventcrew'));
+        }
+
+        $date = '' !== $command['date'] ? $command['date'] : $this->access->defaultDate();
+
+        if ('' === $date) {
+            return $refuse(__('No event is scheduled yet. Give a date: /door add 1.8. Name', 'eventcrew'));
+        }
+
+        $day = Dates::dayLabel($date);
+        $state = ['date' => $date] + $command;
+
+        if (GuestCommand::ADD === $command['action']) {
+            $who = (string) $command['name'] . ((int) $command['plus_ones'] > 0 ? ' +' . (int) $command['plus_ones'] : '');
+            /* translators: 1: guest name, maybe with "+2", 2: event day */
+            $text = sprintf(__('Add %1$s to the guest list for %2$s?', 'eventcrew'), $who, $day);
+
+            if ('' !== $command['email']) {
+                $text .= "\n" . __('They get their ticket by email.', 'eventcrew');
+            }
+
+            return ['ok' => true, 'text' => $text, 'state' => $state];
+        }
+
+        $guest = $this->numbered($date, $command['number']);
+
+        if (null === $guest) {
+            return $refuse($this->noSuchNumberMessage($command['number'], $date));
+        }
+
+        $state['guest'] = $guest->id;
+
+        if (GuestCommand::REMOVE === $command['action']) {
+            /* translators: 1: guest name, 2: event day */
+            return ['ok' => true, 'text' => sprintf(__('Remove %1$s from the guest list for %2$s?', 'eventcrew'), $guest->name, $day), 'state' => $state];
+        }
+
+        $parts = [];
+
+        if (null !== $command['name']) {
+            $parts[] = $command['name'];
+        }
+
+        if (null !== $command['plus_ones']) {
+            $parts[] = '+' . $command['plus_ones'];
+        }
+
+        if (null !== $command['note']) {
+            $parts[] = '; ' . $command['note'];
+        }
+
+        return [
+            'ok' => true,
+            /* translators: 1: guest name, 2: event day, 3: the new name, +N or note */
+            'text' => sprintf(__('Change %1$s on the guest list for %2$s to: %3$s?', 'eventcrew'), $guest->name, $day, implode(' ', $parts)),
+            'state' => $state,
+        ];
+    }
+
+    /**
+     * Confirm in the helper box: the state prepareWeb() gave. "changed" only
+     * when the guest list changed.
+     *
+     * @param array<string, mixed> $state
+     * @return array{changed: bool, text: string}
+     */
+    public function runWeb(Person $organizer, array $state): array
+    {
+        $date = (string) ($state['date'] ?? '');
+        $action = (string) ($state['action'] ?? '');
+
+        if ('' === $date || ! $organizer->isOrganizer) {
+            return ['changed' => false, 'text' => __('Only organizers can change the guest list.', 'eventcrew')];
+        }
+
+        if (GuestCommand::ADD === $action) {
+            /** @var array{name: ?string, plus_ones: ?int, note: ?string, email?: string} $state */
+            return ['changed' => true, 'text' => $this->add($organizer, $date, $state)];
+        }
+
+        $guest = null;
+
+        foreach ($this->guests->forDate($date) as $listed) {
+            if ($listed->id === (int) ($state['guest'] ?? 0)) {
+                $guest = $listed;
+            }
+        }
+
+        if (null === $guest || ! in_array($action, [GuestCommand::EDIT, GuestCommand::REMOVE], true)) {
+            return ['changed' => false, 'text' => '⚠️ ' . $this->noSuchNumberMessage((int) ($state['number'] ?? 0), $date)];
+        }
+
+        if (GuestCommand::REMOVE === $action) {
+            return ['changed' => true, 'text' => $this->removeGuest($guest)];
+        }
+
+        /** @var array{name: ?string, plus_ones: ?int, note: ?string} $state */
+        return ['changed' => true, 'text' => $this->editGuest($guest, $state)];
+    }
+
+    /**
      * A night or page button tap: shows that night's guest list, at that
      * page, in the same message.
      *
@@ -274,10 +392,14 @@ final class GuestListService
     {
         $guest = $this->numbered($date, $command['number']);
 
-        if (null === $guest) {
-            return null;
-        }
+        return null === $guest ? null : $this->editGuest($guest, $command);
+    }
 
+    /**
+     * @param array{name: ?string, plus_ones: ?int, note: ?string} $command
+     */
+    private function editGuest(Guest $guest, array $command): string
+    {
         $name = $command['name'] ?? $guest->name;
         $this->guests->update(
             $guest->id,
@@ -297,10 +419,11 @@ final class GuestListService
     {
         $guest = $this->numbered($date, $number);
 
-        if (null === $guest) {
-            return null;
-        }
+        return null === $guest ? null : $this->removeGuest($guest);
+    }
 
+    private function removeGuest(Guest $guest): string
+    {
         $this->guests->delete($guest->id);
         // "Your ticket is cancelled", when the guest was emailed a ticket.
         $this->ticketMail?->guestCancelled($guest);

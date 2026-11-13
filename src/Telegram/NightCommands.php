@@ -86,7 +86,59 @@ final class NightCommands
             return;
         }
 
-        [$date, $args] = CommandFlow::takeDate(CommandFlow::args($text));
+        $asked = $this->question($command, CommandFlow::args($text), $fromId);
+
+        if (! $asked['ok']) {
+            $this->flow->telegram()->sendMessage($chatId, $asked['text']);
+
+            return;
+        }
+
+        $id = $this->flow->start($asked['state']);
+        $this->flow->confirm($chatId, $id, $asked['text'], $asked['button']);
+    }
+
+    /**
+     * The Crew app's helper box (AssistantWebChanges): the command with its
+     * arguments, read as the bot reads them. The question to show with
+     * Confirm and the state to run, or (ok false) why it cannot be done.
+     *
+     * @return array{ok: bool, text: string, state: array<string, mixed>}
+     */
+    public function prepareWeb(string $command, string $args): array
+    {
+        if (! in_array($command, self::COMMANDS, true)) {
+            return ['ok' => false, 'text' => __('That can no longer be done.', 'eventcrew'), 'state' => []];
+        }
+
+        $asked = $this->question($command, $args, 0);
+
+        return ['ok' => $asked['ok'], 'text' => $asked['text'], 'state' => $asked['state']];
+    }
+
+    /**
+     * Confirm in the helper box: the state prepareWeb() gave, run as ✅ runs
+     * it. "changed" only when the change went through.
+     *
+     * @param array<string, mixed> $state
+     * @return array{changed: bool, text: string}
+     */
+    public function runWeb(array $state): array
+    {
+        $done = $this->change($state);
+
+        return ['changed' => $done['done'], 'text' => $done['text']];
+    }
+
+    /**
+     * The question before the command changes anything, with its ✅ label
+     * and the state ✅ runs, or (ok false) the answer that ends it.
+     *
+     * @return array{ok: bool, text: string, button: string, state: array<string, mixed>}
+     */
+    private function question(string $command, string $args, int $fromId): array
+    {
+        [$date, $args] = CommandFlow::takeDate($args);
         $words = preg_split('/\s+/u', mb_strtolower($args), -1, PREG_SPLIT_NO_EMPTY) ?: [];
         $word = self::WORDS[$words[0] ?? ''] ?? '';
 
@@ -101,13 +153,30 @@ final class NightCommands
         $state = ['user' => $fromId, 'op' => $command, 'date' => $date, 'what' => $word];
         $stray = count($words) > $known;
 
-        match ($command) {
-            self::FREE_ENTRY => $this->askFreeEntry($chatId, $state, $stray),
-            self::STOP => $this->askStop($chatId, $state),
-            self::NEW_BOARD => $this->askBoard($chatId, $state),
-            self::SEND_TICKETS => $this->askTickets($chatId, $state, $stray),
-            default => null,
+        return match ($command) {
+            self::FREE_ENTRY => $this->askFreeEntry($state, $stray),
+            self::STOP => $this->askStop($state),
+            self::NEW_BOARD => $this->askBoard($state),
+            self::SEND_TICKETS => $this->askTickets($state, $stray),
+            default => self::refuse(''),
         };
+    }
+
+    /**
+     * @return array{ok: bool, text: string, button: string, state: array<string, mixed>}
+     */
+    private static function refuse(string $text): array
+    {
+        return ['ok' => false, 'text' => $text, 'button' => '', 'state' => []];
+    }
+
+    /**
+     * @param array<string, mixed> $state
+     * @return array{ok: bool, text: string, button: string, state: array<string, mixed>}
+     */
+    private static function ask(array $state, string $text, string $button): array
+    {
+        return ['ok' => true, 'text' => $text, 'button' => $button, 'state' => $state];
     }
 
     /**
@@ -134,79 +203,67 @@ final class NightCommands
         }
 
         $this->flow->drop($tap['id']);
-        $state = $tap['state'];
+        $telegram->sendMessage($tap['chat'], $this->change($tap['state'])['text']);
+    }
+
+    /**
+     * ✅: the change through the same service as the crew page's button,
+     * and the answer. "done" only when it went through.
+     *
+     * @param array<string, mixed> $state
+     * @return array{done: bool, text: string}
+     */
+    private function change(array $state): array
+    {
         $date = (string) ($state['date'] ?? '');
-        $chatId = $tap['chat'];
 
         switch ((string) ($state['what'] ?? '')) {
             case self::CLOSE:
                 $this->freeEntry->close($date);
-                $telegram->sendMessage($chatId, CommandFlow::result(true, Dates::dayLabel($date), CrewAdminRoster::noticeText('admin_door_closed_now')));
 
-                return;
+                return ['done' => true, 'text' => CommandFlow::result(true, Dates::dayLabel($date), CrewAdminRoster::noticeText('admin_door_closed_now'))];
 
             case self::OPEN:
                 $this->freeEntry->open($date);
-                $telegram->sendMessage($chatId, CommandFlow::result(true, Dates::dayLabel($date), CrewAdminRoster::noticeText('admin_door_reopened')));
 
-                return;
+                return ['done' => true, 'text' => CommandFlow::result(true, Dates::dayLabel($date), CrewAdminRoster::noticeText('admin_door_reopened'))];
 
             case self::ANNOUNCEMENT:
                 $answer = $this->newsletter->stop((int) ($state['plan'] ?? 0));
-                $telegram->sendMessage($chatId, CommandFlow::result(
-                    Newsletter::STOPPED === $answer,
-                    '',
-                    CrewAdminNewsletter::noticeText('admin_newsletter_' . $answer)
-                ));
+                $done = Newsletter::STOPPED === $answer;
 
-                return;
+                return ['done' => $done, 'text' => CommandFlow::result($done, '', CrewAdminNewsletter::noticeText('admin_newsletter_' . $answer))];
 
             case self::EMAIL:
                 $answer = $this->followup->stop($date);
-                $telegram->sendMessage($chatId, CommandFlow::result(
-                    FollowupMail::STOPPED === $answer,
-                    Dates::dayLabel($date),
-                    RosterPage::followupStopMessage($answer)
-                ));
+                $done = FollowupMail::STOPPED === $answer;
 
-                return;
+                return ['done' => $done, 'text' => CommandFlow::result($done, Dates::dayLabel($date), RosterPage::followupStopMessage($answer))];
 
             case self::POST:
-                $ok = $telegram->isConfigured() && $this->board->hasHome();
+                $ok = $this->flow->telegram()->isConfigured() && $this->board->hasHome();
 
                 if ($ok) {
                     $this->board->repost();
                 }
 
-                $telegram->sendMessage($chatId, CommandFlow::result(
-                    $ok,
-                    '',
-                    CrewAdminController::noticeText($ok ? 'admin_board_posted' : 'admin_board_no_group')
-                ));
-
-                return;
+                return ['done' => $ok, 'text' => CommandFlow::result($ok, '', CrewAdminController::noticeText($ok ? 'admin_board_posted' : 'admin_board_no_group'))];
 
             case self::SEND:
                 $this->roster->sendTicketsRest($date, TicketMail::KIND_BUYERS);
                 $code = $this->roster->sendTicketsRest($date, TicketMail::KIND_GUESTS);
-                $telegram->sendMessage($chatId, CommandFlow::result(
-                    'admin_change_failed' !== $code,
-                    Dates::dayLabel($date),
-                    CrewAdminRoster::noticeText($code)
-                ));
+                $done = 'admin_change_failed' !== $code;
 
-                return;
+                return ['done' => $done, 'text' => CommandFlow::result($done, Dates::dayLabel($date), CrewAdminRoster::noticeText($code))];
 
             case self::CANCEL:
                 $code = $this->roster->cancelTicketSend();
-                $telegram->sendMessage($chatId, CommandFlow::result(
-                    'admin_tickets_cancelled' === $code,
-                    '',
-                    CrewAdminRoster::noticeText($code)
-                ));
+                $done = 'admin_tickets_cancelled' === $code;
 
-                return;
+                return ['done' => $done, 'text' => CommandFlow::result($done, '', CrewAdminRoster::noticeText($code))];
         }
+
+        return ['done' => false, 'text' => CommandFlow::result(false, '', CrewAdminRoster::noticeText('admin_change_failed'))];
     }
 
     public static function usage(string $command): string
@@ -221,23 +278,18 @@ final class NightCommands
 
     /**
      * @param array<string, mixed> $state
+     * @return array{ok: bool, text: string, button: string, state: array<string, mixed>}
      */
-    private function askFreeEntry(int $chatId, array $state, bool $stray): void
+    private function askFreeEntry(array $state, bool $stray): array
     {
-        $telegram = $this->flow->telegram();
-
         if ($stray || ! in_array($state['what'], ['', self::CLOSE, self::OPEN], true)) {
-            $telegram->sendMessage($chatId, self::usage(self::FREE_ENTRY));
-
-            return;
+            return self::refuse(self::usage(self::FREE_ENTRY));
         }
 
         $date = $this->nightOr((string) $state['date']);
 
         if ('' === $date) {
-            $telegram->sendMessage($chatId, __('There are no upcoming tasks.', 'eventcrew'));
-
-            return;
+            return self::refuse(__('There are no upcoming tasks.', 'eventcrew'));
         }
 
         $day = Dates::dayLabel($date);
@@ -245,104 +297,82 @@ final class NightCommands
         $what = '' === $state['what'] ? ($byHand ? self::OPEN : self::CLOSE) : $state['what'];
 
         if (self::CLOSE === $what && $byHand) {
-            $telegram->sendMessage($chatId, $day . "\n" . CrewAdminRoster::noticeText('admin_door_closed'));
-
-            return;
+            return self::refuse($day . "\n" . CrewAdminRoster::noticeText('admin_door_closed'));
         }
 
         if (self::OPEN === $what && ! $byHand) {
-            $telegram->sendMessage(
-                $chatId,
+            return self::refuse(
                 $day . "\n" . ('' !== $this->freeEntry->eventReason($date)
                     ? __('Free entry is closed by the event itself (sold out, hidden or off). Change it in the event.', 'eventcrew')
                     : __('Free entry is open for this date.', 'eventcrew'))
             );
-
-            return;
         }
 
         $state['date'] = $date;
         $state['what'] = $what;
-        $id = $this->flow->start($state);
 
         if (self::CLOSE === $what) {
             /* translators: %s: a short day label, like "Sat 14 Nov". */
-            $this->flow->confirm($chatId, $id, sprintf(__('Close free entry for %s? Nobody can use a credit for that night.', 'eventcrew'), $day), __('Close', 'eventcrew'));
-
-            return;
+            return self::ask($state, sprintf(__('Close free entry for %s? Nobody can use a credit for that night.', 'eventcrew'), $day), __('Close', 'eventcrew'));
         }
 
         /* translators: %s: a short day label, like "Sat 14 Nov". */
-        $this->flow->confirm($chatId, $id, sprintf(__('Reopen free entry for %s?', 'eventcrew'), $day), __('Reopen', 'eventcrew'));
+        return self::ask($state, sprintf(__('Reopen free entry for %s?', 'eventcrew'), $day), __('Reopen', 'eventcrew'));
     }
 
     /**
      * @param array<string, mixed> $state
+     * @return array{ok: bool, text: string, button: string, state: array<string, mixed>}
      */
-    private function askStop(int $chatId, array $state): void
+    private function askStop(array $state): array
     {
-        $telegram = $this->flow->telegram();
-
         if (self::ANNOUNCEMENT === $state['what']) {
             $plan = $this->newsletter->status()['plan'];
 
             if (! is_array($plan)) {
-                $telegram->sendMessage($chatId, __('No announcement is planned.', 'eventcrew'));
-
-                return;
+                return self::refuse(__('No announcement is planned.', 'eventcrew'));
             }
 
             if (Newsletter::PLAN_SENDING === ($plan['status'] ?? '')) {
-                $telegram->sendMessage($chatId, CrewAdminNewsletter::noticeText('admin_newsletter_too_late'));
-
-                return;
+                return self::refuse(CrewAdminNewsletter::noticeText('admin_newsletter_too_late'));
             }
 
             $state['plan'] = (int) ($plan['id'] ?? 0);
-            $id = $this->flow->start($state);
-            $this->flow->confirm(
-                $chatId,
-                $id,
+
+            return self::ask(
+                $state,
                 /* translators: %s: a short day label, like "Sat 14 Nov". */
                 sprintf(__('Stop the announcement planned for %s? It will not be sent.', 'eventcrew'), Dates::dayLabel((string) ($plan['send_on'] ?? ''))),
                 __('Stop', 'eventcrew')
             );
-
-            return;
         }
 
         if (self::EMAIL !== $state['what']) {
-            $telegram->sendMessage($chatId, self::usage(self::STOP));
-
-            return;
+            return self::refuse(self::usage(self::STOP));
         }
 
         $date = '' !== $state['date'] ? (string) $state['date'] : $this->followup->nextNight();
 
         if ('' === $date) {
-            $telegram->sendMessage($chatId, __('No post-event email is planned.', 'eventcrew'));
-
-            return;
+            return self::refuse(__('No post-event email is planned.', 'eventcrew'));
         }
 
         $day = Dates::dayLabel($date);
 
         if (! $this->followup->canStop($date)) {
             $status = $this->followup->nightStatus($date);
-            $telegram->sendMessage($chatId, $day . "\n" . match ($status) {
+
+            return self::refuse($day . "\n" . match ($status) {
                 'stopped' => RosterPage::followupStopMessage(FollowupMail::ALREADY),
                 'sending', 'sent' => RosterPage::followupStopMessage(FollowupMail::TOO_LATE),
                 default => __('No post-event email is planned.', 'eventcrew'),
             });
-
-            return;
         }
 
         $state['date'] = $date;
-        $id = $this->flow->start($state);
-        $this->flow->confirm(
-            $chatId,
-            $id,
+
+        return self::ask(
+            $state,
             /* translators: %s: a short day label, like "Sat 14 Nov". */
             sprintf(__('Stop the post-event email for %s? It will not be sent.', 'eventcrew'), $day),
             __('Stop', 'eventcrew')
@@ -351,72 +381,50 @@ final class NightCommands
 
     /**
      * @param array<string, mixed> $state
+     * @return array{ok: bool, text: string, button: string, state: array<string, mixed>}
      */
-    private function askBoard(int $chatId, array $state): void
+    private function askBoard(array $state): array
     {
         if (! $this->flow->telegram()->isConfigured() || ! $this->board->hasHome()) {
-            $this->flow->telegram()->sendMessage($chatId, CrewAdminController::noticeText('admin_board_no_group'));
-
-            return;
+            return self::refuse(CrewAdminController::noticeText('admin_board_no_group'));
         }
 
         $state['what'] = self::POST;
-        $id = $this->flow->start($state);
-        $this->flow->confirm(
-            $chatId,
-            $id,
-            __('Post a new board in the group? The old one is removed.', 'eventcrew'),
-            __('Post', 'eventcrew')
-        );
+
+        return self::ask($state, __('Post a new board in the group? The old one is removed.', 'eventcrew'), __('Post', 'eventcrew'));
     }
 
     /**
      * @param array<string, mixed> $state
+     * @return array{ok: bool, text: string, button: string, state: array<string, mixed>}
      */
-    private function askTickets(int $chatId, array $state, bool $stray): void
+    private function askTickets(array $state, bool $stray): array
     {
-        $telegram = $this->flow->telegram();
-
         if ($stray || ! in_array($state['what'], ['', self::CANCEL], true)) {
-            $telegram->sendMessage($chatId, self::usage(self::SEND_TICKETS));
-
-            return;
+            return self::refuse(self::usage(self::SEND_TICKETS));
         }
 
         if (self::CANCEL === $state['what']) {
             $summary = $this->ticketMail->pendingSummary();
 
             if (null === $summary) {
-                $telegram->sendMessage($chatId, RosterPage::ticketsCancelMessage(false));
-
-                return;
+                return self::refuse(RosterPage::ticketsCancelMessage(false));
             }
 
-            $id = $this->flow->start($state);
-            $this->flow->confirm(
-                $chatId,
-                $id,
-                TicketMail::pendingLine($summary) . "\n" . __('Cancel this send?', 'eventcrew'),
-                __('Cancel send', 'eventcrew')
-            );
-
-            return;
+            return self::ask($state, TicketMail::pendingLine($summary) . "\n" . __('Cancel this send?', 'eventcrew'), __('Cancel send', 'eventcrew'));
         }
 
         $date = $this->nightOr((string) $state['date']);
 
         if ('' === $date) {
-            $telegram->sendMessage($chatId, __('There are no upcoming tasks.', 'eventcrew'));
-
-            return;
+            return self::refuse(__('There are no upcoming tasks.', 'eventcrew'));
         }
 
         $state['date'] = $date;
         $state['what'] = self::SEND;
-        $id = $this->flow->start($state);
-        $this->flow->confirm(
-            $chatId,
-            $id,
+
+        return self::ask(
+            $state,
             sprintf(
                 /* translators: %s: a short day label, like "Sat 14 Nov". */
                 __('Send the ticket emails for %s that have not gone out? They go out in about 10 minutes; until then you can cancel them.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.

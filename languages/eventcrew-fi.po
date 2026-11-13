@@ -11291,3 +11291,32 @@ msgstr "Poistetaanko %s ja koko hänen tehtävähistoriansa? Tätä ei voi perua
 
 msgid "Delete this person"
 msgstr "Poista tämä henkilö"
+
+#. translators: %s: the matching people, tasks or events, comma separated.
+#, php-format
+msgid "Several match: %s. Write it more exactly."
+msgstr "Useita osumia: %s. Kirjoita tarkemmin."
+
+#. translators: 1: guest name, maybe with "+2", 2: event day
+#, php-format
+msgid "Add %1$s to the guest list for %2$s?"
+msgstr "Lisätäänkö %1$s vieraslistalle %2$s?"
+
+msgid "They get their ticket by email."
+msgstr "Lippu lähtee hänelle sähköpostilla."
+
+#. translators: 1: guest name, 2: event day
+#, php-format
+msgid "Remove %1$s from the guest list for %2$s?"
+msgstr "Poistetaanko %1$s vieraslistalta %2$s?"
+
+#. translators: 1: guest name, 2: event day, 3: the new name, +N or note
+#, php-format
+msgid "Change %1$s on the guest list for %2$s to: %3$s?"
+msgstr "Muutetaanko %1$s vieraslistalla %2$s: %3$s?"
+
+msgid "Not done yet: open it here."
+msgstr "Ei vielä tehty: avaa se tästä."
+
+msgid "Not done: this page cannot do that."
+msgstr "Ei tehty: tämä sivu ei osaa sitä."

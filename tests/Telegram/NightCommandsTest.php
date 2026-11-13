@@ -146,6 +146,20 @@ final class NightCommandsTest extends TelegramTestCase
         self::assertSame([], $this->transients);
     }
 
+    public function testTheWebHelperGetsTheSameQuestionAndAnswers(): void
+    {
+        $board = $this->command()->prepareWeb(NightCommands::NEW_BOARD, '');
+        self::assertFalse($board['ok']);
+        self::assertSame('No Telegram group is set up for the board yet.', $board['text']);
+
+        $send = $this->command()->prepareWeb(NightCommands::SEND_TICKETS, '25.7.');
+        self::assertTrue($send['ok']);
+        self::assertStringStartsWith('Send the ticket emails for Sat 25 Jul that have not gone out?', $send['text']);
+        self::assertSame('2026-07-25', $send['state']['date']);
+        self::assertSame([], $this->transients);
+        self::assertSame('', $this->lastText());
+    }
+
     public function testCancelWithNothingWaitingSaysSo(): void
     {
         $this->wpdb->nextRows[] = $this->organizer();

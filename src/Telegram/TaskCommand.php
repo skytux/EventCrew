@@ -11,6 +11,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\Dates;
 use EventCrew\Support\EventSource;
 use EventCrew\Support\Roles;
+use EventCrew\Web\AssistantWebChanges;
 use EventCrew\Web\CrewAdminTasks;
 
 /**
@@ -175,6 +176,78 @@ final class TaskCommand
         // ✅: used once.
         delete_transient($key);
         $this->telegram->sendMessage($chatId, $this->write($state));
+    }
+
+    /**
+     * The Crew app's helper box (AssistantWebChanges): the command with its
+     * arguments, read as the bot reads them. The question to show with
+     * Confirm and the state to run, or (ok false) why not: a mistake, or
+     * several tasks, roles or events (the page has no choice buttons).
+     *
+     * @param string $mode One of self::MODES.
+     * @return array{ok: bool, text: string, state: array<string, mixed>}
+     */
+    public function prepareWeb(string $mode, string $args): array
+    {
+        $refuse = static fn (string $text): array => ['ok' => false, 'text' => $text, 'state' => []];
+
+        if (! in_array($mode, self::MODES, true)) {
+            return $refuse(__('That can no longer be done.', 'eventcrew'));
+        }
+
+        $state = ['user' => 0, 'mode' => $mode, 'choices' => [], 'choice' => 0, 'fields' => [], 'date' => ''];
+        $reply = match ($mode) {
+            self::ADD => $this->startAdd($args, $state),
+            self::EDIT, self::DELETE => $this->startTask($args, $state),
+            self::MAKE => $this->startMake($args, $state),
+            default => '' === $args ? null : self::usage($mode),
+        };
+
+        if (null !== $reply) {
+            return $refuse($reply);
+        }
+
+        $open = self::ADD === $mode ? -1 === (int) $state['choice'] : (self::MAIL !== $mode && 0 === (int) $state['choice']);
+
+        if ($open) {
+            $labels = [];
+
+            foreach ((array) $state['choices'] as $choice) {
+                $label = $this->choiceLabel($mode, (int) $choice, $state);
+
+                if ('' !== $label) {
+                    $labels[] = $label;
+                }
+            }
+
+            return $refuse(AssistantWebChanges::several($labels));
+        }
+
+        $text = $this->confirmText($state);
+
+        if (null === $text) {
+            return $refuse(CrewAdminTasks::noticeText('admin_task_gone'));
+        }
+
+        return ['ok' => true, 'text' => $text, 'state' => $state];
+    }
+
+    /**
+     * Confirm in the helper box: the state prepareWeb() gave, run as ✅ runs
+     * it. "changed" only when the change went through.
+     *
+     * @param array<string, mixed> $state
+     * @return array{changed: bool, text: string}
+     */
+    public function runWeb(array $state): array
+    {
+        if (! in_array($state['mode'] ?? '', self::MODES, true)) {
+            return ['changed' => false, 'text' => self::result('admin_task_gone', '')];
+        }
+
+        [$code, $head] = $this->apply($state);
+
+        return ['changed' => self::done($code), 'text' => self::result($code, $head)];
     }
 
     /**
@@ -580,17 +653,31 @@ final class TaskCommand
      */
     private function write(array $state): string
     {
+        [$code, $head] = $this->apply($state);
+
+        return self::result($code, $head);
+    }
+
+    /**
+     * Runs the confirmed request through CrewAdminTasks: the Admin tab's
+     * notice code and the head line for the answer.
+     *
+     * @param array<string, mixed> $state
+     * @return array{0: string, 1: string}
+     */
+    private function apply(array $state): array
+    {
         $mode = (string) $state['mode'];
 
         if (self::MAIL === $mode) {
-            return self::result($this->admin->sendOpenTaskEmail(), '');
+            return [$this->admin->sendOpenTaskEmail(), ''];
         }
 
         if (self::MAKE === $mode) {
             $event = EventSource::describe((int) $state['choice']);
             $head = null === $event ? '' : $event['title'] . ' · ' . Dates::dayLabel($event['date']);
 
-            return self::result($this->admin->applyTemplate((int) $state['choice']), $head);
+            return [$this->admin->applyTemplate((int) $state['choice']), $head];
         }
 
         if (self::ADD === $mode) {
@@ -608,23 +695,23 @@ final class TaskCommand
                 'notes' => (string) ($fields['notes'] ?? ''),
             ];
 
-            return self::result($this->admin->save($post), AssignCommand::taskLabel($preview));
+            return [$this->admin->save($post), AssignCommand::taskLabel($preview)];
         }
 
         $task = $this->tasks->findLive((int) $state['choice']);
 
         if (null === $task) {
-            return self::result('admin_task_gone', '');
+            return ['admin_task_gone', ''];
         }
 
         if (self::DELETE === $mode) {
-            return self::result($this->admin->delete($task->id), AssignCommand::taskLabel($task));
+            return [$this->admin->delete($task->id), AssignCommand::taskLabel($task)];
         }
 
         $code = $this->admin->save($this->editPost($task, (array) $state['fields']));
         $saved = $this->tasks->findLive($task->id) ?? $task;
 
-        return self::result($code, AssignCommand::taskLabel($saved));
+        return [$code, AssignCommand::taskLabel($saved)];
     }
 
     /**
@@ -758,11 +845,15 @@ final class TaskCommand
     /** "✅ <head>\n<the Admin tab's notice>", or ⚠️ when it did not go through. */
     private static function result(string $code, string $head): string
     {
-        $done = in_array($code, ['admin_task_added', 'admin_task_updated', 'admin_task_deleted'], true)
+        return (self::done($code) ? '✅ ' : '⚠️ ') . ('' === $head ? '' : $head . "\n") . CrewAdminTasks::noticeText($code);
+    }
+
+    /** Whether the Admin tab's notice code says the change went through. */
+    private static function done(string $code): bool
+    {
+        return in_array($code, ['admin_task_added', 'admin_task_updated', 'admin_task_deleted'], true)
             || str_starts_with($code, 'admin_template_created_')
             || str_starts_with($code, 'admin_open_task_sent_');
-
-        return ($done ? '✅ ' : '⚠️ ') . ('' === $head ? '' : $head . "\n") . CrewAdminTasks::noticeText($code);
     }
 
     private static function unreadable(string $part): string

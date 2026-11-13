@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Tests\Telegram;
 
 use Brain\Monkey\Functions;
+use EventCrew\Models\Person;
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\GuestRepository;
 use EventCrew\Repositories\PersonRepository;
@@ -202,6 +203,39 @@ final class GuestListServiceTest extends TelegramTestCase
         self::assertSame(['id' => 5], $this->wpdb->deletes[0]['where']);
         self::assertSame('📬 Sent you a DM.', $this->lastCallTo('sendMessage')['text']);
         self::assertStringStartsWith('🗑 Removed Bo.', $this->telegramCalls[0]['body']['text']);
+    }
+
+    /** The Crew app's helper box: the question first, the guest kept by id, the change on Confirm. */
+    public function testTheWebHelperAsksThenRemovesThatGuest(): void
+    {
+        $organizer = Person::fromRow(['id' => 7, 'email' => 'door@example.com', 'is_organizer' => 1]);
+        $this->wpdb->nextResults[] = [$this->guest(1, 'Anna'), $this->guest(2, 'Ben')];
+
+        $asked = $this->guestListService()->prepareWeb($organizer, 'remove 1.8. 2');
+
+        self::assertTrue($asked['ok']);
+        self::assertSame('Remove Ben from the guest list for Sat 1 Aug?', $asked['text']);
+        self::assertSame(2, $asked['state']['guest']);
+        self::assertSame([], $this->wpdb->deletes);
+
+        // The list changed in between: Ben is now number 1; still Ben goes.
+        $this->wpdb->nextResults[] = [$this->guest(2, 'Ben')];
+        $done = $this->guestListService()->runWeb($organizer, $asked['state']);
+
+        self::assertTrue($done['changed']);
+        self::assertSame('🗑 Removed Ben.', $done['text']);
+        self::assertSame(2, $this->wpdb->deletes[0]['where']['id']);
+    }
+
+    public function testTheWebHelperChangesNothingWhenTheGuestIsGone(): void
+    {
+        $organizer = Person::fromRow(['id' => 7, 'email' => 'door@example.com', 'is_organizer' => 1]);
+        $this->wpdb->nextResults[] = [];
+
+        $done = $this->guestListService()->runWeb($organizer, ['date' => '2026-08-01', 'action' => 'remove', 'number' => 2, 'guest' => 2]);
+
+        self::assertFalse($done['changed']);
+        self::assertSame([], $this->wpdb->deletes);
     }
 
     public function testWelcomeCrewSeeTheirNightWithoutTheOrganizerHelp(): void

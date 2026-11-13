@@ -17,6 +17,7 @@ use EventCrew\Support\Dates;
 use EventCrew\Support\MarkedBy;
 use EventCrew\Support\NewcomerApproval;
 use EventCrew\Support\StandingCalculator;
+use EventCrew\Web\AssistantWebChanges;
 use EventCrew\Web\CrewAdminPeople;
 use EventCrew\Web\CrewAdminRoster;
 use EventCrew\Support\ExtraTaskCredits;
@@ -50,6 +51,9 @@ final class PersonCommands
 
     /** The commands this class answers. */
     public const COMMANDS = [self::MARK, self::STANDING, self::NEWCOMER, self::TICKET, self::UNTICKET, self::UNBAN];
+
+    /** The commands the Crew app's helper box runs (prepareWeb(), runWeb()). */
+    public const WEB = [self::TICKET, self::UNTICKET, self::UNBAN];
 
     /** The marks /mark sets, by button number. */
     private const MARKS = [
@@ -294,9 +298,7 @@ final class PersonCommands
         match ($state['op']) {
             self::STANDING => $this->showStanding($chatId, $id, $person),
             self::MARK => $this->nextMark($chatId, $id, $state, $person),
-            self::TICKET => $this->confirmTicket($chatId, $id, $state, $person),
-            self::UNTICKET => $this->confirmUnticket($chatId, $id, $state, $person),
-            self::UNBAN => $this->confirmUnban($chatId, $id, $person),
+            self::TICKET, self::UNTICKET, self::UNBAN => $this->ask($chatId, $id, $state, $person),
             default => null,
         };
     }
@@ -529,95 +531,178 @@ final class PersonCommands
     }
 
     /**
+     * /ticket, /unticket or /unban for $person: the question with its ✅
+     * label, or why it cannot be done.
+     *
      * @param array<string, mixed> $state
      */
-    private function confirmTicket(int $chatId, string $id, array $state, Person $person): void
+    private function ask(int $chatId, string $id, array $state, Person $person): void
     {
-        $date = (string) $state['date'];
+        $asked = $this->question($state, $person);
+
+        if (! $asked['ok']) {
+            $this->flow->drop($id);
+            $this->flow->telegram()->sendMessage($chatId, $asked['text']);
+
+            return;
+        }
+
+        $this->flow->save($id, $asked['state']);
+        $this->flow->confirm($chatId, $id, $asked['text'], $asked['button']);
+    }
+
+    /**
+     * The question before /ticket, /unticket or /unban changes anything, or
+     * (ok false) the sentence why it cannot be done. The state gains what ✅
+     * acts on (the ticket of /unticket).
+     *
+     * @param array<string, mixed> $state
+     * @return array{ok: bool, text: string, button: string, state: array<string, mixed>}
+     */
+    private function question(array $state, Person $person): array
+    {
+        $date = (string) ($state['date'] ?? '');
         $day = Dates::dayLabel($date);
+        $refuse = static fn (string $text): array => ['ok' => false, 'text' => $text, 'button' => '', 'state' => $state];
+
+        if (self::UNBAN === $state['op']) {
+            if (! $person->isBanned()) {
+                /* translators: %s: a person's name. */
+                return $refuse(sprintf(__('%s is not blocked.', 'eventcrew'), $person->name()));
+            }
+
+            return [
+                'ok' => true,
+                /* translators: %s: a person's name. */
+                'text' => sprintf(__('Lift the block on %s? They can sign in and sign up again.', 'eventcrew'), $person->name()),
+                'button' => __('Lift block', 'eventcrew'),
+                'state' => $state,
+            ];
+        }
+
+        if (self::UNTICKET === $state['op']) {
+            $ticket = $this->ticketFor($person->id, $date);
+
+            if (null === $ticket) {
+                /* translators: 1: a person's name, 2: a short day label, like "Sat 14 Nov". */
+                return $refuse(sprintf(__('%1$s has no free-entry ticket for %2$s.', 'eventcrew'), $person->name(), $day));
+            }
+
+            $state['redemption'] = $ticket->id;
+
+            return [
+                'ok' => true,
+                /* translators: 1: a person's name, 2: a short day label, like "Sat 14 Nov". */
+                'text' => sprintf(__('Cancel the free-entry ticket of %1$s for %2$s? The credit goes back.', 'eventcrew'), $person->name(), $day),
+                'button' => __('Cancel ticket', 'eventcrew'),
+                'state' => $state,
+            ];
+        }
+
         $balance = $this->standing->for($person->id)->creditBalance;
 
         if ($balance < 1) {
-            $this->flow->drop($id);
-            $this->flow->telegram()->sendMessage(
-                $chatId,
-                CommandFlow::result(false, $person->name() . ' · ' . $day, CrewAdminRoster::noticeText('admin_door_no_credit'))
-            );
-
-            return;
+            return $refuse(CommandFlow::result(false, $person->name() . ' · ' . $day, CrewAdminRoster::noticeText('admin_door_no_credit')));
         }
 
         if (null !== $this->ticketFor($person->id, $date)) {
-            $this->flow->drop($id);
-            $this->flow->telegram()->sendMessage(
-                $chatId,
-                CommandFlow::result(false, $person->name() . ' · ' . $day, CrewAdminRoster::noticeText('admin_door_already'))
-            );
-
-            return;
+            return $refuse(CommandFlow::result(false, $person->name() . ' · ' . $day, CrewAdminRoster::noticeText('admin_door_already')));
         }
 
-        $this->flow->confirm(
-            $chatId,
-            $id,
-            sprintf(
+        return [
+            'ok' => true,
+            'text' => sprintf(
                 /* translators: 1: a person's name, 2: a short day label, 3: credits they have now. */
                 _n('Free entry for %1$s on %2$s? It uses 1 of their %3$d credit.', 'Free entry for %1$s on %2$s? It uses 1 of their %3$d credits.', $balance, 'eventcrew'),
                 $person->name(),
                 $day,
                 $balance
             ),
-            __('Give ticket', 'eventcrew')
-        );
+            'button' => __('Give ticket', 'eventcrew'),
+            'state' => $state,
+        ];
     }
 
     /**
-     * @param array<string, mixed> $state
+     * The Crew app's helper box (AssistantWebChanges): /ticket, /unticket or
+     * /unban with its arguments, read as the bot reads them, for exactly one
+     * member. The question to show with Confirm and the state to run, or (ok
+     * false) the answer why not: no such member, several (the page has no
+     * buttons to choose with), or the bot's own refusal.
+     *
+     * @return array{ok: bool, text: string, state: array<string, mixed>}
      */
-    private function confirmUnticket(int $chatId, string $id, array $state, Person $person): void
+    public function prepareWeb(string $command, string $args): array
     {
-        $date = (string) $state['date'];
-        $ticket = $this->ticketFor($person->id, $date);
+        $refuse = static fn (string $text): array => ['ok' => false, 'text' => $text, 'state' => []];
 
-        if (null === $ticket) {
-            $this->flow->drop($id);
-            $this->flow->telegram()->sendMessage(
-                $chatId,
-                /* translators: 1: a person's name, 2: a short day label, like "Sat 14 Nov". */
-                sprintf(__('%1$s has no free-entry ticket for %2$s.', 'eventcrew'), $person->name(), Dates::dayLabel($date))
-            );
-
-            return;
+        if (! in_array($command, self::WEB, true)) {
+            return $refuse(__('That can no longer be done.', 'eventcrew'));
         }
 
-        $state['redemption'] = $ticket->id;
-        $this->flow->save($id, $state);
-        $this->flow->confirm(
-            $chatId,
-            $id,
-            /* translators: 1: a person's name, 2: a short day label, like "Sat 14 Nov". */
-            sprintf(__('Cancel the free-entry ticket of %1$s for %2$s? The credit goes back.', 'eventcrew'), $person->name(), Dates::dayLabel($date)),
-            __('Cancel ticket', 'eventcrew')
-        );
+        $date = '';
+
+        if (self::UNBAN !== $command) {
+            [$date, $args] = CommandFlow::takeDate($args);
+            $date = '' !== $date ? $date : (string) ($this->tasks->upcomingDates(1)[0] ?? '');
+
+            if ('' === $date) {
+                return $refuse(__('There are no upcoming tasks.', 'eventcrew'));
+            }
+        }
+
+        if ('' === $args) {
+            return $refuse(self::usage($command));
+        }
+
+        $pool = $this->flow->members();
+        /* translators: %s: the name the organizer typed. */
+        $none = sprintf(__('No member called “%s” was found.', 'eventcrew'), $args);
+
+        if (self::UNBAN === $command) {
+            $pool = array_values(array_filter($pool, static fn (Person $p): bool => $p->isBanned()));
+            /* translators: %s: the name the organizer typed. */
+            $none = sprintf(__('No blocked member called “%s” was found.', 'eventcrew'), $args);
+        }
+
+        $found = AssignCommand::matchPeople($args, $pool);
+
+        if ([] === $found) {
+            return $refuse($none);
+        }
+
+        if (count($found) > 1) {
+            return $refuse(AssistantWebChanges::several(array_values(CommandFlow::personOptions($found))));
+        }
+
+        $state = ['user' => 0, 'op' => $command, 'date' => $date, 'person' => $found[0]->id];
+        $asked = $this->question($state, $found[0]);
+
+        return ['ok' => $asked['ok'], 'text' => $asked['text'], 'state' => $asked['state']];
     }
 
-    private function confirmUnban(int $chatId, string $id, Person $person): void
+    /**
+     * Confirm in the helper box: the state prepareWeb() gave, run as ✅ runs
+     * it. "changed" only when the change really happened.
+     *
+     * @param array<string, mixed> $state
+     * @return array{changed: bool, text: string}
+     */
+    public function runWeb(Person $organizer, array $state): array
     {
-        if (! $person->isBanned()) {
-            $this->flow->drop($id);
-            /* translators: %s: a person's name. */
-            $this->flow->telegram()->sendMessage($chatId, sprintf(__('%s is not blocked.', 'eventcrew'), $person->name()));
-
-            return;
+        if (! in_array($state['op'] ?? '', self::WEB, true)) {
+            return ['changed' => false, 'text' => CrewAdminRoster::noticeText('admin_change_failed')];
         }
 
-        $this->flow->confirm(
-            $chatId,
-            $id,
-            /* translators: %s: a person's name. */
-            sprintf(__('Lift the block on %s? They can sign in and sign up again.', 'eventcrew'), $person->name()),
-            __('Lift block', 'eventcrew')
-        );
+        $person = $this->people->find((int) ($state['person'] ?? 0));
+
+        if (null === $person) {
+            return ['changed' => false, 'text' => __('That person was not found.', 'eventcrew')];
+        }
+
+        $done = $this->change($state, $person, $organizer);
+
+        return ['changed' => $done['done'], 'text' => CommandFlow::result($done['done'], $done['head'], $done['text'])];
     }
 
     /**
@@ -635,8 +720,6 @@ final class PersonCommands
 
             return;
         }
-
-        $day = Dates::dayLabel((string) ($state['date'] ?? ''));
 
         switch ($state['op']) {
             case self::MARK:
@@ -665,44 +748,54 @@ final class PersonCommands
                 return;
 
             case self::TICKET:
-                $code = $this->roster->redeem((string) $state['date'], $person->id);
-                $telegram->sendMessage($chatId, CommandFlow::result(
-                    'admin_door_redeemed' === $code,
-                    $person->name() . ' · ' . $day,
-                    CrewAdminRoster::noticeText($code)
-                ));
-
-                return;
-
             case self::UNTICKET:
-                $ticket = $this->redemptions->find((int) ($state['redemption'] ?? 0));
-
-                if (null === $ticket || $ticket->personId !== $person->id || null !== $ticket->cancelledAt) {
-                    $telegram->sendMessage($chatId, CommandFlow::result(false, $person->name() . ' · ' . $day, CrewAdminRoster::noticeText('admin_change_failed')));
-
-                    return;
-                }
-
-                // ✅ only when the row really changed (CrewAdminRoster::unredeem()).
-                $code = $this->roster->unredeem($ticket->id);
-                $telegram->sendMessage($chatId, CommandFlow::result(
-                    in_array($code, ['admin_door_returned', 'admin_door_transfer_cancelled'], true),
-                    $person->name() . ' · ' . $day,
-                    CrewAdminRoster::noticeText($code)
-                ));
-
-                return;
-
             case self::UNBAN:
-                $code = $this->peopleAdmin->unban($person->id);
-                $telegram->sendMessage($chatId, CommandFlow::result(
-                    'admin_person_unbanned' === $code,
-                    $person->name(),
-                    CrewAdminPeople::noticeText($code)
-                ));
+                $done = $this->change($state, $person, $organizer);
+                $telegram->sendMessage($chatId, CommandFlow::result($done['done'], $done['head'], $done['text']));
 
                 return;
         }
+    }
+
+    /**
+     * ✅ on /ticket, /unticket or /unban: the change through the crew page's
+     * own service. "done" only when it really happened.
+     *
+     * @param array<string, mixed> $state
+     * @return array{done: bool, head: string, text: string}
+     */
+    private function change(array $state, Person $person, Person $organizer): array
+    {
+        $day = Dates::dayLabel((string) ($state['date'] ?? ''));
+
+        if (self::UNBAN === $state['op']) {
+            $code = $this->peopleAdmin->unban($person->id);
+
+            return ['done' => 'admin_person_unbanned' === $code, 'head' => $person->name(), 'text' => CrewAdminPeople::noticeText($code)];
+        }
+
+        $head = $person->name() . ' · ' . $day;
+
+        if (self::TICKET === $state['op']) {
+            $code = $this->roster->redeem((string) $state['date'], $person->id);
+
+            return ['done' => 'admin_door_redeemed' === $code, 'head' => $head, 'text' => CrewAdminRoster::noticeText($code)];
+        }
+
+        $ticket = $this->redemptions->find((int) ($state['redemption'] ?? 0));
+
+        if (null === $ticket || $ticket->personId !== $person->id || null !== $ticket->cancelledAt) {
+            return ['done' => false, 'head' => $head, 'text' => CrewAdminRoster::noticeText('admin_change_failed')];
+        }
+
+        // ✅ only when the row really changed (CrewAdminRoster::unredeem()).
+        $code = $this->roster->unredeem($ticket->id);
+
+        return [
+            'done' => in_array($code, ['admin_door_returned', 'admin_door_transfer_cancelled'], true),
+            'head' => $head,
+            'text' => CrewAdminRoster::noticeText($code),
+        ];
     }
 
     /**

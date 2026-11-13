@@ -33,6 +33,8 @@ final class AssistantWebControllerTest extends TestCase
 
     private FakeTaskSignup $signup;
 
+    private FakeWebChanges $changes;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -46,6 +48,7 @@ final class AssistantWebControllerTest extends TestCase
         $this->transients = [];
         $this->assistant = new FakeWebAssistant();
         $this->signup = new FakeTaskSignup();
+        $this->changes = new FakeWebChanges();
 
         Functions\when('get_option')->alias(fn (string $name, mixed $default = false): mixed => $this->options[$name] ?? $default);
         Functions\when('set_transient')->alias(function (string $key, mixed $value): bool {
@@ -67,7 +70,8 @@ final class AssistantWebControllerTest extends TestCase
             $this->assistant,
             $this->signup,
             new TaskRepository(),
-            new SessionPerson(new PersonRepository())
+            new SessionPerson(new PersonRepository()),
+            $this->changes
         );
     }
 
@@ -347,5 +351,81 @@ final class AssistantWebControllerTest extends TestCase
         self::assertSame(AssistantWebActions::GOTO, $body['action']['kind']);
         self::assertSame(['eventcrew-admin-roster', 'eventcrew-panel-admin'], $body['action']['targets']);
         self::assertStringNotContainsString('Telegram', self::text($body));
+    }
+
+    private function organizer(): Person
+    {
+        return Person::fromRow(['id' => 7, 'email' => 'sam@example.com', 'is_organizer' => 1]);
+    }
+
+    public function testAnOrganizersChangeIsAskedWithTheCommandsOwnQuestion(): void
+    {
+        $this->assistant->next = FakeWebAssistant::answer('Done, the ticket is gone.', '/unticket 14.11. Lou H');
+
+        [, $body] = $this->post(['op' => 'ask', 'text' => 'remove my free ticket'], $this->organizer());
+
+        self::assertSame(AssistantWebActions::CONFIRM, $body['action']['kind']);
+        self::assertSame('', $body['action']['summary']);
+        // The model's "Done" is not shown: the question is the answer.
+        self::assertSame('Take the ticket away?', self::text($body));
+        self::assertSame([], $this->changes->ran);
+        $kept = $this->transients[AssistantWebController::PENDING_PREFIX . $body['action']['id']];
+        self::assertSame(['person' => 7, 'action' => '/unticket 14.11. Lou H', 'state' => ['person' => 9]], $kept);
+    }
+
+    public function testConfirmRunsTheChangeAndShowsTheRealOutcome(): void
+    {
+        $this->assistant->next = FakeWebAssistant::answer('Sure.', '/unticket 14.11. Lou H');
+        [, $asked] = $this->post(['op' => 'ask', 'text' => 'remove my free ticket'], $this->organizer());
+        $this->assistant->recheck = '/unticket 14.11. Lou H';
+
+        [, $body] = $this->post(['op' => 'confirm', 'id' => $asked['action']['id']], $this->organizer());
+
+        self::assertTrue($body['changed']);
+        self::assertSame('changed', $body['code']);
+        self::assertSame('✅ Ticket taken away.', self::text($body));
+        self::assertSame([[7, '/unticket 14.11. Lou H', ['person' => 9]]], $this->changes->ran);
+        self::assertSame([[7, '/unticket 14.11. Lou H', true]], $this->assistant->noted);
+
+        [, $again] = $this->post(['op' => 'confirm', 'id' => $asked['action']['id']], $this->organizer());
+        self::assertSame('expired', $again['code']);
+        self::assertCount(1, $this->changes->ran);
+    }
+
+    public function testAChangeThatDidNotGoThroughSaysSo(): void
+    {
+        $this->changes->outcome = ['changed' => false, 'text' => '⚠️ Nothing was changed.'];
+        $this->assistant->next = FakeWebAssistant::answer('Sure.', '/unticket Lou H');
+        [, $asked] = $this->post(['op' => 'ask', 'text' => 'remove my free ticket'], $this->organizer());
+        $this->assistant->recheck = '/unticket Lou H';
+
+        [, $body] = $this->post(['op' => 'confirm', 'id' => $asked['action']['id']], $this->organizer());
+
+        self::assertFalse($body['changed']);
+        self::assertSame('unchanged', $body['code']);
+        self::assertSame('⚠️ Nothing was changed.', self::text($body));
+        self::assertSame([], $this->assistant->noted);
+    }
+
+    public function testAChangeThatCannotBeDoneHasNoButtons(): void
+    {
+        $this->changes->prepared = ['ok' => false, 'text' => 'Several match: Lou H, Lou K. Write it more exactly.', 'state' => []];
+        $this->assistant->next = FakeWebAssistant::answer('Sure.', '/unticket Lou');
+
+        [, $body] = $this->post(['op' => 'ask', 'text' => 'remove Lou\'s ticket'], $this->organizer());
+
+        self::assertNull($body['action']);
+        self::assertSame('Several match: Lou H, Lou K. Write it more exactly.', self::text($body));
+        self::assertSame([], $this->transients);
+    }
+
+    public function testAChangeThePageOnlyOpensSaysItIsNotDone(): void
+    {
+        $this->assistant->next = FakeWebAssistant::answer('Marked.', '/mark 14.11. Sam');
+
+        [, $body] = $this->post(['op' => 'ask', 'text' => 'mark Sam'], $this->organizer());
+
+        self::assertSame(AssistantWebActions::GOTO, $body['action']['kind']);
+        self::assertSame("Not done yet: open it here.\nMarked.", self::text($body));
     }
 }

@@ -16,6 +16,10 @@ use EventCrew\Support\HelpPage;
  *   Confirm and Cancel first, then runs the page's own sign-up or cancel
  *   (SignupController), with the same checks. Cancelling asks too: on the
  *   page there is no second question about what the cancel costs.
+ *   An organizer change the bot confirms first (op "change": CHANGES, such
+ *   as /unticket) is asked the same way and runs on Confirm through the
+ *   bot command's own checks and services (AssistantWebChanges), with the
+ *   real outcome as the answer (Owner 2026-11-13).
  * - goto: what the bot would show or do, the page has a place for: the page
  *   opens that tab (and Admin screen) and scrolls to the card ("targets":
  *   element ids, the first one on the page wins). "query" (optional) are
@@ -34,6 +38,7 @@ final class AssistantWebActions
 
     public const JOIN = 'join';
     public const LEAVE = 'leave';
+    public const CHANGE = 'change';
 
     /** The Admin tab's screens and cards (templates/public/signup.php). */
     public const ADMIN_PANEL = 'eventcrew-panel-admin';
@@ -76,7 +81,8 @@ final class AssistantWebActions
 
     /**
      * Organizer commands => the Admin screen or card, and which page-address
-     * value a date in the line sets ('' = none).
+     * value a date in the line sets ('' = none). The changes the page runs
+     * itself (CHANGES) are not here.
      *
      * @var array<string, array{0: string, 1: string}>
      */
@@ -89,37 +95,70 @@ final class AssistantWebActions
         'menu:doorlist' => [self::ADMIN_DOOR, 'roster_date'],
         'menu:guestlist' => [self::ADMIN_DOOR, 'roster_date'],
         'menu:sales' => [self::ADMIN_DOOR, ''],
-        '/freeentry' => [self::ADMIN_DOOR, 'roster_date'],
-        '/sendtickets' => [self::ADMIN_DOOR, 'roster_date'],
-        '/ticket' => [self::ADMIN_DOOR, 'roster_date'],
-        '/unticket' => [self::ADMIN_DOOR, 'roster_date'],
-        '/addtask' => [self::ADMIN_TASKS, 'tasks_date'],
-        '/edittask' => [self::ADMIN_TASKS, 'tasks_date'],
-        '/deletetask' => [self::ADMIN_TASKS, 'tasks_date'],
-        '/maketasks' => [self::ADMIN_TASKS, 'tasks_date'],
-        // The open-task email's card is on Messages (Owner 2026-11-13).
-        '/mailtasks' => [self::ADMIN_OPEN_TASK, ''],
         '/people' => [self::ADMIN_PEOPLE, ''],
         'menu:gift' => [self::ADMIN_PEOPLE, ''],
         'menu:roles' => [self::ADMIN_PEOPLE, ''],
         'menu:eligible' => [self::ADMIN_ROLES, ''],
         '/standing' => [self::ADMIN_PEOPLE, ''],
-        '/unban' => [self::ADMIN_PEOPLE, ''],
         '/newcomer' => [self::ADMIN_NEWCOMERS, ''],
         '/newsletter' => [self::ADMIN_NEWSLETTER, ''],
         '/followup' => [self::ADMIN_FOLLOWUP, ''],
-        '/newboard' => [self::ADMIN_BOARD, ''],
     ];
 
+    /**
+     * Organizer changes the page runs itself after Confirm (AssistantWebChanges).
+     * "/door" only with add, edit or remove; "/stop" and "/sendtickets" with
+     * every form the bot takes.
+     */
+    public const CHANGES = [
+        '/ticket',
+        '/unticket',
+        '/unban',
+        '/freeentry',
+        '/stop',
+        '/newboard',
+        '/sendtickets',
+        '/addtask',
+        '/edittask',
+        '/deletetask',
+        '/maketasks',
+        '/mailtasks',
+    ];
+
+    /** The /door words that change the guest list. */
+    private const DOOR_CHANGES = ['add', 'edit', 'remove'];
+
+    /**
+     * Actions that change something but that the page does not run: it only
+     * opens the place where the person does it, or has no place for it.
+     */
+    private const LEFT_UNDONE = [
+        '/mark',
+        '/assign',
+        '/unassign',
+        '/subscribe',
+        '/say',
+        '/tell',
+        'menu:gift',
+        'menu:roles',
+        'menu:ticket',
+        'menu:replace',
+        'menu:notifications',
+        'menu:language',
+    ];
+
+    /** Actions that change something only with text after the command. */
+    private const LEFT_UNDONE_WITH_TEXT = ['/newsletter', '/followup', '/name', '/email'];
+
     /** Organizer commands whose line is "[date] <person>": the person is searched on People. */
-    private const PERSON_SEARCH = ['/standing', '/unban'];
+    private const PERSON_SEARCH = ['/standing'];
 
     /**
      * What the page does with a checked action line ("/join 12", "/me history",
      * "menu:ticket", "/roster 14.11.") for someone who is an organizer or not.
      * $today (Y-m-d) reads a date like 14.11.
      *
-     * @return array{kind: string, op?: string, task?: int, targets?: list<string>, query?: array<string, string>}
+     * @return array{kind: string, op?: string, task?: int, command?: string, targets?: list<string>, query?: array<string, string>}
      */
     public static function plan(string $action, bool $organizer = false, string $today = ''): array
     {
@@ -142,6 +181,10 @@ final class AssistantWebActions
         $head = strtolower($words[0]);
         $rest = trim($words[1] ?? '');
 
+        if ($organizer && self::isChange($head, $rest)) {
+            return ['kind' => self::CONFIRM, 'op' => self::CHANGE, 'command' => $head];
+        }
+
         if (in_array($head, self::SETTINGS_COMMANDS, true)) {
             return ['kind' => self::GOTO, 'targets' => ['eventcrew-panel-settings']];
         }
@@ -152,18 +195,44 @@ final class AssistantWebActions
             return ['kind' => self::GOTO, 'targets' => ['eventcrew-door-scanner']];
         }
 
-        // "/stop announcement" is the announcement's card, "/stop email" the post-event email's.
-        if ($organizer && '/stop' === $head) {
-            $card = str_starts_with(strtolower($rest), 'email') ? self::ADMIN_FOLLOWUP : self::ADMIN_NEWSLETTER;
-
-            return ['kind' => self::GOTO, 'targets' => [$card, self::ADMIN_PANEL]];
-        }
-
         if ($organizer && isset(self::ADMIN[$head])) {
             return self::adminPlan($head, $rest, $today);
         }
 
         return ['kind' => self::NONE];
+    }
+
+    /**
+     * Whether the page runs this organizer action line itself after Confirm
+     * (CHANGES, and /door add, edit or remove).
+     */
+    public static function isChange(string $head, string $rest): bool
+    {
+        $head = strtolower($head);
+
+        if ('/door' === $head) {
+            return in_array(strtolower((string) strtok($rest, ' ')), self::DOOR_CHANGES, true);
+        }
+
+        return in_array($head, self::CHANGES, true);
+    }
+
+    /**
+     * Whether $action changes something the page leaves for the person to
+     * do (it opens the place, or has none): the answer then says it is not
+     * done yet, whatever the model wrote.
+     */
+    public static function leavesUndone(string $action): bool
+    {
+        $words = explode(' ', trim((string) preg_replace('/\s+/u', ' ', $action)), 2);
+        $head = strtolower($words[0]);
+        $rest = trim($words[1] ?? '');
+
+        if (in_array($head, self::LEFT_UNDONE, true)) {
+            return true;
+        }
+
+        return '' !== $rest && in_array($head, self::LEFT_UNDONE_WITH_TEXT, true);
     }
 
     /**

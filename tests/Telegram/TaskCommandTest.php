@@ -330,6 +330,33 @@ final class TaskCommandTest extends TelegramTestCase
         self::assertSame('⚠️ Nothing to send: no open tasks, or everyone eligible already has it.', $this->lastText());
     }
 
+    /** The Crew app's helper box: no choice buttons, so two matching tasks are named instead. */
+    public function testTheWebHelperNamesSeveralMatchingTasks(): void
+    {
+        $this->wpdb->nextResults[] = [$this->task(5), $this->task(6, 'decorate', ['starts_at' => '2026-07-25 18:00:00'])];
+        $this->wpdb->nextRows[] = $this->task(5);
+        $this->wpdb->nextRows[] = $this->task(6, 'decorate', ['starts_at' => '2026-07-25 18:00:00']);
+
+        $asked = $this->command()->prepareWeb(TaskCommand::EDIT, 'Decorate ; notes Keys at the bar');
+
+        self::assertFalse($asked['ok']);
+        self::assertStringStartsWith('Several match: Decorate · ', $asked['text']);
+        self::assertSame('', $this->lastText());
+    }
+
+    public function testTheWebHelperSendsTheOpenTaskEmailOnlyOnConfirm(): void
+    {
+        $asked = $this->command()->prepareWeb(TaskCommand::MAIL, '');
+
+        self::assertTrue($asked['ok']);
+        self::assertStringStartsWith('Send the open-task email now', $asked['text']);
+
+        $done = $this->command()->runWeb($asked['state']);
+
+        self::assertFalse($done['changed']);
+        self::assertSame('⚠️ Nothing to send: no open tasks, or everyone eligible already has it.', $done['text']);
+    }
+
     public function testMakeTasksSaysWhenThereIsNoEvent(): void
     {
         $this->wpdb->nextRows[] = $this->organizer();

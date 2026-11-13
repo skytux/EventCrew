@@ -58,19 +58,31 @@ final class AssistantWebActionsTest extends TestCase
         self::assertSame(['eventcrew-admin-people', 'eventcrew-panel-admin'], $standing['targets']);
         self::assertSame(['people_q' => 'Lou H'], $standing['query'] ?? null);
 
-        self::assertSame(
-            ['eventcrew-admin-tasks', 'eventcrew-panel-admin'],
-            AssistantWebActions::plan('/addtask', true, '2026-11-13')['targets'] ?? null
-        );
-        self::assertSame(
-            ['eventcrew-admin-board', 'eventcrew-panel-admin'],
-            AssistantWebActions::plan('/newboard', true, '2026-11-13')['targets'] ?? null
-        );
-        // The Open-task email card is on Messages (Owner 2026-11-13).
-        self::assertSame(
-            ['eventcrew-admin-open-task', 'eventcrew-panel-admin'],
-            AssistantWebActions::plan('/mailtasks', true, '2026-11-13')['targets'] ?? null
-        );
+        self::assertSame(['eventcrew-admin-door', 'eventcrew-panel-admin'], AssistantWebActions::plan('/door 14.11.', true, '2026-11-13')['targets'] ?? null);
+    }
+
+    public function testAnOrganizersChangeIsConfirmedAndRunOnThePage(): void
+    {
+        foreach (['/unticket 14.11. Lou H', '/ticket Sam', '/unban Sam', '/freeentry close', '/stop email', '/newboard', '/sendtickets', '/addtask DJ 14.11.', '/edittask 12 +2', '/deletetask 12', '/maketasks', '/mailtasks', '/door add Anna', '/door remove 2'] as $line) {
+            $head = (string) strtok($line, ' ');
+            self::assertSame(
+                ['kind' => AssistantWebActions::CONFIRM, 'op' => AssistantWebActions::CHANGE, 'command' => $head],
+                AssistantWebActions::plan($line, true, '2026-11-13'),
+                $line
+            );
+        }
+
+        // A member never: those are organizer commands.
+        self::assertSame(['kind' => AssistantWebActions::NONE], AssistantWebActions::plan('/unticket Lou'));
+    }
+
+    public function testWhatThePageLeavesUndoneIsKnown(): void
+    {
+        self::assertTrue(AssistantWebActions::leavesUndone('/mark 14.11. Sam'));
+        self::assertTrue(AssistantWebActions::leavesUndone('/newsletter Hello all'));
+        self::assertFalse(AssistantWebActions::leavesUndone('/newsletter'));
+        self::assertFalse(AssistantWebActions::leavesUndone('/roster 14.11.'));
+        self::assertFalse(AssistantWebActions::leavesUndone('/unticket Sam'));
     }
 
     public function testTelegramLinksAreDropped(): void

@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Telegram;
 
 use EventCrew\Repositories\AssignmentRepository;
 use EventCrew\Repositories\CreditGrantRepository;
+use EventCrew\Models\Person;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Repositories\TaskRepository;
@@ -300,6 +301,51 @@ final class PersonCommandsTest extends TelegramTestCase
         self::assertStringStartsWith('⚠️ Milla Virtanen · ', $this->lastText());
         self::assertStringEndsWith('That change could not be applied.', $this->lastText());
         self::assertStringNotContainsString('Credit handed back.', $this->lastText());
+    }
+
+    /** The Crew app's helper box asks the same question, without buttons in the chat. */
+    public function testTheWebHelperGetsTheSameAnswerWithoutATicket(): void
+    {
+        $milla = $this->person(7, 'Milla Virtanen');
+        $this->wpdb->nextResults[] = [$milla];
+        $this->wpdb->nextRows[] = $milla;
+
+        $asked = $this->command()->prepareWeb(PersonCommands::UNTICKET, '25.7. Milla');
+
+        self::assertFalse($asked['ok']);
+        self::assertStringStartsWith('Milla Virtanen has no free-entry ticket for ', $asked['text']);
+        self::assertSame('', $this->lastText());
+    }
+
+    public function testTheWebHelperRefusesSeveralMatches(): void
+    {
+        $this->wpdb->nextResults[] = [$this->person(7, 'Milla Virtanen'), $this->person(8, 'Milla Koski')];
+
+        $asked = $this->command()->prepareWeb(PersonCommands::UNTICKET, '25.7. Milla');
+
+        self::assertFalse($asked['ok']);
+        self::assertStringStartsWith('Several match: ', $asked['text']);
+        self::assertStringContainsString('Milla Koski', $asked['text']);
+    }
+
+    /** Confirm in the helper box: changed only when the ticket row was cancelled (Owner 2026-11-13). */
+    public function testTheWebHelperSaysWhetherTheTicketWasRemoved(): void
+    {
+        foreach ([1 => true, 0 => false] as $rows => $changed) {
+            $ticket = ['id' => 40, 'person_id' => 7, 'redeemed_for' => '2026-07-25', 'cancelled_at' => null];
+            $this->wpdb->nextRows[] = $this->person(7, 'Milla Virtanen');
+            $this->wpdb->nextRows[] = $ticket;
+            $this->wpdb->nextRows[] = $ticket;
+            $this->wpdb->nextQueryResults[] = $rows;
+
+            $done = $this->command()->runWeb(
+                Person::fromRow($this->organizer()),
+                ['user' => 0, 'op' => 'unticket', 'date' => '2026-07-25', 'person' => 7, 'redemption' => 40]
+            );
+
+            self::assertSame($changed, $done['changed']);
+            self::assertStringStartsWith($changed ? '✅ Milla Virtanen · ' : '⚠️ Milla Virtanen · ', $done['text']);
+        }
     }
 
     /** Taps ✅ on a waiting /unticket for Milla's ticket 40; $rows is what the cancel UPDATE changes. */

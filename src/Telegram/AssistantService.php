@@ -1019,10 +1019,14 @@ final class AssistantService implements WebAssistant
         ];
 
         if ($organizer) {
-            $lines[] = '- For an organizer, an action line other than signing up or cancelling only opens the'
-                . ' matching Admin screen (with the date or name in it): the page does not do the change itself.'
-                . ' So "reply" says where on that screen to do it (like "Admin tab → Roster, + Add a person"),'
-                . ' never that it is done or that someone will confirm.';
+            $lines[] = '- For an organizer, these action lines are asked with Confirm and Cancel and run on Confirm,'
+                . ' with the real outcome shown after: a ticket, a ticket removal, an unblock, free entry, stopping'
+                . ' an announcement or post-event email, a new board, sending tickets, adding, changing, deleting'
+                . ' or creating tasks, the open-task email, and adding, changing or removing a guest. The page'
+                . ' shows its own question for these, not your reply. Any other action line only opens the'
+                . ' matching Admin screen (with the date or name in it), and the page then says it is not done.'
+                . ' So "reply" never says a change is done, made, sent or saved: for those other lines it says'
+                . ' where on that screen to do it (like "Admin tab → Roster, + Add a person").';
         }
 
         return $lines;
