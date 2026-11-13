@@ -268,6 +268,33 @@ final class CodebaseStructureTest extends TestCase
     }
 
     /**
+     * Owner 2026-11-13: the email code did not sign in. The code form has a
+     * hidden field named "action", so form.action is that field and the
+     * script posted to "[object HTMLInputElement]". Scripts read the attribute.
+     */
+    public function testNoScriptPostsToAFormsActionProperty(): void
+    {
+        $found = [];
+        $dirs = [EVENTCREW_PLUGIN_DIR . 'templates', $this->sourceDir()];
+
+        foreach ($dirs as $dir) {
+            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS));
+
+            foreach ($iterator as $file) {
+                if (! $file instanceof SplFileInfo || 'php' !== $file->getExtension()) {
+                    continue;
+                }
+
+                if (1 === preg_match('/fetch\(\s*\w+\.action\b/', (string) file_get_contents($file->getPathname()))) {
+                    $found[] = $file->getFilename();
+                }
+            }
+        }
+
+        self::assertSame([], $found);
+    }
+
+    /**
      * @return array<int, SplFileInfo>
      */
     private function sourceFiles(): array

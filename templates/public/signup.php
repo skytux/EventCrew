@@ -496,7 +496,13 @@ if ($eventcrew_link_expired) {
                     busy = true;
                     var data = new FormData(form);
                     data.append('eventcrew_ajax', '1');
-                    fetch(form.action, { method: 'POST', body: data, credentials: 'same-origin', cache: 'no-store' })
+                    // The attribute: the hidden field named "action" hides
+                    // form.action ("[object HTMLInputElement]", a 404).
+                    fetch(form.getAttribute('action'), { method: 'POST', body: data, credentials: 'same-origin', cache: 'no-store' })
+                        .then(function (response) {
+                            if (!response.ok) { throw new Error(String(response.status)); }
+                            return response;
+                        })
                         .then(function (response) { return response.json(); })
                         .then(function (res) {
                             busy = false;
@@ -514,7 +520,10 @@ if ($eventcrew_link_expired) {
                             field.value = '';
                             toast(res && res.notice);
                         })
-                        .catch(function () { busy = false; });
+                        .catch(function () {
+                            busy = false;
+                            toast(<?php echo wp_json_encode(__('Something went wrong. Please try again.', 'eventcrew')); ?>);
+                        });
                 }
 
                 form.addEventListener('submit', function (event) {
