@@ -1331,18 +1331,15 @@ if ($eventcrew_link_expired) {
              */
             $eventcrew_subtabs = [
                 'roster' => _x('Roster', 'Admin tab screen', 'eventcrew'),
+                // Messages (the texts sent to people, the board repost, the
+                // open-task email) right after Roster (Owner 2026-11-13).
+                'messages' => __('Messages', 'eventcrew'),
                 'tasks' => __('Tasks', 'eventcrew'),
                 // A role's settings are a screen of their own (Owner 2026-11-13).
                 'roles' => __('Roles', 'eventcrew'),
                 'door' => __('Door', 'eventcrew'),
                 'people' => _x('People', 'Admin tab screen', 'eventcrew'),
             ];
-
-            // The texts sent to people (the announcement, the post-event
-            // email, the AI texts per event) are one screen, Messages, as on
-            // the wp-admin Messages page. It is always there: the board repost
-            // and the open-task email are on it too (Owner 2026-11-13).
-            $eventcrew_subtabs['messages'] = __('Messages', 'eventcrew');
 
             /*
              * The (i) after a card's title: the card's longer explanation opens
@@ -2084,6 +2081,17 @@ if ($eventcrew_link_expired) {
                     </div>
                     <?php endif; ?>
                     <div class="eventcrew-card-body">
+                        <?php // The Holvi ticket file, as on the sales desk's Organizer section (Owner 2026-11-13). ?>
+                        <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" enctype="multipart/form-data" class="eventcrew-admin-form eventcrew-admin-buyer-file">
+                            <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['buyers_action']); ?>">
+                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_door_here); ?>">
+                            <input type="hidden" name="roster_date" value="<?php echo esc_attr($eventcrew_roster_date); ?>">
+                            <label for="eventcrew-admin-buyer-file"><?php esc_html_e('Holvi ticket file', 'eventcrew'); ?></label>
+                            <input id="eventcrew-admin-buyer-file" type="file" name="buyer_file" required accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv">
+                            <span class="eventcrew-muted eventcrew-admin-hint"><?php esc_html_e('The .xlsx or .csv file exported from Holvi. Its tickets go onto the list of the date shown above; the same file twice adds nothing.', 'eventcrew'); ?></span>
+                            <button type="submit" name="op" value="upload" class="wp-element-button"><?php esc_html_e('Add to the list', 'eventcrew'); ?></button>
+                        </form>
                         <details class="eventcrew-admin-fold">
                             <summary class="eventcrew-textlink"><?php esc_html_e('Paste names, one per line', 'eventcrew'); ?></summary>
                             <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" class="eventcrew-admin-form">

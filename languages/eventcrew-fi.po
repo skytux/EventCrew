@@ -11205,3 +11205,9 @@ msgstr "Lippujen sähköpostit"
 
 msgid "Tonight’s list"
 msgstr "Illan lista"
+
+msgid "That file could not be added. Pick the .xlsx or .csv ticket file exported from Holvi (at most 2 MB)."
+msgstr "Tiedostoa ei voitu lisätä. Valitse Holvista viety .xlsx- tai .csv-lipputiedosto (enintään 2 Mt)."
+
+msgid "The .xlsx or .csv file exported from Holvi. Its tickets go onto the list of the date shown above; the same file twice adds nothing."
+msgstr "Holvista viety .xlsx- tai .csv-tiedosto. Sen liput menevät yllä näkyvän päivän listaan; sama tiedosto toiseen kertaan ei lisää mitään."

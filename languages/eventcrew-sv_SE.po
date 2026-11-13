@@ -14131,3 +14131,9 @@ msgstr "Biljettmejl"
 
 msgid "Tonight’s list"
 msgstr "Kvällens lista"
+
+msgid "That file could not be added. Pick the .xlsx or .csv ticket file exported from Holvi (at most 2 MB)."
+msgstr "Filen kunde inte läggas till. Välj biljettfilen (.xlsx eller .csv) som exporterats från Holvi (högst 2 MB)."
+
+msgid "The .xlsx or .csv file exported from Holvi. Its tickets go onto the list of the date shown above; the same file twice adds nothing."
+msgstr "Filen (.xlsx eller .csv) som exporterats från Holvi. Biljetterna hamnar på listan för datumet ovan; samma fil två gånger lägger inte till något."

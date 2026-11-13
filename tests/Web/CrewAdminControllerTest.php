@@ -60,6 +60,7 @@ use EventCrew\Web\CrewAdminFollowup;
 use EventCrew\Web\CrewAdminPeople;
 use EventCrew\Web\CrewAdminRoster;
 use EventCrew\Web\CrewAdminTasks;
+use EventCrew\Web\DoorOrganizer;
 use EventCrew\Web\SessionPerson;
 use EventCrew\Web\SignupController;
 
@@ -120,8 +121,10 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         return new Mailer(new Logger(), new EmailTemplate(new Logger()));
     }
 
-    private function admin(?\EventCrew\Support\BackgroundJobs $jobs = null): CrewAdminController
-    {
+    private function admin(
+        ?\EventCrew\Support\BackgroundJobs $jobs = null,
+        ?DoorOrganizer $door = null
+    ): CrewAdminController {
         return new CrewAdminController(
             new PersonRepository(),
             new SessionPerson(new PersonRepository()),
@@ -143,7 +146,8 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             new CrewAdminFollowup(new FollowupText(new LlmClient(new Logger()), new Logger())),
             null,
             new NewcomerApproval(new PersonRepository(), $this->mailer(), $this->client()),
-            $jobs
+            $jobs,
+            $door
         );
     }
 
@@ -1593,6 +1597,51 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         Functions\when('wp_clear_scheduled_hook')->justReturn(1);
     }
 
+    /** The Door screen's Holvi ticket file goes through the sales desk's reader (Owner 2026-11-13). */
+    public function testTheHolviFileUploadOnTheDoorScreen(): void
+    {
+        $this->wpdb->nextCols[] = ['2026-07-27', self::NIGHT, '2026-07-13'];
+        $this->wpdb->nextCols[] = ['2026-07-27', self::NIGHT, '2026-07-13'];
+        $door = $this->subpanel($this->renderAs($this->organizerRow(1)), 'door');
+
+        self::assertStringContainsString('enctype="multipart/form-data"', $door);
+        self::assertStringContainsString('name="buyer_file"', $door);
+        self::assertStringContainsString('name="op" value="upload"', $door);
+
+        Functions\when('sanitize_file_name')->returnArg();
+        // A posted field cannot stand in for the upload: dispatch() always
+        // replaces it, and the reader checks PHP received the path.
+        $organizer = new DoorOrganizer(
+            new FreeEntryGate(),
+            new BuyerImport(new TicketBuyerRepository(), new DoorAccess(new TaskRepository(), new AssignmentRepository())),
+            new TicketBuyerRepository(),
+            null,
+            static fn (string $path): bool => false
+        );
+        $this->signIn($this->organizerRow(1));
+        $result = $this->admin(null, $organizer)->handle(
+            CrewAdminController::BUYERS_ACTION,
+            'POST',
+            [
+                'roster_date' => self::NIGHT,
+                'op' => 'upload',
+                'csrf' => WebSession::csrfToken(1),
+                '_buyer_file' => ['name' => 'holvi.xlsx', 'tmp_name' => '/etc/hostname', 'size' => 10, 'error' => UPLOAD_ERR_OK],
+            ],
+            self::IP
+        );
+
+        self::assertSame('admin_buyers_file_failed', $result['notice']);
+        self::assertStringContainsString('Pick the .xlsx or .csv', CrewAdminController::noticeText($result['notice']));
+
+        // Without the reader wired in, it says the same.
+        $this->signIn($this->organizerRow(1));
+        self::assertSame(
+            'admin_buyers_file_failed',
+            $this->post(CrewAdminController::BUYERS_ACTION, ['roster_date' => self::NIGHT, 'op' => 'upload'])['notice']
+        );
+    }
+
     public function testAnOrganizerCancelsTheWaitingTicketSend(): void
     {
         $this->aTicketSendIsWaiting();
@@ -2341,7 +2390,11 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
                 $action
             );
         }
-        // Roles comes right after Tasks in the row of screens (Owner 2026-11-13).
+        // Messages right after Roster, Roles right after Tasks (Owner 2026-11-13).
+        self::assertMatchesRegularExpression(
+            '/data-eventcrew-subtab="roster">[^<]*<\/a>\s*<a [^>]*data-eventcrew-subtab="messages">[^<]*<\/a>\s*<a [^>]*data-eventcrew-subtab="tasks">/',
+            $html
+        );
         self::assertMatchesRegularExpression(
             '/data-eventcrew-subtab="tasks">[^<]*<\/a>\s*<a [^>]*data-eventcrew-subtab="roles">Roles</',
             $html

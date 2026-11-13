@@ -170,15 +170,17 @@ final class DoorOrganizer
     /**
      * The Holvi ticket file an organizer picked on the page: one entry of
      * $_FILES (name, tmp_name, size, error). Its tickets go onto $date's
-     * list; 'added' is how many.
+     * list; 'added' is how many. 'code' is the same result as a Crew app
+     * Admin notice code (CrewAdminRoster::noticeText()), for the Admin Door
+     * screen's upload.
      *
      * @param array<string, mixed> $file
-     * @return array{ok: bool, refused: bool, added: int, message: string}
+     * @return array{ok: bool, refused: bool, added: int, message: string, code: string}
      */
     public function importUpload(Person $person, string $date, array $file): array
     {
         if (! $person->isOrganizer) {
-            return self::refused() + ['added' => 0];
+            return self::refused() + ['added' => 0, 'code' => 'admin_buyers_file_failed'];
         }
 
         $name = is_string($file['name'] ?? null) ? sanitize_file_name((string) $file['name']) : '';
@@ -227,16 +229,18 @@ final class DoorOrganizer
                 'refused' => false,
                 'added' => 0,
                 'message' => __('This file was already added for this night. Nothing changed.', 'eventcrew'),
+                'code' => 'admin_buyers_file_same',
             ];
         }
+
+        $code = sprintf('admin_buyers_added_%d_%d', $result['added'], $result['skipped']);
 
         return [
             'ok' => true,
             'refused' => false,
             'added' => $result['added'],
-            'message' => CrewAdminRoster::noticeText(
-                sprintf('admin_buyers_added_%d_%d', $result['added'], $result['skipped'])
-            ),
+            'message' => CrewAdminRoster::noticeText($code),
+            'code' => $code,
         ];
     }
 
@@ -250,9 +254,15 @@ final class DoorOrganizer
         ];
     }
 
-    /** @return array{ok: bool, refused: bool, added: int, message: string} */
+    /** @return array{ok: bool, refused: bool, added: int, message: string, code: string} */
     private static function failed(string $message): array
     {
-        return ['ok' => false, 'refused' => false, 'added' => 0, 'message' => $message];
+        return [
+            'ok' => false,
+            'refused' => false,
+            'added' => 0,
+            'message' => $message,
+            'code' => 'admin_buyers_file_failed',
+        ];
     }
 }

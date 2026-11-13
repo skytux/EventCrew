@@ -159,7 +159,8 @@ final class CrewAdminController
         private readonly ?CrewAdminFollowup $followupScreen = null,
         private readonly ?CrewAdminAiText $aiTextScreen = null,
         private readonly ?NewcomerApproval $newcomers = null,
-        private readonly ?BackgroundJobs $jobs = null
+        private readonly ?BackgroundJobs $jobs = null,
+        private readonly ?DoorOrganizer $doorOrganizer = null
     ) {
     }
 
@@ -358,6 +359,13 @@ final class CrewAdminController
         $action = isset($_REQUEST['action']) ? sanitize_key(wp_unslash($_REQUEST['action'])) : '';
         $method = isset($_SERVER['REQUEST_METHOD']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD'])) : '';
         $post = wp_unslash($_POST);
+        if (is_array($post)) {
+            // The Holvi ticket file, if one came; always the real upload, never
+            // a posted field of the same name.
+            $post['_buyer_file'] = isset($_FILES['buyer_file']) && is_array($_FILES['buyer_file'])
+                ? $_FILES['buyer_file'] // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- checked in DoorOrganizer::importUpload().
+                : [];
+        }
         // phpcs:enable WordPress.Security.NonceVerification
 
         $result = $this->handle($action, $method, is_array($post) ? $post : [], $this->clientIp());
@@ -593,6 +601,15 @@ final class CrewAdminController
                 'mail_test' => $this->rosterScreen->sendTicketTest($date, $organizer),
                 'mail_rest' => $this->rosterScreen->sendTicketsRest($date, 'buyers'),
                 'mail_cancel' => $this->rosterScreen->cancelTicketSend(),
+                // The Holvi ticket file (.xlsx or .csv), read as on the sales
+                // desk's Organizer section (Owner 2026-11-13).
+                'upload' => null === $this->doorOrganizer || ! CrewAdminRoster::isValidDate($date)
+                    ? 'admin_buyers_file_failed'
+                    : $this->doorOrganizer->importUpload(
+                        $organizer,
+                        $date,
+                        is_array($post['_buyer_file'] ?? null) ? $post['_buyer_file'] : []
+                    )['code'],
                 default => 'admin_change_failed',
             },
             self::FOLLOWUP_ACTION => match ($op) {

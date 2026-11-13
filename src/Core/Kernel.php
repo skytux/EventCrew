@@ -1144,7 +1144,8 @@ final class Kernel
                 $container->get(CrewAdminFollowup::class),
                 $container->get(CrewAdminAiText::class),
                 $container->get(NewcomerApproval::class),
-                $container->get(BackgroundJobs::class)
+                $container->get(BackgroundJobs::class),
+                $container->get(DoorOrganizer::class)
             )
         );
 

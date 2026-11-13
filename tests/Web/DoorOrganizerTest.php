@@ -90,6 +90,7 @@ final class DoorOrganizerTest extends SalesDeskTestCase
         self::assertSame(self::NIGHT, $this->wpdb->inserts[0]['data']['event_date']);
         self::assertSame('anna@example.com', $this->wpdb->inserts[0]['data']['email']);
         self::assertStringContainsString('3 ticket buyers added', $result['message']);
+        self::assertSame('admin_buyers_added_3_0', $result['code']);
     }
 
     public function testTheSameFileTwiceAddsNothing(): void
@@ -107,6 +108,7 @@ final class DoorOrganizerTest extends SalesDeskTestCase
         self::assertSame(0, $result['added']);
         self::assertSame([], $this->wpdb->inserts);
         self::assertStringContainsString('already added', $result['message']);
+        self::assertSame('admin_buyers_file_same', $result['code']);
     }
 
     public function testTheSalesDeskCrewCannotAddATicketFile(): void
@@ -155,6 +157,7 @@ final class DoorOrganizerTest extends SalesDeskTestCase
 
         self::assertFalse($result['ok']);
         self::assertSame('Pick the ticket file first.', $result['message']);
+        self::assertSame('admin_buyers_file_failed', $result['code']);
     }
 
     public function testAPathPhpDidNotReceiveIsNotRead(): void

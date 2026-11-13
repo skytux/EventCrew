@@ -622,6 +622,9 @@ final class CrewAdminRoster
             ),
             'admin_guest_removed' => __('Guest removed.', 'eventcrew'),
             'admin_buyers_failed' => __('That list could not be imported.', 'eventcrew'),
+            // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+            'admin_buyers_file_failed' => __('That file could not be added. Pick the .xlsx or .csv ticket file exported from Holvi (at most 2 MB).', 'eventcrew'),
+            'admin_buyers_file_same' => __('This file was already added for this night. Nothing changed.', 'eventcrew'),
             'admin_tickets_test_sent' => __('A test ticket email was sent to your own address.', 'eventcrew'),
             'admin_tickets_test_failed' => RosterPage::ticketTestMessage(TicketMail::TEST_FAILED, ''),
             'admin_tickets_test_none' => RosterPage::ticketTestMessage(TicketMail::TEST_NONE, ''),
