@@ -376,8 +376,8 @@ final class ActionParity
                 'Admin > People: one-time pass',
                 'CrewAdminController::PASS_ACTION',
                 self::ORGANIZER,
-                ['mn:roles', 'PermissionService::PICK_PREFIX', '/atriskpass'],
-                '/atriskpass Anna'
+                ['mn:roles', 'PermissionService::PICK_PREFIX', '/oncemore'],
+                '/oncemore Anna'
             ),
             'organizer' => self::change(
                 'Admin > People: make or remove an organizer',

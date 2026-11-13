@@ -276,8 +276,8 @@ final class AssistantActions
 
         return [
             self::entry(
-                '/atriskpass <person>',
-                'give a member at risk the at-risk pass: they can sign up once past the sign-up gate; they are told'
+                '/oncemore <person>',
+                'give a member at risk one more sign-up: they can sign up once past the sign-up gate; they are told'
             ),
             self::entry(
                 '/addperson <name> ; <email> [; <notes>]',
@@ -684,7 +684,7 @@ final class AssistantActions
      */
     private static function validateParityA(string $head, string $rest, array $audience): ?array
     {
-        $commands = ['/atriskpass', '/addperson', '/editperson', '/editrole', '/optout', '/aitext'];
+        $commands = ['/oncemore', '/addperson', '/editperson', '/editrole', '/optout', '/aitext'];
 
         if (in_array($head, $commands, true)) {
             if (empty($audience['organizer'])) {

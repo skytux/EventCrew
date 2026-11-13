@@ -14354,8 +14354,8 @@ msgid "/organizer on name – make an organizer (off ends it); /deleteperson nam
 msgstr "/organizer on namn – gör till arrangör (off avslutar); /deleteperson namn"
 
 # parityA
-msgid "/atriskpass name – a member at risk may sign up once more"
-msgstr "/atriskpass namn – en medlem i riskzonen får anmäla sig en gång till"
+msgid "/oncemore name – a member at risk may sign up once more"
+msgstr "/oncemore namn – en medlem i riskzonen får anmäla sig en gång till"
 
 # parityA
 msgid "/addperson name ; email – add a person; /editperson name ; notes text"
@@ -14390,8 +14390,8 @@ msgid "Delete a person and erase their data: /deleteperson name\nExample: /delet
 msgstr "Ta bort en person och radera hens uppgifter: /deleteperson namn\nExempel: /deleteperson Milla\nDet går inte att ångra."
 
 # parityA
-msgid "Let someone at risk sign up once more: /atriskpass name\nExample: /atriskpass Milla"
-msgstr "Låt någon i riskzonen anmäla sig en gång till: /atriskpass namn\nExempel: /atriskpass Milla"
+msgid "Let someone at risk sign up once more: /oncemore name\nExample: /oncemore Milla"
+msgstr "Låt någon i riskzonen anmäla sig en gång till: /oncemore namn\nExempel: /oncemore Milla"
 
 # parityA
 msgid "Add a person: /addperson name ; email ; notes\nExample: /addperson Milla Virtanen ; milla@example.com\nThe notes are optional."
@@ -14452,3 +14452,17 @@ msgstr "Använda AI-texten igen för %s?"
 #, php-format
 msgid "Send this text for %1$s (%2$s), as you wrote it?"
 msgstr "Skicka den här texten för %1$s (%2$s), som du skrev den?"
+
+# parityA
+#, php-format
+msgid "%s may already sign up once more."
+msgstr "%s får redan anmäla sig en gång till."
+
+# parityA
+#, php-format
+msgid "Let %s sign up once more past the sign-up gate? They are told."
+msgstr "Får %s anmäla sig en gång till trots anmälningsspärren? Hen får veta det."
+
+# parityA
+msgid "Done. They may sign up once more."
+msgstr "Klart. Hen får anmäla sig en gång till."

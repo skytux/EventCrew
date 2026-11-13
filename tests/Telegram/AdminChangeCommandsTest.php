@@ -64,8 +64,8 @@ final class AdminChangeCommandsTest extends TelegramTestCase
     public function testAMemberIsRefusedAndAGroupIsSentToThePrivateChat(): void
     {
         $this->wpdb->nextRows[] = $this->person(7, 'Milla Virtanen', ['telegram_user_id' => 555]);
-        $this->command()->onCommand(555, 555, '/atriskpass Kim', true, AssistantWebAdmin::AT_RISK_PASS);
-        self::assertSame('Only organizers can use /atriskpass.', $this->lastText());
+        $this->command()->onCommand(555, 555, '/oncemore Kim', true, AssistantWebAdmin::AT_RISK_ONCE_MORE);
+        self::assertSame('Only organizers can use /oncemore.', $this->lastText());
 
         $this->command()->onCommand(-100, 555, '/optout', false, AssistantWebAdmin::OPTOUT);
         self::assertSame('Use /optout in a private chat with me.', $this->lastText());
@@ -81,16 +81,16 @@ final class AdminChangeCommandsTest extends TelegramTestCase
         self::assertSame([], $this->transients);
     }
 
-    public function testTheAtRiskPassIsGivenOnlyAfterTheTap(): void
+    public function testOneMoreSignUpIsGivenOnlyAfterTheTap(): void
     {
         $milla = $this->person(7, 'Milla Virtanen');
         $this->wpdb->nextRows[] = $this->organizer();
         $this->wpdb->nextResults[] = [$this->organizer(), $milla];
         $this->wpdb->nextRows[] = $milla;
 
-        $this->command()->onCommand(555, 555, '/atriskpass milla', true, AssistantWebAdmin::AT_RISK_PASS);
+        $this->command()->onCommand(555, 555, '/oncemore milla', true, AssistantWebAdmin::AT_RISK_ONCE_MORE);
 
-        self::assertSame("Milla Virtanen\n🎟 Give a one-time pass?", $this->lastText());
+        self::assertSame('Let Milla Virtanen sign up once more past the sign-up gate? They are told.', $this->lastText());
         $id = $this->requestId(AdminChangeCommands::PREFIX);
         self::assertSame(['ac:y:' . $id, 'ac:x:' . $id], $this->buttonData());
         self::assertSame([], $this->wpdb->updates);
@@ -100,7 +100,7 @@ final class AdminChangeCommandsTest extends TelegramTestCase
         $this->command()->onCallback($this->tap('ac:y:' . $id));
 
         self::assertSame(1, $this->wpdb->updates[0]['data']['at_risk_pass'] ?? null);
-        self::assertStringContainsString('One-time sign-up pass granted.', $this->lastText());
+        self::assertStringContainsString('Done. They may sign up once more.', $this->lastText());
         self::assertSame([], $this->transients);
     }
 

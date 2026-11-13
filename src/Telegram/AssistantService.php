@@ -892,8 +892,8 @@ final class AssistantService implements WebAssistant
             // parityA
             $lines[] = '- The Admin tab\'s other changes are commands too, and each asks with buttons and confirms:'
                 . ' credits (menu:gift person ; credits), roles (menu:roles add|remove role ; person), the organizer'
-                . ' role (/organizer on|off person), deleting a person (/deleteperson), the at-risk pass past the'
-                . ' sign-up gate (/atriskpass), adding or changing a person (/addperson, /editperson), a role\'s'
+                . ' role (/organizer on|off person), deleting a person (/deleteperson), one more sign-up past the'
+                . ' gate for a member at risk (/oncemore), adding or changing a person (/addperson, /editperson), a role\'s'
                 . ' settings (/editrole), the post-event email\'s do-not-send list (/optout) and the AI texts of'
                 . ' the coming events (/aitext). A language change is menu:language with the code.';
         }
@@ -1052,8 +1052,8 @@ final class AssistantService implements WebAssistant
                 . ' done, made, sent or saved, and never says "not done yet" or "open it here" for a change it'
                 . ' gives the line for: the page asks.';
             // parityA
-            $lines[] = '- For an organizer, these also run on Confirm here: the at-risk pass past the sign-up gate'
-                . ' (/atriskpass), adding a person (/addperson), changing a person\'s name, email or notes'
+            $lines[] = '- For an organizer, these also run on Confirm here: one more sign-up for a member at risk'
+                . ' (/oncemore), adding a person (/addperson), changing a person\'s name, email or notes'
                 . ' (/editperson), changing a role\'s settings (/editrole), the post-event email\'s do-not-send'
                 . ' list (/optout add or remove) and an event\'s AI text (/aitext). /optout and /aitext alone'
                 . ' open their Admin card.';

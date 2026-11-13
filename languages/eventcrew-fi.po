@@ -11428,8 +11428,8 @@ msgid "/organizer on name – make an organizer (off ends it); /deleteperson nam
 msgstr "/organizer on nimi – tee järjestäjäksi (off lopettaa); /deleteperson nimi"
 
 # parityA
-msgid "/atriskpass name – a member at risk may sign up once more"
-msgstr "/atriskpass nimi – vaarassa oleva jäsen saa ilmoittautua vielä kerran"
+msgid "/oncemore name – a member at risk may sign up once more"
+msgstr "/oncemore nimi – vaarassa oleva jäsen saa ilmoittautua vielä kerran"
 
 # parityA
 msgid "/addperson name ; email – add a person; /editperson name ; notes text"
@@ -11464,8 +11464,8 @@ msgid "Delete a person and erase their data: /deleteperson name\nExample: /delet
 msgstr "Poista henkilö ja hänen tietonsa: /deleteperson nimi\nEsimerkki: /deleteperson Milla\nTätä ei voi perua."
 
 # parityA
-msgid "Let someone at risk sign up once more: /atriskpass name\nExample: /atriskpass Milla"
-msgstr "Anna vaarassa olevan ilmoittautua vielä kerran: /atriskpass nimi\nEsimerkki: /atriskpass Milla"
+msgid "Let someone at risk sign up once more: /oncemore name\nExample: /oncemore Milla"
+msgstr "Anna vaarassa olevan ilmoittautua vielä kerran: /oncemore nimi\nEsimerkki: /oncemore Milla"
 
 # parityA
 msgid "Add a person: /addperson name ; email ; notes\nExample: /addperson Milla Virtanen ; milla@example.com\nThe notes are optional."
@@ -11526,3 +11526,17 @@ msgstr "Käytetäänkö taas tekoälyn tekstiä: %s?"
 #, php-format
 msgid "Send this text for %1$s (%2$s), as you wrote it?"
 msgstr "Lähetetäänkö tämä teksti kohteeseen %1$s (%2$s) niin kuin kirjoitit sen?"
+
+# parityA
+#, php-format
+msgid "%s may already sign up once more."
+msgstr "%s saa jo ilmoittautua vielä kerran."
+
+# parityA
+#, php-format
+msgid "Let %s sign up once more past the sign-up gate? They are told."
+msgstr "Saako %s ilmoittautua vielä kerran ilmoittautumisrajasta huolimatta? Hänelle kerrotaan."
+
+# parityA
+msgid "Done. They may sign up once more."
+msgstr "Valmis. Hän saa ilmoittautua vielä kerran."

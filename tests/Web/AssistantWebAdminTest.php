@@ -82,37 +82,37 @@ final class AssistantWebAdminTest extends TelegramTestCase
             self::assertFalse($this->admin()->prepare($member, $command, 'Sam')['ok'], $command);
         }
 
-        self::assertFalse($this->admin()->run($member, ['op' => AssistantWebAdmin::AT_RISK_PASS, 'person' => 8])['changed']);
+        self::assertFalse($this->admin()->run($member, ['op' => AssistantWebAdmin::AT_RISK_ONCE_MORE, 'person' => 8])['changed']);
         self::assertSame([], $this->wpdb->updates);
     }
 
-    public function testTheAtRiskPassIsAskedThenGranted(): void
+    public function testOneMoreSignUpIsAskedThenGiven(): void
     {
         $this->wpdb->nextResults[] = [self::row(1, 'Lou H', ['is_organizer' => 1]), self::row(7, 'Milla Virtanen')];
         $this->wpdb->nextRows[] = self::row(7, 'Milla Virtanen');
 
-        $asked = $this->admin()->prepare(self::me(), AssistantWebAdmin::AT_RISK_PASS, 'Milla');
+        $asked = $this->admin()->prepare(self::me(), AssistantWebAdmin::AT_RISK_ONCE_MORE, 'Milla');
 
         self::assertTrue($asked['ok']);
-        self::assertSame("Milla Virtanen\n🎟 Give a one-time pass?", $asked['text']);
+        self::assertSame('Let Milla Virtanen sign up once more past the sign-up gate? They are told.', $asked['text']);
         self::assertSame([], $this->wpdb->updates);
 
         $this->wpdb->nextRows[] = self::row(7, 'Milla Virtanen');
         $done = $this->admin()->run(self::me(), $asked['state']);
 
         self::assertTrue($done['changed']);
-        self::assertSame('One-time sign-up pass granted.', $done['text']);
+        self::assertSame('Done. They may sign up once more.', $done['text']);
         self::assertSame(1, $this->wpdb->updates[0]['data']['at_risk_pass'] ?? null);
     }
 
-    public function testSomeoneWithThePassAlreadyIsSaid(): void
+    public function testSomeoneWhoMaySignUpOnceMoreAlreadyIsSaid(): void
     {
         $this->wpdb->nextRows[] = self::row(7, 'Milla Virtanen', ['at_risk_pass' => 1]);
 
-        $asked = $this->admin()->choose(self::me(), ['op' => AssistantWebAdmin::AT_RISK_PASS, 'person' => 7]);
+        $asked = $this->admin()->choose(self::me(), ['op' => AssistantWebAdmin::AT_RISK_ONCE_MORE, 'person' => 7]);
 
         self::assertFalse($asked['ok']);
-        self::assertSame('Milla Virtanen has a one-time sign-up pass.', $asked['text']);
+        self::assertSame('Milla Virtanen may already sign up once more.', $asked['text']);
     }
 
     public function testAddingAPersonIsAskedAndATakenEmailIsRefused(): void

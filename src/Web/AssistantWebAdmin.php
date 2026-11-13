@@ -20,8 +20,8 @@ use EventCrew\Telegram\CommandFlow;
  * AdminChangeCommands asks the same questions with ✅ / ✖️; both run the
  * Admin tab's own methods, so the three never differ:
  *
- * - "/atriskpass <person>": CrewAdminPeople::grantPass(), the at-risk pass
- *   past the sign-up gate; the member is told.
+ * - "/oncemore <person>": CrewAdminPeople::grantPass(), one more sign-up
+ *   past the gate for a member at risk; the member is told.
  * - "/addperson <name> ; <email> [; <notes>]": CrewAdminPeople::save() with
  *   no id. The new person is left unverified, as on the page.
  * - "/editperson <person> ; name <new> ; email <new> ; notes <text|->":
@@ -38,7 +38,7 @@ use EventCrew\Telegram\CommandFlow;
  */
 final class AssistantWebAdmin
 {
-    public const AT_RISK_PASS = 'atriskpass';
+    public const AT_RISK_ONCE_MORE = 'oncemore';
     public const ADD_PERSON = 'addperson';
     public const EDIT_PERSON = 'editperson';
     public const EDIT_ROLE = 'editrole';
@@ -47,7 +47,7 @@ final class AssistantWebAdmin
 
     /** The commands this class answers, as AssistantWebChanges splits them. */
     public const COMMANDS = [
-        self::AT_RISK_PASS,
+        self::AT_RISK_ONCE_MORE,
         self::ADD_PERSON,
         self::EDIT_PERSON,
         self::EDIT_ROLE,
@@ -123,10 +123,10 @@ final class AssistantWebAdmin
         $rest = trim($rest);
 
         switch ($command) {
-            case self::AT_RISK_PASS:
+            case self::AT_RISK_ONCE_MORE:
                 return '' === $rest
-                    ? self::fail(self::usage(self::AT_RISK_PASS))
-                    : $this->person($organizer, $rest, ['op' => self::AT_RISK_PASS]);
+                    ? self::fail(self::usage(self::AT_RISK_ONCE_MORE))
+                    : $this->person($organizer, $rest, ['op' => self::AT_RISK_ONCE_MORE]);
 
             case self::ADD_PERSON:
                 return $this->prepareAdd($rest);
@@ -164,13 +164,14 @@ final class AssistantWebAdmin
         $name = $person->name();
 
         switch ((string) ($state['op'] ?? '')) {
-            case self::AT_RISK_PASS:
+            case self::AT_RISK_ONCE_MORE:
                 if ($person->hasAtRiskPass) {
                     /* translators: %s: a person's name. */
-                    return self::fail(sprintf(__('%s has a one-time sign-up pass.', 'eventcrew'), $name));
+                    return self::fail(sprintf(__('%s may already sign up once more.', 'eventcrew'), $name));
                 }
 
-                return self::ask($name . "\n🎟 " . __('Give a one-time pass', 'eventcrew') . '?', $state);
+                /* translators: %s: a person's name. */
+                return self::ask(sprintf(__('Let %s sign up once more past the sign-up gate? They are told.', 'eventcrew'), $name), $state);
 
             case self::EDIT_PERSON:
                 $email = (string) ($state['email'] ?? '');
@@ -211,10 +212,15 @@ final class AssistantWebAdmin
         }
 
         switch ((string) ($state['op'] ?? '')) {
-            case self::AT_RISK_PASS:
+            case self::AT_RISK_ONCE_MORE:
                 $code = $this->peopleScreen->grantPass((int) ($state['person'] ?? 0));
 
-                return ['changed' => 'admin_pass_granted' === $code, 'text' => CrewAdminPeople::noticeText($code)];
+                $given = 'admin_pass_granted' === $code;
+
+                return [
+                    'changed' => $given,
+                    'text' => $given ? __('Done. They may sign up once more.', 'eventcrew') : CrewAdminPeople::noticeText($code),
+                ];
 
             case self::ADD_PERSON:
                 $code = $this->peopleScreen->save(
@@ -348,7 +354,7 @@ final class AssistantWebAdmin
     {
         // phpcs:disable Generic.Files.LineLength.TooLong -- gettext literals; splitting one breaks extraction.
         return match ($command) {
-            self::AT_RISK_PASS => __("Let someone at risk sign up once more: /atriskpass name\nExample: /atriskpass Milla", 'eventcrew'),
+            self::AT_RISK_ONCE_MORE => __("Let someone at risk sign up once more: /oncemore name\nExample: /oncemore Milla", 'eventcrew'),
             self::ADD_PERSON => __("Add a person: /addperson name ; email ; notes\nExample: /addperson Milla Virtanen ; milla@example.com\nThe notes are optional.", 'eventcrew'),
             self::EDIT_PERSON => __("Change someone’s details: /editperson name ; name new name ; email new address ; notes text\nExample: /editperson Milla ; notes Bar on Fridays\nGive only what changes. notes - empties the notes.", 'eventcrew'),
             self::EDIT_ROLE => __("Change a role: /editrole role ; field value ; field value\nExample: /editrole Bar ; people 3 ; guestsignup off\nFields: name, emoji, people, plus, description, measured start|end, starts minutes, ends minutes, events text, minroles, timeseach, count role number, and on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous. - empties a text or time.", 'eventcrew'),

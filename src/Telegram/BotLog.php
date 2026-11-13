@@ -46,7 +46,7 @@ final class BotLog
         'mark', 'standing', 'newcomer', 'ticket', 'unticket', 'unban', 'freeentry', 'stop', 'newboard', 'sendtickets',
         'tell', 'crew', 'name', 'email', 'subscribe', 'appinvite',
         // parityA: AdminChangeCommands.
-        'gift', 'role', 'organizer', 'deleteperson', 'atriskpass', 'addperson', 'editperson', 'editrole', 'optout',
+        'gift', 'role', 'organizer', 'deleteperson', 'oncemore', 'addperson', 'editperson', 'editrole', 'optout',
         'aitext',
     ];
 

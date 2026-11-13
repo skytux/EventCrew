@@ -21,7 +21,7 @@ use EventCrew\Web\AssistantWebPeople;
  * - /role <add|remove> <role> ; <person>
  * - /organizer <on|off> <person>
  * - /deleteperson <person>, with a warning: the data is erased
- * - /atriskpass <person>
+ * - /oncemore <person>
  * - /addperson <name> ; <email> [; <notes>]
  * - /editperson <person> ; name … ; email … ; notes …
  * - /editrole <role> ; <field> <value> ; …
@@ -47,7 +47,7 @@ final class AdminChangeCommands
         self::ROLE,
         self::ORGANIZER,
         self::DELETE,
-        AssistantWebAdmin::AT_RISK_PASS,
+        AssistantWebAdmin::AT_RISK_ONCE_MORE,
         AssistantWebAdmin::ADD_PERSON,
         AssistantWebAdmin::EDIT_PERSON,
         AssistantWebAdmin::EDIT_ROLE,

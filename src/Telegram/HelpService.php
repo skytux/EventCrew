@@ -433,7 +433,7 @@ final class HelpService
             // The Crew app Admin tab's changes (parityA).
             __('/gift name ; 1 ; reason – give credits; /role add role ; name – give a role', 'eventcrew'),
             __('/organizer on name – make an organizer (off ends it); /deleteperson name', 'eventcrew'),
-            __('/atriskpass name – a member at risk may sign up once more', 'eventcrew'),
+            __('/oncemore name – a member at risk may sign up once more', 'eventcrew'),
             __('/addperson name ; email – add a person; /editperson name ; notes text', 'eventcrew'),
             __('/editrole role ; people 3 – change a role\'s settings', 'eventcrew'),
             __('/optout – the post-event email\'s do-not-send list (add, remove)', 'eventcrew'),

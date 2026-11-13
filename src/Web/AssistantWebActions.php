@@ -154,7 +154,7 @@ final class AssistantWebActions
      * their Admin card (VIEWS_PARITY_A); the others need the text.
      */
     private const CHANGES_PARITY_A = [
-        '/atriskpass',
+        '/oncemore',
         '/addperson',
         '/editperson',
         '/editrole',
@@ -164,7 +164,7 @@ final class AssistantWebActions
 
     /** parityA: the Admin card each of CHANGES_PARITY_A opens alone. */
     private const VIEWS_PARITY_A = [
-        '/atriskpass' => self::ADMIN_PEOPLE,
+        '/oncemore' => self::ADMIN_PEOPLE,
         '/addperson' => self::ADMIN_PEOPLE,
         '/editperson' => self::ADMIN_PEOPLE,
         '/editrole' => self::ADMIN_ROLES,

@@ -135,7 +135,7 @@ final class AssistantActionsTest extends TestCase
     public function testTheAdminTabsChangesAreOrganizersOnly(): void
     {
         $lines = [
-            '/atriskpass Sam',
+            '/oncemore Sam',
             '/addperson Sam Example ; sam@example.com',
             '/editperson Sam ; notes Bar',
             '/editrole Bar ; people 3',
@@ -155,7 +155,7 @@ final class AssistantActionsTest extends TestCase
             self::assertSame(AssistantActions::ERROR_NOT_PERMITTED, self::check($line, self::member())['error'], $line);
         }
 
-        foreach (['/atriskpass', '/editrole', '/optout add nobody', '/optout drop sam@example.com'] as $line) {
+        foreach (['/oncemore', '/editrole', '/optout add nobody', '/optout drop sam@example.com'] as $line) {
             self::assertSame(AssistantActions::ERROR_INVALID, self::check($line, self::organizer())['error'], $line);
         }
     }
