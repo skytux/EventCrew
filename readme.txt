@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.238
+Stable tag: 1.140.239
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.239 =
+* Fix: typing the code from the sign-in email did nothing: the page sent it to a wrong address. It now signs in, and a failed try says so.
 
 = 1.140.238 =
 * Crew app: the links at the top of the Help tab sit on one line that wraps, instead of a column with a gap around every link and dot.
@@ -2109,6 +2112,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.239 =
+No settings change.
 
 = 1.140.238 =
 No settings change.
