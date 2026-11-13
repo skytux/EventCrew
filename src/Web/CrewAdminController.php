@@ -560,7 +560,6 @@ final class CrewAdminController
                 ),
             self::DOOR_ACTION => match ($op) {
                 'toggle' => $this->rosterScreen->toggleFreeEntry($date),
-                'redeem' => $this->rosterScreen->redeem($date, (int) ($post['person_id'] ?? 0)),
                 'unredeem' => $this->rosterScreen->unredeem((int) ($post['redemption_id'] ?? 0)),
                 default => 'admin_change_failed',
             },
@@ -797,6 +796,8 @@ final class CrewAdminController
         ]) + (null === $this->followupScreen ? [] : [
             'followup_text_action' => self::FOLLOWUP_TEXT_ACTION,
             'followup' => $this->followupScreen->view(),
+            // The night's status, test and stop, on Messages (Owner 2026-11-13).
+            'followup_nights' => $this->rosterScreen->followupNights((string) array_key_first($dates['past'])),
         ]) + (null === $this->aiTextScreen ? [] : [
             'ai_text_action' => self::AI_TEXT_ACTION,
             'ai_texts' => $this->aiTextScreen->view(),

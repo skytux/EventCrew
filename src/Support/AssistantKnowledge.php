@@ -276,17 +276,19 @@ final class AssistantKnowledge
                 ...$lines,
                 '- Admin tab → Roster: a night\'s people by task; mark arrived, late, no-show or done; add someone'
                     . ' to a task or take them off.',
-                '- Admin tab → Tasks: add, change or delete tasks, create an event\'s tasks from the roles, the'
-                    . ' open-task email.',
+                '- Admin tab → Tasks: add, change or delete tasks, create an event\'s tasks from the roles.',
                 '- Admin tab → Roles: one role\'s settings (label, people, timing, access, conditions).',
-                '- Admin tab → Door: the sales desk, the door list (redeem a credit for someone\'s free entry, or'
-                    . ' undo it), the guest list (add, change, remove guests), close or reopen free entry, the'
-                    . ' ticket emails.',
-                '- Admin tab → People: find a person: their standing, credits, credit log, give a credit,'
-                    . ' let an at-risk member sign up once, lift a block; newcomers waiting for an OK are at the top.',
-                '- Admin tab → Messages: the next events announcement (its text, stop it) and the post-event email'
-                    . ' (its one-time texts, stop it).',
-                '- Admin tab → Tasks, top of the Open-task email card: a link to post a new board in the crew group.',
+                '- Admin tab → Door: the sales desk, the Crew card (who gets in free that night; undo a spent'
+                    . ' credit there, close or reopen free entry), the guest list (add, change, remove guests), the'
+                    . ' Holvi ticket buyers and their ticket emails. A credit is spent for free entry at the sales'
+                    . ' desk.',
+                '- Admin tab → People: search as you type, tap a name to open that person: their standing,'
+                    . ' credits, credit log, give a credit, let an at-risk member sign up once, lift a block (Back'
+                    . ' returns to the list); newcomers waiting for an OK are at the top of the list.',
+                '- Admin tab → Messages: the Open-task email card (at its top a link to post a new board in the'
+                    . ' crew group, then send the open-task email now), the next events announcement (its text, stop'
+                    . ' it) and the post-event email (the next night\'s status, send a test to me, stop it, its'
+                    . ' one-time texts).',
                 '- Writing a message to the crew group or to everyone on a task, the event cards and a newsletter'
                     . ' subscription for someone else are not on this page.',
             ];

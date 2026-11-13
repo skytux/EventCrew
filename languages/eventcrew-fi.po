@@ -273,6 +273,10 @@ msgstr "Vapaalippu annettu. Jäsenelle on kerrottu."
 msgid "Credits"
 msgstr "Vapaaliput"
 
+#: templates/public/signup.php
+msgid "Crew"
+msgstr "Crew"
+
 #: templates/public/door.php:173 templates/public/door.php:213
 msgid "Crew member"
 msgstr "Crew-jäsen"

@@ -1834,6 +1834,10 @@ msgstr "Crew-appen: en medlem blockeras efter en förfalskad admin-förfrågan"
 msgid "Crew guide"
 msgstr "Crewguiden"
 
+#: templates/public/signup.php
+msgid "Crew"
+msgstr "Crew"
+
 #: templates/public/door.php:244 templates/public/door.php:287
 msgid "Crew member"
 msgstr "Crewmedlem"

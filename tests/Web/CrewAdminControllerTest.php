@@ -30,6 +30,8 @@ use EventCrew\Support\DoorAccess;
 use EventCrew\Support\DoorAddedBy;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\EmailTemplate;
+use EventCrew\Repositories\FollowupRepository;
+use EventCrew\Support\FollowupMail;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\LlmClient;
@@ -80,6 +82,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
     /** Whether the stand-in mailbox fails to connect. */
     private bool $mailboxFails = false;
+
+    /** The post-event email the Roster screen reads, when a test sets one. */
+    private ?FollowupMail $followup = null;
 
     protected function setUp(): void
     {
@@ -189,7 +194,6 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
                 addedBy: $addedBy
             ),
             new RedemptionRepository(),
-            $this->standing(),
             new FreeEntryGate(),
             new TicketRedemptionService(
                 new PersonRepository(),
@@ -208,6 +212,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
                 new Logger(),
                 static fn (): Mailbox => $mailbox
             ),
+            followup: $this->followup,
             addedBy: $addedBy
         );
     }
@@ -1010,7 +1015,6 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             'save attendance' => [CrewAdminController::ROSTER_ACTION, ['roster_date' => $date, 'status' => ['30' => 'arrived']]],
             'mark all' => [CrewAdminController::ROSTER_ACTION, ['roster_date' => $date, 'task_id' => '6', 'mark_all' => 'arrived']],
             'close free entry' => [CrewAdminController::DOOR_ACTION, ['roster_date' => $date, 'op' => 'toggle']],
-            'redeem' => [CrewAdminController::DOOR_ACTION, ['roster_date' => $date, 'op' => 'redeem', 'person_id' => '8']],
             'unredeem' => [CrewAdminController::DOOR_ACTION, ['roster_date' => $date, 'op' => 'unredeem', 'redemption_id' => '40']],
             'add guest' => [CrewAdminController::GUEST_ACTION, ['roster_date' => $date, 'op' => 'save', 'guest_name' => 'Anna']],
             'remove guest' => [CrewAdminController::GUEST_ACTION, ['roster_date' => $date, 'op' => 'remove', 'guest_id' => '5']],
@@ -1100,7 +1104,6 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             [CrewAdminController::ROSTER_ACTION, ['status' => ['30' => 'arrived']], 'admin_change_failed'],
             [CrewAdminController::ROSTER_ACTION, ['task_id' => '6', 'mark_all' => 'arrived'], 'admin_roster_bulk_failed'],
             [CrewAdminController::DOOR_ACTION, ['op' => 'toggle'], 'admin_change_failed'],
-            [CrewAdminController::DOOR_ACTION, ['op' => 'redeem', 'person_id' => '8'], 'admin_door_failed'],
             [CrewAdminController::GUEST_ACTION, ['op' => 'save', 'guest_name' => 'Anna'], 'admin_change_failed'],
             [CrewAdminController::BUYERS_ACTION, ['op' => 'import', 'buyer_names' => 'Anna'], 'admin_buyers_failed'],
             [CrewAdminController::BUYERS_ACTION, ['op' => 'reset'], 'admin_change_failed'],
@@ -1291,74 +1294,19 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
     }
 
     /**
-     * Queues person 8's standing: no tasks, no redemptions, $grants credits
-     * given by hand.
+     * The crew app no longer redeems a credit from the Door screen: the
+     * sales desk does (Owner 2026-11-13). The old request changes nothing.
      */
-    private function queueStanding(int $grants): void
+    public function testTheDoorScreenNoLongerRedeemsACredit(): void
     {
-        $this->wpdb->nextResults[] = [];               // historyFor
-        $this->wpdb->nextVars[] = '0';                 // redemptions countFor
-        $this->wpdb->nextVars[] = (string) $grants;    // grants sumFor
-    }
-
-    public function testRedeemingWhenFreeEntryIsClosedRecordsNothing(): void
-    {
-        $this->options[FreeEntryGate::OPTION] = [self::NIGHT];
         $this->signIn($this->organizerRow(1));
-        $this->queueStanding(2);
 
         $result = $this->post(CrewAdminController::DOOR_ACTION, ['roster_date' => self::NIGHT, 'op' => 'redeem', 'person_id' => '8']);
 
-        self::assertSame('admin_door_closed', $result['notice']);
+        self::assertSame('admin_change_failed', $result['notice']);
         self::assertSame([], $this->redemptionInserts());
-        self::assertSame([], $this->telegramCalls);
-    }
-
-    public function testRedeemingWithNoCreditLeftRecordsNothing(): void
-    {
-        $this->signIn($this->organizerRow(1));
-        $this->queueStanding(0);
-
-        $result = $this->post(CrewAdminController::DOOR_ACTION, ['roster_date' => self::NIGHT, 'op' => 'redeem', 'person_id' => '8']);
-
-        self::assertSame('admin_door_no_credit', $result['notice']);
-        self::assertSame([], $this->redemptionInserts());
-        self::assertSame([], $this->telegramCalls);
-    }
-
-    public function testRedeemingTwiceForOneDateSendsNoSecondTicket(): void
-    {
-        $this->signIn($this->organizerRow(1));
-        $this->queueStanding(2);
-        $this->wpdb->nextResults[] = [$this->taskRow(6, 'decorate')];   // the event context
-        $this->wpdb->nextQueryResults[] = 0;                             // already redeemed
-        $this->wpdb->nextRows[] = $this->personRow(8);
-
-        $result = $this->post(CrewAdminController::DOOR_ACTION, ['roster_date' => self::NIGHT, 'op' => 'redeem', 'person_id' => '8']);
-
-        self::assertSame('admin_door_already', $result['notice']);
-        self::assertCount(1, $this->redemptionInserts());
         self::assertSame([], $this->telegramCalls);
         self::assertSame([], $this->mails);
-    }
-
-    public function testRedeemingACreditPutsThemOnTheDoorListAndSendsTheTicket(): void
-    {
-        $this->signIn($this->organizerRow(1));
-        $this->queueStanding(2);
-        $this->wpdb->nextResults[] = [$this->taskRow(6, 'decorate')];   // the event context
-        $this->wpdb->nextQueryResults[] = 1;                             // recorded
-        $this->wpdb->nextRows[] = $this->personRow(8);                   // the ticket goes to them
-
-        $result = $this->post(CrewAdminController::DOOR_ACTION, ['roster_date' => self::NIGHT, 'op' => 'redeem', 'person_id' => '8']);
-
-        self::assertSame('admin_door_redeemed', $result['notice']);
-        $inserts = $this->redemptionInserts();
-        self::assertCount(1, $inserts);
-        self::assertStringContainsString("8, '" . self::NIGHT . "'", $inserts[0]);
-        $dm = $this->lastCallTo('sendMessage');
-        self::assertSame(508, $dm['chat_id']);
-        self::assertStringContainsString('eventcrew/v1/ticket', (string) json_encode($dm, JSON_UNESCAPED_SLASHES));
     }
 
     public function testRemovingARedemptionHandsTheCreditBack(): void
@@ -2373,13 +2321,25 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         foreach (['roster', 'tasks', 'roles', 'door', 'people', 'messages'] as $screen) {
             self::assertStringContainsString('data-eventcrew-subpanel="' . $screen . '"', $html, $screen);
         }
-        // The board repost is the first thing in the Open-task email card on
-        // Tasks; there is no Telegram screen any more (Owner 2026-11-13).
+        // The board repost is the first thing in the Open-task email card,
+        // which is on Messages, not Tasks; both send the page back to
+        // Messages. No Telegram screen (Owner 2026-11-13).
         self::assertStringNotContainsString('data-eventcrew-subpanel="telegram"', $html);
+        $messages = $this->subpanel($html, 'messages');
         self::assertMatchesRegularExpression(
             '~Open-task email</h3>.*?<div class="eventcrew-card-body eventcrew-admin-links">\s*(<\?php[^>]*>)?\s*<form id="eventcrew-admin-board"~s',
-            $html
+            $messages
         );
+        self::assertStringNotContainsString('Open-task email', $this->subpanel($html, 'tasks'));
+        self::assertStringNotContainsString('eventcrew-admin-board', $this->subpanel($html, 'tasks'));
+        foreach ([CrewAdminController::BOARD_ACTION, CrewAdminController::OPEN_TASK_ACTION] as $action) {
+            self::assertMatchesRegularExpression(
+                '~value="' . $action . '">\s*<input type="hidden" name="csrf" value="[^"]*">\s*'
+                    . '<input type="hidden" name="redirect_to" value="https://site.test/signup/#eventcrew-admin-messages">~',
+                $messages,
+                $action
+            );
+        }
         // Roles comes right after Tasks in the row of screens (Owner 2026-11-13).
         self::assertMatchesRegularExpression(
             '/data-eventcrew-subtab="tasks">[^<]*<\/a>\s*<a [^>]*data-eventcrew-subtab="roles">Roles</',
@@ -2401,10 +2361,11 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
     }
 
     /**
-     * The Door list, Guest list and Holvi ticket buyers cards are on the Door
-     * screen, after the Sales desk and the date bar, and every form there
-     * sends the page back to the Door screen. The Roster screen has the crew
-     * only.
+     * The Crew (was Door list), Guest list and Holvi ticket buyers cards are
+     * on the Door screen, after the Sales desk and the date bar, and every
+     * form there sends the page back to the Door screen. The Roster screen
+     * has the crew only. No credit is redeemed there and the post-event
+     * email is on Messages (Owner 2026-11-13).
      */
     public function testTheDoorCardsAreOnTheDoorScreenNotTheRosterScreen(): void
     {
@@ -2415,7 +2376,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         $door = $this->subpanel($html, 'door');
         $roster = $this->subpanel($html, 'roster');
 
-        foreach (['Door list', 'Guest list', 'Holvi ticket buyers'] as $card) {
+        foreach (['Crew', 'Guest list', 'Holvi ticket buyers'] as $card) {
             self::assertStringContainsString('>' . $card . '</h3>', $door, $card);
             self::assertStringNotContainsString('>' . $card . '</h3>', $roster, $card);
         }
@@ -2427,7 +2388,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         // Sales desk first, then the date bar, then the cards.
         $sales = strpos($door, 'Sales desk');
         $bar = strpos($door, 'eventcrew-admin-datebar');
-        $list = strpos($door, 'Door list');
+        $list = strpos($door, '>Crew</h3>');
         self::assertNotFalse($sales);
         self::assertNotFalse($bar);
         self::assertNotFalse($list);
@@ -2441,6 +2402,10 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         );
         self::assertStringNotContainsString('Add a person to a task', $html);
         self::assertStringNotContainsString('Crew and attendance', $html);
+        self::assertStringNotContainsString('>Door list</h3>', $html);
+        self::assertStringNotContainsString('Redeem a credit for', $html);
+        self::assertStringNotContainsString('value="redeem"', $html);
+        self::assertStringNotContainsString('followup_', $door);
     }
 
     /**
@@ -2569,6 +2534,15 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringNotContainsString('value="' . CrewAdminController::GIFT_ACTION . '"', $html);
         self::assertStringNotContainsString('value="' . CrewAdminController::ROLES_ACTION . '"', $html);
         self::assertStringNotContainsString('Give the role', $html);
+        // No person open: the list shows and there is no Back link; the
+        // search runs while typing (Owner 2026-11-13).
+        self::assertStringContainsString('id="eventcrew-admin-people-list"', $html);
+        self::assertStringNotContainsString('eventcrew-admin-back', $html);
+        self::assertStringContainsString('data-eventcrew-people-search', $html);
+        self::assertStringContainsString('id="eventcrew-admin-people-results"', $html);
+        self::assertStringContainsString("getAttribute('action')", $html);
+        self::assertStringContainsString('history.replaceState', $html);
+        self::assertStringNotContainsString('form.action', $html);
     }
 
     public function testThePeopleScreenOpensAPersonForEditing(): void
@@ -2602,6 +2576,14 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             '/name="redirect_to" value="[^"]*\?person_id=8&amp;people_q=p8[^"]*#eventcrew-admin-people"/',
             $html
         );
+        // Only the person is shown, with a Back link to the search; the list
+        // and the newcomers are not (Owner 2026-11-13).
+        self::assertMatchesRegularExpression(
+            '/<p class="eventcrew-admin-back"><a class="eventcrew-textlink" href="[^"]*people_q=p8[^"]*#eventcrew-admin-people">/',
+            $html
+        );
+        self::assertStringNotContainsString('id="eventcrew-admin-people-list"', $html);
+        self::assertStringNotContainsString('id="eventcrew-admin-people-results"', $html);
     }
 
     public function testWithNoTasksTheRosterScreenHasNoDateCards(): void
@@ -2991,6 +2973,42 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame('admin_open_task_none', $result['notice']);
         self::assertSame([], $this->mails);
         self::assertSame(['inserts' => [], 'updates' => [], 'deletes' => [], 'statements' => []], $this->tasksScreenWrites());
+    }
+
+    /**
+     * The post-event email's next night, with its test and stop, is on
+     * Messages, not in the Holvi ticket buyers card on Door; both forms send
+     * the page back to Messages (Owner 2026-11-13).
+     */
+    public function testThePostEventEmailNightIsOnMessages(): void
+    {
+        Functions\when('wp_timezone')->justReturn(new \DateTimeZone('Europe/Helsinki'));
+        $today = (new \DateTimeImmutable('now', new \DateTimeZone('Europe/Helsinki')))->format('Y-m-d');
+        $this->options[FollowupMail::ENABLED_OPTION] = '1';
+        $this->options[FollowupMail::ENABLED_AT_OPTION] = 1;
+        $this->options[FollowupMail::STATE_OPTION] = ['previewed' => [$today => 1]];
+        $this->followup = new FollowupMail(
+            new FollowupRepository(),
+            new TaskRepository(),
+            new PersonRepository(),
+            $this->mailer(),
+            new Logger()
+        );
+
+        $html = $this->renderAs($this->organizerRow(1));
+        $messages = $this->subpanel($html, 'messages');
+
+        self::assertStringContainsString('eventcrew-admin-followup-night', $messages);
+        self::assertStringContainsString('Post-event email:', $messages);
+        foreach (['followup_test', 'followup_stop'] as $op) {
+            self::assertMatchesRegularExpression(
+                '~name="roster_date" value="' . $today . '">\s*<button type="submit" name="op" value="' . $op . '"~',
+                $messages,
+                $op
+            );
+        }
+        self::assertStringContainsString('#eventcrew-admin-messages"', $messages);
+        self::assertStringNotContainsString('followup_', $this->subpanel($html, 'door'));
     }
 
     public function testTheOpenTaskEmailIsSentAndTheNoticeCountsThePeople(): void

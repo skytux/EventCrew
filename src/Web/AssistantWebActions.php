@@ -46,6 +46,7 @@ final class AssistantWebActions
     public const ADMIN_NEWSLETTER = 'eventcrew-admin-newsletter-card';
     public const ADMIN_FOLLOWUP = 'eventcrew-admin-followup-card';
     public const ADMIN_BOARD = 'eventcrew-admin-board';
+    public const ADMIN_OPEN_TASK = 'eventcrew-admin-open-task';
 
     /** Hosts whose links a web answer never carries. */
     private const TELEGRAM_HOSTS = ['t.me', 'telegram.me', 'telegram.dog', 'telegram.org'];
@@ -96,7 +97,8 @@ final class AssistantWebActions
         '/edittask' => [self::ADMIN_TASKS, 'tasks_date'],
         '/deletetask' => [self::ADMIN_TASKS, 'tasks_date'],
         '/maketasks' => [self::ADMIN_TASKS, 'tasks_date'],
-        '/mailtasks' => [self::ADMIN_TASKS, ''],
+        // The open-task email's card is on Messages (Owner 2026-11-13).
+        '/mailtasks' => [self::ADMIN_OPEN_TASK, ''],
         '/people' => [self::ADMIN_PEOPLE, ''],
         'menu:gift' => [self::ADMIN_PEOPLE, ''],
         'menu:roles' => [self::ADMIN_PEOPLE, ''],

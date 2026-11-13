@@ -158,7 +158,6 @@ trait CommandTestHelpers
             $assignments,
             new DoorList($tasks, $assignments, new PersonRepository(), new RedemptionRepository(), $this->standing()),
             new RedemptionRepository(),
-            $this->standing(),
             new FreeEntryGate(),
             new TicketRedemptionService(
                 new PersonRepository(),

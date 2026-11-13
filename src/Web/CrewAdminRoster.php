@@ -23,7 +23,6 @@ use EventCrew\Support\DoorAddedBy;
 use EventCrew\Support\DoorList;
 use EventCrew\Support\FreeEntryGate;
 use EventCrew\Support\MarkedBy;
-use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Telegram\DayPicker;
@@ -53,7 +52,6 @@ final class CrewAdminRoster
         private readonly AssignmentRepository $assignments,
         private readonly DoorList $doorList,
         private readonly RedemptionRepository $redemptions,
-        private readonly StandingCalculator $standing,
         private readonly FreeEntryGate $freeEntry,
         private readonly TicketRedemptionService $tickets,
         private readonly GuestRepository $guests,
@@ -117,7 +115,6 @@ final class CrewAdminRoster
      *     entrants: list<array{
      *         name: string, detail: string, standing: string, at_risk: bool, redemption_id: ?int, added_by: string
      *     }>,
-     *     candidates: list<array{person_id: int, name: string, credit_balance: int}>,
      *     closed_by_hand: bool,
      *     event_reason: string,
      *     guests: list<array{id: int, name: string, plus_ones: int, note: string, email: string, added_by: string}>,
@@ -125,8 +122,6 @@ final class CrewAdminRoster
      *     ticket_mail_buyers: string,
      *     ticket_mail_guests: string,
      *     ticket_mail_pending: string,
-     *     followup_mail: string,
-     *     followup_can_stop: bool,
      *     mailbox: string,
      *     mail_last: string
      * }
@@ -135,7 +130,6 @@ final class CrewAdminRoster
     {
         $view = [
             'entrants' => [],
-            'candidates' => [],
             'closed_by_hand' => false,
             'event_reason' => '',
             'guests' => [],
@@ -143,8 +137,6 @@ final class CrewAdminRoster
             'ticket_mail_buyers' => '',
             'ticket_mail_guests' => '',
             'ticket_mail_pending' => '',
-            'followup_mail' => '',
-            'followup_can_stop' => false,
             'mailbox' => MailedListImport::mailbox(),
             'mail_last' => self::lastMailCheck(),
         ];
@@ -166,7 +158,6 @@ final class CrewAdminRoster
             ];
         }
 
-        $view['candidates'] = array_values($door['candidates']);
         $view['closed_by_hand'] = $this->freeEntry->isClosedByHand($date);
         $view['event_reason'] = $this->freeEntry->eventReason($date);
         $guests = array_values($this->guests->forDate($date));
@@ -201,16 +192,62 @@ final class CrewAdminRoster
             $view['ticket_mail_pending'] = null === $pending ? '' : TicketMail::pendingLine($pending);
         }
 
-        if (null !== $this->followup) {
-            $view['followup_mail'] = FollowupMail::statusLine(
-                $this->followup->counts($date),
-                $this->followup->nightStatus($date),
-                $date
-            );
-            $view['followup_can_stop'] = $this->followup->canStop($date);
+        return $view;
+    }
+
+    /**
+     * The post-event email's nights for the Messages screen (Owner
+     * 2026-11-13; it was per date on the Door screen): the night the email
+     * is next about (FollowupMail::nextNight()), marked next, and before it
+     * $lastNight (the latest past date with tasks) when that is another
+     * night with a status to show. line is "Sat 14 Nov · Post-event email:
+     * …"; can_stop says whether that night's email can still be stopped.
+     * [] without the email.
+     *
+     * @return list<array{date: string, line: string, next: bool, can_stop: bool}>
+     */
+    public function followupNights(string $lastNight): array
+    {
+        if (null === $this->followup) {
+            return [];
         }
 
-        return $view;
+        $next = $this->followup->nextNight();
+        $nights = [];
+
+        if (self::isValidDate($lastNight) && $lastNight !== $next) {
+            $line = FollowupMail::statusLine(
+                $this->followup->counts($lastNight),
+                $this->followup->nightStatus($lastNight),
+                $lastNight
+            );
+
+            if ('' !== $line) {
+                $nights[] = ['date' => $lastNight, 'line' => $line, 'next' => false, 'can_stop' => false];
+            }
+        }
+
+        if ('' !== $next) {
+            $counts = $this->followup->counts($next);
+
+            // Nobody to email yet: still say when it goes out.
+            if (0 === $counts['sent'] + $counts['failed'] + $counts['stopped'] + $counts['unsent']) {
+                $counts['unsent'] = 1;
+            }
+
+            $nights[] = [
+                'date' => $next,
+                'line' => FollowupMail::statusLine($counts, $this->followup->nightStatus($next), $next),
+                'next' => true,
+                'can_stop' => $this->followup->canStop($next),
+            ];
+        }
+
+        foreach ($nights as $i => $night) {
+            $nights[$i]['line'] = Dates::dayLabel($night['date']) . ' · ' . $night['line'];
+        }
+
+        return $nights;
     }
 
     /**
@@ -306,38 +343,6 @@ final class CrewAdminRoster
         $this->freeEntry->close($date);
 
         return 'admin_door_closed_now';
-    }
-
-    /**
-     * "Redeem a credit": spends one of the person's credits for free entry on
-     * $date and sends them the door ticket, as the wp-admin Roster page does.
-     * The balance is checked again here, not taken from the page.
-     */
-    public function redeem(string $date, int $personId): string
-    {
-        if ($personId <= 0 || ! self::isValidDate($date)) {
-            return 'admin_door_failed';
-        }
-
-        if ($this->freeEntry->isClosed($date)) {
-            return 'admin_door_closed';
-        }
-
-        if ($this->standing->for($personId)->creditBalance < 1) {
-            return 'admin_door_no_credit';
-        }
-
-        [$eventPostId, $eventLabel] = $this->eventContext($date);
-        $redemptionId = $this->redemptions->record($personId, $date, $eventPostId, $eventLabel);
-
-        // 0: they were already down for this date. No second ticket.
-        if (0 === $redemptionId) {
-            return 'admin_door_already';
-        }
-
-        $this->tickets->notifyRedemption($personId, $date, $redemptionId, $eventPostId);
-
-        return 'admin_door_redeemed';
     }
 
     /** "Remove" on a redeemed row: the credit goes back to the person. */
@@ -601,11 +606,6 @@ final class CrewAdminRoster
             'admin_roster_bulk_failed' => __('That bulk update could not be applied.', 'eventcrew'),
             'admin_door_closed_now' => __('Free entry closed for this date.', 'eventcrew'),
             'admin_door_reopened' => __('Free entry reopened for this date.', 'eventcrew'),
-            'admin_door_failed' => __('That credit could not be redeemed.', 'eventcrew'),
-            'admin_door_closed' => __('Free entry is closed for this date.', 'eventcrew'),
-            'admin_door_no_credit' => __('They have no credit left to redeem.', 'eventcrew'),
-            'admin_door_already' => __('They already have free entry for this date.', 'eventcrew'),
-            'admin_door_redeemed' => __('Credit redeemed — they’re on the door list.', 'eventcrew'),
             'admin_door_returned' => __('Credit handed back.', 'eventcrew'),
             'admin_door_transfer_cancelled' => __('Transferred ticket cancelled.', 'eventcrew'),
             'admin_guest_no_name' => __('A guest needs a name.', 'eventcrew'),
@@ -693,21 +693,6 @@ final class CrewAdminRoster
         }
 
         return '';
-    }
-
-    /**
-     * The event a redemption on $date is recorded against: the first task's
-     * event that day, as on the wp-admin Roster page.
-     *
-     * @return array{0: ?int, 1: string}
-     */
-    private function eventContext(string $date): array
-    {
-        foreach ($this->tasks->forDate($date) as $task) {
-            return [$task->eventPostId, $task->eventName()];
-        }
-
-        return [null, ''];
     }
 
     /**

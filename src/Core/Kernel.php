@@ -1176,7 +1176,6 @@ final class Kernel
                 $container->get(AssignmentRepository::class),
                 $container->get(DoorList::class),
                 $container->get(RedemptionRepository::class),
-                $container->get(StandingCalculator::class),
                 $container->get(FreeEntryGate::class),
                 $container->get(TicketRedemptionService::class),
                 $container->get(GuestRepository::class),

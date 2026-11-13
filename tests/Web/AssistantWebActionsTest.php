@@ -66,6 +66,11 @@ final class AssistantWebActionsTest extends TestCase
             ['eventcrew-admin-board', 'eventcrew-panel-admin'],
             AssistantWebActions::plan('/newboard', true, '2026-11-13')['targets'] ?? null
         );
+        // The Open-task email card is on Messages (Owner 2026-11-13).
+        self::assertSame(
+            ['eventcrew-admin-open-task', 'eventcrew-panel-admin'],
+            AssistantWebActions::plan('/mailtasks', true, '2026-11-13')['targets'] ?? null
+        );
     }
 
     public function testTelegramLinksAreDropped(): void
