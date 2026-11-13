@@ -2516,7 +2516,7 @@ msgstr ""
 msgid "Could not read “%s”. Use time 21:00-23:00, places 2, notes text or plus 1."
 msgstr ""
 
-#: templates/public/signup-push.php:60
+#: templates/public/signup-push.php:61
 msgid "Could not turn on notifications. Try again."
 msgstr ""
 
@@ -9360,6 +9360,10 @@ msgstr ""
 
 #: templates/admin/settings.php:2220
 msgid "The bot must read every group message: in BotFather, send /setprivacy, choose the bot, choose Disable. Then remove the bot from the group and add it back, and press Install / refresh webhook below."
+msgstr ""
+
+#: templates/public/signup-push.php:60
+msgid "The browser did not finish turning on notifications. In the phone's Settings → Apps → your browser → Notifications, allow them, then try again."
 msgstr ""
 
 #: templates/admin/settings.php:1761

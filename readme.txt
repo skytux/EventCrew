@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.233
+Stable tag: 1.140.234
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,10 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.234 =
+* wp-admin: an emptied AI prompt is saved as empty; Reset to built-in brings the text back.
+* Crew app: turning on notifications stops waiting after 5 seconds when the browser never answers, and says to allow notifications for the browser in the phone settings.
 
 = 1.140.233 =
 * Crew app: the Group chat is a card that looks like a messaging app: bubbles, day separators, reply quotes, a pinned composer and a New messages button.
@@ -2092,6 +2096,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.234 =
+No settings change.
 
 = 1.140.233 =
 No settings change.
