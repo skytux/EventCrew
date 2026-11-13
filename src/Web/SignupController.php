@@ -440,7 +440,7 @@ final class SignupController implements WebTaskSignup
     {
         $person = $this->currentPerson();
 
-        // Which page of Tasks and Past tasks the Me tab shows: plain GET
+        // Which page of Tasks and Past tasks the Tasks tab shows: plain GET
         // links (Previous / Next), so paging works without JavaScript.
         // phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only page numbers.
         $tasksPage = Paging::parse($_GET[SignupBoardView::TASKS_PAGE_ARG] ?? '');

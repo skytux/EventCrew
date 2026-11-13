@@ -89,6 +89,64 @@ if ($eventcrew_link_expired) {
     <div id="eventcrew-toast" class="eventcrew-toast<?php echo '' !== $eventcrew_notice_text ? ' show' : ''; ?>" role="status" aria-live="polite"><?php echo esc_html($eventcrew_notice_text); ?></div>
 
     <?php if (null !== $eventcrew_person) : ?>
+        <?php
+        /*
+         * "Hi <first name> ☰" at the top right, as in most apps (Owner
+         * 2026-11-13): a button that opens a small menu with Settings, Help and
+         * Sign out. Settings and Help are panels without a tab of their own; the
+         * menu opens them through the tab script (data-eventcrew-goto), so their
+         * deep links and the notices that open them work as before. Each entry
+         * has the id a tab would have, so the panel's aria-labelledby and the
+         * helper's "Go to" name still find it. Without JavaScript the menu is a
+         * row of plain links under the name.
+         *
+         * On the Crew app's own page it goes up into the bar opposite
+         * "← Website" (CrewAppPage::putInBar()); inside a theme page it sits at
+         * the top right of the crew block.
+         */
+        $eventcrew_first_name = trim((string) strtok(trim($eventcrew_person->name()), " \t"));
+        ?>
+        <?php ob_start(); ?>
+    <div class="eventcrew-usermenu" data-eventcrew-usermenu>
+        <button type="button" class="eventcrew-usermenu-button" aria-expanded="false" aria-controls="eventcrew-usermenu-list">
+            <span class="eventcrew-usermenu-hi"><?php
+            if ('' === $eventcrew_first_name) {
+                esc_html_e('Menu', 'eventcrew');
+            } else {
+                /* translators: %s: the signed-in person's first name */
+                echo esc_html(sprintf(__('Hi %s', 'eventcrew'), $eventcrew_first_name));
+            }
+            ?></span>
+            <svg class="eventcrew-usermenu-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+        </button>
+        <ul class="eventcrew-usermenu-list" id="eventcrew-usermenu-list" aria-label="<?php esc_attr_e('Menu', 'eventcrew'); ?>">
+            <li><a id="eventcrew-tab-settings" href="#eventcrew-panel-settings" data-eventcrew-goto="eventcrew-panel-settings"><?php esc_html_e('Settings', 'eventcrew'); ?></a></li>
+            <li><a id="eventcrew-tab-help" href="#<?php echo esc_attr(\EventCrew\Support\HelpPage::PANEL_ANCHOR); ?>" data-eventcrew-goto="<?php echo esc_attr(\EventCrew\Support\HelpPage::PANEL_ANCHOR); ?>"><?php esc_html_e('Help', 'eventcrew'); ?></a></li>
+            <li>
+                <form class="eventcrew-signout" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+                    <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['logout_action']); ?>">
+                    <?php
+                    /*
+                     * Signing out is checked like every other action, so this
+                     * has to carry the token; without it the button answered
+                     * "please sign in" to someone who was signed in.
+                     */
+                    ?>
+                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                    <button type="submit"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
+                </form>
+            </li>
+        </ul>
+    </div>
+        <?php
+        $eventcrew_usermenu = (string) ob_get_clean();
+
+        if (! \EventCrew\Web\CrewAppPage::putInBar($eventcrew_usermenu)) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it was written above.
+            echo '<div class="eventcrew-usermenu-row">' . $eventcrew_usermenu . '</div>';
+        }
+        ?>
     <?php
     /*
      * Real anchors, not buttons: with JavaScript off every panel stays
@@ -97,20 +155,20 @@ if ($eventcrew_link_expired) {
      * them to a tablist in place. The bar is the first thing on the page and
      * stays at the top while scrolling; signed out there is nothing to tab
      * between, so it is not drawn.
+     *
+     * Tasks and Tickets were one Me tab until the menu freed the room
+     * (Owner 2026-11-13); an old #eventcrew-panel-me link opens Tasks.
      */
     ?>
     <nav class="eventcrew-tabs" aria-label="<?php esc_attr_e('Your Crew app', 'eventcrew'); ?>">
         <?php
         $eventcrew_tabs = [
             'board' => __('Board', 'eventcrew'),
-            'me' => __('Me', 'eventcrew'),
+            'tasks' => __('Tasks', 'eventcrew'),
+            'tickets' => __('Tickets', 'eventcrew'),
         ];
         // The group chat on the web (signup-groupchat.php), for the crew it is open to.
         $eventcrew_tabs += \EventCrew\Telegram\GroupRelay::visibleTo($eventcrew_person) ? ['chat' => __('Chat', 'eventcrew')] : [];
-        $eventcrew_tabs += [
-            'settings' => __('Settings', 'eventcrew'),
-            'help' => __('Help', 'eventcrew'),
-        ];
         $eventcrew_tabs += null !== $eventcrew_admin ? ['admin' => __('Admin', 'eventcrew')] : [];
         foreach ($eventcrew_tabs as $eventcrew_key => $eventcrew_label) :
             ?>
@@ -131,13 +189,25 @@ if ($eventcrew_link_expired) {
     ?>
 
     <?php
-    // The Telegram group button, at the top of the page so it shows above
-    // every tab, signed in only. The crew guide sits under the person's
-    // details in the header card; signed out it is not shown (Lou 2026-11-08).
-    $eventcrew_group_link = null === $eventcrew_person ? '' : (string) ($view['telegram_group_link'] ?? '');
-    $eventcrew_links_guide = false;
-    require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-links.php';
+    /*
+     * 🚪 Door scanner at the top of every tab (Owner 2026-11-13), where the
+     * Telegram group button was: it opens the sales desk on this device. For
+     * the next night's sales-desk crew (SalesDeskGate, via
+     * SignupController::canOpenSalesDesk()) and for organizers; the server
+     * checks again on press. The Admin tab keeps its own Sales desk card.
+     */
+    $eventcrew_door_scanner = null !== $eventcrew_person
+        && '' !== (string) ($view['sales_action'] ?? '')
+        && (! empty($view['sales_desk']) || null !== $eventcrew_admin);
     ?>
+    <?php if ($eventcrew_door_scanner) : ?>
+        <form class="eventcrew-links eventcrew-sales-desk" id="eventcrew-door-scanner" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
+            <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['sales_action']); ?>">
+            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+            <button type="submit" class="wp-element-button"><span aria-hidden="true">🚪</span> <?php esc_html_e('Door scanner', 'eventcrew'); ?></button>
+        </form>
+    <?php endif; ?>
 
     <?php if (null === $eventcrew_person) :
         // Signed out there are only two things - sign in, and look at the board
@@ -540,106 +610,30 @@ if ($eventcrew_link_expired) {
         ?>
         <?php
         /*
-         * The header card, under the tab bar: who is signed in, the language
-         * switch and Sign out in its top bar, and the person's standing,
-         * credits and the score explainer in its body. Sign out is here rather
-         * than in Settings because it is the one thing you might want from any
-         * tab. The sales desk button that used to sit under it is gone: an
-         * organizer opens the desk from the Admin tab, and the crew on a
-         * sales-desk task from the Sales desk card at the top of the Me tab.
+         * The Summary card, under the tab bar on every tab (Owner 2026-11-13):
+         * the person's standing, once - the bar and its "85% · Good standing"
+         * when rated, else how many tasks to go - then the completed tasks, the
+         * free-entry credits and what is coming, each a text link to its card
+         * on the Tasks or Tickets tab, and the score explainer. The name, the
+         * language and Sign out that sat in its head bar are in the menu at
+         * the top right and in Settings now.
          */
+        $eventcrew_get_ticket_shown = '' !== $eventcrew_redeem_action && [] !== $eventcrew_ticket_dates;
+        $eventcrew_coming_tasks = (int) ($view['my_upcoming_total'] ?? count($eventcrew_my_upcoming));
+        $eventcrew_coming_tickets = count($eventcrew_my_tickets['upcoming']);
         ?>
-        <section class="eventcrew-event eventcrew-me-card eventcrew-header-card">
-            <header class="eventcrew-event-head eventcrew-identity">
-                <span class="eventcrew-identity-name">
-                    <span class="eventcrew-standing-icon" aria-hidden="true">👤</span>
-                    <?php
-                    printf(/* translators: %s: person's name */
-                        esc_html__('Signed in as %s.', 'eventcrew'),
-                        esc_html($eventcrew_person->name())
-                    ); ?>
-                </span>
-                <?php
-                /*
-                 * The language this page, the bot's DMs and the emails reach
-                 * this person in: one button per site language, main language
-                 * first. The names stay untranslated: each is written in its
-                 * own language so a reader can find theirs whichever is on.
-                 *
-                 * On the Crew app's own page the switch goes up into the bar
-                 * beside "← Website", on the opposite side, so the two take
-                 * one line (Owner 2026-11-08, CrewAppPage::putInBar()); inside
-                 * a theme page it stays here.
-                 */
-                ?>
-                <?php if ('' !== (string) ($view['language_action'] ?? '')) : ?>
-                    <?php ob_start(); ?>
-                    <form class="eventcrew-language" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                        <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['language_action']); ?>">
-                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                        <?php $eventcrew_lang_first = true; ?>
-                        <?php foreach ((array) ($view['language_choices'] ?? []) as $eventcrew_lang_code => $eventcrew_lang_name) : ?>
-                            <?php if (! $eventcrew_lang_first) : ?>
-                                <span aria-hidden="true">|</span>
-                            <?php endif; ?>
-                            <?php $eventcrew_lang_first = false; ?>
-                            <button type="submit" name="language"
-                                value="<?php echo esc_attr((string) $eventcrew_lang_code); ?>"
-                                lang="<?php echo esc_attr((string) $eventcrew_lang_code); ?>"
-                                aria-pressed="<?php echo $eventcrew_lang_code === ($view['language'] ?? '') ? 'true' : 'false'; ?>"><?php echo esc_html((string) $eventcrew_lang_name); ?></button>
-                        <?php endforeach; ?>
-                    </form>
-                    <?php
-                    $eventcrew_language_form = (string) ob_get_clean();
-
-                    if (! \EventCrew\Web\CrewAppPage::putInBar($eventcrew_language_form)) {
-                        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped as it was written above.
-                        echo $eventcrew_language_form;
-                    }
-                    ?>
-                <?php endif; ?>
-                <form class="eventcrew-signout" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                    <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['logout_action']); ?>">
-                    <?php
-                    /*
-                     * Signing out is checked like every other action, so this
-                     * has to carry the token; without it the button answered
-                     * "please sign in" to someone who was signed in.
-                     */
-                    ?>
-                    <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                    <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                    <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Sign out', 'eventcrew'); ?></button>
-                </form>
+        <section class="eventcrew-event eventcrew-me-card eventcrew-header-card" id="eventcrew-summary">
+            <header class="eventcrew-event-head">
+                <h2 class="eventcrew-event-title"><?php esc_html_e('Summary', 'eventcrew'); ?></h2>
             </header>
             <?php if (null !== $eventcrew_standing) : ?>
                 <div class="eventcrew-card-body">
                     <?php
                     /*
-                     * One line each with an icon (Owner 2026-11-08): the
-                     * standing, the completed tasks and the free-entry
-                     * credits. The same counts and words as the bot's My info
-                     * (Owner 2026-11-08), so one translation serves both.
-                     */
-                    ?>
-                    <ul class="eventcrew-standing">
-                        <li><span class="eventcrew-standing-icon" aria-hidden="true">🌟</span><span><?php echo esc_html($eventcrew_standing->ratedSummary()); ?></span></li>
-                        <li><span class="eventcrew-standing-icon" aria-hidden="true">✅</span><span><?php echo esc_html(sprintf(/* translators: %d: completed tasks */
-                            __('Completed tasks: %d', 'eventcrew'),
-                            $eventcrew_standing->completedCount
-                        )); ?></span></li>
-                        <li><span class="eventcrew-standing-icon" aria-hidden="true">🎟️</span><span><?php echo esc_html(sprintf(/* translators: %d: free-entry credits */
-                            __('Free-entry credits: %d', 'eventcrew'),
-                            $eventcrew_standing->creditBalance
-                        ) . \EventCrew\Support\ExtraTaskCredits::pendingSuffix((int) ($eventcrew_pending ?? 0))); ?></span></li>
-                    </ul>
-                    <?php
-                    /*
                      * The standing as one bar once rated, green, orange or
                      * red by where the score is, a small mark at the limit
                      * and a short text (StandingBar, Owner Q382). Before
-                     * that, how many tasks to go.
+                     * that, one line on how many tasks to go.
                      */
                     ?>
                     <?php if ($eventcrew_standing->isRated()) : ?>
@@ -656,8 +650,47 @@ if ($eventcrew_link_expired) {
                         </div>
                         <p class="eventcrew-muted eventcrew-standing-bar-label"><strong><?php echo esc_html($eventcrew_bar_percent . '%'); ?></strong> · <?php echo esc_html(\EventCrew\Support\StandingBar::state($eventcrew_bar_percent, $eventcrew_bar_limit)); ?></p>
                     <?php else : ?>
-                        <p class="eventcrew-muted"><?php echo esc_html(\EventCrew\Support\StandingBar::untilRated($eventcrew_standing)); ?></p>
+                        <p class="eventcrew-muted eventcrew-standing-bar-label"><?php echo esc_html(\EventCrew\Support\StandingBar::untilRated($eventcrew_standing)); ?></p>
                     <?php endif; ?>
+                    <?php
+                    /*
+                     * One line each with an icon (Owner 2026-11-08), the same
+                     * counts and words as the bot's My info, so one
+                     * translation serves both. Each is a text link to its card
+                     * (Owner 2026-11-13): the tab script opens the tab and
+                     * scrolls there; without JavaScript it is a jump link.
+                     */
+                    $eventcrew_credit_card = $eventcrew_get_ticket_shown ? 'eventcrew-get-ticket' : 'eventcrew-my-tickets';
+                    ?>
+                    <ul class="eventcrew-standing">
+                        <li><span class="eventcrew-standing-icon" aria-hidden="true">✅</span><a class="eventcrew-textlink" href="#eventcrew-past-tasks" data-eventcrew-goto="eventcrew-past-tasks"><?php echo esc_html(sprintf(/* translators: %d: completed tasks */
+                            __('Completed tasks: %d', 'eventcrew'),
+                            $eventcrew_standing->completedCount
+                        )); ?></a></li>
+                        <li><span class="eventcrew-standing-icon" aria-hidden="true">🎟️</span><span><a class="eventcrew-textlink" href="#<?php echo esc_attr($eventcrew_credit_card); ?>" data-eventcrew-goto="<?php echo esc_attr($eventcrew_credit_card); ?>"><?php echo esc_html(sprintf(/* translators: %d: free-entry credits */
+                            __('Free-entry credits: %d', 'eventcrew'),
+                            $eventcrew_standing->creditBalance
+                        )); ?></a><?php echo esc_html(\EventCrew\Support\ExtraTaskCredits::pendingSuffix((int) ($eventcrew_pending ?? 0))); ?></span></li>
+                        <?php if ($eventcrew_coming_tasks > 0 || $eventcrew_coming_tickets > 0) : ?>
+                            <li class="eventcrew-summary-coming"><span class="eventcrew-standing-icon" aria-hidden="true">📅</span><span>
+                                <?php if ($eventcrew_coming_tasks > 0) : ?>
+                                    <a class="eventcrew-textlink" href="#eventcrew-my-tasks" data-eventcrew-goto="eventcrew-my-tasks"><?php
+                                    /* translators: %d: the person's coming tasks */
+                                    echo esc_html(sprintf(_n('%d task coming', '%d tasks coming', $eventcrew_coming_tasks, 'eventcrew'), $eventcrew_coming_tasks));
+                                    ?></a>
+                                <?php endif; ?>
+                                <?php if ($eventcrew_coming_tasks > 0 && $eventcrew_coming_tickets > 0) : ?>
+                                    <span aria-hidden="true">·</span>
+                                <?php endif; ?>
+                                <?php if ($eventcrew_coming_tickets > 0) : ?>
+                                    <a class="eventcrew-textlink" href="#eventcrew-my-tickets" data-eventcrew-goto="eventcrew-my-tickets"><?php
+                                    /* translators: %d: the person's coming tickets */
+                                    echo esc_html(sprintf(_n('%d ticket', '%d tickets', $eventcrew_coming_tickets, 'eventcrew'), $eventcrew_coming_tickets));
+                                    ?></a>
+                                <?php endif; ?>
+                            </span></li>
+                        <?php endif; ?>
+                    </ul>
                     <details class="eventcrew-disclosure eventcrew-score-help">
                         <summary><?php esc_html_e('How your score works', 'eventcrew'); ?></summary>
                         <table>
@@ -677,7 +710,7 @@ if ($eventcrew_link_expired) {
             <?php
             // The crew guide under the person's details, centred (Owner
             // 2026-11-08: the 🎟 Tickets button that stood above it is gone;
-            // tickets are on the Me tab). Signed out there is no guide link.
+            // tickets are on the Tickets tab). Signed out there is no guide link.
             $eventcrew_header_guide = \EventCrew\Support\RoleGuide::emailAction();
             ?>
             <?php if (null !== $eventcrew_header_guide) : ?>
@@ -698,37 +731,122 @@ if ($eventcrew_link_expired) {
             </div>
         </section>
 
-        <section class="eventcrew-panel" id="eventcrew-panel-me" data-eventcrew-panel="me" aria-labelledby="eventcrew-tab-me">
-            <h2 class="eventcrew-panel-title"><?php esc_html_e('Me', 'eventcrew'); ?></h2>
+        <?php
+        /*
+         * Each part is a card like an event on the board: a header bar with
+         * its name, and its rows under it. Tasks and Tickets were one Me tab
+         * (Owner 2026-11-08 order: Get a ticket, Tickets, Tasks, Past
+         * tickets, Past tasks) until Owner 2026-11-13 split them. Tickets,
+         * Tasks and Past tasks are always drawn, even empty, because "you are
+         * not on anything yet" is worth knowing. The sales desk is the Door
+         * scanner button at the top of the page now.
+         */
+        ?>
+        <section class="eventcrew-panel" id="eventcrew-panel-tasks" data-eventcrew-panel="tasks" aria-labelledby="eventcrew-tab-tasks">
+            <h2 class="eventcrew-panel-title"><?php esc_html_e('Tasks', 'eventcrew'); ?></h2>
+
+            <section class="eventcrew-event eventcrew-me-card" id="eventcrew-my-tasks">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Tasks', 'eventcrew'); ?></h3>
+                </header>
+                <?php
+                // Card titles and the empty text follow the bot's Tasks and
+                // Past tasks (Owner 2026-11-08); the web keeps a link to the board.
+                ?>
+                <?php if ([] === $eventcrew_my_upcoming) : ?>
+                    <p class="eventcrew-muted eventcrew-card-body">
+                        <?php esc_html_e('No coming tasks.', 'eventcrew'); ?>
+                        <a class="eventcrew-textlink" href="#eventcrew-panel-board" data-eventcrew-goto="eventcrew-panel-board"><?php esc_html_e('See open tasks', 'eventcrew'); ?></a>
+                    </p>
+                <?php else : ?>
+                    <ul class="eventcrew-plain-list eventcrew-me-list">
+                        <?php foreach ($eventcrew_my_upcoming as $eventcrew_mine) : ?>
+                            <?php
+                            $eventcrew_row = [
+                                'day' => (string) $eventcrew_mine['day'],
+                                'side' => (string) $eventcrew_mine['time'],
+                                'event' => (string) $eventcrew_mine['event'],
+                                'dj' => (string) $eventcrew_mine['dj'],
+                                'what' => (string) $eventcrew_mine['role'],
+                                'used' => $eventcrew_mine['used'] ?? null,
+                            ];
+                            ?>
+                            <li class="eventcrew-me-row">
+                                <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-me-row.php'; ?>
+                                <span class="eventcrew-me-actions">
+                                    <a class="eventcrew-textlink" href="<?php echo esc_url((string) $eventcrew_mine['ticket_url']); ?>" target="_blank" rel="noopener"><?php esc_html_e('Ticket', 'eventcrew'); ?></a>
+                                    <a class="eventcrew-textlink" href="<?php echo esc_url($eventcrew_mine['calendar_url']); ?>"><?php esc_html_e('Add to calendar', 'eventcrew'); ?></a>
+                                    <?php
+                                    /*
+                                     * Cancel here too, as a text link (Owner 2026-11-08):
+                                     * the board's drop action with the board's question.
+                                     * The page reloads after it, so this card and the
+                                     * Tickets card show the change.
+                                     */
+                                    ?>
+                                    <form class="eventcrew-action eventcrew-inline-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
+                                        data-eventcrew-confirm="<?php echo esc_attr((string) ($eventcrew_mine['cancel_ask'] ?? '')); ?>"
+                                        data-eventcrew-reload="eventcrew-my-tasks">
+                                        <input type="hidden" name="action" value="<?php echo esc_attr(\EventCrew\Web\SignupController::DROP_ACTION); ?>">
+                                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
+                                        <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_mine['task_id']); ?>">
+                                        <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Cancel', 'eventcrew'); ?></button>
+                                    </form>
+                                </span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php
+                    $eventcrew_pager = ['arg' => \EventCrew\Web\SignupBoardView::TASKS_PAGE_ARG, 'anchor' => 'eventcrew-my-tasks'];
+                    require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-pager.php';
+                    ?>
+                <?php endif; ?>
+            </section>
 
             <?php
             /*
-             * Each part is a card like an event on the board: a header bar with
-             * its name, and its rows under it. In order (Owner 2026-11-08):
-             * Get a ticket, Tickets, Tasks, Past tickets, Past tasks. Tickets,
-             * Tasks and Past tasks are always drawn, even empty, because "you
-             * are not on anything yet" is worth knowing.
-             *
-             * Sales desk comes first, and only for someone on tonight's
-             * sales-desk task who is not an organizer: an organizer has the
-             * same button on the Admin tab. The server checks again on press.
+             * Every past task, a page at a time, and the card drawn even
+             * before the first one with the bot's words (Owner 2026-11-08:
+             * like Telegram's Past tasks). The status sits where a coming
+             * task shows its times.
              */
             ?>
-            <?php if (! empty($view['sales_desk']) && null === $eventcrew_admin) : ?>
-                <section class="eventcrew-event eventcrew-me-card" id="eventcrew-me-sales">
-                    <header class="eventcrew-event-head">
-                        <h3 class="eventcrew-event-title"><?php esc_html_e('Sales desk', 'eventcrew'); ?></h3>
-                    </header>
-                    <div class="eventcrew-card-body">
-                        <form class="eventcrew-sales-desk" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
-                            <input type="hidden" name="action" value="<?php echo esc_attr((string) $view['sales_action']); ?>">
-                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                            <button type="submit" class="wp-element-button"><?php esc_html_e('Open the sales desk on this device', 'eventcrew'); ?></button>
-                        </form>
-                    </div>
-                </section>
-            <?php endif; ?>
+            <section class="eventcrew-event eventcrew-me-card" id="eventcrew-past-tasks">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Past tasks', 'eventcrew'); ?></h3>
+                </header>
+                <?php if ([] === $eventcrew_my_history) : ?>
+                    <p class="eventcrew-muted eventcrew-card-body"><?php echo esc_html(\EventCrew\Telegram\ProfileService::noPastTasksText()); ?></p>
+                <?php else : ?>
+                    <ul class="eventcrew-plain-list eventcrew-me-list">
+                        <?php foreach ($eventcrew_my_history as $eventcrew_past) : ?>
+                            <?php
+                            $eventcrew_row = [
+                                'day' => (string) $eventcrew_past['day'],
+                                'side' => (string) $eventcrew_past['status'],
+                                'side_class' => 'eventcrew-me-status',
+                                'event' => (string) $eventcrew_past['event'],
+                                'dj' => (string) $eventcrew_past['dj'],
+                                'what' => implode(' · ', array_filter([(string) $eventcrew_past['role'], (string) $eventcrew_past['time']], static fn (string $part): bool => '' !== $part)),
+                            ];
+                            ?>
+                            <li class="eventcrew-me-row">
+                                <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-me-row.php'; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php
+                    $eventcrew_pager = ['arg' => \EventCrew\Web\SignupBoardView::PAST_PAGE_ARG, 'anchor' => 'eventcrew-past-tasks'];
+                    require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-pager.php';
+                    ?>
+                <?php endif; ?>
+            </section>
+        </section>
+
+        <section class="eventcrew-panel" id="eventcrew-panel-tickets" data-eventcrew-panel="tickets" aria-labelledby="eventcrew-tab-tickets">
+            <h2 class="eventcrew-panel-title"><?php esc_html_e('Tickets', 'eventcrew'); ?></h2>
+
             <?php
             /*
              * Get a ticket: spending a credit, its own card, only while there
@@ -847,65 +965,6 @@ if ($eventcrew_link_expired) {
                 <?php endif; ?>
             </section>
 
-            <section class="eventcrew-event eventcrew-me-card" id="eventcrew-my-tasks">
-                <header class="eventcrew-event-head">
-                    <h3 class="eventcrew-event-title"><?php esc_html_e('Tasks', 'eventcrew'); ?></h3>
-                </header>
-                <?php
-                // Card titles and the empty text follow the bot's Tasks and
-                // Past tasks (Owner 2026-11-08); the web keeps a link to the board.
-                ?>
-                <?php if ([] === $eventcrew_my_upcoming) : ?>
-                    <p class="eventcrew-muted eventcrew-card-body">
-                        <?php esc_html_e('No coming tasks.', 'eventcrew'); ?>
-                        <a class="eventcrew-textlink" href="#eventcrew-panel-board" data-eventcrew-goto="eventcrew-panel-board"><?php esc_html_e('See open tasks', 'eventcrew'); ?></a>
-                    </p>
-                <?php else : ?>
-                    <ul class="eventcrew-plain-list eventcrew-me-list">
-                        <?php foreach ($eventcrew_my_upcoming as $eventcrew_mine) : ?>
-                            <?php
-                            $eventcrew_row = [
-                                'day' => (string) $eventcrew_mine['day'],
-                                'side' => (string) $eventcrew_mine['time'],
-                                'event' => (string) $eventcrew_mine['event'],
-                                'dj' => (string) $eventcrew_mine['dj'],
-                                'what' => (string) $eventcrew_mine['role'],
-                                'used' => $eventcrew_mine['used'] ?? null,
-                            ];
-                            ?>
-                            <li class="eventcrew-me-row">
-                                <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-me-row.php'; ?>
-                                <span class="eventcrew-me-actions">
-                                    <a class="eventcrew-textlink" href="<?php echo esc_url((string) $eventcrew_mine['ticket_url']); ?>" target="_blank" rel="noopener"><?php esc_html_e('Ticket', 'eventcrew'); ?></a>
-                                    <a class="eventcrew-textlink" href="<?php echo esc_url($eventcrew_mine['calendar_url']); ?>"><?php esc_html_e('Add to calendar', 'eventcrew'); ?></a>
-                                    <?php
-                                    /*
-                                     * Cancel here too, as a text link (Owner 2026-11-08):
-                                     * the board's drop action with the board's question.
-                                     * The page reloads after it, so this card and the
-                                     * Tickets card show the change.
-                                     */
-                                    ?>
-                                    <form class="eventcrew-action eventcrew-inline-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
-                                        data-eventcrew-confirm="<?php echo esc_attr((string) ($eventcrew_mine['cancel_ask'] ?? '')); ?>"
-                                        data-eventcrew-reload="eventcrew-my-tasks">
-                                        <input type="hidden" name="action" value="<?php echo esc_attr(\EventCrew\Web\SignupController::DROP_ACTION); ?>">
-                                        <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                                        <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                                        <input type="hidden" name="task_id" value="<?php echo esc_attr((string) $eventcrew_mine['task_id']); ?>">
-                                        <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Cancel', 'eventcrew'); ?></button>
-                                    </form>
-                                </span>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <?php
-                    $eventcrew_pager = ['arg' => \EventCrew\Web\SignupBoardView::TASKS_PAGE_ARG, 'anchor' => 'eventcrew-my-tasks'];
-                    require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-pager.php';
-                    ?>
-                <?php endif; ?>
-            </section>
-
             <?php
             /*
              * Past tickets: only listed, as on the bot, since there is no door
@@ -936,44 +995,6 @@ if ($eventcrew_link_expired) {
                 </section>
             <?php endif; ?>
 
-            <?php
-            /*
-             * Every past task, a page at a time, and the card drawn even
-             * before the first one with the bot's words (Owner 2026-11-08:
-             * like Telegram's Past tasks). The status sits where a coming
-             * task shows its times.
-             */
-            ?>
-            <section class="eventcrew-event eventcrew-me-card" id="eventcrew-past-tasks">
-                <header class="eventcrew-event-head">
-                    <h3 class="eventcrew-event-title"><?php esc_html_e('Past tasks', 'eventcrew'); ?></h3>
-                </header>
-                <?php if ([] === $eventcrew_my_history) : ?>
-                    <p class="eventcrew-muted eventcrew-card-body"><?php echo esc_html(\EventCrew\Telegram\ProfileService::noPastTasksText()); ?></p>
-                <?php else : ?>
-                    <ul class="eventcrew-plain-list eventcrew-me-list">
-                        <?php foreach ($eventcrew_my_history as $eventcrew_past) : ?>
-                            <?php
-                            $eventcrew_row = [
-                                'day' => (string) $eventcrew_past['day'],
-                                'side' => (string) $eventcrew_past['status'],
-                                'side_class' => 'eventcrew-me-status',
-                                'event' => (string) $eventcrew_past['event'],
-                                'dj' => (string) $eventcrew_past['dj'],
-                                'what' => implode(' · ', array_filter([(string) $eventcrew_past['role'], (string) $eventcrew_past['time']], static fn (string $part): bool => '' !== $part)),
-                            ];
-                            ?>
-                            <li class="eventcrew-me-row">
-                                <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-me-row.php'; ?>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <?php
-                    $eventcrew_pager = ['arg' => \EventCrew\Web\SignupBoardView::PAST_PAGE_ARG, 'anchor' => 'eventcrew-past-tasks'];
-                    require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-pager.php';
-                    ?>
-                <?php endif; ?>
-            </section>
         </section>
 
         <?php if (\EventCrew\Telegram\GroupRelay::visibleTo($eventcrew_person)) : ?>
@@ -1072,7 +1093,7 @@ if ($eventcrew_link_expired) {
              * Language and Telegram, as under the bot's Settings (Owner
              * 2026-11-08: Settings alike on both, in the same order - details,
              * notifications, language, the other side, sign out everywhere,
-             * delete). Language posts to the header bar's own handler.
+             * delete). Language posts to its own handler; this is the only language switch (Owner 2026-11-13).
              */
             ?>
             <?php if ('' !== (string) ($view['language_action'] ?? '') && count((array) ($view['language_choices'] ?? [])) > 1) : ?>
@@ -1250,7 +1271,7 @@ if ($eventcrew_link_expired) {
 
             <?php
             /*
-             * One card per job, the same frame as the Board and Me tabs, so the
+             * One card per job, the same frame as the Board and Tasks tabs, so the
              * tab reads as separate tools instead of one long form. The cards
              * are grouped into screens with a second row of tabs, Roster first:
              * marking the crew is the job done most. Without JavaScript the row
@@ -2885,6 +2906,9 @@ if ($eventcrew_link_expired) {
         </section>
         <?php endif; ?>
         <?php
+        // The crew's Telegram group, a text link under the panels (signup-links.php).
+        $eventcrew_group_link = (string) ($view['telegram_group_link'] ?? '');
+        require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-links.php';
     endif; ?>
     <?php
     // The "Get the app" pop-in, signed in only (nothing when signed out).
@@ -3000,6 +3024,17 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
             panel.classList.toggle('is-active', panel.getAttribute('data-eventcrew-panel') === key);
         });
 
+        // Settings and Help have no tab: their entry in the top-right menu
+        // says which is open instead.
+        [].slice.call(document.querySelectorAll('.eventcrew-usermenu-list [data-eventcrew-goto]')).forEach(function (item) {
+            if (item.getAttribute('data-eventcrew-goto') === 'eventcrew-panel-' + key
+                || (panelFor(key) && panelFor(key).id === item.getAttribute('data-eventcrew-goto'))) {
+                item.setAttribute('aria-current', 'page');
+            } else {
+                item.removeAttribute('aria-current');
+            }
+        });
+
         // replaceState, not the hash directly: setting location.hash would jump
         // the page to the panel, undoing the point of a tab. Deep links still
         // work, because the hash is read on load below.
@@ -3040,6 +3075,9 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
     function initialKey() {
         var hash = (window.location.hash || '').slice(1);
         var fromHash = hash.replace('eventcrew-panel-', '');
+        // The Me tab became Tasks and Tickets (Owner 2026-11-13): an old
+        // #eventcrew-panel-me link opens Tasks.
+        if ('me' === fromHash && panelFor('tasks')) { return 'tasks'; }
         if (fromHash && panelFor(fromHash)) { return fromHash; }
 
         var element = hash ? document.getElementById(hash) : null;
@@ -3051,21 +3089,35 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
 
         var notice = (window.location.search.match(/[?&]eventcrew_notice=([a-z_]+)/) || [])[1] || '';
         if (notice === 'prefs_saved' && panelFor('settings')) { return 'settings'; }
-        if (notice.indexOf('ticket_') === 0 && panelFor('me')) { return 'me'; }
+        if (notice.indexOf('ticket_') === 0 && panelFor('tickets')) { return 'tickets'; }
         if (notice.indexOf('admin_') === 0 && panelFor('admin')) { return 'admin'; }
 
         return 'board';
     }
 
-    // A link to a card on another tab, such as See open tasks on the Me
-    // tab: its tab opens, then the page scrolls to the card.
-    root.addEventListener('click', function (e) {
+    // A link to a card on another tab, such as See open tasks on the Tasks
+    // tab or a Summary line: its tab opens, then the page scrolls to the
+    // card. On the document, not the crew block: the menu at the top right
+    // (Settings, Help) sits in the Crew app page's bar, outside it. A link
+    // to a whole panel (the menu's) shows it from the top of the page.
+    document.addEventListener('click', function (e) {
         var link = e.target.closest ? e.target.closest('[data-eventcrew-goto]') : null;
         var target = link ? document.getElementById(link.getAttribute('data-eventcrew-goto')) : null;
         var holder = target && target.closest('[data-eventcrew-panel]');
-        if (!holder) { return; }
+        if (!target || !root.contains(target)) { return; }
         e.preventDefault();
+        if (!holder) {
+            // Above the tabs (the Door scanner): scroll there, focus its button.
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            var control = target.querySelector('button, a');
+            if (control) { control.focus({ preventScroll: true }); }
+            return;
+        }
         show(holder.getAttribute('data-eventcrew-panel'), false);
+        if (holder === target) {
+            window.scrollTo(0, 0);
+            return;
+        }
         // A card on one of the Admin tab's screens: that screen opens too.
         var sub = target.closest('[data-eventcrew-subpanel]');
         var subLink = sub && root.querySelector('[data-eventcrew-subtab="' + sub.getAttribute('data-eventcrew-subpanel') + '"]');
@@ -3092,6 +3144,49 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         top();
         window.addEventListener('load', function () { top(); setTimeout(top, 0); }, { once: true });
     }
+})();
+
+/*
+ * The menu at the top right ("Hi Name ☰": Settings, Help, Sign out). A
+ * disclosure: the button opens and closes the list under it; Esc, a click
+ * or tap outside it, or focus leaving it close it again. Without this script
+ * the list stays a row of plain links under the name.
+ */
+(function () {
+    [].slice.call(document.querySelectorAll('[data-eventcrew-usermenu]')).forEach(function (menu) {
+        var button = menu.querySelector('.eventcrew-usermenu-button');
+        var list = menu.querySelector('.eventcrew-usermenu-list');
+        if (!button || !list) { return; }
+
+        function setOpen(open, focusButton) {
+            list.hidden = !open;
+            button.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (!open && focusButton) { button.focus(); }
+        }
+
+        menu.classList.add('is-ready');
+        setOpen(false, false);
+
+        button.addEventListener('click', function () {
+            setOpen(list.hidden, false);
+        });
+        menu.addEventListener('keydown', function (e) {
+            if ((e.key === 'Escape' || e.key === 'Esc') && !list.hidden) {
+                e.preventDefault();
+                setOpen(false, true);
+            }
+        });
+        menu.addEventListener('focusout', function (e) {
+            if (e.relatedTarget && !menu.contains(e.relatedTarget)) { setOpen(false, false); }
+        });
+        // Choosing Settings or Help closes it; the tab script shows the panel.
+        list.addEventListener('click', function (e) {
+            if (e.target.closest && e.target.closest('a')) { setOpen(false, false); }
+        });
+        document.addEventListener('click', function (e) {
+            if (!list.hidden && !menu.contains(e.target)) { setOpen(false, false); }
+        });
+    });
 })();
 
 /*
@@ -3302,7 +3397,7 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 4000);
     }
 
-    // A toast carried over a reload by a Me-tab form (data-eventcrew-reload).
+    // A toast carried over a reload by a Tasks or Tickets tab form (data-eventcrew-reload).
     try {
         var carried = sessionStorage.getItem('eventcrew_toast');
         if (carried) {
@@ -3788,7 +3883,7 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
                 showToast(res.notice);
             }
             /*
-             * A Me-tab form (Cancel, Give away, Take someone's task) changes
+             * A Tasks or Tickets tab form (Cancel, Give away, Take someone's task) changes
              * cards the board swap does not redraw: reload onto its card, and
              * carry the toast over the reload. res.changed === false means
              * nothing happened (a typo in the email), so the form stays filled.

@@ -80,19 +80,6 @@
 .eventcrew-signup .eventcrew-profile label { display: block; margin-top: .75em; font-weight: 600; }
 .eventcrew-signup .eventcrew-profile .wp-element-input { display: block; width: 100%; max-width: 28em; box-sizing: border-box; }
 /*
- * Name on the left, Sign out on the right. The form is a block element, so
- * without the flex it drops to its own row and ends up nowhere near the name it
- * belongs to.
- *
- * Centred rather than on a shared baseline now that Sign out is a real button:
- * a baseline lines up the two pieces of text and leaves the button's padding
- * hanging below the name, which reads as misalignment rather than as intent.
- */
-.eventcrew-signup .eventcrew-identity {
-    display: flex; align-items: center; gap: .5em; flex-wrap: wrap;
-    margin: 0 0 .6em; font-size: .9em;
-}
-/*
  * A little air above each heading, so a section's title is not sitting on the
  * button that ended the section before it. Margins between the two collapse, so
  * this is the gap rather than an addition to one.
@@ -361,7 +348,7 @@
 }
 
 /*
- * The Me tab's parts (My tasks, What you've done, Tickets) are cards like the
+ * The Tasks and Tickets tabs' parts are cards like the
  * board's events. Rows get the same side padding as a board row; anything that
  * is not a list (a note, the credit form) sits in a padded body.
  */
@@ -554,7 +541,7 @@
 .eventcrew-signup .eventcrew-card-body > .eventcrew-admin-lead { margin: 0; }
 .eventcrew-signup .eventcrew-admin-line + .eventcrew-admin-line { margin-top: .3em; }
 /*
- * One entry in the Me tab's Tickets, Tasks, Past tickets and Past tasks
+ * One entry in the Tasks, Past tasks, Tickets and Past tickets
  * (signup-me-row.php, Owner 2026-11-08): the day in bold with the times or
  * the status on the right, the event's name, its DJs, what it is, then a
  * line of small text links. A thin accent bar on the left ties the lines of
@@ -849,17 +836,14 @@
 .eventcrew-signup button.eventcrew-settings-btn:focus-visible {
     background: color-mix(in srgb, currentColor 10%, transparent);
 }
-/* Pushed to the far end of the identity row, whatever the name's length. */
-.eventcrew-signup .eventcrew-signout { margin: 0 0 0 auto; }
 /*
- * The language switch (Suomi | English | ...), between the name and Sign out. It takes the push to the far
- * end itself and Sign out sits right after it. Plain text buttons: the one in
- * use is bold, the other underlined like a link.
+ * The language switch (Suomi | English | ...) in Settings, the only one
+ * since Owner 2026-11-13. Plain text buttons: the one in use is bold, the
+ * other underlined like a link.
  */
 .eventcrew-signup .eventcrew-language {
-    display: flex; flex-wrap: wrap; align-items: center; gap: .35em; margin: 0 0 0 auto;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .35em; margin: 0;
 }
-.eventcrew-signup .eventcrew-language + .eventcrew-signout { margin-left: .5em; }
 .eventcrew-signup .eventcrew-language button {
     background: none; border: 0; padding: 0; font: inherit; color: inherit;
     text-decoration: underline; cursor: pointer;
@@ -1011,13 +995,14 @@
 .eventcrew-signup .eventcrew-standing-bar-limit { position: absolute; top: -.15em; bottom: -.15em; left: var(--eventcrew-bar-limit); width: 2px; margin-left: -1px; background: currentColor; opacity: .6; }
 .eventcrew-signup .eventcrew-standing-bar-label { margin: 0 0 .4em; }
 /*
- * The header card: name, language and Sign out in its top bar, standing in
- * its body. The bar keeps the identity row's centring and its smaller text.
+ * The Summary card (the header card): its title in the top bar, the
+ * standing, counts and links in its body. Narrower than the panels under it,
+ * and centred.
  */
-/* Narrower than the panels under it, and centred. */
 .eventcrew-signup .eventcrew-header-card { max-width: 32em; margin-inline: auto; }
-.eventcrew-signup .eventcrew-header-card .eventcrew-identity { margin: 0; align-items: center; }
-.eventcrew-signup .eventcrew-header-card .eventcrew-identity-name { font-weight: 600; }
+/* Its lines are links to their cards; a line's height, not a 44px button's, so the card stays short on a phone. */
+.eventcrew-signup .eventcrew-standing .eventcrew-textlink { display: inline; min-height: 0; padding: .2em 0; font-weight: inherit; }
+.eventcrew-signup .eventcrew-summary-coming > span:last-child { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0 .4em; }
 .eventcrew-signup .eventcrew-header-card .eventcrew-disclosure { margin-bottom: 0; }
 /* The crew guide under the person's details: one card body, so no second gap. */
 .eventcrew-signup .eventcrew-header-card .eventcrew-card-body + .eventcrew-header-guide { padding-top: 0; }
@@ -1346,22 +1331,6 @@
         margin-left: min(0px, calc(50% - 50vw + 24px)) !important;
         margin-right: min(0px, calc(50% - 50vw + 24px)) !important;
     }
-    /*
-     * On a phone the identity row wrapped and Sign out dropped under the
-     * name, on the left. Two columns instead: the name on the left, and on
-     * the right Suomi | English with Sign out stacked under it.
-     */
-    .eventcrew-signup .eventcrew-header-card .eventcrew-identity {
-        display: grid; grid-template-columns: minmax(0, 1fr) auto;
-        align-items: center; column-gap: .75em; row-gap: .4em;
-    }
-    .eventcrew-signup .eventcrew-identity:has(.eventcrew-language) .eventcrew-identity-name {
-        grid-row: span 2;
-    }
-    .eventcrew-signup .eventcrew-header-card .eventcrew-language,
-    .eventcrew-signup .eventcrew-header-card .eventcrew-signout {
-        grid-column: 2; justify-self: end; margin: 0;
-    }
 }
 
 /* Sign in with Telegram, while the code is made: a small spinner after the label. */
@@ -1544,3 +1513,60 @@
 .eventcrew-signup .eventcrew-ai-summary { margin: .5em 0 0; font-weight: 600; }
 .eventcrew-signup .eventcrew-ai-actions { display: flex; flex-wrap: wrap; gap: .5em; margin-top: .6em; white-space: normal; }
 .eventcrew-signup .eventcrew-ai-actions > * { margin: 0; }
+
+/*
+ * The menu at the top right, signed in (Owner 2026-11-13): "Hi Name ☰", a
+ * button that opens Settings, Help and Sign out under it. On the Crew app's
+ * own page it sits in the app bar, outside .eventcrew-signup, so these rules
+ * are not scoped to it and bring their own fallbacks. Inside a theme page it
+ * has a row of its own at the top right of the crew block. The open list is
+ * anchored to the button's right edge and never wider than the screen less
+ * the page's 16px gutters, so it cannot run off the right on a phone.
+ * Without the script (no .is-ready) the entries are a row of links.
+ */
+.eventcrew-usermenu-row { display: flex; justify-content: flex-end; margin: 0 0 .25em; }
+.eventcrew-usermenu { position: relative; margin-left: auto; max-width: 100%; }
+.eventcrew-usermenu-button {
+    display: inline-flex; align-items: center; gap: .4em; min-height: 44px; max-width: 100%;
+    margin: 0; padding: 0 .2em 0 .5em; background: none; border: 0; border-radius: 6px;
+    color: inherit; font: inherit; font-weight: 600; line-height: 1.2; cursor: pointer;
+}
+.eventcrew-usermenu-button:hover,
+.eventcrew-usermenu-button:focus-visible,
+.eventcrew-usermenu-button[aria-expanded="true"] { background: color-mix(in srgb, currentColor 10%, transparent); }
+.eventcrew-usermenu-hi { min-width: 0; max-width: 11em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eventcrew-usermenu-icon { flex: none; width: 1.4em; height: 1.4em; }
+.eventcrew-usermenu-list { display: flex; flex-wrap: wrap; gap: 0 1em; margin: 0; padding: 0; list-style: none; }
+.eventcrew-usermenu-list li { margin: 0; padding: 0; }
+.eventcrew-usermenu-list li::before { content: none; }
+.eventcrew-usermenu-list form { margin: 0; }
+.eventcrew-usermenu.is-ready .eventcrew-usermenu-list {
+    position: absolute; top: 100%; right: 0; z-index: 60;
+    display: block; box-sizing: border-box; min-width: 11em; max-width: calc(100vw - 32px);
+    margin-top: 4px; padding: .3em 0;
+    background: var(--eventcrew-page-bg, var(--wp--preset--color--base, Canvas));
+    color: inherit;
+    border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+    border-radius: var(--wp--custom--border-radius, 8px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .28);
+}
+.eventcrew-usermenu.is-ready .eventcrew-usermenu-list[hidden] { display: none; }
+.eventcrew-usermenu-list a,
+.eventcrew-usermenu-list button {
+    display: flex; align-items: center; box-sizing: border-box; width: 100%; min-height: 44px;
+    margin: 0; padding: .5em 1.1em; background: none; border: 0; border-radius: 0; box-shadow: none;
+    color: inherit; font: inherit; font-weight: 600; letter-spacing: normal; text-transform: none;
+    text-align: left; text-decoration: none; line-height: 1.3; cursor: pointer; white-space: nowrap;
+}
+.eventcrew-usermenu:not(.is-ready) .eventcrew-usermenu-list a,
+.eventcrew-usermenu:not(.is-ready) .eventcrew-usermenu-list button { padding: 0; text-decoration: underline; }
+.eventcrew-usermenu-list a:hover,
+.eventcrew-usermenu-list a:focus-visible,
+.eventcrew-usermenu-list button:hover,
+.eventcrew-usermenu-list button:focus-visible { background: color-mix(in srgb, currentColor 10%, transparent); outline: none; }
+.eventcrew-usermenu-list [aria-current="page"] { box-shadow: inset 3px 0 0 var(--eventcrew-accent, currentColor); }
+
+/* The crew's Telegram group: a small text link with its icon, under the panels. */
+.eventcrew-signup .eventcrew-grouplink { margin: 1.5em 0 .5em; text-align: center; font-size: .95em; }
+.eventcrew-signup .eventcrew-grouplink .eventcrew-textlink { gap: .4em; }
+.eventcrew-signup .eventcrew-grouplink .eventcrew-link-icon { flex: none; width: 1.1em; height: 1.1em; }

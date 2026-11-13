@@ -246,7 +246,9 @@ final class AssistantKnowledgeTest extends TestCase
         $member = AssistantKnowledge::webPlacesText(false);
         $organizer = AssistantKnowledge::webPlacesText(true);
 
-        self::assertStringContainsString('Me tab', $member);
+        self::assertStringContainsString('Tasks tab', $member);
+        self::assertStringContainsString('Tickets tab', $member);
+        self::assertStringNotContainsString('Me tab', $member);
         self::assertStringNotContainsString('Admin tab', $member);
         self::assertStringContainsString('Admin tab → People', $organizer);
 

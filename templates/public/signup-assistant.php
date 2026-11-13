@@ -143,6 +143,8 @@ $eventcrew_ai_line = static function (string $where) use ($eventcrew_ai_placehol
     // "Admin → Roster" for a card on one of the Admin tab's screens.
     var tabName = function (target) {
         var panel = target.closest('[data-eventcrew-panel]');
+        // Outside every tab (the Door scanner at the top): its own words.
+        if (!panel) { return target.textContent.replace(/\s+/g, ' ').trim(); }
         var tab = panel && document.getElementById('eventcrew-tab-' + panel.getAttribute('data-eventcrew-panel'));
         var name = tab ? tab.textContent.trim() : '';
         var sub = target.closest('[data-eventcrew-subpanel]');

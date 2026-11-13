@@ -3116,12 +3116,6 @@ msgid ""
 msgstr ""
 "Hur uppgifter, biljetter, fribiljetter och pålitlighet fungerar, via e-post och Telegram, en gång till varje medlem. Arrangörer får också arrangörsguiden. Nya medlemmar får det när de bekräftar sin e-post; alla andra via körningen varje timme, inom aviseringstiderna, 25 personer per timme. Använd \"Skicka välkomstmeddelandet till mig\" nedan för att kolla det först."
 
-#: templates/admin/settings.php:1216
-msgid ""
-"How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the Crew app. A line starting with \"## \" is a heading, lines starting with \"- \" are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing."
-msgstr ""
-"Hur den här webbplatsen drivs: var den finns, vilka lösningar den behöver, hur e-post kommer och går, externa tjänster. Visas bara för arrangörer, under fliken Hjälp i Crew-appen. En rad som börjar med \"## \" är en rubrik, rader som börjar med \"- \" är en lista, och en tom rad börjar ett nytt stycke. Skriv inga lösenord eller nycklar här. Lämna tomt för att inte visa något."
-
 #: src/Support/MessageTemplates.php:1008
 msgid ""
 "How to cancel the task or find someone to take it over: in the bot, or, for a person with no Telegram chat, on the crew page, with its link."
@@ -3371,12 +3365,6 @@ msgstr "Installerad"
 #. translators: %s: the date and time the ticket was issued
 msgid "Issued %s"
 msgstr "Utfärdad %s"
-
-#: src/Support/WelcomeSender.php:470
-msgid ""
-"It is the first button in your sign-up confirmation, and the Me tab lists all your tickets."
-msgstr ""
-"Det är den första knappen i din anmälningsbekräftelse, och fliken Jag visar alla dina biljetter."
 
 #: src/Support/TakeoverService.php:509
 #. translators: %d: hours before the task starts
@@ -3773,10 +3761,6 @@ msgstr "maj"
 msgctxt "short month name"
 msgid "May"
 msgstr "maj"
-
-#: templates/public/signup.php:98 templates/public/signup.php:404
-msgid "Me"
-msgstr "Jag"
 
 #: templates/admin/settings.php:248 templates/public/signup.php:1830
 msgid "Measured from"
@@ -4700,10 +4684,6 @@ msgstr "Öppna gruppen i Telegram"
 #: templates/public/signup.php:1167
 msgid "Open the sales desk"
 msgstr "Öppna försäljningsdisken"
-
-#: templates/public/signup.php:428
-msgid "Open the sales desk on this device"
-msgstr "Öppna försäljningsdisken på den här enheten"
 
 #: src/Support/Mailer.php:447
 msgid "Open the signup page"
@@ -6450,11 +6430,6 @@ msgstr "Anmälningar är pausade på ditt konto — kontakta arrangören."
 msgid "Signature"
 msgstr "Signatur"
 
-#: templates/public/signup.php:324
-#. translators: %s: person's name
-msgid "Signed in as %s."
-msgstr "Inloggad som %s."
-
 #: src/Telegram/WebLoginBot.php:173
 msgid "Signed in. You can go back to the crew app."
 msgstr "Inloggad. Du kan gå tillbaka till crew-appen."
@@ -6742,11 +6717,6 @@ msgstr ""
 #: templates/public/signup-board.php:196
 msgid "Talk to the team at an event"
 msgstr "Prata med teamet på ett evenemang"
-
-#: src/Support/MessageTemplates.php:2140
-#. translators: %s: link to the crew page
-msgid "Tap Sales desk in the Me tab of the crew page (%s)."
-msgstr "Tryck på Försäljningsdisken i fliken Jag på crew-sidan (%s)."
 
 #: src/Support/MessageTemplates.php:2129
 msgid "Tap 💳 Sales desk below."
@@ -7341,13 +7311,6 @@ msgstr ""
 #: templates/public/door.php:84
 msgid "The QR code could not be drawn. Use Copy link instead."
 msgstr "QR-koden kunde inte ritas. Använd Kopiera länk i stället."
-
-#: src/Support/MessageTemplates.php:2135
-#. translators: %s: link to the crew page
-msgid ""
-"The Sales desk card is under Door in the Admin tab of the crew page (%s)."
-msgstr ""
-"Kortet Försäljningsdisken finns under Dörr på fliken Admin på crew-sidan (%s)."
 
 #: templates/admin/settings.php:1153
 msgid ""
@@ -10540,13 +10503,6 @@ msgstr "av %s incheckade"
 msgid "ok"
 msgstr "ok"
 
-#: src/Support/MessageTemplates.php:1178
-#. translators: %s: link to the crew page
-msgid ""
-"open the Me tab of the crew page (%s) and pick a night under Tickets to get your free ticket."
-msgstr ""
-"öppna fliken Jag på crew-sidan (%s) och välj en kväll under Biljetter för att få din fribiljett."
-
 #: src/Admin/SettingsPage.php:1351
 msgid "organizer Telegram message"
 msgstr "Telegram-meddelande till arrangör"
@@ -11457,20 +11413,11 @@ msgstr "Ge eller ta bort roller"
 msgid "Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers."
 msgstr "Problem, feedback eller en bugg? Säg det bara till boten: den skickar det vidare till arrangörerna."
 
-msgid "How the %s crew works. Your own numbers are in the Me tab, and the bot shows them when you ask in a private chat."
-msgstr "Så fungerar %s crew. Dina egna siffror finns i fliken Jag, och boten visar dem när du frågar i en privat chatt."
-
-msgid "How to spend a credit: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app."
-msgstr "Hur man använder en fribiljett: tomt för en person med Telegram-chatt; för en person utan, fliken Jag i Crew-appen."
-
 msgid "If you cannot reach the bot, contact the maintainer, %s, or just try again a bit later."
 msgstr "Om du inte når boten, kontakta systemansvarig, %s, eller försök igen lite senare."
 
 msgid "In a private chat with the bot, it is usually enough to write what you want in your own words. There are no commands or keywords to remember."
 msgstr "I en privat chatt med boten räcker det oftast att skriva vad du vill med egna ord. Det finns inga kommandon eller nyckelord att komma ihåg."
-
-msgid "It is the first button in your sign-up confirmation, and the Me tab of the Crew app lists all your tickets."
-msgstr "Det är den första knappen i din anmälningsbekräftelse, och fliken Jag i Crew-appen visar alla dina biljetter."
 
 msgid "It is the first button in your sign-up confirmation, and the bot lists all your tickets when you ask."
 msgstr "Det är den första knappen i din anmälningsbekräftelse, och boten visar alla dina biljetter när du frågar."
@@ -11496,23 +11443,11 @@ msgstr "Anmäl dig genom att trycka på 📋 Se lediga uppgifter nedan."
 msgid "To spend a credit, ask the bot for a free-entry ticket, or use the web page."
 msgstr "För att använda en fribiljett, be boten om en biljett med fritt inträde, eller använd webbsidan."
 
-msgid "To spend a credit, pick a night under Tickets in the Me tab of the Crew app."
-msgstr "För att använda en fribiljett, välj en kväll under Biljetter i fliken Jag i Crew-appen."
-
-msgid "Where all your tickets are: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app."
-msgstr "Var alla dina biljetter finns: tomt för en person med Telegram-chatt; för en person utan, fliken Jag i Crew-appen."
-
-msgid "Where to see your own numbers: ask the bot, or, for a person with no Telegram chat, the Me tab of the Crew app."
-msgstr "Var man ser sina egna siffror: fråga boten, eller, för en person utan Telegram-chatt, fliken Jag i Crew-appen."
-
 msgid "Whom to contact when the bot cannot be reached (Settings > Welcome message)."
 msgstr "Vem man kontaktar när boten inte går att nå (Inställningar > Välkomstmeddelande)."
 
 msgid "Whom to contact when the bot cannot be reached, for example an email address and a Telegram name. Shown in the welcome message. Empty: the text in the box."
 msgstr "Vem man kontaktar när boten inte går att nå, till exempel en e-postadress och ett Telegram-namn. Visas i välkomstmeddelandet. Tomt: texten i rutan."
-
-msgid "You can see your own numbers any time in the Me tab of the Crew app."
-msgstr "Du kan se dina egna siffror när som helst i fliken Jag i Crew-appen."
 
 #: src/Telegram/OnboardingService.php:333
 msgid "A few questions for the organizers, then I’ll email you the link. Have you worked on the crew here before?"
@@ -13115,9 +13050,6 @@ msgstr "Du kan ge bort en fribiljett som du inte längre behöver."
 msgid "Where do I see my credits and tasks?"
 msgstr "Var ser jag mina fribiljetter och uppgifter?"
 
-msgid "In My info in the bot, and in the Me tab on the web page."
-msgstr "Under Min info i boten och på fliken Jag på webbsidan."
-
 msgid "How do I choose which messages I get?"
 msgstr "Hur väljer jag vilka meddelanden jag får?"
 
@@ -13879,12 +13811,6 @@ msgstr "Du är utloggad. Ladda om sidan."
 msgid "edited"
 msgstr "redigerad"
 
-msgid "I do not know that. The Help tab has more, or ask an organizer."
-msgstr "Det vet jag inte. Fliken Hjälp har mer, eller fråga en arrangör."
-
-msgid "I cannot do that for you here. The Help tab shows what you can do."
-msgstr "Det kan jag inte göra åt dig här. Fliken Hjälp visar vad du kan göra."
-
 msgid "First confirm your email address in Settings."
 msgstr "Bekräfta först din e-postadress under Inställningar."
 
@@ -13990,10 +13916,6 @@ msgstr "Här är din länk till Crew-appen — gäller i 30 minuter, en gång. N
 msgid "If the link opens inside Telegram, open it in your browser first."
 msgstr "Om länken öppnas i Telegram, öppna den i webbläsaren först."
 
-#: templates/public/signup-app-install.php:123 templates/public/signup-app-install.php:142
-msgid "In the app, turn on notifications: Settings tab → Notifications → Turn on notifications on this device."
-msgstr "Slå på aviseringar i appen: fliken Inställningar → Aviseringar → Slå på aviseringar på den här enheten."
-
 #: templates/public/signup-app-install.php:126
 msgid "No Add to Home Screen in the Share menu? Open this page in Safari and try again."
 msgstr "Inget Lägg till på hemskärmen i Dela-menyn? Öppna sidan i Safari och försök igen."
@@ -14013,10 +13935,6 @@ msgstr "Öppna webbläsarens meny ⋮."
 #: templates/public/signup-app-install.php:130
 msgid "Opened inside Telegram or another app? Open this page in your browser first."
 msgstr "Öppnades sidan i Telegram eller en annan app? Öppna den i webbläsaren först."
-
-#: templates/public/signup-app-install.php:148
-msgid "Settings tab → Notifications → Turn on notifications on this device."
-msgstr "Fliken Inställningar → Aviseringar → Slå på aviseringar på den här enheten."
 
 #: templates/public/signup-app-install.php:146
 msgid "This browser does not install apps, but notifications work while this page is open in a tab."
@@ -14073,3 +13991,81 @@ msgstr "En person räknas en gång i månaden. Aktiva installationer: öppnade f
 #: templates/admin/settings.php
 msgid "People count once a month. Active installs: opened from the home screen. Devices with notifications are devices, not people."
 msgstr "En person räknas en gång i månaden. Aktiva installationer: öppnade från hemskärmen. Enheter med aviseringar räknas per enhet, inte per person."
+
+#: templates/admin/settings.php:1216
+msgid "How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in Help in the Crew app. A line starting with \"## \" is a heading, lines starting with \"- \" are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing."
+msgstr "Hur den här webbplatsen drivs: var den finns, vilka lösningar den behöver, hur e-post kommer och går, externa tjänster. Visas bara för arrangörer, under Hjälp i Crew-appen. En rad som börjar med \"## \" är en rubrik, rader som börjar med \"- \" är en lista, och en tom rad börjar ett nytt stycke. Skriv inga lösenord eller nycklar här. Lämna tomt för att inte visa något."
+
+#: src/Support/WelcomeSender.php:470
+msgid "It is the first button in your sign-up confirmation, and the Tickets tab lists all your tickets."
+msgstr "Det är den första knappen i din anmälningsbekräftelse, och fliken Biljetter visar alla dina biljetter."
+
+#: src/Support/MessageTemplates.php:2140
+#. translators: %s: link to the crew page
+msgid "Tap 🚪 Door scanner at the top of the crew page (%s)."
+msgstr "Tryck på 🚪 Dörrskanner högst upp på crew-sidan (%s)."
+
+#: src/Support/MessageTemplates.php:1178
+#. translators: %s: link to the crew page
+msgid "open the Tickets tab of the crew page (%s) and pick a night to get your free ticket."
+msgstr "öppna fliken Biljetter på crew-sidan (%s) och välj en kväll för att få din fribiljett."
+
+msgid "How the %s crew works. Your own numbers are in the Summary at the top, and the bot shows them when you ask in a private chat."
+msgstr "Så fungerar %s crew. Dina egna siffror finns i Sammanfattning högst upp, och boten visar dem när du frågar i en privat chatt."
+
+msgid "How to spend a credit: empty for a person with a Telegram chat; for a person with none, the Tickets tab of the Crew app."
+msgstr "Hur man använder en fribiljett: tomt för en person med Telegram-chatt; för en person utan, fliken Biljetter i Crew-appen."
+
+msgid "It is the first button in your sign-up confirmation, and the Tickets tab of the Crew app lists all your tickets."
+msgstr "Det är den första knappen i din anmälningsbekräftelse, och fliken Biljetter i Crew-appen visar alla dina biljetter."
+
+msgid "To spend a credit, pick a night under Get a ticket in the Tickets tab of the Crew app."
+msgstr "För att använda en fribiljett, välj en kväll under Skaffa en biljett i fliken Biljetter i Crew-appen."
+
+msgid "Where all your tickets are: empty for a person with a Telegram chat; for a person with none, the Tickets tab of the Crew app."
+msgstr "Var alla dina biljetter finns: tomt för en person med Telegram-chatt; för en person utan, fliken Biljetter i Crew-appen."
+
+msgid "Where to see your own numbers: ask the bot, or, for a person with no Telegram chat, the Summary in the Crew app."
+msgstr "Var man ser sina egna siffror: fråga boten, eller, för en person utan Telegram-chatt, Sammanfattning i Crew-appen."
+
+msgid "You can see your own numbers any time in the Summary at the top of the Crew app."
+msgstr "Du kan se dina egna siffror när som helst i Sammanfattning högst upp i Crew-appen."
+
+msgid "In My info in the bot, and in the Summary at the top of the web page."
+msgstr "Under Min info i boten och i Sammanfattning högst upp på webbsidan."
+
+msgid "I do not know that. Help in the top-right menu has more, or ask an organizer."
+msgstr "Det vet jag inte. Hjälp i menyn uppe till höger har mer, eller fråga en arrangör."
+
+msgid "I cannot do that for you here. Help in the top-right menu shows what you can do."
+msgstr "Det kan jag inte göra åt dig här. Hjälp i menyn uppe till höger visar vad du kan göra."
+
+#: templates/public/signup-app-install.php:123 templates/public/signup-app-install.php:142
+msgid "In the app, turn on notifications: Menu → Settings → Notifications → Turn on notifications on this device."
+msgstr "Slå på aviseringar i appen: Meny → Inställningar → Aviseringar → Slå på aviseringar på den här enheten."
+
+#: templates/public/signup-app-install.php:148
+msgid "Menu → Settings → Notifications → Turn on notifications on this device."
+msgstr "Meny → Inställningar → Aviseringar → Slå på aviseringar på den här enheten."
+
+msgid "Hi %s"
+msgstr "Hej %s"
+
+msgid "Menu"
+msgstr "Meny"
+
+msgid "Summary"
+msgstr "Sammanfattning"
+
+msgid "Door scanner"
+msgstr "Dörrskanner"
+
+msgid "%d task coming"
+msgid_plural "%d tasks coming"
+msgstr[0] "%d uppgift kommer"
+msgstr[1] "%d uppgifter kommer"
+
+msgid "%d ticket"
+msgid_plural "%d tickets"
+msgstr[0] "%d biljett"
+msgstr[1] "%d biljetter"

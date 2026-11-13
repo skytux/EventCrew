@@ -55,31 +55,8 @@ $eventcrew_language = $eventcrew_page->language();
         opacity: 1;
         text-decoration: underline;
     }
-    /* The language switch, on the right of the bar: plain text buttons, the one in use bold. */
-    .eventcrew-app-bar .eventcrew-language {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 2px 6px;
-        margin: 0 0 0 auto;
-    }
-    .eventcrew-app-bar .eventcrew-language button {
-        min-height: 32px;
-        padding: 0 4px;
-        background: none;
-        border: 0;
-        font: inherit;
-        color: inherit;
-        text-decoration: underline;
-        text-underline-offset: .2em;
-        cursor: pointer;
-        opacity: .85;
-    }
-    .eventcrew-app-bar .eventcrew-language button[aria-pressed="true"] {
-        font-weight: 700;
-        text-decoration: none;
-        opacity: 1;
-    }
+    /* The menu ("Hi Name ☰") on the right of the bar; its own rules are in eventcrew.css. */
+    .eventcrew-app-bar .eventcrew-usermenu { margin: 0 0 0 auto; }
     .eventcrew-app-main {
         box-sizing: border-box;
         width: 100%;
@@ -95,7 +72,7 @@ $eventcrew_language = $eventcrew_page->language();
 echo $eventcrew_page->banner();
 ?>
 <?php
-// "← Website" on one side and, signed in, the language switch the crew page
+// "← Website" on one side and, signed in, the "Hi Name ☰" menu the crew page
 // handed over (CrewAppPage::putInBar()) on the other: one line, not two.
 ?>
 <nav class="eventcrew-app-bar">

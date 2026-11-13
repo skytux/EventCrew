@@ -321,7 +321,7 @@ final class AssistantWebControllerTest extends TestCase
         [, $body] = $this->post(['op' => 'ask', 'text' => 'my tickets']);
 
         self::assertSame(
-            ['kind' => AssistantWebActions::GOTO, 'targets' => ['eventcrew-my-tickets', 'eventcrew-panel-me']],
+            ['kind' => AssistantWebActions::GOTO, 'targets' => ['eventcrew-my-tickets', 'eventcrew-panel-tickets']],
             $body['action']
         );
         self::assertSame([[7, '/me tickets', false]], $this->assistant->noted);

@@ -263,13 +263,13 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
         $this->assertFixture('help_text', \EventCrew\Support\WelcomeSender::helpText());
     }
 
-    /** On the crew page the Help tab names the Me tab for the tickets, not /me tickets. */
-    public function testTheHelpTabNamesTheMeTabForTickets(): void
+    /** On the crew page the Help names the Tickets tab for the tickets, not /me tickets. */
+    public function testTheHelpNamesTheTicketsTabForTickets(): void
     {
         $text = \EventCrew\Support\WelcomeSender::helpText();
 
         self::assertStringContainsString(
-            'It is the first button in your sign-up confirmation, and the Me tab lists all your tickets.',
+            'It is the first button in your sign-up confirmation, and the Tickets tab lists all your tickets.',
             $text
         );
         self::assertStringNotContainsString('/me tickets', $text);
@@ -279,7 +279,7 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
             static fn (): string => \EventCrew\Support\WelcomeSender::helpText()
         );
         self::assertStringContainsString(
-            'Se on ilmoittautumisvahvistuksesi ensimmäinen painike, ja Minä-välilehti listaa kaikki lippusi.',
+            'Se on ilmoittautumisvahvistuksesi ensimmäinen painike, ja Liput-välilehti listaa kaikki lippusi.',
             $finnish
         );
     }
@@ -440,7 +440,10 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
 
     // ---- A person with no Telegram chat gets the crew page (E2) -----------
 
-    /** The web-only lines name the Me tab of the Crew app, with no visible address (Owner 2026-11-07). */
+    /**
+     * The web-only lines name the Summary and the Tickets tab of the Crew app
+     * (Owner 2026-11-13), with no visible address (Owner 2026-11-07).
+     */
     public function testAWebOnlyPersonsWelcomeEmailPointsToTheCrewPage(): void
     {
         $this->webOnly = true;
@@ -450,16 +453,16 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
         self::assertCount(2, $sent);
         $body = explode("\n\n—\n", $sent[0])[0];
         self::assertStringContainsString(
-            'This message explains how it all works. You can see your own numbers any time in the Me tab of the Crew app.',
+            'This message explains how it all works. You can see your own numbers any time in the Summary at the top of the Crew app.',
             $body
         );
         self::assertStringContainsString(
-            'It is the first button in your sign-up confirmation, and the Me tab of the Crew app lists all your tickets.',
+            'It is the first button in your sign-up confirmation, and the Tickets tab of the Crew app lists all your tickets.',
             $body
         );
         self::assertStringContainsString(
-            'tasks you complete. To spend a credit, pick a night under Tickets in the Me tab of the Crew app.'
-                . ' You then get a ticket for the night you choose.',
+            'tasks you complete. To spend a credit, pick a night under Get a ticket in the Tickets tab of the'
+                . ' Crew app. You then get a ticket for the night you choose.',
             $body
         );
         self::assertStringNotContainsString('/me', $body);
@@ -473,11 +476,11 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
 
         $sent = $this->sent();
         self::assertStringContainsString(
-            'Omat lukusi näet milloin vain Crew-sovelluksen Minä-välilehdellä.',
+            'Omat lukusi näet milloin vain Crew-sovelluksen yläosan Yhteenvedosta.',
             $sent[0]
         );
         self::assertStringContainsString(
-            'Käytä vapaalippu valitsemalla ilta kohdasta Liput Crew-sovelluksen Minä-välilehdellä. Saat silloin lipun',
+            'Käytä vapaalippu valitsemalla ilta kohdasta Hanki lippu Crew-sovelluksen Liput-välilehdellä. Saat silloin lipun',
             $sent[0]
         );
         self::assertStringNotContainsString('/me', $sent[0]);
@@ -492,7 +495,7 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
         $sent = $this->sent();
         self::assertCount(1, $sent);
         self::assertStringContainsString(
-            'Need another one? Tap Sales desk in the Me tab of the crew page (https://site.test/crew/).',
+            'Need another one? Tap 🚪 Door scanner at the top of the crew page (https://site.test/crew/).',
             $sent[0]
         );
         self::assertStringNotContainsString('/door', $sent[0]);
@@ -507,11 +510,11 @@ final class WelcomeAndDoorMessagesTest extends SalesDeskTestCase
         $sent = $this->sent();
         self::assertCount(1, $sent);
         self::assertStringContainsString(
-            'Tarvitsetko uuden myyntipisteen linkin? Myyntipiste-kortti on crew-sivun Ylläpito-välilehdellä'
-                . ' kohdassa Ovi (https://site.test/crew/).',
+            'Tarvitsetko uuden myyntipisteen linkin? Napauta 🚪 Oviskanneri crew-sivun yläosassa'
+                . ' (https://site.test/crew/).',
             $sent[0]
         );
-        self::assertStringNotContainsString('Minä-välilehdellä', $sent[0], 'an organizer has no Sales desk card in Me');
+        self::assertStringNotContainsString('Minä-välilehdellä', $sent[0], 'the old Me tab is gone');
         self::assertStringNotContainsString('/door', $sent[0]);
     }
 }

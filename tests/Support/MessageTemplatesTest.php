@@ -182,8 +182,8 @@ final class MessageTemplatesTest extends TestCase
 
         self::assertSame(
             "Hi Anna,\n\nAn organizer has given you a free-entry credit. You can spend it on any upcoming event —"
-                . ' open the Me tab of the crew page (https://site.test/crew/) and pick a night under Tickets to get'
-                . ' your free ticket.',
+                . ' open the Tickets tab of the crew page (https://site.test/crew/) and pick a night to get your'
+                . ' free ticket.',
             MessageTemplates::body('credit_granted', $web)
         );
         self::assertSame(
@@ -202,8 +202,8 @@ final class MessageTemplatesTest extends TestCase
         );
         self::assertSame(
             "Hei Anna,\n\njärjestäjä antoi sinulle vapaalipun. Voit käyttää sen mihin tahansa tulevaan tapahtumaan —"
-                . ' avaa crew-sivun Minä-välilehti (https://site.test/crew/) ja valitse ilta kohdasta Liput, niin saat'
-                . ' ilmaisen lippusi.',
+                . ' avaa crew-sivun Liput-välilehti (https://site.test/crew/) ja valitse ilta, niin saat ilmaisen'
+                . ' lippusi.',
             Language::run(Language::FINNISH, static fn (): string => MessageTemplates::body('credit_granted', $web))
         );
     }
@@ -239,11 +239,11 @@ final class MessageTemplatesTest extends TestCase
     }
 
     /**
-     * An organizer has no Sales desk card in the Me tab: theirs is under Door
-     * in the Admin tab. A web-only organizer's door help names that; anyone
-     * else on the sales desk keeps the Me tab.
+     * The 🚪 Door scanner button at the top of the crew page opens the sales
+     * desk for the sales-desk crew and organizers alike (Owner 2026-11-13),
+     * so a web-only person's door help names it for both.
      */
-    public function testTheWebDoorHelpNamesTheAdminTabOnlyForAnOrganizer(): void
+    public function testTheWebDoorHelpNamesTheDoorScanner(): void
     {
         $this->crewPage();
         $organizer = [
@@ -251,26 +251,19 @@ final class MessageTemplatesTest extends TestCase
             'day' => 'Sat 1 Aug',
         ];
         $crew = ['person' => $this->person(), 'day' => 'Sat 1 Aug'];
-        $admin = 'The Sales desk card is under Door in the Admin tab of the crew page (https://site.test/crew/).';
-        $me = 'Tap Sales desk in the Me tab of the crew page (https://site.test/crew/).';
+        $help = 'Tap 🚪 Door scanner at the top of the crew page (https://site.test/crew/).';
 
         foreach (['organizer_notice', 'sales_desk_link'] as $kind) {
-            self::assertStringContainsString($admin, MessageTemplates::body($kind, $organizer), $kind);
-            self::assertStringNotContainsString('Me tab', MessageTemplates::body($kind, $organizer), $kind);
-            self::assertStringContainsString($me, MessageTemplates::body($kind, $crew), $kind);
+            foreach ([$organizer, $crew] as $context) {
+                self::assertStringContainsString($help, MessageTemplates::body($kind, $context), $kind);
+                self::assertStringNotContainsString('Me tab', MessageTemplates::body($kind, $context), $kind);
+                self::assertStringContainsString(
+                    'Napauta 🚪 Oviskanneri crew-sivun yläosassa (https://site.test/crew/).',
+                    Language::run(Language::FINNISH, static fn (): string => MessageTemplates::body($kind, $context)),
+                    $kind
+                );
+            }
         }
-
-        self::assertStringContainsString(
-            'Myyntipiste-kortti on crew-sivun Ylläpito-välilehdellä kohdassa Ovi (https://site.test/crew/).',
-            Language::run(
-                Language::FINNISH,
-                static fn (): string => MessageTemplates::body('organizer_notice', $organizer)
-            )
-        );
-        self::assertStringContainsString(
-            'Napauta Myyntipiste crew-sivun Minä-välilehdellä (https://site.test/crew/).',
-            Language::run(Language::FINNISH, static fn (): string => MessageTemplates::body('sales_desk_link', $crew))
-        );
     }
 
     private function crewPage(): void

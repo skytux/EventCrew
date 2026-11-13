@@ -257,10 +257,17 @@ final class AssistantKnowledge
     {
         $lines = [
             '- Board tab: the open tasks; sign up there. Taking over someone\'s task is on the task too.',
-            '- Me tab: the person\'s own coming tasks (cancel there), tickets, the free-entry ticket and past tasks.',
-            '- Settings tab: name and email (Your details), notifications, language. The newsletter (the'
-                . ' announcement email) is turned on or off in Notifications, last row.',
-            '- Help tab: how this works and the FAQ.',
+            '- Summary card, under the tab bar on every tab: the person\'s standing, completed tasks,'
+                . ' free-entry credits and what is coming, each a link to its card.',
+            '- Tasks tab: the person\'s own coming tasks (cancel there) and past tasks.',
+            '- Tickets tab: get a free-entry ticket with a credit, the person\'s tickets (give one away there)'
+                . ' and past tickets.',
+            '- The menu at the top right (Hi + name): Settings, Help and Sign out.',
+            '- Settings (in that menu): name and email (Your details), notifications, language. The newsletter'
+                . ' (the announcement email) is turned on or off in Notifications, last row.',
+            '- Help (in that menu): how this works and the FAQ.',
+            '- Door scanner button at the top, for the sales-desk crew of the next night and organizers: opens'
+                . ' the sales desk on this device.',
             '- Who else works a night is not shown on this page.',
         ];
 

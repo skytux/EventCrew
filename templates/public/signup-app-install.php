@@ -124,7 +124,7 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
                             ?>
                         </span>
                     </li>
-                    <li><span><?php esc_html_e('In the app, turn on notifications: Settings tab → Notifications → Turn on notifications on this device.', 'eventcrew'); ?></span></li>
+                    <li><span><?php esc_html_e('In the app, turn on notifications: Menu → Settings → Notifications → Turn on notifications on this device.', 'eventcrew'); ?></span></li>
                 </ol>
                 <p class="eventcrew-muted"><?php esc_html_e('On iPhone, notifications work after you add this page to your Home Screen.', 'eventcrew'); ?></p>
                 <p class="eventcrew-muted"><?php esc_html_e('No Add to Home Screen in the Share menu? Open this page in Safari and try again.', 'eventcrew'); ?></p>
@@ -143,13 +143,13 @@ $eventcrew_app_start = (string) ($eventcrew_app_install['start'] ?? '');
                             ?>
                         </span>
                     </li>
-                    <li><span><?php esc_html_e('In the app, turn on notifications: Settings tab → Notifications → Turn on notifications on this device.', 'eventcrew'); ?></span></li>
+                    <li><span><?php esc_html_e('In the app, turn on notifications: Menu → Settings → Notifications → Turn on notifications on this device.', 'eventcrew'); ?></span></li>
                 </ol>
             </div>
             <div class="eventcrew-app-manual" data-eventcrew-app-how="desktop" hidden>
                 <p><?php esc_html_e('This browser does not install apps, but notifications work while this page is open in a tab.', 'eventcrew'); ?></p>
                 <ol class="eventcrew-app-how">
-                    <li><span><?php esc_html_e('Settings tab → Notifications → Turn on notifications on this device.', 'eventcrew'); ?></span></li>
+                    <li><span><?php esc_html_e('Menu → Settings → Notifications → Turn on notifications on this device.', 'eventcrew'); ?></span></li>
                 </ol>
             </div>
             <div class="eventcrew-app-actions">

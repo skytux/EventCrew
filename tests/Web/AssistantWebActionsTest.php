@@ -27,7 +27,7 @@ final class AssistantWebActionsTest extends TestCase
     {
         self::assertSame(['eventcrew-panel-board'], AssistantWebActions::plan('/board')['targets'] ?? null);
         self::assertSame(
-            ['eventcrew-past-tasks', 'eventcrew-panel-me'],
+            ['eventcrew-past-tasks', 'eventcrew-panel-tasks'],
             AssistantWebActions::plan('/me history')['targets'] ?? null
         );
         self::assertSame([HelpPage::PANEL_ANCHOR], AssistantWebActions::plan('/help')['targets'] ?? null);
@@ -44,7 +44,7 @@ final class AssistantWebActionsTest extends TestCase
     public function testAMemberNeverGetsAnAdminScreen(): void
     {
         self::assertSame(['kind' => AssistantWebActions::NONE], AssistantWebActions::plan('/standing Lou'));
-        self::assertSame(['eventcrew-me-sales'], AssistantWebActions::plan('menu:sales')['targets'] ?? null);
+        self::assertSame(['eventcrew-door-scanner'], AssistantWebActions::plan('menu:sales')['targets'] ?? null);
     }
 
     public function testAnOrganizerGetsTheAdminScreenWithTheDateOrName(): void

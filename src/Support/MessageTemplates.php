@@ -1841,7 +1841,7 @@ final class MessageTemplates
                         static fn (): string => __('tap 🎟 Free-entry ticket below.', 'eventcrew'),
                         static fn (string $url): string => sprintf(
                             /* translators: %s: link to the crew page */
-                            __('open the Me tab of the crew page (%s) and pick a night under Tickets to get your free ticket.', 'eventcrew'),
+                            __('open the Tickets tab of the crew page (%s) and pick a night to get your free ticket.', 'eventcrew'),
                             $url
                         )
                     ),
@@ -2855,21 +2855,21 @@ final class MessageTemplates
             // No visible address (Owner 2026-11-07): the crew page is the
             // email's See open tasks and Help buttons.
             'me_help' => self::botOrWeb(
-                __('Where to see your own numbers: ask the bot, or, for a person with no Telegram chat, the Me tab of the Crew app.', 'eventcrew'),
+                __('Where to see your own numbers: ask the bot, or, for a person with no Telegram chat, the Summary in the Crew app.', 'eventcrew'),
                 // One line for the numbers, tickets and credits: the bot's
                 // {credit_help} and {tickets_help} are empty.
                 static fn (): string => WelcomeSender::meBotLine(),
-                static fn (): string => __('You can see your own numbers any time in the Me tab of the Crew app.', 'eventcrew')
+                static fn (): string => __('You can see your own numbers any time in the Summary at the top of the Crew app.', 'eventcrew')
             ),
             'credit_help' => self::botOrWeb(
-                __('How to spend a credit: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app.', 'eventcrew'),
+                __('How to spend a credit: empty for a person with a Telegram chat; for a person with none, the Tickets tab of the Crew app.', 'eventcrew'),
                 static fn (): string => '',
-                static fn (): string => __('To spend a credit, pick a night under Tickets in the Me tab of the Crew app.', 'eventcrew')
+                static fn (): string => __('To spend a credit, pick a night under Get a ticket in the Tickets tab of the Crew app.', 'eventcrew')
             ),
             'tickets_help' => self::botOrWeb(
-                __('Where all your tickets are: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app.', 'eventcrew'),
+                __('Where all your tickets are: empty for a person with a Telegram chat; for a person with none, the Tickets tab of the Crew app.', 'eventcrew'),
                 static fn (): string => '',
-                static fn (): string => __('It is the first button in your sign-up confirmation, and the Me tab of the Crew app lists all your tickets.', 'eventcrew')
+                static fn (): string => __('It is the first button in your sign-up confirmation, and the Tickets tab of the Crew app lists all your tickets.', 'eventcrew')
             ),
             'roles' => self::placeholder(
                 __('The tasks on offer, one line each, with what each one involves.', 'eventcrew'),
@@ -2929,19 +2929,14 @@ final class MessageTemplates
         $doorHelp = self::botOrWeb(
             __('How to get another sales desk link: in the bot, or, for a person with no Telegram chat, on the crew page, with its link.', 'eventcrew'),
             static fn (): string => __('Tap 💳 Sales desk below.', 'eventcrew'),
-            // An organizer has no Sales desk card in the Me tab; theirs is
-            // under Door in the Admin tab (templates/public/signup.php).
-            static fn (string $url, array $c): string => ($c['person'] ?? null) instanceof Person && $c['person']->isOrganizer
-                ? sprintf(
-                    /* translators: %s: link to the crew page */
-                    __('The Sales desk card is under Door in the Admin tab of the crew page (%s).', 'eventcrew'),
-                    $url
-                )
-                : sprintf(
-                    /* translators: %s: link to the crew page */
-                    __('Tap Sales desk in the Me tab of the crew page (%s).', 'eventcrew'),
-                    $url
-                )
+            // The Door scanner button at the top of the crew page, for the
+            // sales-desk crew and organizers alike (Owner 2026-11-13;
+            // templates/public/signup.php).
+            static fn (string $url): string => sprintf(
+                /* translators: %s: link to the crew page */
+                __('Tap 🚪 Door scanner at the top of the crew page (%s).', 'eventcrew'),
+                $url
+            )
         );
 
         return [

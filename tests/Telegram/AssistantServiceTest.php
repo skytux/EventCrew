@@ -1765,7 +1765,10 @@ final class AssistantServiceTest extends TelegramTestCase
         $answer = $this->service()->answerWeb(self::webPerson(), 'sign me up for the bar');
 
         self::assertNull($answer['action']);
-        self::assertSame('I cannot do that for you here. The Help tab shows what you can do.', $answer['text']);
+        self::assertSame(
+            'I cannot do that for you here. Help in the top-right menu shows what you can do.',
+            $answer['text']
+        );
     }
 
     public function testAnEmptyWebReplySaysTheHelpTab(): void
@@ -1774,7 +1777,10 @@ final class AssistantServiceTest extends TelegramTestCase
 
         $answer = $this->service()->answerWeb(self::webPerson(), 'what is the meaning of life?');
 
-        self::assertSame('I do not know that. The Help tab has more, or ask an organizer.', $answer['text']);
+        self::assertSame(
+            'I do not know that. Help in the top-right menu has more, or ask an organizer.',
+            $answer['text']
+        );
     }
 
     public function testAFailedModelCallGivesTheWebErrorSentence(): void

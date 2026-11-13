@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Previous / Next under a paged Me-tab list (Tasks, Past tasks; Paging, 25
+ * Previous / Next under a paged Tasks-tab list (Tasks, Past tasks; Paging, 25
  * to a page, Owner 2026-11-08). Plain links, so paging works without
- * JavaScript; each ends in the card's #id, which opens the Me tab on it.
+ * JavaScript; each ends in the card's #id, which opens the Tasks tab on it.
  * Nothing when the list fits on one page.
  *
  * Expects $eventcrew_pager = [arg, anchor] and $eventcrew_pages (each list's

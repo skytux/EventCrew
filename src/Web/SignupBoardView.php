@@ -121,10 +121,12 @@ final class SignupBoardView
             // The person's own upcoming tasks, soonest first, so "when am I next
             // on?" is answered up front rather than by hunting the board.
             'my_upcoming' => ($upcoming = Paging::slice(
-                null === $person ? [] : $this->upcomingFor($person->id),
+                $upcomingAll = null === $person ? [] : $this->upcomingFor($person->id),
                 $tasksPage
             ))['items'],
             'my_upcoming_paging' => ['page' => $upcoming['page'], 'pages' => $upcoming['pages']],
+            // All of them, not just this page: the Summary card's count.
+            'my_upcoming_total' => count($upcomingAll),
             // What they have already done, all of it like the bot's Past
             // tasks (Owner 2026-11-08), a page at a time. Standing is built
             // from exactly this, so showing it turns a score into something a
@@ -173,7 +175,7 @@ final class SignupBoardView
                 'sort' => $task->taskDate . ' ' . ($task->startsAt ?? ''),
                 'date' => $task->taskDate,
                 'task_id' => $task->id,
-                // The row's parts, drawn as the Me tab's entry: the day on
+                // The row's parts, drawn as the Tasks tab's entry: the day on
                 // top, the event and its DJs, then the role and its times.
                 'day' => $day,
                 'event' => $event['name'],
@@ -248,7 +250,7 @@ final class SignupBoardView
     /**
      * The address of page $page of the list $arg names (TASKS_PAGE_ARG or
      * PAST_PAGE_ARG), keeping the other list's page and ending in #$anchor,
-     * the card's id: the Me tab opens on it, and without JavaScript the page
+     * the card's id: its tab opens on it, and without JavaScript the page
      * scrolls to it. Page 1 leaves its argument out.
      *
      * @param array<string, int> $pages Each list's current page, by argument.
@@ -268,7 +270,7 @@ final class SignupBoardView
 
     /**
      * A Y-m-d date as the page shows dates to people: "Sat 7 Nov", in the
-     * site's language. The board and the Me tab use the same form, so a task
+     * site's language. The board and the Tasks tab use the same form, so a task
      * reads the same in both places. Anything that is not a date comes back
      * unchanged.
      */

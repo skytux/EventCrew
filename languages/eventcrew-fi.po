@@ -608,10 +608,6 @@ msgstr "Merkitty tehdyksi."
 msgid "Marked no-show."
 msgstr "Merkitty poissaolleeksi."
 
-#: templates/public/signup.php:255 templates/public/signup.php:287
-msgid "Me"
-msgstr "Minä"
-
 #: src/Support/DoorNewMember.php:88
 msgid "Member added. They got an email to confirm their address and join the Telegram group."
 msgstr "Jäsen lisätty. Hän sai sähköpostin, jolla vahvistaa osoitteensa ja liittyy Telegram-ryhmään."
@@ -794,10 +790,6 @@ msgstr "Avaa ryhmä"
 msgid "Open the group in Telegram"
 msgstr "Avaa ryhmä Telegramissa"
 
-#: templates/public/signup.php:493
-msgid "Open the sales desk on this device"
-msgstr "Avaa myyntipiste tällä laitteella"
-
 #: src/Support/NotificationPreferences.php:62
 msgid "Open-task alerts"
 msgstr "Avoimet tehtävät"
@@ -951,12 +943,6 @@ msgstr "Ilmoittaudu: %1$s · %2$s"
 #: src/Web/SignupController.php:697
 msgid "Sign-ups are paused on your account — please contact the organizer."
 msgstr "Ilmoittautumisesi on keskeytetty — ota yhteyttä järjestäjään."
-
-#. translators: %s: person's name
-#: templates/public/signup.php:155
-#, php-format
-msgid "Signed in as %s."
-msgstr "Kirjautuneena: %s."
 
 #: src/Web/SignupController.php:702
 msgid "Signed out everywhere. Any other browser or phone that was signed in as you will need a fresh link."
@@ -3661,9 +3647,6 @@ msgstr "Lipun teksti"
 
 msgid "Text shown on every ticket, under the VALID line, such as the door code and the address. Line breaks are kept. Left blank, the ticket shows only when the doors close, if it knows."
 msgstr "Teksti, joka näytetään jokaisessa lipussa VALID-rivin alla, esimerkiksi ovikoodi ja osoite. Rivinvaihdot säilyvät. Tyhjänä lipussa näkyy vain ovien sulkemisaika, jos se tiedetään."
-
-msgid "How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the Crew app. A line starting with \"## \" is a heading, lines starting with \"- \" are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing."
-msgstr "Miten tätä sivustoa ylläpidetään: missä se on hostattu, mitä kiertoteitä se tarvitsee, miten sähköposti kulkee, mitä ulkopuolisia palveluita on käytössä. Näytetään vain järjestäjille Crew-sovelluksen Ohje-välilehdellä. Merkeillä \"## \" alkava rivi on otsikko, merkeillä \"- \" alkavat rivit ovat luettelo, ja tyhjä rivi aloittaa uuden kappaleen. Älä kirjoita tähän salasanoja tai avaimia. Jätä tyhjäksi, jos et halua näyttää mitään."
 
 msgid "Who is responsible for the data"
 msgstr "Kuka vastaa tiedoista"
@@ -7235,12 +7218,6 @@ msgstr "Olet %1$s järjestäjänä. Myyntipisteen painike kirjaa tämän laittee
 msgid "Tap 💳 Sales desk below."
 msgstr "Napauta alta 💳 Myyntipiste."
 
-msgid "Tap Sales desk in the Me tab of the crew page (%s)."
-msgstr "Napauta Myyntipiste crew-sivun Minä-välilehdellä (%s)."
-
-msgid "The Sales desk card is under Door in the Admin tab of the crew page (%s)."
-msgstr "Myyntipiste-kortti on crew-sivun Ylläpito-välilehdellä kohdassa Ovi (%s)."
-
 msgid "When you sign up for a task, you get a free ticket for that night. Show it at the door. %s"
 msgstr "Kun ilmoittaudut tehtävään, saat sille illalle ilmaisen lipun. Näytä se ovella. %s"
 
@@ -7267,14 +7244,8 @@ msgstr[1] "Hei %1$s,\n\njärjestäjä antoi sinulle %2$d vapaalippua. Voit käyt
 msgid "How to get the free ticket: in the bot or the Crew app, or, for a person with no Telegram chat, on the crew page, with its link."
 msgstr "Miten ilmainen lippu saadaan: botissa tai Crew-sovelluksessa, tai henkilölle ilman Telegram-keskustelua crew-sivulla, linkin kanssa."
 
-msgid "open the Me tab of the crew page (%s) and pick a night under Tickets to get your free ticket."
-msgstr "avaa crew-sivun Minä-välilehti (%s) ja valitse ilta kohdasta Liput, niin saat ilmaisen lippusi."
-
 msgid "You earn 1 free-entry credit for every %1$d tasks you complete. %2$s You then get a ticket for the night you choose. Some nights (sold out, or special events) do not accept credits."
 msgstr "Saat 1 vapaalipun jokaisesta %1$d tekemästäsi tehtävästä. %2$s Saat silloin lipun valitsemallesi illalle. Joinakin iltoina (loppuunmyydyt tai erikoistapahtumat) vapaalippuja ei voi käyttää."
-
-msgid "It is the first button in your sign-up confirmation, and the Me tab lists all your tickets."
-msgstr "Se on ilmoittautumisvahvistuksesi ensimmäinen painike, ja Minä-välilehti listaa kaikki lippusi."
 
 msgctxt "date format"
 msgid "D j M"
@@ -8559,20 +8530,11 @@ msgstr "Anna tai poista rooleja"
 msgid "Any difficulty, feedback or a bug? Just tell the bot: it passes it on to the organizers."
 msgstr "Ongelma, palautetta tai bugi? Kerro botille: se välittää asian järjestäjille."
 
-msgid "How the %s crew works. Your own numbers are in the Me tab, and the bot shows them when you ask in a private chat."
-msgstr "Näin %s-crew toimii. Omat lukusi näet Minä-välilehdeltä, ja botti näyttää ne, kun kysyt yksityisviestillä."
-
-msgid "How to spend a credit: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app."
-msgstr "Vapaalipun käyttö: tyhjä, jos henkilöllä on Telegram-keskustelu; muuten Crew-sovelluksen Minä-välilehti."
-
 msgid "If you cannot reach the bot, contact the maintainer, %s, or just try again a bit later."
 msgstr "Jos botti ei vastaa, ota yhteyttä ylläpitäjään, %s, tai yritä hetken päästä uudelleen."
 
 msgid "In a private chat with the bot, it is usually enough to write what you want in your own words. There are no commands or keywords to remember."
 msgstr "Yksityisviestissä botille riittää yleensä, että kirjoitat omin sanoin, mitä haluat. Komentoja tai avainsanoja ei tarvitse muistaa."
-
-msgid "It is the first button in your sign-up confirmation, and the Me tab of the Crew app lists all your tickets."
-msgstr "Se on ilmoittautumisvahvistuksesi ensimmäinen painike, ja Crew-sovelluksen Minä-välilehti listaa kaikki lippusi."
 
 msgid "It is the first button in your sign-up confirmation, and the bot lists all your tickets when you ask."
 msgstr "Se on ilmoittautumisvahvistuksesi ensimmäinen painike, ja botti listaa kaikki lippusi, kun kysyt."
@@ -8598,23 +8560,11 @@ msgstr "Ilmoittaudu napauttamalla alta 📋 Avoimet tehtävät."
 msgid "To spend a credit, ask the bot for a free-entry ticket, or use the web page."
 msgstr "Käytä vapaalippu pyytämällä sitä botilta tai verkkosivulla."
 
-msgid "To spend a credit, pick a night under Tickets in the Me tab of the Crew app."
-msgstr "Käytä vapaalippu valitsemalla ilta kohdasta Liput Crew-sovelluksen Minä-välilehdellä."
-
-msgid "Where all your tickets are: empty for a person with a Telegram chat; for a person with none, the Me tab of the Crew app."
-msgstr "Missä kaikki lippusi ovat: tyhjä, jos henkilöllä on Telegram-keskustelu; muuten Crew-sovelluksen Minä-välilehti."
-
-msgid "Where to see your own numbers: ask the bot, or, for a person with no Telegram chat, the Me tab of the Crew app."
-msgstr "Missä omat luvut näkyvät: kysy botilta, tai jos henkilöllä ei ole Telegram-keskustelua, Crew-sovelluksen Minä-välilehti."
-
 msgid "Whom to contact when the bot cannot be reached (Settings > Welcome message)."
 msgstr "Kenelle ottaa yhteyttä, kun botti ei vastaa (Asetukset > Tervetuloviesti)."
 
 msgid "Whom to contact when the bot cannot be reached, for example an email address and a Telegram name. Shown in the welcome message. Empty: the text in the box."
 msgstr "Kenelle ottaa yhteyttä, kun botti ei vastaa, esimerkiksi sähköposti ja Telegram-nimi. Näkyy tervetuloviestissä. Tyhjä: kentän teksti."
-
-msgid "You can see your own numbers any time in the Me tab of the Crew app."
-msgstr "Omat lukusi näet milloin vain Crew-sovelluksen Minä-välilehdellä."
 
 #: src/Telegram/OnboardingService.php:333
 msgid "A few questions for the organizers, then I’ll email you the link. Have you worked on the crew here before?"
@@ -10175,9 +10125,6 @@ msgstr "Voit antaa pois vapaalipun, jota et enää tarvitse."
 msgid "Where do I see my credits and tasks?"
 msgstr "Mistä näen vapaalippuni ja tehtäväni?"
 
-msgid "In My info in the bot, and in the Me tab on the web page."
-msgstr "Botissa kohdassa Omat tietoni ja verkkosivulla Minä-välilehdellä."
-
 msgid "How do I choose which messages I get?"
 msgstr "Miten valitsen, mitä viestejä saan?"
 
@@ -10939,12 +10886,6 @@ msgstr "Olet kirjautunut ulos. Lataa sivu uudelleen."
 msgid "edited"
 msgstr "muokattu"
 
-msgid "I do not know that. The Help tab has more, or ask an organizer."
-msgstr "En tiedä sitä. Ohje-välilehdellä on lisää, tai kysy järjestäjältä."
-
-msgid "I cannot do that for you here. The Help tab shows what you can do."
-msgstr "En voi tehdä sitä puolestasi täällä. Ohje-välilehti kertoo, mitä voit tehdä."
-
 msgid "First confirm your email address in Settings."
 msgstr "Vahvista ensin sähköpostiosoitteesi Asetuksissa."
 
@@ -11050,10 +10991,6 @@ msgstr "Tässä linkkisi Crew-sovellukseen — voimassa 30 minuuttia, kertakäyt
 msgid "If the link opens inside Telegram, open it in your browser first."
 msgstr "Jos linkki aukeaa Telegramin sisällä, avaa se ensin selaimessa."
 
-#: templates/public/signup-app-install.php:123 templates/public/signup-app-install.php:142
-msgid "In the app, turn on notifications: Settings tab → Notifications → Turn on notifications on this device."
-msgstr "Laita sovelluksessa ilmoitukset päälle: Asetukset-välilehti → Ilmoitukset → Laita ilmoitukset päälle tällä laitteella."
-
 #: templates/public/signup-app-install.php:126
 msgid "No Add to Home Screen in the Share menu? Open this page in Safari and try again."
 msgstr "Eikö Jaa-valikossa ole Lisää Koti-valikkoon? Avaa sivu Safarissa ja yritä uudelleen."
@@ -11073,10 +11010,6 @@ msgstr "Avaa selaimen valikko ⋮."
 #: templates/public/signup-app-install.php:130
 msgid "Opened inside Telegram or another app? Open this page in your browser first."
 msgstr "Avautuiko sivu Telegramissa tai muussa sovelluksessa? Avaa se ensin selaimessa."
-
-#: templates/public/signup-app-install.php:148
-msgid "Settings tab → Notifications → Turn on notifications on this device."
-msgstr "Asetukset-välilehti → Ilmoitukset → Laita ilmoitukset päälle tällä laitteella."
 
 #: templates/public/signup-app-install.php:146
 msgid "This browser does not install apps, but notifications work while this page is open in a tab."
@@ -11133,3 +11066,75 @@ msgstr "Henkilö lasketaan kerran kuussa. Aktiiviset asennukset: avattu aloitusn
 #: templates/admin/settings.php
 msgid "People count once a month. Active installs: opened from the home screen. Devices with notifications are devices, not people."
 msgstr "Henkilö lasketaan kerran kuussa. Aktiiviset asennukset: avattu aloitusnäytöltä. Laitteet ilmoituksin ovat laitteita, eivät henkilöitä."
+
+msgid "How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in Help in the Crew app. A line starting with \"## \" is a heading, lines starting with \"- \" are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing."
+msgstr "Miten tätä sivustoa ylläpidetään: missä se on hostattu, mitä kiertoteitä se tarvitsee, miten sähköposti kulkee, mitä ulkopuolisia palveluita on käytössä. Näytetään vain järjestäjille Crew-sovelluksen Ohjeessa. Merkeillä \"## \" alkava rivi on otsikko, merkeillä \"- \" alkavat rivit ovat luettelo, ja tyhjä rivi aloittaa uuden kappaleen. Älä kirjoita tähän salasanoja tai avaimia. Jätä tyhjäksi, jos et halua näyttää mitään."
+
+msgid "Tap 🚪 Door scanner at the top of the crew page (%s)."
+msgstr "Napauta 🚪 Oviskanneri crew-sivun yläosassa (%s)."
+
+msgid "open the Tickets tab of the crew page (%s) and pick a night to get your free ticket."
+msgstr "avaa crew-sivun Liput-välilehti (%s) ja valitse ilta, niin saat ilmaisen lippusi."
+
+msgid "It is the first button in your sign-up confirmation, and the Tickets tab lists all your tickets."
+msgstr "Se on ilmoittautumisvahvistuksesi ensimmäinen painike, ja Liput-välilehti listaa kaikki lippusi."
+
+msgid "How the %s crew works. Your own numbers are in the Summary at the top, and the bot shows them when you ask in a private chat."
+msgstr "Näin %s-crew toimii. Omat lukusi näet yläosan Yhteenvedosta, ja botti näyttää ne, kun kysyt yksityisviestillä."
+
+msgid "How to spend a credit: empty for a person with a Telegram chat; for a person with none, the Tickets tab of the Crew app."
+msgstr "Vapaalipun käyttö: tyhjä, jos henkilöllä on Telegram-keskustelu; muuten Crew-sovelluksen Liput-välilehti."
+
+msgid "It is the first button in your sign-up confirmation, and the Tickets tab of the Crew app lists all your tickets."
+msgstr "Se on ilmoittautumisvahvistuksesi ensimmäinen painike, ja Crew-sovelluksen Liput-välilehti listaa kaikki lippusi."
+
+msgid "To spend a credit, pick a night under Get a ticket in the Tickets tab of the Crew app."
+msgstr "Käytä vapaalippu valitsemalla ilta kohdasta Hanki lippu Crew-sovelluksen Liput-välilehdellä."
+
+msgid "Where all your tickets are: empty for a person with a Telegram chat; for a person with none, the Tickets tab of the Crew app."
+msgstr "Missä kaikki lippusi ovat: tyhjä, jos henkilöllä on Telegram-keskustelu; muuten Crew-sovelluksen Liput-välilehti."
+
+msgid "Where to see your own numbers: ask the bot, or, for a person with no Telegram chat, the Summary in the Crew app."
+msgstr "Missä omat luvut näkyvät: kysy botilta, tai jos henkilöllä ei ole Telegram-keskustelua, Crew-sovelluksen Yhteenveto."
+
+msgid "You can see your own numbers any time in the Summary at the top of the Crew app."
+msgstr "Omat lukusi näet milloin vain Crew-sovelluksen yläosan Yhteenvedosta."
+
+msgid "In My info in the bot, and in the Summary at the top of the web page."
+msgstr "Botissa kohdassa Omat tietoni ja verkkosivun yläosan Yhteenvedossa."
+
+msgid "I do not know that. Help in the top-right menu has more, or ask an organizer."
+msgstr "En tiedä sitä. Yläkulman valikon Ohjeessa on lisää, tai kysy järjestäjältä."
+
+msgid "I cannot do that for you here. Help in the top-right menu shows what you can do."
+msgstr "En voi tehdä sitä puolestasi täällä. Yläkulman valikon Ohje kertoo, mitä voit tehdä."
+
+#: templates/public/signup-app-install.php:123 templates/public/signup-app-install.php:142
+msgid "In the app, turn on notifications: Menu → Settings → Notifications → Turn on notifications on this device."
+msgstr "Laita sovelluksessa ilmoitukset päälle: Valikko → Asetukset → Ilmoitukset → Laita ilmoitukset päälle tällä laitteella."
+
+#: templates/public/signup-app-install.php:148
+msgid "Menu → Settings → Notifications → Turn on notifications on this device."
+msgstr "Valikko → Asetukset → Ilmoitukset → Laita ilmoitukset päälle tällä laitteella."
+
+msgid "Hi %s"
+msgstr "Hei %s"
+
+msgid "Menu"
+msgstr "Valikko"
+
+msgid "Summary"
+msgstr "Yhteenveto"
+
+msgid "Door scanner"
+msgstr "Oviskanneri"
+
+msgid "%d task coming"
+msgid_plural "%d tasks coming"
+msgstr[0] "%d tehtävä tulossa"
+msgstr[1] "%d tehtävää tulossa"
+
+msgid "%d ticket"
+msgid_plural "%d tickets"
+msgstr[0] "%d lippu"
+msgstr[1] "%d lippua"

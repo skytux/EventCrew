@@ -466,8 +466,14 @@ final class AssistantService implements WebAssistant
     private function fixedWeb(?string $language, string $which): string
     {
         return Language::run($language, static fn (): string => match ($which) {
-            'unknown' => __('I do not know that. The Help tab has more, or ask an organizer.', 'eventcrew'),
-            'cannot' => __('I cannot do that for you here. The Help tab shows what you can do.', 'eventcrew'),
+            'unknown' => __(
+                'I do not know that. Help in the top-right menu has more, or ask an organizer.',
+                'eventcrew'
+            ),
+            'cannot' => __(
+                'I cannot do that for you here. Help in the top-right menu shows what you can do.',
+                'eventcrew'
+            ),
             'register' => __('First confirm your email address in Settings.', 'eventcrew'),
             'limited' => __('That is all I can answer this hour. The page works as usual.', 'eventcrew'),
             default => __('Sorry, I could not answer just now. Please try again.', 'eventcrew'),
@@ -784,7 +790,7 @@ final class AssistantService implements WebAssistant
 
         // On the page, the help, a command and the place that shows a thing
         // are the page's tabs, never the bot's commands (Owner 2026-11-13).
-        $helpPlace = $web ? 'the Help tab' : '/help';
+        $helpPlace = $web ? 'Help in the top-right menu' : '/help';
         $lines = [
             $web
                 ? 'You are the helper of the crew web page (the Crew app) of EventCrew, the crew of a recurring'
@@ -822,8 +828,9 @@ final class AssistantService implements WebAssistant
                 . ' for the person.',
             '- When the message is a greeting, "reply" greets back and says the person can simply write'
                 . ' what they want in their own words, with one or two short examples (like "sign me up'
-                . ' for a task on Saturday"), and that ' . ($web ? 'the Help tab explains how it all works' : '/help'
-                . ' lists the commands') . '. Do not answer a greeting with only a list of commands.',
+                . ' for a task on Saturday"), and that '
+                . ($web ? 'Help in the top-right menu explains how it all works' : '/help lists the commands')
+                . '. Do not answer a greeting with only a list of commands.',
             '- When the person asks how something affects their standing (a late cancel, a no-show, a missed'
                 . ' or replaced task), explain it with "How standing works" in the FACTS and their own numbers in'
                 . ' "This person" (standing now, and after one late cancel or one more completed task), in plain'
@@ -992,12 +999,15 @@ final class AssistantService implements WebAssistant
     {
         $lines = [
             '- This message was written in the helper box of the crew web page (the Crew app). The page has'
-                . ' the tabs Board (the open tasks, sign up), Me (the person\'s tasks, tickets, cancelling),'
-                . ' Settings (name and email, notifications, language) and Help'
+                . ' the tabs Board (the open tasks, sign up), Tasks (the person\'s tasks, cancelling) and'
+                . ' Tickets (the person\'s tickets)'
                 . ($organizer ? ', and for an organizer Admin (screens Roster, Tasks, Door, People, Messages)' : '')
-                . '. "Where things are on this page" in the FACTS says which tab or screen has what.',
+                . ', a Summary card with the person\'s numbers, and a menu at the top right with Settings (name'
+                . ' and email, notifications, language), Help and Sign out. "Where things are on this page" in'
+                . ' the FACTS says which tab or screen has what.',
             '- In "reply", never mention Telegram, the bot, a chat, a t.me link or a command starting with "/":'
-                . ' name the tab or screen of this page instead ("the Help tab", "the Admin tab, People screen").'
+                . ' name the tab or screen of this page instead ("Help in the top-right menu", "the Admin tab,'
+                . ' People screen").'
                 . ' When the FACTS, the guide or CONVERSATION name a bot command or a button of the bot, say'
                 . ' where the same thing is on this page; when this page has no place for it, say only what it'
                 . ' is, or that an organizer can help. Never suggest using Telegram or the bot.',

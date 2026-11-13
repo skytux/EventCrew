@@ -15,7 +15,7 @@ namespace EventCrew\Support;
  * for features that can be switched off follow their switches the way
  * TicketRules does: the standing gate, giving tickets away and the credit for
  * an extra task on the same night. The screens are named as both sides name
- * them: Tasks, Tickets, Settings, My info / the Me tab.
+ * them: Tasks, Tickets, Settings, My info / the Summary card.
  */
 final class Faq
 {
@@ -139,7 +139,7 @@ final class Faq
 
         $items[] = self::item(
             __('Where do I see my credits and tasks?', 'eventcrew'),
-            __('In My info in the bot, and in the Me tab on the web page.', 'eventcrew')
+            __('In My info in the bot, and in the Summary at the top of the web page.', 'eventcrew')
         );
 
         $items[] = self::item(

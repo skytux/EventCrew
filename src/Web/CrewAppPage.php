@@ -95,10 +95,11 @@ final class CrewAppPage
     }
 
     /**
-     * Hands $html (the signed-in person's language switch, already escaped)
-     * to the bar at the top of this page, on the side opposite "← Website",
-     * so the two take one line (Owner 2026-11-08). False when the crew page
-     * is not shown as this page: the caller then prints it where it was.
+     * Hands $html (the signed-in person's "Hi Name ☰" menu, already
+     * escaped) to the bar at the top of this page, on the side opposite
+     * "← Website", so the two take one line (Owner 2026-11-08, the language
+     * switch then; the menu since Owner 2026-11-13). False when the crew page
+     * is not shown as this page: the caller then prints it itself.
      */
     public static function putInBar(string $html): bool
     {

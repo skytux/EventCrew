@@ -537,10 +537,13 @@ final class SignupControllerTest extends TestCase
 
         $html = $this->controller()->renderShortcode();
 
-        self::assertSame(1, preg_match('~<p class="eventcrew-links">.*?</p>~s', $html, $links));
+        // The Telegram group is a text link at the bottom (Owner 2026-11-13).
+        self::assertSame(1, preg_match('~<p class="eventcrew-grouplink">.*?</p>~s', $html, $links));
         self::assertStringContainsString('https://t.me/+secretcrew', $links[0]);
+        self::assertStringContainsString('class="eventcrew-textlink"', $links[0]);
         self::assertStringNotContainsString('Crew guide', $links[0]);
-        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card">.*?</section>~s', $html, $card));
+        self::assertGreaterThan(strrpos($html, 'data-eventcrew-panel='), strpos($html, 'eventcrew-grouplink'));
+        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card" id="eventcrew-summary">.*?</section>~s', $html, $card));
         self::assertStringContainsString('class="eventcrew-card-body eventcrew-header-guide"', $card[0]);
         self::assertStringContainsString('href="https://docs.example/guide"', $card[0]);
         // Once under the details, once in the Help tab (Owner 2026-11-08).
@@ -654,7 +657,7 @@ final class SignupControllerTest extends TestCase
 
         $html = $this->controller()->renderShortcode();
 
-        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card">.*?</section>~s', $html, $card));
+        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card" id="eventcrew-summary">.*?</section>~s', $html, $card));
         // The 🎟️ in front of the credits line is an icon, not the old button.
         self::assertDoesNotMatchRegularExpression('~<a[^>]*>\s*🎟~u', $card[0]);
         self::assertStringNotContainsString('eventcrew-my-tickets-btn', $html);
@@ -689,12 +692,16 @@ final class SignupControllerTest extends TestCase
 
         $html = $this->controller()->renderShortcode();
 
-        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card">.*?</section>~s', $html, $card));
+        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card" id="eventcrew-summary">.*?</section>~s', $html, $card));
         self::assertStringContainsString('Completed tasks: 0', $card[0]);
         self::assertStringContainsString('Free-entry credits: 0', $card[0]);
-        // One line each with an icon (Owner 2026-11-08), no middot run.
-        self::assertMatchesRegularExpression('~<ul class="eventcrew-standing">\s*<li><span class="eventcrew-standing-icon" aria-hidden="true">🌟</span>.*?</li>\s*<li><span class="eventcrew-standing-icon" aria-hidden="true">✅</span><span>Completed tasks: 0</span></li>\s*<li><span class="eventcrew-standing-icon" aria-hidden="true">🎟️</span><span>Free-entry credits: 0</span></li>\s*</ul>~s', $card[0]);
-        self::assertStringContainsString('<span class="eventcrew-standing-icon" aria-hidden="true">👤</span>', $card[0]);
+        // One line each with an icon (Owner 2026-11-08), each a link to its
+        // card; the standing itself is shown once, above (Owner 2026-11-13).
+        self::assertMatchesRegularExpression('~<ul class="eventcrew-standing">\s*<li><span class="eventcrew-standing-icon" aria-hidden="true">✅</span><a class="eventcrew-textlink" href="#eventcrew-past-tasks" data-eventcrew-goto="eventcrew-past-tasks">Completed tasks: 0</a></li>\s*<li><span class="eventcrew-standing-icon" aria-hidden="true">🎟️</span><span><a class="eventcrew-textlink" href="#eventcrew-my-tickets" data-eventcrew-goto="eventcrew-my-tickets">Free-entry credits: 0</a></span></li>\s*</ul>~s', $card[0]);
+        self::assertStringContainsString('<h2 class="eventcrew-event-title">Summary</h2>', $card[0]);
+        self::assertStringNotContainsString('🌟', $card[0]);
+        self::assertStringNotContainsString('👤', $card[0]);
+        self::assertStringNotContainsString('Signed in as', $html);
         self::assertStringNotContainsString('&middot;', $card[0]);
         self::assertStringNotContainsString('0 credits', $html);
         self::assertStringContainsString('<h3 class="eventcrew-event-title">Tasks</h3>', $html);
@@ -954,8 +961,8 @@ final class SignupControllerTest extends TestCase
     }
 
     /**
-     * The Me tab's cards in Owner 2026-11-08's order: Tickets, Tasks, Past
-     * tickets, Past tasks; each entry shows its day, the event's clean name
+     * The Tasks and Tickets tabs' cards in order (Owner 2026-11-13): Tasks,
+     * Past tasks, then Tickets, Past tickets; each entry shows its day, the event's clean name
      * and its DJs, and its actions as text links.
      */
     public function testTheMeTabCardsComeInOrderWithTheDjNames(): void
@@ -978,10 +985,13 @@ final class SignupControllerTest extends TestCase
         $html = $this->controller(null, null, $this->transfers())->renderShortcode();
 
         $at = static fn (string $id): int|false => strpos($html, 'id="' . $id . '"');
+        // The Tasks tab (Tasks, Past tasks), then the Tickets tab (Tickets,
+        // Past tickets) (Owner 2026-11-13).
         self::assertNotFalse($at('eventcrew-my-tickets'));
-        self::assertLessThan($at('eventcrew-my-tasks'), $at('eventcrew-my-tickets'));
-        self::assertLessThan($at('eventcrew-past-tickets'), $at('eventcrew-my-tasks'));
-        self::assertLessThan($at('eventcrew-past-tasks'), $at('eventcrew-past-tickets'));
+        self::assertLessThan($at('eventcrew-past-tasks'), $at('eventcrew-my-tasks'));
+        self::assertLessThan($at('eventcrew-panel-tickets'), $at('eventcrew-past-tasks'));
+        self::assertLessThan($at('eventcrew-my-tickets'), $at('eventcrew-panel-tickets'));
+        self::assertLessThan($at('eventcrew-past-tickets'), $at('eventcrew-my-tickets'));
 
         self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card" id="eventcrew-my-tickets">.*?</section>~s', $html, $card));
         self::assertStringContainsString('<span class="eventcrew-me-event">Ecstatic Dance</span>', $card[0]);
@@ -1146,12 +1156,127 @@ final class SignupControllerTest extends TestCase
 
         $html = $this->controller()->renderShortcode();
 
-        self::assertSame(1, preg_match('~<form class="eventcrew-language".*?</form>~s', $html, $form));
+        // Only in Settings (Owner 2026-11-13).
+        self::assertSame(1, preg_match_all('~<form[^>]*eventcrew-language~', $html));
+        self::assertSame(1, preg_match('~<form class="eventcrew-card-body eventcrew-language eventcrew-language-settings".*?</form>~s', $html, $form));
         $button = '~<button type="submit" name="language"\s+value="(\w+)".*?aria-pressed="(\w+)">([^<]+)</button>~s';
         preg_match_all($button, $form[0], $buttons);
         self::assertSame(['fi', 'en', 'sv'], $buttons[1]);
         self::assertSame(['Suomi', 'English', 'Svenska'], $buttons[3]);
         self::assertSame(['false', 'false', 'true'], $buttons[2]);
+    }
+
+    /**
+     * Owner 2026-11-13: signed in, a "Hi <first name> ☰" menu holds Settings,
+     * Help and Sign out; the tabs are the board, Tasks and Tickets, and the
+     * old Me tab is gone.
+     */
+    public function testSignedInTheMenuHoldsSettingsHelpAndSignOut(): void
+    {
+        $html = $this->signedInPage(['display_name' => 'Sam Example']);
+
+        self::assertSame(1, preg_match('~<div class="eventcrew-usermenu" data-eventcrew-usermenu>.*?</ul>\s*</div>~s', $html, $menu));
+        self::assertMatchesRegularExpression('~<button type="button" class="eventcrew-usermenu-button" aria-expanded="false" aria-controls="eventcrew-usermenu-list">\s*<span class="eventcrew-usermenu-hi">Hi Sam</span>~', $menu[0]);
+        self::assertStringContainsString('id="eventcrew-usermenu-list"', $menu[0]);
+        self::assertStringContainsString('<a id="eventcrew-tab-settings" href="#eventcrew-panel-settings" data-eventcrew-goto="eventcrew-panel-settings">Settings</a>', $menu[0]);
+        self::assertStringContainsString('id="eventcrew-tab-help"', $menu[0]);
+        self::assertStringContainsString('class="eventcrew-signout"', $menu[0]);
+        self::assertStringContainsString('Sign out', $menu[0]);
+        self::assertSame(1, substr_count($html, 'class="eventcrew-signout"'));
+
+        preg_match_all('~class="eventcrew-tab"\s+id="eventcrew-tab-(\w+)"~', $html, $tabs);
+        self::assertSame(['board', 'tasks', 'tickets'], $tabs[1]);
+        self::assertStringNotContainsString('eventcrew-panel-me"', $html);
+        self::assertStringContainsString('data-eventcrew-panel="tasks"', $html);
+        self::assertStringContainsString('data-eventcrew-panel="tickets"', $html);
+        self::assertStringContainsString('data-eventcrew-panel="settings"', $html);
+        self::assertStringContainsString('data-eventcrew-panel="help"', $html);
+    }
+
+    /** Without a display name the menu greets the person by their email name. */
+    public function testWithoutANameTheMenuUsesTheEmailName(): void
+    {
+        $html = $this->signedInPage(['display_name' => '']);
+
+        self::assertStringContainsString('<span class="eventcrew-usermenu-hi">Hi sam</span>', $html);
+    }
+
+    /**
+     * Owner 2026-11-13: the Summary links to the person's coming tasks; the
+     * Door scanner is not there for someone who may not open the sales desk,
+     * nor the old Me tab sales card.
+     */
+    public function testTheSummaryLinksComingTasksAndHidesTheDoorScanner(): void
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        Functions\when('get_option')->alias(static fn (string $name, mixed $default = false): mixed => $default);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+        $this->useMeTabWpdb();
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertSame(1, preg_match('~<section class="eventcrew-event eventcrew-me-card eventcrew-header-card" id="eventcrew-summary">.*?</section>~s', $html, $card));
+        self::assertMatchesRegularExpression('~<li class="eventcrew-summary-coming">.*?<a class="eventcrew-textlink" href="#eventcrew-my-tasks" data-eventcrew-goto="eventcrew-my-tasks">\s*1 task coming\s*</a>~s', $card[0]);
+        self::assertStringNotContainsString('eventcrew-door-scanner', $html);
+        self::assertStringNotContainsString('🚪</span> Door scanner', $html);
+        self::assertStringNotContainsString('eventcrew-me-sales', $html);
+    }
+
+    /**
+     * Owner 2026-11-13: someone who may open the sales desk for the next
+     * night gets the 🚪 Door scanner button at the top, posting the sales
+     * desk action (the server checks again when it is pressed).
+     */
+    public function testTheDoorScannerIsAtTheTopForSalesDeskCrew(): void
+    {
+        $html = $this->signedInPage([], ['sales_desk' => true]);
+
+        self::assertSame(1, preg_match('~<form class="eventcrew-links eventcrew-sales-desk" id="eventcrew-door-scanner".*?</form>~s', $html, $form));
+        self::assertStringContainsString('value="' . SignupController::SALES_ACTION . '"', $form[0]);
+        self::assertMatchesRegularExpression('~<button type="submit" class="wp-element-button">\s*<span aria-hidden="true">🚪</span> Door scanner\s*</button>~u', $form[0]);
+        self::assertLessThan(strpos($html, 'id="eventcrew-summary"'), strpos($html, 'id="eventcrew-door-scanner"'));
+        self::assertSame(1, substr_count($html, 'id="eventcrew-door-scanner"'));
+    }
+
+    /**
+     * The signed-in page for person 7, rendered from the view model with
+     * $person merged into the person row and $view into the view.
+     *
+     * @param array<string, mixed> $person
+     * @param array<string, mixed> $view
+     */
+    private function signedInPage(array $person = [], array $view = []): string
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+
+        $this->wpdb->nextRows[] = array_merge([
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+        ], $person);
+        $this->wpdb->nextResults[] = [$this->taskRow()]; // upcoming
+        $this->wpdb->nextResults[] = [];                 // occupancyFor
+        $this->wpdb->nextResults[] = [];                 // forPerson (occupiedTaskIds)
+        $this->wpdb->nextResults[] = [];                 // standing historyFor
+        $this->wpdb->nextVars[] = 0;                     // standing countFor
+
+        $controller = $this->controller();
+        $model = array_merge($controller->viewModel(), ['admin' => null], $view);
+
+        return (string) \Closure::bind(
+            function (array $view): string {
+                ob_start();
+                include EVENTCREW_PLUGIN_DIR . 'templates/public/signup.php';
+
+                return (string) ob_get_clean();
+            },
+            $controller,
+            SignupController::class
+        )($model);
     }
 
     /** The WordPress functions a full page render touches. */

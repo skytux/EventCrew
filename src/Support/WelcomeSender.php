@@ -673,7 +673,7 @@ final class WelcomeSender
      * The {tickets_help} of the welcome message for a
      * person with a Telegram chat: where their tickets are. A person without
      * one gets the crew page in the welcome email (MessageTemplates,
-     * CrewPageHelp), and the web Help tab names the Me tab (helpText()).
+     * CrewPageHelp), and the web Help names the Tickets tab (helpText()).
      */
     public static function ticketsBotLine(): string
     {
@@ -692,14 +692,14 @@ final class WelcomeSender
         return implode("\n\n", [
             sprintf(
                 /* translators: %s: the crew's name (the site name) */
-                __('How the %s crew works. Your own numbers are in the Me tab, and the bot shows them when you ask in a private chat.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
+                __('How the %s crew works. Your own numbers are in the Summary at the top, and the bot shows them when you ask in a private chat.', 'eventcrew'), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
                 Organization::name()
             ),
             ...self::sections([
-                // On the crew page itself the tickets are in the Me tab, for
-                // everyone.
+                // On the crew page itself the tickets are in the Tickets tab,
+                // for everyone.
                 'tickets_help' => __(
-                    'It is the first button in your sign-up confirmation, and the Me tab lists all your tickets.',
+                    'It is the first button in your sign-up confirmation, and the Tickets tab lists all your tickets.',
                     'eventcrew'
                 ),
             ]),

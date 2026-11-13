@@ -53,19 +53,19 @@ final class AssistantWebActions
     /** @var array<string, list<string>> action line => element ids */
     private const PLACES = [
         '/board' => ['eventcrew-panel-board'],
-        '/me' => ['eventcrew-my-tasks', 'eventcrew-panel-me'],
-        '/me history' => ['eventcrew-past-tasks', 'eventcrew-panel-me'],
-        '/me tickets' => ['eventcrew-my-tickets', 'eventcrew-panel-me'],
-        '/tasks' => ['eventcrew-my-tasks', 'eventcrew-panel-me'],
-        '/tickets' => ['eventcrew-my-tickets', 'eventcrew-get-ticket', 'eventcrew-panel-me'],
-        'menu:ticket' => ['eventcrew-get-ticket', 'eventcrew-my-tickets', 'eventcrew-panel-me'],
+        '/me' => ['eventcrew-my-tasks', 'eventcrew-panel-tasks'],
+        '/me history' => ['eventcrew-past-tasks', 'eventcrew-panel-tasks'],
+        '/me tickets' => ['eventcrew-my-tickets', 'eventcrew-panel-tickets'],
+        '/tasks' => ['eventcrew-my-tasks', 'eventcrew-panel-tasks'],
+        '/tickets' => ['eventcrew-my-tickets', 'eventcrew-get-ticket', 'eventcrew-panel-tickets'],
+        'menu:ticket' => ['eventcrew-get-ticket', 'eventcrew-my-tickets', 'eventcrew-panel-tickets'],
         // Taking over a task is a button on the full task, on the board.
         'menu:replace' => ['eventcrew-panel-board'],
         '/settings' => ['eventcrew-panel-settings'],
         'menu:notifications' => ['eventcrew-notifications', 'eventcrew-panel-settings'],
         'menu:language' => ['eventcrew-settings-language', 'eventcrew-panel-settings'],
         // Signed in already: the sign-in link is this page.
-        'menu:web' => ['eventcrew-panel-me'],
+        'menu:web' => ['eventcrew-panel-tasks'],
         '/help' => [HelpPage::PANEL_ANCHOR],
         '/start' => [HelpPage::PANEL_ANCHOR],
     ];
@@ -144,9 +144,10 @@ final class AssistantWebActions
             return ['kind' => self::GOTO, 'targets' => ['eventcrew-panel-settings']];
         }
 
-        // The sales desk of someone on tonight's sales-desk task is on their Me tab.
+        // The sales desk of someone on tonight's sales-desk task is the Door
+        // scanner button at the top of the page (Owner 2026-11-13).
         if ('menu:sales' === $head && ! $organizer) {
-            return ['kind' => self::GOTO, 'targets' => ['eventcrew-me-sales']];
+            return ['kind' => self::GOTO, 'targets' => ['eventcrew-door-scanner']];
         }
 
         // "/stop announcement" is the announcement's card, "/stop email" the post-event email's.

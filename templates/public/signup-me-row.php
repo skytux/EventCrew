@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The top of one entry in the Me tab's Tickets, Tasks, Past tickets and Past
+ * The top of one entry in the Tasks and Tickets tabs' Tickets, Tasks, Past tickets and Past
  * tasks cards (Owner 2026-11-08: "look nicer, not just like random links,
  * and add the DJ names"): the day in bold with the times or the status on
  * the right, then the event's name, its DJs (EventName::djLine()) and what

@@ -1,4 +1,4 @@
-How the Test Crew crew works. Your own numbers are in the Me tab, and the bot shows them when you ask in a private chat.
+How the Test Crew crew works. Your own numbers are in the Summary at the top, and the bot shows them when you ask in a private chat.
 
 ## 🧩 The tasks
 
@@ -8,7 +8,7 @@ How the Test Crew crew works. Your own numbers are in the Me tab, and the bot sh
 
 ## 🎟️ Tickets
 
-When you sign up for a task, you get a free ticket for that night. Show it at the door. It is the first button in your sign-up confirmation, and the Me tab lists all your tickets.
+When you sign up for a task, you get a free ticket for that night. Show it at the door. It is the first button in your sign-up confirmation, and the Tickets tab lists all your tickets.
 
 ## 🎁 Credits
 

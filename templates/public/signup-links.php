@@ -1,14 +1,12 @@
 <?php
 
 /**
- * The links at the top of the crew page: the crew's Telegram group (the main
- * button, filled) and, when $eventcrew_links_guide is set, the crew guide (a
- * text link beside it). The crew page passes no guide here: signed in it sits
- * under the person's details, signed out it is not shown. Nothing is drawn
- * when neither is shown.
+ * The crew's Telegram group at the foot of the crew page, after the panels:
+ * a small text link with the Telegram icon, signed in only (Owner
+ * 2026-11-13: buttons stay few; it was the filled button at the top of every
+ * tab, where the Door scanner is now). Nothing is drawn without a link.
  *
  * @var string $eventcrew_group_link The Telegram group link, or '' to leave it out.
- * @var bool   $eventcrew_links_guide Whether the crew guide is shown here.
  */
 
 declare(strict_types=1);
@@ -17,22 +15,13 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-$eventcrew_guide = ($eventcrew_links_guide ?? true) ? \EventCrew\Support\RoleGuide::emailAction() : null;
-
-if ('' === $eventcrew_group_link && null === $eventcrew_guide) {
+if ('' === $eventcrew_group_link) {
     return;
 }
 ?>
-<p class="eventcrew-links">
-    <?php if ('' !== $eventcrew_group_link) : ?>
-        <a class="wp-element-button eventcrew-link-primary" href="<?php echo esc_url($eventcrew_group_link); ?>" target="_blank" rel="noopener">
-            <svg class="eventcrew-link-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-            <?php esc_html_e('Telegram group', 'eventcrew'); ?>
-        </a>
-    <?php endif; ?>
-    <?php if (null !== $eventcrew_guide) : ?>
-        <a class="eventcrew-textlink" href="<?php echo esc_url($eventcrew_guide['url']); ?>" target="_blank" rel="noopener">
-            <?php echo esc_html($eventcrew_guide['label']); ?>
-        </a>
-    <?php endif; ?>
+<p class="eventcrew-grouplink">
+    <a class="eventcrew-textlink" href="<?php echo esc_url($eventcrew_group_link); ?>" target="_blank" rel="noopener">
+        <svg class="eventcrew-link-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+        <?php esc_html_e('Telegram group', 'eventcrew'); ?>
+    </a>
 </p>

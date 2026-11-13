@@ -44,11 +44,11 @@ final class TicketList
 
     /**
      * $withTasks false leaves out the tickets that come with a task, for the web
-     * page's Me tab, which shows each of those on its task's own row. 'used'
+     * page's Tasks tab, which shows each of those on its task's own row. 'used'
      * is when the door marked the ticket in (site time), null while it is not.
      *
      * Besides 'label' (one line, as the bot shows it), each ticket carries its
-     * parts for the web's Me tab: 'what' (the roles, or "Free entry" and who
+     * parts for the web's Tasks and Tickets tabs: 'what' (the roles, or "Free entry" and who
      * gave it), 'event' (the event's name, '' when unknown) and 'dj' (its DJ
      * line, EventName::djLine(), '' when none).
      *

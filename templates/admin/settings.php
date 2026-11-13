@@ -1437,7 +1437,7 @@ if (! defined('ABSPATH')) {
                         'text.infrastructure_note'
                     );
                     ?>
-                    <p class="description"><?php esc_html_e('How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in the Help tab of the Crew app. A line starting with "## " is a heading, lines starting with "- " are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing.', 'eventcrew'); ?></p>
+                    <p class="description"><?php esc_html_e('How this site is run: where it is hosted, the workarounds it needs, how email comes and goes, outside services. Shown to organizers only, in Help in the Crew app. A line starting with "## " is a heading, lines starting with "- " are a list, and an empty line starts a new paragraph. Do not put passwords or keys here. Leave it blank to show nothing.', 'eventcrew'); ?></p>
                 </td>
             </tr>
         </table>
