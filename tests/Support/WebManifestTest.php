@@ -65,4 +65,16 @@ final class WebManifestTest extends TestCase
         // Icon URLs carry the size the endpoint should render.
         self::assertStringContainsString('size=512', $manifest['icons'][1]['src']);
     }
+
+    /** Owner 2026-11-13: links into the scope open the installed app where the browser can. */
+    public function testLinksOpenTheInstalledApp(): void
+    {
+        $manifest = WebManifest::build([
+            'name' => 'Crew', 'short_name' => 'Crew', 'start_url' => '/crew-app/',
+            'icon_url' => '/?icon', 'theme_color' => '#000000', 'background_color' => '#ffffff',
+        ]);
+
+        self::assertSame('preferred', $manifest['handle_links']);
+        self::assertSame(['client_mode' => ['navigate-existing', 'auto']], $manifest['launch_handler']);
+    }
 }

@@ -32,6 +32,12 @@ final class WebManifest
             // the browser; '/' when none is given.
             'scope' => $config['scope'] ?? '/',
             'display' => 'standalone',
+            // A link into the scope opens the installed app rather than the
+            // browser where the browser supports it (Chrome on Android), and
+            // reuses the open app window instead of a new one (Owner
+            // 2026-11-13). Others ignore both.
+            'handle_links' => 'preferred',
+            'launch_handler' => ['client_mode' => ['navigate-existing', 'auto']],
             'orientation' => 'portrait',
             'background_color' => $config['background_color'],
             'theme_color' => $config['theme_color'],
