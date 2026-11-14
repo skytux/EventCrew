@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.259
+Stable tag: 1.140.260
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,11 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.260 =
+* Messages: the Scheduled messages card is grouped by where each message goes, with Send now and the switch in the same columns on every row.
+* Messages: Send now for the newsletter and the post-event email; switching a scheduled message on or off in FlowKeeper happens at once, without Confirm.
+* Announcement: the Text for the next announcement field (Crew app and wp-admin) shows the language model's suggested text when no organizer has written one.
 
 = 1.140.259 =
 * Bot: a personal command typed in the group no longer posts a Sent you a DM note there; a button tap still shows it as a pop-up to the one who tapped.
@@ -2184,6 +2189,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.260 =
+No settings change.
 
 = 1.140.259 =
 No settings change.
