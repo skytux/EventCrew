@@ -105,6 +105,7 @@ final class AssistantWebAdmin
         'membersdisplay' => 'role_members_display',
         'guestsignup' => 'role_guest_signup',
         'anonymous' => 'role_anonymous',
+        'adminaccess' => 'role_admin_access',
     ];
 
     /** The page's "+1 allowed" field's highest number. */
@@ -491,7 +492,7 @@ final class AssistantWebAdmin
             self::AT_RISK_ONCE_MORE => __("Let someone at risk sign up once more: /oncemore name\nExample: /oncemore Milla", 'eventcrew'),
             self::ADD_PERSON => __("Add a person: /addperson name ; email ; notes\nExample: /addperson Milla Virtanen ; milla@example.com\nThe notes are optional.", 'eventcrew'),
             self::EDIT_PERSON => __("Change someone’s details: /editperson name ; name new name ; email new address ; notes text\nExample: /editperson Milla ; notes Bar on Fridays\nGive only what changes. notes - empties the notes.", 'eventcrew'),
-            self::EDIT_ROLE => __("Change a role: /editrole role ; field value ; field value\nExample: /editrole Bar ; people 3 ; guestsignup off\nFields: name, emoji, people, plus, description, measured start|end, starts minutes, ends minutes, events text, minroles, timeseach, count role number, and on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous. - empties a text or time.", 'eventcrew'),
+            self::EDIT_ROLE => __("Change a role: /editrole role ; field value ; field value\nExample: /editrole Bar ; people 3 ; guestsignup off\nFields: name, emoji, people, plus, description, measured start|end, starts minutes, ends minutes, events text, minroles, timeseach, count role number, and on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous, adminaccess. - empties a text or time.", 'eventcrew'),
             self::OPTOUT => __("Change the list: /optout add address, /optout remove address\nExample: /optout add milla@example.com", 'eventcrew'),
             self::SCHEDULED => __("Switch a scheduled message: /scheduled name on|off\nSend it once now: /scheduled name send\nExample: /scheduled reminders off\n/scheduled alone lists the names.", 'eventcrew'),
             self::ROLE_ORDER => __("Move a role in the order: /roleorder role up|down|first|last\nExample: /roleorder Clean first\n/roleorder alone shows the order.", 'eventcrew'),
@@ -746,6 +747,7 @@ final class AssistantWebAdmin
             'role_guest_signup' => (bool) ($role['guest_signup'] ?? true),
             'role_anonymous' => (bool) ($role['anonymous'] ?? false),
             'role_members_display' => (bool) ($role['members_display'] ?? false),
+            'role_admin_access' => (bool) ($role['admin_access'] ?? false),
         ];
 
         foreach ($changes as $key => $value) {

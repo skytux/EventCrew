@@ -433,6 +433,72 @@ final class SchemaTest extends TestCase
         self::assertGreaterThanOrEqual(38, (int) Schema::DB_VERSION);
     }
 
+    /**
+     * Schema 41 (Owner 2026-11-08, Q371): every organizer is given the
+     * Organize role, which is stored in the role list with Admin access, so
+     * they stay organizers. Anonymised people are left out.
+     */
+    public function testEveryOrganizerIsGivenTheOrganizeRole(): void
+    {
+        $options = [];
+        Functions\when('get_option')->alias(static function (string $name, mixed $default = false) use (&$options): mixed {
+            return $options[$name] ?? $default;
+        });
+        Functions\when('add_option')->alias(static function (string $name, mixed $value) use (&$options): bool {
+            if (array_key_exists($name, $options)) {
+                return false;
+            }
+
+            $options[$name] = $value;
+
+            return true;
+        });
+        Functions\when('update_option')->alias(static function (string $name, mixed $value) use (&$options): bool {
+            $options[$name] = $value;
+
+            return true;
+        });
+
+        $this->wpdb->nextQueryResults[] = 4;
+        // Everyone after the update: the four organizers hold Organize.
+        $this->wpdb->nextResults[] = [
+            ['id' => 1, 'role_slugs' => 'organize', 'is_organizer' => 1, 'anonymized_at' => null],
+            ['id' => 2, 'role_slugs' => 'clean,organize', 'is_organizer' => 1, 'anonymized_at' => null],
+            ['id' => 3, 'role_slugs' => 'organize', 'is_organizer' => 1, 'anonymized_at' => null],
+            ['id' => 4, 'role_slugs' => 'organize', 'is_organizer' => 1, 'anonymized_at' => null],
+            ['id' => 5, 'role_slugs' => 'clean', 'is_organizer' => 0, 'anonymized_at' => null],
+        ];
+
+        self::assertSame(4, Schema::moveOrganizersToRole('40'));
+
+        $update = $this->wpdb->queries[0];
+        self::assertStringContainsString('UPDATE wp_eventcrew_people', $update);
+        self::assertStringContainsString('is_organizer = 1 AND anonymized_at IS NULL', $update);
+        self::assertStringContainsString("FIND_IN_SET('organize', role_slugs) = 0", $update);
+        // Nobody's organizer status changed.
+        self::assertSame([], $this->wpdb->updates);
+
+        $stored = $options[\EventCrew\Support\Roles::OPTION_NAME];
+        $organize = array_values(array_filter($stored, static fn (array $role): bool => 'organize' === $role['slug']));
+        self::assertCount(1, $organize);
+        self::assertTrue($organize[0]['admin_access']);
+        self::assertTrue($organize[0]['restricted']);
+        self::assertArrayHasKey(Schema::ORGANIZE_ROLE_OPTION, $options);
+
+        // A second request finds the claim taken and does nothing.
+        $queries = count($this->wpdb->queries);
+        self::assertSame(-1, Schema::moveOrganizersToRole('40'));
+        self::assertCount($queries, $this->wpdb->queries);
+    }
+
+    public function testOrganizersAreMovedOnlyWhenUpdatingFromBeforeSchema41(): void
+    {
+        self::assertSame(-1, Schema::moveOrganizersToRole('41'));
+        self::assertSame(-1, Schema::moveOrganizersToRole('42'));
+        self::assertSame([], $this->wpdb->queries);
+        self::assertGreaterThanOrEqual(41, (int) Schema::DB_VERSION);
+    }
+
     public function testDevicesAreUniquePerEndpoint(): void
     {
         $sql = implode("\n", $this->statements());

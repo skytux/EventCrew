@@ -4750,10 +4750,6 @@ msgstr "Organisationens namn"
 msgid "Organize"
 msgstr "Arrangemang"
 
-#: templates/admin/settings.php:419
-msgid "Organize task: +1 allowed"
-msgstr "Arrangemang-uppgift: +1 tillåten"
-
 #: src/Admin/PeopleListTable.php:140 src/Telegram/PermissionService.php:180 templates/admin/people.php:78 templates/public/signup.php:832
 #: templates/public/signup.php:924
 msgid "Organizer"
@@ -7279,12 +7275,6 @@ msgstr "Holvi-köparen kunde inte läggas till. Försök igen."
 #: src/Support/MessageTemplates.php:1745
 msgid "The IP address the request came from."
 msgstr "IP-adressen som förfrågan kom från."
-
-#: templates/admin/settings.php:431
-msgid ""
-"The Organize task is not in the list above. New Organize tasks copy this number."
-msgstr ""
-"Arrangemang-uppgiften finns inte i listan ovan. Nya Arrangemang-uppgifter kopierar det här antalet."
 
 #: templates/public/door.php:84
 msgid "The QR code could not be drawn. Use Copy link instead."
@@ -10709,10 +10699,6 @@ msgstr "❌ Avbokad"
 #: src/Support/MessageTemplates.php:877 src/Support/TakeoverService.php:366 src/Web/TakeoverController.php:130
 msgid "❌ Keep my task"
 msgstr "❌ Behåll min uppgift"
-
-#: src/Support/Roles.php:442
-msgid "⭐ Organize"
-msgstr "⭐ Arrangemang"
 
 #: src/Support/MessageTemplates.php:1623
 #. translators: %s: the organization's name
@@ -14388,10 +14374,6 @@ msgid "Change someone’s details: /editperson name ; name new name ; email new 
 msgstr "Ändra någons uppgifter: /editperson namn ; name nytt namn ; email ny adress ; notes text\nExempel: /editperson Milla ; notes Baren på fredagar\nAnge bara det som ändras. notes - tömmer anteckningarna."
 
 # parityA
-msgid "Change a role: /editrole role ; field value ; field value\nExample: /editrole Bar ; people 3 ; guestsignup off\nFields: name, emoji, people, plus, description, measured start|end, starts minutes, ends minutes, events text, minroles, timeseach, count role number, and on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous. - empties a text or time."
-msgstr "Ändra en roll: /editrole roll ; fält värde ; fält värde\nExempel: /editrole Bar ; people 3 ; guestsignup off\nFält: name, emoji, people, plus, description, measured start|end, starts minuter, ends minuter, events text, minroles, timeseach, count roll antal, och on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous. - tömmer en text eller tid."
-
-# parityA
 msgid "Change the list: /optout add address, /optout remove address\nExample: /optout add milla@example.com"
 msgstr "Ändra listan: /optout add adress, /optout remove adress\nExempel: /optout add milla@example.com"
 
@@ -14787,3 +14769,19 @@ msgstr "Lägga upp nästa evenemangs kort i gruppen nu?"
 
 msgid "Next event card posted in the group."
 msgstr "Nästa evenemangs kort upplagt i gruppen."
+
+# parityA
+msgid "Change a role: /editrole role ; field value ; field value\nExample: /editrole Bar ; people 3 ; guestsignup off\nFields: name, emoji, people, plus, description, measured start|end, starts minutes, ends minutes, events text, minroles, timeseach, count role number, and on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous, adminaccess. - empties a text or time."
+msgstr "Ändra en roll: /editrole roll ; fält värde ; fält värde\nExempel: /editrole Bar ; people 3 ; guestsignup off\nFält: name, emoji, people, plus, description, measured start|end, starts minuter, ends minuter, events text, minroles, timeseach, count roll antal, och on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous, adminaccess. - tömmer en text eller tid."
+
+msgid "\"Admin access\": everyone holding the role is an organizer, in the bot and the Crew app. Organize has it; it is always \"Only people with this role\". Making someone an organizer gives them Organize. At least one person must keep a role with Admin access. WordPress administrators keep wp-admin either way."
+msgstr "\"Adminbehörighet\": alla som har rollen är arrangörer, i boten och i Crew-appen. Arrangemang har den; den är alltid \"Bara personer med den här rollen\". Att göra någon till arrangör ger dem Arrangemang. Minst en person måste ha en roll med adminbehörighet. WordPress-administratörer behåller wp-admin i alla fall."
+
+msgid "Admin access: people with this role are organizers"
+msgstr "Adminbehörighet: personer med den här rollen är arrangörer"
+
+msgid "That would leave no organizer: at least one person has to hold a role with Admin access."
+msgstr "Då skulle ingen arrangör finnas kvar: minst en person måste ha en roll med adminbehörighet."
+
+msgid "The roles were not saved."
+msgstr "Rollerna sparades inte."

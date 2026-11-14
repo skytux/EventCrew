@@ -49,6 +49,49 @@ final class PersonRepositoryTest extends TestCase
         self::assertSame('ana@example.test', $this->wpdb->inserts[0]['data']['email']);
     }
 
+    /**
+     * Being an organizer follows the roles (Owner 2026-11-08, Q371): adding
+     * an organizer gives them Organize.
+     */
+    public function testAnOrganizerIsCreatedWithTheOrganizeRole(): void
+    {
+        Functions\when('get_option')->justReturn(null);
+        Functions\when('do_action')->justReturn(null);
+
+        (new PersonRepository())->create(['email' => 'a@example.test', 'is_organizer' => true]);
+        (new PersonRepository())->create(['email' => 'b@example.test', 'role_slugs' => ['clean']]);
+
+        self::assertSame('organize', $this->wpdb->inserts[0]['data']['role_slugs']);
+        self::assertSame(1, $this->wpdb->inserts[0]['data']['is_organizer']);
+        self::assertSame('clean', $this->wpdb->inserts[1]['data']['role_slugs']);
+        self::assertSame(0, $this->wpdb->inserts[1]['data']['is_organizer']);
+    }
+
+    /**
+     * is_organizer is never written as given: it is derived with the roles,
+     * and a change of it refreshes the person's command menu.
+     */
+    public function testTheOrganizerCopyFollowsTheRolesOnUpdate(): void
+    {
+        Functions\when('get_option')->justReturn(null);
+        $fired = [];
+        Functions\when('do_action')->alias(static function (string $hook, mixed ...$args) use (&$fired): void {
+            $fired[] = [$hook, $args];
+        });
+
+        (new PersonRepository())->update(4, ['display_name' => 'Ana', 'is_organizer' => 1]);
+        self::assertArrayNotHasKey('is_organizer', $this->wpdb->updates[0]['data']);
+
+        (new PersonRepository())->update(4, ['role_slugs' => 'clean'], '', true);
+        self::assertSame(0, $this->wpdb->updates[1]['data']['is_organizer']);
+        self::assertContains([\EventCrew\Telegram\CommandMenu::ORGANIZER_CHANGED_HOOK, [4]], $fired);
+
+        $fired = [];
+        (new PersonRepository())->update(4, ['role_slugs' => 'clean'], '', false);
+        self::assertSame(0, $this->wpdb->updates[2]['data']['is_organizer']);
+        self::assertSame([], $fired);
+    }
+
     public function testLowercasesTheEmailOnUpdate(): void
     {
         (new PersonRepository())->update(4, ['email' => 'NEW@Example.TEST']);

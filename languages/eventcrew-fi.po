@@ -1646,10 +1646,6 @@ msgstr "Ladataan…"
 msgid "Organize"
 msgstr "Järjestelyt"
 
-#: src/Support/Roles.php:291
-msgid "⭐ Organize"
-msgstr "⭐ Järjestelyt"
-
 #: templates/public/signup-board.php:64
 msgid "%d signed up"
 msgstr "%d ilmoittautunut"
@@ -4081,12 +4077,6 @@ msgstr "\"Avaa myyntipisteen\": tämän roolin tehtävässä sinä iltana olevat
 
 msgid "The description is a sentence or two on what the job involves. It is shown under the task on the web page, and in the signup confirmation and the reminder."
 msgstr "Kuvaus on lause tai kaksi siitä, mitä tehtävään kuuluu. Se näytetään tehtävän alla verkkosivulla sekä ilmoittautumisvahvistuksessa ja muistutuksessa."
-
-msgid "Organize task: +1 allowed"
-msgstr "Järjestelyt-tehtävä: +1 sallittu"
-
-msgid "The Organize task is not in the list above. New Organize tasks copy this number."
-msgstr "Järjestelyt-tehtävä ei ole yllä olevassa listassa. Uudet Järjestelyt-tehtävät saavat tämän luvun."
 
 msgid "Crew guide"
 msgstr "Crew-opas"
@@ -11474,10 +11464,6 @@ msgid "Change someone’s details: /editperson name ; name new name ; email new 
 msgstr "Muuta jonkun tietoja: /editperson nimi ; name uusi nimi ; email uusi osoite ; notes teksti\nEsimerkki: /editperson Milla ; notes Baari perjantaisin\nAnna vain se, mikä muuttuu. notes - tyhjentää muistiinpanot."
 
 # parityA
-msgid "Change a role: /editrole role ; field value ; field value\nExample: /editrole Bar ; people 3 ; guestsignup off\nFields: name, emoji, people, plus, description, measured start|end, starts minutes, ends minutes, events text, minroles, timeseach, count role number, and on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous. - empties a text or time."
-msgstr "Muuta roolia: /editrole rooli ; kenttä arvo ; kenttä arvo\nEsimerkki: /editrole Baari ; people 3 ; guestsignup off\nKentät: name, emoji, people, plus, description, measured start|end, starts minuutit, ends minuutit, events teksti, minroles, timeseach, count rooli määrä, ja on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous. - tyhjentää tekstin tai ajan."
-
-# parityA
 msgid "Change the list: /optout add address, /optout remove address\nExample: /optout add milla@example.com"
 msgstr "Muuta listaa: /optout add osoite, /optout remove osoite\nEsimerkki: /optout add milla@example.com"
 
@@ -11865,3 +11851,19 @@ msgstr "Julkaistaanko seuraavan tapahtuman kortti ryhmässä nyt?"
 
 msgid "Next event card posted in the group."
 msgstr "Seuraavan tapahtuman kortti julkaistu ryhmässä."
+
+# parityA
+msgid "Change a role: /editrole role ; field value ; field value\nExample: /editrole Bar ; people 3 ; guestsignup off\nFields: name, emoji, people, plus, description, measured start|end, starts minutes, ends minutes, events text, minroles, timeseach, count role number, and on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous, adminaccess. - empties a text or time."
+msgstr "Muuta roolia: /editrole rooli ; kenttä arvo ; kenttä arvo\nEsimerkki: /editrole Baari ; people 3 ; guestsignup off\nKentät: name, emoji, people, plus, description, measured start|end, starts minuutit, ends minuutit, events teksti, minroles, timeseach, count rooli määrä, ja on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous, adminaccess. - tyhjentää tekstin tai ajan."
+
+msgid "\"Admin access\": everyone holding the role is an organizer, in the bot and the Crew app. Organize has it; it is always \"Only people with this role\". Making someone an organizer gives them Organize. At least one person must keep a role with Admin access. WordPress administrators keep wp-admin either way."
+msgstr "\"Ylläpito-oikeus\": jokainen, jolla on rooli, on järjestäjä botissa ja Crew-sovelluksessa. Järjestelyt-roolilla se on; se on aina \"Vain henkilöt, joilla on tämä rooli\". Järjestäjäksi tekeminen antaa Järjestelyt-roolin. Ainakin yhdellä on oltava rooli, jolla on ylläpito-oikeus. WordPressin ylläpitäjät pääsevät wp-adminiin joka tapauksessa."
+
+msgid "Admin access: people with this role are organizers"
+msgstr "Ylläpito-oikeus: tämän roolin henkilöt ovat järjestäjiä"
+
+msgid "That would leave no organizer: at least one person has to hold a role with Admin access."
+msgstr "Silloin ei jäisi järjestäjää: ainakin yhdellä on oltava rooli, jolla on ylläpito-oikeus."
+
+msgid "The roles were not saved."
+msgstr "Rooleja ei tallennettu."

@@ -8,7 +8,7 @@ use EventCrew\Database\Schema;
 use EventCrew\Models\Person;
 use EventCrew\Support\History;
 use EventCrew\Support\Language;
-use EventCrew\Support\Roles;
+use EventCrew\Support\OrganizerSync;
 
 /**
  * All reads and writes of the people table.
@@ -143,11 +143,25 @@ final class PersonRepository
     }
 
     /**
+     * is_organizer is not taken as given: it follows the roles
+     * (OrganizerSync). 'is_organizer' => true in $data means "make them an
+     * organizer", which gives them Organize. $by is who added them, for the
+     * notice to a new organizer.
+     *
      * @param array<string, mixed> $data
      */
-    public function create(array $data): int
+    public function create(array $data, string $by = ''): int
     {
         global $wpdb;
+
+        $roles = array_values((array) ($data['role_slugs'] ?? []));
+
+        if (! empty($data['is_organizer'])) {
+            $roles = OrganizerSync::withAdmin(Person::decodeRoles(self::encodeRoles($roles)));
+        }
+
+        $encoded = self::encodeRoles($roles);
+        $organizer = OrganizerSync::organizerFor(Person::decodeRoles($encoded));
 
         $now = current_time('mysql');
 
@@ -165,10 +179,10 @@ final class PersonRepository
                 'display_name' => (string) ($data['display_name'] ?? ''),
                 'telegram_user_id' => $data['telegram_user_id'] ?? null,
                 'telegram_chat_id' => $data['telegram_chat_id'] ?? null,
-                'is_organizer' => ! empty($data['is_organizer']) ? 1 : 0,
+                'is_organizer' => $organizer,
                 'at_risk_pass' => ! empty($data['at_risk_pass']) ? 1 : 0,
                 'notify_muted' => ! empty($data['notify_muted']) ? 1 : 0,
-                'role_slugs' => self::encodeRoles((array) ($data['role_slugs'] ?? [])),
+                'role_slugs' => $encoded,
                 'notes' => (string) ($data['notes'] ?? ''),
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -179,21 +193,66 @@ final class PersonRepository
 
         if ($id > 0) {
             History::record(History::PERSON_ADDED, ['person_id' => $id]);
+
+            if (1 === $organizer) {
+                OrganizerSync::changed($id, true, $by);
+            }
         }
 
         return $id;
     }
 
     /**
+     * Writes the given columns. is_organizer is never taken from $data: it
+     * follows role_slugs (OrganizerSync), written with them whenever they
+     * are. When that changes the person's organizer status, OrganizerSync
+     * hears of it; $by is who made the change, for the notice. $wasOrganizer
+     * is their status before, when the caller has the person at hand (else
+     * it is read).
+     *
      * @param array<string, mixed> $data
      */
-    public function update(int $id, array $data): void
+    public function update(int $id, array $data, string $by = '', ?bool $wasOrganizer = null): void
     {
         global $wpdb;
+
+        unset($data['is_organizer']);
 
         if (isset($data['email'])) {
             $data['email'] = $this->normalizeEmail((string) $data['email']);
         }
+
+        $was = null;
+
+        if (array_key_exists('role_slugs', $data)) {
+            $data['role_slugs'] = (string) $data['role_slugs'];
+            $data['is_organizer'] = OrganizerSync::organizerFor(Person::decodeRoles($data['role_slugs']));
+            $was = null === $wasOrganizer ? $this->storedOrganizer($id) : ($wasOrganizer ? 1 : 0);
+        }
+
+        $this->write($id, $data);
+
+        if (null !== $was && $was !== $data['is_organizer']) {
+            OrganizerSync::changed($id, 1 === $data['is_organizer'], $by);
+        }
+    }
+
+    /**
+     * Writes the derived organizer copy alone. Only OrganizerSync calls it,
+     * after a role's Admin access changed.
+     */
+    public function writeOrganizer(int $id, bool $isOrganizer): void
+    {
+        $this->write($id, ['is_organizer' => $isOrganizer ? 1 : 0]);
+        OrganizerSync::changed($id, $isOrganizer);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function write(int $id, array $data): void
+    {
+        global $wpdb;
 
         $data['updated_at'] = current_time('mysql');
 
@@ -206,6 +265,16 @@ final class PersonRepository
         }
 
         $wpdb->update($this->table(), $data, ['id' => $id]);
+    }
+
+    /** The stored organizer copy (1 or 0); 0 for no such person. */
+    private function storedOrganizer(int $id): int
+    {
+        global $wpdb;
+
+        return (int) $wpdb->get_var(
+            $wpdb->prepare("SELECT is_organizer FROM {$this->table()} WHERE id = %d", $id)
+        ) > 0 ? 1 : 0;
     }
 
     public function delete(int $id): void
@@ -328,20 +397,44 @@ final class PersonRepository
         $this->update($id, ['banned_at' => null, 'ban_reason' => null]);
     }
 
-    public function setOrganizer(int $id, bool $isOrganizer): void
+    /**
+     * Makes the person an organizer, by giving them Organize
+     * (OrganizerSync::withAdmin()), or takes it away, by taking every role
+     * with Admin access they hold. The caller checks the lockout guard
+     * (OrganizerSync::personWouldLeaveNone()) first. $by is who did it.
+     */
+    public function setOrganizer(int $id, bool $isOrganizer, string $by = ''): void
     {
-        $this->update($id, ['is_organizer' => $isOrganizer ? 1 : 0]);
+        $person = $this->find($id);
+
+        if (null !== $person) {
+            $this->setOrganizerFor($person, $isOrganizer, $by);
+        }
+    }
+
+    /** setOrganizer() for a person the caller has already read. */
+    public function setOrganizerFor(Person $person, bool $isOrganizer, string $by = ''): void
+    {
+        $this->setRoles(
+            $person->id,
+            $isOrganizer
+                ? OrganizerSync::withAdmin($person->roleSlugs)
+                : OrganizerSync::withoutAdmin($person->roleSlugs),
+            $by,
+            $person->isOrganizer
+        );
     }
 
     /**
-     * Replaces the restricted roles a person holds (DJ, VJ, ...). Unknown
-     * slugs and Organize are dropped: Organize follows is_organizer.
+     * Replaces the roles a person holds (DJ, VJ, Organize, ...); the
+     * organizer copy follows (update()). $by is who did it; $wasOrganizer
+     * as for update().
      *
      * @param array<int, string> $slugs
      */
-    public function setRoles(int $id, array $slugs): void
+    public function setRoles(int $id, array $slugs, string $by = '', ?bool $wasOrganizer = null): void
     {
-        $this->update($id, ['role_slugs' => self::encodeRoles($slugs)]);
+        $this->update($id, ['role_slugs' => self::encodeRoles($slugs)], $by, $wasOrganizer);
     }
 
     /**
@@ -356,7 +449,7 @@ final class PersonRepository
         foreach ($slugs as $slug) {
             $slug = sanitize_key((string) $slug);
 
-            if ('' === $slug || Roles::ORGANIZE_SLUG === $slug) {
+            if ('' === $slug) {
                 continue;
             }
 

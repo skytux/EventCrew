@@ -2587,7 +2587,8 @@ if ($eventcrew_link_expired) {
                             <summary class="eventcrew-textlink"><?php esc_html_e('Access', 'eventcrew'); ?></summary>
                             <div class="eventcrew-admin-roles">
                                 <label><input type="checkbox" name="role_archived" value="1"<?php echo $eventcrew_role_editing['archived'] ? ' checked' : ''; ?>> <?php esc_html_e('Archived (hidden)', 'eventcrew'); ?></label>
-                                <label><input type="checkbox" name="role_restricted" value="1"<?php echo $eventcrew_role_editing['restricted'] ? ' checked' : ''; ?>> <?php esc_html_e('Only people with this role', 'eventcrew'); ?></label>
+                                <label><input type="checkbox" name="role_restricted" value="1"<?php echo $eventcrew_role_editing['restricted'] ? ' checked' : ''; ?><?php echo \EventCrew\Support\Roles::ORGANIZE_SLUG === $eventcrew_role_editing['slug'] ? ' disabled' : ''; ?>> <?php esc_html_e('Only people with this role', 'eventcrew'); ?></label>
+                                <label><input type="checkbox" name="role_admin_access" value="1"<?php echo ($eventcrew_role_editing['admin_access'] ?? false) ? ' checked' : ''; ?>> <?php esc_html_e('Admin access: people with this role are organizers', 'eventcrew'); ?></label>
                                 <label><input type="checkbox" name="role_every_night" value="1"<?php echo $eventcrew_role_editing['every_night'] ? ' checked' : ''; ?>> <?php esc_html_e('Add to every night', 'eventcrew'); ?></label>
                                 <label><input type="checkbox" name="role_sales_desk" value="1"<?php echo $eventcrew_role_editing['sales_desk'] ? ' checked' : ''; ?>> <?php esc_html_e('Opens the sales desk', 'eventcrew'); ?></label>
                                 <?php // Guest sign up greys out while Guest display and Members display are off (eventcrew.css). ?>

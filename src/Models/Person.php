@@ -219,13 +219,13 @@ final class Person
 
     /**
      * Whether this person was given a restricted role (DJ, VJ, ...) and so may
-     * see and take its tasks. Organize is not a stored role: it follows the
-     * organizer permission.
+     * see and take its tasks. Every organizer may take Organize tasks, also
+     * one who is an organizer through another role with Admin access.
      */
     public function hasRole(string $slug): bool
     {
-        if (Roles::ORGANIZE_SLUG === $slug) {
-            return $this->isOrganizer;
+        if (Roles::ORGANIZE_SLUG === $slug && $this->isOrganizer) {
+            return true;
         }
 
         return in_array($slug, $this->roleSlugs, true);

@@ -93,7 +93,8 @@ final class RoleGuide
     }
 
     /**
-     * Every role on offer with what it involves. The one list the welcome
+     * Every role on offer with what it involves (not the ones with Admin
+     * access). The one list the welcome
      * message and the web board's descriptions section both print, so they
      * cannot disagree.
      *
@@ -104,6 +105,12 @@ final class RoleGuide
         $list = [];
 
         foreach (Roles::active() as $role) {
+            // Organize and the other roles with Admin access are the
+            // organizers' own: not a job the crew is told about.
+            if ($role['admin_access']) {
+                continue;
+            }
+
             $list[] = [
                 'name' => '' === $role['emoji'] ? $role['label'] : $role['emoji'] . ' ' . $role['label'],
                 'description' => $role['description'],

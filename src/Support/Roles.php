@@ -57,6 +57,7 @@ use EventCrew\Models\Task;
  *     members_display: bool,
  *     title_contains: string,
  *     plus_ones: int,
+ *     admin_access: bool,
  *     conditions: array{counts: array<string, int>, min_roles: int, times_each: int}
  * }
  *
@@ -79,23 +80,32 @@ use EventCrew\Models\Task;
  * roles, and/or a number of different roles done a number of times each. The
  * conditions never let anyone sign up; they only drive a notice to the
  * organizers and a list in wp-admin and the bot's /people. See RoleConditions.
+ *
+ * admin_access ("Admin access"): holding a role with it makes the person an
+ * organizer. people.is_organizer is derived from it (OrganizerSync), never set
+ * by hand. Organize is an ordinary entry in the list since schema 41, with
+ * Admin access on by default; while it is not stored, all() adds it at the
+ * end with its defaults (defaultOrganize()). It stays restricted: its tasks
+ * are for organizers only (Task::isOrganizersOnly()).
  */
 final class Roles
 {
     public const OPTION_NAME = 'eventcrew_roles';
 
     /**
-     * The reserved role for organizing the night. It is not in the editable
-     * role list: the plugin adds one per event. Only
-     * organizers see it or may take it, and it has no limit on how many people
-     * take it, so it is never full and never counted as a place that needs
-     * filling. See Task::isOrganizersOnly() and Task::hasNoLimit().
+     * The role for organizing the night, with Admin access by default: whoever
+     * holds it is an organizer. Every night gets one task of it (it ships
+     * with "Add to every night" on). Only organizers see its tasks or may
+     * take them, and they have no limit on how many people take them, so they
+     * are never full and never counted as places that need filling. See
+     * Task::isOrganizersOnly() and Task::hasNoLimit().
      */
     public const ORGANIZE_SLUG = 'organize';
 
     /**
-     * The reserved Organize role is not in the role list, so its "+1 allowed"
-     * default is an option of its own. 1 until it is saved.
+     * Before schema 41 Organize was not in the role list, and its "+1
+     * allowed" default was this option of its own (1 until saved). Now only
+     * read for the Organize entry while that is not stored yet.
      */
     public const ORGANIZE_PLUS_ONES_OPTION = 'eventcrew_organize_plus_ones';
 
@@ -115,7 +125,7 @@ final class Roles
     public const DEFAULT_SLUGS = ['decorate', 'welcome', 'clean'];
 
     /**
-     * The role slugs in their stored order, as all() lists them, but without
+     * The role slugs in their stored order, Organize included, as all() lists them, but without
      * building the roles: no name is translated, so this is safe before init
      * (TaskOrder runs from the boot's backfill).
      *
@@ -134,7 +144,14 @@ final class Roles
             }
         }
 
-        return [] === $slugs ? self::DEFAULT_SLUGS : $slugs;
+        $slugs = [] === $slugs ? self::DEFAULT_SLUGS : $slugs;
+
+        // Organize is always there, at the end until it is stored (all()).
+        if (! in_array(self::ORGANIZE_SLUG, $slugs, true)) {
+            $slugs[] = self::ORGANIZE_SLUG;
+        }
+
+        return $slugs;
     }
 
     /**
@@ -243,7 +260,104 @@ final class Roles
             }
         }
 
+        if (! in_array(self::ORGANIZE_SLUG, array_column($roles, 'slug'), true)) {
+            $roles[] = self::normalize(self::defaultOrganize(), self::ORGANIZE_SLUG);
+        }
+
         return $roles;
+    }
+
+    /**
+     * The Organize entry as it ships: Admin access, for organizers only, one
+     * task every night, untimed, +1 allowed from the old option (1 unless it
+     * was saved). The name is the translated "Organize" in the reader's
+     * language until it is stored (forStorage() then keeps every language).
+     *
+     * @return array<string, mixed>
+     */
+    public static function defaultOrganize(): array
+    {
+        $stored = get_option(self::ORGANIZE_PLUS_ONES_OPTION, '');
+
+        return [
+            'slug' => self::ORGANIZE_SLUG,
+            'label' => __('Organize', 'eventcrew'),
+            'emoji' => '⭐',
+            'capacity' => 1,
+            'archived' => false,
+            'restricted' => true,
+            'every_night' => true,
+            'sales_desk' => false,
+            'on_board' => false,
+            'guest_signup' => false,
+            'anonymous' => false,
+            'members_display' => false,
+            'title_contains' => '',
+            'plus_ones' => is_numeric($stored) ? (int) $stored : 1,
+            'admin_access' => true,
+            'conditions' => self::noConditions(),
+            'anchor' => self::ANCHOR_START,
+            'start_offset' => null,
+            'end_offset' => null,
+            'description' => '',
+        ];
+    }
+
+    /**
+     * Whether the Organize entry is in the stored role list (schema 41 adds
+     * it), not only added by all().
+     */
+    public static function organizeStored(): bool
+    {
+        $stored = get_option(self::OPTION_NAME, null);
+
+        foreach (is_array($stored) ? $stored : [] as $role) {
+            if (is_array($role) && self::ORGANIZE_SLUG === sanitize_key((string) ($role['slug'] ?? ''))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Stores the role list as all() reads it, so the Organize entry is in it.
+     * Schema 41. Returns false when it was already there.
+     */
+    public static function storeOrganize(): bool
+    {
+        if (self::organizeStored()) {
+            return false;
+        }
+
+        update_option(self::OPTION_NAME, array_map(static fn (array $role): array => self::forStorage($role), self::all()));
+
+        return true;
+    }
+
+    /**
+     * The slugs of the active roles with Admin access: holding one of them
+     * makes a person an organizer.
+     *
+     * @return list<string>
+     */
+    public static function adminSlugs(): array
+    {
+        $slugs = [];
+
+        foreach (self::active() as $role) {
+            if ($role['admin_access']) {
+                $slugs[] = $role['slug'];
+            }
+        }
+
+        return $slugs;
+    }
+
+    /** Whether a role gives Admin access (archived roles give none). */
+    public static function givesAdminAccess(string $slug): bool
+    {
+        return in_array($slug, self::adminSlugs(), true);
     }
 
     /**
@@ -294,9 +408,7 @@ final class Roles
                 $slug = sanitize_key($label);
             }
 
-            // The organize slug is reserved and auto-managed; never let a
-            // hand-typed role take it over.
-            if ('' === $slug || self::ORGANIZE_SLUG === $slug || isset($seen[$slug])) {
+            if ('' === $slug || isset($seen[$slug])) {
                 continue;
             }
 
@@ -305,9 +417,54 @@ final class Roles
             $clean[] = self::forStorage(self::normalize($role, $slug));
         }
 
+        // A list without Organize (an older form) keeps the stored entry.
+        if ([] !== $clean && ! isset($seen[self::ORGANIZE_SLUG]) && self::organizeStored()) {
+            $organize = self::find(self::ORGANIZE_SLUG);
+
+            if (null !== $organize) {
+                $clean[] = self::forStorage($organize);
+            }
+        }
+
         $before = self::everyNightSlugs();
+        $admin = self::adminSlugs();
         update_option(self::OPTION_NAME, [] === $clean ? self::defaults() : $clean);
         self::queueNewEveryNight($before);
+        OrganizerSync::rolesChanged($admin);
+    }
+
+    /**
+     * Why saving $roles (a role list in the shape save() takes) is refused:
+     * it would leave no organizer, because no person would hold an active
+     * role with Admin access any more. '' when it may be saved.
+     *
+     * @param array<int, array<string, mixed>> $roles
+     */
+    public static function lockoutError(array $roles): string
+    {
+        $admin = [];
+        $seen = false;
+
+        foreach ($roles as $role) {
+            $slug = sanitize_key((string) ($role['slug'] ?? ''));
+            $seen = $seen || self::ORGANIZE_SLUG === $slug;
+            $access = array_key_exists('admin_access', $role)
+                ? ! empty($role['admin_access'])
+                : self::ORGANIZE_SLUG === $slug;
+
+            if ('' !== $slug && $access && empty($role['archived'])) {
+                $admin[] = $slug;
+            }
+        }
+
+        // Organize left out of the list keeps what it has (save()).
+        if (! $seen && self::givesAdminAccess(self::ORGANIZE_SLUG)) {
+            $admin[] = self::ORGANIZE_SLUG;
+        }
+
+        return OrganizerSync::wouldLeaveNone($admin)
+            ? __('That would leave no organizer: at least one person has to hold a role with Admin access.', 'eventcrew')
+            : '';
     }
 
     /**
@@ -319,11 +476,43 @@ final class Roles
      */
     private static function forStorage(array $role): array
     {
+        // Organize under its shipped name is stored in every language; a
+        // name the organizers gave it is stored like any other.
+        if (
+            self::ORGANIZE_SLUG === $role['slug']
+            && [] === array_filter($role['label_text']['texts'] ?? [])
+            && in_array(trim((string) ($role['label_text']['source'] ?? '')), ['', 'Organize', __('Organize', 'eventcrew')], true)
+        ) {
+            $role['label_text'] = self::organizeLabelText();
+        }
+
         $label = trim((string) ($role['label_text']['source'] ?? ''));
         $role['label'] = '' === $label ? $role['slug'] : $label;
         $role['description'] = trim((string) ($role['description_text']['source'] ?? ''));
 
         return $role;
+    }
+
+    /**
+     * The shipped name "Organize" in every site language (the plugin's own
+     * translations), as a translated text: what the Organize entry is stored
+     * with, so each reader keeps reading it in their own language.
+     *
+     * @return array<string, mixed>
+     */
+    private static function organizeLabelText(): array
+    {
+        $value = TranslatedText::blank();
+        $main = TranslatedText::mainLanguage();
+
+        foreach (TranslatedText::languages() as $lang) {
+            $value['texts'][$lang] = Language::run($lang, static fn (): string => __('Organize', 'eventcrew'));
+        }
+
+        $value['source'] = '' !== ($value['texts'][$main] ?? '') ? $value['texts'][$main] : 'Organize';
+        $value['lang'] = $main;
+
+        return $value;
     }
 
     /**
@@ -368,6 +557,7 @@ final class Roles
     private static function setArchived(string $slug, bool $archived): void
     {
         $before = self::everyNightSlugs();
+        $admin = self::adminSlugs();
         $roles = self::all();
 
         foreach ($roles as $index => $role) {
@@ -378,6 +568,53 @@ final class Roles
 
         update_option(self::OPTION_NAME, array_map(static fn (array $role): array => self::forStorage($role), $roles));
         self::queueNewEveryNight($before);
+        OrganizerSync::rolesChanged($admin);
+    }
+
+    /**
+     * Why archiving $slug is refused ('' when it may be archived): it is the
+     * last role with Admin access anyone holds.
+     */
+    public static function archiveError(string $slug): string
+    {
+        $admin = array_values(array_diff(self::adminSlugs(), [$slug]));
+
+        return self::givesAdminAccess($slug) && OrganizerSync::wouldLeaveNone($admin)
+            ? __('That would leave no organizer: at least one person has to hold a role with Admin access.', 'eventcrew')
+            : '';
+    }
+
+    /**
+     * Ticks or unticks Admin access on one role. Returns '' when done, else
+     * why not: an unknown role, or it would leave no organizer.
+     */
+    public static function setAdminAccess(string $slug, bool $on): string
+    {
+        $roles = self::all();
+        $found = false;
+
+        foreach ($roles as $index => $role) {
+            if ($role['slug'] === $slug) {
+                $roles[$index]['admin_access'] = $on;
+                $found = true;
+            }
+        }
+
+        if (! $found) {
+            return __('That role was not found.', 'eventcrew');
+        }
+
+        $error = self::lockoutError($roles);
+
+        if ('' !== $error) {
+            return $error;
+        }
+
+        $admin = self::adminSlugs();
+        update_option(self::OPTION_NAME, array_map(static fn (array $role): array => self::forStorage($role), $roles));
+        OrganizerSync::rolesChanged($admin);
+
+        return '';
     }
 
     /** Ways a role moves in the order (move()). */
@@ -453,13 +690,17 @@ final class Roles
     public static function translationRows(): array
     {
         $rows = [];
+        // Organize has the plugin's own translations until it is stored
+        // (schema 41 stores it with them): nothing to translate before.
+        $organizeStored = self::organizeStored();
 
         foreach (self::all() as $role) {
-            if (self::ORGANIZE_SLUG === $role['slug']) {
+            $slug = $role['slug'];
+
+            if (self::ORGANIZE_SLUG === $slug && ! $organizeStored) {
                 continue;
             }
 
-            $slug = $role['slug'];
             $rows[] = new TranslationRow(
                 'role.' . $slug . '.label',
                 /* translators: %s: the role's name, e.g. Decorate */
@@ -524,10 +765,6 @@ final class Roles
 
     public static function label(string $slug): string
     {
-        if (self::ORGANIZE_SLUG === $slug) {
-            return __('Organize', 'eventcrew');
-        }
-
         return self::find($slug)['label'] ?? $slug;
     }
 
@@ -536,10 +773,6 @@ final class Roles
      */
     public static function display(string $slug): string
     {
-        if (self::ORGANIZE_SLUG === $slug) {
-            return __('⭐ Organize', 'eventcrew');
-        }
-
         $role = self::find($slug);
 
         if (null === $role) {
@@ -578,12 +811,6 @@ final class Roles
      */
     public static function defaultPlusOnes(string $slug): int
     {
-        if (self::ORGANIZE_SLUG === $slug) {
-            $stored = get_option(self::ORGANIZE_PLUS_ONES_OPTION, '');
-
-            return Task::clampPlusOnes(is_numeric($stored) ? (int) $stored : 1);
-        }
-
         return self::find($slug)['plus_ones'] ?? 0;
     }
 
@@ -595,7 +822,7 @@ final class Roles
      */
     public static function exists(string $slug): bool
     {
-        return self::ORGANIZE_SLUG === $slug || null !== self::find($slug);
+        return null !== self::find($slug);
     }
 
     public static function isArchived(string $slug): bool
@@ -611,10 +838,6 @@ final class Roles
      */
     public static function isRestricted(string $slug): bool
     {
-        if (self::ORGANIZE_SLUG === $slug) {
-            return true;
-        }
-
         return self::find($slug)['restricted'] ?? false;
     }
 
@@ -628,7 +851,7 @@ final class Roles
         $slugs = [self::ORGANIZE_SLUG];
 
         foreach (self::all() as $role) {
-            if ($role['restricted']) {
+            if ($role['restricted'] && self::ORGANIZE_SLUG !== $role['slug']) {
                 $slugs[] = $role['slug'];
             }
         }
@@ -637,9 +860,10 @@ final class Roles
     }
 
     /**
-     * The roles a person can be given (restricted, editable ones; Organize is
-     * not here because it follows the organizer permission). Archived ones
-     * are left out: nobody new should be handed a role no longer offered.
+     * The roles a person can be given: the restricted ones and those with
+     * Admin access. Not Organize: the "Organizer" switch gives and takes it
+     * (OrganizerSync::withAdmin() / withoutAdmin()). Archived ones are left out: nobody
+     * new should be handed a role no longer offered.
      *
      * @return array<int, Role>
      */
@@ -647,7 +871,8 @@ final class Roles
     {
         return array_values(array_filter(
             self::active(),
-            static fn (array $role): bool => $role['restricted']
+            static fn (array $role): bool => ($role['restricted'] || $role['admin_access'])
+                && self::ORGANIZE_SLUG !== $role['slug']
         ));
     }
 
@@ -797,7 +1022,8 @@ final class Roles
             'start_offset' => self::nullableOffset($role['start_offset'] ?? null),
             'end_offset' => self::nullableOffset($role['end_offset'] ?? null),
             'description' => TranslatedText::forReader($descriptionText),
-            'restricted' => ! empty($role['restricted']),
+            // Organize is always restricted: its tasks are for organizers only.
+            'restricted' => self::ORGANIZE_SLUG === $slug || ! empty($role['restricted']),
             // On unless switched off: a role stored before this key existed
             // was never restricted, so the default only matters once it is.
             'every_night' => ! array_key_exists('every_night', $role) || ! empty($role['every_night']),
@@ -825,6 +1051,12 @@ final class Roles
             // number new tasks of this role start with. 0 for a role stored
             // before this key existed.
             'plus_ones' => Task::clampPlusOnes((int) ($role['plus_ones'] ?? 0)),
+            // Admin access: holding the role makes a person an organizer.
+            // Organize has it unless switched off; other roles stored before
+            // this key existed have none.
+            'admin_access' => array_key_exists('admin_access', $role)
+                ? ! empty($role['admin_access'])
+                : self::ORGANIZE_SLUG === $slug,
         ];
     }
 

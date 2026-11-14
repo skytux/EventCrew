@@ -124,7 +124,7 @@ final class PeoplePageTest extends TestCase
      *
      * @return array<int, array{0: string, 1: array<int, mixed>}>
      */
-    private function editOrganizer(bool $stillOrganizer, bool $wasOrganizer = true): array
+    private function editOrganizer(bool $stillOrganizer, bool $wasOrganizer = true, string $otherOrganizers = '1'): array
     {
         $row = [
             'id' => 8,
@@ -135,6 +135,7 @@ final class PeoplePageTest extends TestCase
         $this->wpdb->nextRows[] = $row; // findByEmail
         $this->wpdb->nextRows[] = $row; // find, before the save
         $this->wpdb->nextRows[] = $row; // find, for the roles
+        $this->wpdb->nextVars[] = $otherOrganizers; // for the lockout guard
 
         $_POST = ['person_id' => '8', 'email' => 'anna@example.com', 'display_name' => 'Anna'];
 
@@ -162,6 +163,18 @@ final class PeoplePageTest extends TestCase
         $fired = $this->editOrganizer(false);
 
         self::assertContains([\EventCrew\Telegram\CommandMenu::ORGANIZER_CHANGED_HOOK, [8]], $fired);
+    }
+
+    /**
+     * Unticking the last organizer would leave the site without one: nothing
+     * is saved (Owner 2026-11-08, Q372).
+     */
+    public function testTheLastOrganizerCannotBeUnticked(): void
+    {
+        $fired = $this->editOrganizer(false, true, '0');
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertNotContains(\EventCrew\Telegram\CommandMenu::ORGANIZER_CHANGED_HOOK, array_column($fired, 0));
     }
 
     public function testSavingWithoutChangingOrganizerLeavesTheCommandMenu(): void

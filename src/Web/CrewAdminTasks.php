@@ -253,6 +253,7 @@ final class CrewAdminTasks
             'guest_signup' => isset($post['role_guest_signup']),
             'anonymous' => isset($post['role_anonymous']),
             'members_display' => isset($post['role_members_display']),
+            'admin_access' => isset($post['role_admin_access']),
             'title_contains' => sanitize_text_field((string) ($post['role_title_contains'] ?? '')),
             'plus_ones' => (int) ($post['role_plus_ones'] ?? 0),
             'conditions' => [
@@ -278,6 +279,12 @@ final class CrewAdminTasks
                 $roles[$index][$plain] = (string) $stored['source'];
                 $roles[$index][$translated] = $stored;
             }
+        }
+
+        // Admin access unticked (or the role archived) must leave someone an
+        // organizer.
+        if ('' !== Roles::lockoutError($roles)) {
+            return 'admin_role_lockout';
         }
 
         Roles::save($roles);
@@ -324,6 +331,7 @@ final class CrewAdminTasks
             'admin_template_none' => __('Every active role already has a task for that event.', 'eventcrew'),
             'admin_open_task_none' => __('Nothing to send: no open tasks, or everyone eligible already has it.', 'eventcrew'),
             'admin_role_saved' => __('Settings saved.', 'eventcrew'),
+            'admin_role_lockout' => __('That would leave no organizer: at least one person has to hold a role with Admin access.', 'eventcrew'),
             'admin_role_gone' => __('That role was not found.', 'eventcrew'),
             'admin_role_order_saved' => __('Role order saved.', 'eventcrew'),
             'admin_role_order_same' => __('The role is already there.', 'eventcrew'),
@@ -455,17 +463,6 @@ final class CrewAdminTasks
             if ($role['slug'] === $editing->roleSlug) {
                 return $roles;
             }
-        }
-
-        if (Roles::ORGANIZE_SLUG === $editing->roleSlug) {
-            $roles[] = [
-                'slug' => Roles::ORGANIZE_SLUG,
-                'label' => Roles::label(Roles::ORGANIZE_SLUG),
-                'archived' => false,
-                'capacity' => $editing->capacity,
-            ];
-
-            return $roles;
         }
 
         $archived = Roles::find($editing->roleSlug);

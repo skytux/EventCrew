@@ -558,6 +558,49 @@ final class SettingsPageTest extends TelegramTestCase
         self::assertTrue(\EventCrew\Support\Roles::membersDisplay('clean'));
     }
 
+    /**
+     * The Admin access tick (Owner 2026-11-08, Q371) saves per row; Organize
+     * is always for the people holding it only.
+     */
+    public function testTheAdminAccessTickSavesPerRole(): void
+    {
+        $this->options[\EventCrew\Support\Roles::OPTION_NAME] = [
+            ['slug' => 'decorate', 'label' => 'Decorate', 'capacity' => 2],
+            ['slug' => 'organize', 'label' => 'Organize', 'capacity' => 1, 'admin_access' => true],
+        ];
+
+        $this->saveUntil([
+            'role_slug' => ['decorate', 'organize'],
+            'role_label' => [['source' => 'Decorate'], ['source' => 'Organize']],
+            'role_admin_access' => [0 => '1', 1 => '1'],
+        ], \EventCrew\Support\Roles::GUIDE_URL_OPTION);
+
+        self::assertSame(['decorate', 'organize'], \EventCrew\Support\Roles::adminSlugs());
+        self::assertTrue(\EventCrew\Support\Roles::isRestricted('organize'));
+    }
+
+    /**
+     * Unticking Admin access on the only role the organizers hold would
+     * leave none: the roles are not saved.
+     */
+    public function testTheRolesAreNotSavedWhenTheyWouldLeaveNoOrganizer(): void
+    {
+        $before = [
+            ['slug' => 'decorate', 'label' => 'Decorate', 'capacity' => 2],
+            ['slug' => 'organize', 'label' => 'Organize', 'capacity' => 1, 'admin_access' => true],
+        ];
+        $this->options[\EventCrew\Support\Roles::OPTION_NAME] = $before;
+        $this->wpdb->nextResults[] = [['id' => 1, 'role_slugs' => 'organize', 'is_organizer' => 1, 'anonymized_at' => null]];
+
+        $this->saveUntil([
+            'role_slug' => ['decorate', 'organize'],
+            'role_label' => [['source' => 'Decorate'], ['source' => 'Organize']],
+        ], \EventCrew\Support\Roles::GUIDE_URL_OPTION);
+
+        self::assertSame($before, $this->options[\EventCrew\Support\Roles::OPTION_NAME]);
+        self::assertSame(['organize'], \EventCrew\Support\Roles::adminSlugs());
+    }
+
     public function testASecretIsShownOnlyByItsLastFourCharacters(): void
     {
         self::assertSame('', \EventCrew\Support\SecretMask::mask(''));

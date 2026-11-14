@@ -11,6 +11,7 @@ use EventCrew\Support\RoleConditions;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
 use EventCrew\Support\Organization;
+use EventCrew\Support\OrganizerSync;
 
 /**
  * The organizer's permission tools from Telegram, the 🏷 and ✅ buttons under /people.
@@ -337,7 +338,7 @@ final class PermissionService
         // What is given fires its hook, and AccessNotifier tells the person.
         $answer = 'role' === $action
             ? $this->toggleRole($person, $slug, $organizer->name())
-            : $this->apply($action, $person->id, $person->name(), $person->isOrganizer, $organizer->name());
+            : $this->apply($action, $person, $organizer->name());
         $this->telegram->answerCallbackQuery($callbackId, $answer);
         $this->refreshMenu($callbackQuery, $person->id);
     }
@@ -379,24 +380,40 @@ final class PermissionService
         $label = Roles::label($slug);
 
         if ($person->hasRole($slug)) {
-            $this->people->setRoles($person->id, array_values(array_diff($person->roleSlugs, [$slug])));
+            $left = array_values(array_diff($person->roleSlugs, [$slug]));
+
+            if (OrganizerSync::personWouldLeaveNone($person->id, $person->isOrganizer, $left)) {
+                return self::lockoutText();
+            }
+
+            $this->people->setRoles($person->id, $left, $giverName, $person->isOrganizer);
 
             /* translators: 1: person's name, 2: role name */
             return sprintf(__('%1$s no longer has the role %2$s.', 'eventcrew'), $person->name(), $label);
         }
 
-        $this->people->setRoles($person->id, array_merge($person->roleSlugs, [$slug]));
+        $this->people->setRoles($person->id, array_merge($person->roleSlugs, [$slug]), $giverName, $person->isOrganizer);
         RoleNotifier::rolesChanged($person->id, $person->roleSlugs, [$slug], $giverName);
 
         /* translators: 1: person's name, 2: role name */
         return sprintf(__('%1$s now has the role %2$s.', 'eventcrew'), $person->name(), $label);
     }
 
+    /** Why a change was refused: it would leave no organizer. */
+    private static function lockoutText(): string
+    {
+        return __('That would leave no organizer: at least one person has to hold a role with Admin access.', 'eventcrew');
+    }
+
     /**
      * Applies one permission action, returning the organizer's confirmation.
      */
-    private function apply(string $action, int $personId, string $name, bool $isOrganizer, string $giverName): string
+    private function apply(string $action, Person $person, string $giverName): string
     {
+        $personId = $person->id;
+        $name = $person->name();
+        $isOrganizer = $person->isOrganizer;
+
         switch ($action) {
             case 'pass':
                 $this->people->grantAtRiskPass($personId);
@@ -405,12 +422,14 @@ final class PermissionService
                 /* translators: %s: person's name */
                 return sprintf(__('%s has a one-time sign-up pass.', 'eventcrew'), $name);
             case 'admin':
-                $this->people->setOrganizer($personId, ! $isOrganizer);
-                do_action(CommandMenu::ORGANIZER_CHANGED_HOOK, $personId);
-
-                if (! $isOrganizer) {
-                    RoleNotifier::madeOrganizer($personId, $giverName);
+                if ($isOrganizer && OrganizerSync::personWouldLeaveNone($personId, true, [])) {
+                    return self::lockoutText();
                 }
+
+                // Gives Organize, or takes every role with Admin access; the
+                // repository refreshes the command menu and welcomes a new
+                // organizer.
+                $this->people->setOrganizerFor($person, ! $isOrganizer, $giverName);
 
                 /* translators: %s: person's name */
                 $gone = __('%s is no longer an organizer.', 'eventcrew');

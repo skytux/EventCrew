@@ -178,6 +178,29 @@ final class AssistantWebAdminTest extends TelegramTestCase
         self::assertFalse($this->admin()->prepare(self::me(), AssistantWebAdmin::EDIT_ROLE, 'bar ; count bar 2')['ok']);
     }
 
+    /**
+     * Admin access is a security change: /editrole asks first, and a change
+     * of another field keeps the tick as it was.
+     */
+    public function testAdminAccessIsAskedAndKeptByOtherEdits(): void
+    {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'bar', 'label' => 'Bar'],
+            ['slug' => 'organize', 'label' => 'Organize', 'admin_access' => true],
+        ];
+
+        $asked = $this->admin()->prepare(self::me(), AssistantWebAdmin::EDIT_ROLE, 'bar ; adminaccess on');
+
+        self::assertTrue($asked['ok']);
+        self::assertArrayNotHasKey('ran', $asked);
+        self::assertSame(['role_admin_access' => true], $asked['state']['changes']);
+        $post = (new \ReflectionMethod(AssistantWebAdmin::class, 'rolePost'))->invoke(null, 'bar', $asked['state']['changes']);
+        self::assertSame('1', $post['role_admin_access']);
+
+        $kept = (new \ReflectionMethod(AssistantWebAdmin::class, 'rolePost'))->invoke(null, 'organize', ['role_capacity' => 2]);
+        self::assertSame('1', $kept['role_admin_access']);
+    }
+
     public function testTheDoNotSendListIsAskedThenChanged(): void
     {
         $asked = $this->admin()->prepare(self::me(), AssistantWebAdmin::OPTOUT, 'add Anna@Example.com');
@@ -250,8 +273,8 @@ final class AssistantWebAdminTest extends TelegramTestCase
         self::assertFalse($done['ok']);
         self::assertTrue($done['ran']);
         self::assertTrue($done['changed']);
-        self::assertSame("Role order saved.\n1. Door (door)\n2. Bar (bar)", $done['text']);
-        self::assertSame(['door', 'bar'], array_column($this->options[Roles::OPTION_NAME], 'slug'));
+        self::assertSame("Role order saved.\n1. Door (door)\n2. Bar (bar)\n3. ⭐ Järjestelyt (organize)", $done['text']);
+        self::assertSame(['door', 'bar', Roles::ORGANIZE_SLUG], array_column($this->options[Roles::OPTION_NAME], 'slug'));
 
         $same = $this->admin()->prepare(self::me(), AssistantWebAdmin::ROLE_ORDER, 'door first');
         self::assertTrue($same['ran']);

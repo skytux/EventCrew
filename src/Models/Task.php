@@ -173,7 +173,7 @@ final class Task
     /** Whether only organizers may see this task and sign up for it. */
     public function isOrganizersOnly(): bool
     {
-        return Roles::ORGANIZE_SLUG === $this->roleSlug;
+        return Roles::ORGANIZE_SLUG === $this->roleSlug || Roles::givesAdminAccess($this->roleSlug);
     }
 
     /**

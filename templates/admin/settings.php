@@ -3,9 +3,8 @@
 /**
  * Settings admin view.
  *
- * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null, description: string, restricted: bool, every_night: bool, sales_desk: bool, on_board: bool, guest_signup: bool, anonymous: bool, title_contains: string, plus_ones: int, conditions: array{counts: array<string, int>, min_roles: int, times_each: int}}> $roles
+ * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null, description: string, restricted: bool, every_night: bool, sales_desk: bool, on_board: bool, guest_signup: bool, anonymous: bool, title_contains: string, plus_ones: int, admin_access: bool, conditions: array{counts: array<string, int>, min_roles: int, times_each: int}}> $roles
  * @var array<string, array<string, string>> $role_move_urls The ↑ / ↓ links per role slug ('up', 'down'), the role order every night's tasks follow.
- * @var int $organize_plus_ones The "+1 allowed" number new Organize tasks copy.
  * @var string $guide_url Link to the crew's full guide, shared by every role.
  * @var string $nonce_action Nonce action for the save form.
  * @var bool $eventmesh_available Whether EventMesh is installed and active.
@@ -313,8 +312,17 @@ if (! defined('ABSPATH')) {
                                     type="checkbox"
                                     name="role_restricted[<?php echo esc_attr($eventcrew_i); ?>]"
                                     value="1"
-                                    <?php checked($eventcrew_role['restricted']); ?>>
+                                    <?php checked($eventcrew_role['restricted']); ?>
+                                    <?php disabled(\EventCrew\Support\Roles::ORGANIZE_SLUG === $eventcrew_role['slug']); ?>>
                                 <?php esc_html_e('Only people with this role', 'eventcrew'); ?>
+                            </label><br>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="role_admin_access[<?php echo esc_attr($eventcrew_i); ?>]"
+                                    value="1"
+                                    <?php checked($eventcrew_role['admin_access'] ?? false); ?>>
+                                <?php esc_html_e('Admin access: people with this role are organizers', 'eventcrew'); ?>
                             </label><br>
                             <label>
                                 <input
@@ -458,6 +466,9 @@ if (! defined('ABSPATH')) {
             <?php esc_html_e('A role ticked "Only people with this role" (a DJ, a VJ, a ceremony leader) is shown only to people given that role, in the Crew app, in the bot and at the sales desk. Its tasks have no sign-up limit and are never posted on the Telegram group board. Give people the role on the People page, in the Crew app Admin tab, or with /people in the bot. With "Add to every night" ticked, every upcoming night gets one task of that role, including nights that already exist; unticking it later removes nothing.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
         </p>
         <p class="description">
+            <?php esc_html_e('"Admin access": everyone holding the role is an organizer, in the bot and the Crew app. Organize has it; it is always "Only people with this role". Making someone an organizer gives them Organize. At least one person must keep a role with Admin access. WordPress administrators keep wp-admin either way.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+        </p>
+        <p class="description">
             <?php esc_html_e('"Opens the sales desk": the people on that night’s task of this role are the welcome crew. Once marked arrived they get the sales desk link, can see who has a ticket and the guest list, and can mark the crew with /roster.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
         </p>
         <p class="description">
@@ -465,22 +476,6 @@ if (! defined('ABSPATH')) {
         </p>
         <p class="description">
             <?php esc_html_e('The description is a sentence or two on what the job involves. It is shown under the task on the web page, and in the signup confirmation and the reminder.', 'eventcrew'); ?>
-        </p>
-
-        <p>
-            <label for="eventcrew-organize-plus-ones"><?php esc_html_e('Organize task: +1 allowed', 'eventcrew'); ?></label>
-            <input
-                type="number"
-                min="0"
-                max="20"
-                step="1"
-                id="eventcrew-organize-plus-ones"
-                name="organize_plus_ones"
-                value="<?php echo esc_attr((string) $organize_plus_ones); ?>"
-                class="small-text">
-        </p>
-        <p class="description">
-            <?php esc_html_e('The Organize task is not in the list above. New Organize tasks copy this number.', 'eventcrew'); ?>
         </p>
 
         <h2><?php esc_html_e('Crew guide', 'eventcrew'); ?></h2>

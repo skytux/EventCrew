@@ -47,7 +47,7 @@ final class TaskTemplateApplier
         $untimed = 0;
 
         // The ordinary roles, plus the restricted roles set to "Add to every
-        // night" (DJ, VJ, ...). A restricted role switched off is left out,
+        // night" (Organize, DJ, VJ, ...). A restricted role switched off is left out,
         // and so is a role whose title text is not in this event's title.
         $roles = array_values(array_filter(
             array_merge(Roles::forTemplate(), Roles::everyNight()),
@@ -75,16 +75,10 @@ final class TaskTemplateApplier
             $this->tasks->create($task);
             ++$created;
 
-            if (null === $task['starts_at']) {
+            // Organize is untimed by design: it covers the whole night.
+            if (null === $task['starts_at'] && Roles::ORGANIZE_SLUG !== $task['role_slug']) {
                 ++$untimed;
             }
-        }
-
-        // One organize task per event, for organizers only and with no limit on
-        // people. Untimed: it covers the whole night.
-        if (! isset($existing[Roles::ORGANIZE_SLUG])) {
-            $this->tasks->create(OrganizeTaskBackfill::taskData($event['date'], $eventPostId, ''));
-            ++$created;
         }
 
         // A new batch of tasks makes the Telegram board out of date. The hook

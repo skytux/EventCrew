@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace EventCrew\Admin;
 
-use EventCrew\Models\Task;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\AppInstallPrompt;
 use EventCrew\Support\AppStats;
@@ -161,7 +160,6 @@ final class SettingsPage
                 'roles' => Roles::all(),
                 'role_move_urls' => self::roleMoveUrls(),
                 'guide_url' => Roles::guideUrl(),
-                'organize_plus_ones' => Roles::defaultPlusOnes(Roles::ORGANIZE_SLUG),
                 'nonce_action' => self::NONCE_ACTION,
                 'eventmesh_available' => EventSource::isAvailable(),
                 'auto_create_tasks' => (bool) get_option(EventMeshSyncListener::OPTION_NAME, false),
@@ -648,21 +646,18 @@ final class SettingsPage
     {
         Admin::assertCanSave(self::NONCE_ACTION);
 
-        Roles::save($this->submittedRoles());
+        // The roles are not saved when the Admin access ticks (or archive
+        // ticks) would leave no organizer; the rest of the page still is.
+        $submittedRoles = $this->submittedRoles();
+        $lockout = Roles::lockoutError($submittedRoles);
+
+        if ('' === $lockout) {
+            Roles::save($submittedRoles);
+        }
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
         $guideUrl = isset($_POST['guide_url']) ? esc_url_raw(wp_unslash($_POST['guide_url'])) : '';
         update_option(Roles::GUIDE_URL_OPTION, $guideUrl);
-
-        // phpcs:disable WordPress.Security.NonceVerification.Missing -- verified in assertCanSave().
-        $organizePlusOnes = isset($_POST['organize_plus_ones'])
-            ? trim(wp_unslash((string) $_POST['organize_plus_ones']))
-            : '';
-        // phpcs:enable WordPress.Security.NonceVerification.Missing
-
-        if (is_numeric($organizePlusOnes)) {
-            update_option(Roles::ORGANIZE_PLUS_ONES_OPTION, Task::clampPlusOnes((int) $organizePlusOnes));
-        }
 
         // Checkbox: absent means unticked, same reasoning as the role
         // archive checkboxes above - an absent field is a real "off", not
@@ -1005,6 +1000,11 @@ final class SettingsPage
         }
 
         $profileSuffix = '' === $profile['message'] ? '' : ' ' . $profile['message'];
+
+        if ('' !== $lockout) {
+            $profile['ok'] = false;
+            $profileSuffix = ' ' . __('The roles were not saved.', 'eventcrew') . ' ' . $lockout . $profileSuffix;
+        }
 
         // Telegram is still posting to the old URL until it is told otherwise,
         // so a moved door is re-installed here rather than left to the organizer
@@ -2249,6 +2249,9 @@ final class SettingsPage
         $membersDisplay = isset($_POST['role_members_display']) && is_array($_POST['role_members_display'])
             ? array_map('intval', array_keys(wp_unslash($_POST['role_members_display'])))
             : [];
+        $adminAccess = isset($_POST['role_admin_access']) && is_array($_POST['role_admin_access'])
+            ? array_map('intval', array_keys(wp_unslash($_POST['role_admin_access'])))
+            : [];
 
         // Conditions: role_count[index][slug], role_min_roles[index] and
         // role_times_each[index]. Roles::normalize() drops blanks and zeros.
@@ -2272,6 +2275,7 @@ final class SettingsPage
         $guestSignupIndexes = array_flip($guestSignup);
         $anonymousIndexes = array_flip($anonymous);
         $membersDisplayIndexes = array_flip($membersDisplay);
+        $adminAccessIndexes = array_flip($adminAccess);
 
         $types = [];
         $translator = $this->translator();
@@ -2288,7 +2292,7 @@ final class SettingsPage
             // (Roles::save()), so its row is known now. A new row whose name
             // gives no slug of its own (an empty line, or a slug taken) is
             // left out, as Roles::save() would, and nothing is translated.
-            $row = null === $previous || Roles::ORGANIZE_SLUG === $previous['slug'] ? null : 'role.' . $previous['slug'];
+            $row = null === $previous ? null : 'role.' . $previous['slug'];
 
             if ('' === ($slugs[$index] ?? '')) {
                 $newSlug = self::newRoleSlug($labels[$index] ?? null, $taken);
@@ -2329,6 +2333,7 @@ final class SettingsPage
                 'guest_signup' => isset($guestSignupIndexes[$index]),
                 'anonymous' => isset($anonymousIndexes[$index]),
                 'members_display' => isset($membersDisplayIndexes[$index]),
+                'admin_access' => isset($adminAccessIndexes[$index]),
                 'title_contains' => $titleContains[$index] ?? '',
                 'plus_ones' => $plusOnes[$index] ?? 0,
                 'conditions' => [

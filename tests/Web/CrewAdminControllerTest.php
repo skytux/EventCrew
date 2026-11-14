@@ -803,14 +803,15 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame('Bar on Fridays', $update['data']['notes']);
         // A role the form does not show (archived) is kept, as in wp-admin.
         self::assertSame('archived,dj', $update['data']['role_slugs']);
-        self::assertArrayNotHasKey('is_organizer', $update['data']);
+        // The tick is ignored: is_organizer follows the roles (no Admin access role here).
+        self::assertSame(0, $update['data']['is_organizer']);
         self::assertSame('Person updated.', CrewAdminController::noticeText('admin_person_updated'));
     }
 
     public function testEditingAnOrganizerLeavesThemAnOrganizer(): void
     {
         $this->signIn($this->organizerRow(1));
-        $this->wpdb->nextRows[] = $this->personRow(2, true);   // find()
+        $this->wpdb->nextRows[] = ['role_slugs' => 'organize'] + $this->personRow(2, true);   // find()
 
         $result = $this->post(CrewAdminController::PERSON_ACTION, [
             'person_id' => '2',
@@ -818,8 +819,10 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             'display_name' => 'Person 2',
         ]);
 
+        // Organize is not on the form, so it is kept, and with it Admin access.
         self::assertSame('admin_person_updated', $result['notice']);
-        self::assertArrayNotHasKey('is_organizer', $this->wpdb->updates[0]['data']);
+        self::assertSame('organize', $this->wpdb->updates[0]['data']['role_slugs']);
+        self::assertSame(1, $this->wpdb->updates[0]['data']['is_organizer']);
     }
 
     public function testAnOrganizerAddsAPersonWhoIsNeitherAnOrganizerNorVerified(): void
@@ -3550,7 +3553,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         $result = $this->post(CrewAdminController::ROLE_ORDER_ACTION, ['move' => 'clean up']);
 
         self::assertSame('admin_role_order_saved', $result['notice']);
-        self::assertSame(['decorate', 'clean', 'welcome'], array_column($this->options[Roles::OPTION_NAME], 'slug'));
+        self::assertSame(['decorate', 'clean', 'welcome', Roles::ORGANIZE_SLUG], array_column($this->options[Roles::OPTION_NAME], 'slug'));
         self::assertSame('Role order saved.', CrewAdminController::noticeText($result['notice']));
         $this->signIn($this->organizerRow(1));
         self::assertSame(
@@ -3593,7 +3596,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         self::assertSame('admin_role_saved', $result['notice']);
         $saved = $this->options[Roles::OPTION_NAME];
-        self::assertSame(['decorate', 'welcome', 'clean'], array_column($saved, 'slug'));
+        self::assertSame(['decorate', 'welcome', 'clean', Roles::ORGANIZE_SLUG], array_column($saved, 'slug'));
         self::assertSame($before[0], $saved[0]);
         self::assertSame($before[2], $saved[2]);
         $role = Roles::find('welcome');
@@ -3696,9 +3699,56 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         Roles::save($roles);
     }
 
-    public function testTheOrganizeRoleOrAnUnknownRoleIsNotSaved(): void
+    /**
+     * Organize is an ordinary role now: it can be renamed, and keeps Admin
+     * access and "Only people with this role".
+     */
+    public function testTheOrganizeRoleIsSavedLikeAnyRole(): void
     {
-        foreach ([Roles::ORGANIZE_SLUG, 'juggle', ''] as $slug) {
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::ROLE_ACTION, [
+            'role' => Roles::ORGANIZE_SLUG,
+            'role_label' => 'Lead',
+            'role_capacity' => '2',
+            'role_admin_access' => '1',
+        ]);
+
+        self::assertSame('admin_role_saved', $result['notice']);
+        $role = Roles::find(Roles::ORGANIZE_SLUG);
+        self::assertNotNull($role);
+        self::assertSame('Lead', $role['label']);
+        self::assertSame(2, $role['capacity']);
+        self::assertTrue($role['admin_access']);
+        self::assertTrue($role['restricted']);
+    }
+
+    /**
+     * Taking Admin access off the only role that gives it, while someone is
+     * an organizer through it, would leave no organizer: nothing is saved.
+     */
+    public function testTakingTheLastAdminAccessAwayIsRefused(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        // OrganizerSync reads who holds which role.
+        $this->wpdb->nextResults[] = [['id' => 1, 'role_slugs' => 'organize', 'is_organizer' => 1, 'anonymized_at' => null]];
+
+        $result = $this->post(CrewAdminController::ROLE_ACTION, [
+            'role' => Roles::ORGANIZE_SLUG,
+            'role_label' => 'Organize',
+        ]);
+
+        self::assertSame('admin_role_lockout', $result['notice']);
+        self::assertArrayNotHasKey(Roles::OPTION_NAME, $this->options);
+        self::assertSame(
+            'That would leave no organizer: at least one person has to hold a role with Admin access.',
+            CrewAdminController::noticeText('admin_role_lockout')
+        );
+    }
+
+    public function testAnUnknownRoleIsNotSaved(): void
+    {
+        foreach (['juggle', ''] as $slug) {
             $this->signIn($this->organizerRow(1));
 
             $result = $this->post(CrewAdminController::ROLE_ACTION, ['role' => $slug, 'role_label' => 'Taken over']);

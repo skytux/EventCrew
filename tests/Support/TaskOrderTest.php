@@ -49,12 +49,16 @@ final class TaskOrderTest extends TestCase
     public function testTheSlugsFollowAllWithoutTranslatingAnything(): void
     {
         Functions\when('get_option')->justReturn(null);
-        self::assertSame(array_column(Roles::defaults(), 'slug'), Roles::slugs());
-        self::assertSame(Roles::DEFAULT_SLUGS, Roles::slugs());
+        self::assertSame([...array_column(Roles::defaults(), 'slug'), Roles::ORGANIZE_SLUG], Roles::slugs());
+        self::assertSame([...Roles::DEFAULT_SLUGS, Roles::ORGANIZE_SLUG], Roles::slugs());
 
         Functions\when('get_option')->justReturn([['slug' => 'Bar'], 'junk', ['label' => 'No slug'], ['slug' => 'door']]);
         self::assertSame(array_column(Roles::all(), 'slug'), Roles::slugs());
-        self::assertSame(['bar', 'door'], Roles::slugs());
+        self::assertSame(['bar', 'door', Roles::ORGANIZE_SLUG], Roles::slugs());
+
+        // Once stored, Organize keeps its place.
+        Functions\when('get_option')->justReturn([['slug' => 'organize'], ['slug' => 'door']]);
+        self::assertSame(['organize', 'door'], Roles::slugs());
     }
 
     public function testSortsByDateThenRoleOrderThenStartTimeThenId(): void
@@ -118,18 +122,21 @@ final class TaskOrderTest extends TestCase
 
     public function testMovingARoleSavesTheNewOrder(): void
     {
-        self::assertSame(['welcome', 'decorate', 'clean'], $this->moveAndCapture('welcome', 'up', $moved));
+        // Organize is in the list too (at the end until it is stored), and
+        // is saved with the rest.
+        self::assertSame(['welcome', 'decorate', 'clean', 'organize'], $this->moveAndCapture('welcome', 'up', $moved));
         self::assertTrue($moved);
-        self::assertSame(['decorate', 'clean', 'welcome'], $this->moveAndCapture('welcome', 'down', $moved));
-        self::assertSame(['clean', 'decorate', 'welcome'], $this->moveAndCapture('clean', 'first', $moved));
-        self::assertSame(['welcome', 'clean', 'decorate'], $this->moveAndCapture('decorate', 'last', $moved));
+        self::assertSame(['decorate', 'clean', 'welcome', 'organize'], $this->moveAndCapture('welcome', 'down', $moved));
+        self::assertSame(['clean', 'decorate', 'welcome', 'organize'], $this->moveAndCapture('clean', 'first', $moved));
+        self::assertSame(['welcome', 'clean', 'organize', 'decorate'], $this->moveAndCapture('decorate', 'last', $moved));
+        self::assertSame(['organize', 'decorate', 'welcome', 'clean'], $this->moveAndCapture('organize', 'first', $moved));
     }
 
     public function testAMoveThatChangesNothingSavesNothing(): void
     {
         self::assertSame([], $this->moveAndCapture('decorate', 'up', $moved));
         self::assertFalse($moved);
-        self::assertSame([], $this->moveAndCapture('clean', 'last', $moved));
+        self::assertSame([], $this->moveAndCapture('organize', 'last', $moved));
         self::assertSame([], $this->moveAndCapture('nobody', 'up', $moved));
         self::assertSame([], $this->moveAndCapture('clean', 'sideways', $moved));
         self::assertFalse($moved);
@@ -139,6 +146,6 @@ final class TaskOrderTest extends TestCase
     {
         $this->rolesInOrder(['clean', 'decorate']);
 
-        self::assertSame("1. Clean (clean)\n2. Decorate (decorate)", Roles::orderText());
+        self::assertSame("1. Clean (clean)\n2. Decorate (decorate)\n3. ⭐ Organize (organize)", Roles::orderText());
     }
 }

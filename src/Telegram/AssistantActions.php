@@ -298,7 +298,8 @@ final class AssistantActions
                 "change a role's settings as on the Roles screen; fields: name, emoji, people (places), plus"
                     . ' (+1 allowed), description, measured start|end, starts <minutes>, ends <minutes>, events'
                     . ' <title text>, minroles, timeseach, count <role> <number>, and on|off: archived,'
-                    . ' restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous;'
+                    . ' restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous,'
+                    . ' adminaccess (its holders are organizers);'
                     . ' - empties a text or time'
             ),
             self::entry('/optout', "show the post-event email's do-not-send list"),
@@ -358,8 +359,9 @@ final class AssistantActions
         );
         $list[] = self::entry(
             '/organizer <on|off> <person>',
-            'make a member an organizer (on) or take the organizer role away (off); "make Anna organizer" is'
-                . ' /organizer on Anna, never /assign. Never one\'s own off, never the last organizer'
+            'make a member an organizer (on: gives the Organize role) or take it away (off: takes every role'
+                . ' with Admin access); "make Anna organizer" is /organizer on Anna, never /assign. Never one\'s'
+                . ' own off, never the last organizer'
         );
         $list[] = self::entry(
             '/deleteperson <person>',

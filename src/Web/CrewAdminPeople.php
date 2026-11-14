@@ -10,12 +10,12 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\RedemptionRepository;
 use EventCrew\Support\AccessNotifier;
 use EventCrew\Support\Dates;
+use EventCrew\Support\OrganizerSync;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\ExtraTaskCredits;
-use EventCrew\Telegram\CommandMenu;
 
 /**
  * The People screen of the crew page's Admin tab, made to match the wp-admin
@@ -147,7 +147,13 @@ final class CrewAdminPeople
         $kept = null === $before ? [] : array_diff($before->roleSlugs, $shown);
         $roles = array_values(array_merge($kept, array_intersect($shown, $ticked)));
 
-        // No is_organizer here: that flag has its own action (setOrganizer()).
+        // A role with Admin access ticked or unticked here can change who is
+        // an organizer, so the lockout guard applies (Organize itself is not
+        // on the form: it has its own action, setOrganizer()).
+        if (null !== $before && OrganizerSync::personWouldLeaveNone($before->id, $before->isOrganizer, $roles)) {
+            return 'admin_last_organizer';
+        }
+
         $data = [
             'email' => $email,
             'display_name' => $name,
@@ -156,7 +162,7 @@ final class CrewAdminPeople
         ];
 
         if (null !== $before) {
-            $this->people->update($before->id, $data);
+            $this->people->update($before->id, $data, $giverName, $before->isOrganizer);
             RoleNotifier::rolesChanged($before->id, $before->roleSlugs, $roles, $giverName);
 
             return 'admin_person_updated';
@@ -164,7 +170,7 @@ final class CrewAdminPeople
 
         // create() encodes the roles itself; handing it the encoded string
         // would run "dj,vj" through sanitize_key() as one slug, "djvj".
-        $newId = $this->people->create(['role_slugs' => $roles] + $data);
+        $newId = $this->people->create(['role_slugs' => $roles] + $data, $giverName);
 
         if ($newId > 0) {
             RoleNotifier::rolesChanged($newId, [], $roles, $giverName);
@@ -258,12 +264,9 @@ final class CrewAdminPeople
             return 'admin_last_organizer';
         }
 
-        $this->people->setOrganizer($person->id, $on);
-        do_action(CommandMenu::ORGANIZER_CHANGED_HOOK, $person->id);
-
-        if ($on) {
-            RoleNotifier::madeOrganizer($person->id, $organizer->name());
-        }
+        // Gives Organize or takes every Admin access role; the repository
+        // refreshes the command menu and welcomes a new organizer.
+        $this->people->setOrganizerFor($person, $on, $organizer->name());
 
         return $on ? 'admin_organizer_on' : 'admin_organizer_off';
     }

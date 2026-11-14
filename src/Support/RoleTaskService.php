@@ -261,7 +261,7 @@ final class RoleTaskService
 
         if ($task->isRestricted() && ! $person->hasRole($task->roleSlug)) {
             $roles = array_merge($person->roleSlugs, [$task->roleSlug]);
-            $this->people->setRoles($person->id, $roles);
+            $this->people->setRoles($person->id, $roles, $giverName, $person->isOrganizer);
             RoleNotifier::rolesChanged($person->id, $person->roleSlugs, $roles, $giverName);
         }
 

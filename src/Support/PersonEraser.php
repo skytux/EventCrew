@@ -152,8 +152,8 @@ final class PersonEraser
             array_merge(JoinAnswers::KEYS, AppInstallPrompt::KEYS, ChannelChoice::KEYS)
         );
 
-        // Muted: the organizer flag cleared here is part of the erasure, not
-        // a change of its own.
+        // Muted: the roles and the organizer flag (it follows the roles)
+        // cleared here are part of the erasure, not a change of their own.
         History::muted(fn () => $this->people->update($personId, [
             'email' => 'anonymised-' . $personId . '@removed.invalid',
             'display_name' => '',
@@ -162,7 +162,7 @@ final class PersonEraser
             'telegram_chat_id' => null,
             'notes' => '',
             'notify_prefs' => null,
-            'is_organizer' => 0,
+            'role_slugs' => '',
             'at_risk_pass' => 0,
             'anonymized_at' => current_time('mysql'),
             // The row survives anonymising, so a live session cookie would go

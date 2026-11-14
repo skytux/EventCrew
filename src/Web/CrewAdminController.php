@@ -24,6 +24,7 @@ use EventCrew\Support\MarkedBy;
 use EventCrew\Support\MessageActions;
 use EventCrew\Support\MessageTemplates;
 use EventCrew\Support\NewcomerApproval;
+use EventCrew\Support\OrganizerSync;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\Roles;
@@ -676,7 +677,14 @@ final class CrewAdminController
         $chosen = null === $add ? $roles : array_merge($member->roleSlugs, $add);
 
         $roles = array_merge($kept, array_intersect($chosen, $shown));
-        $this->people->setRoles($member->id, $roles);
+
+        // A role with Admin access taken here can leave the team without an
+        // organizer (OrganizerSync).
+        if (OrganizerSync::personWouldLeaveNone($member->id, $member->isOrganizer, $roles)) {
+            return 'admin_last_organizer';
+        }
+
+        $this->people->setRoles($member->id, $roles, $giverName, $member->isOrganizer);
         RoleNotifier::rolesChanged($member->id, $member->roleSlugs, $roles, $giverName);
 
         return 'admin_roles_saved';

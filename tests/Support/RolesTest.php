@@ -17,7 +17,8 @@ final class RolesTest extends TestCase
 
         $slugs = array_column(Roles::all(), 'slug');
 
-        self::assertSame(['decorate', 'welcome', 'clean'], $slugs);
+        // Organize is always in the list, at the end until it is stored.
+        self::assertSame(['decorate', 'welcome', 'clean', 'organize'], $slugs);
     }
 
     public function testDecorateDefaultsToTwoPeople(): void
@@ -34,34 +35,61 @@ final class RolesTest extends TestCase
     public function testFallsBackToDefaultsWhenTheStoredOptionIsUnusable(): void
     {
         Functions\when('get_option')->justReturn([]);
-        self::assertCount(3, Roles::all());
+        self::assertCount(4, Roles::all());
 
         Functions\when('get_option')->justReturn('not an array');
-        self::assertCount(3, Roles::all());
+        self::assertCount(4, Roles::all());
     }
 
     /**
-     * The organize role is reserved: named by the plugin,
-     * known to exist, and never in the editable list.
+     * Organize is an ordinary role in the list (Owner 2026-11-08, Q371):
+     * named by the plugin until it is stored, with Admin access, for
+     * organizers only, on every night.
      */
-    public function testTheOrganizeRoleIsReservedAndNamed(): void
+    public function testTheOrganizeRoleIsInTheListWithAdminAccess(): void
     {
         Functions\when('get_option')->justReturn(null);
 
         self::assertSame('Organize', Roles::label(Roles::ORGANIZE_SLUG));
         self::assertSame('⭐ Organize', Roles::display(Roles::ORGANIZE_SLUG));
         self::assertTrue(Roles::exists(Roles::ORGANIZE_SLUG));
-        self::assertNotContains(Roles::ORGANIZE_SLUG, array_column(Roles::all(), 'slug'));
+        self::assertContains(Roles::ORGANIZE_SLUG, array_column(Roles::active(), 'slug'));
+        self::assertSame([Roles::ORGANIZE_SLUG], Roles::adminSlugs());
+        self::assertTrue(Roles::isRestricted(Roles::ORGANIZE_SLUG));
+        self::assertContains(Roles::ORGANIZE_SLUG, array_column(Roles::everyNight(), 'slug'));
+        // The Organizer switch gives it, not the role list of a person.
+        self::assertNotContains(Roles::ORGANIZE_SLUG, array_column(Roles::assignable(), 'slug'));
     }
 
-    public function testAHandTypedRoleCannotTakeTheOrganizeSlug(): void
+    public function testOrganizeIsSavedLikeAnyRoleAndStaysForOrganizersOnly(): void
     {
         $saved = $this->captureSavedRoles([
             ['slug' => 'decorate', 'label' => 'Decorate', 'emoji' => '🎈', 'capacity' => 2],
-            ['slug' => 'organize', 'label' => 'Organize', 'emoji' => '⭐', 'capacity' => 5],
+            ['slug' => 'organize', 'label' => 'Organize', 'emoji' => '⭐', 'capacity' => 5, 'restricted' => false, 'admin_access' => true],
         ]);
 
-        self::assertSame(['decorate'], array_column($saved, 'slug'));
+        self::assertSame(['decorate', 'organize'], array_column($saved, 'slug'));
+        self::assertSame(5, $saved[1]['capacity']);
+        self::assertTrue($saved[1]['restricted']);
+        self::assertTrue($saved[1]['admin_access']);
+        self::assertFalse($saved[0]['admin_access']);
+    }
+
+    public function testAnyRoleCanGiveAdminAccess(): void
+    {
+        Functions\when('get_option')->justReturn([
+            ['slug' => 'decorate', 'label' => 'Decorate', 'admin_access' => true],
+            ['slug' => 'organize', 'label' => 'Organize', 'admin_access' => false],
+            ['slug' => 'karaoke', 'label' => 'Karaoke', 'admin_access' => true, 'archived' => true],
+        ]);
+
+        // Archived roles give none.
+        self::assertSame(['decorate'], Roles::adminSlugs());
+        self::assertTrue(Roles::givesAdminAccess('decorate'));
+        self::assertFalse(Roles::givesAdminAccess('organize'));
+        self::assertFalse(Roles::givesAdminAccess('karaoke'));
+        // A role with Admin access can be given to a person.
+        self::assertContains('decorate', array_column(Roles::assignable(), 'slug'));
     }
 
     public function testDropsRowsTheOrganizerLeftCompletelyBlank(): void
@@ -160,8 +188,8 @@ final class RolesTest extends TestCase
             ['slug' => 'karaoke', 'label' => 'Karaoke', 'emoji' => '🎤', 'capacity' => 1, 'archived' => true],
         ]);
 
-        self::assertSame(['decorate'], array_column(Roles::active(), 'slug'));
-        self::assertSame(['decorate', 'karaoke'], array_column(Roles::all(), 'slug'));
+        self::assertSame(['decorate', 'organize'], array_column(Roles::active(), 'slug'));
+        self::assertSame(['decorate', 'karaoke', 'organize'], array_column(Roles::all(), 'slug'));
         self::assertSame(['karaoke'], array_column(Roles::archived(), 'slug'));
     }
 
@@ -249,7 +277,8 @@ final class RolesTest extends TestCase
 
         Roles::archive('decorate');
 
-        self::assertCount(1, $captured);
+        // Organize is stored with it.
+        self::assertSame(['decorate', 'organize'], array_column($captured, 'slug'));
         self::assertTrue($captured[0]['archived']);
         self::assertSame('Decorate', $captured[0]['label']);
 

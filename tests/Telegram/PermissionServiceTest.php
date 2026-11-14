@@ -74,6 +74,7 @@ final class PermissionServiceTest extends TelegramTestCase
     {
         $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
         $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'is_organizer' => 1, 'telegram_chat_id' => 999];
+        $this->wpdb->nextVars[] = '1'; // another organizer, for the lockout guard
 
         $fired = [];
         Functions\when('do_action')->alias(static function (string $hook, mixed ...$args) use (&$fired): void {
@@ -85,6 +86,40 @@ final class PermissionServiceTest extends TelegramTestCase
         self::assertSame(0, (int) $this->wpdb->updates[0]['data']['is_organizer']);
         self::assertContains([\EventCrew\Telegram\CommandMenu::ORGANIZER_CHANGED_HOOK, [8]], $fired);
         self::assertNotContains(\EventCrew\Support\RoleNotifier::ORGANIZER_HOOK, array_column($fired, 0));
+    }
+
+    /**
+     * The last organizer keeps their rights: the site is never left without
+     * an organizer (Owner 2026-11-08, Q372).
+     */
+    public function testTheLastOrganizerIsNotTakenAway(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 7, 'display_name' => 'Sam', 'is_organizer' => 1, 'role_slugs' => 'organize', 'telegram_chat_id' => 999];
+        $this->wpdb->nextVars[] = '0'; // no other organizer
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:admin:7']);
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame(
+            'That would leave no organizer: at least one person has to hold a role with Admin access.',
+            $this->lastCallTo('answerCallbackQuery')['text']
+        );
+    }
+
+    /**
+     * Making someone an organizer gives them the Organize role, and their
+     * organizer copy follows it.
+     */
+    public function testMakingSomeoneAnOrganizerGivesThemOrganize(): void
+    {
+        $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'is_organizer' => 0, 'role_slugs' => 'clean', 'telegram_chat_id' => 999];
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:admin:8']);
+
+        self::assertSame('clean,organize', $this->wpdb->updates[0]['data']['role_slugs']);
+        self::assertSame(1, $this->wpdb->updates[0]['data']['is_organizer']);
     }
 
     public function testMakingSomeoneAnOrganizerAnnouncesItWithTheOrganizersName(): void

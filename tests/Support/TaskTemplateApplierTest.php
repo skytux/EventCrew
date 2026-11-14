@@ -75,7 +75,8 @@ final class TaskTemplateApplierTest extends TestCase
 
     /**
      * The happy path: three shipped roles, no existing tasks, so three are
-     * created - one per role - plus the organize task.
+     * created - one per role - plus the organize task (Organize is a role
+     * on every night; untimed by design, so not counted as untimed).
      */
     public function testCreatesOneTaskPerActiveRoleForANewEvent(): void
     {

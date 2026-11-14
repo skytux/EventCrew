@@ -11,12 +11,12 @@ use EventCrew\Support\AccessNotifier;
 use EventCrew\Support\CreditGrantNotifier;
 use EventCrew\Support\Dates;
 use EventCrew\Support\NewcomerApproval;
+use EventCrew\Support\OrganizerSync;
 use EventCrew\Support\PersonEraser;
 use EventCrew\Support\RoleConditions;
 use EventCrew\Support\RoleNotifier;
 use EventCrew\Support\Roles;
 use EventCrew\Support\StandingCalculator;
-use EventCrew\Telegram\CommandMenu;
 
 final class PeoplePage
 {
@@ -233,28 +233,42 @@ final class PeoplePage
         $previous = $id > 0 ? $this->people->find($id) : null;
         $before = $previous?->roleSlugs ?? [];
         $roles = $this->rolesAfterSave($id, $ticked);
+
+        // The Organizer tick gives Organize; unticking it takes every role
+        // with Admin access. Left unticked for someone who was no organizer,
+        // a ticked role with Admin access still makes them one.
+        if ($isOrganizer) {
+            $roles = OrganizerSync::withAdmin($roles);
+        } elseif ((bool) $previous?->isOrganizer) {
+            $roles = OrganizerSync::withoutAdmin($roles);
+        }
+
+        if (
+            null !== $previous
+            && OrganizerSync::personWouldLeaveNone($id, $previous->isOrganizer, $roles)
+        ) {
+            Admin::redirectTo(
+                self::PAGE_SLUG,
+                __('That would leave no organizer: at least one person has to hold a role with Admin access.', 'eventcrew'),
+                'error'
+            );
+        }
+
         $data = [
             'email' => $email,
             'display_name' => $displayName,
             'notes' => $notes,
-            'is_organizer' => $isOrganizer,
             'role_slugs' => PersonRepository::encodeRoles($roles),
         ];
 
         // The wp-admin user's own name stands for who made the change.
         $giverName = (string) wp_get_current_user()->display_name;
 
+        // The repository refreshes the command menu and announces a new
+        // organizer when the roles change their organizer status.
         if ($id > 0) {
-            $this->people->update($id, $data);
+            $this->people->update($id, $data, $giverName, null === $previous ? null : $previous->isOrganizer);
             RoleNotifier::rolesChanged($id, $before, $roles, $giverName);
-
-            if ((bool) $previous?->isOrganizer !== $isOrganizer) {
-                do_action(CommandMenu::ORGANIZER_CHANGED_HOOK, $id);
-            }
-
-            if ($isOrganizer && ! (bool) $previous?->isOrganizer) {
-                RoleNotifier::madeOrganizer($id, $giverName);
-            }
 
             Admin::redirectTo(self::PAGE_SLUG, __('Person updated.', 'eventcrew'));
         }
@@ -265,15 +279,10 @@ final class PeoplePage
         // only happen when the person acts themselves.
         // create() encodes the role list itself, so it gets the plain list:
         // the already-encoded "dj,vj" would lose its comma and become "djvj".
-        $newId = $this->people->create(['role_slugs' => $roles] + $data);
+        $newId = $this->people->create(['role_slugs' => $roles] + $data, $giverName);
 
         if ($newId > 0) {
             RoleNotifier::rolesChanged($newId, [], $roles, $giverName);
-
-            if ($isOrganizer) {
-                do_action(CommandMenu::ORGANIZER_CHANGED_HOOK, $newId);
-                RoleNotifier::madeOrganizer($newId, $giverName);
-            }
         }
 
         Admin::redirectTo(self::PAGE_SLUG, __('Person added.', 'eventcrew'));

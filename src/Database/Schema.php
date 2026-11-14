@@ -9,6 +9,8 @@ use EventCrew\Repositories\HistoryRepository;
 use EventCrew\Repositories\NewsletterHistoryRepository;
 use EventCrew\Support\History;
 use EventCrew\Support\NotificationPreferences;
+use EventCrew\Support\OrganizerSync;
+use EventCrew\Support\Roles;
 
 /**
  * Owns every EventCrew table definition and the migration that applies them.
@@ -23,7 +25,7 @@ final class Schema
      * EventCrew's options is compared against this on every request, so an
      * un-bumped version means an added column silently never appears.
      */
-    public const DB_VERSION = '40';
+    public const DB_VERSION = '41';
 
     public const VERSION_OPTION = 'eventcrew_db_version';
 
@@ -64,6 +66,12 @@ final class Schema
      * requests running the update at once, only one adds it and backfills.
      */
     public const HISTORY_BACKFILLED_OPTION = 'eventcrew_history_backfilled';
+
+    /**
+     * Set by the schema 41 update when it has stored the Organize role and
+     * given it to the organizers. add_option() is the claim, as above.
+     */
+    public const ORGANIZE_ROLE_OPTION = 'eventcrew_organize_role_migrated';
 
     /**
      * @return array<int, string>
@@ -169,6 +177,10 @@ final class Schema
         // Schema 40: the post-event email's three columns on the assignments
         // and redemptions tables (the crew and the free-entry tickets get it
         // too). dbDelta adds them with their defaults; nothing to copy.
+
+        // Schema 41: Organize is an ordinary role with Admin access, and
+        // being an organizer follows the roles a person holds.
+        self::moveOrganizersToRole((string) get_option(self::VERSION_OPTION, ''));
 
         update_option(self::VERSION_OPTION, self::DB_VERSION);
     }
@@ -391,6 +403,51 @@ final class Schema
 
     /** The role slug a can_lead person is given when that column is retired. */
     private const CREW_LEADER_SLUG = 'leader';
+
+    /**
+     * Schema 41: stores the Organize entry in the role list (at the end, so
+     * the role order stays as it was, Admin access on, +1 allowed from the old
+     * option), gives Organize to every organizer who lacks it, then
+     * recomputes everyone's organizer flag from their roles (nobody changes:
+     * every organizer now holds Organize). Straight SQL for the grant, as in
+     * moveCanLeadToRole(): it is not a change anyone made, so no history and
+     * no notices. Skipped once the stored schema is 41 or later and when the
+     * claim option is already there (another request is running it); every
+     * step is safe to run twice. Returns how many people were given
+     * Organize, -1 when skipped.
+     */
+    public static function moveOrganizersToRole(string $storedVersion): int
+    {
+        global $wpdb;
+
+        if ('' !== $storedVersion && (int) $storedVersion >= 41) {
+            return -1;
+        }
+
+        if (! add_option(self::ORGANIZE_ROLE_OPTION, (string) current_time('mysql'), '', false)) {
+            return -1;
+        }
+
+        Roles::storeOrganize();
+
+        $table = self::table(self::PEOPLE);
+        $slug = Roles::ORGANIZE_SLUG;
+
+        $given = $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $wpdb->prepare(
+                "UPDATE {$table}
+                 SET role_slugs = IF(role_slugs = '', %s, CONCAT(role_slugs, ',', %s))
+                 WHERE is_organizer = 1 AND anonymized_at IS NULL AND FIND_IN_SET(%s, role_slugs) = 0",
+                $slug,
+                $slug,
+                $slug
+            )
+        );
+
+        OrganizerSync::refreshAll();
+
+        return is_int($given) ? $given : 0;
+    }
 
     /**
      * Gives everyone who had the old crew-leader permission (can_lead = 1) the
