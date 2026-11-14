@@ -9,6 +9,7 @@ use EventCrew\Repositories\PersonRepository;
 use EventCrew\Support\Dates;
 use EventCrew\Support\EventAiText;
 use EventCrew\Support\Roles;
+use EventCrew\Support\ScheduledMessages;
 use EventCrew\Support\TranslatedText;
 use EventCrew\Telegram\AssignCommand;
 use EventCrew\Telegram\CommandFlow;
@@ -33,6 +34,9 @@ use EventCrew\Telegram\CommandFlow;
  * - "/aitext <date> <text name> <language> ; <text>" or
  *   "/aitext <date> <text name> ai": CrewAdminAiText::save(), one event's
  *   AI text written by hand, or the AI's own text again.
+ * - "/scheduled <message> on|off|send": ScheduledMessages::apply(), a
+ *   scheduled message switched on or off, or sent once now (Owner
+ *   2026-11-14). The question for "send" says how many get it.
  *
  * Emails are personal data: organizers only, as the Admin tab.
  */
@@ -44,6 +48,7 @@ final class AssistantWebAdmin
     public const EDIT_ROLE = 'editrole';
     public const OPTOUT = 'optout';
     public const AI_TEXT = 'aitext';
+    public const SCHEDULED = 'scheduled';
 
     /** The commands this class answers, as AssistantWebChanges splits them. */
     public const COMMANDS = [
@@ -53,6 +58,7 @@ final class AssistantWebAdmin
         self::EDIT_ROLE,
         self::OPTOUT,
         self::AI_TEXT,
+        self::SCHEDULED,
     ];
 
     /** /editperson fields => CrewAdminPeople::save() argument. */
@@ -105,7 +111,8 @@ final class AssistantWebAdmin
         private readonly CrewAdminPeople $peopleScreen,
         private readonly CrewAdminTasks $tasksScreen,
         private readonly CrewAdminFollowup $followupScreen,
-        private readonly CrewAdminAiText $aiTextScreen
+        private readonly CrewAdminAiText $aiTextScreen,
+        private readonly ?ScheduledMessages $scheduled = null
     ) {
     }
 
@@ -142,6 +149,9 @@ final class AssistantWebAdmin
 
             case self::AI_TEXT:
                 return self::prepareAiText($rest);
+
+            case self::SCHEDULED:
+                return $this->prepareScheduled($rest);
         }
 
         return self::fail(__('That can no longer be done.', 'eventcrew'));
@@ -281,9 +291,71 @@ final class AssistantWebAdmin
                     'changed' => in_array($code, ['admin_aitext_saved', 'admin_aitext_back'], true),
                     'text' => CrewAdminAiText::noticeText($code),
                 ];
+
+            case self::SCHEDULED:
+                if (null === $this->scheduled) {
+                    break;
+                }
+
+                $code = $this->scheduled->apply((string) ($state['message'] ?? ''), (string) ($state['do'] ?? ''));
+
+                return [
+                    'changed' => str_starts_with($code, 'admin_sched_on_')
+                        || str_starts_with($code, 'admin_sched_off_')
+                        || str_starts_with($code, 'admin_sched_sent_'),
+                    'text' => ScheduledMessages::noticeText($code),
+                ];
         }
 
         return ['changed' => false, 'text' => __('That can no longer be done.', 'eventcrew')];
+    }
+
+    /**
+     * The bot's /scheduled alone: every scheduled message, on or off.
+     */
+    public function scheduledList(): string
+    {
+        return self::clip(ScheduledMessages::listText());
+    }
+
+    /**
+     * "/scheduled <message> on|off|send": the question, or why not. "send"
+     * asks with how many get it.
+     *
+     * @return array{ok: bool, text: string, state: array<string, mixed>}
+     */
+    private function prepareScheduled(string $rest): array
+    {
+        $words = '' === $rest ? [] : (array) preg_split('/\s+/', strtolower($rest));
+        $key = (string) ($words[0] ?? '');
+        $do = (string) ($words[1] ?? '');
+
+        if (null === $this->scheduled || ! ScheduledMessages::exists($key) || ! in_array($do, ['on', 'off', 'send'], true)) {
+            return self::fail(self::usage(self::SCHEDULED));
+        }
+
+        $state = ['op' => self::SCHEDULED, 'message' => $key, 'do' => $do];
+        $name = ScheduledMessages::name($key);
+
+        if ('send' !== $do) {
+            return self::ask(
+                'on' === $do
+                    /* translators: %s: a scheduled message's name. */
+                    ? sprintf(__('Switch "%s" on?', 'eventcrew'), $name)
+                    /* translators: %s: a scheduled message's name. */
+                    : sprintf(__('Switch "%s" off? It is not sent until switched on again.', 'eventcrew'), $name),
+                $state
+            );
+        }
+
+        if (! ScheduledMessages::sendable($key)) {
+            /* translators: %s: a scheduled message's name. */
+            return self::fail(sprintf(__('"%s" cannot be sent now; it goes when its time comes.', 'eventcrew'), $name));
+        }
+
+        $question = $this->scheduled->question($key);
+
+        return '' === $question ? self::fail(ScheduledMessages::sentText($key, 0)) : self::ask($question, $state);
     }
 
     /**
@@ -359,6 +431,7 @@ final class AssistantWebAdmin
             self::EDIT_PERSON => __("Change someone’s details: /editperson name ; name new name ; email new address ; notes text\nExample: /editperson Milla ; notes Bar on Fridays\nGive only what changes. notes - empties the notes.", 'eventcrew'),
             self::EDIT_ROLE => __("Change a role: /editrole role ; field value ; field value\nExample: /editrole Bar ; people 3 ; guestsignup off\nFields: name, emoji, people, plus, description, measured start|end, starts minutes, ends minutes, events text, minroles, timeseach, count role number, and on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous. - empties a text or time.", 'eventcrew'),
             self::OPTOUT => __("Change the list: /optout add address, /optout remove address\nExample: /optout add milla@example.com", 'eventcrew'),
+            self::SCHEDULED => __("Switch a scheduled message: /scheduled name on|off\nSend it once now: /scheduled name send\nExample: /scheduled reminders off\n/scheduled alone lists the names.", 'eventcrew'),
             self::AI_TEXT => __("Change an AI text: /aitext date text-name language ; your text\nUse the AI text again: /aitext date text-name ai\nExample: /aitext 21.11. welcome fi ; Tervetuloa!", 'eventcrew'),
             default => __('That can no longer be done.', 'eventcrew'),
         };

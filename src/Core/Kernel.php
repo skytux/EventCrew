@@ -97,6 +97,7 @@ use EventCrew\Support\PrivacyEraser;
 use EventCrew\Support\PrivacyExporter;
 use EventCrew\Support\PushNotifier;
 use EventCrew\Support\ReminderCall;
+use EventCrew\Support\ScheduledMessages;
 use EventCrew\Support\RetentionPurge;
 use EventCrew\Support\RoleConditions;
 use EventCrew\Support\RoleNotifier;
@@ -1193,7 +1194,21 @@ final class Kernel
                 $container->get(CrewAdminAiText::class),
                 $container->get(NewcomerApproval::class),
                 $container->get(BackgroundJobs::class),
-                $container->get(DoorOrganizer::class)
+                $container->get(DoorOrganizer::class),
+                $container->get(ScheduledMessages::class)
+            )
+        );
+
+        // The Messages card "Scheduled messages", /scheduled and the helper
+        // (Owner 2026-11-14).
+        $this->container->singleton(
+            ScheduledMessages::class,
+            fn (Container $container) => new ScheduledMessages(
+                $container->get(ReminderCall::class),
+                $container->get(OpenTaskCall::class),
+                $container->get(BoardService::class),
+                $container->get(TelegramClient::class),
+                $container->get(MonthlyReport::class)
             )
         );
 
@@ -1885,7 +1900,8 @@ final class Kernel
                 $container->get(CrewAdminPeople::class),
                 $container->get(CrewAdminTasks::class),
                 $container->get(CrewAdminFollowup::class),
-                $container->get(CrewAdminAiText::class)
+                $container->get(CrewAdminAiText::class),
+                $container->get(ScheduledMessages::class)
             )
         );
 

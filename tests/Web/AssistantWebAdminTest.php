@@ -14,6 +14,7 @@ use EventCrew\Support\FollowupText;
 use EventCrew\Support\LlmClient;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Roles;
+use EventCrew\Support\ScheduledMessages;
 use EventCrew\Tests\Support\AiTextOptions;
 use EventCrew\Tests\Telegram\TelegramTestCase;
 use EventCrew\Web\AssistantWebAdmin;
@@ -52,7 +53,8 @@ final class AssistantWebAdminTest extends TelegramTestCase
             // The role questions never reach the Tasks screen's object.
             (new \ReflectionClass(CrewAdminTasks::class))->newInstanceWithoutConstructor(),
             new CrewAdminFollowup(new FollowupText(new LlmClient(new Logger()), new Logger())),
-            new CrewAdminAiText()
+            new CrewAdminAiText(),
+            new ScheduledMessages()
         );
     }
 
@@ -198,6 +200,27 @@ final class AssistantWebAdminTest extends TelegramTestCase
         self::assertTrue($this->admin()->run(self::me(), $remove['state'])['changed']);
         self::assertArrayNotHasKey('anna@example.com', $this->options[FollowupOptOut::OPTION]);
         self::assertFalse($this->admin()->prepare(self::me(), AssistantWebAdmin::OPTOUT, 'remove anna@example.com')['ok']);
+    }
+
+    public function testAScheduledMessageIsSwitchedOnlyAfterConfirm(): void
+    {
+        $option = ScheduledMessages::OPTIONS[ScheduledMessages::REMINDERS];
+        $asked = $this->admin()->prepare(self::me(), AssistantWebAdmin::SCHEDULED, 'reminders off');
+
+        self::assertTrue($asked['ok']);
+        self::assertSame('Switch "Task reminder" off? It is not sent until switched on again.', $asked['text']);
+        self::assertArrayNotHasKey($option, $this->options);
+
+        $done = $this->admin()->run(self::me(), $asked['state']);
+        self::assertTrue($done['changed']);
+        self::assertSame('Task reminder: off.', $done['text']);
+        self::assertSame('0', $this->options[$option]);
+
+        // A message sent to one person when its time comes has no "send now".
+        $send = $this->admin()->prepare(self::me(), AssistantWebAdmin::SCHEDULED, 'takeover send');
+        self::assertFalse($send['ok']);
+        self::assertFalse($this->admin()->prepare(self::me(), AssistantWebAdmin::SCHEDULED, 'nosuch on')['ok']);
+        self::assertStringContainsString('reminders', $this->admin()->scheduledList());
     }
 
     public function testAnAiTextIsFoundByDateAndNameAndAsked(): void

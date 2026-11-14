@@ -41,6 +41,11 @@ final class ReminderCall
      */
     public function run(int $limit): int
     {
+        // Switched off on the Scheduled messages card (Owner 2026-11-14).
+        if (! ScheduledMessages::isOn(ScheduledMessages::REMINDERS)) {
+            return 0;
+        }
+
         $now = (string) current_time('mysql');
         $until = $this->hoursAhead(self::REMINDER_HOURS);
 
@@ -73,6 +78,75 @@ final class ReminderCall
         }
 
         return $sent;
+    }
+
+    /**
+     * How many people sendNext() would remind: those signed up for the next
+     * date's tasks that have not started yet, and not reminded about them.
+     */
+    public function countNext(): int
+    {
+        return count($this->nextDue());
+    }
+
+    /**
+     * The organizer's "send now": reminds everyone sendNext() counts, at
+     * once, whatever the hour and the switch. Each is still reminded once
+     * only (reminded_at), so the scheduled reminder skips them later.
+     * Returns how many were reminded.
+     */
+    public function sendNext(): int
+    {
+        $sent = 0;
+
+        foreach ($this->nextDue() as [$person, $task, $assignmentId]) {
+            $this->remind($person, $task, $assignmentId);
+            $this->assignments->markReminded($assignmentId);
+            ++$sent;
+        }
+
+        return $sent;
+    }
+
+    /**
+     * The people to remind for the nearest date with a task still to come.
+     *
+     * @return list<array{0: Person, 1: Task, 2: int}>
+     */
+    private function nextDue(): array
+    {
+        $now = (string) current_time('mysql');
+
+        foreach ($this->tasks->upcomingDates() as $date) {
+            $tasks = array_filter(
+                $this->tasks->forDate((string) $date),
+                static fn (Task $task): bool => null === $task->startsAt || (string) $task->startsAt >= $now
+            );
+
+            if ([] === $tasks) {
+                continue;
+            }
+
+            $due = [];
+
+            foreach ($tasks as $task) {
+                foreach ($this->assignments->forTask($task->id) as $assignment) {
+                    if (! $assignment->isOccupying() || null !== $assignment->remindedAt) {
+                        continue;
+                    }
+
+                    $person = $this->people->find($assignment->personId);
+
+                    if (null !== $person) {
+                        $due[] = [$person, $task, $assignment->id];
+                    }
+                }
+            }
+
+            return $due;
+        }
+
+        return [];
     }
 
     /**

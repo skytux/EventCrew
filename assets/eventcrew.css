@@ -789,6 +789,7 @@
 }
 .eventcrew-signup .eventcrew-me-actions .eventcrew-textlink { min-height: 36px; white-space: nowrap; }
 .eventcrew-signup .eventcrew-me-actions .eventcrew-inline-form { align-self: center; }
+.eventcrew-signup .eventcrew-admin-scheduled-row { display: flex; flex-wrap: wrap; gap: 0.25em 0.75em; align-items: baseline; }
 /* Give away opened: its form takes the whole width under the links. */
 .eventcrew-signup .eventcrew-me-actions .eventcrew-give[open] { flex-basis: 100%; }
 .eventcrew-signup form { margin: 0; }

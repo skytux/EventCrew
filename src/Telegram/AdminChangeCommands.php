@@ -27,6 +27,7 @@ use EventCrew\Web\AssistantWebPeople;
  * - /editrole <role> ; <field> <value> ; …
  * - /optout (the list), /optout add|remove <email>
  * - /aitext (the coming events' texts), /aitext <date> <text> <language> ; <text>
+ * - /scheduled (the list), /scheduled <message> on|off|send
  *
  * The helper in Telegram runs its lines for these through the command
  * (AssistantActions), so the command's own ✅ is the one confirmation.
@@ -53,6 +54,7 @@ final class AdminChangeCommands
         AssistantWebAdmin::EDIT_ROLE,
         AssistantWebAdmin::OPTOUT,
         AssistantWebAdmin::AI_TEXT,
+        AssistantWebAdmin::SCHEDULED,
     ];
 
     /** Bot command => AssistantWebPeople command. */
@@ -101,6 +103,7 @@ final class AdminChangeCommands
             $telegram->sendMessage($chatId, match ($command) {
                 AssistantWebAdmin::OPTOUT => $this->adminChanges()->optOutList(),
                 AssistantWebAdmin::AI_TEXT => AssistantWebAdmin::aiTextList(),
+                AssistantWebAdmin::SCHEDULED => $this->adminChanges()->scheduledList(),
                 default => self::usage($command),
             });
 

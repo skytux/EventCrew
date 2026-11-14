@@ -441,6 +441,7 @@ final class HelpService
             __('/editrole role ; people 3 – change a role\'s settings', 'eventcrew'),
             __('/optout – the post-event email\'s do-not-send list (add, remove)', 'eventcrew'),
             __('/aitext – the coming events\' AI texts; write one by hand or use the AI\'s again', 'eventcrew'),
+            __('/scheduled – the scheduled messages; /scheduled name on|off or send', 'eventcrew'),
             // parityB
             __('/markall task ; done – mark everyone on a task (or arrived)', 'eventcrew'),
             __('/buyers add name ; name – add ticket buyers (/buyers reset empties the list); or send the Holvi file', 'eventcrew'),

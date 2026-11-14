@@ -96,7 +96,13 @@ final class RoleNotifier
                     continue;
                 }
 
-                $this->announce($organizers, $person, (string) $slug, 'met');
+                // Switched off on the Scheduled messages card (Owner
+                // 2026-11-14): still noted, so switching it back on does not
+                // send the old ones.
+                if (ScheduledMessages::isOn(ScheduledMessages::ROLE_MET)) {
+                    $this->announce($organizers, $person, (string) $slug, 'met');
+                }
+
                 $this->people->markRoleNotice($person->id, $key);
             }
         }

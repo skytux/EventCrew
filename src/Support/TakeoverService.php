@@ -452,7 +452,11 @@ final class TakeoverService
             return false;
         }
 
-        if (null !== $cover && null !== $holder && null !== $task) {
+        // An expired request's note can be switched off on the Scheduled
+        // messages card (Owner 2026-11-14).
+        $quiet = Takeover::EXPIRED === $status && ! ScheduledMessages::isOn(ScheduledMessages::TAKEOVER);
+
+        if (null !== $cover && null !== $holder && null !== $task && ! $quiet) {
             $this->tellCover($cover, $holder, $task, $status);
         }
 

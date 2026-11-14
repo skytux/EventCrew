@@ -2647,6 +2647,44 @@ if ($eventcrew_link_expired) {
                 </div>
             </section>
 
+            <?php if (isset($eventcrew_admin['scheduled'])) : ?>
+                <?php // Every message sent on its own: on/off, and some sent once now (Owner 2026-11-14). ?>
+            <section class="eventcrew-event eventcrew-admin-card" id="eventcrew-admin-scheduled">
+                <header class="eventcrew-event-head">
+                    <h3 class="eventcrew-event-title"><?php esc_html_e('Scheduled messages', 'eventcrew'); ?></h3>
+                    <?php $eventcrew_admin_about('eventcrew-admin-about-scheduled', __('Scheduled messages', 'eventcrew'), __('The messages sent on their own. A message switched off is not sent until it is switched on again. Send now sends it once, right away, to the same people with the same opt-outs.', 'eventcrew'), __('The bot’s /scheduled command does the same.', 'eventcrew')); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?>
+                </header>
+                <div class="eventcrew-card-body eventcrew-admin-links">
+                    <?php foreach ($eventcrew_admin['scheduled'] as $eventcrew_sched) : ?>
+                    <div class="eventcrew-admin-line eventcrew-admin-scheduled-row">
+                        <strong><?php echo esc_html($eventcrew_sched['name']); ?></strong>
+                        <span class="eventcrew-muted"><?php echo esc_html($eventcrew_sched['channel'] . ' · ' . $eventcrew_sched['when']); ?></span>
+                        <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" class="eventcrew-inline-form">
+                            <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['scheduled_action']); ?>">
+                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here . '#eventcrew-admin-scheduled'); ?>">
+                            <input type="hidden" name="message" value="<?php echo esc_attr($eventcrew_sched['key']); ?>">
+                            <input type="hidden" name="op" value="<?php echo $eventcrew_sched['on'] ? 'off' : 'on'; ?>">
+                            <label><input type="checkbox" onchange="this.form.submit()"<?php echo $eventcrew_sched['on'] ? ' checked' : ''; ?>> <?php esc_html_e('On', 'eventcrew'); ?></label>
+                            <noscript><button type="submit" class="eventcrew-textlink"><?php esc_html_e('Save', 'eventcrew'); ?></button></noscript>
+                        </form>
+                        <?php if ('' !== $eventcrew_sched['question']) : ?>
+                        <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>" class="eventcrew-inline-form"
+                            onsubmit="return confirm('<?php echo esc_js($eventcrew_sched['question']); ?>');">
+                            <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['scheduled_action']); ?>">
+                            <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
+                            <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here . '#eventcrew-admin-scheduled'); ?>">
+                            <input type="hidden" name="message" value="<?php echo esc_attr($eventcrew_sched['key']); ?>">
+                            <input type="hidden" name="op" value="send">
+                            <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Send now', 'eventcrew'); ?></button>
+                        </form>
+                        <?php endif; ?>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+            <?php endif; ?>
+
             <?php if (isset($eventcrew_admin['newsletter'])) : ?>
                 <?php $eventcrew_news = $eventcrew_admin['newsletter']; ?>
             <div id="eventcrew-admin-newsletter">

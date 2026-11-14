@@ -58,6 +58,7 @@ final class AssistantWebActions
     public const ADMIN_OPEN_TASK = 'eventcrew-admin-open-task';
     public const ADMIN_OPTOUT = 'eventcrew-admin-optout';
     public const ADMIN_AI_TEXTS = 'eventcrew-admin-aitexts';
+    public const ADMIN_SCHEDULED = 'eventcrew-admin-scheduled';
 
     /** Hosts whose links a web answer never carries. */
     private const TELEGRAM_HOSTS = ['t.me', 'telegram.me', 'telegram.dog', 'telegram.org'];
@@ -153,7 +154,7 @@ final class AssistantWebActions
 
     /**
      * parityA: the Admin tab's other changes (AssistantWebAdmin), run after
-     * Confirm with text after the command. Alone, /optout and /aitext open
+     * Confirm with text after the command. Alone, /optout, /aitext and /scheduled open
      * their Admin card (VIEWS_PARITY_A); the others need the text.
      */
     private const CHANGES_PARITY_A = [
@@ -163,6 +164,7 @@ final class AssistantWebActions
         '/editrole',
         '/optout',
         '/aitext',
+        '/scheduled',
     ];
 
     /** parityA: the Admin card each of CHANGES_PARITY_A opens alone. */
@@ -173,6 +175,7 @@ final class AssistantWebActions
         '/editrole' => self::ADMIN_ROLES,
         '/optout' => self::ADMIN_OPTOUT,
         '/aitext' => self::ADMIN_AI_TEXTS,
+        '/scheduled' => self::ADMIN_SCHEDULED,
     ];
 
     /** "/newcomer" runs here with OK or No; alone it opens the waiting list. */

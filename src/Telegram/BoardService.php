@@ -19,6 +19,7 @@ use EventCrew\Support\Logger;
 use EventCrew\Support\MessageActions;
 use EventCrew\Support\RoleGuide;
 use EventCrew\Support\RoleTaskService;
+use EventCrew\Support\ScheduledMessages;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\SlotFreedNotice;
 
@@ -580,7 +581,8 @@ final class BoardService
      */
     public function announceNextCard(): bool
     {
-        if (! self::cardsOn() || ! $this->telegram->isConfigured()) {
+        // Switchable on the Scheduled messages card (Owner 2026-11-14).
+        if (! self::cardsOn() || ! $this->telegram->isConfigured() || ! ScheduledMessages::isOn(ScheduledMessages::CARD)) {
             return false;
         }
 

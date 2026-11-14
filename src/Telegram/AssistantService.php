@@ -899,7 +899,8 @@ final class AssistantService implements WebAssistant
                 . ' role (/organizer on|off person), deleting a person (/deleteperson), one more sign-up past the'
                 . ' gate for a member at risk (/oncemore), adding or changing a person (/addperson, /editperson), a role\'s'
                 . ' settings (/editrole), the post-event email\'s do-not-send list (/optout) and the AI texts of'
-                . ' the coming events (/aitext). A language change is menu:language with the code.';
+                . ' the coming events (/aitext), and the scheduled messages on or off or sent once now'
+                . ' (/scheduled name on|off|send). A language change is menu:language with the code.';
         }
 
         if (! $web) {
@@ -1057,8 +1058,9 @@ final class AssistantService implements WebAssistant
             $lines[] = '- For an organizer, these also run on Confirm here: one more sign-up for a member at risk'
                 . ' (/oncemore), adding a person (/addperson), changing a person\'s name, email or notes'
                 . ' (/editperson), changing a role\'s settings (/editrole), the post-event email\'s do-not-send'
-                . ' list (/optout add or remove) and an event\'s AI text (/aitext). /optout and /aitext alone'
-                . ' open their Admin card.';
+                . ' list (/optout add or remove), an event\'s AI text (/aitext) and a scheduled message switched'
+                . ' on or off or sent once now (/scheduled name on|off|send). /optout, /aitext and /scheduled'
+                . ' alone open their Admin card.';
         }
 
         return $lines;

@@ -116,6 +116,43 @@ final class OpenTaskCall
     }
 
     /**
+     * How many people sendForNextOpenDate() would tell now: the same
+     * filters as sendForDate(), without sending.
+     */
+    public function countForNextOpenDate(): int
+    {
+        foreach ($this->upcomingDates() as $date) {
+            if ($this->hasOpenSlots($date)) {
+                return $this->countForDate($date);
+            }
+        }
+
+        return 0;
+    }
+
+    private function countForDate(string $date): int
+    {
+        $prefs = new NotificationPreferences();
+        $count = 0;
+
+        foreach ($this->people->activeEmailRecipients() as $person) {
+            if (
+                $this->hasOpenSlots($date, $person)
+                && ! $this->ledger->hasSent(self::KIND, $person->id, $date)
+                && (
+                    $prefs->emailAllowed($person, NotificationPreferences::OPEN_TASK)
+                    || $prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK)
+                    || $prefs->pushAllowed($person, NotificationPreferences::OPEN_TASK)
+                )
+            ) {
+                ++$count;
+            }
+        }
+
+        return $count;
+    }
+
+    /**
      * The automated call. One email per person per day, covering every date
      * that is due for them, rather than one email per date - two events falling
      * inside a window on the same day is a normal week, not a reason to send
@@ -134,6 +171,11 @@ final class OpenTaskCall
      */
     public function sendDue(array $leads, int $limit): int
     {
+        // Switched off on the Scheduled messages card (Owner 2026-11-14).
+        if (! ScheduledMessages::isOn(ScheduledMessages::OPEN_TASKS)) {
+            return 0;
+        }
+
         $now = (string) current_time('mysql');
         $today = (string) current_time('Y-m-d');
         $prefs = new NotificationPreferences();

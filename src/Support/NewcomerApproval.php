@@ -544,7 +544,8 @@ final class NewcomerApproval
             Language::forPerson($decided, fn () => $this->tellOk($decided));
         } elseif (self::REASON_UNKNOWN === $reason) {
             Language::forPerson($decided, fn () => $this->tell($decided, 'newcomer_unknown'));
-        } elseif (self::REASON_TIMEOUT === $reason) {
+        } elseif (self::REASON_TIMEOUT === $reason && ScheduledMessages::isOn(ScheduledMessages::NEWCOMER)) {
+            // Switchable on the Scheduled messages card (Owner 2026-11-14).
             Language::forPerson($decided, fn () => $this->tell($decided, 'newcomer_timeout'));
         }
 

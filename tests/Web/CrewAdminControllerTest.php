@@ -122,6 +122,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         return new Mailer(new Logger(), new EmailTemplate(new Logger()));
     }
 
+    /** The Scheduled messages card's service, when a test renders it. */
+    private ?\EventCrew\Support\ScheduledMessages $scheduled = null;
+
     private function admin(
         ?\EventCrew\Support\BackgroundJobs $jobs = null,
         ?DoorOrganizer $door = null
@@ -148,7 +151,8 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             null,
             new NewcomerApproval(new PersonRepository(), $this->mailer(), $this->client()),
             $jobs,
-            $door
+            $door,
+            $this->scheduled
         );
     }
 
@@ -3494,6 +3498,45 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame('sam@example.com', $this->mails[0]['to']);
         self::assertSame('Open-task email sent to 1 person.', CrewAdminController::noticeText($result['notice']));
         self::assertSame('Open-task email sent to 3 people.', CrewAdminController::noticeText('admin_open_task_sent_3'));
+    }
+
+    public function testTheScheduledMessagesCardListsEachMessageWithItsSwitch(): void
+    {
+        $this->scheduled = new \EventCrew\Support\ScheduledMessages();
+        \EventCrew\Support\ScheduledMessages::setOn(\EventCrew\Support\ScheduledMessages::REMINDERS, false);
+
+        $card = strstr((string) strstr(
+            $this->subpanel($this->renderAs($this->organizerRow(1)), 'messages'),
+            'id="eventcrew-admin-scheduled"'
+        ), '</section>', true);
+
+        self::assertIsString($card);
+        self::assertStringContainsString('Scheduled messages', $card);
+        self::assertStringContainsString('<strong>Task reminder</strong>', $card);
+        self::assertStringContainsString('<strong>Monthly report</strong>', $card);
+        self::assertSame(count(\EventCrew\Support\ScheduledMessages::KEYS), substr_count($card, 'type="checkbox"'));
+        // The switched-off reminder offers "on"; the board, on by default, offers "off".
+        self::assertStringContainsString('name="message" value="reminders">' . "\n" . '                            <input type="hidden" name="op" value="on">', $card);
+        self::assertStringContainsString('name="message" value="board">' . "\n" . '                            <input type="hidden" name="op" value="off">', $card);
+        self::assertStringContainsString(CrewAdminController::SCHEDULED_ACTION, $card);
+    }
+
+    public function testTheScheduledMessagesCardIsNotShownToAPerson(): void
+    {
+        $this->scheduled = new \EventCrew\Support\ScheduledMessages();
+
+        self::assertStringNotContainsString('eventcrew-admin-scheduled', $this->renderAs($this->personRow(8)));
+    }
+
+    public function testAnOrganizerSwitchesAScheduledMessageOff(): void
+    {
+        $this->scheduled = new \EventCrew\Support\ScheduledMessages();
+        $this->signIn($this->organizerRow(1));
+        $result = $this->post(CrewAdminController::SCHEDULED_ACTION, ['message' => 'board', 'op' => 'off']);
+
+        self::assertSame('admin_sched_off_board', $result['notice']);
+        self::assertFalse(\EventCrew\Support\ScheduledMessages::isOn(\EventCrew\Support\ScheduledMessages::BOARD));
+        self::assertSame('Board in the group: off.', CrewAdminController::noticeText($result['notice']));
     }
 
     public function testAnOrganizerSavesARoleAndTheOtherRolesStayAsTheyWere(): void

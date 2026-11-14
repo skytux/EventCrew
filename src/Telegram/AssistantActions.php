@@ -8,6 +8,7 @@ use EventCrew\Support\Dates;
 use EventCrew\Support\GuestCommand;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\NewsletterText;
+use EventCrew\Support\ScheduledMessages;
 use EventCrew\Support\SiteLanguages;
 
 /**
@@ -311,6 +312,12 @@ final class AssistantActions
                     . implode(', ', SiteLanguages::codes())
             ),
             self::entry('/aitext <date> <text name> ai', "use the AI's own text again for that event"),
+            self::entry('/scheduled', 'show the scheduled messages, each with its name and whether it is on'),
+            self::entry(
+                '/scheduled <name> <on|off|send>',
+                'switch a scheduled message on or off, or send it once now (send only: '
+                    . implode(', ', ScheduledMessages::SENDABLE) . '); names: ' . implode(', ', ScheduledMessages::KEYS)
+            ),
         ];
     }
 
@@ -699,14 +706,14 @@ final class AssistantActions
      */
     private static function validateParityA(string $head, string $rest, array $audience): ?array
     {
-        $commands = ['/oncemore', '/addperson', '/editperson', '/editrole', '/optout']; // /aitext: validateAiText()
+        $commands = ['/oncemore', '/addperson', '/editperson', '/editrole', '/optout', '/scheduled']; // /aitext: validateAiText()
 
         if (in_array($head, $commands, true)) {
             if (empty($audience['organizer'])) {
                 return self::refuse(self::ERROR_NOT_PERMITTED);
             }
 
-            $optional = ['/optout'];
+            $optional = ['/optout', '/scheduled'];
 
             if ('' === $rest && ! in_array($head, $optional, true)) {
                 return self::refuse(self::ERROR_INVALID);
@@ -721,6 +728,21 @@ final class AssistantActions
                 if (2 !== count($words) || ! in_array($op, ['add', 'remove'], true) || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     return self::refuse(self::ERROR_INVALID);
                 }
+            }
+
+            if ('/scheduled' === $head && '' !== $rest) {
+                $words = explode(' ', strtolower($rest));
+
+                if (
+                    2 !== count($words)
+                    || ! ScheduledMessages::exists($words[0])
+                    || ! in_array($words[1], ['on', 'off', 'send'], true)
+                    || ('send' === $words[1] && ! ScheduledMessages::sendable($words[0]))
+                ) {
+                    return self::refuse(self::ERROR_INVALID);
+                }
+
+                $rest = implode(' ', $words);
             }
 
             $line = trim($head . ' ' . $rest);

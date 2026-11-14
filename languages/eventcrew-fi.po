@@ -11647,3 +11647,171 @@ msgstr "Avustajan nimi"
 #. flow1114
 msgid "Shown on the Crew app's helper box. Empty: the Telegram bot's name, else \"Assistant\"."
 msgstr "Näkyy Crew-sovelluksen avustajaruudussa. Tyhjä: Telegram-botin nimi, muuten ”Avustaja”."
+
+#. sched1114
+msgid "/scheduled – the scheduled messages; /scheduled name on|off or send"
+msgstr "/scheduled – ajastetut viestit; /scheduled nimi on|off tai send"
+
+#. sched1114
+msgid "Switch \"%s\" on?"
+msgstr "Kytketäänkö ”%s” päälle?"
+
+#. sched1114
+msgid "Switch \"%s\" off? It is not sent until switched on again."
+msgstr "Kytketäänkö ”%s” pois? Sitä ei lähetetä ennen kuin se kytketään taas päälle."
+
+#. sched1114
+msgid "\"%s\" cannot be sent now; it goes when its time comes."
+msgstr "”%s” ei lähde nyt; se lähtee aikanaan."
+
+#. sched1114
+msgid "Scheduled messages"
+msgstr "Ajastetut viestit"
+
+#. sched1114
+msgid "The messages sent on their own. A message switched off is not sent until it is switched on again. Send now sends it once, right away, to the same people with the same opt-outs."
+msgstr "Viestit, jotka lähtevät itsestään. Pois kytkettyä viestiä ei lähetetä ennen kuin se kytketään taas päälle. Lähetä nyt lähettää sen kerran heti, samoille ihmisille samoin kieltäytymisin."
+
+#. sched1114
+msgid "The bot’s /scheduled command does the same."
+msgstr "Botin /scheduled-komento tekee saman."
+
+#. sched1114
+msgid "Send now"
+msgstr "Lähetä nyt"
+
+#. sched1114
+msgid "Task reminder"
+msgstr "Tehtävämuistutus"
+
+#. sched1114
+msgid "Open tasks call"
+msgstr "Avoimet tehtävät -kutsu"
+
+#. sched1114
+msgid "Board in the group"
+msgstr "Taulu ryhmässä"
+
+#. sched1114
+msgid "Next event card"
+msgstr "Seuraavan tapahtuman kortti"
+
+#. sched1114
+msgid "Place freed"
+msgstr "Paikka vapautui"
+
+#. sched1114
+msgid "Thanks and no-show notes"
+msgstr "Kiitokset ja poissaoloviestit"
+
+#. sched1114
+msgid "Role conditions met"
+msgstr "Roolin ehdot täyttyivät"
+
+#. sched1114
+msgid "Takeover expired"
+msgstr "Siirto vanheni"
+
+#. sched1114
+msgid "Newcomer not answered"
+msgstr "Uuteen tulijaan ei vastattu"
+
+#. sched1114
+msgid "Follow-up email"
+msgstr "Jälkiviesti"
+
+#. sched1114
+msgid "Group"
+msgstr "Ryhmä"
+
+#. sched1114
+msgid "Email + DM"
+msgstr "Sähköposti + DM"
+
+#. sched1114
+msgid "%d h before"
+msgstr "%d h ennen"
+
+#. sched1114
+msgid "Before each event"
+msgstr "Ennen jokaista tapahtumaa"
+
+#. sched1114
+msgid "When an event is next"
+msgstr "Kun tapahtuma on seuraava"
+
+#. sched1114
+msgid "After a late cancel"
+msgstr "Myöhäisen peruutuksen jälkeen"
+
+#. sched1114
+msgid "%d h after marking"
+msgstr "%d h merkinnän jälkeen"
+
+#. sched1114
+msgid "Hourly check"
+msgstr "Tarkistus tunneittain"
+
+#. sched1114
+msgid "When time runs out"
+msgstr "Kun aika loppuu"
+
+#. sched1114
+msgid "After joining"
+msgstr "Liittymisen jälkeen"
+
+#. sched1114
+msgid "%d days before"
+msgstr "%d päivää ennen"
+
+#. sched1114
+msgid "Day after the event"
+msgstr "Tapahtumaa seuraavana päivänä"
+
+#. sched1114
+msgid "Early each month"
+msgstr "Kuun alussa"
+
+#. sched1114
+msgid "Post the board in the group now?"
+msgstr "Julkaistaanko taulu ryhmässä nyt?"
+
+#. sched1114
+msgid "Nobody to send it to."
+msgstr "Ei ketään, kenelle lähettää."
+
+#. sched1114
+msgid "Board posted in the group."
+msgstr "Taulu julkaistu ryhmässä."
+
+#. sched1114
+msgid "/scheduled <name> on|off · /scheduled <name> send"
+msgstr "/scheduled <nimi> on|off · /scheduled <nimi> send"
+
+#. sched1114
+msgid "No such scheduled message."
+msgstr "Ajastettua viestiä ei löydy."
+
+#. sched1114
+msgid "%s: on."
+msgstr "%s: päällä."
+
+#. sched1114
+msgid "%s: off."
+msgstr "%s: pois."
+
+#. sched1114
+msgid "Send \"%1$s\" now to %2$d person?"
+msgid_plural "Send \"%1$s\" now to %2$d people?"
+msgstr[0] "Lähetetäänkö ”%1$s” nyt %2$d henkilölle?"
+msgstr[1] "Lähetetäänkö ”%1$s” nyt %2$d henkilölle?"
+
+#. sched1114
+msgid "\"%1$s\" sent to %2$d person."
+msgid_plural "\"%1$s\" sent to %2$d people."
+msgstr[0] "”%1$s” lähetetty %2$d henkilölle."
+msgstr[1] "”%1$s” lähetetty %2$d henkilölle."
+
+#. sched1114
+msgid "Switch a scheduled message: /scheduled name on|off\nSend it once now: /scheduled name send\nExample: /scheduled reminders off\n/scheduled alone lists the names."
+msgstr "Kytke ajastettu viesti: /scheduled nimi on|off\nLähetä se kerran nyt: /scheduled nimi send\nEsimerkki: /scheduled reminders off\n/scheduled yksin listaa nimet."

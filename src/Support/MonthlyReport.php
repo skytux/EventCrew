@@ -191,6 +191,38 @@ final class MonthlyReport
             return 0;
         }
 
+        return $this->sendMonth($month, $now);
+    }
+
+    /**
+     * The organizer's "send now" (Owner 2026-11-14): last month's report to
+     * every organizer at once, whatever the day and the switch. Noted as
+     * sent, so the heartbeat does not send it again. Returns how many went.
+     */
+    public function sendNow(?\DateTimeImmutable $now = null): int
+    {
+        $now ??= new \DateTimeImmutable('now', self::timezone());
+
+        return $this->sendMonth(self::previousMonth($now), $now);
+    }
+
+    /** How many organizers sendNow() mails. */
+    public function recipientCount(): int
+    {
+        return count($this->recipients());
+    }
+
+    /** @return list<Person> The organizers who get the report. */
+    private function recipients(): array
+    {
+        return array_values(array_filter(
+            $this->people->organizers(),
+            static fn (Person $person): bool => ! $person->isAnonymized() && ! $person->isBanned()
+        ));
+    }
+
+    private function sendMonth(string $month, \DateTimeImmutable $now): int
+    {
         // Noted before sending: a run that dies halfway leaves some
         // organizers without it rather than mailing the others twice.
         update_option(self::SENT_OPTION, $month);
@@ -202,14 +234,10 @@ final class MonthlyReport
         // The click and campaign counts are kept for KEEP_MONTHS months.
         SiteStats::prune($now);
 
-        $organizers = $this->people->organizers();
+        $organizers = $this->recipients();
         $actions = $this->adminActions($month);
 
         foreach ($organizers as $person) {
-            if ($person->isAnonymized() || $person->isBanned()) {
-                continue;
-            }
-
             if ($this->sendTo($person->email, $person, $stats, $before, $actions)) {
                 $sent++;
             }

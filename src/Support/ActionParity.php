@@ -558,6 +558,24 @@ final class ActionParity
                 ['/aitext'],
                 '/aitext 21.11. welcome fi ; Tervetuloa'
             ),
+            // The Scheduled messages card (Owner 2026-11-14).
+            'admin_scheduled' => self::view('Admin > Messages: scheduled messages', ['/scheduled'], '/scheduled', self::ORGANIZER),
+            'scheduled_toggle' => self::change(
+                'Admin > Messages: switch a scheduled message on or off',
+                'CrewAdminController::SCHEDULED_ACTION',
+                self::ORGANIZER,
+                ['/scheduled'],
+                '/scheduled reminders off',
+                'toggle'
+            ),
+            'scheduled_send' => self::change(
+                'Admin > Messages: send a scheduled message once now',
+                'CrewAdminController::SCHEDULED_ACTION',
+                self::ORGANIZER,
+                ['/scheduled'],
+                '/scheduled reminders send',
+                'send'
+            ),
 
             // The sales desk (door page), for the night's sales-desk crew.
             'desk_view' => self::view(

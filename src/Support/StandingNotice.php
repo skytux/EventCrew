@@ -120,7 +120,10 @@ final class StandingNotice
             $person = $this->people->find($night['person_id']);
 
             if (null !== $person) {
-                $this->creditNote($person, $night['added']);
+                if (ScheduledMessages::isOn(ScheduledMessages::STANDING)) {
+                    $this->creditNote($person, $night['added']);
+                }
+
                 ++$sent;
             }
         }
@@ -164,6 +167,12 @@ final class StandingNotice
 
     private function notify(Person $person, Task $task, Assignment $assignment, int $added = 0): void
     {
+        // Switched off on the Scheduled messages card (Owner 2026-11-14): the
+        // ledger and the credits go on as before, only nobody is told.
+        if (! ScheduledMessages::isOn(ScheduledMessages::STANDING)) {
+            return;
+        }
+
         Language::forPerson($person, fn () => $this->notifyInLanguage($person, $task, $assignment, $added));
     }
 

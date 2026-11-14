@@ -140,6 +140,11 @@ final class SlotFreedNotice
      */
     public function queue(int $taskId, int $cancellerId): void
     {
+        // Switched off on the Scheduled messages card (Owner 2026-11-14).
+        if (! ScheduledMessages::isOn(ScheduledMessages::FREED)) {
+            return;
+        }
+
         $queue = self::queued();
         $entry = $queue[$taskId] ?? ['queued_at' => time(), 'cancellers' => [], 'told' => []];
 

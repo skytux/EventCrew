@@ -29,6 +29,7 @@ use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\Roles;
 use EventCrew\Support\RosterAssembler;
 use EventCrew\Support\SalesDeskGate;
+use EventCrew\Support\ScheduledMessages;
 use EventCrew\Support\WebSession;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\TelegramClient;
@@ -87,6 +88,7 @@ final class CrewAdminController
     public const AI_TEXT_ACTION = 'eventcrew_web_admin_ai_text';
     public const NEWCOMER_ACTION = 'eventcrew_web_admin_newcomer';
     public const TEXT_STATUS_ACTION = 'eventcrew_web_admin_text_status';
+    public const SCHEDULED_ACTION = 'eventcrew_web_admin_scheduled';
 
     /**
      * The action names boot() hooks. Kept apart from actionLabels(), because
@@ -123,6 +125,7 @@ final class CrewAdminController
         self::AI_TEXT_ACTION,
         self::NEWCOMER_ACTION,
         self::TEXT_STATUS_ACTION,
+        self::SCHEDULED_ACTION,
     ];
 
     /** guard(): an organizer with a valid CSRF token. Run the action. */
@@ -166,7 +169,8 @@ final class CrewAdminController
         private readonly ?CrewAdminAiText $aiTextScreen = null,
         private readonly ?NewcomerApproval $newcomers = null,
         private readonly ?BackgroundJobs $jobs = null,
-        private readonly ?DoorOrganizer $doorOrganizer = null
+        private readonly ?DoorOrganizer $doorOrganizer = null,
+        private readonly ?ScheduledMessages $scheduled = null
     ) {
     }
 
@@ -217,6 +221,7 @@ final class CrewAdminController
             self::AI_TEXT_ACTION => __('Change an AI text for an event', 'eventcrew'),
             self::NEWCOMER_ACTION => __('Say OK or No to a newcomer', 'eventcrew'),
             self::TEXT_STATUS_ACTION => __('Check whether a text is translated', 'eventcrew'),
+            self::SCHEDULED_ACTION => __('Scheduled messages', 'eventcrew'),
         ];
     }
 
@@ -310,6 +315,10 @@ final class CrewAdminController
             self::TASK_DELETE_ACTION => $this->tasksScreen->delete((int) ($post['task_id'] ?? 0)),
             self::TEMPLATE_ACTION => $this->tasksScreen->applyTemplate((int) ($post['template_event'] ?? 0)),
             self::OPEN_TASK_ACTION => $this->tasksScreen->sendOpenTaskEmail(),
+            self::SCHEDULED_ACTION => null === $this->scheduled ? '' : $this->scheduled->apply(
+                sanitize_key((string) ($post['message'] ?? '')),
+                sanitize_key((string) ($post['op'] ?? ''))
+            ),
             self::ROLE_ACTION => $this->tasksScreen->saveRole($post),
             self::NEWSLETTER_TEXT_ACTION => null === $this->newsletterScreen ? '' : $this->newsletterScreen->saveText(
                 $organizer->id,
@@ -851,6 +860,10 @@ final class CrewAdminController
         ]) + (null === $this->newcomers ? [] : [
             'newcomer_action' => self::NEWCOMER_ACTION,
             'newcomers' => $this->newcomerRows(),
+        ]) + (null === $this->scheduled ? [] : [
+            // The Scheduled messages card (Owner 2026-11-14).
+            'scheduled_action' => self::SCHEDULED_ACTION,
+            'scheduled' => $this->scheduled->view(),
         ]);
     }
 
@@ -984,6 +997,10 @@ final class CrewAdminController
 
         if (! isset($map[$code]) && '' !== CrewAdminAiText::noticeText($code)) {
             return CrewAdminAiText::noticeText($code);
+        }
+
+        if (! isset($map[$code]) && '' !== ScheduledMessages::noticeText($code)) {
+            return ScheduledMessages::noticeText($code);
         }
 
         if (! isset($map[$code]) && '' !== CrewAdminTasks::noticeText($code)) {
