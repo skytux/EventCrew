@@ -259,7 +259,8 @@ final class TaskCommandTest extends TelegramTestCase
 
         self::assertSame('Which task?', $this->lastText());
         $id = $this->requestId();
-        self::assertSame(['tk:c:' . $id . ':5', 'tk:c:' . $id . ':6', 'tk:x:' . $id], $this->buttonData());
+        // Same role, so by start time: task 6 (18:00) before task 5.
+        self::assertSame(['tk:c:' . $id . ':6', 'tk:c:' . $id . ':5', 'tk:x:' . $id], $this->buttonData());
 
         // A task that was not offered cannot be slipped in.
         $this->wpdb->nextRows[] = $this->organizer();

@@ -1524,11 +1524,13 @@ final class DoorDeskTest extends SalesDeskTestCase
             ['plus_ones' => 1] + $this->taskRow(6, 'host'),
             $this->taskRow(7, 'decorate'),
         ];
+        // The night's tasks come in role order: decorate first, then the
+        // roles not in the list (dj, host). Each task's crew is read in that order.
+        $this->wpdb->nextResults[] = [$this->assignmentRow(32, 7, 9, 'signed_up')];
         $this->wpdb->nextResults[] = [$this->assignmentRow(30, 5, 8, 'signed_up')];
         $this->wpdb->nextResults[] = [$this->assignmentRow(31, 6, 8, 'signed_up')];
-        $this->wpdb->nextResults[] = [$this->assignmentRow(32, 7, 9, 'signed_up')];
-        $this->wpdb->nextRows[] = $this->personRow(8);
         $this->wpdb->nextRows[] = $this->personRow(9);
+        $this->wpdb->nextRows[] = $this->personRow(8);
         $this->wpdb->nextResults[] = [];
         $this->wpdb->nextResults[] = [];
         $this->wpdb->nextResults[] = [];

@@ -42,6 +42,21 @@ final class TaskOrderTest extends TestCase
         self::assertSame(4, TaskOrder::rank('unknown'));
     }
 
+    /**
+     * The order is read from the slugs alone, so no role name is translated:
+     * the boot's backfill sorts tasks before init.
+     */
+    public function testTheSlugsFollowAllWithoutTranslatingAnything(): void
+    {
+        Functions\when('get_option')->justReturn(null);
+        self::assertSame(array_column(Roles::defaults(), 'slug'), Roles::slugs());
+        self::assertSame(Roles::DEFAULT_SLUGS, Roles::slugs());
+
+        Functions\when('get_option')->justReturn([['slug' => 'Bar'], 'junk', ['label' => 'No slug'], ['slug' => 'door']]);
+        self::assertSame(array_column(Roles::all(), 'slug'), Roles::slugs());
+        self::assertSame(['bar', 'door'], Roles::slugs());
+    }
+
     public function testSortsByDateThenRoleOrderThenStartTimeThenId(): void
     {
         $this->rolesInOrder(['clean', 'decorate', 'welcome']);

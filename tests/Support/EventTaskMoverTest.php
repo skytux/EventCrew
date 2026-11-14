@@ -55,6 +55,23 @@ final class EventTaskMoverTest extends TestCase
         $mover->moveTasks(42);
     }
 
+    /**
+     * Each task's update by task id: the tasks come in role order, and every
+     * one moves by the same amount whatever its place.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function updatesById(): array
+    {
+        $byId = [];
+
+        foreach ($this->wpdb->updates as $update) {
+            $byId[(int) $update['where']['id']] = $update['data'];
+        }
+
+        return $byId;
+    }
+
     private function taskRows(): array
     {
         return [
@@ -85,14 +102,14 @@ final class EventTaskMoverTest extends TestCase
         $this->save(new EventTaskMover(new TaskRepository()), '2026-08-01T22:30:00');
 
         self::assertCount(2, $this->wpdb->updates);
+        $byId = $this->updatesById();
         self::assertSame(
             ['task_date' => '2026-08-01', 'starts_at' => '2026-08-01 22:00:00', 'ends_at' => '2026-08-02 00:30:00'],
-            $this->wpdb->updates[0]['data']
+            $byId[6]
         );
-        self::assertSame(['id' => 6], $this->wpdb->updates[0]['where']);
         self::assertSame(
             ['task_date' => '2026-08-01', 'starts_at' => '2026-08-02 02:00:00', 'ends_at' => null],
-            $this->wpdb->updates[1]['data']
+            $byId[7]
         );
         self::assertStringContainsString('event_post_id = 42', (string) end($this->wpdb->queries));
     }
@@ -104,9 +121,10 @@ final class EventTaskMoverTest extends TestCase
 
         $this->save(new EventTaskMover(new TaskRepository()), '2026-08-08T21:00:00');
 
-        self::assertSame('2026-08-08', $this->wpdb->updates[0]['data']['task_date']);
-        self::assertSame('2026-08-08 20:30:00', $this->wpdb->updates[0]['data']['starts_at']);
-        self::assertSame('2026-08-09 00:30:00', $this->wpdb->updates[1]['data']['starts_at']);
+        $byId = $this->updatesById();
+        self::assertSame('2026-08-08', $byId[6]['task_date']);
+        self::assertSame('2026-08-08 20:30:00', $byId[6]['starts_at']);
+        self::assertSame('2026-08-09 00:30:00', $byId[7]['starts_at']);
     }
 
     public function testUntickedLeavesTheTasksWhereTheyWere(): void

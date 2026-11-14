@@ -12,8 +12,8 @@ use EventCrew\Models\Task;
  * Organizers put the roles in order once (wp-admin Roles, the Crew app's
  * Admin tab, the bot's /roleorder) and every list of a night's tasks - the
  * group board, the open tasks call, reminders, the Crew app, wp-admin -
- * follows it. The order is the stored role list itself (Roles::all(), which
- * keeps the option's array order), so it needs no field of its own: moving a
+ * follows it. The order is the stored role list itself (Roles::slugs(), the
+ * option's array order), so it needs no field of its own: moving a
  * role is moving its entry in that list (Roles::move()).
  *
  * Within one role the tasks go by start time, then id. The reserved Organize
@@ -32,8 +32,8 @@ final class TaskOrder
     {
         $ranks = [];
 
-        foreach (Roles::all() as $index => $role) {
-            $ranks[$role['slug']] = $index;
+        foreach (Roles::slugs() as $index => $slug) {
+            $ranks[$slug] ??= $index;
         }
 
         $ranks[Roles::ORGANIZE_SLUG] ??= count($ranks);

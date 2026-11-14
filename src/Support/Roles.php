@@ -111,6 +111,32 @@ final class Roles
     /** Offsets are measured from when the event ends. */
     public const ANCHOR_END = 'end';
 
+    /** The slugs of defaults(), in their order. */
+    public const DEFAULT_SLUGS = ['decorate', 'welcome', 'clean'];
+
+    /**
+     * The role slugs in their stored order, as all() lists them, but without
+     * building the roles: no name is translated, so this is safe before init
+     * (TaskOrder runs from the boot's backfill).
+     *
+     * @return list<string>
+     */
+    public static function slugs(): array
+    {
+        $stored = get_option(self::OPTION_NAME, null);
+        $slugs = [];
+
+        foreach (is_array($stored) ? $stored : [] as $role) {
+            $slug = is_array($role) ? sanitize_key((string) ($role['slug'] ?? '')) : '';
+
+            if ('' !== $slug) {
+                $slugs[] = $slug;
+            }
+        }
+
+        return [] === $slugs ? self::DEFAULT_SLUGS : $slugs;
+    }
+
     /**
      * @return array<int, Role>
      */
