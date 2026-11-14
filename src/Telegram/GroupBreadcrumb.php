@@ -40,7 +40,7 @@ trait GroupBreadcrumb
             return;
         }
 
-        $text = Language::run(Language::ENGLISH, static fn (): string => __('📬 Sent you a DM.', 'eventcrew'));
+        $text = DmNote::text();
         $tap = '' !== $callbackId ? $callbackId : DmNote::takeTap();
 
         if ('' !== $tap) {

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EventCrew\Telegram;
 
+use EventCrew\Support\Language;
+
 /**
  * What GroupBreadcrumb's "📬 Sent you a DM." note needs beyond the using
  * service, which a trait cannot hold: the WP-Cron event that deletes the note
@@ -64,5 +66,11 @@ final class DmNote
         self::$tap = '';
 
         return $tap;
+    }
+
+    /** The note's text (in English, as the group's notes are). */
+    public static function text(): string
+    {
+        return Language::run(Language::ENGLISH, static fn (): string => __('📬 Sent you a DM.', 'eventcrew'));
     }
 }

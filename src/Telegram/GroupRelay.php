@@ -323,7 +323,8 @@ final class GroupRelay
                 continue;
             }
 
-            if ('' === $text && '' === $kind) {
+            // The "Sent you a DM." note is deleted again in a minute: not kept, not notified.
+            if (('' === $text && '' === $kind) || DmNote::text() === $text) {
                 continue;
             }
 

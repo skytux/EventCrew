@@ -336,6 +336,16 @@ final class GroupRelayTest extends TelegramTestCase
         self::assertSame(0, $this->notifyTries());
     }
 
+    public function testTheSentYouADmNoteIsNotStoredOrNotified(): void
+    {
+        [, $client] = $this->listening();
+        $this->telegramResults['sendMessage'] = $this->sent(94, ['text' => \EventCrew\Telegram\DmNote::text()]);
+        $client->sendMessage(self::GROUP, \EventCrew\Telegram\DmNote::text());
+
+        self::assertSame([], $this->store->rows);
+        self::assertSame(0, $this->notifyTries());
+    }
+
     public function testAWebPostIsStoredOnceAsTheWritersAndNotifiedOnce(): void
     {
         [$relay] = $this->listening();
