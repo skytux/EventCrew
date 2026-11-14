@@ -11653,14 +11653,6 @@ msgid "/scheduled – the scheduled messages; /scheduled name on|off or send"
 msgstr "/scheduled – ajastetut viestit; /scheduled nimi on|off tai send"
 
 #. sched1114
-msgid "Switch \"%s\" on?"
-msgstr "Kytketäänkö ”%s” päälle?"
-
-#. sched1114
-msgid "Switch \"%s\" off? It is not sent until switched on again."
-msgstr "Kytketäänkö ”%s” pois? Sitä ei lähetetä ennen kuin se kytketään taas päälle."
-
-#. sched1114
 msgid "\"%s\" cannot be sent now; it goes when its time comes."
 msgstr "”%s” ei lähde nyt; se lähtee aikanaan."
 
@@ -11823,3 +11815,7 @@ msgstr "Kielimallin ehdottama teksti."
 #. aitext1114
 msgid "Nothing was saved: the announcement uses the suggested text as it is."
 msgstr "Mitään ei tallennettu: tiedote käyttää ehdotettua tekstiä sellaisenaan."
+
+#. sendnow1114
+msgid "\"%s\" is switched off. Switch it on to send it now."
+msgstr "”%s” on pois päältä. Kytke se päälle lähettääksesi sen nyt."

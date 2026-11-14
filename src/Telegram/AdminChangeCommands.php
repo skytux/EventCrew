@@ -27,7 +27,8 @@ use EventCrew\Web\AssistantWebPeople;
  * - /editrole <role> ; <field> <value> ; …
  * - /optout (the list), /optout add|remove <email>
  * - /aitext (the coming events' texts), /aitext <date> <text> <language> ; <text>
- * - /scheduled (the list), /scheduled <message> on|off|send
+ * - /scheduled (the list), /scheduled <message> on|off (at once, no ✅:
+ *   easy to undo, sends nothing), /scheduled <message> send
  *
  * The helper in Telegram runs its lines for these through the command
  * (AssistantActions), so the command's own ✅ is the one confirmation.

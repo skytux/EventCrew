@@ -36,7 +36,8 @@ use EventCrew\Telegram\CommandFlow;
  *   AI text written by hand, or the AI's own text again.
  * - "/scheduled <message> on|off|send": ScheduledMessages::apply(), a
  *   scheduled message switched on or off, or sent once now (Owner
- *   2026-11-14). The question for "send" says how many get it.
+ *   2026-11-14). On and off switch at once, with no Confirm (easy to
+ *   undo, nothing is sent); "send" asks, saying how many get it.
  *
  * Emails are personal data: organizers only, as the Admin tab.
  */
@@ -319,8 +320,8 @@ final class AssistantWebAdmin
     }
 
     /**
-     * "/scheduled <message> on|off|send": the question, or why not. "send"
-     * asks with how many get it.
+     * "/scheduled <message> on|off|send": on and off are done at once;
+     * "send" asks with how many get it, or says why not.
      *
      * @return array{ok: bool, text: string, state: array<string, mixed>}
      */
@@ -338,19 +339,27 @@ final class AssistantWebAdmin
         $name = ScheduledMessages::name($key);
 
         if ('send' !== $do) {
-            return self::ask(
-                'on' === $do
-                    /* translators: %s: a scheduled message's name. */
-                    ? sprintf(__('Switch "%s" on?', 'eventcrew'), $name)
-                    /* translators: %s: a scheduled message's name. */
-                    : sprintf(__('Switch "%s" off? It is not sent until switched on again.', 'eventcrew'), $name),
-                $state
-            );
+            // Owner 2026-11-14: easy to undo and sends nothing, so it is
+            // switched at once, with no Confirm, as /notify is. The answer
+            // has "ran" true and no state to confirm.
+            $code = $this->scheduled->apply($key, $do);
+
+            return [
+                'ok' => false,
+                'text' => ScheduledMessages::noticeText($code),
+                'state' => [],
+                'ran' => true,
+                'changed' => str_starts_with($code, 'admin_sched_' . $do . '_'),
+            ];
         }
 
         if (! ScheduledMessages::sendable($key)) {
             /* translators: %s: a scheduled message's name. */
             return self::fail(sprintf(__('"%s" cannot be sent now; it goes when its time comes.', 'eventcrew'), $name));
+        }
+
+        if (ScheduledMessages::sendNeedsOn($key)) {
+            return self::fail(ScheduledMessages::noticeText('admin_sched_needson_' . $key));
         }
 
         $question = $this->scheduled->question($key);

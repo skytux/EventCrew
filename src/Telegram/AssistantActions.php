@@ -315,7 +315,7 @@ final class AssistantActions
             self::entry('/scheduled', 'show the scheduled messages, each with its name and whether it is on'),
             self::entry(
                 '/scheduled <name> <on|off|send>',
-                'switch a scheduled message on or off, or send it once now (send only: '
+                'switch a scheduled message on or off at once, or send it once now after Confirm (send only: '
                     . implode(', ', ScheduledMessages::SENDABLE) . '); names: ' . implode(', ', ScheduledMessages::KEYS)
             ),
         ];

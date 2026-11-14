@@ -2387,6 +2387,68 @@ EN: {$english}", $both);
         ];
     }
 
+    // ---- Send now (Owner 2026-11-14) --------------------------------------
+
+    /**
+     * The morning after the night, before 12:00: Send now counts one per
+     * address not on the list and sends through the same batch, even before
+     * the preview went.
+     */
+    public function testSendNowStartsLastNightsEmailEarly(): void
+    {
+        $this->buyer(1, 'Anna Example', 'anna@example.test');
+        $this->buyer(2, 'Anna Again', 'ANNA@example.test');
+        $this->buyer(3, 'Bo Example', 'bo@example.test');
+        $this->buyer(4, 'Cy Example', 'cy@example.test');
+        $this->options[FollowupOptOut::OPTION] = ['bo@example.test' => '2026-11-01 10:00:00'];
+        $mail = $this->followup();
+        $morning = $this->at('2026-11-15 09:00');
+
+        self::assertSame(self::NIGHT, $mail->sendNowNight($morning));
+        self::assertSame(2, $mail->sendNowCount($morning));
+        self::assertSame([], $this->mails);
+
+        self::assertSame(2, $mail->sendNow($morning));
+
+        self::assertSame(['anna@example.test', 'cy@example.test'], array_column($this->mails, 'to'));
+        self::assertSame(FollowupMail::STATUS_DUPLICATE, $this->db->statusOf('buyer', 2));
+        self::assertSame(FollowupMail::STATUS_OPTOUT, $this->db->statusOf('buyer', 3));
+        self::assertTrue($this->state()['started'][self::NIGHT] ?? false);
+        self::assertTrue($this->state()['done'][self::NIGHT] ?? false);
+
+        // Sent: nothing left to send now, and the 12:00 run sends nothing more.
+        self::assertSame('', $mail->sendNowNight($morning));
+        self::assertSame(0, $mail->sendNow($morning));
+        $this->mails = [];
+        $mail->run($this->at('2026-11-15 12:00'));
+        self::assertSame([], $this->mails);
+    }
+
+    public function testSendNowLeavesOutTonightStoppedLateAndUncoveredNights(): void
+    {
+        $this->buyer(1, 'Anna Example', 'anna@example.test');
+        $mail = $this->followup();
+
+        // The night itself has not happened yet.
+        self::assertSame('', $mail->sendNowNight($this->at('2026-11-14 20:00')));
+        // More than LATE_DAYS after its send time.
+        self::assertSame('', $mail->sendNowNight($this->at('2026-11-17 12:00')));
+
+        $this->options[FollowupMail::STATE_OPTION] = ['stopped' => [self::NIGHT => true]];
+        self::assertSame(0, $mail->sendNowCount($this->at('2026-11-15 09:00')));
+
+        $this->options[FollowupMail::STATE_OPTION] = [];
+        $this->options[FollowupMail::ENABLED_AT_OPTION] = $this->at('2026-11-14 10:00')->getTimestamp();
+        self::assertSame('', $mail->sendNowNight($this->at('2026-11-15 09:00')));
+
+        // Switched off: nothing to send now.
+        $this->options[FollowupMail::ENABLED_AT_OPTION] = $this->at('2026-11-01 09:00')->getTimestamp();
+        $this->options[FollowupMail::ENABLED_OPTION] = '0';
+        self::assertSame(0, $mail->sendNowCount($this->at('2026-11-15 09:00')));
+        self::assertSame(0, $mail->sendNow($this->at('2026-11-15 09:00')));
+        self::assertSame([], $this->mails);
+    }
+
     private function followup(): FollowupMail
     {
         $logger = new Logger();

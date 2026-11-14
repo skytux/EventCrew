@@ -202,19 +202,30 @@ final class AssistantWebAdminTest extends TelegramTestCase
         self::assertFalse($this->admin()->prepare(self::me(), AssistantWebAdmin::OPTOUT, 'remove anna@example.com')['ok']);
     }
 
-    public function testAScheduledMessageIsSwitchedOnlyAfterConfirm(): void
+    /**
+     * On and off are easy to undo and send nothing (Owner 2026-11-14): done
+     * at once, with no Confirm, as /notify is.
+     */
+    public function testAScheduledMessageIsSwitchedAtOnce(): void
     {
         $option = ScheduledMessages::OPTIONS[ScheduledMessages::REMINDERS];
-        $asked = $this->admin()->prepare(self::me(), AssistantWebAdmin::SCHEDULED, 'reminders off');
+        $done = $this->admin()->prepare(self::me(), AssistantWebAdmin::SCHEDULED, 'reminders off');
 
-        self::assertTrue($asked['ok']);
-        self::assertSame('Switch "Task reminder" off? It is not sent until switched on again.', $asked['text']);
-        self::assertArrayNotHasKey($option, $this->options);
-
-        $done = $this->admin()->run(self::me(), $asked['state']);
+        self::assertFalse($done['ok']);
+        self::assertTrue($done['ran']);
         self::assertTrue($done['changed']);
+        self::assertSame([], $done['state']);
         self::assertSame('Task reminder: off.', $done['text']);
         self::assertSame('0', $this->options[$option]);
+
+        $on = $this->admin()->prepare(self::me(), AssistantWebAdmin::SCHEDULED, 'reminders on');
+        self::assertTrue($on['ran']);
+        self::assertSame('1', $this->options[$option]);
+
+        // Sending a message still asks; switched off, the newsletter says so.
+        $newsletter = $this->admin()->prepare(self::me(), AssistantWebAdmin::SCHEDULED, 'newsletter send');
+        self::assertFalse($newsletter['ok']);
+        self::assertSame('"Newsletter" is switched off. Switch it on to send it now.', $newsletter['text']);
 
         // A message sent to one person when its time comes has no "send now".
         $send = $this->admin()->prepare(self::me(), AssistantWebAdmin::SCHEDULED, 'takeover send');

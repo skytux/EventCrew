@@ -304,6 +304,80 @@ final class NewsletterTest extends TestCase
     }
 
     /**
+     * Send now with nothing planned (Owner 2026-11-14): a plan is made now
+     * for the earliest coming event and the others in the days() window,
+     * no preview goes, and the batches start at once.
+     */
+    public function testSendNowPlansAndStartsTheNextNewsletter(): void
+    {
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $this->event(2, '2026-07-30', 'Too Far');
+        $this->wpdb->nextVars[] = 3;
+        $this->wpdb->nextVars[] = 3;
+
+        self::assertSame(3, $this->newsletter()->sendNowCount());
+        self::assertSame(3, $this->newsletter()->sendNow());
+
+        $plan = $this->state()['plan'];
+        self::assertSame(Newsletter::PLAN_SENDING, $plan['status']);
+        self::assertSame('2026-07-20', $plan['send_on']);
+        self::assertTrue($plan['previewed']);
+        self::assertSame([1], array_column($plan['events'], 'id'));
+        self::assertSame([2], array_column($plan['later'], 'id'));
+        self::assertSame([Newsletter::HOOK], $this->scheduled);
+        self::assertSame([], $this->mails);
+    }
+
+    /** A planned newsletter whose preview has not gone starts now without it. */
+    public function testSendNowStartsThePlannedNewsletterWithoutItsPreview(): void
+    {
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $this->withPlan([
+            'send_on' => '2026-07-21',
+            'send_at' => '2026-07-21 09:00:00',
+            'preview_at' => '2026-07-20 20:00:00',
+            'previewed' => false,
+            'events' => [self::planEvent(1, '2026-07-27')],
+        ]);
+        $this->wpdb->nextVars[] = 2;
+
+        self::assertSame(2, $this->newsletter()->sendNow());
+
+        $plan = $this->state()['plan'];
+        self::assertSame(Newsletter::PLAN_SENDING, $plan['status']);
+        self::assertSame(1, $plan['id']);
+        self::assertSame('2026-07-20', $plan['send_on']);
+        self::assertSame([Newsletter::HOOK], $this->scheduled);
+        self::assertSame([], $this->mails);
+    }
+
+    public function testSendNowWithNothingToSend(): void
+    {
+        // No coming event.
+        self::assertSame(0, $this->newsletter()->sendNowCount());
+        self::assertSame(0, $this->newsletter()->sendNow());
+        self::assertNull($this->state()['plan'] ?? null);
+
+        // No confirmed subscriber.
+        $this->event(1, '2026-07-27', 'Summer Social');
+        $this->wpdb->nextVars[] = 0;
+        self::assertSame(0, $this->newsletter()->sendNow());
+        self::assertNull($this->state()['plan'] ?? null);
+
+        // Already being sent.
+        $this->withPlan(['status' => Newsletter::PLAN_SENDING, 'events' => [self::planEvent(1, '2026-07-27')]]);
+        self::assertSame(0, $this->newsletter()->sendNowCount());
+
+        // Switched off: its batches would wait, so it is not started.
+        $this->withPlan(['events' => [self::planEvent(1, '2026-07-27')]]);
+        $this->options[Newsletter::ENABLED_OPTION] = '0';
+        $this->wpdb->nextVars[] = 3;
+        self::assertSame(0, $this->newsletter()->sendNow());
+        self::assertSame(Newsletter::PLAN_PLANNED, $this->state()['plan']['status']);
+        self::assertSame([], $this->scheduled);
+    }
+
+    /**
      * The last batch mails every subscriber with the unsubscribe headers,
      * records the events as sent and clears the text it carried.
      */

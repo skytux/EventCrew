@@ -323,6 +323,54 @@ final class Newsletter
     }
 
     /**
+     * How many would get the newsletter if an organizer sent it now
+     * (sendNow()): every confirmed subscriber. 0 while it is switched off
+     * (its batches wait for the switch), while one is being sent, when there
+     * is no coming event to carry, or with no confirmed subscriber.
+     */
+    public function sendNowCount(): int
+    {
+        if (! self::enabled()) {
+            return 0;
+        }
+
+        $state = $this->state();
+        $today = (string) current_time('Y-m-d');
+        $plan = $state['plan'];
+
+        if (null !== $plan && self::PLAN_SENDING === $plan['status']) {
+            return 0;
+        }
+
+        $carries = null !== $plan && $this->hasComingEvent($plan, $today);
+
+        if (! $carries && [] === $this->eligibleEvents($state['ledger'], $today, EventSource::upcoming(self::EVENT_SCAN))) {
+            return 0;
+        }
+
+        return $this->subscribers->countConfirmed();
+    }
+
+    /**
+     * Sends the next newsletter now, without waiting for its send time (the
+     * organizer asked, Owner 2026-11-14): the planned one, or, with none
+     * planned, one planned now for the earliest coming events no newsletter
+     * has carried, with the texts the language model writes for it. No
+     * preview goes; the batches start as at the send time (startSending()).
+     * Returns how many confirmed subscribers get it, 0 when it did not start.
+     */
+    public function sendNow(): int
+    {
+        $count = 0;
+
+        $this->locked(function () use (&$count): void {
+            $count = $this->sendNowLocked();
+        });
+
+        return $count;
+    }
+
+    /**
      * After the organizers' text changed: a newsletter that is planned and not
      * sent yet carries the new text, so the organizers get the preview again.
      */
@@ -694,6 +742,99 @@ final class Newsletter
         if (null !== $state['plan'] && $state['plan']['previewed']) {
             $this->sendPreview($state['plan']);
         }
+    }
+
+    private function sendNowLocked(): int
+    {
+        $count = $this->sendNowCount();
+
+        if ($count < 1) {
+            return 0;
+        }
+
+        $state = $this->state();
+        $today = (string) current_time('Y-m-d');
+        $now = (string) current_time('mysql');
+
+        if (null !== $state['plan'] && ! $this->hasComingEvent($state['plan'], $today)) {
+            foreach ($state['plan']['events'] as $event) {
+                $state['ledger'][$event['id']] = ['s' => self::LEDGER_MISSED, 'd' => $event['date']];
+            }
+
+            $state['plan'] = null;
+        }
+
+        if (null === $state['plan']) {
+            $state = $this->planNow($state, $today, $now);
+        }
+
+        if (null === $state['plan']) {
+            $this->save($state);
+
+            return 0;
+        }
+
+        // Sent now: the send time is now, and no preview goes any more.
+        $state['plan'] = array_merge($state['plan'], [
+            'send_on' => $today,
+            'send_at' => $now,
+            'previewed' => true,
+            'sent_now' => true,
+        ]);
+        $state = $this->startSending($state, $today);
+        $this->save($state);
+
+        if (null === $state['plan'] || self::PLAN_SENDING !== $state['plan']['status']) {
+            return 0;
+        }
+
+        $this->logger->info(sprintf('Newsletter sent now by an organizer: %d subscribers.', $count));
+
+        return $count;
+    }
+
+    /**
+     * A plan made now for sendNow(): the earliest coming event no newsletter
+     * has carried, and every other one in the days() days from today.
+     *
+     * @param array<string, mixed> $state
+     * @return array<string, mixed>
+     */
+    private function planNow(array $state, string $today, string $now): array
+    {
+        $events = $this->eligibleEvents($state['ledger'], $today, EventSource::upcoming(self::EVENT_SCAN));
+
+        if ([] === $events) {
+            return $state;
+        }
+
+        $until = max(self::addDays($today, self::days()), (string) $events[0]['date']);
+        $chosen = [];
+
+        foreach ($events as $event) {
+            if ($event['date'] <= $until) {
+                unset($event['starts_at']);
+                $chosen[] = $event;
+            }
+        }
+
+        $state['plan'] = [
+            'id' => $state['next_id'],
+            'status' => self::PLAN_PLANNED,
+            'send_on' => $today,
+            'send_at' => $now,
+            'preview_at' => $now,
+            'previewed' => true,
+            'events' => $chosen,
+            'cursor' => 0,
+            'sent' => 0,
+            'failed' => 0,
+            'text' => null,
+        ];
+        $state['next_id']++;
+        $state['plan'] = $this->written($state['plan'], null === $this->text->get());
+
+        return $state;
     }
 
     /**

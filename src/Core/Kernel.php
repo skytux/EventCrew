@@ -1208,7 +1208,9 @@ final class Kernel
                 $container->get(OpenTaskCall::class),
                 $container->get(BoardService::class),
                 $container->get(TelegramClient::class),
-                $container->get(MonthlyReport::class)
+                $container->get(MonthlyReport::class),
+                $container->get(Newsletter::class),
+                $container->get(FollowupMail::class)
             )
         );
 

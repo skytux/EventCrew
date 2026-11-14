@@ -71,14 +71,30 @@ final class ScheduledMessages
     ];
 
     /** The messages that can be sent once now. */
-    public const SENDABLE = [self::REMINDERS, self::OPEN_TASKS, self::BOARD, self::MONTHLY];
+    public const SENDABLE = [
+        self::REMINDERS,
+        self::OPEN_TASKS,
+        self::BOARD,
+        self::NEWSLETTER,
+        self::FOLLOWUP,
+        self::MONTHLY,
+    ];
+
+    /**
+     * The messages whose "send now" needs them switched on: switched off,
+     * the newsletter's batches wait and the post-event email covers no
+     * night (FollowupMail::covers()).
+     */
+    public const SEND_NEEDS_ON = [self::NEWSLETTER, self::FOLLOWUP];
 
     public function __construct(
         private readonly ?ReminderCall $reminders = null,
         private readonly ?OpenTaskCall $openTasks = null,
         private readonly ?BoardService $board = null,
         private readonly ?TelegramClient $telegram = null,
-        private readonly ?MonthlyReport $monthly = null
+        private readonly ?MonthlyReport $monthly = null,
+        private readonly ?Newsletter $newsletter = null,
+        private readonly ?FollowupMail $followup = null
     ) {
     }
 
@@ -126,6 +142,12 @@ final class ScheduledMessages
     public static function sendable(string $key): bool
     {
         return in_array($key, self::SENDABLE, true);
+    }
+
+    /** Whether "send now" waits for the message to be switched on first. */
+    public static function sendNeedsOn(string $key): bool
+    {
+        return in_array($key, self::SEND_NEEDS_ON, true) && ! self::isOn($key);
     }
 
     /** The message's short name, translated. */
@@ -212,6 +234,8 @@ final class ScheduledMessages
             self::REMINDERS => $this->reminders?->countNext() ?? 0,
             self::OPEN_TASKS => $this->openTasks?->countForNextOpenDate() ?? 0,
             self::BOARD => $this->hasGroup() ? 1 : 0,
+            self::NEWSLETTER => $this->newsletter?->sendNowCount() ?? 0,
+            self::FOLLOWUP => $this->followup?->sendNowCount() ?? 0,
             self::MONTHLY => $this->monthly?->recipientCount() ?? 0,
             default => null,
         };
@@ -252,6 +276,8 @@ final class ScheduledMessages
             self::REMINDERS => $this->reminders?->sendNext() ?? 0,
             self::OPEN_TASKS => $this->openTasks?->sendForNextOpenDate() ?? 0,
             self::BOARD => $this->hasGroup() && null !== $this->board && $this->board->repost() ? 1 : 0,
+            self::NEWSLETTER => self::isOn($key) ? $this->newsletter?->sendNow() ?? 0 : 0,
+            self::FOLLOWUP => self::isOn($key) ? $this->followup?->sendNow() ?? 0 : 0,
             self::MONTHLY => $this->monthly?->sendNow() ?? 0,
             default => 0,
         };
@@ -335,6 +361,10 @@ final class ScheduledMessages
             return 'admin_sched_unknown';
         }
 
+        if (self::sendNeedsOn($key)) {
+            return 'admin_sched_needson_' . $key;
+        }
+
         $sent = $this->send($key);
 
         return $sent < 1 ? 'admin_sched_none' : 'admin_sched_sent_' . $key . '_' . $sent;
@@ -356,6 +386,14 @@ final class ScheduledMessages
                 /* translators: %s: the message's name. */
                 'on' === $m[1] ? __('%s: on.', 'eventcrew') : __('%s: off.', 'eventcrew'),
                 self::name($m[2])
+            );
+        }
+
+        if (1 === preg_match('/^admin_sched_needson_([a-z]+)$/', $code, $m) && self::exists($m[1])) {
+            return sprintf(
+                /* translators: %s: the message's name. */
+                __('"%s" is switched off. Switch it on to send it now.', 'eventcrew'),
+                self::name($m[1])
             );
         }
 

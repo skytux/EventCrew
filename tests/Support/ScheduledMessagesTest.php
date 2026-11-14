@@ -6,6 +6,7 @@ namespace EventCrew\Tests\Support;
 
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\AssignmentRepository;
+use EventCrew\Repositories\NewsletterSubscriberRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\BoardPush;
@@ -13,8 +14,10 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\FollowupMail;
 use EventCrew\Support\Logger;
 use EventCrew\Support\Mailer;
+use EventCrew\Support\LlmClient;
 use EventCrew\Support\MonthlyReport;
 use EventCrew\Support\Newsletter;
+use EventCrew\Support\NewsletterText;
 use EventCrew\Support\ReminderCall;
 use EventCrew\Support\ScheduledMessages;
 use EventCrew\Support\WelcomeSender;
@@ -132,7 +135,14 @@ final class ScheduledMessagesTest extends TelegramTestCase
         self::assertFalse(ScheduledMessages::isOn(ScheduledMessages::NEWSLETTER));
         self::assertTrue(ScheduledMessages::isOn(ScheduledMessages::BOARD));
         self::assertSame(
-            [ScheduledMessages::REMINDERS, ScheduledMessages::OPEN_TASKS, ScheduledMessages::BOARD, ScheduledMessages::MONTHLY],
+            [
+                ScheduledMessages::REMINDERS,
+                ScheduledMessages::OPEN_TASKS,
+                ScheduledMessages::BOARD,
+                ScheduledMessages::NEWSLETTER,
+                ScheduledMessages::FOLLOWUP,
+                ScheduledMessages::MONTHLY,
+            ],
             array_column(array_filter($rows, static fn (array $row): bool => $row['sendable']), 'key')
         );
         self::assertStringContainsString('✅ Task reminder (reminders)', ScheduledMessages::listText());
@@ -226,5 +236,86 @@ final class ScheduledMessagesTest extends TelegramTestCase
         self::assertFalse(
             AssistantActions::validate('/scheduled reminders off', ['organizer' => false, 'welcomeCrew' => false, 'member' => true], null, '2026-07-20', [12])['ok']
         );
+    }
+
+    private function newsletter(): Newsletter
+    {
+        $logger = new Logger();
+
+        return new Newsletter(
+            new NewsletterSubscriberRepository(),
+            new PersonRepository(),
+            new NewsletterText(new LlmClient($logger), $logger),
+            new Mailer($logger, new EmailTemplate($logger)),
+            $logger
+        );
+    }
+
+    /**
+     * Send now for the newsletter (Owner 2026-11-14): asked with the
+     * subscriber count, then its batches start; switched off, it says so
+     * and nothing starts.
+     */
+    public function testTheNewsletterCanBeSentNow(): void
+    {
+        $this->fakeEvents();
+        $this->event(1, '2026-07-27', 'Summer Social');
+        Functions\when('wp_next_scheduled')->justReturn(false);
+        $hooks = [];
+        Functions\when('wp_schedule_single_event')->alias(static function (int $time, string $hook) use (&$hooks): bool {
+            $hooks[] = $hook;
+
+            return true;
+        });
+        $scheduled = new ScheduledMessages(null, null, null, null, null, $this->newsletter());
+
+        self::assertSame('admin_sched_needson_newsletter', $scheduled->apply(ScheduledMessages::NEWSLETTER, 'send'));
+        self::assertSame(
+            '"Newsletter" is switched off. Switch it on to send it now.',
+            ScheduledMessages::noticeText('admin_sched_needson_newsletter')
+        );
+        self::assertSame('', $scheduled->question(ScheduledMessages::NEWSLETTER));
+        self::assertSame([], $hooks);
+
+        ScheduledMessages::setOn(ScheduledMessages::NEWSLETTER, true);
+        $this->wpdb->nextVars[] = 4;
+        self::assertSame('Send "Newsletter" now to 4 people?', $scheduled->question(ScheduledMessages::NEWSLETTER));
+
+        $this->wpdb->nextVars[] = 4;
+        $code = $scheduled->apply(ScheduledMessages::NEWSLETTER, 'send');
+
+        self::assertSame('admin_sched_sent_newsletter_4', $code);
+        self::assertSame('"Newsletter" sent to 4 people.', ScheduledMessages::noticeText($code));
+        self::assertSame([Newsletter::HOOK], $hooks);
+        self::assertSame(Newsletter::PLAN_SENDING, $this->options[Newsletter::STATE_OPTION]['plan']['status']);
+        self::assertSame([], $this->mails);
+
+        // Being sent: nothing more to send now.
+        self::assertSame('', $scheduled->question(ScheduledMessages::NEWSLETTER));
+    }
+
+    public function testThePostEventEmailNeedsItsSwitchToBeSentNow(): void
+    {
+        $scheduled = $this->scheduled();
+
+        self::assertSame('admin_sched_needson_followup', $scheduled->apply(ScheduledMessages::FOLLOWUP, 'send'));
+        self::assertTrue(ScheduledMessages::sendNeedsOn(ScheduledMessages::FOLLOWUP));
+        self::assertFalse(ScheduledMessages::sendNeedsOn(ScheduledMessages::REMINDERS));
+
+        // On, but without its sender here: nobody to send it to.
+        ScheduledMessages::setOn(ScheduledMessages::FOLLOWUP, true);
+        self::assertSame(0, $scheduled->count(ScheduledMessages::FOLLOWUP));
+        self::assertSame('admin_sched_none', $scheduled->apply(ScheduledMessages::FOLLOWUP, 'send'));
+    }
+
+    public function testTheHelperMaySendTheNewsletterAndThePostEventEmailNow(): void
+    {
+        $organizer = ['organizer' => true, 'welcomeCrew' => false, 'member' => true, 'web' => true];
+
+        foreach (['newsletter', 'followup'] as $key) {
+            $ok = AssistantActions::validate('/scheduled ' . $key . ' send', $organizer, null, '2026-07-20', [12]);
+            self::assertTrue($ok['ok']);
+            self::assertSame('/scheduled ' . $key . ' send', $ok['action']);
+        }
     }
 }

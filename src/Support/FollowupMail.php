@@ -363,6 +363,137 @@ final class FollowupMail
     }
 
     /**
+     * The night an organizer can send now (sendNow()): the latest night
+     * before today whose email has not started, was not stopped and is not
+     * too late (LATE_DAYS after its send time), and that the email covers
+     * (covers()). '' when there is none or the email is switched off.
+     */
+    public function sendNowNight(?\DateTimeImmutable $now = null): string
+    {
+        if (! self::enabled()) {
+            return '';
+        }
+
+        $now = $now ?? self::now();
+
+        return $this->pendingNight($now, $this->state());
+    }
+
+    /**
+     * How many would get the post-event email if it were sent now: one per
+     * address of sendNowNight() that has not had it and is not on the
+     * do-not-send list. 0 when there is no such night.
+     */
+    public function sendNowCount(?\DateTimeImmutable $now = null): int
+    {
+        $date = $this->sendNowNight($now);
+
+        return '' === $date ? 0 : $this->recipientCount($date);
+    }
+
+    /**
+     * Starts sendNowNight()'s email now instead of at SEND_HOUR (the
+     * organizer asked, Owner 2026-11-14), through the same batches, opt-outs
+     * and one email per address as the scheduled send. No preview goes any
+     * more. Returns how many get it, 0 when nothing started.
+     */
+    public function sendNow(?\DateTimeImmutable $now = null): int
+    {
+        if (! self::enabled()) {
+            return 0;
+        }
+
+        $now = $now ?? self::now();
+        $count = 0;
+
+        $this->locked(function () use ($now, &$count): void {
+            $state = $this->state();
+            $date = $this->pendingNight($now, $state);
+
+            if ('' === $date) {
+                return;
+            }
+
+            $count = $this->recipientCount($date);
+
+            if ($count < 1) {
+                $count = 0;
+
+                return;
+            }
+
+            // As runLocked() starts a night at its send time.
+            $this->text->translatePending();
+            $state['texts'][$date] = $this->text->revisions();
+            $state = $this->writeNight($date, $state);
+            $state['previewed'][$date] = true;
+            $state['started'][$date] = true;
+            $this->save($state);
+            $this->log(sprintf('Post-event email for %s sent now by an organizer.', $date));
+            $this->save($this->sendNight($date, $state));
+        });
+
+        return $count;
+    }
+
+    /**
+     * sendNowNight() on $state.
+     *
+     * @param array<string, array<string, mixed>> $state
+     */
+    private function pendingNight(\DateTimeImmutable $now, array $state): string
+    {
+        $today = $now->setTimezone(self::timezone())->format('Y-m-d');
+        $at = $now->getTimestamp();
+        $dates = $this->rows->datesWithRecipients(self::addDays($today, -(self::LATE_DAYS + 1)), self::addDays($today, -1));
+
+        foreach (array_reverse($dates) as $date) {
+            $date = (string) $date;
+
+            if (
+                $date < $today
+                && ! isset($state['stopped'][$date])
+                && ! isset($state['started'][$date])
+                && ! isset($state['done'][$date])
+                && ! isset($state['expired'][$date])
+                && self::covers($date)
+                && $at < self::sendAt($date)->getTimestamp() + self::LATE_DAYS * DAY_IN_SECONDS
+            ) {
+                return $date;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * How many addresses of $date would get an email in sendNight(): one per
+     * address none of whose rows has had it, not on the do-not-send list.
+     */
+    private function recipientCount(string $date): int
+    {
+        $blocked = $this->optOut->blocked();
+        $groups = [];
+
+        foreach ($this->rows->recipients($date) as $row) {
+            $key = function_exists('mb_strtolower') ? mb_strtolower($row['email']) : strtolower($row['email']);
+            $groups[$key][] = $row;
+        }
+
+        $count = 0;
+
+        foreach ($groups as $group) {
+            $handled = array_filter($group, static fn (array $row): bool => '' !== $row['status']);
+
+            if ([] === $handled && ! isset($blocked[NewsletterSubscriberRepository::normalize($group[0]['email'])])) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    /**
      * Where $date's email stands: 'off' (switched off), 'stopped', 'sending'
      * (started, not finished), 'sent' (finished), 'not_covered' (the setting
      * went on after the event's day began), or 'planned'.
