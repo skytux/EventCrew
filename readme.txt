@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.264
+Stable tag: 1.140.265
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,12 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.265 =
+* Crew app: opens the tab you need first and loads the others right after, with far fewer database queries.
+* Crew app: forms and buttons save in place without reloading; the open tab updates itself every 5 seconds when something changes.
+* Organize is a role you tick like any other in the Crew app, wp-admin People and the bot; the separate organizer switch is gone.
+* wp-admin: Settings, Messages and Translations pages load several times faster.
 
 = 1.140.264 =
 * Telegram channel: the bot posts the next event card and a thank-you card after each event in a channel it is an admin of; connected by an organizer, shown in Settings, with switches and Send now.
@@ -2203,6 +2209,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.265 =
+No settings change.
 
 = 1.140.264 =
 No settings change.
