@@ -209,6 +209,67 @@ final class PermissionServiceTest extends TelegramTestCase
         ];
     }
 
+    public function testTheOrganizeRoleButtonMakesSomeoneAnOrganizer(): void
+    {
+        $this->withDjRole();
+        $this->wpdb->nextRows[] = ['id' => 7, 'display_name' => 'Owner', 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'is_organizer' => 0, 'role_slugs' => 'dj', 'telegram_chat_id' => 999];
+        $fired = [];
+        Functions\when('do_action')->alias(static function (string $hook, mixed ...$args) use (&$fired): void {
+            $fired[] = [$hook, $args];
+        });
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:role:organize:8']);
+
+        self::assertSame('dj,organize', $this->wpdb->updates[0]['data']['role_slugs']);
+        self::assertSame(1, $this->wpdb->updates[0]['data']['is_organizer']);
+        self::assertContains([\EventCrew\Support\RoleNotifier::ORGANIZER_HOOK, [8, 'Owner']], $fired);
+    }
+
+    public function testTheOrganizeRoleButtonTakesOrganizerRightsWhileAnotherIsLeft(): void
+    {
+        $this->withDjRole();
+        $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'is_organizer' => 1, 'role_slugs' => 'organize', 'telegram_chat_id' => 999];
+        $this->wpdb->nextVars[] = '1'; // another organizer, for the lockout guard
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:role:organize:8']);
+
+        self::assertSame('', $this->wpdb->updates[0]['data']['role_slugs']);
+        self::assertSame(0, $this->wpdb->updates[0]['data']['is_organizer']);
+    }
+
+    public function testTheOrganizeRoleButtonKeepsTheLastOrganizer(): void
+    {
+        $this->withDjRole();
+        $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 8, 'display_name' => 'Sam', 'is_organizer' => 1, 'role_slugs' => 'organize', 'telegram_chat_id' => 999];
+        $this->wpdb->nextVars[] = '0'; // no other organizer
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:role:organize:8']);
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame(
+            'That would leave no organizer: at least one person has to hold a role with Admin access.',
+            $this->lastCallTo('answerCallbackQuery')['text']
+        );
+    }
+
+    public function testAnOrganizerCannotTakeTheirOwnOrganizeRole(): void
+    {
+        $this->withDjRole();
+        $this->wpdb->nextRows[] = ['id' => 7, 'is_organizer' => 1, 'telegram_user_id' => 555];
+        $this->wpdb->nextRows[] = ['id' => 7, 'display_name' => 'Owner', 'is_organizer' => 1, 'role_slugs' => 'organize', 'telegram_chat_id' => 999];
+
+        $this->service()->onSelect(['id' => 'cbq', 'from' => ['id' => 555], 'data' => 'perm:role:organize:7']);
+
+        self::assertSame([], $this->wpdb->updates);
+        self::assertSame(
+            'Nothing was changed: you cannot take away your own organizer flag.',
+            $this->lastCallTo('answerCallbackQuery')['text']
+        );
+    }
+
     public function testRolesGivesARestrictedRole(): void
     {
         $this->withDjRole();
@@ -268,11 +329,13 @@ final class PermissionServiceTest extends TelegramTestCase
         $sent = $this->lastCallTo('sendMessage');
         self::assertStringStartsWith('Roles for Sam.', $sent['text']);
         $buttons = array_merge(...$sent['reply_markup']['inline_keyboard']);
+        // Organize is a role button like the others; no ⭐ Organizer button.
         self::assertSame(
-            ['perm:pass:8', 'perm:admin:8', 'perm:role:dj:8'],
+            ['perm:pass:8', 'perm:role:dj:8', 'perm:role:organize:8'],
             array_column($buttons, 'callback_data')
         );
-        self::assertStringStartsWith('✅ ', $buttons[2]['text']);
+        self::assertStringStartsWith('✅ ', $buttons[1]['text']);
+        self::assertStringStartsNotWith('✅ ', $buttons[2]['text']);
         self::assertStringStartsNotWith('✅ ', $buttons[0]['text']);
     }
 
@@ -316,7 +379,7 @@ final class PermissionServiceTest extends TelegramTestCase
         self::assertSame(555, $sent['chat_id']);
         self::assertStringStartsWith('Roles for Sam.', $sent['text']);
         self::assertSame(
-            ['perm:pass:8', 'perm:admin:8', 'perm:role:dj:8'],
+            ['perm:pass:8', 'perm:role:dj:8', 'perm:role:organize:8'],
             array_column(array_merge(...$sent['reply_markup']['inline_keyboard']), 'callback_data')
         );
         self::assertContains('answerCallbackQuery', $this->calledMethods());

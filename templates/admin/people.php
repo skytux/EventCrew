@@ -71,19 +71,6 @@ $eventcrew_is_edit = $editing instanceof \EventCrew\Models\Person;
                             value="<?php echo esc_attr($eventcrew_is_edit ? $editing->displayName : ''); ?>">
                     </div>
 
-                    <div class="form-field">
-                        <label for="eventcrew-is-organizer">
-                            <input
-                                name="is_organizer"
-                                id="eventcrew-is-organizer"
-                                type="checkbox"
-                                value="1"
-                                <?php checked($eventcrew_is_edit && $editing->isOrganizer); ?>>
-                            <?php esc_html_e('Organizer', 'eventcrew'); ?>
-                        </label>
-                        <p><?php esc_html_e('Organizers can mark attendance from the bot.', 'eventcrew'); ?></p>
-                    </div>
-
                     <?php $eventcrew_restricted_roles = \EventCrew\Support\Roles::assignable(); ?>
                     <?php if ([] !== $eventcrew_restricted_roles) : ?>
                         <div class="form-field">

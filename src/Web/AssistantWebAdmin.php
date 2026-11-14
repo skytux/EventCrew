@@ -268,7 +268,8 @@ final class AssistantWebAdmin
                     (string) ($state['name'] ?? $person->displayName),
                     (string) ($state['notes'] ?? $person->notes),
                     $person->roleSlugs,
-                    $organizer->name()
+                    $organizer->name(),
+                    $organizer->id
                 );
 
                 return ['changed' => 'admin_person_updated' === $code, 'text' => CrewAdminPeople::noticeText($code)];

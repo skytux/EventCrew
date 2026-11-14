@@ -808,7 +808,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame('Person updated.', CrewAdminController::noticeText('admin_person_updated'));
     }
 
-    public function testEditingAnOrganizerLeavesThemAnOrganizer(): void
+    public function testEditingAnOrganizerWithOrganizeTickedLeavesThemAnOrganizer(): void
     {
         $this->signIn($this->organizerRow(1));
         $this->wpdb->nextRows[] = ['role_slugs' => 'organize'] + $this->personRow(2, true);   // find()
@@ -817,12 +817,99 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             'person_id' => '2',
             'email' => 'p2@example.com',
             'display_name' => 'Person 2',
+            'roles' => ['organize'],
         ]);
 
-        // Organize is not on the form, so it is kept, and with it Admin access.
         self::assertSame('admin_person_updated', $result['notice']);
         self::assertSame('organize', $this->wpdb->updates[0]['data']['role_slugs']);
         self::assertSame(1, $this->wpdb->updates[0]['data']['is_organizer']);
+    }
+
+    public function testTickingOrganizeOnAPersonMakesThemAnOrganizer(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = $this->personRow(8);   // find()
+        $fired = $this->recordActions();
+
+        $result = $this->post(CrewAdminController::PERSON_ACTION, [
+            'person_id' => '8',
+            'email' => 'p8@example.com',
+            'display_name' => 'Person 8',
+            'roles' => ['organize'],
+        ]);
+
+        self::assertSame('admin_person_updated', $result['notice']);
+        self::assertSame('organize', $this->wpdb->updates[0]['data']['role_slugs']);
+        self::assertSame(1, $this->wpdb->updates[0]['data']['is_organizer']);
+        self::assertContains([\EventCrew\Support\RoleNotifier::ORGANIZER_HOOK, [8, 'Person 1']], (array) $fired);
+    }
+
+    public function testUntickingOrganizeTakesOrganizerRightsWhileAnotherIsLeft(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['role_slugs' => 'organize'] + $this->personRow(2, true);   // find()
+        $this->wpdb->nextVars[] = '1';                                                     // other organizers
+        $fired = $this->recordActions();
+
+        $result = $this->post(CrewAdminController::PERSON_ACTION, [
+            'person_id' => '2',
+            'email' => 'p2@example.com',
+            'display_name' => 'Person 2',
+        ]);
+
+        self::assertSame('admin_person_updated', $result['notice']);
+        self::assertSame('', $this->wpdb->updates[0]['data']['role_slugs']);
+        self::assertSame(0, $this->wpdb->updates[0]['data']['is_organizer']);
+        self::assertContains([\EventCrew\Telegram\CommandMenu::ORGANIZER_CHANGED_HOOK, [2]], (array) $fired);
+    }
+
+    public function testUntickingOrganizeOnTheLastOrganizerChangesNothing(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['role_slugs' => 'organize'] + $this->personRow(2, true);   // find()
+        $this->wpdb->nextVars[] = '0';                                                     // no other organizer
+
+        $result = $this->post(CrewAdminController::PERSON_ACTION, [
+            'person_id' => '2',
+            'email' => 'p2@example.com',
+            'display_name' => 'Person 2',
+        ]);
+
+        self::assertSame('admin_last_organizer', $result['notice']);
+        self::assertSame([], $this->wpdb->updates);
+    }
+
+    public function testTheRolesFormAndTheHelperGiveOrganizeLikeAnyRole(): void
+    {
+        // menu:roles add Organize ; Sam runs saveRoles() with one role to add.
+        $this->wpdb->nextRows[] = ['role_slugs' => 'dj'] + $this->personRow(8);   // find()
+
+        $notice = $this->admin()->saveRoles(8, [Roles::ORGANIZE_SLUG], [], 'Person 1', 1);
+
+        self::assertSame('admin_roles_saved', $notice);
+        self::assertSame('dj,organize', $this->wpdb->updates[0]['data']['role_slugs']);
+        self::assertSame(1, $this->wpdb->updates[0]['data']['is_organizer']);
+    }
+
+    public function testAnOrganizerCannotUntickTheirOwnOrganize(): void
+    {
+        $this->signIn($this->organizerRow(1));
+        $this->wpdb->nextRows[] = ['role_slugs' => 'organize'] + $this->organizerRow(1);   // find()
+
+        $result = $this->post(CrewAdminController::PERSON_ACTION, [
+            'person_id' => '1',
+            'email' => 'p1@example.com',
+            'display_name' => 'Person 1',
+        ]);
+
+        self::assertSame('admin_organizer_self', $result['notice']);
+        self::assertSame([], $this->wpdb->updates);
+
+        // The same through the roles form (and the helper's menu:roles).
+        $this->wpdb->nextRows[] = ['role_slugs' => 'organize'] + $this->organizerRow(1);   // find()
+        $notice = $this->admin()->saveRoles(1, null, [], 'Person 1', 1);
+        self::assertSame('admin_organizer_self', $notice);
+        self::assertSame([], $this->wpdb->updates);
     }
 
     public function testAnOrganizerAddsAPersonWhoIsNeitherAnOrganizerNorVerified(): void
@@ -2937,11 +3024,11 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         );
         self::assertStringNotContainsString('id="eventcrew-admin-people-list"', $html);
         self::assertStringNotContainsString('id="eventcrew-admin-people-results"', $html);
-        // The organizer flag and Delete are text links, each asking first.
-        self::assertStringContainsString('value="' . CrewAdminController::ORGANIZER_ACTION . '"', $html);
-        self::assertStringContainsString('name="organizer" value="1"', $html);
-        self::assertStringContainsString('Make organizer', $html);
-        self::assertStringContainsString('Make Person 8 an organizer?', $html);
+        // Organize is a role tick like the others; no separate organizer
+        // link or row (Owner 2026-11-14). Delete is a text link asking first.
+        self::assertMatchesRegularExpression('/name="roles\[\]" value="organize"/', $html);
+        self::assertStringNotContainsString('value="' . CrewAdminController::ORGANIZER_ACTION . '"', $html);
+        self::assertStringNotContainsString('Make organizer', $html);
         self::assertStringContainsString('value="' . CrewAdminController::PERSON_REMOVE_ACTION . '"', $html);
         self::assertStringContainsString(
             'class="eventcrew-textlink eventcrew-textlink-danger">Delete this person</button>',
@@ -2970,7 +3057,7 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringNotContainsString('value="' . CrewAdminController::PERSON_REMOVE_ACTION . '"', $html);
     }
 
-    public function testAnotherOrganizerOpenedHasRemoveAsOrganizer(): void
+    public function testAnotherOrganizerOpenedHasOrganizeTickedAndNoOrganizerLink(): void
     {
         Functions\when('absint')->alias(static fn (mixed $n): int => abs((int) $n));
         Functions\when('wp_unslash')->returnArg();
@@ -2978,6 +3065,12 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
 
         try {
             $html = $this->renderAs($this->organizerRow(1), function (): void {
+                // renderAs() silences checked(); here the tick is the point.
+                Functions\when('checked')->alias(static function ($checked, $current = true): void {
+                    if ((string) $checked === (string) $current) {
+                        echo ' checked';
+                    }
+                });
                 $this->wpdb->nextRows[] = $this->organizerRow(1);
                 $this->wpdb->nextRows[] = $this->organizerRow(2);
             });
@@ -2985,9 +3078,9 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
             $_GET = [];
         }
 
-        self::assertStringContainsString('name="organizer" value="0"', $html);
-        self::assertStringContainsString('Remove as organizer', $html);
-        self::assertStringContainsString('Remove Person 2 as an organizer?', $html);
+        self::assertMatchesRegularExpression('/name="roles\[\]" value="organize"\s*checked/', $html);
+        self::assertStringNotContainsString('Remove as organizer', $html);
+        self::assertStringNotContainsString('value="' . CrewAdminController::ORGANIZER_ACTION . '"', $html);
     }
 
     public function testTheDoNotSendListHasAPagerThatKeepsItsPage(): void

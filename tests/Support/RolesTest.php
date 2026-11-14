@@ -57,8 +57,8 @@ final class RolesTest extends TestCase
         self::assertSame([Roles::ORGANIZE_SLUG], Roles::adminSlugs());
         self::assertTrue(Roles::isRestricted(Roles::ORGANIZE_SLUG));
         self::assertContains(Roles::ORGANIZE_SLUG, array_column(Roles::everyNight(), 'slug'));
-        // The Organizer switch gives it, not the role list of a person.
-        self::assertNotContains(Roles::ORGANIZE_SLUG, array_column(Roles::assignable(), 'slug'));
+        // Set like any other role on a person (Owner 2026-11-14).
+        self::assertContains(Roles::ORGANIZE_SLUG, array_column(Roles::assignable(), 'slug'));
     }
 
     public function testOrganizeIsSavedLikeAnyRoleAndStaysForOrganizersOnly(): void

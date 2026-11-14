@@ -908,9 +908,11 @@ final class Roles
 
     /**
      * The roles a person can be given: the restricted ones and those with
-     * Admin access. Not Organize: the "Organizer" switch gives and takes it
-     * (OrganizerSync::withAdmin() / withoutAdmin()). Archived ones are left out: nobody
-     * new should be handed a role no longer offered.
+     * Admin access, Organize among them. Organize is set like any other role:
+     * holding it (or another role with Admin access) is what makes someone an
+     * organizer (OrganizerSync), and the savers keep the lockout guard.
+     * Archived ones are left out: nobody new should be handed a role no
+     * longer offered.
      *
      * @return array<int, Role>
      */
@@ -918,8 +920,7 @@ final class Roles
     {
         return array_values(array_filter(
             self::active(),
-            static fn (array $role): bool => ($role['restricted'] || $role['admin_access'])
-                && self::ORGANIZE_SLUG !== $role['slug']
+            static fn (array $role): bool => $role['restricted'] || $role['admin_access']
         ));
     }
 
