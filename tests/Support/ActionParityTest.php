@@ -22,7 +22,10 @@ use ReflectionClassConstant;
  * to it. ActionParity is the map; this test checks it against the code.
  *
  * KNOWN_GAPS are today's gaps, one line each with why. A gap that closes
- * fails the test until its line is removed, so the list only shrinks. A new
+ * fails the test until its line is removed, so the list only shrinks. The
+ * sales desk's own actions (ActionParity::DESK_ONLY) and the helper's
+ * Open sales desk button (ActionParity::WEB_SHOWS_BUTTON) are intended
+ * exceptions, not gaps, and never go into KNOWN_GAPS (flow1114). A new
  * web action constant (a *_ACTION of a src/Web controller) fails it until it
  * is in the map or in ActionParity::EXCLUDED.
  */
@@ -38,35 +41,8 @@ final class ActionParityTest extends TestCase
      * tg: the helper line works on the Crew app page only, not in Telegram.
      */
     private const KNOWN_GAPS = [
-        // Missing in the bot.
-        'desk_mark bot' => 'the door list has no check-in buttons; /roster marks crew only',
-        'desk_plus bot' => 'no +1 count at the door',
-        'desk_give bot' => '/ticket does it but is organizers only; the sales-desk crew has nothing',
-        'desk_sale bot' => 'no door-sale command',
-        'desk_holvi bot' => 'no add-a-Holvi-buyer command',
-        'desk_count bot' => 'no head count at the door',
-        'desk_guest bot' => '/door add does it but is organizers only',
-        'desk_note bot' => 'no who-came-in note',
-        'desk_note_remove bot' => 'no who-came-in note',
-        'desk_work bot' => '/assign and Add someone do it but are organizers only',
-        'desk_new_member bot' => 'Add someone creates a member only onto a task, organizers only',
-        'desk_file bot' => 'the bot takes no file',
-
         // Missing in the helper.
         'buyers_upload helper' => 'a file cannot go through the helper',
-        'desk_mark helper' => 'no helper line',
-        'desk_plus helper' => 'no helper line',
-        'desk_give helper' => '/ticket is organizers only',
-        'desk_sale helper' => 'no helper line',
-        'desk_holvi helper' => 'no helper line',
-        'desk_count helper' => 'no helper line',
-        'desk_guest helper' => '/door add is organizers only',
-        'desk_note helper' => 'no helper line',
-        'desk_note_remove helper' => 'no helper line',
-        'desk_work helper' => '/assign is organizers only',
-        'desk_new_member helper' => 'no helper line',
-        'desk_file helper' => 'a file cannot go through the helper',
-
 
         // The helper only links on the Crew app page.
         'profile_email web' => '/email opens Settings: the link goes to the new address (Owner 2026-11-14)',
@@ -83,11 +59,25 @@ final class ActionParityTest extends TestCase
     public function testEveryAppActionHasABotAndAHelperTwin(): void
     {
         $gaps = [];
+        $intended = [];
 
         foreach (ActionParity::actions() as $id => $row) {
             foreach ($this->gapsOf($row) as $kind => $why) {
+                if (self::isIntended($id, $kind)) {
+                    $intended[$id . ' ' . $kind] = $why;
+
+                    continue;
+                }
+
                 $gaps[$id . ' ' . $kind] = $why;
             }
+        }
+
+        // Each WEB_SHOWS_BUTTON row still only shows its button: when the
+        // helper runs it on Confirm again, its line goes.
+        foreach (array_keys(ActionParity::WEB_SHOWS_BUTTON) as $id) {
+            self::assertArrayHasKey($id . ' web', $intended, $id . ' is no longer a button only: remove it from WEB_SHOWS_BUTTON');
+            self::assertSame(AssistantWebActions::GOTO, $intended[$id . ' web'], $id . ' shows its button');
         }
 
         $new = array_diff_key($gaps, self::KNOWN_GAPS);
@@ -100,6 +90,36 @@ final class ActionParityTest extends TestCase
                 . print_r($new, true)
         );
         self::assertSame([], $closed, "Gaps now closed: remove these KNOWN_GAPS lines:\n" . print_r($closed, true));
+    }
+
+    /**
+     * The sales desk's actions stay on the desk page (flow1114): a separate,
+     * named list, never gaps. Every DoorController action is mapped or
+     * excluded (testEveryWebActionIsInTheMapOrExcluded), so a new desk
+     * action cannot slip in unmapped either.
+     */
+    public function testDeskActionsAreAnIntendedExceptionNotGaps(): void
+    {
+        $actions = ActionParity::actions();
+
+        self::assertSame('Owner 2026-11-14: desk actions stay on the desk page', ActionParity::DESK_ONLY_WHY);
+        self::assertSame(array_values(array_unique(ActionParity::DESK_ONLY)), ActionParity::DESK_ONLY);
+
+        foreach (ActionParity::DESK_ONLY as $id) {
+            self::assertArrayHasKey($id, $actions, $id . ' is not in ActionParity::actions()');
+            self::assertStringStartsWith('DoorController::', (string) $actions[$id]['source'], $id . ' is not a sales desk action');
+            self::assertStringStartsWith('Sales desk', $actions[$id]['place'], $id);
+        }
+
+        foreach (array_keys(self::KNOWN_GAPS) as $key) {
+            $id = (string) strtok($key, ' ');
+            self::assertNotContains($id, ActionParity::DESK_ONLY, $key . ': a desk action is an exception, not a gap');
+            self::assertArrayNotHasKey($id, ActionParity::WEB_SHOWS_BUTTON, $key . ': listed as intended already');
+        }
+
+        foreach (array_keys(ActionParity::WEB_SHOWS_BUTTON) as $id) {
+            self::assertArrayHasKey($id, $actions, $id . ' is not in ActionParity::actions()');
+        }
     }
 
     public function testEveryWebActionIsInTheMapOrExcluded(): void
@@ -166,6 +186,20 @@ final class ActionParityTest extends TestCase
         foreach (self::KNOWN_GAPS as $key => $why) {
             self::assertNotSame('', trim($why), $key . ' needs a reason');
         }
+
+        foreach (ActionParity::WEB_SHOWS_BUTTON as $id => $why) {
+            self::assertNotSame('', trim($why), $id . ' needs a reason');
+        }
+    }
+
+    /** Whether a gap of $kind for action $id is an intended exception (flow1114). */
+    private static function isIntended(string $id, string $kind): bool
+    {
+        if (in_array($id, ActionParity::DESK_ONLY, true)) {
+            return true;
+        }
+
+        return 'web' === $kind && isset(ActionParity::WEB_SHOWS_BUTTON[$id]);
     }
 
     /**

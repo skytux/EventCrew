@@ -11,8 +11,8 @@ use EventCrew\Support\NotificationPreferences;
  * The helper's lines for the Crew app actions that had none (parityB), in
  * Telegram and in the Crew app's helper box alike. Each runs the bot's own
  * command or button, which asks with ✅ / ✖️ before it changes anything, so
- * the helper adds no question of its own (except /notify and the
- * notification lines, whose bot command sets the switch at once).
+ * the helper adds no question of its own. /notify and the notification
+ * lines change at once, as the settings toggle does (flow1114).
  *
  * AssistantActions::catalogue() lists entries(), AssistantActions::validate()
  * asks validate() first.
@@ -30,7 +30,8 @@ final class AssistantParityLines
     {
         $types = implode(', ', array_keys(NotificationPreferences::labels(! empty($audience['organizer']))));
         $list = [
-            self::entry('menu:signout', 'sign the person out of the crew web page on every browser and phone (asked first)'),
+            self::entry('menu:signout', 'sign the person out of the crew web page on every other browser and phone (asked first);'
+                . ' in Telegram every web sign-in ends, in the Crew app this browser stays signed in'),
             self::entry(
                 'menu:replace <task>',
                 'ask to take over someone else\'s place on that task (<task> as for /join); the holder decides;'
@@ -38,13 +39,11 @@ final class AssistantParityLines
             ),
             self::entry(
                 'menu:notifications <type> <telegram|email|app> <on|off>',
-                'turn one notification on or off; <type> is one of: ' . $types,
-                true
+                'turn one notification on or off at once; <type> is one of: ' . $types
             ),
             self::entry(
                 'menu:notifications <app|telegram|both>',
-                'where notifications go when the person uses both the app and Telegram',
-                true
+                'where notifications go when the person uses both the app and Telegram; changes at once'
             ),
             self::entry(
                 '/giveaway [date] [<person or email>] [; <their name>]',
@@ -132,7 +131,8 @@ final class AssistantParityLines
 
     /**
      * menu:notifications (or /notify) app|telegram|both: the settings row's
-     * button; <type> <channel> <on|off>: /notify, asked first here.
+     * choice; <type> <channel> <on|off>: one switch. Both run the bot's
+     * /notify at once, with no Confirm (flow1114).
      *
      * @param array<string, mixed> $audience
      * @return array{ok: bool, error: string, action: string, confirm: bool, run: string, payload: string}
@@ -141,13 +141,10 @@ final class AssistantParityLines
     {
         $choice = ChannelChoice::parse($rest);
 
+        // flow1114: both change at once, as the settings toggle does: the
+        // bot's /notify, no Confirm.
         if (null !== $choice) {
-            return self::accept(
-                $head . ' ' . $choice,
-                true,
-                AssistantActions::RUN_TAP,
-                NotificationSettingsService::CHOICE_PREFIX . $choice
-            );
+            return self::accept($head . ' ' . $choice, false, AssistantActions::RUN_MESSAGE, '/notify ' . $choice);
         }
 
         $words = explode(' ', $rest);
@@ -161,7 +158,7 @@ final class AssistantParityLines
             return self::refuse(AssistantActions::ERROR_INVALID);
         }
 
-        return self::accept($head . ' ' . $rest, true, AssistantActions::RUN_MESSAGE, '/notify ' . $rest);
+        return self::accept($head . ' ' . $rest, false, AssistantActions::RUN_MESSAGE, '/notify ' . $rest);
     }
 
     /**

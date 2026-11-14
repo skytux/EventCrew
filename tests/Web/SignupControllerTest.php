@@ -43,6 +43,7 @@ use EventCrew\Telegram\TicketRedemptionService;
 use EventCrew\Tests\Support\FakeEventNames;
 use EventCrew\Tests\Support\MeTabWpdb;
 use EventCrew\Tests\TestCase;
+use EventCrew\Web\OtherSessions;
 use EventCrew\Web\SignupController;
 
 final class SignupControllerTest extends TestCase
@@ -2485,6 +2486,30 @@ final class SignupControllerTest extends TestCase
         $this->wpdb->nextRows[] = self::samRow(gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS));
 
         self::assertNull($this->controller()->renewSession());
+    }
+
+    /**
+     * flow1114: Sign out everywhere else moves the line, so every other
+     * session ends, and gives this browser a fresh cookie the line accepts.
+     */
+    public function testSignOutEverywhereElseKeepsThisBrowserSignedIn(): void
+    {
+        Functions\when('is_ssl')->justReturn(true);
+        Functions\when('get_gmt_from_date')->returnArg(1);
+        $now = (int) strtotime('2026-07-20 12:00:00'); // the stubbed current_time()
+        $old = WebSession::mint(7, $now - HOUR_IN_SECONDS);
+        $_COOKIE[WebSession::COOKIE] = $old;
+        $person = Person::fromRow(self::samRow());
+
+        $fresh = OtherSessions::signOut(new PersonRepository(), $person, $now);
+
+        self::assertCount(1, $this->wpdb->updates);
+        $line = (string) $this->wpdb->updates[0]['data']['sessions_valid_from'];
+        $after = Person::fromRow(self::samRow($line));
+        self::assertSame($fresh, $_COOKIE[WebSession::COOKIE]);
+        self::assertSame(7, WebSession::read($fresh, $now));
+        self::assertTrue($after->acceptsSessionIssuedAt((int) WebSession::issuedAt($fresh, $now)), 'This browser stays.');
+        self::assertFalse($after->acceptsSessionIssuedAt((int) WebSession::issuedAt($old, $now)), 'The others end.');
     }
 
     public function testASignInLinkOpenedTwiceAtOnceSignsInOnlyOnce(): void

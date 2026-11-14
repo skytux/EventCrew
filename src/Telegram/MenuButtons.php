@@ -230,7 +230,7 @@ final class MenuButtons
      * (Owner 2026-11-07: rarely needed). In the order of the web's Settings
      * tab (Owner 2026-11-08: Settings alike on both): name and email,
      * notifications, language, the other side (web sign-in here, Telegram
-     * there), sign out everywhere, delete my data.
+     * there), sign out everywhere else, delete my data.
      *
      * @return array{inline_keyboard: array<int, array<int, array{text: string, callback_data: string}>>}
      */
@@ -252,7 +252,7 @@ final class MenuButtons
             [self::button('🔔 ' . __('Choose notifications', 'eventcrew'), self::NOTIFICATIONS)],
             [self::button('🌐 ' . __('Change language', 'eventcrew'), self::LANGUAGE)],
             [self::button('🔑 ' . __('Get a web sign-in link', 'eventcrew'), self::WEB)],
-            [self::button('🚪 ' . __('Sign out everywhere', 'eventcrew'), self::SIGN_OUT)],
+            [self::button('🚪 ' . __('Sign out everywhere else', 'eventcrew'), self::SIGN_OUT)],
             [self::button('🗑 ' . __('Delete my data', 'eventcrew'), self::DELETE)],
             self::backRow(),
         ]];

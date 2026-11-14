@@ -45,8 +45,9 @@ final class AssistantWebActionsTest extends TestCase
     public function testAMemberNeverGetsAnAdminScreen(): void
     {
         self::assertSame(['kind' => AssistantWebActions::NONE], AssistantWebActions::plan('/standing Lou'));
-        // The sales desk link is sent on Confirm, for anyone (parityB); the page checks who may have it.
-        self::assertSame(AssistantWebActions::CONFIRM, AssistantWebActions::plan('menu:sales')['kind']);
+        // The Open sales desk button at the top of the page (flow1114), not a link sent on Confirm.
+        self::assertSame(['eventcrew-door-scanner'], AssistantWebActions::plan('menu:sales')['targets'] ?? null);
+        self::assertSame(['eventcrew-door-scanner'], AssistantWebActions::plan('menu:sales', true)['targets'] ?? null);
     }
 
     public function testAnOrganizerGetsTheAdminScreenWithTheDateOrName(): void
@@ -97,7 +98,7 @@ final class AssistantWebActionsTest extends TestCase
         }
     }
 
-    /** Lou 2026-11-14: "give myself a ticket" spends the person's own credit on Confirm. */
+    /** Owner 2026-11-14: "give myself a ticket" spends the person's own credit on Confirm. */
     public function testAnyoneSpendsTheirOwnCreditOnConfirm(): void
     {
         foreach (['menu:ticket', 'menu:ticket 2026-11-14'] as $line) {

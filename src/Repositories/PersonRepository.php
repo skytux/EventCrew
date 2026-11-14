@@ -296,8 +296,9 @@ final class PersonRepository
      * Covers the sessions we cannot see - a phone left behind, a shared
      * computer, a cookie copied off a machine - which is the whole point: the
      * cookie is stateless, so there is no list of sessions to revoke one by
-     * one. The person's own session goes with them, and that is correct; being
-     * signed out is the proof it worked.
+     * one. The person's own session goes with them; the web's Sign out
+     * everywhere else then hands that browser a fresh cookie
+     * (OtherSessions, flow1114), the bot keeps none.
      */
     public function revokeSessions(int $id): void
     {

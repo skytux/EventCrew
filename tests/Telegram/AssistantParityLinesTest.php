@@ -32,15 +32,25 @@ final class AssistantParityLinesTest extends TelegramTestCase
         self::assertNull(AssistantParityLines::validate('menu:replace', '', self::MEMBER));
     }
 
-    public function testANotificationSwitchIsAskedFirst(): void
+    /** flow1114: notifications change at once, as the settings toggle does. */
+    public function testANotificationSwitchChangesAtOnce(): void
     {
         $line = AssistantParityLines::validate('menu:notifications', 'credit telegram off', self::MEMBER);
 
         self::assertTrue($line['ok']);
-        self::assertTrue($line['confirm']);
+        self::assertFalse($line['confirm']);
+        self::assertSame(AssistantActions::RUN_MESSAGE, $line['run']);
         self::assertSame('/notify credit telegram off', $line['payload']);
         self::assertFalse(AssistantParityLines::validate('menu:notifications', 'credit fax off', self::MEMBER)['ok']);
-        self::assertTrue(AssistantParityLines::validate('/notify', 'both', self::MEMBER)['confirm']);
+
+        $choice = AssistantParityLines::validate('/notify', 'both', self::MEMBER);
+        self::assertFalse($choice['confirm']);
+        self::assertSame(AssistantActions::RUN_MESSAGE, $choice['run']);
+        self::assertSame('/notify both', $choice['payload']);
+        self::assertSame([], array_filter(
+            AssistantParityLines::entries(self::MEMBER),
+            static fn (array $e): bool => str_starts_with($e['usage'], 'menu:notifications') && $e['confirm']
+        ));
     }
 
     public function testOrganizerLinesAreForOrganizersOnly(): void
@@ -68,7 +78,9 @@ final class AssistantParityLinesTest extends TelegramTestCase
 
     public function testTheHelperBoxTakesTheSameLines(): void
     {
-        self::assertTrue(AssistantWebParity::handles('menu:sales', '', false));
+        // The page shows its Open sales desk button for menu:sales (flow1114).
+        self::assertFalse(AssistantWebParity::handles('menu:sales', '', false));
+        self::assertFalse(AssistantWebParity::handles('menu:sales', '', true));
         self::assertTrue(AssistantWebParity::handles('menu:replace', '12', false));
         self::assertFalse(AssistantWebParity::handles('menu:replace', '', false));
         self::assertTrue(AssistantWebParity::handles('/giveaway', 'cancel', false));

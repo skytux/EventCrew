@@ -8,9 +8,6 @@ use EventCrew\Models\Person;
 use EventCrew\Models\Task;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\TaskRepository;
-use EventCrew\Support\Dates;
-use EventCrew\Support\DoorLinkSender;
-use EventCrew\Support\SalesDeskGate;
 use EventCrew\Support\TakeoverService;
 use EventCrew\Support\TicketTransferService;
 use EventCrew\Telegram\CommandFlow;
@@ -23,15 +20,17 @@ use EventCrew\Telegram\TransferPage;
  * The helper box's changes for the Crew app actions it only linked to, or
  * had no line for (parityB), each asked with Confirm and run here through
  * the same services as the page's own buttons:
- * - menu:signout: Sign out everywhere;
+ * - menu:signout: Sign out everywhere else (this browser stays signed in);
  * - menu:replace <task>: ask to take over someone's place on a task;
  * - menu:notifications (or /notify) <type> <channel> <on|off>, or
- *   <app|telegram|both>: one notification switch, or where they go;
+ *   <app|telegram|both>: one notification switch, or where they go. These
+ *   run at once, with no Confirm, as /notify does: easy to undo (flow1114);
  * - /giveaway [date] [person or email] [; their name], /giveaway cancel
  *   [date]: 🎁 Give away and ✖️ Cancel offer;
- * - menu:sales: the sales desk link, sent by email and Telegram as the
- *   page's button sends it (the link itself is never in the answer);
  * - organizers: /markall, /buyers, /testmail, /checkmail (ParityCommands).
+ *
+ * menu:sales is not here: on the page it shows the Open sales desk button
+ * (AssistantWebActions::PLACES, flow1114).
  */
 final class AssistantWebParity
 {
@@ -46,8 +45,6 @@ final class AssistantWebParity
         private readonly TaskRepository $tasks,
         private readonly TakeoverService $takeovers,
         private readonly TicketTransferService $transfers,
-        private readonly SalesDeskGate $salesDesk,
-        private readonly DoorLinkSender $doorLinks,
         private readonly ParityCommands $parity
     ) {
     }
@@ -56,7 +53,7 @@ final class AssistantWebParity
     public static function handles(string $head, string $rest, bool $organizer): bool
     {
         return match ($head) {
-            'menu:signout', 'menu:sales' => '' === $rest,
+            'menu:signout' => '' === $rest,
             'menu:replace' => 1 === preg_match('/^\d{1,10}$/', $rest),
             'menu:notifications', '/notify' => '' !== $rest,
             '/giveaway' => true,
@@ -65,7 +62,10 @@ final class AssistantWebParity
     }
 
     /**
-     * @return array{ok: bool, text: string, state: array<string, mixed>, choices?: list<array{label: string, state: array<string, mixed>}>}
+     * A notification line runs here at once (flow1114): the answer then has
+     * "ran" true, "changed" whether it was set, and no state to confirm.
+     *
+     * @return array{ok: bool, text: string, state: array<string, mixed>, choices?: list<array{label: string, state: array<string, mixed>}>, ran?: bool, changed?: bool}
      */
     public function prepare(Person $person, string $head, string $rest): array
     {
@@ -75,22 +75,24 @@ final class AssistantWebParity
 
         switch ($head) {
             case 'menu:signout':
-                return self::ask(MemberCommands::signOutQuestion(), ['op' => 'signout']);
+                return self::ask(MemberCommands::signOutWebQuestion(), ['op' => 'signout']);
 
             case 'menu:replace':
                 return $this->prepareReplace($person, (int) $rest);
 
             case 'menu:notifications':
             case '/notify':
-                $question = ParityCommands::notifyQuestion($person, $rest);
+                // flow1114: set at once, like /notify; the answer says what changed.
+                if ('' === ParityCommands::notifyQuestion($person, $rest)) {
+                    return self::gone();
+                }
 
-                return '' === $question ? self::gone() : self::ask($question, ['op' => 'notify', 'args' => $rest]);
+                $done = $this->parity->notify($person, $rest);
+
+                return ['ok' => false, 'text' => $done['text'], 'state' => [], 'ran' => true, 'changed' => $done['done']];
 
             case '/giveaway':
                 return $this->prepareGiveAway($person, $rest);
-
-            case 'menu:sales':
-                return $this->prepareSales($person);
         }
 
         return $this->parity->prepareWeb(ltrim($head, '/'), $rest);
@@ -125,7 +127,8 @@ final class AssistantWebParity
     {
         switch ((string) ($state['op'] ?? '')) {
             case 'signout':
-                $this->people->revokeSessions($person->id);
+                // flow1114: every other session ends; this browser gets a fresh cookie.
+                OtherSessions::signOut($this->people, $person);
 
                 return ['changed' => true, 'text' => SignupController::noticeText('sessions_revoked')];
 
@@ -148,23 +151,6 @@ final class AssistantWebParity
                 return TicketTransferService::OK === $code
                     ? ['changed' => true, 'text' => __('Offer cancelled. Your ticket is yours again.', 'eventcrew')]
                     : ['changed' => false, 'text' => TicketTransferService::message($code)];
-
-            case 'sales':
-                // Checked again: the night or the person's task may have changed.
-                $date = $this->salesDesk->nextNight();
-                $code = $this->salesDesk->check($person, $date);
-
-                if (SalesDeskGate::OK !== $code) {
-                    return ['changed' => false, 'text' => CrewAdminController::noticeText('admin_sales_' . $code)];
-                }
-
-                // The link goes by email and Telegram, never into this answer.
-                $sent = $this->doorLinks->send($person, $date);
-
-                return [
-                    'changed' => $sent,
-                    'text' => CrewAdminController::noticeText($sent ? 'admin_sales_sent' : 'admin_sales_' . SalesDeskGate::CLOSED),
-                ];
         }
 
         if ($person->isOrganizer && in_array($head, self::ORGANIZER, true)) {
@@ -369,24 +355,6 @@ final class AssistantWebParity
         return ['changed' => true, 'text' => TransferBot::doneFor($this->transfers, $result['transfer'])];
     }
 
-    /**
-     * @return array{ok: bool, text: string, state: array<string, mixed>}
-     */
-    private function prepareSales(Person $person): array
-    {
-        $date = $this->salesDesk->nextNight();
-        $code = $this->salesDesk->check($person, $date);
-
-        if (SalesDeskGate::OK !== $code) {
-            return self::refused(CrewAdminController::noticeText('admin_sales_' . $code));
-        }
-
-        return self::ask(
-            /* translators: %s: a short day label, like "Sat 14 Nov". */
-            sprintf(__('Send you the sales desk link for %s by email (and Telegram if you use the bot)?', 'eventcrew'), Dates::dayLabel($date)), // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            ['op' => 'sales']
-        );
-    }
 
     /**
      * @param list<string> $labels

@@ -1201,14 +1201,14 @@ if ($eventcrew_link_expired) {
                 </header>
                 <div class="eventcrew-card-body">
                 <p class="eventcrew-muted">
-                    <?php esc_html_e('Signing in leaves this browser signed in for 30 days. If you have used a shared or borrowed device — or you think somebody else has your sign-in link — this signs out every browser and phone at once, including this one. Nothing is lost; you just sign in again.', 'eventcrew'); ?>
+                    <?php esc_html_e('Signing in leaves this browser signed in for 30 days. If you have used a shared or borrowed device — or you think somebody else has your sign-in link — this signs out every other browser and phone at once. This one stays signed in.', 'eventcrew'); ?>
                 </p>
                 <form method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
-                    onsubmit="return confirm('<?php echo esc_js(__('Sign out everywhere, including here?', 'eventcrew')); ?>');">
+                    onsubmit="return confirm('<?php echo esc_js(__('Sign out every other browser and phone?', 'eventcrew')); ?>');">
                     <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_revoke_action); ?>">
                     <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                     <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_here); ?>">
-                    <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Sign out everywhere', 'eventcrew'); ?></button>
+                    <button type="submit" class="eventcrew-textlink"><?php esc_html_e('Sign out everywhere else', 'eventcrew'); ?></button>
                 </form>
                 </div>
                 </section>

@@ -12,7 +12,7 @@
  * only, never as HTML. Signing up for or cancelling a task shows Confirm
  * and Cancel first; something the page has opens that tab (and Admin
  * screen, for an organizer); a credit spent here gets one Open my ticket
- * button (Lou 2026-11-14); when several people, tasks or marks match, one
+ * button (Owner 2026-11-14); when several people, tasks or marks match, one
  * button each (at most four), leading on to Confirm and Cancel; anything
  * else gets no button. The page never
  * offers to go to Telegram (Owner 2026-11-13).
@@ -32,7 +32,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-/** @var array{action: string, speech: string}|null $eventcrew_assistant */
+/** @var array{action: string, speech: string, name?: string}|null $eventcrew_assistant */
 /** @var string $eventcrew_ajax */
 /** @var string $eventcrew_csrf */
 
@@ -82,7 +82,7 @@ $eventcrew_ai_line = static function (string $where) use ($eventcrew_ai_placehol
         <div class="eventcrew-app-card eventcrew-ai-card">
             <button type="button" class="eventcrew-app-close" data-eventcrew-ai-close
                 aria-label="<?php esc_attr_e('Close', 'eventcrew'); ?>"><span aria-hidden="true">×</span></button>
-            <h2 class="eventcrew-app-title eventcrew-ai-title" id="eventcrew-ai-title"><?php esc_html_e('Assistant', 'eventcrew'); ?></h2>
+            <h2 class="eventcrew-app-title eventcrew-ai-title" id="eventcrew-ai-title"><?php echo esc_html($eventcrew_assistant['name'] ?? __('Assistant', 'eventcrew')); ?></h2>
             <div class="eventcrew-ai-log" data-eventcrew-ai-log aria-live="polite"></div>
             <?php $eventcrew_ai_line('dialog'); ?>
         </div>

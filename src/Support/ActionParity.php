@@ -22,7 +22,9 @@ namespace EventCrew\Support;
  * A bot entry is a command ("/door"), a MenuButtons button ("mn:gift"), or
  * a callback prefix constant ("TransferBot::PREFIX", in EventCrew\Telegram
  * or EventCrew\Support). An empty bot list or a null helper line is a gap;
- * the test lists the known ones.
+ * the test lists the known ones. The sales desk's own actions (DESK_ONLY)
+ * and the helper's button for the sales desk (WEB_SHOWS_BUTTON) are
+ * intended exceptions, listed here with why (flow1114).
  *
  * Not used at run time: the map is for the test and the parity audit.
  */
@@ -61,6 +63,44 @@ final class ActionParity
         'DoorController::SCAN_ACTION' => 'a QR-code lookup; the check-in itself is MARK_ACTION',
         'DoorController::TICKET_CODE_ACTION' => 'a ticket-code lookup; the check-in itself is MARK_ACTION',
         'DoorController::HANDOFF_ACTION' => 'hands the sales desk to another browser: a device action',
+    ];
+
+    /**
+     * Why DESK_ONLY has no bot or helper twin. flow1114.
+     */
+    public const DESK_ONLY_WHY = 'Owner 2026-11-14: desk actions stay on the desk page';
+
+    /**
+     * The sales desk's own actions (rows of actions()): an intended
+     * exception, not a gap (DESK_ONLY_WHY). ActionParityTest lets their
+     * bot and helper gaps be, fails when one is listed as a gap, and fails
+     * for a new desk action constant that is in neither actions() nor
+     * EXCLUDED. flow1114.
+     */
+    public const DESK_ONLY = [
+        'desk_mark',
+        'desk_plus',
+        'desk_give',
+        'desk_sale',
+        'desk_holvi',
+        'desk_count',
+        'desk_guest',
+        'desk_note',
+        'desk_note_remove',
+        'desk_work',
+        'desk_new_member',
+        'desk_file',
+    ];
+
+    /**
+     * Changes the Crew app's helper deliberately does not run on Confirm but
+     * shows the button for (flow1114): action id => why.
+     *
+     * @var array<string, string>
+     */
+    public const WEB_SHOWS_BUTTON = [
+        'sales_link' => 'Owner 2026-11-14: the helper shows the Open sales desk button, it does not send the link',
+        'sales_link_organizer' => 'Owner 2026-11-14: the helper shows the Open sales desk button, it does not send the link',
     ];
 
     /**
@@ -160,7 +200,7 @@ final class ActionParity
                 'menu:language fi'
             ),
             'sign_out_everywhere' => self::change(
-                'Settings tab: Sign out everywhere',
+                'Settings tab: Sign out everywhere else',
                 'SignupController::REVOKE_ACTION',
                 self::MEMBER,
                 ['mn:signout'],

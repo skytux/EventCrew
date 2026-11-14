@@ -241,7 +241,7 @@ final class MemberCommandsTest extends TelegramTestCase
         self::assertCount(1, $this->wpdb->updates);
         self::assertArrayHasKey('sessions_valid_from', $this->wpdb->updates[0]['data']);
         self::assertSame(
-            '✅ Signed out everywhere. Any other browser or phone that was signed in as you will need a fresh link.',
+            '✅ Signed out of the web page on every browser and phone.',
             $this->lastText()
         );
         self::assertSame(['mn:set'], $this->buttonData());

@@ -979,8 +979,6 @@ final class Kernel
                         $container->get(TaskRepository::class),
                         $container->get(TakeoverService::class),
                         $container->get(TicketTransferService::class),
-                        $container->get(SalesDeskGate::class),
-                        $container->get(DoorLinkSender::class),
                         $container->get(ParityCommands::class)
                     )
                 )

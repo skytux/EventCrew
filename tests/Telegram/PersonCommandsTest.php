@@ -317,7 +317,7 @@ final class PersonCommandsTest extends TelegramTestCase
         self::assertSame('', $this->lastText());
     }
 
-    /** Lou 2026-11-14: several matches are choice buttons on the page, each carrying its person. */
+    /** Owner 2026-11-14: several matches are choice buttons on the page, each carrying its person. */
     public function testTheWebHelperOffersSeveralMatchesAsChoices(): void
     {
         $this->wpdb->nextResults[] = [$this->person(7, 'Milla Virtanen'), $this->person(8, 'Milla Koski')];

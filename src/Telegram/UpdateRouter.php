@@ -834,7 +834,7 @@ final class UpdateRouter
 
         match ($data) {
             // Settings' Change name / Change email open the /name and /email
-            // flows; Sign out everywhere and Delete my data ask first
+            // flows; Sign out everywhere else and Delete my data ask first
             // (Owner 2026-11-08, as on the web).
             MenuButtons::NAME => $this->chatCommands?->onCommand($chatId, $fromId, '/' . MemberCommands::NAME, $isPrivate),
             MenuButtons::EMAIL => $this->chatCommands?->onCommand($chatId, $fromId, '/' . MemberCommands::EMAIL, $isPrivate),

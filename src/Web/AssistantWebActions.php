@@ -77,6 +77,10 @@ final class AssistantWebActions
         'menu:language' => ['eventcrew-settings-language', 'eventcrew-panel-settings'],
         // Signed in already: the sign-in link is this page.
         'menu:web' => ['eventcrew-panel-tasks'],
+        // The Open sales desk button at the top of the page, for the night's
+        // sales-desk crew and organizers, as before parityB: the helper shows
+        // the button, it does not send the link (flow1114).
+        'menu:sales' => ['eventcrew-door-scanner'],
         '/help' => [HelpPage::PANEL_ANCHOR],
         '/start' => [HelpPage::PANEL_ANCHOR],
     ];

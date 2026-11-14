@@ -661,7 +661,7 @@ final class TicketRedemptionServiceTest extends TelegramTestCase
         return $rows;
     }
 
-    /** Lou 2026-11-14: "give myself a ticket" in the helper box asks before it spends. */
+    /** Owner 2026-11-14: "give myself a ticket" in the helper box asks before it spends. */
     public function testTheHelperBoxAsksTheCreditQuestionForANight(): void
     {
         $this->wpdb->nextResults[] = self::completions(4); // historyFor -> two credits

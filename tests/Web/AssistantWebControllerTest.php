@@ -11,6 +11,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\WebSession;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\TelegramClient;
 use EventCrew\Tests\TestCase;
 use EventCrew\Web\AssistantWebActions;
 use EventCrew\Web\AssistantWebController;
@@ -151,9 +152,49 @@ final class AssistantWebControllerTest extends TestCase
         $finn = Person::fromRow(['id' => 7, 'email' => 'sam@example.com', 'language' => 'fi']);
 
         self::assertSame(
-            ['action' => AssistantWebController::ACTION, 'speech' => 'fi-FI'],
+            ['action' => AssistantWebController::ACTION, 'speech' => 'fi-FI', 'name' => 'Assistant'],
             AssistantWebController::view($finn)
         );
+    }
+
+    /** flow1114: the box is titled with the helper name from Settings, else the bot's name. */
+    public function testTheBoxIsTitledWithTheHelpersName(): void
+    {
+        $this->options[BoardService::NAME_OPTION] = ' Crew Bot ';
+        self::assertSame('Crew Bot', AssistantWebController::view($this->person())['name'] ?? null);
+
+        $this->options[AssistantSettings::NAME_OPTION] = ' Crew Helper ';
+        self::assertSame('Crew Helper', AssistantWebController::view($this->person())['name'] ?? null);
+    }
+
+    /**
+     * flow1114 (item 7): with no bot token, no group and no bot name the box
+     * is there, a question is answered and a Confirm runs, all in the panel;
+     * nothing is sent to Telegram.
+     */
+    public function testTheHelperWorksWithoutTelegram(): void
+    {
+        unset($this->options[BoardService::USERNAME_OPTION]);
+        self::assertArrayNotHasKey(TelegramClient::TOKEN_OPTION, $this->options);
+        Functions\when('wp_remote_post')->alias(static function (): never {
+            throw new \LogicException('Nothing may go to Telegram.');
+        });
+
+        self::assertSame('Assistant', AssistantWebController::view($this->person())['name'] ?? null);
+
+        $this->assistant->next = FakeWebAssistant::answer('Sure.', '/unticket 14.11. Sam');
+        [$status, $asked] = $this->post(['op' => 'ask', 'text' => 'remove the ticket'], $this->organizer());
+
+        self::assertSame(200, $status);
+        self::assertSame('Take the ticket away?', self::text($asked));
+        self::assertSame(AssistantWebActions::CONFIRM, $asked['action']['kind']);
+
+        $this->assistant->recheck = '/unticket 14.11. Sam';
+        [, $body] = $this->post(['op' => 'confirm', 'id' => $asked['action']['id']], $this->organizer());
+
+        self::assertTrue($body['changed']);
+        self::assertSame('✅ Ticket taken away.', self::text($body));
+        self::assertCount(1, $this->changes->ran);
     }
 
     public function testAnEmptyOrTooLongMessageIsRefused(): void
@@ -419,6 +460,20 @@ final class AssistantWebControllerTest extends TestCase
         self::assertSame([], $this->transients);
     }
 
+    /** flow1114: a notification switch changes at once: no Confirm, its outcome, noted as done. */
+    public function testAChangeThatRanAtOnceHasNoConfirmAndIsNoted(): void
+    {
+        $this->changes->prepared = ['ok' => false, 'text' => '✅ Reminders by email: off.', 'state' => [], 'ran' => true, 'changed' => true];
+        $this->assistant->next = FakeWebAssistant::answer('Sure.', '/notify reminders email off');
+
+        [, $body] = $this->post(['op' => 'ask', 'text' => 'no reminder emails']);
+
+        self::assertNull($body['action']);
+        self::assertSame('✅ Reminders by email: off.', self::text($body));
+        self::assertSame([], $this->transients);
+        self::assertSame([[7, '/notify reminders email off', true]], $this->assistant->noted);
+    }
+
     public function testAChangeThePageOnlyOpensSaysItIsNotDone(): void
     {
         $this->assistant->next = FakeWebAssistant::answer('Given.', 'menu:gift');
@@ -429,7 +484,7 @@ final class AssistantWebControllerTest extends TestCase
         self::assertSame("Not done yet: open it here.\nGiven.", self::text($body));
     }
 
-    /** Lou 2026-11-14: several matches get one button each, then the question with Confirm. */
+    /** Owner 2026-11-14: several matches get one button each, then the question with Confirm. */
     public function testSeveralMatchesAreChoiceButtonsThenTheQuestion(): void
     {
         $this->changes->prepared = ['ok' => false, 'text' => 'Which Sam?', 'state' => [], 'choices' => [
@@ -478,7 +533,7 @@ final class AssistantWebControllerTest extends TestCase
         self::assertSame([], $this->changes->choseStates);
     }
 
-    /** Lou 2026-11-14: "give myself a ticket" is asked and spent on the page, for any member. */
+    /** Owner 2026-11-14: "give myself a ticket" is asked and spent on the page, for any member. */
     public function testAMemberSpendsTheirOwnCreditOnConfirm(): void
     {
         $this->assistant->next = FakeWebAssistant::answer('You can get one on the Tickets tab.', 'menu:ticket 2026-11-14');
@@ -496,7 +551,7 @@ final class AssistantWebControllerTest extends TestCase
         self::assertSame([[7, 'menu:ticket 2026-11-14', ['person' => 9]]], $this->changes->ran);
     }
 
-    /** Lou 2026-11-14: one Open my ticket button after a credit is spent; the address is in no text or note. */
+    /** Owner 2026-11-14: one Open my ticket button after a credit is spent; the address is in no text or note. */
     public function testASpentCreditGetsOneOpenTicketButton(): void
     {
         $url = 'https://site.test/wp-json/eventcrew/v1/ticket?token=abc';

@@ -281,7 +281,7 @@ final class SignupController implements WebTaskSignup
      * cookie alone decides whether to look further, so a fresh cookie costs
      * no database read; an old one is renewed only for a person who may
      * still sign in (currentPerson(): not blocked, the cookie not revoked by
-     * "Sign out everywhere"). Returns the new cookie value, or null when
+     * "Sign out everywhere else"). Returns the new cookie value, or null when
      * nothing was renewed.
      *
      * Called only from preventCachingWhenSignedIn(), whose response is never
@@ -1483,11 +1483,9 @@ final class SignupController implements WebTaskSignup
         if (self::REVOKE_ACTION === $action) {
             // Moves the line every session cookie is measured against, so the
             // ones we cannot see - another browser, a phone left somewhere -
-            // stop working. This one included: clearing the cookie here just
-            // saves the person a redirect that would have found them signed out
-            // anyway.
-            $this->people->revokeSessions($person->id);
-            $this->setSessionCookie('', time() - DAY_IN_SECONDS);
+            // stop working. This one stays signed in (flow1114): it gets a
+            // fresh cookie issued after the line.
+            OtherSessions::signOut($this->people, $person);
             $this->redirect($redirect, 'sessions_revoked');
         }
 
@@ -1609,7 +1607,7 @@ final class SignupController implements WebTaskSignup
             'prefs_saved' => __('Your notification preferences are saved.', 'eventcrew'),
             'language_saved' => __('Your language is saved.', 'eventcrew'),
             // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction.
-            'sessions_revoked' => __('Signed out everywhere. Any other browser or phone that was signed in as you will need a fresh link.', 'eventcrew'),
+            'sessions_revoked' => __('Signed out everywhere else. This browser stays signed in.', 'eventcrew'),
             'unavailable' => __('That task is no longer available.', 'eventcrew'),
             'crew_only' => SignupService::crewOnlyText(),
             'credit_question' => __('Choose whether this task counts toward free-entry credit.', 'eventcrew'),

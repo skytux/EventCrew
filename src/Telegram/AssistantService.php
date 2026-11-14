@@ -797,6 +797,10 @@ final class AssistantService implements WebAssistant
                 ? 'You are the helper of the crew web page (the Crew app) of EventCrew, the crew of a recurring'
                     . ' event. People earn free entry by doing tasks at the event; the page shows the tasks,'
                     . ' signs people up and gives tickets.'
+                    // flow1114: the helper's name from Settings, else the
+                    // bot's (no @username: the page never sends people to
+                    // Telegram, and works without it connected).
+                    . self::webName()
                 : 'You are the Telegram bot of EventCrew, the crew of a recurring event. People earn free entry'
                     . ' by doing tasks at the event; the bot shows the tasks, signs people up and gives tickets.'
                     . $this->ownName(),
@@ -1089,6 +1093,14 @@ final class AssistantService implements WebAssistant
         }
 
         return ' Your name is ' . $name . ('' !== $username ? ' (@' . $username . ')' : '') . '.';
+    }
+
+    /** " Your name is Crew Helper." for the Crew app's helper, or "" (flow1114). */
+    private static function webName(): string
+    {
+        $name = AssistantSettings::name();
+
+        return '' !== $name ? ' Your name is ' . $name . '.' : '';
     }
 
     /**

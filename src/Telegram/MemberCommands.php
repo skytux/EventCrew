@@ -22,7 +22,7 @@ use EventCrew\Web\SignupController;
  * - /email <new address>: change the email, after ✅, through the crew
  *   page's own flow (SignupController::updateProfile): a link goes to the new
  *   address and nothing changes until it is opened. RATE_LIMIT an hour.
- * - Settings' 🚪 Sign out everywhere and 🗑 Delete my data (Owner
+ * - Settings' 🚪 Sign out everywhere else and 🗑 Delete my data (Owner
  *   2026-11-08, as on the web), each asked first: the first signs the web
  *   out on every browser (SignupController's revoke action), the second
  *   mails the one-time delete link, as the web's Delete my data does
@@ -167,8 +167,9 @@ final class MemberCommands
     }
 
     /**
-     * 🚪 Sign out everywhere under Settings: asks first, like the web's
-     * button does.
+     * 🚪 Sign out everywhere else under Settings: asks first, like the
+     * web's button does. This chat has no web session to keep, so every
+     * web sign-in ends (flow1114); the bot itself is not affected.
      */
     public function askSignOut(int $chatId, int $fromId, bool $isPrivate): void
     {
@@ -177,7 +178,7 @@ final class MemberCommands
         }
 
         $id = $this->flow->start(['user' => $fromId, 'op' => self::SIGN_OUT, 'value' => '1']);
-        $this->flow->confirm($chatId, $id, self::signOutQuestion(), __('Sign out everywhere', 'eventcrew'));
+        $this->flow->confirm($chatId, $id, self::signOutQuestion(), __('Sign out everywhere else', 'eventcrew'));
     }
 
     /**
@@ -195,10 +196,22 @@ final class MemberCommands
         $this->flow->confirm($chatId, $id, self::deleteQuestion(), __('Delete my data', 'eventcrew'));
     }
 
-    /** What 🚪 Sign out everywhere asks. */
+    /** What 🚪 Sign out everywhere else asks in the bot. */
     public static function signOutQuestion(): string
     {
-        return __('Sign out of the web board on every browser and phone? Nothing is lost; you just sign in again.', 'eventcrew');
+        return __('Sign out of the web page on every browser and phone? This chat is not affected.', 'eventcrew');
+    }
+
+    /** What it asks in the Crew app's helper box, whose browser stays signed in (flow1114). */
+    public static function signOutWebQuestion(): string
+    {
+        return __('Sign out every other browser and phone? This one stays signed in.', 'eventcrew');
+    }
+
+    /** What the bot says once every web sign-in has ended. */
+    public static function signedOutText(): string
+    {
+        return __('Signed out of the web page on every browser and phone.', 'eventcrew');
     }
 
     /** What 🗑 Delete my data asks: the web's warning, and the link that comes first. */
@@ -256,10 +269,11 @@ final class MemberCommands
 
         if (self::SIGN_OUT === $op) {
             // The web's revoke action: every web session cookie stops working.
+            // The bot has none to keep, so none stays (flow1114).
             $this->people->revokeSessions($member->id);
             $telegram->sendMessage(
                 $tap['chat'],
-                CommandFlow::result(true, '', SignupController::noticeText('sessions_revoked')),
+                CommandFlow::result(true, '', self::signedOutText()),
                 MenuButtons::back(MenuButtons::SETTINGS)
             );
 

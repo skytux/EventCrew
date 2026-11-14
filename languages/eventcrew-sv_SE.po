@@ -6357,12 +6357,12 @@ msgid "Sign out"
 msgstr "Logga ut"
 
 #: templates/public/signup.php:618
-msgid "Sign out everywhere"
-msgstr "Logga ut överallt"
+msgid "Sign out everywhere else"
+msgstr "Logga ut överallt annars"
 
 #: templates/public/signup.php:614
-msgid "Sign out everywhere, including here?"
-msgstr "Logga ut överallt, även här?"
+msgid "Sign out every other browser and phone?"
+msgstr "Logga ut alla andra webbläsare och telefoner?"
 
 #: src/Support/MessageTemplates.php:337 templates/public/door.php:68 templates/public/signup-board.php:244 templates/public/signup-board.php:267
 msgid "Sign up"
@@ -13089,8 +13089,8 @@ msgid "Change email"
 msgstr "Byt e-post"
 
 #: src/Telegram/MemberCommands.php
-msgid "Sign out of the web board on every browser and phone? Nothing is lost; you just sign in again."
-msgstr "Logga ut från webbsidan i alla webbläsare och telefoner? Inget försvinner; du loggar bara in igen."
+msgid "Sign out of the web page on every browser and phone? This chat is not affected."
+msgstr "Logga ut från webbsidan i alla webbläsare och telefoner? Den här chatten påverkas inte."
 
 #: src/Telegram/MemberCommands.php
 msgid "A link goes to your email first; your data is deleted only when you open it."
@@ -14561,3 +14561,27 @@ msgstr "/testmail tickets eller /testmail followup – ett testmejl till dig"
 
 msgid "/checkmail – check the mailbox for ticket and guest lists now"
 msgstr "/checkmail – kontrollera brevlådan efter biljett- och gästlistor nu"
+
+#. flow1114
+msgid "Signed out everywhere else. This browser stays signed in."
+msgstr "Utloggad överallt annars. Den här webbläsaren förblir inloggad."
+
+#. flow1114
+msgid "Signing in leaves this browser signed in for 30 days. If you have used a shared or borrowed device — or you think somebody else has your sign-in link — this signs out every other browser and phone at once. This one stays signed in."
+msgstr "Inloggningen håller den här webbläsaren inloggad i 30 dagar. Om du har använt en delad eller lånad enhet — eller tror att någon annan har din inloggningslänk — loggar detta ut alla andra webbläsare och telefoner på en gång. Den här förblir inloggad."
+
+#. flow1114
+msgid "Sign out every other browser and phone? This one stays signed in."
+msgstr "Logga ut alla andra webbläsare och telefoner? Den här förblir inloggad."
+
+#. flow1114
+msgid "Signed out of the web page on every browser and phone."
+msgstr "Utloggad från webbsidan i alla webbläsare och telefoner."
+
+#. flow1114
+msgid "Helper name"
+msgstr "Hjälparens namn"
+
+#. flow1114
+msgid "Shown on the Crew app's helper box. Empty: the Telegram bot's name, else \"Assistant\"."
+msgstr "Visas i Crew-appens hjälpruta. Tomt: Telegram-botens namn, annars ”Assistent”."

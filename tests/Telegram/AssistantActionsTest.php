@@ -90,7 +90,7 @@ final class AssistantActionsTest extends TestCase
     }
 
     /**
-     * The Crew app page's own lines, organizers' only for organizers (Lou 2026-11-14); in the chat
+     * The Crew app page's own lines, organizers' only for organizers (Owner 2026-11-14); in the chat
      * they run through the bot's commands (parityA), the language with Confirm first.
      */
     public function testThePagesOwnLinesWorkOnThePageAndInTheChat(): void
@@ -158,6 +158,19 @@ final class AssistantActionsTest extends TestCase
         foreach (['/oncemore', '/editrole', '/optout add nobody', '/optout drop sam@example.com'] as $line) {
             self::assertSame(AssistantActions::ERROR_INVALID, self::check($line, self::organizer())['error'], $line);
         }
+    }
+
+    /** flow1114: an AI text written through the helper keeps its line breaks. */
+    public function testAnAiTextKeepsItsLineBreaks(): void
+    {
+        foreach ([self::organizer(), ['web' => true] + self::organizer()] as $audience) {
+            $result = self::check("/aitext  21.11.   welcome fi ;  Hei   kaikki\r\nToinen rivi\n\n\n\nLoppu ", $audience);
+
+            self::assertTrue($result['ok']);
+            self::assertSame("/aitext 21.11. welcome fi ; Hei kaikki\nToinen rivi\n\nLoppu", $result['payload']);
+        }
+
+        self::assertSame('/aitext 21.11. welcome ai', self::check("/aitext 21.11.\nwelcome ai", self::organizer())['payload']);
     }
 
     public function testStaffCommandsAreNotPermittedForAMember(): void
@@ -285,8 +298,6 @@ final class AssistantActionsTest extends TestCase
                 '/newsletter reset',
                 '/followup <came|missed> <text>',
                 '/followup [came|missed] reset',
-                'menu:notifications <type> <telegram|email|app> <on|off>',
-                'menu:notifications <app|telegram|both>',
             ],
             array_values($confirm)
         );

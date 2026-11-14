@@ -307,7 +307,7 @@ final class AssistantActions
             self::entry('/aitext', "show the coming events' AI texts, with each text's name"),
             self::entry(
                 '/aitext <date> <text name> <language> ; <text>',
-                "write one event's AI text by hand in one language (sent as written); <language> is one of: "
+                "write one event's AI text by hand in one language (sent as written, line breaks kept); <language> is one of: "
                     . implode(', ', SiteLanguages::codes())
             ),
             self::entry('/aitext <date> <text name> ai', "use the AI's own text again for that event"),
@@ -483,6 +483,11 @@ final class AssistantActions
         // A message for one task's crew: kept exactly as written (ag-people).
         if (1 === preg_match('#^\s*/tell(?=\s|$)(.*)$#isu', $action, $m)) {
             return self::validateTell($m[1], $audience);
+        }
+
+        // An event's AI text keeps its line breaks too (flow1114).
+        if (1 === preg_match('#^\s*/aitext(?=\s|$)(.*)$#isu', $action, $m)) {
+            return self::validateAiText($m[1], $audience);
         }
 
         $action = trim((string) preg_replace('/\s+/u', ' ', $action));
@@ -694,14 +699,14 @@ final class AssistantActions
      */
     private static function validateParityA(string $head, string $rest, array $audience): ?array
     {
-        $commands = ['/oncemore', '/addperson', '/editperson', '/editrole', '/optout', '/aitext'];
+        $commands = ['/oncemore', '/addperson', '/editperson', '/editrole', '/optout']; // /aitext: validateAiText()
 
         if (in_array($head, $commands, true)) {
             if (empty($audience['organizer'])) {
                 return self::refuse(self::ERROR_NOT_PERMITTED);
             }
 
-            $optional = ['/optout', '/aitext'];
+            $optional = ['/optout'];
 
             if ('' === $rest && ! in_array($head, $optional, true)) {
                 return self::refuse(self::ERROR_INVALID);
@@ -963,6 +968,36 @@ final class AssistantActions
         $line = '/door ' . $rest;
 
         return self::accept($line, true, self::RUN_MESSAGE, $line);
+    }
+
+    /**
+     * "/aitext" alone lists the coming events' AI texts; "/aitext <date>
+     * <text name> <language> ; <text>" or "... ai" sets one. Organizers
+     * only. The part before ";" has its spaces squeezed, the text after it
+     * keeps its line breaks (spaces squeezed within each line), as the
+     * bot's /aitext keeps them (flow1114). The bot command asks with ✅.
+     *
+     * @param array<string, mixed> $audience
+     * @return array{ok: bool, error: string, action: string, confirm: bool, run: string, payload: string}
+     */
+    private static function validateAiText(string $rest, array $audience): array
+    {
+        if (empty($audience['organizer'])) {
+            return self::refuse(self::ERROR_NOT_PERMITTED);
+        }
+
+        $sides = explode(';', str_replace("\r\n", "\n", $rest), 2);
+        $line = trim('/aitext ' . trim((string) preg_replace('/\s+/u', ' ', $sides[0])));
+
+        if (isset($sides[1])) {
+            $lines = array_map(
+                static fn (string $l): string => trim((string) preg_replace('/[^\S\n]+/u', ' ', $l)),
+                explode("\n", $sides[1])
+            );
+            $line .= ' ; ' . trim((string) preg_replace("/\n{3,}/", "\n\n", implode("\n", $lines)));
+        }
+
+        return self::accept($line, false, self::RUN_MESSAGE, $line);
     }
 
     /**

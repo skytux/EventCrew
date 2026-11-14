@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EventCrew\Support;
 
+use EventCrew\Telegram\BoardService;
+
 /**
  * The settings of the bot's language-model helper (AssistantService): on or
  * off, the server's address, the model, the API key and the hourly limits.
@@ -33,6 +35,8 @@ final class AssistantSettings
     public const ORGANIZER_LIMIT_OPTION = 'eventcrew_assistant_organizer_limit';
     public const PAGES_OPTION = 'eventcrew_assistant_pages';
     public const FORWARD_OPTION = 'eventcrew_assistant_forward';
+    /** The helper's name in the Crew app (flow1114); empty = the bot's name. */
+    public const NAME_OPTION = 'eventcrew_assistant_name';
 
     public const DEFAULT_PRIVATE_LIMIT = 20;
     public const DEFAULT_GROUP_LIMIT = 60;
@@ -121,6 +125,19 @@ final class AssistantSettings
     public static function groupLimit(): int
     {
         return max(0, (int) get_option(self::GROUP_LIMIT_OPTION, self::DEFAULT_GROUP_LIMIT));
+    }
+
+    /**
+     * The helper's name for the Crew app's box and its instructions
+     * (flow1114): the name set here, else the Telegram bot's cached name,
+     * else "" (the caller says "Assistant"). The same for every visitor, so
+     * the page cache is not split. Works without Telegram connected.
+     */
+    public static function name(): string
+    {
+        $own = trim((string) get_option(self::NAME_OPTION, ''));
+
+        return '' !== $own ? $own : trim((string) get_option(BoardService::NAME_OPTION, ''));
     }
 
     /**

@@ -487,6 +487,7 @@ final class SettingsPage
         return [
             'enabled' => AssistantSettings::isEnabled(),
             'forward' => AssistantSettings::forwardEnabled(),
+            'name' => trim((string) get_option(AssistantSettings::NAME_OPTION, '')),
             'url' => AssistantSettings::url(),
             'model' => AssistantSettings::model(),
             'key_status' => AssistantSettings::keyStatus(),
@@ -1064,6 +1065,11 @@ final class SettingsPage
 
         update_option(AssistantSettings::ENABLED_OPTION, isset($_POST['assistant_enabled']), false);
         update_option(AssistantSettings::FORWARD_OPTION, isset($_POST['assistant_forward']), false);
+
+        // flow1114: the helper's name in the Crew app; empty = the bot's name.
+        if (isset($_POST['assistant_name'])) {
+            update_option(AssistantSettings::NAME_OPTION, trim(sanitize_text_field(wp_unslash((string) $_POST['assistant_name']))), false);
+        }
 
         $rawUrl = trim(sanitize_text_field(wp_unslash((string) $_POST['assistant_url'])));
         $model = isset($_POST['assistant_model'])

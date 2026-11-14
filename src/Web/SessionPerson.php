@@ -14,7 +14,7 @@ use EventCrew\Support\WebSession;
  * people table on every call.
  *
  * Shared by the crew page and its Admin tab so both answer "who is this" the
- * same way: a valid signature, a session not revoked by "Sign out everywhere",
+ * same way: a valid signature, a session not revoked by "Sign out everywhere else",
  * and a person who is not blocked. Nothing about roles is taken from the
  * request; isOrganizer comes from the row read here.
  */

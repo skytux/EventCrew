@@ -23,9 +23,11 @@ interface WebChanges
      * answer why it cannot be done. "state" is what run() needs; nothing is
      * changed yet. "choices" (ok false), when several people, tasks or marks
      * match: the page shows one button each (at most MAX_CHOICES) and passes
-     * the chosen one's state to choose().
+     * the chosen one's state to choose(). "ran" (ok false): a change that
+     * needs no Confirm already ran (notifications, flow1114); "changed"
+     * whether it went through, "text" its outcome.
      *
-     * @return array{ok: bool, text: string, state: array<string, mixed>, choices?: list<array{label: string, state: array<string, mixed>}>}
+     * @return array{ok: bool, text: string, state: array<string, mixed>, choices?: list<array{label: string, state: array<string, mixed>}>, ran?: bool, changed?: bool}
      */
     public function prepare(Person $organizer, string $action): array;
 

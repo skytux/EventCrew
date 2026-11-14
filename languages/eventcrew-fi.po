@@ -927,12 +927,12 @@ msgid "Sign out"
 msgstr "Kirjaudu ulos"
 
 #: templates/public/signup.php:428
-msgid "Sign out everywhere"
-msgstr "Kirjaudu ulos kaikkialta"
+msgid "Sign out everywhere else"
+msgstr "Kirjaudu ulos muualta"
 
 #: templates/public/signup.php:424
-msgid "Sign out everywhere, including here?"
-msgstr "Kirjaudutaanko ulos kaikkialta, myös täältä?"
+msgid "Sign out every other browser and phone?"
+msgstr "Kirjaudutaanko ulos muista selaimista ja puhelimista?"
 
 #: templates/public/door.php:54 templates/public/signup-board.php:137
 msgid "Sign up"
@@ -949,8 +949,8 @@ msgid "Sign-ups are paused on your account — please contact the organizer."
 msgstr "Ilmoittautumisesi on keskeytetty — ota yhteyttä järjestäjään."
 
 #: src/Web/SignupController.php:702
-msgid "Signed out everywhere. Any other browser or phone that was signed in as you will need a fresh link."
-msgstr "Kirjauduit ulos kaikkialta. Muut selaimet ja puhelimet, joilla olit kirjautuneena, tarvitsevat uuden linkin."
+msgid "Signed out everywhere else. This browser stays signed in."
+msgstr "Kirjauduit ulos muualta. Tämä selain pysyy kirjautuneena."
 
 #: src/Support/AssignmentStatus.php:104
 msgid "Signed up"
@@ -961,8 +961,8 @@ msgid "Signed up and checked in. They are on the crew list now."
 msgstr "Ilmoitettu tehtävään ja kirjattu sisään. Hän on nyt crew-listalla."
 
 #: templates/public/signup.php:421
-msgid "Signing in leaves this browser signed in for 30 days. If you have used a shared or borrowed device — or you think somebody else has your sign-in link — this signs out every browser and phone at once, including this one. Nothing is lost; you just sign in again."
-msgstr "Kirjautuminen pitää tämän selaimen kirjautuneena 30 päivää. Jos olet käyttänyt jaettua tai lainattua laitetta — tai epäilet, että jollakulla muulla on kirjautumislinkkisi — tämä kirjaa ulos kaikki selaimet ja puhelimet kerralla, myös tämän. Mitään ei katoa; kirjaudut vain uudelleen."
+msgid "Signing in leaves this browser signed in for 30 days. If you have used a shared or borrowed device — or you think somebody else has your sign-in link — this signs out every other browser and phone at once. This one stays signed in."
+msgstr "Kirjautuminen pitää tämän selaimen kirjautuneena 30 päivää. Jos olet käyttänyt jaettua tai lainattua laitetta — tai epäilet, että jollakulla muulla on kirjautumislinkkisi — tämä kirjaa ulos kaikki muut selaimet ja puhelimet kerralla. Tämä pysyy kirjautuneena."
 
 #: src/Support/OpenTaskCall.php:259
 msgid "Some tasks still need people"
@@ -10169,8 +10169,8 @@ msgid "Change email"
 msgstr "Vaihda sähköposti"
 
 #: src/Telegram/MemberCommands.php
-msgid "Sign out of the web board on every browser and phone? Nothing is lost; you just sign in again."
-msgstr "Kirjaudutaanko ulos verkkosivulta kaikilla selaimilla ja puhelimilla? Mitään ei katoa; kirjaudut vain uudelleen."
+msgid "Sign out of the web page on every browser and phone? This chat is not affected."
+msgstr "Kirjaudutaanko ulos verkkosivulta kaikilla selaimilla ja puhelimilla? Tämä keskustelu ei muutu."
 
 #: src/Telegram/MemberCommands.php
 msgid "A link goes to your email first; your data is deleted only when you open it."
@@ -11635,3 +11635,19 @@ msgstr "/testmail tickets tai /testmail followup – testisähköposti sinulle"
 
 msgid "/checkmail – check the mailbox for ticket and guest lists now"
 msgstr "/checkmail – tarkista postilaatikko lippu- ja vieraslistojen varalta nyt"
+
+#. flow1114
+msgid "Sign out every other browser and phone? This one stays signed in."
+msgstr "Kirjaudutaanko ulos muista selaimista ja puhelimista? Tämä pysyy kirjautuneena."
+
+#. flow1114
+msgid "Signed out of the web page on every browser and phone."
+msgstr "Kirjauduit ulos verkkosivulta kaikilla selaimilla ja puhelimilla."
+
+#. flow1114
+msgid "Helper name"
+msgstr "Avustajan nimi"
+
+#. flow1114
+msgid "Shown on the Crew app's helper box. Empty: the Telegram bot's name, else \"Assistant\"."
+msgstr "Näkyy Crew-sovelluksen avustajaruudussa. Tyhjä: Telegram-botin nimi, muuten ”Avustaja”."

@@ -33,7 +33,7 @@ use EventCrew\Telegram\TicketRedemptionService;
 final class AssistantWebChanges implements WebChanges
 {
     /** Commands whose text keeps its line breaks (as AssistantActions::validate() keeps them). */
-    private const TEXT_COMMANDS = ['say', 'tell', 'newsletter', 'followup'];
+    private const TEXT_COMMANDS = ['say', 'tell', 'newsletter', 'followup', 'aitext'];
 
     public function __construct(
         private readonly PersonCommands $people,

@@ -59,9 +59,11 @@ final class AssistantWebController
 
     /**
      * What the page's helper box needs, or null when the helper is off (or
-     * not configured): then the page has no box.
+     * not configured): then the page has no box. "name" is the box's title:
+     * the helper name from Settings, else the bot's name (flow1114, the same
+     * for every visitor), else "Assistant".
      *
-     * @return array{action: string, speech: string}|null
+     * @return array{action: string, speech: string, name: string}|null
      */
     public static function view(Person $person): ?array
     {
@@ -75,7 +77,13 @@ final class AssistantWebController
             default => 'en-US',
         };
 
-        return ['action' => self::ACTION, 'speech' => $speech];
+        $name = AssistantSettings::name();
+
+        return [
+            'action' => self::ACTION,
+            'speech' => $speech,
+            'name' => '' !== $name ? $name : __('Assistant', 'eventcrew'),
+        ];
     }
 
     /**
@@ -176,6 +184,12 @@ final class AssistantWebController
                 $asked = Language::run($language, static fn (): array => $changes->prepare($person, $checked['action']));
                 $reply = (string) $asked['text'];
                 $body['action'] = $this->askedAction($person, $checked['action'], $asked, $language);
+
+                // A change that runs at once (notifications, flow1114): no
+                // Confirm, already done; logged like a confirmed one.
+                if (! empty($asked['ran']) && ! empty($asked['changed'])) {
+                    $this->assistant->noteWeb($person, $checked['action'], true);
+                }
             } elseif (AssistantWebActions::CONFIRM === $plan['kind']) {
                 $body['action'] = $this->confirmAction($person, $checked['action'], [], $this->summary($plan, $language), $language);
             } elseif (AssistantWebActions::GOTO === $plan['kind']) {
@@ -242,7 +256,7 @@ final class AssistantWebController
             $body = $this->told($done['text'], $done['changed'] ? 'changed' : 'unchanged', $done['changed']);
             $ticket = (string) ($done['ticket'] ?? '');
 
-            // Lou 2026-11-14: one button that opens the ticket just spent. The
+            // Owner 2026-11-14: one button that opens the ticket just spent. The
             // address is only in this answer, never in the text or a log.
             if ($done['changed'] && 1 === preg_match('#^https?://#i', $ticket)) {
                 $body['action'] = ['kind' => 'ticket', 'label' => __('Open my ticket', 'eventcrew'), 'url' => $ticket];
