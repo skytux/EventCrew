@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.256
+Stable tag: 1.140.257
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.257 =
+* Crew app: Sign out everywhere else keeps this device signed in; the bot signs out of the web page everywhere. Helper: asking for the sales desk shows its button again; notification changes happen at once; AI texts keep their line breaks; no longer offers in a greeting that it remembers the chat; its name can be set in Settings; the web helper works without Telegram. Sales desk actions stay on the desk page.
 
 = 1.140.256 =
 * Bot and helper: everything the Crew app does can now be done in the bot and the helper too: credits, roles, organizers, add, edit or delete a person, one more sign-up, role settings, the do-not-send list and AI texts (/gift, /role, /organizer, /addperson, /editperson, /deleteperson, /oncemore, /editrole, /optout, /aitext); give away a ticket, take over a task, notifications, sign out everywhere, the sales desk link, mark a whole task, ticket buyers, test mails, mailbox check and the Holvi file sent to the bot (/giveaway, /notify, /markall, /buyers, /testmail, /checkmail). A test keeps the app, bot and helper in step.
@@ -2175,6 +2178,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.257 =
+No settings change.
 
 = 1.140.256 =
 No settings change.
