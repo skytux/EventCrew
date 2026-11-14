@@ -4,7 +4,7 @@ Tags: events, attendance, telegram, rsvp, roster
 Requires at least: 6.8
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.140.257
+Stable tag: 1.140.258
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -154,6 +154,9 @@ replaced, late-cancelled, no-showed), never stored — always recomputed — so 
 cannot drift. The outcome weights, threshold and half-life are editable in Settings.
 
 == Changelog ==
+
+= 1.140.258 =
+* Crew app Messages: a Scheduled messages card lists every automatic email, DM and group message, with an on/off switch each and Send now for reminders, the open tasks call, the board and the monthly report; also /scheduled in the bot and FlowKeeper. Web group chat: the bot's own group posts now show there and notify like other messages.
 
 = 1.140.257 =
 * Crew app: Sign out everywhere else keeps this device signed in; the bot signs out of the web page everywhere. Helper: asking for the sales desk shows its button again; notification changes happen at once; AI texts keep their line breaks; no longer offers in a greeting that it remembers the chat; its name can be set in Settings; the web helper works without Telegram. Sales desk actions stay on the desk page.
@@ -2178,6 +2181,9 @@ Note for anyone whose changes to this plugin's appearance do not seem to take ef
 Full history: https://github.com/skytux/EventCrew/blob/main/ROADMAP.md
 
 == Upgrade Notice ==
+
+= 1.140.258 =
+No settings change.
 
 = 1.140.257 =
 No settings change.
