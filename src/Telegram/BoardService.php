@@ -147,6 +147,9 @@ final class BoardService
      */
     public const NEXT_CARD_OPTION = 'eventcrew_telegram_next_card';
 
+    /** announceChannelCard()'s state, as NEXT_CARD_OPTION's for the channel. */
+    public const CHANNEL_CARD_OPTION = 'eventcrew_telegram_channel_card';
+
     /** The hours (site time) the next-event picture may be posted in. */
     public const CARD_FROM_HOUR = 9;
     public const CARD_UNTIL_HOUR = 21;
@@ -582,11 +585,40 @@ final class BoardService
     public function announceNextCard(): bool
     {
         // Switchable on the Scheduled messages card (Owner 2026-11-14).
-        if (! self::cardsOn() || ! $this->telegram->isConfigured() || ! ScheduledMessages::isOn(ScheduledMessages::CARD)) {
+        if (! self::cardsOn() || ! ScheduledMessages::isOn(ScheduledMessages::CARD)) {
             return false;
         }
 
-        $chatId = (int) ($this->board()['chat_id'] ?? 0);
+        return $this->announceCardTo((int) ($this->board()['chat_id'] ?? 0), self::NEXT_CARD_OPTION);
+    }
+
+    /**
+     * The next event's card in the crew's channel (ChannelChat, Owner
+     * 2026-11-14, Q398): the same picture, caption and link buttons as the
+     * group's, on the same schedule as announceNextCard(), with its own
+     * state (CHANNEL_CARD_OPTION), so the group and the channel never wait
+     * for each other. Does not need the board's card format. Returns whether
+     * a card was posted.
+     */
+    public function announceChannelCard(): bool
+    {
+        if (! ScheduledMessages::isOn(ScheduledMessages::CHANNEL_CARD)) {
+            return false;
+        }
+
+        return $this->announceCardTo(ChannelChat::id(), self::CHANNEL_CARD_OPTION);
+    }
+
+    /**
+     * announceNextCard()'s schedule for the chat $chatId, its state kept in
+     * the option $option.
+     */
+    private function announceCardTo(int $chatId, string $option): bool
+    {
+        if (! $this->telegram->isConfigured()) {
+            return false;
+        }
+
         $hour = (int) current_time('G');
 
         if (0 === $chatId || $hour < self::CARD_FROM_HOUR || $hour >= self::CARD_UNTIL_HOUR) {
@@ -599,7 +631,7 @@ final class BoardService
             return false;
         }
 
-        $stored = get_option(self::NEXT_CARD_OPTION, []);
+        $stored = get_option($option, []);
         $state = is_array($stored) ? $stored : [];
         $today = current_time('Y-m-d');
         $isDay = $target['date'] === $today;
@@ -611,7 +643,7 @@ final class BoardService
 
         if (! $isDay && '' === BoardDjText::stored($target['event']) && (int) ($state['waited'] ?? 0) !== $target['event']) {
             BoardDjText::schedule($target['event']);
-            update_option(self::NEXT_CARD_OPTION, ['waited' => $target['event']] + $state, false);
+            update_option($option, ['waited' => $target['event']] + $state, false);
 
             return false;
         }
@@ -623,7 +655,7 @@ final class BoardService
         }
 
         update_option(
-            self::NEXT_CARD_OPTION,
+            $option,
             ['event' => $target['event'], 'day' => $isDay ? $today : '', 'waited' => 0],
             false
         );
@@ -634,8 +666,19 @@ final class BoardService
     /** Whether postNextCardNow() has a group and a next event to post. */
     public function canPostNextCard(): bool
     {
+        return $this->canPostCardTo((int) ($this->board()['chat_id'] ?? 0));
+    }
+
+    /** Whether postChannelCardNow() has a channel and a next event to post. */
+    public function canPostChannelCard(): bool
+    {
+        return $this->canPostCardTo(ChannelChat::id());
+    }
+
+    private function canPostCardTo(int $chatId): bool
+    {
         return $this->telegram->isConfigured()
-            && 0 !== (int) ($this->board()['chat_id'] ?? 0)
+            && 0 !== $chatId
             && null !== $this->renderer->nextCardTarget();
     }
 
@@ -647,8 +690,20 @@ final class BoardService
      */
     public function postNextCardNow(): bool
     {
-        $chatId = (int) ($this->board()['chat_id'] ?? 0);
+        return $this->postCardNowTo((int) ($this->board()['chat_id'] ?? 0), self::NEXT_CARD_OPTION);
+    }
 
+    /**
+     * postNextCardNow() for the channel: counts as that event's post for
+     * announceChannelCard().
+     */
+    public function postChannelCardNow(): bool
+    {
+        return $this->postCardNowTo(ChannelChat::id(), self::CHANNEL_CARD_OPTION);
+    }
+
+    private function postCardNowTo(int $chatId, string $option): bool
+    {
         if (! $this->telegram->isConfigured() || 0 === $chatId) {
             return false;
         }
@@ -662,7 +717,7 @@ final class BoardService
 
         $today = current_time('Y-m-d');
         update_option(
-            self::NEXT_CARD_OPTION,
+            $option,
             ['event' => $card['event'], 'day' => $target['date'] === $today ? $today : '', 'waited' => 0],
             false
         );
@@ -1146,6 +1201,14 @@ final class BoardService
         $chat = is_array($membership['chat'] ?? null) ? $membership['chat'] : [];
         $status = (string) ($membership['new_chat_member']['status'] ?? '');
 
+        // A channel is never the board's group: its own capture, and never
+        // the group's lock or leave (Owner 2026-11-14, Q397).
+        if ('channel' === (string) ($chat['type'] ?? '')) {
+            $this->onChannelMembership($chat, $status, (int) ($membership['from']['id'] ?? 0));
+
+            return;
+        }
+
         // Only groups, and only when the bot is actually in - a removal
         // ('left'/'kicked') must not re-capture a chat it just left.
         if (! in_array((string) ($chat['type'] ?? ''), ['group', 'supergroup'], true)) {
@@ -1177,6 +1240,50 @@ final class BoardService
 
         $this->setBoardChat($chatId);
         $this->refresh();
+    }
+
+    /**
+     * The bot's membership of a channel changed (Owner 2026-11-14, Q397).
+     * Made an administrator (with Post messages on) by an organizer: that
+     * channel becomes the crew's channel (ChannelChat), replacing any earlier
+     * one. Made an administrator by anyone else: the bot leaves it, so no
+     * stranger can point the posts at their own channel. Removed from the
+     * stored channel: it is forgotten.
+     *
+     * @param array<string, mixed> $chat
+     */
+    private function onChannelMembership(array $chat, string $status, int $fromId): void
+    {
+        $chatId = (int) ($chat['id'] ?? 0);
+
+        if (0 === $chatId) {
+            return;
+        }
+
+        if ('administrator' === $status) {
+            $person = 0 === $fromId ? null : $this->people->findByTelegramUserId($fromId);
+
+            if (null === $person || ! $person->isOrganizer) {
+                $this->logger->info(sprintf(
+                    'Bot made an admin of channel %d by someone who is not an organizer; leaving it.',
+                    $chatId
+                ));
+                $this->telegram->leaveChat($chatId);
+
+                return;
+            }
+
+            $title = trim((string) ($chat['title'] ?? ''));
+            ChannelChat::set($chatId, $title);
+            $this->logger->info(sprintf('Telegram channel connected: %d (%s).', $chatId, $title));
+
+            return;
+        }
+
+        if (in_array($status, ['left', 'kicked'], true) && ChannelChat::id() === $chatId) {
+            ChannelChat::clear();
+            $this->logger->info(sprintf('Bot removed from the Telegram channel %d; channel forgotten.', $chatId));
+        }
     }
 
     /**

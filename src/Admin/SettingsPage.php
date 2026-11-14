@@ -59,6 +59,7 @@ use EventCrew\Support\WelcomeSender;
 use EventCrew\Telegram\BoardBanner;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\CommandMenu;
+use EventCrew\Telegram\ChannelChat;
 use EventCrew\Telegram\GroupChat;
 use EventCrew\Telegram\GroupRelay;
 use EventCrew\Telegram\PrivateChatGate;
@@ -471,6 +472,8 @@ final class SettingsPage
             'webhook_info' => $configured ? $this->telegram->getWebhookInfo() : null,
             'bot_username' => (string) get_option(BoardService::USERNAME_OPTION, ''),
             'board_chat_id' => GroupChat::current(),
+            'channel_id' => ChannelChat::id(),
+            'channel_title' => ChannelChat::title(),
             'group_link' => (string) get_option(BoardService::GROUP_LINK_OPTION, ''),
             'group_link_auto' => (string) get_option(BoardService::GROUP_LINK_AUTO_OPTION, ''),
             'group_lock' => (bool) get_option(BoardService::LOCK_OPTION, true),
@@ -1678,6 +1681,20 @@ final class SettingsPage
             self::PAGE_SLUG,
             __('The board is being posted in the group. This page shows when it is done.', 'eventcrew')
         );
+    }
+
+    /**
+     * "Disconnect the channel": the bot stops posting the next event card
+     * and the thank-you card in the Telegram channel (ChannelChat). It stays
+     * in the channel; removing it and adding it again connects it again.
+     */
+    public function disconnectChannel(): void
+    {
+        Admin::assertCanSave(self::SETUP_NONCE_ACTION);
+
+        ChannelChat::clear();
+
+        Admin::redirectTo(self::PAGE_SLUG, __('Channel disconnected. The bot no longer posts there.', 'eventcrew'));
     }
 
     /**

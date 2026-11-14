@@ -9,6 +9,7 @@ use EventCrew\Repositories\AuthTokenRepository;
 use EventCrew\Telegram\BoardDjText;
 use EventCrew\Telegram\BoardService;
 use EventCrew\Telegram\BotLog;
+use EventCrew\Telegram\ChannelThanks;
 use EventCrew\Telegram\CommandMenu;
 use EventCrew\Telegram\GroupRelay;
 
@@ -53,7 +54,8 @@ final class Scheduler
         private readonly ?TakeoverService $takeovers = null,
         private readonly ?SlotFreedNotice $slotFreed = null,
         private readonly ?NewcomerApproval $newcomers = null,
-        private readonly ?MonthlyReport $monthlyReport = null
+        private readonly ?MonthlyReport $monthlyReport = null,
+        private readonly ?ChannelThanks $channelThanks = null
     ) {
     }
 
@@ -165,6 +167,12 @@ final class Scheduler
         // The next event's picture in the group: once when it becomes the
         // next event, and again on its morning. Only in the day hours.
         $this->board->announceNextCard();
+
+        // The same card in the crew's Telegram channel, on the same schedule
+        // with its own state, and the thank-you card there the day after each
+        // event (Owner 2026-11-14, Q398 and Q399). Only in the day hours.
+        $this->board->announceChannelCard();
+        $this->channelThanks?->run();
 
         // Discover a link to the group, so the emails and DMs can offer a way
         // in without anyone pasting one into Settings. Throttled to once a week

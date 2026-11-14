@@ -88,7 +88,7 @@
  * @var array<int, array{id: string, name: string, columns: array<string, string|array<int, string>>, decoder_js: string}> $ticket_formats The ticket file formats.
  * @var array{protocol: string, server: string, port: int, security: string, username: string, password: string, folder: string, imported_folder: string, rejected_folder: string, authserv_id: string} $mail_fetch How the site reads the import mailbox itself.
  * @var array{time: int, ok: bool, message: string} $mail_fetch_status The last mailbox check.
- * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, group_link: string, group_link_auto: string, group_lock: bool, group_gate: bool, group_chat_web: bool, reads_all: string, board_cards: bool, board_banner_page: int, profile: array{about: array{source: string, texts: array<string, string>, manual: array<string, bool>}, description: array{source: string, texts: array<string, string>, manual: array<string, bool>}}, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
+ * @var array{token: string, configured: bool, dns_bypass: bool, use_fallback: bool, secret_in_url: bool, webhook_url: string, test_url: string, header_only_url: string, secret: string, webhook_info: array<string, mixed>|null, bot_username: string, board_chat_id: int, channel_id: int, channel_title: string, group_link: string, group_link_auto: string, group_lock: bool, group_gate: bool, group_chat_web: bool, reads_all: string, board_cards: bool, board_banner_page: int, profile: array{about: array{source: string, texts: array<string, string>, manual: array<string, bool>}, description: array{source: string, texts: array<string, string>, manual: array<string, bool>}}, setup_nonce_action: string} $telegram Telegram bot configuration and live webhook status.
  * @var array{enabled: bool, forward: bool, name: string, url: string, model: string, key_status: string, private_limit: int, organizer_limit: int, group_limit: int, pages: array<int, int>, page_choices: array<int, string>, default_pages: array<int, string>, test_url: string, remove_key_url: string} $assistant The language-model helper for plain bot messages.
  * @var array{controller: string, address: string, contact: string, dpo_name: string, dpo_contact: string, retention_years: int, retention_min: int, retention_max: int, purge: bool, page_id: int, configured: bool, notice_url: string, buyer_page_id: int, buyer_notice_url: string, create_buyer_url: string, core_policy_url: string, create_nonce_action: string} $privacy Who is answerable for the crew's data, and how long it is kept.
  */
@@ -3025,6 +3025,36 @@ if (! defined('ABSPATH')) {
             <?php wp_nonce_field($telegram['setup_nonce_action']); ?>
             <?php submit_button(__('Post the board in the group', 'eventcrew'), 'secondary', 'submit', false, $eventcrew_no_board); ?>
         </form>
+
+        <h2><?php esc_html_e('The channel', 'eventcrew'); ?></h2>
+        <p class="description">
+            <?php esc_html_e('The bot posts the next event card and, the day after each event, a thank-you card in your Telegram channel. Switch each on or off in the Crew app: Admin, Messages, Scheduled messages.', 'eventcrew'); ?>
+        </p>
+        <?php if (0 === $telegram['channel_id']) : ?>
+            <p><?php esc_html_e('No channel. Add the bot to the channel as an admin with Post messages on.', 'eventcrew'); ?></p>
+        <?php else : ?>
+            <p>
+                <?php
+                printf(
+                    /* translators: %s: the Telegram channel's title */
+                    esc_html__('Connected channel: %s', 'eventcrew'),
+                    '<strong>' . esc_html('' !== $telegram['channel_title'] ? $telegram['channel_title'] : (string) $telegram['channel_id']) . '</strong>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped.
+                );
+                ?>
+            </p>
+            <form
+                method="post"
+                action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                style="margin:.6em 0 1em"
+                onsubmit="return confirm('<?php echo esc_js(__('Disconnect the channel? To connect it again, the bot has to be removed from the channel and added again.', 'eventcrew')); ?>');">
+                <input type="hidden" name="action" value="eventcrew_disconnect_channel">
+                <?php wp_nonce_field($telegram['setup_nonce_action']); ?>
+                <?php submit_button(__('Disconnect the channel', 'eventcrew'), 'secondary', 'submit', false); ?>
+                <span class="description">
+                    <?php esc_html_e('The bot stops posting there. To connect it again, remove the bot from the channel and add it again as an admin.', 'eventcrew'); ?>
+                </span>
+            </form>
+        <?php endif; ?>
     <?php endif; ?>
     </div>
 

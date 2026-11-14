@@ -7,10 +7,12 @@ namespace EventCrew\Tests\Telegram;
 use Brain\Monkey\Functions;
 use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AssistantSettings;
+use EventCrew\Support\ScheduledMessages;
 use EventCrew\Telegram\BoardBanner;
 use EventCrew\Telegram\BoardDjText;
 use EventCrew\Telegram\BoardRenderer;
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\ChannelChat;
 use EventCrew\Telegram\DayPicker;
 use EventCrew\Telegram\EntityHtml;
 use EventCrew\Telegram\EventCard;
@@ -456,6 +458,114 @@ final class BoardCardsTest extends TelegramTestCase
         self::assertFalse($this->announce());
 
         self::assertSame([], $this->telegramCalls);
+        self::assertArrayNotHasKey(BoardService::NEXT_CARD_OPTION, $this->options);
+    }
+
+    // --- The channel's card (Owner 2026-11-14, Q397-Q398) ----------------
+
+    private const CHANNEL = -200;
+
+    private function connectChannel(): void
+    {
+        $this->options[ChannelChat::OPTION] = ['id' => self::CHANNEL, 'title' => 'Dance nights'];
+    }
+
+    /** @return list<int|string> The chat ids of the photos sent, in order. */
+    private function photoChats(): array
+    {
+        return array_map(
+            static fn (array $call): int|string => $call['body']['chat_id'],
+            array_values(array_filter(
+                $this->telegramCalls,
+                static fn (array $call): bool => 'sendPhoto' === $call['method']
+            ))
+        );
+    }
+
+    public function testTheChannelGetsTheNextEventsPictureOnceAndAgainOnItsMorning(): void
+    {
+        $this->connectChannel();
+        $this->partyEvent();
+        $this->storeDjText(100, 'DJ Anna plays swing.');
+        $this->queueAnnounce($this->twoDays());
+
+        self::assertTrue($this->board()->announceChannelCard());
+
+        self::assertSame([self::CHANNEL], $this->photoChats());
+        self::assertSame(
+            ['event' => 100, 'day' => '', 'waited' => 0],
+            $this->options[BoardService::CHANNEL_CARD_OPTION]
+        );
+        // The group's own state is untouched.
+        self::assertArrayNotHasKey(BoardService::NEXT_CARD_OPTION, $this->options);
+
+        $this->telegramCalls = [];
+        $this->at('2026-07-21', 12);
+        $this->wpdb->nextResults[] = $this->twoDays();
+        self::assertFalse($this->board()->announceChannelCard());
+        self::assertSame([], $this->telegramCalls);
+
+        $this->at('2026-08-01', 9);
+        $this->queueAnnounce($this->twoDays());
+        self::assertTrue($this->board()->announceChannelCard());
+        self::assertSame([self::CHANNEL], $this->photoChats());
+        self::assertSame('2026-08-01', $this->options[BoardService::CHANNEL_CARD_OPTION]['day']);
+    }
+
+    public function testTheChannelCardDoesNotWaitForTheGroupsCard(): void
+    {
+        $this->connectChannel();
+        $this->partyEvent();
+        $this->storeDjText(100, 'DJ Anna plays swing.');
+        // The group got it already, and the group's card format is off.
+        $this->options[BoardService::NEXT_CARD_OPTION] = ['event' => 100, 'day' => '', 'waited' => 0];
+        $this->options[BoardService::CARDS_OPTION] = false;
+        $this->queueAnnounce($this->twoDays());
+
+        self::assertTrue($this->board()->announceChannelCard());
+        self::assertSame([self::CHANNEL], $this->photoChats());
+    }
+
+    public function testTheChannelCardKeepsTheHoursItsSwitchAndNeedsAChannel(): void
+    {
+        $this->partyEvent();
+        $this->storeDjText(100, 'DJ Anna plays swing.');
+
+        // No channel.
+        self::assertFalse($this->board()->announceChannelCard());
+        self::assertFalse($this->board()->canPostChannelCard());
+        self::assertFalse($this->board()->postChannelCardNow());
+
+        $this->connectChannel();
+
+        foreach ([8, 21] as $hour) {
+            $this->at('2026-07-20', $hour);
+            self::assertFalse($this->board()->announceChannelCard());
+        }
+
+        $this->at('2026-07-20', 12);
+        ScheduledMessages::setOn(ScheduledMessages::CHANNEL_CARD, false);
+        self::assertFalse($this->board()->announceChannelCard());
+
+        self::assertSame([], $this->telegramCalls);
+        self::assertArrayNotHasKey(BoardService::CHANNEL_CARD_OPTION, $this->options);
+    }
+
+    public function testTheChannelCardCanBePostedNowEvenWhenPostedAlready(): void
+    {
+        $this->connectChannel();
+        $this->partyEvent();
+        $this->storeDjText(100, 'DJ Anna plays swing.');
+        $this->options[BoardService::CHANNEL_CARD_OPTION] = ['event' => 100, 'day' => '', 'waited' => 0];
+        $this->at('2026-07-20', 23);
+        $this->wpdb->nextResults[] = $this->twoDays();
+
+        self::assertTrue($this->board()->canPostChannelCard());
+
+        $this->queueAnnounce($this->twoDays());
+
+        self::assertTrue($this->board()->postChannelCardNow());
+        self::assertSame([self::CHANNEL], $this->photoChats());
         self::assertArrayNotHasKey(BoardService::NEXT_CARD_OPTION, $this->options);
     }
 

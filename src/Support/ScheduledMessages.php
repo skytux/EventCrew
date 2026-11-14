@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EventCrew\Support;
 
 use EventCrew\Telegram\BoardService;
+use EventCrew\Telegram\ChannelThanks;
 use EventCrew\Telegram\TelegramClient;
 
 /**
@@ -28,6 +29,8 @@ final class ScheduledMessages
     public const OPEN_TASKS = 'opentasks';
     public const BOARD = 'board';
     public const CARD = 'card';
+    public const CHANNEL_CARD = 'channelcard';
+    public const THANKS = 'thanks';
     public const FREED = 'freed';
     public const STANDING = 'standing';
     public const ROLE_MET = 'rolemet';
@@ -44,6 +47,8 @@ final class ScheduledMessages
         self::OPEN_TASKS,
         self::BOARD,
         self::CARD,
+        self::CHANNEL_CARD,
+        self::THANKS,
         self::FREED,
         self::STANDING,
         self::ROLE_MET,
@@ -63,6 +68,8 @@ final class ScheduledMessages
         self::REMINDERS => 'eventcrew_reminders_enabled',
         self::OPEN_TASKS => 'eventcrew_open_task_call_enabled',
         self::CARD => 'eventcrew_next_card_enabled',
+        self::CHANNEL_CARD => 'eventcrew_channel_card_enabled',
+        self::THANKS => 'eventcrew_channel_thanks_enabled',
         self::FREED => 'eventcrew_slot_freed_enabled',
         self::STANDING => 'eventcrew_standing_notice_enabled',
         self::ROLE_MET => 'eventcrew_role_met_enabled',
@@ -76,6 +83,8 @@ final class ScheduledMessages
         self::OPEN_TASKS,
         self::BOARD,
         self::CARD,
+        self::CHANNEL_CARD,
+        self::THANKS,
         self::NEWSLETTER,
         self::FOLLOWUP,
         self::MONTHLY,
@@ -95,7 +104,8 @@ final class ScheduledMessages
         private readonly ?TelegramClient $telegram = null,
         private readonly ?MonthlyReport $monthly = null,
         private readonly ?Newsletter $newsletter = null,
-        private readonly ?FollowupMail $followup = null
+        private readonly ?FollowupMail $followup = null,
+        private readonly ?ChannelThanks $thanks = null
     ) {
     }
 
@@ -159,6 +169,8 @@ final class ScheduledMessages
             self::OPEN_TASKS => __('Open tasks call', 'eventcrew'),
             self::BOARD => __('Board in the group', 'eventcrew'),
             self::CARD => __('Next event card', 'eventcrew'),
+            self::CHANNEL_CARD => __('Next event card in the channel', 'eventcrew'),
+            self::THANKS => __('Thank-you card', 'eventcrew'),
             self::FREED => __('Place freed', 'eventcrew'),
             self::STANDING => __('Thanks and no-show notes', 'eventcrew'),
             self::ROLE_MET => __('Role conditions met', 'eventcrew'),
@@ -177,6 +189,7 @@ final class ScheduledMessages
     {
         return match ($key) {
             self::BOARD, self::CARD => __('Group', 'eventcrew'),
+            self::CHANNEL_CARD, self::THANKS => __('Channel', 'eventcrew'),
             self::NEWSLETTER, self::FOLLOWUP => __('Email', 'eventcrew'),
             self::ROLE_MET, self::MONTHLY => __('Organizers', 'eventcrew'),
             default => __('Email + DM', 'eventcrew'),
@@ -190,7 +203,7 @@ final class ScheduledMessages
             /* translators: %d: hours. */
             self::REMINDERS => sprintf(__('%d h before', 'eventcrew'), ReminderCall::REMINDER_HOURS),
             self::OPEN_TASKS, self::BOARD => __('Before each event', 'eventcrew'),
-            self::CARD => __('When an event is next', 'eventcrew'),
+            self::CARD, self::CHANNEL_CARD => __('When an event is next', 'eventcrew'),
             self::FREED => __('After a late cancel', 'eventcrew'),
             /* translators: %d: hours. */
             self::STANDING => sprintf(__('%d h after marking', 'eventcrew'), StandingNotice::DELAY_HOURS),
@@ -199,7 +212,7 @@ final class ScheduledMessages
             self::WELCOME => __('After joining', 'eventcrew'),
             /* translators: %d: days. */
             self::NEWSLETTER => sprintf(__('%d days before', 'eventcrew'), Newsletter::days()),
-            self::FOLLOWUP => __('Day after the event', 'eventcrew'),
+            self::FOLLOWUP, self::THANKS => __('Day after the event', 'eventcrew'),
             self::MONTHLY => __('Early each month', 'eventcrew'),
             default => '',
         };
@@ -226,7 +239,8 @@ final class ScheduledMessages
     }
 
     /**
-     * How many would get it if it were sent now: people, or 1 for the group.
+     * How many would get it if it were sent now: people, or 1 for the group
+     * or the channel.
      * 0 when nobody would; null for a message without "send now".
      */
     public function count(string $key): ?int
@@ -236,6 +250,8 @@ final class ScheduledMessages
             self::OPEN_TASKS => $this->openTasks?->countForNextOpenDate(true) ?? 0,
             self::BOARD => $this->hasGroup() ? 1 : 0,
             self::CARD => null !== $this->board && $this->board->canPostNextCard() ? 1 : 0,
+            self::CHANNEL_CARD => null !== $this->board && $this->board->canPostChannelCard() ? 1 : 0,
+            self::THANKS => null !== $this->thanks && $this->thanks->canSendNow() ? 1 : 0,
             self::NEWSLETTER => $this->newsletter?->sendNowCount() ?? 0,
             self::FOLLOWUP => $this->followup?->sendNowCount() ?? 0,
             self::MONTHLY => $this->monthly?->recipientCount() ?? 0,
@@ -263,6 +279,14 @@ final class ScheduledMessages
             return __('Post the next event card in the group now?', 'eventcrew');
         }
 
+        if (self::CHANNEL_CARD === $key) {
+            return __('Post the next event card in the channel now?', 'eventcrew');
+        }
+
+        if (self::THANKS === $key) {
+            return __('Post the thank-you card in the channel now?', 'eventcrew');
+        }
+
         return sprintf(
             /* translators: 1: the message's name, 2: how many people get it. */
             _n('Send "%1$s" now to %2$d person?', 'Send "%1$s" now to %2$d people?', $count, 'eventcrew'),
@@ -274,7 +298,7 @@ final class ScheduledMessages
     /**
      * Sends the message once now, through its own sender, outside the send
      * window (the organizer asked). Returns how many got it (1 for the
-     * group), 0 when nobody did.
+     * group or the channel), 0 when nobody did.
      */
     public function send(string $key): int
     {
@@ -283,6 +307,8 @@ final class ScheduledMessages
             self::OPEN_TASKS => $this->openTasks?->sendForNextOpenDate(true) ?? 0,
             self::BOARD => $this->hasGroup() && null !== $this->board && $this->board->repost() ? 1 : 0,
             self::CARD => null !== $this->board && $this->board->postNextCardNow() ? 1 : 0,
+            self::CHANNEL_CARD => null !== $this->board && $this->board->postChannelCardNow() ? 1 : 0,
+            self::THANKS => null !== $this->thanks && $this->thanks->sendNow() ? 1 : 0,
             self::NEWSLETTER => self::isOn($key) ? $this->newsletter?->sendNow() ?? 0 : 0,
             self::FOLLOWUP => self::isOn($key) ? $this->followup?->sendNow() ?? 0 : 0,
             self::MONTHLY => $this->monthly?->sendNow() ?? 0,
@@ -303,6 +329,14 @@ final class ScheduledMessages
 
         if (self::CARD === $key) {
             return __('Next event card posted in the group.', 'eventcrew');
+        }
+
+        if (self::CHANNEL_CARD === $key) {
+            return __('Next event card posted in the channel.', 'eventcrew');
+        }
+
+        if (self::THANKS === $key) {
+            return __('Thank-you card posted in the channel.', 'eventcrew');
         }
 
         return sprintf(

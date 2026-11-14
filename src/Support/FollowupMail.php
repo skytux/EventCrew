@@ -1084,6 +1084,40 @@ final class FollowupMail
         ];
     }
 
+    /**
+     * The thank-you to those who came, as the Telegram channel posts it the
+     * day after $date's night (Telegram\ChannelThanks, Owner 2026-11-14,
+     * Q399): the same text as the email's thank-you in $lang, with no name
+     * and no greeting, {event} as the name of the event $eventId in $lang.
+     * Plain text. $hasNext false (no ticket button under it) drops the
+     * sentences that point below, as the email does without coming events.
+     */
+    public function thanksText(string $date, string $lang, int $eventId, bool $hasNext = true): string
+    {
+        $text = $this->text->text(FollowupText::CAME, $lang);
+        $translated = trim(EventSource::translatedTitle($eventId, $lang));
+        $event = EventName::name(
+            $eventId,
+            $lang,
+            '' !== $translated ? $translated : (string) (EventSource::describe($eventId)['title'] ?? '')
+        );
+        $shortDate = TicketMail::shortDate($date);
+
+        return (string) Language::run(
+            $lang,
+            static function () use ($text, $event, $shortDate, $hasNext, $eventId): string {
+                $body = self::words(FollowupText::CAME, '', $text, $event, $shortDate, $hasNext, $eventId)['body'];
+                $hello = __('Hi,', 'eventcrew') . "\n\n";
+
+                // The built-in text's "Hi," for someone without a name: a
+                // post to everyone has no greeting.
+                return ! $text['template'] && str_starts_with($body, $hello)
+                    ? substr($body, strlen($hello))
+                    : $body;
+            }
+        );
+    }
+
     /** The background, edge, button and button text colours of joinInvite(). */
     private const INVITE_BACKGROUND = '#fff4e6';
     private const INVITE_EDGE = '#ffc98f';

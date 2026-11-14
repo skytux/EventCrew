@@ -140,6 +140,8 @@ final class ScheduledMessagesTest extends TelegramTestCase
                 ScheduledMessages::OPEN_TASKS,
                 ScheduledMessages::BOARD,
                 ScheduledMessages::CARD,
+                ScheduledMessages::CHANNEL_CARD,
+                ScheduledMessages::THANKS,
                 ScheduledMessages::NEWSLETTER,
                 ScheduledMessages::FOLLOWUP,
                 ScheduledMessages::MONTHLY,

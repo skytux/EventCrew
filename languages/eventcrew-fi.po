@@ -11867,3 +11867,50 @@ msgstr "Silloin ei jäisi järjestäjää: ainakin yhdellä on oltava rooli, jol
 
 msgid "The roles were not saved."
 msgstr "Rooleja ei tallennettu."
+
+# channel-1114
+msgid "Next event card in the channel"
+msgstr "Seuraavan tapahtuman kortti kanavalla"
+
+msgid "Thank-you card"
+msgstr "Kiitoskortti"
+
+msgid "Channel"
+msgstr "Kanava"
+
+msgid "Post the next event card in the channel now?"
+msgstr "Julkaistaanko seuraavan tapahtuman kortti kanavalla nyt?"
+
+msgid "Post the thank-you card in the channel now?"
+msgstr "Julkaistaanko kiitoskortti kanavalla nyt?"
+
+msgid "Next event card posted in the channel."
+msgstr "Seuraavan tapahtuman kortti julkaistu kanavalla."
+
+msgid "Thank-you card posted in the channel."
+msgstr "Kiitoskortti julkaistu kanavalla."
+
+msgid "The channel"
+msgstr "Kanava"
+
+msgid "The bot posts the next event card and, the day after each event, a thank-you card in your Telegram channel. Switch each on or off in the Crew app: Admin, Messages, Scheduled messages."
+msgstr "Botti julkaisee Telegram-kanavallasi seuraavan tapahtuman kortin ja tapahtumaa seuraavana päivänä kiitoskortin. Kytke kumpikin päälle tai pois Crew-sovelluksessa: Ylläpito, Viestit, Ajastetut viestit."
+
+msgid "No channel. Add the bot to the channel as an admin with Post messages on."
+msgstr "Ei kanavaa. Lisää botti kanavalle ylläpitäjäksi, Viestien julkaisu päällä."
+
+#, php-format
+msgid "Connected channel: %s"
+msgstr "Yhdistetty kanava: %s"
+
+msgid "Disconnect the channel"
+msgstr "Irrota kanava"
+
+msgid "The bot stops posting there. To connect it again, remove the bot from the channel and add it again as an admin."
+msgstr "Botti lakkaa julkaisemasta siellä. Yhdistä uudelleen poistamalla botti kanavalta ja lisäämällä se taas ylläpitäjäksi."
+
+msgid "Disconnect the channel? To connect it again, the bot has to be removed from the channel and added again."
+msgstr "Irrotetaanko kanava? Yhdistäminen uudelleen vaatii botin poistamisen kanavalta ja lisäämisen takaisin."
+
+msgid "Channel disconnected. The bot no longer posts there."
+msgstr "Kanava irrotettu. Botti ei enää julkaise siellä."

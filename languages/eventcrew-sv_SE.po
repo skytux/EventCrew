@@ -14785,3 +14785,50 @@ msgstr "Då skulle ingen arrangör finnas kvar: minst en person måste ha en rol
 
 msgid "The roles were not saved."
 msgstr "Rollerna sparades inte."
+
+# channel-1114
+msgid "Next event card in the channel"
+msgstr "Nästa evenemangs kort i kanalen"
+
+msgid "Thank-you card"
+msgstr "Tackkort"
+
+msgid "Channel"
+msgstr "Kanal"
+
+msgid "Post the next event card in the channel now?"
+msgstr "Lägga upp nästa evenemangs kort i kanalen nu?"
+
+msgid "Post the thank-you card in the channel now?"
+msgstr "Lägga upp tackkortet i kanalen nu?"
+
+msgid "Next event card posted in the channel."
+msgstr "Nästa evenemangs kort upplagt i kanalen."
+
+msgid "Thank-you card posted in the channel."
+msgstr "Tackkortet upplagt i kanalen."
+
+msgid "The channel"
+msgstr "Kanalen"
+
+msgid "The bot posts the next event card and, the day after each event, a thank-you card in your Telegram channel. Switch each on or off in the Crew app: Admin, Messages, Scheduled messages."
+msgstr "Boten lägger upp nästa evenemangs kort och, dagen efter varje evenemang, ett tackkort i din Telegram-kanal. Slå på eller av vart och ett i Crew-appen: Admin, Meddelanden, Schemalagda meddelanden."
+
+msgid "No channel. Add the bot to the channel as an admin with Post messages on."
+msgstr "Ingen kanal. Lägg till boten i kanalen som admin med Publicera meddelanden på."
+
+#, php-format
+msgid "Connected channel: %s"
+msgstr "Ansluten kanal: %s"
+
+msgid "Disconnect the channel"
+msgstr "Koppla från kanalen"
+
+msgid "The bot stops posting there. To connect it again, remove the bot from the channel and add it again as an admin."
+msgstr "Boten slutar lägga upp där. För att ansluta igen, ta bort boten från kanalen och lägg till den igen som admin."
+
+msgid "Disconnect the channel? To connect it again, the bot has to be removed from the channel and added again."
+msgstr "Koppla från kanalen? För att ansluta igen måste boten tas bort från kanalen och läggas till igen."
+
+msgid "Channel disconnected. The bot no longer posts there."
+msgstr "Kanalen frånkopplad. Boten lägger inte längre upp där."

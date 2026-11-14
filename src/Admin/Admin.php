@@ -104,6 +104,10 @@ final class Admin
             'admin_post_eventcrew_post_board',
             [$this->container->get(SettingsPage::class), 'postBoard']
         );
+        add_action(
+            'admin_post_eventcrew_disconnect_channel',
+            [$this->container->get(SettingsPage::class), 'disconnectChannel']
+        );
 
         add_action(
             'admin_post_eventcrew_rotate_webhook_secret',

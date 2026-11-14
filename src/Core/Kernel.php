@@ -129,6 +129,7 @@ use EventCrew\Telegram\ActingAs;
 use EventCrew\Telegram\AdminChangeCommands;
 use EventCrew\Telegram\ReopenProfile;
 use EventCrew\Telegram\AssignCommand;
+use EventCrew\Telegram\ChannelThanks;
 use EventCrew\Telegram\ChatCommands;
 use EventCrew\Telegram\MemberCommands;
 use EventCrew\Telegram\NightCommands;
@@ -1090,7 +1091,18 @@ final class Kernel
                 $container->get(TakeoverService::class),
                 $container->get(SlotFreedNotice::class),
                 $container->get(NewcomerApproval::class),
-                $container->get(MonthlyReport::class)
+                $container->get(MonthlyReport::class),
+                $container->get(ChannelThanks::class)
+            )
+        );
+
+        // The thank-you card in the Telegram channel (Owner 2026-11-14, Q399).
+        $this->container->singleton(
+            ChannelThanks::class,
+            fn (Container $container) => new ChannelThanks(
+                $container->get(TelegramClient::class),
+                $container->get(FollowupMail::class),
+                $container->get(Logger::class)
             )
         );
 
@@ -1210,7 +1222,8 @@ final class Kernel
                 $container->get(TelegramClient::class),
                 $container->get(MonthlyReport::class),
                 $container->get(Newsletter::class),
-                $container->get(FollowupMail::class)
+                $container->get(FollowupMail::class),
+                $container->get(ChannelThanks::class)
             )
         );
 
