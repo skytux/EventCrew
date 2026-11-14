@@ -190,9 +190,8 @@ final class RosterServiceTest extends TelegramTestCase
         // The roster itself lands in the asker's DM...
         self::assertSame(555, $this->telegramCalls[0]['body']['chat_id']);
         self::assertStringContainsString('Sam', $this->telegramCalls[0]['body']['text']);
-        // ...and only a breadcrumb goes to the group.
-        self::assertSame(-100, $this->lastCallTo('sendMessage')['chat_id']);
-        self::assertSame('📬 Sent you a DM.', $this->lastCallTo('sendMessage')['text']);
+        // ...and nothing goes to the group (Owner 2026-11-14).
+        self::assertSame([], array_filter(array_column($this->telegramCalls, 'body'), static fn (array $b): bool => -100 === ($b['chat_id'] ?? null)));
     }
 
     public function testTellsTheOrganizerWhenNothingIsScheduled(): void

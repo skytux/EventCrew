@@ -123,8 +123,7 @@ final class DoorListServiceTest extends TelegramTestCase
 
         $this->doorListService()->onTicketsCommand(555, -100, false, '1.8.');
 
-        $sent = $this->lastCallTo('sendMessage');
-        self::assertSame('📬 Sent you a DM.', $sent['text']);
+        self::assertSame([], array_filter(array_column($this->telegramCalls, 'body'), static fn (array $b): bool => -100 === ($b['chat_id'] ?? null)));
 
         $list = $this->telegramCalls[0]['body'];
         self::assertSame(555, $list['chat_id']);

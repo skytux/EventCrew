@@ -148,7 +148,7 @@ final class GroupBreadcrumbTest extends TelegramTestCase
         self::assertSame([], $this->scheduled);
     }
 
-    public function testATypedGroupCommandPostsTheNoteAndSchedulesItsDeletion(): void
+    public function testATypedGroupCommandPostsNothingInTheGroup(): void
     {
         $this->telegramResults['sendMessage'] = ['message_id' => 77];
         $this->wpdb->nextRows[] = $this->personRow(7, 555, ['is_organizer' => 1]);
@@ -158,18 +158,10 @@ final class GroupBreadcrumbTest extends TelegramTestCase
         ];
         $this->wpdb->nextResults[] = [];
 
-        $before = time();
         $this->roster()->onRosterCommand(555, -100, false);
 
-        $note = $this->lastCallTo('sendMessage');
-        self::assertSame(-100, $note['chat_id']);
-        self::assertSame('📬 Sent you a DM.', $note['text']);
-
-        self::assertCount(1, $this->scheduled);
-        self::assertSame(DmNote::HOOK, $this->scheduled[0]['hook']);
-        self::assertSame([-100, 77], $this->scheduled[0]['args']);
-        self::assertGreaterThanOrEqual($before + DmNote::DELAY, $this->scheduled[0]['time']);
-        self::assertLessThanOrEqual(time() + DmNote::DELAY, $this->scheduled[0]['time']);
+        self::assertSame([], array_filter(array_column($this->telegramCalls, 'body'), static fn (array $b): bool => -100 === ($b['chat_id'] ?? null)));
+        self::assertSame([], $this->scheduled);
         self::assertSame([], $this->callsTo('answerCallbackQuery'));
     }
 

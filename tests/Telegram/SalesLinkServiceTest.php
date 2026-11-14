@@ -60,19 +60,15 @@ final class SalesLinkServiceTest extends SalesDeskTestCase
         );
     }
 
-    public function testAnOrganizerGetsALinkInTheirDmAndANoteInTheGroup(): void
+    public function testAnOrganizerGetsALinkInTheirDmAndNothingInTheGroup(): void
     {
         $this->queueAsker(1, true);
 
         $this->salesLinkService()->onSalesCommand(501, self::GROUP, false);
 
         $messages = $this->messages();
-        self::assertCount(2, $messages);
+        self::assertCount(1, $messages);
         $this->assertLinkDmTo(501, $messages[0]);
-        self::assertSame(['chat_id' => self::GROUP, 'text' => '📬 Sent you a DM.'], array_intersect_key(
-            $messages[1],
-            ['chat_id' => 0, 'text' => '']
-        ));
         // The link is issued as a one-time door token.
         self::assertSame('door', $this->wpdb->inserts[0]['data']['purpose']);
     }
@@ -136,13 +132,11 @@ final class SalesLinkServiceTest extends SalesDeskTestCase
 
         $this->salesLinkService()->onSalesCommand(508, self::GROUP, false);
 
-        // The refusal goes to the DM; the group only gets the breadcrumb.
+        // The refusal goes to the DM; the group gets nothing.
         $messages = $this->messages();
-        self::assertCount(2, $messages);
+        self::assertCount(1, $messages);
         self::assertSame(508, $messages[0]['chat_id']);
         self::assertStringStartsWith('The sales desk link opens 10 minutes', $messages[0]['text']);
-        self::assertSame(self::GROUP, $messages[1]['chat_id']);
-        self::assertSame('📬 Sent you a DM.', $messages[1]['text']);
         self::assertSame([], $this->wpdb->inserts);
     }
 

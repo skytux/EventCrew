@@ -201,7 +201,7 @@ final class GuestListServiceTest extends TelegramTestCase
         $this->guestListService()->onGuestCommand(555, -100, false, 'remove 1.8. 2');
 
         self::assertSame(['id' => 5], $this->wpdb->deletes[0]['where']);
-        self::assertSame('📬 Sent you a DM.', $this->lastCallTo('sendMessage')['text']);
+        self::assertSame([], array_filter(array_column($this->telegramCalls, 'body'), static fn (array $b): bool => -100 === ($b['chat_id'] ?? null)));
         self::assertStringStartsWith('🗑 Removed Bo.', $this->telegramCalls[0]['body']['text']);
     }
 

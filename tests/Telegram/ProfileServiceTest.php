@@ -408,14 +408,14 @@ final class ProfileServiceTest extends TelegramTestCase
         $this->wpdb->nextRows[] = $this->taskRow(1);
 
         // From the group (isPrivate = false): the list lands in the DM (555),
-        // and the public chat (999) only gets the nudge.
+        // and the public chat (999) gets nothing.
         $this->service()->onMyHistory(555, 999, false);
 
         $dm = $this->telegramCalls[0]['body'];
         self::assertSame(555, $dm['chat_id']);
         self::assertStringContainsString('Sat 18 Jul — Decorate', (string) $dm['text']);
 
-        self::assertSame(999, $this->telegramCalls[1]['body']['chat_id']);
+        self::assertSame([], array_filter(array_column($this->telegramCalls, 'body'), static fn (array $b): bool => 999 === ($b['chat_id'] ?? null)));
     }
     public function testMyTicketsGivesEachUpcomingTicketANamedButtonAndNoRawLinks(): void
     {

@@ -590,7 +590,7 @@ final class HelpServiceTest extends TelegramTestCase
         self::assertSame(555, $menu['chat_id']);
         self::assertSame('🚪 The door: choose what to open.', $menu['text']);
         self::assertSame(['mn:dl:', 'mn:gl:', 'mn:sales'], array_column(array_merge(...$menu['reply_markup']['inline_keyboard']), 'callback_data'));
-        self::assertSame(-100, $this->lastCallTo('sendMessage')['chat_id']);
+        self::assertSame([], array_filter(array_column($this->telegramCalls, 'body'), static fn (array $b): bool => -100 === ($b['chat_id'] ?? null)));
     }
 
     public function testPeopleIsOnlyForOrganizers(): void

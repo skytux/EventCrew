@@ -12,9 +12,9 @@ use EventCrew\Support\Language;
  * command that answers by DM (/me, /roster, /door, /people) so
  * the wording and the "only in a group" rule live in one place.
  *
- * A typed command's note is a group message that deletes itself about a
- * minute later (DmNote). A group button tap gets no group message: the note
- * is the tap's toast, so only the tapper sees it.
+ * Never a group message (Owner 2026-11-14): only a group button tap gets the
+ * note, as the tap's toast, so only the tapper sees it. A typed command gets
+ * nothing in the group.
  *
  * A trait rather than a collaborator because it needs the using service's own
  * TelegramClient; every service that uses it holds one as $this->telegram.
@@ -28,7 +28,7 @@ trait GroupBreadcrumb
      * $callbackId: the button tap this answers, which this then answers (with
      * the note as a toast in a group, empty in a private chat). Without it, a
      * group tap held by the router (DmNote::holdTap()) is answered the same
-     * way, and otherwise the note is posted and deleted a minute later.
+     * way, and otherwise nothing is sent.
      */
     private function sentDmNote(int $chatId, bool $isPrivate, string $callbackId = ''): void
     {
@@ -43,13 +43,10 @@ trait GroupBreadcrumb
         $text = DmNote::text();
         $tap = '' !== $callbackId ? $callbackId : DmNote::takeTap();
 
+        // Only a button tap gets it, as a toast to the one who tapped. Never a
+        // group message (Owner 2026-11-14).
         if ('' !== $tap) {
             $this->telegram->answerCallbackQuery($tap, $text);
-
-            return;
         }
-
-        $sent = $this->telegram->sendMessage($chatId, $text);
-        DmNote::scheduleDelete($chatId, (int) ($sent['message_id'] ?? 0));
     }
 }
