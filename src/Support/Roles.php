@@ -233,7 +233,45 @@ final class Roles
     public static function all(): array
     {
         $stored = get_option(self::OPTION_NAME, null);
+        // The list is read for every task on every board, and building it
+        // translates every role's texts: remembered for as long as what it
+        // is built from stays the same (the stored list, the reader's
+        // language, the site languages and Organize's +1).
+        $key = [
+            $stored,
+            Language::current(),
+            SiteLanguages::codes(),
+            get_option(self::ORGANIZE_PLUS_ONES_OPTION, ''),
+            function_exists('determine_locale') ? determine_locale() : '',
+        ];
 
+        if (null !== self::$built && $key === self::$built[0]) {
+            return self::$built[1];
+        }
+
+        self::$built = [$key, self::build($stored)];
+
+        return self::$built[1];
+    }
+
+    /**
+     * all()'s remembered list and what it was built from.
+     *
+     * @var array{0: array<int, mixed>, 1: array<int, Role>}|null
+     */
+    private static ?array $built = null;
+
+    /** Forgets all()'s remembered list (tests). */
+    public static function flushCache(): void
+    {
+        self::$built = null;
+    }
+
+    /**
+     * @return array<int, Role>
+     */
+    private static function build(mixed $stored): array
+    {
         if (! is_array($stored) || [] === $stored) {
             $stored = self::defaults();
         }

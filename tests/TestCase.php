@@ -29,6 +29,7 @@ abstract class TestCase extends PHPUnitTestCase
 
         // The message kinds are built afresh for each test.
         \EventCrew\Support\MessageTemplates::flushCache();
+        \EventCrew\Support\Roles::flushCache();
 
         $this->stubCommonFunctions();
 
