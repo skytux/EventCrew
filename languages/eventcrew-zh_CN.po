@@ -4599,10 +4599,6 @@ msgstr "组织者"
 msgid "Organizers can email the Holvi ticket file (.xlsx or .csv) to the import mailbox; its tickets go to the door list. Names typed in the mail itself, one per line, go to the guest list, and \"+2\" after a name adds two plus-ones. This site reads that mailbox itself; set it up below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import."
 msgstr "组织者可以把 Holvi 票务文件（.xlsx 或 .csv）发邮件到导入邮箱；其中的票会进入入场名单。邮件正文中输入的姓名（每行一个）会进入嘉宾名单，姓名后的 \"+2\" 表示加两位同伴。本网站会自行读取该邮箱；请在下方设置。名单归入下一个活动。未设置邮箱时，组织者指南和名册页面不会提到邮件导入。"
 
-#: templates/admin/people.php:80
-msgid "Organizers can mark attendance from the bot."
-msgstr "组织者可以通过机器人标记出勤。"
-
 #: templates/admin/tasks.php:171 templates/public/signup.php:1557
 msgid "Other (type a name)"
 msgstr "其他（输入名称）"

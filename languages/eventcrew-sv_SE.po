@@ -4793,10 +4793,6 @@ msgid ""
 msgstr ""
 "Arrangörer kan mejla Holvi-biljettfilen (.xlsx eller .csv) till importbrevlådan; biljetterna hamnar på dörrlistan. Namn som skrivs i själva mejlet, ett per rad, går till gästlistan, och \"+2\" efter ett namn lägger till två extra gäster. Den här webbplatsen läser brevlådan själv; ställ in den nedan. Listan går till nästa evenemang. Så länge ingen brevlåda är inställd nämner varken arrangörsguiden eller sidan Närvaro e-postimporten."
 
-#: templates/admin/people.php:80
-msgid "Organizers can mark attendance from the bot."
-msgstr "Arrangörer kan markera närvaro från boten."
-
 #: templates/admin/tasks.php:171 templates/public/signup.php:1556
 msgid "Other (type a name)"
 msgstr "Annat (skriv ett namn)"
@@ -14165,22 +14161,6 @@ msgstr "Ta bort en person"
 
 msgid "Make or remove an organizer"
 msgstr "Lägg till eller ta bort arrangör"
-
-#. translators: %s: person's name
-#, php-format
-msgid "Remove %s as an organizer? They lose the Admin tab and the organizer commands."
-msgstr "Ta bort %s som arrangör? Hen förlorar Admin-fliken och arrangörskommandona."
-
-#. translators: %s: person's name
-#, php-format
-msgid "Make %s an organizer? They get the Admin tab and the organizer commands."
-msgstr "Göra %s till arrangör? Hen får Admin-fliken och arrangörskommandona."
-
-msgid "Remove as organizer"
-msgstr "Ta bort som arrangör"
-
-msgid "Make organizer"
-msgstr "Gör till arrangör"
 
 #. translators: %s: person's name
 #, php-format

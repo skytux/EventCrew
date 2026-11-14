@@ -3619,9 +3619,6 @@ msgstr "Millekään roolille ei ole asetettu ehtoja."
 msgid "Nobody meets them yet."
 msgstr "Kukaan ei vielä täytä niitä."
 
-msgid "Organizers can mark attendance from the bot."
-msgstr "Järjestäjät voivat merkitä läsnäolon botin kautta."
-
 msgid "Saves every status picker below at once."
 msgstr "Tallentaa kaikki alla olevat tilavalinnat kerralla."
 
@@ -11255,22 +11252,6 @@ msgstr "Poista henkilö"
 
 msgid "Make or remove an organizer"
 msgstr "Lisää tai poista järjestäjä"
-
-#. translators: %s: person's name
-#, php-format
-msgid "Remove %s as an organizer? They lose the Admin tab and the organizer commands."
-msgstr "Poistetaanko %s järjestäjistä? Hän menettää Ylläpito-välilehden ja järjestäjän komennot."
-
-#. translators: %s: person's name
-#, php-format
-msgid "Make %s an organizer? They get the Admin tab and the organizer commands."
-msgstr "Tehdäänkö %s järjestäjäksi? Hän saa Ylläpito-välilehden ja järjestäjän komennot."
-
-msgid "Remove as organizer"
-msgstr "Poista järjestäjistä"
-
-msgid "Make organizer"
-msgstr "Tee järjestäjäksi"
 
 #. translators: %s: person's name
 #, php-format

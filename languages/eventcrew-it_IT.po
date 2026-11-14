@@ -4640,10 +4640,6 @@ msgstr "Organizzatori"
 msgid "Organizers can email the Holvi ticket file (.xlsx or .csv) to the import mailbox; its tickets go to the door list. Names typed in the mail itself, one per line, go to the guest list, and \"+2\" after a name adds two plus-ones. This site reads that mailbox itself; set it up below. The list goes to the next event. While no mailbox is set, the organizer guide and the Roster page do not mention the email import."
 msgstr "Gli organizzatori possono inviare per email il file dei biglietti Holvi (.xlsx o .csv) alla casella di importazione; i suoi biglietti vanno nella lista della porta. I nomi scritti nella mail stessa, uno per riga, vanno nella lista ospiti, e \"+2\" dopo un nome aggiunge due accompagnatori. Questo sito legge da solo quella casella; impostala qui sotto. La lista va al prossimo evento. Finché non è impostata una casella, la guida per organizzatori e la pagina Roster non parlano dell’importazione via email."
 
-#: templates/admin/people.php:80
-msgid "Organizers can mark attendance from the bot."
-msgstr "Gli organizzatori possono segnare le presenze dal bot."
-
 #: templates/admin/tasks.php:171 templates/public/signup.php:1557
 msgid "Other (type a name)"
 msgstr "Altro (scrivi un nome)"
