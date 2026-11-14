@@ -3714,8 +3714,10 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         buttons.forEach(function (b) { b.disabled = true; });
         var done = function () { buttons.forEach(function (b) { b.disabled = false; }); };
 
+        var answered = false;
         window.fetch(to.href, { method: 'POST', body: data, credentials: 'same-origin' })
             .then(function (r) {
+                answered = true;
                 var json = (r.headers.get('content-type') || '').indexOf('json') >= 0;
                 if (r.ok && json) { return r.json(); }
                 // Not an answer this script knows: show what the server sent
@@ -3742,6 +3744,9 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
             })
             .catch(function () {
                 done();
+                // The server already has the post once it answered: reload
+                // rather than send it a second time.
+                if (answered) { window.location.assign(address()); return; }
                 HTMLFormElement.prototype.submit.call(form);
             });
     });
