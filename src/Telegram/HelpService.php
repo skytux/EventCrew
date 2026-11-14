@@ -388,7 +388,6 @@ final class HelpService
         return implode("\n", [
             __('In your own words', 'eventcrew'),
             __('You can also just write what you want, like "sign me up for a task on Saturday".', 'eventcrew'),
-            __('I remember our private chat for 24 hours, so you can refer back to it.', 'eventcrew'),
         ]);
     }
 

@@ -396,13 +396,13 @@ final class AssistantServiceTest extends TelegramTestCase
         self::assertSame([], $this->transientsStartingWith(\EventCrew\Telegram\ConversationLog::PREFIX));
     }
 
-    public function testHelpSaysPlainWordsWorkAndTheChatIsRemembered(): void
+    public function testHelpSaysPlainWordsWorkWithoutTheMemoryLine(): void
     {
         $this->help()->onHelp(555, 555, true);
 
         $text = $this->sentTexts()[0];
         self::assertStringContainsString('You can also just write what you want', $text);
-        self::assertStringContainsString('I remember our private chat for 24 hours', $text);
+        self::assertStringNotContainsString('24 hours', $text);
     }
 
     public function testHelpWithoutTheHelperDoesNotMentionPlainWords(): void
@@ -411,7 +411,7 @@ final class AssistantServiceTest extends TelegramTestCase
 
         $this->help()->onHelp(555, 555, true);
 
-        self::assertStringNotContainsString('I remember our private chat', $this->sentTexts()[0]);
+        self::assertStringNotContainsString('You can also just write what you want', $this->sentTexts()[0]);
     }
 
     public function testThePromptNamesThePersonsRoles(): void
