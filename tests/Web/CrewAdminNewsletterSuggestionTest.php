@@ -44,7 +44,6 @@ final class CrewAdminNewsletterSuggestionTest extends TestCase
 
             return true;
         });
-        Functions\when('determine_locale')->justReturn('en_US');
     }
 
     private function screen(): CrewAdminNewsletter
@@ -80,7 +79,9 @@ final class CrewAdminNewsletterSuggestionTest extends TestCase
     {
         $this->plan(['fi' => 'Tervetuloa tanssimaan', 'en' => 'Welcome to dance']);
 
-        self::assertSame('Welcome to dance', $this->screen()->view()['suggested']);
+        // The viewer's language set the way a page sets it, without stubbing determine_locale(),
+        // which would leave it defined for later tests.
+        self::assertSame('Welcome to dance', \EventCrew\Support\Language::run('en', fn (): string => $this->screen()->view()['suggested']));
     }
 
     public function testTheFieldIsEmptyWithoutAPlanOrAnOpening(): void
