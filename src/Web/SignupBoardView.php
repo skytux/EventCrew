@@ -74,6 +74,7 @@ final class SignupBoardView
      */
     public function build(?Person $person, int $tasksPage = 1, int $pastPage = 1): array
     {
+        $this->cancelAsks = [];
         $tasks = $this->tasks->upcoming();
         $occupancy = $this->tasks->occupancyFor(array_map(static fn (Task $t): int => $t->id, $tasks));
         $mine = null === $person ? [] : $this->occupiedTaskIds($person->id);
@@ -438,6 +439,16 @@ final class SignupBoardView
      * would be late, or '' when there is nothing a cancel would record.
      */
     private function cancelAsk(Task $task, int $personId): string
+    {
+        // The board row and the Tasks card ask the same question about the
+        // same task: worked out once per build.
+        return $this->cancelAsks[$personId . ':' . $task->id] ??= $this->cancelQuestion($task, $personId);
+    }
+
+    /** @var array<string, string> cancelAsk()'s answers in this build, by person:task. */
+    private array $cancelAsks = [];
+
+    private function cancelQuestion(Task $task, int $personId): string
     {
         $outcome = $this->signup->dropOutcome($personId, $task->id);
 
