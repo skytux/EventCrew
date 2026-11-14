@@ -14540,10 +14540,6 @@ msgstr "Be %1$s att låta dig ta över uppgiften %2$s? Hen bestämmer."
 msgid "Write it after a semicolon: %s ; Their Name"
 msgstr "Skriv det efter ett semikolon: %s ; Hens Namn"
 
-#, php-format
-msgid "Send you the sales desk link for %s by email (and Telegram if you use the bot)?"
-msgstr "Skicka länken till försäljningsdisken för %s till dig via mejl (och Telegram om du använder boten)?"
-
 msgid "/giveaway name or email – give your ticket away (/giveaway cancel takes an offer back)"
 msgstr "/giveaway namn eller mejl – ge bort din biljett (/giveaway cancel tar tillbaka ett erbjudande)"
 

@@ -11614,10 +11614,6 @@ msgstr "Pyydetäänkö henkilöltä %1$s lupaa ottaa hänen tehtävänsä %2$s? 
 msgid "Write it after a semicolon: %s ; Their Name"
 msgstr "Kirjoita se puolipisteen jälkeen: %s ; Hänen Nimensä"
 
-#, php-format
-msgid "Send you the sales desk link for %s by email (and Telegram if you use the bot)?"
-msgstr "Lähetetäänkö sinulle myyntipisteen linkki päivälle %s sähköpostilla (ja Telegramiin, jos käytät bottia)?"
-
 msgid "/giveaway name or email – give your ticket away (/giveaway cancel takes an offer back)"
 msgstr "/giveaway nimi tai sähköposti – anna lippusi pois (/giveaway cancel peruu tarjouksen)"
 
