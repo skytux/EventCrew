@@ -43,9 +43,28 @@ final class BotTexts
     /** True while the built-in texts are read, so the filter steps aside. */
     private static bool $bypass = false;
 
+    /**
+     * The stored option, read once per request: get_option() unserializes
+     * it on every call, and the filter runs on every __() of the plugin.
+     *
+     * @var array<string, mixed>|null
+     */
+    private static ?array $stored = null;
+
     public static function boot(): void
     {
         add_filter('gettext_eventcrew', [self::class, 'filter'], 10, 2);
+
+        // Whoever writes the option, the next read sees it.
+        foreach (['add_option_', 'update_option_', 'delete_option_'] as $hook) {
+            add_action($hook . self::OPTION, [self::class, 'forgetStored']);
+        }
+    }
+
+    /** Drops the stored option read in this request. */
+    public static function forgetStored(): void
+    {
+        self::$stored = null;
     }
 
     /**
@@ -155,6 +174,7 @@ final class BotTexts
         }
 
         update_option(self::OPTION, $stored);
+        self::$stored = null;
     }
 
     /** Forgets what was read in this request (for tests). */
@@ -162,6 +182,7 @@ final class BotTexts
     {
         self::$strings = null;
         self::$catalogs = [];
+        self::$stored = null;
     }
 
     /**
@@ -256,9 +277,12 @@ final class BotTexts
     /** @return array<string, array{texts?: array<string, string>, manual?: array<string, bool>}> */
     private static function stored(): array
     {
-        $stored = get_option(self::OPTION, []);
+        if (null === self::$stored) {
+            $stored = get_option(self::OPTION, []);
+            self::$stored = is_array($stored) ? $stored : [];
+        }
 
-        return is_array($stored) ? $stored : [];
+        return self::$stored;
     }
 
     private static function hasCatalog(string $lang): bool

@@ -188,4 +188,44 @@ final class BotTextsTest extends TestCase
         self::assertSame('DA-TEXT', Language::run('da', static fn (): mixed => BotTexts::filter(self::BUTTON, self::BUTTON)));
         self::assertSame('Ota tehtävä', Language::run('fi', static fn (): mixed => BotTexts::filter('Ota tehtävä', self::BUTTON)));
     }
+
+    /**
+     * The filter runs on every __() of the plugin, so the stored option is
+     * read once per request (get_option() unserializes it on each call),
+     * and read again after it is written.
+     */
+    public function testTheStoredTextsAreReadOncePerRequest(): void
+    {
+        $reads = 0;
+        Functions\when('get_option')->alias(function (string $name, mixed $default = false) use (&$reads): mixed {
+            if (BotTexts::OPTION === $name) {
+                ++$reads;
+            }
+
+            return $this->options[$name] ?? $default;
+        });
+        $entry = static fn (string $text): array => [
+            self::BUTTON => ['texts' => ['en' => $text], 'manual' => ['en' => true]],
+        ];
+        $english = static fn (): mixed => Language::run(
+            'en',
+            static fn (): mixed => BotTexts::filter(self::BUTTON, self::BUTTON)
+        );
+        $this->options[BotTexts::OPTION] = $entry('Stored');
+
+        for ($i = 0; $i < 5; ++$i) {
+            BotTexts::filter('x', 'Some other text');
+            BotTexts::filter(self::BUTTON, self::BUTTON);
+        }
+
+        self::assertSame(1, $reads);
+        self::assertSame('Stored', $english());
+
+        // Written elsewhere: the update_option_ hook drops the copy.
+        $this->options[BotTexts::OPTION] = $entry('Newer');
+        BotTexts::forgetStored();
+
+        self::assertSame('Newer', $english());
+        self::assertSame(2, $reads);
+    }
 }
