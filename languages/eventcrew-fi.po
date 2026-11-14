@@ -11859,3 +11859,9 @@ msgstr "Tehtävät näytetään tässä järjestyksessä."
 #. roleorder1114
 msgid "The role is already there."
 msgstr "Rooli on jo siinä kohdassa."
+
+msgid "Post the next event card in the group now?"
+msgstr "Julkaistaanko seuraavan tapahtuman kortti ryhmässä nyt?"
+
+msgid "Next event card posted in the group."
+msgstr "Seuraavan tapahtuman kortti julkaistu ryhmässä."

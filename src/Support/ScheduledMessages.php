@@ -75,6 +75,7 @@ final class ScheduledMessages
         self::REMINDERS,
         self::OPEN_TASKS,
         self::BOARD,
+        self::CARD,
         self::NEWSLETTER,
         self::FOLLOWUP,
         self::MONTHLY,
@@ -232,8 +233,9 @@ final class ScheduledMessages
     {
         return match ($key) {
             self::REMINDERS => $this->reminders?->countNext() ?? 0,
-            self::OPEN_TASKS => $this->openTasks?->countForNextOpenDate() ?? 0,
+            self::OPEN_TASKS => $this->openTasks?->countForNextOpenDate(true) ?? 0,
             self::BOARD => $this->hasGroup() ? 1 : 0,
+            self::CARD => null !== $this->board && $this->board->canPostNextCard() ? 1 : 0,
             self::NEWSLETTER => $this->newsletter?->sendNowCount() ?? 0,
             self::FOLLOWUP => $this->followup?->sendNowCount() ?? 0,
             self::MONTHLY => $this->monthly?->recipientCount() ?? 0,
@@ -257,6 +259,10 @@ final class ScheduledMessages
             return __('Post the board in the group now?', 'eventcrew');
         }
 
+        if (self::CARD === $key) {
+            return __('Post the next event card in the group now?', 'eventcrew');
+        }
+
         return sprintf(
             /* translators: 1: the message's name, 2: how many people get it. */
             _n('Send "%1$s" now to %2$d person?', 'Send "%1$s" now to %2$d people?', $count, 'eventcrew'),
@@ -274,8 +280,9 @@ final class ScheduledMessages
     {
         return match ($key) {
             self::REMINDERS => $this->reminders?->sendNext() ?? 0,
-            self::OPEN_TASKS => $this->openTasks?->sendForNextOpenDate() ?? 0,
+            self::OPEN_TASKS => $this->openTasks?->sendForNextOpenDate(true) ?? 0,
             self::BOARD => $this->hasGroup() && null !== $this->board && $this->board->repost() ? 1 : 0,
+            self::CARD => null !== $this->board && $this->board->postNextCardNow() ? 1 : 0,
             self::NEWSLETTER => self::isOn($key) ? $this->newsletter?->sendNow() ?? 0 : 0,
             self::FOLLOWUP => self::isOn($key) ? $this->followup?->sendNow() ?? 0 : 0,
             self::MONTHLY => $this->monthly?->sendNow() ?? 0,
@@ -292,6 +299,10 @@ final class ScheduledMessages
 
         if (self::BOARD === $key) {
             return __('Board posted in the group.', 'eventcrew');
+        }
+
+        if (self::CARD === $key) {
+            return __('Next event card posted in the group.', 'eventcrew');
         }
 
         return sprintf(

@@ -104,11 +104,11 @@ final class OpenTaskCall
      * Sends for the nearest upcoming date that still has open slots. Returns
      * how many people were mailed (0 when nothing is open).
      */
-    public function sendForNextOpenDate(): int
+    public function sendForNextOpenDate(bool $again = false): int
     {
         foreach ($this->upcomingDates() as $date) {
             if ($this->hasOpenSlots($date)) {
-                return $this->sendForDate($date);
+                return $this->sendForDate($date, 0, $again);
             }
         }
 
@@ -119,18 +119,18 @@ final class OpenTaskCall
      * How many people sendForNextOpenDate() would tell now: the same
      * filters as sendForDate(), without sending.
      */
-    public function countForNextOpenDate(): int
+    public function countForNextOpenDate(bool $again = false): int
     {
         foreach ($this->upcomingDates() as $date) {
             if ($this->hasOpenSlots($date)) {
-                return $this->countForDate($date);
+                return $this->countForDate($date, $again);
             }
         }
 
         return 0;
     }
 
-    private function countForDate(string $date): int
+    private function countForDate(string $date, bool $again = false): int
     {
         $prefs = new NotificationPreferences();
         $count = 0;
@@ -138,7 +138,7 @@ final class OpenTaskCall
         foreach ($this->people->activeEmailRecipients() as $person) {
             if (
                 $this->hasOpenSlots($date, $person)
-                && ! $this->ledger->hasSent(self::KIND, $person->id, $date)
+                && ($again || ! $this->ledger->hasSent(self::KIND, $person->id, $date))
                 && (
                     $prefs->emailAllowed($person, NotificationPreferences::OPEN_TASK)
                     || $prefs->dmAllowed($person, NotificationPreferences::OPEN_TASK)
@@ -339,9 +339,10 @@ final class OpenTaskCall
      * $limit of them (0 means no cap - the manual button sends the lot). Crew
      * already working that day are included, since they may want a second,
      * non-overlapping slot; the ledger makes a capped or re-run send resume
-     * without doubling up.
+     * without doubling up. $again (an organizer's "Send now") sends also to
+     * those the call already reached for $date.
      */
-    public function sendForDate(string $date, int $limit = 0): int
+    public function sendForDate(string $date, int $limit = 0, bool $again = false): int
     {
         if (! $this->hasOpenSlots($date)) {
             return 0;
@@ -361,7 +362,7 @@ final class OpenTaskCall
                 continue;
             }
 
-            if ($this->ledger->hasSent(self::KIND, $person->id, $date)) {
+            if (! $again && $this->ledger->hasSent(self::KIND, $person->id, $date)) {
                 continue;
             }
 

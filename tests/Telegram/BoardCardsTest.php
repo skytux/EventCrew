@@ -356,6 +356,33 @@ final class BoardCardsTest extends TelegramTestCase
         self::assertSame([], $this->telegramCalls);
     }
 
+    /** Send now posts it whatever the hour, also when already posted (Owner 2026-11-14). */
+    public function testSendNowPostsThePictureAtOnceEvenWhenPostedAlready(): void
+    {
+        $this->partyEvent();
+        $this->storeDjText(100, 'DJ Anna plays swing.');
+        $this->options[BoardService::NEXT_CARD_OPTION] = ['event' => 100, 'day' => '', 'waited' => 0];
+        $this->at('2026-07-20', 23);
+        $this->wpdb->nextResults[] = $this->twoDays();
+
+        self::assertTrue($this->board()->canPostNextCard());
+
+        $this->queueAnnounce($this->twoDays());
+
+        self::assertTrue($this->board()->postNextCardNow());
+        self::assertSame(['sendPhoto'], $this->calledMethods());
+        self::assertSame(100, $this->options[BoardService::NEXT_CARD_OPTION]['event']);
+    }
+
+    public function testSendNowWithoutABoardChatPostsNothing(): void
+    {
+        $this->partyEvent();
+
+        self::assertFalse($this->board()->canPostNextCard());
+        self::assertFalse($this->board()->postNextCardNow());
+        self::assertSame([], $this->telegramCalls);
+    }
+
     public function testThePictureIsPostedAgainOnTheEventsMorningAndOnlyOnce(): void
     {
         $this->partyEvent();

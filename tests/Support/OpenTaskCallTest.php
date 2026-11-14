@@ -260,6 +260,20 @@ final class OpenTaskCallTest extends TestCase
         self::assertSame([], $this->mails);
     }
 
+    /** An organizer's Send now reaches those the call already reached (Owner 2026-11-14). */
+    public function testSendNowAgainMailsThoseAlreadyMailed(): void
+    {
+        $this->queueOpenDate();
+        $this->wpdb->nextResults[] = [$this->activePerson()];
+        $this->queueRecap();
+
+        $sent = $this->call()->sendForDate('2026-08-01', 0, true);
+
+        self::assertSame(1, $sent);
+        self::assertCount(1, $this->mails);
+        self::assertStringContainsString('ON DUPLICATE KEY UPDATE', $this->wpdb->lastQuery());
+    }
+
     public function testOneEmailCoversEveryDueDate(): void
     {
         // "now" is 2026-07-20 12:00. Two dates inside the 48h window would once

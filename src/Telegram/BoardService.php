@@ -631,6 +631,45 @@ final class BoardService
         return true;
     }
 
+    /** Whether postNextCardNow() has a group and a next event to post. */
+    public function canPostNextCard(): bool
+    {
+        return $this->telegram->isConfigured()
+            && 0 !== (int) ($this->board()['chat_id'] ?? 0)
+            && null !== $this->renderer->nextCardTarget();
+    }
+
+    /**
+     * Posts the next event's picture in the group now (the organizer's
+     * "Send now", Owner 2026-11-14), whatever the hour and whether it was
+     * posted already. Counts as that event's post for announceNextCard().
+     * Returns whether it was posted.
+     */
+    public function postNextCardNow(): bool
+    {
+        $chatId = (int) ($this->board()['chat_id'] ?? 0);
+
+        if (! $this->telegram->isConfigured() || 0 === $chatId) {
+            return false;
+        }
+
+        $target = $this->renderer->nextCardTarget();
+        $card = null === $target ? null : $this->renderCard();
+
+        if (null === $card || null === $this->postCard($chatId, $card)) {
+            return false;
+        }
+
+        $today = current_time('Y-m-d');
+        update_option(
+            self::NEXT_CARD_OPTION,
+            ['event' => $card['event'], 'day' => $target['date'] === $today ? $today : '', 'waited' => 0],
+            false
+        );
+
+        return true;
+    }
+
     /**
      * Forgets the photo message stored with the board before the picture was
      * posted on its own. With the card format on, the message stays in the

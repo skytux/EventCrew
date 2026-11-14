@@ -14781,3 +14781,9 @@ msgstr "Uppgifterna visas i den här ordningen."
 #. roleorder1114
 msgid "The role is already there."
 msgstr "Rollen är redan där."
+
+msgid "Post the next event card in the group now?"
+msgstr "Lägga upp nästa evenemangs kort i gruppen nu?"
+
+msgid "Next event card posted in the group."
+msgstr "Nästa evenemangs kort upplagt i gruppen."
