@@ -885,6 +885,26 @@ final class MessageTemplates
         ];
     }
 
+    /**
+     * Reads the stored option of every kind with one query, so stored() of
+     * each kind after it reads none: the Messages page lists them all, and
+     * one query per kind was most of its time.
+     */
+    public static function primeStored(): void
+    {
+        if (! function_exists('wp_prime_option_caches')) {
+            return;
+        }
+
+        $names = [];
+
+        foreach (array_keys(self::all()) as $id) {
+            $names[] = self::OPTION_PREFIX . $id;
+        }
+
+        wp_prime_option_caches($names);
+    }
+
     /** Whether the subject or the text of $id was changed from the built-in one. */
     public static function isChanged(string $id): bool
     {

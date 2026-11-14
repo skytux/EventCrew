@@ -317,22 +317,29 @@ final class MessagesPage
     public static function entries(): array
     {
         $entries = [];
+        // The stored texts of every kind with one query, not one each.
+        MessageTemplates::primeStored();
 
         foreach (MessageTemplates::all() as $id => $template) {
+            $stored = MessageTemplates::stored($id);
+            $subject = $stored[MessageTemplates::SUBJECT];
+            $body = $stored[MessageTemplates::BODY];
             $entries[] = [
                 'id' => $id,
                 'label' => $template->label,
                 'channel' => $template->channel,
                 'description' => $template->description,
                 'wired' => $template->wired,
-                'changed' => MessageTemplates::isChanged($id),
-                'subject' => $template->hasSubject() ? MessageTemplates::value($id, MessageTemplates::SUBJECT) : null,
-                'body' => MessageTemplates::value($id, MessageTemplates::BODY),
+                'changed' => null !== $subject || null !== $body,
+                'subject' => $template->hasSubject()
+                    ? $subject ?? MessageTemplates::defaultValue($id, MessageTemplates::SUBJECT)
+                    : null,
+                'body' => $body ?? MessageTemplates::defaultValue($id, MessageTemplates::BODY),
                 'placeholders' => $template->placeholderList(),
                 'required' => $template->requiredPlaceholders(),
                 'formatting' => self::formatting($template->channel),
                 'template' => $template,
-                'settings' => MessageTemplates::settings($id),
+                'settings' => $stored['settings'],
             ];
         }
 
