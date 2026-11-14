@@ -912,7 +912,6 @@ final class AssistantService implements WebAssistant
                 . ' date) and sent its answer. Use it to understand what'
                 . ' the person refers to, like "that one" or "and on Sunday?". When the FACTS and the'
                 . ' conversation disagree, the FACTS are right: they are newer.';
-            $lines[] = '- Do not say how long you remember the chat unless the person asks.';
 
             if ($web) {
                 $lines = [...$lines, ...self::webLines((bool) $audience['organizer'])];
