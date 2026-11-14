@@ -259,8 +259,14 @@ final class AssistantWebPeople
                 }
 
                 $code = ! empty($state['add'])
-                    ? $this->admin->saveRoles($personId, [$slug], [], $organizer->name())
-                    : $this->admin->saveRoles($personId, null, array_values(array_diff($person->roleSlugs, [$slug])), $organizer->name());
+                    ? $this->admin->saveRoles($personId, [$slug], [], $organizer->name(), $organizer->id)
+                    : $this->admin->saveRoles(
+                        $personId,
+                        null,
+                        array_values(array_diff($person->roleSlugs, [$slug])),
+                        $organizer->name(),
+                        $organizer->id
+                    );
 
                 return ['changed' => 'admin_roles_saved' === $code, 'text' => CrewAdminController::noticeText($code)];
 

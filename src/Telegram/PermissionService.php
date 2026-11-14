@@ -17,9 +17,10 @@ use EventCrew\Support\OrganizerSync;
  * The organizer's permission tools from Telegram, the 🏷 and ✅ buttons under /people.
  *
  * 🏷 Roles, organizers and passes manages one person's roles: a
- * one-time at-risk pass (sign up once despite being at risk), organizer, and
- * each role set to "Only people with this role" in Settings > Roles (DJ, VJ,
- * Crew leader, ...). The flow mirrors 🎁 Give credits and 🔁 Take over a task: ask who, send a name
+ * one-time at-risk pass (sign up once despite being at risk), and each role
+ * set to "Only people with this role" or with Admin access in Settings >
+ * Roles (Organize, DJ, VJ, Crew leader, ...): Organize is what makes an
+ * organizer. The flow mirrors 🎁 Give credits and 🔁 Take over a task: ask who, send a name
  * or @mention, then one message per match with a button per role; a check mark
  * shows what the person has, and a tap switches it on or off. ✅ Who may hold
  * each role lists, for each role with conditions, who
@@ -239,8 +240,10 @@ final class PermissionService
     }
 
     /**
-     * One person's role buttons, two to a row: the one-time pass, organizer,
-     * then every active restricted role.
+     * One person's role buttons, two to a row: the one-time pass, then every
+     * role a person can be given (Roles::assignable(), Organize among them, so
+     * it is set like the others; the old ⭐ Organizer button is gone, its
+     * perm:admin taps on older messages still work).
      *
      * @return array<string, mixed>
      */
@@ -252,10 +255,6 @@ final class PermissionService
             [
                 'text' => $mark($person->hasAtRiskPass) . '🎟 ' . __('Give a one-time pass', 'eventcrew'),
                 'callback_data' => $prefix . 'pass:' . $person->id,
-            ],
-            [
-                'text' => $mark($person->isOrganizer) . '⭐ ' . __('Organizer', 'eventcrew'),
-                'callback_data' => $prefix . 'admin:' . $person->id,
             ],
         ];
 
@@ -337,7 +336,7 @@ final class PermissionService
 
         // What is given fires its hook, and AccessNotifier tells the person.
         $answer = 'role' === $action
-            ? $this->toggleRole($person, $slug, $organizer->name())
+            ? $this->toggleRole($person, $slug, $organizer->name(), $organizer->id)
             : $this->apply($action, $person, $organizer->name());
         $this->telegram->answerCallbackQuery($callbackId, $answer);
         $this->refreshMenu($callbackQuery, $person->id);
@@ -367,11 +366,12 @@ final class PermissionService
     }
 
     /**
-     * Gives or takes away one restricted role (DJ, VJ, ...). Only active
-     * restricted roles are accepted, the ones the buttons offer. Returns the
-     * organizer's confirmation.
+     * Gives or takes away one role (Organize, DJ, VJ, ...). Only the roles
+     * the buttons offer are accepted (Roles::assignable()). Taking one never
+     * leaves no organizer, and never takes the tapping organizer's ($actorId)
+     * own rights. Returns the organizer's confirmation.
      */
-    private function toggleRole(Person $person, string $slug, string $giverName): string
+    private function toggleRole(Person $person, string $slug, string $giverName, int $actorId = 0): string
     {
         if (! in_array($slug, array_column(Roles::assignable(), 'slug'), true)) {
             return __('That role is no longer offered.', 'eventcrew');
@@ -381,6 +381,10 @@ final class PermissionService
 
         if ($person->hasRole($slug)) {
             $left = array_values(array_diff($person->roleSlugs, [$slug]));
+
+            if (OrganizerSync::selfWouldLose($actorId, $person->id, $person->isOrganizer, $left)) {
+                return __('Nothing was changed: you cannot take away your own organizer flag.', 'eventcrew');
+            }
 
             if (OrganizerSync::personWouldLeaveNone($person->id, $person->isOrganizer, $left)) {
                 return self::lockoutText();

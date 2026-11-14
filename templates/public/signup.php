@@ -1659,9 +1659,6 @@ $eventcrew_live = null === $eventcrew_person ? '' : (string) wp_json_encode([
                             <span><?php echo $eventcrew_edit_person->isEmailVerified() ? esc_html((string) $eventcrew_edit_person->emailVerifiedAt) : esc_html__('Not yet', 'eventcrew'); ?></span></li>
                         <li><span><?php esc_html_e('Telegram linked', 'eventcrew'); ?></span>
                             <span><?php echo $eventcrew_edit_person->hasTelegram() ? esc_html__('Yes', 'eventcrew') : esc_html__('No', 'eventcrew'); ?></span></li>
-                        <?php if ($eventcrew_edit_person->isOrganizer) : ?>
-                            <li><span><?php esc_html_e('Organizer', 'eventcrew'); ?></span> <span><?php esc_html_e('Yes', 'eventcrew'); ?></span></li>
-                        <?php endif; ?>
                         <li><span><?php esc_html_e('Standing', 'eventcrew'); ?></span>
                             <span<?php echo $eventcrew_editing['at_risk'] ? ' class="eventcrew-admin-at-risk"' : ''; ?>><?php echo esc_html($eventcrew_editing['standing']); ?></span></li>
                         <li><span><?php esc_html_e('Free-entry credits', 'eventcrew'); ?></span> <span><?php echo esc_html((string) $eventcrew_editing['credits'] . \EventCrew\Support\ExtraTaskCredits::pendingSuffix((int) ($eventcrew_editing['pending'] ?? 0))); ?></span></li>
@@ -1691,29 +1688,16 @@ $eventcrew_live = null === $eventcrew_person ? '' : (string) wp_json_encode([
                         <?php echo $eventcrew_person_form; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped when built above. ?>
                     </div>
                     <?php
-                    // The organizer flag and Delete, as links: never for the
-                    // organizer themselves (the server refuses those too).
+                    // Delete, as a link: never for the organizer themselves
+                    // (the server refuses it too). Organizer rights are the
+                    // Organize role, ticked in the form above.
                     ?>
-                    <?php if (isset($eventcrew_admin['organizer_action'], $eventcrew_admin['person_remove_action']) && $eventcrew_edit_person->id !== (null === $eventcrew_person ? 0 : $eventcrew_person->id)) : ?>
+                    <?php if (isset($eventcrew_admin['person_remove_action']) && $eventcrew_edit_person->id !== (null === $eventcrew_person ? 0 : $eventcrew_person->id)) : ?>
                         <?php
-                        $eventcrew_organizer_ask = $eventcrew_edit_person->isOrganizer
-                            /* translators: %s: person's name */
-                            ? __('Remove %s as an organizer? They lose the Admin tab and the organizer commands.', 'eventcrew')
-                            /* translators: %s: person's name */
-                            : __('Make %s an organizer? They get the Admin tab and the organizer commands.', 'eventcrew');
                         /* translators: %s: person's name */
                         $eventcrew_delete_ask = __('Delete %s and their whole task history? This cannot be undone.', 'eventcrew');
                         ?>
                         <div class="eventcrew-card-body eventcrew-me-actions">
-                            <form class="eventcrew-inline-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
-                                onsubmit="return confirm('<?php echo esc_js(sprintf($eventcrew_organizer_ask, $eventcrew_edit_person->name())); ?>');">
-                                <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['organizer_action']); ?>">
-                                <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
-                                <input type="hidden" name="redirect_to" value="<?php echo esc_attr($eventcrew_people_back); ?>">
-                                <input type="hidden" name="person_id" value="<?php echo esc_attr((string) $eventcrew_edit_person->id); ?>">
-                                <input type="hidden" name="organizer" value="<?php echo $eventcrew_edit_person->isOrganizer ? '0' : '1'; ?>">
-                                <button type="submit" class="eventcrew-textlink"><?php $eventcrew_edit_person->isOrganizer ? esc_html_e('Remove as organizer', 'eventcrew') : esc_html_e('Make organizer', 'eventcrew'); ?></button>
-                            </form>
                             <form class="eventcrew-inline-form" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>"
                                 onsubmit="return confirm('<?php echo esc_js(sprintf($eventcrew_delete_ask, $eventcrew_edit_person->name())); ?>');">
                                 <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['person_remove_action']); ?>">

@@ -205,6 +205,19 @@ final class OrganizerSync
     }
 
     /**
+     * Whether giving person $personId the roles $slugs would take organizer
+     * rights from the organizer making the change ($actorId): nobody takes
+     * away their own, as the old "Remove as organizer" link never allowed.
+     * $actorId 0 (wp-admin, the system) is never refused.
+     *
+     * @param array<int, string> $slugs
+     */
+    public static function selfWouldLose(int $actorId, int $personId, bool $isOrganizer, array $slugs): bool
+    {
+        return $actorId > 0 && $actorId === $personId && $isOrganizer && ! self::holdsAdmin($slugs);
+    }
+
+    /**
      * Every person's id, roles, organizer copy and anonymised mark.
      *
      * @return list<array{id: int, slugs: list<string>, is_organizer: int, anonymized_at: ?string}>

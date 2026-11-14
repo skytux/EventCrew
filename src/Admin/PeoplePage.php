@@ -206,7 +206,6 @@ final class PeoplePage
             ? sanitize_text_field(wp_unslash($_POST['display_name']))
             : '';
         $notes = isset($_POST['notes']) ? sanitize_textarea_field(wp_unslash($_POST['notes'])) : '';
-        $isOrganizer = isset($_POST['is_organizer']) && '1' === (string) $_POST['is_organizer'];
         $ticked = isset($_POST['roles']) && is_array($_POST['roles'])
             ? array_map('sanitize_key', wp_unslash($_POST['roles']))
             : [];
@@ -234,15 +233,9 @@ final class PeoplePage
         $before = $previous?->roleSlugs ?? [];
         $roles = $this->rolesAfterSave($id, $ticked);
 
-        // The Organizer tick gives Organize; unticking it takes every role
-        // with Admin access. Left unticked for someone who was no organizer,
-        // a ticked role with Admin access still makes them one.
-        if ($isOrganizer) {
-            $roles = OrganizerSync::withAdmin($roles);
-        } elseif ((bool) $previous?->isOrganizer) {
-            $roles = OrganizerSync::withoutAdmin($roles);
-        }
-
+        // Organize is one of the role ticks: holding it, or another role
+        // with Admin access, is what makes an organizer. No save may leave
+        // the site without one.
         if (
             null !== $previous
             && OrganizerSync::personWouldLeaveNone($id, $previous->isOrganizer, $roles)
@@ -290,7 +283,8 @@ final class PeoplePage
 
     /**
      * The person's roles once the form's role checkboxes are applied. Only the
-     * roles the form shows (the active "Only people with this role" roles) are
+     * roles the form shows (Roles::assignable(): the active "Only people with
+     * this role" roles and those with Admin access, Organize among them) are
      * changed; a role that is not shown, such as an archived one, is kept.
      *
      * @param array<int, string> $ticked

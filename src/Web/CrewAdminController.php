@@ -305,7 +305,8 @@ final class CrewAdminController
                 sanitize_text_field((string) ($post['display_name'] ?? '')),
                 sanitize_textarea_field((string) ($post['notes'] ?? '')),
                 is_array($post['roles'] ?? null) ? array_map('sanitize_key', array_map('strval', $post['roles'])) : [],
-                $organizer->name()
+                $organizer->name(),
+                $organizer->id
             ),
             self::PASS_ACTION => $this->peopleScreen->grantPass((int) ($post['person_id'] ?? 0)),
             self::UNBAN_ACTION => $this->peopleScreen->unban((int) ($post['person_id'] ?? 0)),
@@ -360,7 +361,8 @@ final class CrewAdminController
                 (int) ($post['person_id'] ?? 0),
                 isset($post['add_role']) ? [sanitize_key((string) $post['add_role'])] : null,
                 is_array($post['roles'] ?? null) ? array_map('sanitize_key', array_map('strval', $post['roles'])) : [],
-                $organizer->name()
+                $organizer->name(),
+                $organizer->id
             ),
             self::ADD_ACTION => $this->addPerson(
                 $organizer,
@@ -676,12 +678,14 @@ final class CrewAdminController
      * role" form); null means $roles is the member's full new set of
      * restricted roles (the checkboxes). Only active restricted roles are
      * written; a role the member holds that is archived or no longer
-     * restricted is kept as it is, since the page did not show it.
+     * restricted is kept as it is, since the page did not show it. Organize
+     * is one of them: taking it (or the last Admin access role) never leaves
+     * the team without an organizer, and never from $actorId themselves.
      *
      * @param list<string>|null $add
      * @param list<string> $roles
      */
-    public function saveRoles(int $personId, ?array $add, array $roles, string $giverName = ''): string
+    public function saveRoles(int $personId, ?array $add, array $roles, string $giverName = '', int $actorId = 0): string
     {
         $member = $personId > 0 ? $this->people->find($personId) : null;
 
@@ -696,7 +700,12 @@ final class CrewAdminController
         $roles = array_merge($kept, array_intersect($chosen, $shown));
 
         // A role with Admin access taken here can leave the team without an
-        // organizer (OrganizerSync).
+        // organizer, or the organizer acting without their own rights
+        // (OrganizerSync).
+        if (OrganizerSync::selfWouldLose($actorId, $member->id, $member->isOrganizer, $roles)) {
+            return 'admin_organizer_self';
+        }
+
         if (OrganizerSync::personWouldLeaveNone($member->id, $member->isOrganizer, $roles)) {
             return 'admin_last_organizer';
         }
@@ -947,8 +956,8 @@ final class CrewAdminController
     }
 
     /**
-     * The restricted roles a member can be given here, slug => label. Organize
-     * is not one: it is the organizer flag, which has its own action.
+     * The roles a member can be given here, slug => label: the restricted
+     * ones and those with Admin access, Organize among them (Roles::assignable()).
      *
      * @return array<string, string>
      */

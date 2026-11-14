@@ -23,11 +23,12 @@ use EventCrew\Support\ExtraTaskCredits;
  * (email, name, roles, notes), the one-time sign-up pass, Unban, the
  * person's credit log, the organizer flag and deleting a person.
  *
- * The save never writes is_organizer, whatever the request holds: the flag
- * has its own action, setOrganizer(), which does what the bot's /people
- * does. remove() is wp-admin's Delete (PersonEraser::erase()). Neither lets
- * an organizer act on themselves, and neither leaves the team with no
- * organizer.
+ * The save never writes is_organizer, whatever the request holds: organizer
+ * rights are the Organize role (or another with Admin access), ticked with
+ * the other roles. setOrganizer() stays for the helper's /organizer and for
+ * pages opened before the roles took over. remove() is wp-admin's Delete
+ * (PersonEraser::erase()). None lets an organizer take their own rights or
+ * delete themselves, and none leaves the team with no organizer.
  *
  * CrewAdminController guards every action (session, organizer flag, CSRF,
  * POST only) before it calls a method here. The methods only check their own
@@ -103,9 +104,9 @@ final class CrewAdminPeople
     }
 
     /**
-     * "Add person" ($personId 0) or "Update person": the wp-admin save, without
-     * the organizer flag. Email is required and must not belong to anyone
-     * else. Only the active restricted roles are changed; a role not shown,
+     * "Add person" ($personId 0) or "Update person": the wp-admin save. Email
+     * is required and must not belong to anyone else. Only the roles shown
+     * (Roles::assignable(), Organize among them) are changed; a role not shown,
      * such as an archived one, is kept. A new person is left unverified, as in
      * wp-admin: typing someone's address is not that person confirming it.
      *
@@ -117,7 +118,8 @@ final class CrewAdminPeople
         string $name,
         string $notes,
         array $ticked,
-        string $giverName = ''
+        string $giverName = '',
+        int $actorId = 0
     ): string {
         if ($personId < 0) {
             return 'admin_no_person';
@@ -147,9 +149,13 @@ final class CrewAdminPeople
         $kept = null === $before ? [] : array_diff($before->roleSlugs, $shown);
         $roles = array_values(array_merge($kept, array_intersect($shown, $ticked)));
 
-        // A role with Admin access ticked or unticked here can change who is
-        // an organizer, so the lockout guard applies (Organize itself is not
-        // on the form: it has its own action, setOrganizer()).
+        // Organize, or another role with Admin access, ticked or unticked
+        // here changes who is an organizer, so the lockout guard applies:
+        // never the organizer's own rights, never the last organizer.
+        if (null !== $before && OrganizerSync::selfWouldLose($actorId, $before->id, $before->isOrganizer, $roles)) {
+            return 'admin_organizer_self';
+        }
+
         if (null !== $before && OrganizerSync::personWouldLeaveNone($before->id, $before->isOrganizer, $roles)) {
             return 'admin_last_organizer';
         }

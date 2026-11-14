@@ -119,8 +119,9 @@ final class PeoplePageTest extends TestCase
     }
 
     /**
-     * Saves an edit of person 8, an organizer before the save, and returns the
-     * actions fired.
+     * Saves an edit of person 8, an organizer before the save unless
+     * $wasOrganizer is false, with Organize ticked when $stillOrganizer, and
+     * returns the actions fired.
      *
      * @return array<int, array{0: string, 1: array<int, mixed>}>
      */
@@ -139,7 +140,11 @@ final class PeoplePageTest extends TestCase
 
         $_POST = ['person_id' => '8', 'email' => 'anna@example.com', 'display_name' => 'Anna'];
 
+        // Organize is one of the role ticks (Owner 2026-11-14); the old
+        // is_organizer field is gone and ignored.
         if ($stillOrganizer) {
+            $_POST['roles'] = [Roles::ORGANIZE_SLUG];
+        } else {
             $_POST['is_organizer'] = '1';
         }
 
@@ -158,11 +163,12 @@ final class PeoplePageTest extends TestCase
         return $fired;
     }
 
-    public function testUntickingOrganizerAsksForANewCommandMenu(): void
+    public function testUntickingOrganizeAsksForANewCommandMenu(): void
     {
         $fired = $this->editOrganizer(false);
 
         self::assertContains([\EventCrew\Telegram\CommandMenu::ORGANIZER_CHANGED_HOOK, [8]], $fired);
+        self::assertSame(0, $this->wpdb->updates[0]['data']['is_organizer']);
     }
 
     /**
