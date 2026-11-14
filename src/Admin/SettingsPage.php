@@ -94,8 +94,11 @@ final class SettingsPage
     /** The language-model helper's Test connection and Remove key links. */
     private const ASSISTANT_NONCE_ACTION = 'eventcrew_assistant';
 
-    /** The Roles tab's ↑ / ↓ links (moveRole()). */
-    private const ROLE_ORDER_NONCE_ACTION = 'eventcrew_role_order';
+    /** The Roles tab's ↑ / ↓ links (moveRole()) and its drag and drop (saveRoleOrder()). */
+    public const ROLE_ORDER_NONCE_ACTION = 'eventcrew_role_order';
+
+    /** admin-ajax action of the Roles tab's drag and drop (saveRoleOrder()). */
+    public const ROLE_ORDER_SAVE_ACTION = 'eventcrew_role_order_save';
 
     /** How many published pages the page choice lists. */
     private const ASSISTANT_PAGE_CHOICES = 100;
@@ -160,6 +163,11 @@ final class SettingsPage
             [
                 'roles' => Roles::all(),
                 'role_move_urls' => self::roleMoveUrls(),
+                'role_order_save' => [
+                    'url' => admin_url('admin-ajax.php'),
+                    'action' => self::ROLE_ORDER_SAVE_ACTION,
+                    'nonce' => wp_create_nonce(self::ROLE_ORDER_NONCE_ACTION),
+                ],
                 'guide_url' => Roles::guideUrl(),
                 'nonce_action' => self::NONCE_ACTION,
                 'eventmesh_available' => EventSource::isAvailable(),
@@ -335,6 +343,35 @@ final class SettingsPage
             self::PAGE_SLUG,
             Roles::move($slug, $where) ? __('Role order saved.', 'eventcrew') : __('The role is already there.', 'eventcrew')
         );
+    }
+
+    /**
+     * admin-ajax: the Roles tab's drag and drop, the whole role order in one
+     * request (Roles::setOrder()). order[] is every role's slug in the new
+     * order; anything but exactly the current roles is refused. Answers JSON
+     * with the notice and stays on the page.
+     */
+    public function saveRoleOrder(): never
+    {
+        if (! current_user_can(Admin::CAPABILITY)) {
+            wp_send_json_error(['notice' => __('You do not have permission to do this.', 'eventcrew')], 403);
+        }
+
+        check_ajax_referer(self::ROLE_ORDER_NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- checked by check_ajax_referer() above.
+        $posted = isset($_POST['order']) && is_array($_POST['order'])
+            ? array_map('sanitize_key', array_map('strval', wp_unslash($_POST['order'])))
+            : [];
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        $result = Roles::setOrder(array_values($posted));
+
+        if (Roles::ORDER_BAD === $result) {
+            wp_send_json_error(['notice' => __('The roles changed meanwhile. Reload the page and try again.', 'eventcrew')]);
+        }
+
+        wp_send_json_success(['notice' => __('Role order saved.', 'eventcrew')]);
     }
 
     public static function hybridView(): array

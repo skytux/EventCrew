@@ -665,6 +665,53 @@ final class Roles
         return true;
     }
 
+    /** setOrder()'s answers. */
+    public const ORDER_SAVED = 'saved';
+    public const ORDER_SAME = 'same';
+    public const ORDER_BAD = 'bad';
+
+    /**
+     * Puts the roles in the order given, all at once: the drag and drop on
+     * the Crew app and the Settings page, and "/roleorder role role role…".
+     * $slugs must be every role's slug exactly once, archived ones included,
+     * or nothing changes, so a list from a page opened before somebody added
+     * a role cannot drop it.
+     *
+     * @param list<string> $slugs
+     * @return string ORDER_SAVED, ORDER_SAME (already in that order) or
+     *                ORDER_BAD (not exactly the current roles).
+     */
+    public static function setOrder(array $slugs): string
+    {
+        $roles = [];
+
+        foreach (self::all() as $role) {
+            $roles[$role['slug']] = $role;
+        }
+
+        $slugs = array_values(array_map('strval', $slugs));
+        $sorted = $slugs;
+        $current = array_map('strval', array_keys($roles));
+        sort($sorted);
+        $expected = $current;
+        sort($expected);
+
+        if ($sorted !== $expected) {
+            return self::ORDER_BAD;
+        }
+
+        if ($slugs === $current) {
+            return self::ORDER_SAME;
+        }
+
+        update_option(
+            self::OPTION_NAME,
+            array_map(static fn (string $slug): array => self::forStorage($roles[$slug]), $slugs)
+        );
+
+        return self::ORDER_SAVED;
+    }
+
     /**
      * The role order as one line per role, for the bot's /roleorder and the
      * helper: "1. 🎈 Decorate (decorate)", archived ones marked.

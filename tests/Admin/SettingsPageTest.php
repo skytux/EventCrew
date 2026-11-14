@@ -64,6 +64,92 @@ final class SettingsPageTest extends TelegramTestCase
         return $notice;
     }
 
+    /**
+     * Runs the Roles tab's drag and drop save (admin-ajax), which ends in a
+     * JSON answer, and returns it as ['success' => bool, 'data' => …].
+     *
+     * @param list<string> $order
+     * @return array{success: bool, data: mixed}
+     */
+    private function saveOrder(array $order, bool $allowed = true, bool $nonceOk = true): array
+    {
+        $answer = null;
+        \Brain\Monkey\Functions\when('current_user_can')->justReturn($allowed);
+        \Brain\Monkey\Functions\when('check_ajax_referer')->alias(static function (string $action) use ($nonceOk): int {
+            self::assertSame(SettingsPage::ROLE_ORDER_NONCE_ACTION, $action);
+            if (! $nonceOk) {
+                throw new \RuntimeException('bad nonce');
+            }
+            return 1;
+        });
+        \Brain\Monkey\Functions\when('wp_unslash')->returnArg(1);
+        foreach (['wp_send_json_success' => true, 'wp_send_json_error' => false] as $function => $success) {
+            \Brain\Monkey\Functions\when($function)->alias(static function (mixed $data = null) use ($success, &$answer): never {
+                $answer = ['success' => $success, 'data' => $data];
+                throw new \RuntimeException('answered');
+            });
+        }
+
+        $_POST = ['order' => $order];
+
+        try {
+            $this->page()->saveRoleOrder();
+        } catch (\RuntimeException $e) {
+            if ('answered' !== $e->getMessage()) {
+                return ['success' => false, 'data' => $e->getMessage()];
+            }
+        }
+
+        self::assertNotNull($answer);
+
+        return $answer;
+    }
+
+    /** The Roles tab's drag and drop saves the whole order in one request. */
+    public function testTheRoleOrderIsSavedWholeFromTheDragAndDrop(): void
+    {
+        \EventCrew\Support\Roles::save(\EventCrew\Support\Roles::defaults());
+        $order = [\EventCrew\Support\Roles::ORGANIZE_SLUG, 'welcome', 'clean', 'decorate'];
+
+        $answer = $this->saveOrder($order);
+
+        self::assertTrue($answer['success']);
+        self::assertSame(['notice' => 'Role order saved.'], $answer['data']);
+        self::assertSame($order, array_column($this->options[\EventCrew\Support\Roles::OPTION_NAME], 'slug'));
+    }
+
+    /** A list that is not exactly the current roles is refused; the order stays. */
+    public function testARoleOrderWithTheWrongRolesIsRefused(): void
+    {
+        \EventCrew\Support\Roles::save(\EventCrew\Support\Roles::defaults());
+        $before = $this->options[\EventCrew\Support\Roles::OPTION_NAME];
+
+        foreach ([['welcome', 'clean', 'decorate'], ['organize', 'welcome', 'clean', 'clean'], ['organize', 'welcome', 'clean', 'decorate', 'x']] as $order) {
+            $answer = $this->saveOrder($order);
+
+            self::assertFalse($answer['success']);
+            self::assertSame(['notice' => 'The roles changed meanwhile. Reload the page and try again.'], $answer['data']);
+        }
+
+        self::assertSame($before, $this->options[\EventCrew\Support\Roles::OPTION_NAME]);
+    }
+
+    /** Without the capability or a good nonce nothing is saved. */
+    public function testARoleOrderNeedsTheCapabilityAndTheNonce(): void
+    {
+        \EventCrew\Support\Roles::save(\EventCrew\Support\Roles::defaults());
+        $before = $this->options[\EventCrew\Support\Roles::OPTION_NAME];
+        $order = [\EventCrew\Support\Roles::ORGANIZE_SLUG, 'welcome', 'clean', 'decorate'];
+
+        $denied = $this->saveOrder($order, false);
+        self::assertFalse($denied['success']);
+        self::assertSame($before, $this->options[\EventCrew\Support\Roles::OPTION_NAME]);
+
+        $forged = $this->saveOrder($order, true, false);
+        self::assertSame(['success' => false, 'data' => 'bad nonce'], $forged);
+        self::assertSame($before, $this->options[\EventCrew\Support\Roles::OPTION_NAME]);
+    }
+
     public function testPostTheBoardQueuesARepostAndTheJobPostsIt(): void
     {
         $this->options[\EventCrew\Telegram\BoardService::BOARD_OPTION] = ['chat_id' => -100, 'message_id' => 5];
@@ -1179,6 +1265,7 @@ final class SettingsPageTest extends TelegramTestCase
         \Brain\Monkey\Functions\when('wp_nonce_url')->alias(
             static fn (string $url): string => $url . '&_wpnonce=nonce'
         );
+        \Brain\Monkey\Functions\when('wp_create_nonce')->justReturn('nonce');
         \Brain\Monkey\Functions\when('post_type_exists')->justReturn(false);
         // wp_date and wp_enqueue_media stay undefined: code elsewhere asks
         // function_exists() for them, and a stub here would leak into later tests.

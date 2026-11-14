@@ -286,6 +286,35 @@ final class AssistantWebAdminTest extends TelegramTestCase
         self::assertArrayNotHasKey('ran', $this->admin()->prepare(self::me(), AssistantWebAdmin::ROLE_ORDER, 'door sideways'));
     }
 
+    /**
+     * "/roleorder role role role…" sets the whole order in one go, as the
+     * Crew app's drag and drop does; a list missing a role changes nothing.
+     */
+    public function testTheWholeRoleOrderIsSetAtOnce(): void
+    {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'bar', 'label' => 'Bar'],
+            ['slug' => 'door', 'label' => 'Door'],
+        ];
+
+        $done = $this->admin()->prepare(self::me(), AssistantWebAdmin::ROLE_ORDER, 'organize door bar');
+
+        self::assertFalse($done['ok']);
+        self::assertTrue($done['ran']);
+        self::assertTrue($done['changed']);
+        self::assertSame([Roles::ORGANIZE_SLUG, 'door', 'bar'], array_column($this->options[Roles::OPTION_NAME], 'slug'));
+        self::assertStringStartsWith("Role order saved.\n1. ", $done['text']);
+
+        $same = $this->admin()->prepare(self::me(), AssistantWebAdmin::ROLE_ORDER, 'organize Door bar');
+        self::assertTrue($same['ran']);
+        self::assertFalse($same['changed']);
+
+        $missing = $this->admin()->prepare(self::me(), AssistantWebAdmin::ROLE_ORDER, 'bar door');
+        self::assertArrayNotHasKey('ran', $missing);
+        self::assertStringStartsWith('Give every role once', $missing['text']);
+        self::assertSame([Roles::ORGANIZE_SLUG, 'door', 'bar'], array_column($this->options[Roles::OPTION_NAME], 'slug'));
+    }
+
     public function testAnAiTextIsFoundByDateAndNameAndAsked(): void
     {
         $this->options = self::aiTextOptions(['reminder'], 42, ['reminder' => ['en' => 'See you!', 'fi' => 'Nähdään!']]);

@@ -791,6 +791,19 @@
 .eventcrew-signup .eventcrew-role-order ol { margin: .25em 0 0 1.5em; padding: 0; }
 .eventcrew-signup .eventcrew-role-order li { margin: .15em 0; }
 .eventcrew-signup .eventcrew-role-order .eventcrew-textlink { padding: 0 .4em; min-height: 0; }
+/* The ☰ handle drags a role (assets/eventcrew-role-order.js); only it stops the page from scrolling under a finger. */
+.eventcrew-signup .eventcrew-role-order li { border-radius: 4px; }
+.eventcrew-signup .eventcrew-role-order .is-dragdrop [data-eventcrew-role-arrow] { display: none; }
+.eventcrew-signup .eventcrew-role-order .eventcrew-role-handle {
+    display: inline-block; margin: 0 .35em 0 0; padding: .2em .55em; min-height: 0;
+    background: none; border: 0; color: inherit; font: inherit; line-height: 1.4;
+    cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.eventcrew-signup .eventcrew-role-order .eventcrew-role-handle[hidden] { display: none; }
+.eventcrew-signup .eventcrew-role-order .is-dragging { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+.eventcrew-signup .eventcrew-role-order li.is-dragging { background: rgba(127, 127, 127, .2); }
+.eventcrew-signup .eventcrew-role-order .is-saving { opacity: .6; }
+.eventcrew-signup .eventcrew-role-order-status.is-error { color: #b32d2e; }
 .eventcrew-signup .eventcrew-me-actions .eventcrew-inline-form { align-self: center; }
 .eventcrew-signup .eventcrew-admin-scheduled-group + .eventcrew-admin-scheduled-group { margin-top: .9em; }
 .eventcrew-signup .eventcrew-admin-scheduled-channel {

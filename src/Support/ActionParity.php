@@ -488,7 +488,7 @@ final class ActionParity
                 '/editrole Bar ; people 3'
             ),
             'role_order' => self::change(
-                'Admin > Roles: Role order ↑ / ↓',
+                'Admin > Roles: Role order ↑ / ↓ and drag and drop (/roleorder role role role…)',
                 'CrewAdminController::ROLE_ORDER_ACTION',
                 self::ORGANIZER,
                 ['/roleorder'],

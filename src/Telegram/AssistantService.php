@@ -901,7 +901,8 @@ final class AssistantService implements WebAssistant
                 . ' settings (/editrole), the post-event email\'s do-not-send list (/optout) and the AI texts of'
                 . ' the coming events (/aitext), and the scheduled messages on or off or sent once now'
                 . ' (/scheduled name on|off|send). The role order, which sets the order of every night\'s tasks,'
-                . ' moves at once with no confirm (/roleorder role up|down|first|last; alone it lists the order).'
+                . ' moves at once with no confirm (/roleorder role up|down|first|last, or every role once in the'
+                . ' new order: /roleorder role role role…; alone it lists the order).'
                 . ' A language change is menu:language with the code.';
         }
 
@@ -1062,7 +1063,8 @@ final class AssistantService implements WebAssistant
                 . ' (/editperson), changing a role\'s settings (/editrole), the post-event email\'s do-not-send'
                 . ' list (/optout add or remove), an event\'s AI text (/aitext) and a scheduled message switched'
                 . ' on or off or sent once now (/scheduled name on|off|send). A role moved in the role order'
-                . ' (/roleorder role up|down|first|last) moves at once, with no Confirm. /optout, /aitext,'
+                . ' (/roleorder role up|down|first|last), or set in one go (/roleorder role role role…, every'
+                . ' role once), changes at once, with no Confirm. /optout, /aitext,'
                 . ' /scheduled and /roleorder alone open their Admin card.';
         }
 

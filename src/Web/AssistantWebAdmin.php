@@ -391,7 +391,8 @@ final class AssistantWebAdmin
     /**
      * "/roleorder <role> up|down|first|last": moved at once, with no Confirm
      * (easy to undo, sends nothing), answered with the new order. Alone: the
-     * order.
+     * order. "/roleorder <role> <role> …" with every role once (as the Crew
+     * app's drag and drop sends it) sets the whole order in one go.
      *
      * @return array{ok: bool, text: string, state: array<string, mixed>, ran?: bool, changed?: bool}
      */
@@ -402,6 +403,29 @@ final class AssistantWebAdmin
         }
 
         $words = (array) preg_split('/\s+/u', $rest);
+        $order = self::roleOrderSlugs($words);
+
+        if (null !== $order) {
+            $result = Roles::setOrder($order);
+
+            if (Roles::ORDER_BAD === $result) {
+                return self::fail(
+                    __('Give every role once, by the name in brackets:', 'eventcrew') . "\n" . Roles::orderText()
+                );
+            }
+
+            return [
+                'ok' => false,
+                'text' => (Roles::ORDER_SAVED === $result
+                    ? __('Role order saved.', 'eventcrew')
+                    : __('The roles are already in that order.', 'eventcrew'))
+                    . "\n" . Roles::orderText(),
+                'state' => [],
+                'ran' => true,
+                'changed' => Roles::ORDER_SAVED === $result,
+            ];
+        }
+
         $where = strtolower((string) array_pop($words));
         $role = self::role(implode(' ', $words));
 
@@ -495,7 +519,8 @@ final class AssistantWebAdmin
             self::EDIT_ROLE => __("Change a role: /editrole role ; field value ; field value\nExample: /editrole Bar ; people 3 ; guestsignup off\nFields: name, emoji, people, plus, description, measured start|end, starts minutes, ends minutes, events text, minroles, timeseach, count role number, and on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous, adminaccess. - empties a text or time.", 'eventcrew'),
             self::OPTOUT => __("Change the list: /optout add address, /optout remove address\nExample: /optout add milla@example.com", 'eventcrew'),
             self::SCHEDULED => __("Switch a scheduled message: /scheduled name on|off\nSend it once now: /scheduled name send\nExample: /scheduled reminders off\n/scheduled alone lists the names.", 'eventcrew'),
-            self::ROLE_ORDER => __("Move a role in the order: /roleorder role up|down|first|last\nExample: /roleorder Clean first\n/roleorder alone shows the order.", 'eventcrew'),
+            self::ROLE_ORDER => __("Move a role in the order: /roleorder role up|down|first|last\nExample: /roleorder Clean first\n/roleorder alone shows the order.", 'eventcrew')
+                . "\n" . __('The whole order at once: /roleorder role role role… (every role once)', 'eventcrew'),
             self::AI_TEXT => __("Change an AI text: /aitext date text-name language ; your text\nUse the AI text again: /aitext date text-name ai\nExample: /aitext 21.11. welcome fi ; Tervetuloa!", 'eventcrew'),
             default => __('That can no longer be done.', 'eventcrew'),
         };
@@ -937,6 +962,36 @@ final class AssistantWebAdmin
      *
      * @return array<string, mixed>|null
      */
+    /**
+     * The words of "/roleorder <role> <role> …" as role slugs, when they are
+     * a whole order: two or more words, none of them a move (up, down…),
+     * each one role. Null for anything else, which is then read as one move.
+     * Roles::setOrder() checks that every role is there exactly once.
+     *
+     * @param array<int, mixed> $words
+     * @return list<string>|null
+     */
+    public static function roleOrderSlugs(array $words): ?array
+    {
+        if (count($words) < 2 || in_array(strtolower((string) end($words)), Roles::MOVES, true)) {
+            return null;
+        }
+
+        $slugs = [];
+
+        foreach ($words as $word) {
+            $role = self::role((string) $word);
+
+            if (null === $role) {
+                return null;
+            }
+
+            $slugs[] = (string) $role['slug'];
+        }
+
+        return $slugs;
+    }
+
     private static function role(string $query): ?array
     {
         $query = mb_strtolower(trim($query));

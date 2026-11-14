@@ -5,6 +5,7 @@
  *
  * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null, description: string, restricted: bool, every_night: bool, sales_desk: bool, on_board: bool, guest_signup: bool, anonymous: bool, title_contains: string, plus_ones: int, admin_access: bool, conditions: array{counts: array<string, int>, min_roles: int, times_each: int}}> $roles
  * @var array<string, array<string, string>> $role_move_urls The ↑ / ↓ links per role slug ('up', 'down'), the role order every night's tasks follow.
+ * @var array{url: string, action: string, nonce: string} $role_order_save Where the ☰ drag and drop saves the whole role order (admin-ajax).
  * @var string $guide_url Link to the crew's full guide, shared by every role.
  * @var string $nonce_action Nonce action for the save form.
  * @var bool $eventmesh_available Whether EventMesh is installed and active.
@@ -165,18 +166,33 @@ if (! defined('ABSPATH')) {
          * as the old table did.
          */
         ?>
-        <div class="eventcrew-role-list">
+        <?php
+        /*
+         * The ☰ handle drags a role to its place in the role order, saved at
+         * once without leaving the page (assets/eventcrew-role-order.js); the
+         * ↑ / ↓ links are the fallback without JavaScript. The rows' fields
+         * follow the rows, so Save keeps the dragged order too.
+         */
+        ?>
+        <p class="eventcrew-role-order-status" data-eventcrew-role-order-status role="status" aria-live="polite"></p>
+        <div
+            class="eventcrew-role-list"
+            data-eventcrew-role-order
+            data-url="<?php echo esc_url($role_order_save['url']); ?>"
+            data-fields="<?php echo esc_attr((string) wp_json_encode(['action' => $role_order_save['action'], '_ajax_nonce' => $role_order_save['nonce']])); ?>"
+            data-error="<?php esc_attr_e('Something went wrong. Please try again.', 'eventcrew'); ?>">
         <?php foreach ($eventcrew_rows as $eventcrew_index => $eventcrew_role) : ?>
             <?php
             $eventcrew_i = (string) $eventcrew_index;
             $eventcrew_id = 'eventcrew-role-' . $eventcrew_i;
             $eventcrew_is_new = '' === $eventcrew_role['slug'];
             ?>
-            <details class="eventcrew-role<?php echo $eventcrew_role['archived'] ? ' is-archived' : ''; ?>" name="eventcrew-role">
+            <details class="eventcrew-role<?php echo $eventcrew_role['archived'] ? ' is-archived' : ''; ?>" name="eventcrew-role"<?php echo $eventcrew_is_new ? '' : ' data-eventcrew-role-slug="' . esc_attr($eventcrew_role['slug']) . '"'; ?>>
                 <summary>
                     <?php if ($eventcrew_is_new) : ?>
                         <strong><?php esc_html_e('+ Add a role', 'eventcrew'); ?></strong>
                     <?php else : ?>
+                        <button type="button" class="eventcrew-role-handle" data-eventcrew-role-handle hidden aria-label="<?php esc_attr_e('Drag to move, or use the arrow keys', 'eventcrew'); ?>">☰</button>
                         <strong><?php echo esc_html(trim($eventcrew_role['emoji'] . ' ' . $eventcrew_role['label'])); ?></strong>
                         <code><?php echo esc_html($eventcrew_role['slug']); ?></code>
                         <?php if ($eventcrew_role['archived']) : ?>
@@ -186,7 +202,7 @@ if (! defined('ABSPATH')) {
                             <span class="eventcrew-role-tag"><?php esc_html_e('Role holders only', 'eventcrew'); ?></span>
                         <?php endif; ?>
                         <?php foreach ($role_move_urls[$eventcrew_role['slug']] ?? [] as $eventcrew_move => $eventcrew_move_url) : ?>
-                            <a class="eventcrew-role-move" href="<?php echo esc_url($eventcrew_move_url); ?>" aria-label="<?php echo 'up' === $eventcrew_move ? esc_attr__('Move up', 'eventcrew') : esc_attr__('Move down', 'eventcrew'); ?>"><?php echo 'up' === $eventcrew_move ? '↑' : '↓'; ?></a>
+                            <a class="eventcrew-role-move" data-eventcrew-role-arrow href="<?php echo esc_url($eventcrew_move_url); ?>" aria-label="<?php echo 'up' === $eventcrew_move ? esc_attr__('Move up', 'eventcrew') : esc_attr__('Move down', 'eventcrew'); ?>"><?php echo 'up' === $eventcrew_move ? '↑' : '↓'; ?></a>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </summary>

@@ -29,8 +29,9 @@ use EventCrew\Web\AssistantWebPeople;
  * - /aitext (the coming events' texts), /aitext <date> <text> <language> ; <text>
  * - /scheduled (the list), /scheduled <message> on|off (at once, no ✅:
  *   easy to undo, sends nothing), /scheduled <message> send
- * - /roleorder (the order), /roleorder <role> up|down|first|last (at once,
- *   no ✅: easy to undo, sends nothing)
+ * - /roleorder (the order), /roleorder <role> up|down|first|last or
+ *   /roleorder <role> <role> … (the whole order; at once, no ✅: easy to
+ *   undo, sends nothing)
  *
  * The helper in Telegram runs its lines for these through the command
  * (AssistantActions), so the command's own ✅ is the one confirmation.

@@ -14832,3 +14832,23 @@ msgstr "Koppla från kanalen? För att ansluta igen måste boten tas bort från 
 
 msgid "Channel disconnected. The bot no longer posts there."
 msgstr "Kanalen frånkopplad. Boten lägger inte längre upp där."
+
+#. roledrag1114
+msgid "The roles changed meanwhile. Reload the page and try again."
+msgstr "Rollerna ändrades under tiden. Ladda om sidan och försök igen."
+
+#. roledrag1114
+msgid "Drag to move, or use the arrow keys"
+msgstr "Dra för att flytta, eller använd piltangenterna"
+
+#. roledrag1114
+msgid "Give every role once, by the name in brackets:"
+msgstr "Ange varje roll en gång, med namnet inom parentes:"
+
+#. roledrag1114
+msgid "The roles are already in that order."
+msgstr "Rollerna är redan i den ordningen."
+
+#. roledrag1114
+msgid "The whole order at once: /roleorder role role role… (every role once)"
+msgstr "Hela ordningen på en gång: /roleorder roll roll roll… (varje roll en gång)"

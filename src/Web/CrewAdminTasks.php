@@ -312,6 +312,28 @@ final class CrewAdminTasks
     }
 
     /**
+     * The Roles card's drag and drop: the whole role order in one request.
+     * $post['order'] is every role's slug in the new order, as a list or
+     * one space-separated text; anything but exactly the current roles is
+     * refused and nothing changes.
+     *
+     * @param array<string, mixed> $post The request body, unslashed.
+     */
+    public function orderRoles(array $post): string
+    {
+        $order = $post['order'] ?? '';
+        $slugs = is_array($order)
+            ? array_map('strval', $order)
+            : (array) preg_split('/[\s,]+/', trim((string) $order), -1, PREG_SPLIT_NO_EMPTY);
+
+        return match (Roles::setOrder(array_map('sanitize_key', $slugs))) {
+            Roles::ORDER_SAVED => 'admin_role_order_saved',
+            Roles::ORDER_SAME => 'admin_role_order_same',
+            default => 'admin_role_order_bad',
+        };
+    }
+
+    /**
      * The text for one of this screen's notice codes, or '' when the code is
      * not one of them. The texts are the wp-admin Tasks and Settings pages'
      * own.
@@ -335,6 +357,7 @@ final class CrewAdminTasks
             'admin_role_gone' => __('That role was not found.', 'eventcrew'),
             'admin_role_order_saved' => __('Role order saved.', 'eventcrew'),
             'admin_role_order_same' => __('The role is already there.', 'eventcrew'),
+            'admin_role_order_bad' => __('The roles changed meanwhile. Reload the page and try again.', 'eventcrew'),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong
 

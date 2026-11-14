@@ -11914,3 +11914,23 @@ msgstr "Irrotetaanko kanava? Yhdistäminen uudelleen vaatii botin poistamisen ka
 
 msgid "Channel disconnected. The bot no longer posts there."
 msgstr "Kanava irrotettu. Botti ei enää julkaise siellä."
+
+#. roledrag1114
+msgid "The roles changed meanwhile. Reload the page and try again."
+msgstr "Roolit muuttuivat välillä. Lataa sivu uudelleen ja yritä taas."
+
+#. roledrag1114
+msgid "Drag to move, or use the arrow keys"
+msgstr "Siirrä vetämällä tai nuolinäppäimillä"
+
+#. roledrag1114
+msgid "Give every role once, by the name in brackets:"
+msgstr "Anna jokainen rooli kerran, suluissa olevalla nimellä:"
+
+#. roledrag1114
+msgid "The roles are already in that order."
+msgstr "Roolit ovat jo tässä järjestyksessä."
+
+#. roledrag1114
+msgid "The whole order at once: /roleorder role role role… (every role once)"
+msgstr "Koko järjestys kerralla: /roleorder rooli rooli rooli… (jokainen rooli kerran)"

@@ -39,6 +39,18 @@
 .eventcrew-role > .form-table { margin: 0; }
 .eventcrew-role > .form-table th { padding-left: 1em; }
 .eventcrew-role-move { text-decoration: none; padding: 0 .25em; font-size: 16px; }
+/* The ☰ handle drags a role (eventcrew-role-order.js); the ↑ / ↓ links then hide. */
+.eventcrew-role-list.is-dragdrop [data-eventcrew-role-arrow] { display: none; }
+.eventcrew-role-handle {
+    margin: 0 .4em 0 0; padding: 0 .4em; background: none; border: 0; font-size: 16px; line-height: 1.4;
+    cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.eventcrew-role-handle[hidden] { display: none; }
+.eventcrew-role-list.is-dragging { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+.eventcrew-role.is-dragging > summary { background: #f0f6fc; }
+.eventcrew-role-list.is-saving { opacity: .7; }
+.eventcrew-role-order-status { min-height: 1.5em; margin: .5em 0 0; }
+.eventcrew-role-order-status.is-error { color: #b32d2e; }
 .eventcrew-role-tag {
     font-size: 12px; padding: 0 .5em; border-radius: 3px;
     background: #f0f0f1; color: #50575e;

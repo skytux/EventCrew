@@ -97,6 +97,11 @@ final class Admin
         );
 
         add_action(
+            'wp_ajax_' . SettingsPage::ROLE_ORDER_SAVE_ACTION,
+            [$this->container->get(SettingsPage::class), 'saveRoleOrder']
+        );
+
+        add_action(
             'admin_post_eventcrew_refresh_board',
             [$this->container->get(SettingsPage::class), 'refreshBoard']
         );
@@ -425,6 +430,18 @@ final class Admin
             EVENTCREW_VERSION,
             true
         );
+        // The Roles tab's drag and drop (the Crew app enqueues the same file
+        // from its own template).
+        if (SettingsPage::PAGE_SLUG === $page) {
+            wp_enqueue_script(
+                'eventcrew-role-order',
+                EVENTCREW_PLUGIN_URL . 'assets/eventcrew-role-order.js',
+                [],
+                EVENTCREW_VERSION,
+                true
+            );
+        }
+
         wp_localize_script('eventcrew-jobs', 'eventcrewJobs', [
             'url' => admin_url('admin-ajax.php'),
             'action' => JobsStatus::ACTION,

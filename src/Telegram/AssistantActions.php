@@ -11,6 +11,7 @@ use EventCrew\Support\NewsletterText;
 use EventCrew\Support\Roles;
 use EventCrew\Support\ScheduledMessages;
 use EventCrew\Support\SiteLanguages;
+use EventCrew\Web\AssistantWebAdmin;
 
 /**
  * The actions the language-model helper may ask for, and the check every one
@@ -324,6 +325,10 @@ final class AssistantActions
             self::entry(
                 '/roleorder <role> <up|down|first|last>',
                 'move a role in that order at once (no Confirm); the board and every task list follow it'
+            ),
+            self::entry(
+                '/roleorder <role> <role> <role>…',
+                'set the whole role order at once (no Confirm): every role once, by its slug, in the new order'
             ),
         ];
     }
@@ -753,7 +758,9 @@ final class AssistantActions
                 $rest = implode(' ', $words);
             }
 
-            if ('/roleorder' === $head && '' !== $rest) {
+            // A whole order ("/roleorder clean decorate welcome organize")
+            // runs as it is; the command checks that every role is there.
+            if ('/roleorder' === $head && '' !== $rest && null === AssistantWebAdmin::roleOrderSlugs(explode(' ', $rest))) {
                 $words = explode(' ', $rest);
                 $where = strtolower((string) array_pop($words));
 

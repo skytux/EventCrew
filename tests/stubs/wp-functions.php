@@ -239,3 +239,8 @@ function get_current_user_id()
 {
     return 1;
 }
+
+// The Crew app's Roles card enqueues its drag and drop script while it renders.
+function wp_enqueue_script($handle, $src = '', $deps = [], $ver = false, $args = [])
+{
+}

@@ -2502,25 +2502,41 @@ if ($eventcrew_link_expired) {
                 /*
                  * The role order: every night's tasks are listed in it, on
                  * the board and everywhere else (TaskOrder). ↑ / ↓ are text
-                 * links, one form for the list.
+                 * links, one form for the list. With JavaScript the ☰ handle
+                 * drags a role instead and the order saves without leaving
+                 * the page (assets/eventcrew-role-order.js); the arrows hide.
                  */
                 $eventcrew_order_count = count($eventcrew_tasks['role_list']);
+                if ($eventcrew_order_count > 1) {
+                    wp_enqueue_script(
+                        'eventcrew-role-order',
+                        EVENTCREW_PLUGIN_URL . 'assets/eventcrew-role-order.js',
+                        [],
+                        EVENTCREW_VERSION,
+                        true
+                    );
+                }
                 ?>
                 <?php if ($eventcrew_order_count > 1) : ?>
                     <form class="eventcrew-card-body eventcrew-role-order" method="post" action="<?php echo esc_url($eventcrew_ajax); ?>">
                         <input type="hidden" name="action" value="<?php echo esc_attr($eventcrew_admin['role_order_action']); ?>">
                         <input type="hidden" name="csrf" value="<?php echo esc_attr($eventcrew_csrf); ?>">
                         <input type="hidden" name="redirect_to" value="<?php echo esc_attr(add_query_arg($eventcrew_tasks_args, $eventcrew_here) . '#eventcrew-admin-roles'); ?>">
-                        <p><strong><?php esc_html_e('Role order', 'eventcrew'); ?></strong> · <?php esc_html_e('Tasks are listed in this order.', 'eventcrew'); ?></p>
-                        <ol>
+                        <p><strong><?php esc_html_e('Role order', 'eventcrew'); ?></strong> · <?php esc_html_e('Tasks are listed in this order.', 'eventcrew'); ?> <span class="eventcrew-role-order-status" data-eventcrew-role-order-status role="status" aria-live="polite"></span></p>
+                        <ol
+                            data-eventcrew-role-order
+                            data-url="<?php echo esc_url($eventcrew_ajax); ?>"
+                            data-fields="<?php echo esc_attr((string) wp_json_encode(['action' => $eventcrew_admin['role_order_action'], 'csrf' => $eventcrew_csrf])); ?>"
+                            data-error="<?php esc_attr_e('Something went wrong. Please try again.', 'eventcrew'); ?>">
                             <?php foreach ($eventcrew_tasks['role_list'] as $eventcrew_order_index => $eventcrew_order_role) : ?>
-                                <li>
+                                <li data-eventcrew-role-slug="<?php echo esc_attr($eventcrew_order_role['slug']); ?>">
+                                    <button type="button" class="eventcrew-role-handle" data-eventcrew-role-handle hidden aria-label="<?php esc_attr_e('Drag to move, or use the arrow keys', 'eventcrew'); ?>">☰</button>
                                     <?php echo esc_html(\EventCrew\Support\Roles::display($eventcrew_order_role['slug'])); ?>
                                     <?php if ($eventcrew_order_index > 0) : ?>
-                                        <button type="submit" class="eventcrew-textlink" name="move" value="<?php echo esc_attr($eventcrew_order_role['slug'] . ' up'); ?>" aria-label="<?php esc_attr_e('Move up', 'eventcrew'); ?>">↑</button>
+                                        <button type="submit" class="eventcrew-textlink" data-eventcrew-role-arrow name="move" value="<?php echo esc_attr($eventcrew_order_role['slug'] . ' up'); ?>" aria-label="<?php esc_attr_e('Move up', 'eventcrew'); ?>">↑</button>
                                     <?php endif; ?>
                                     <?php if ($eventcrew_order_index < $eventcrew_order_count - 1) : ?>
-                                        <button type="submit" class="eventcrew-textlink" name="move" value="<?php echo esc_attr($eventcrew_order_role['slug'] . ' down'); ?>" aria-label="<?php esc_attr_e('Move down', 'eventcrew'); ?>">↓</button>
+                                        <button type="submit" class="eventcrew-textlink" data-eventcrew-role-arrow name="move" value="<?php echo esc_attr($eventcrew_order_role['slug'] . ' down'); ?>" aria-label="<?php esc_attr_e('Move down', 'eventcrew'); ?>">↓</button>
                                     <?php endif; ?>
                                 </li>
                             <?php endforeach; ?>

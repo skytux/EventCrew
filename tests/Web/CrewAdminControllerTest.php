@@ -3567,6 +3567,76 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         );
     }
 
+    /** The Roles card's drag and drop: the whole order in one request. */
+    public function testAnOrganizerSetsTheWholeRoleOrderInOneRequest(): void
+    {
+        Roles::save(Roles::defaults());
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::ROLE_ORDER_ACTION, [
+            'order' => [Roles::ORGANIZE_SLUG, 'welcome', 'clean', 'decorate'],
+            'ajax' => '1',
+        ]);
+
+        self::assertSame(CrewAdminController::OK, $result['code']);
+        self::assertSame('admin_role_order_saved', $result['notice']);
+        self::assertSame([Roles::ORGANIZE_SLUG, 'welcome', 'clean', 'decorate'], array_column($this->options[Roles::OPTION_NAME], 'slug'));
+        self::assertSame('Role order saved.', CrewAdminController::noticeText($result['notice']));
+    }
+
+    /**
+     * A list that is not exactly the current roles (one missing, one twice,
+     * one unknown) is refused and the order stays.
+     */
+    public function testAWholeRoleOrderWithTheWrongRolesIsRefused(): void
+    {
+        Roles::save(Roles::defaults());
+        $before = array_column($this->options[Roles::OPTION_NAME], 'slug');
+
+        foreach (
+            [
+                ['welcome', 'clean', 'decorate'],
+                [Roles::ORGANIZE_SLUG, 'welcome', 'clean', 'clean'],
+                [Roles::ORGANIZE_SLUG, 'welcome', 'clean', 'decorate', 'nobody'],
+                [],
+            ] as $order
+        ) {
+            $this->signIn($this->organizerRow(1));
+            $result = $this->post(CrewAdminController::ROLE_ORDER_ACTION, ['order' => $order]);
+
+            self::assertSame('admin_role_order_bad', $result['notice']);
+            self::assertSame($before, array_column($this->options[Roles::OPTION_NAME], 'slug'));
+        }
+
+        self::assertSame(
+            'The roles changed meanwhile. Reload the page and try again.',
+            CrewAdminController::noticeText('admin_role_order_bad')
+        );
+    }
+
+    /** The whole order needs a signed-in organizer and the page's CSRF token, as ↑ / ↓ do. */
+    public function testAWholeRoleOrderNeedsAnOrganizerAndTheToken(): void
+    {
+        Roles::save(Roles::defaults());
+        $before = $this->options[Roles::OPTION_NAME];
+        $order = ['order' => [Roles::ORGANIZE_SLUG, 'welcome', 'clean', 'decorate'], 'ajax' => '1'];
+
+        $this->signIn($this->organizerRow(1));
+        $forged = $this->admin()->handle(CrewAdminController::ROLE_ORDER_ACTION, 'POST', $order + ['csrf' => 'forged'], self::IP);
+        self::assertNotSame(CrewAdminController::OK, $forged['code']);
+
+        $this->signIn($this->personRow(8));
+        $this->wpdb->nextResults[] = [$this->organizerRow(1)];
+        $member = $this->post(CrewAdminController::ROLE_ORDER_ACTION, $order, 8);
+        self::assertSame(CrewAdminController::FORGED, $member['code']);
+
+        $this->signIn($this->organizerRow(1));
+        $get = $this->admin()->handle(CrewAdminController::ROLE_ORDER_ACTION, 'GET', $order + ['csrf' => WebSession::csrfToken(1)], self::IP);
+        self::assertSame(CrewAdminController::REFUSED, $get['code']);
+
+        self::assertSame($before, $this->options[Roles::OPTION_NAME]);
+    }
+
     public function testAnOrganizerSavesARoleAndTheOtherRolesStayAsTheyWere(): void
     {
         Roles::save(Roles::defaults());
@@ -3860,6 +3930,17 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         );
         self::assertMatchesRegularExpression('/<form [^>]*method="get" action="[^"]*#eventcrew-admin-roles">/', $roles);
         self::assertStringNotContainsString('#eventcrew-admin-tasks', $roles);
+
+        // The role order: a ☰ handle per role for the drag and drop, ↑ / ↓
+        // kept as the fallback, and the save's action and token on the list.
+        self::assertStringContainsString('data-eventcrew-role-order', $roles);
+        self::assertStringContainsString('data-eventcrew-role-slug="welcome"', $roles);
+        self::assertSame(
+            substr_count($roles, 'data-eventcrew-role-slug='),
+            substr_count($roles, 'data-eventcrew-role-handle')
+        );
+        self::assertStringContainsString('data-eventcrew-role-arrow name="move"', $roles);
+        self::assertStringContainsString(CrewAdminController::ROLE_ORDER_ACTION, $roles);
     }
 
     /**

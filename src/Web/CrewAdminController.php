@@ -324,7 +324,10 @@ final class CrewAdminController
                 sanitize_key((string) ($post['op'] ?? ''))
             ),
             self::ROLE_ACTION => $this->tasksScreen->saveRole($post),
-            self::ROLE_ORDER_ACTION => $this->tasksScreen->moveRole($post),
+            // The drag and drop sends the whole order; ↑ / ↓ one move.
+            self::ROLE_ORDER_ACTION => isset($post['order'])
+                ? $this->tasksScreen->orderRoles($post)
+                : $this->tasksScreen->moveRole($post),
             self::NEWSLETTER_TEXT_ACTION => null === $this->newsletterScreen ? '' : $this->newsletterScreen->saveText(
                 $organizer->id,
                 sanitize_key((string) ($post['op'] ?? '')),
@@ -417,6 +420,18 @@ final class CrewAdminController
 
         if (self::TEXT_STATUS_ACTION === $action) {
             wp_send_json_success($this->textStatus());
+        }
+
+        // The Roles card's drag and drop saves with fetch() and stays on the
+        // page: it gets the notice as JSON instead of the redirect.
+        if (self::ROLE_ORDER_ACTION === $action && ! empty($post['ajax'])) {
+            $text = self::noticeText($result['notice']);
+
+            if ('admin_role_order_bad' === $result['notice'] || 'admin_role_gone' === $result['notice']) {
+                wp_send_json_error(['notice' => $text]);
+            }
+
+            wp_send_json_success(['notice' => $text]);
         }
 
         wp_safe_redirect(add_query_arg('eventcrew_notice', $result['notice'], $this->safeRedirect()));
