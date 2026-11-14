@@ -789,7 +789,20 @@
 }
 .eventcrew-signup .eventcrew-me-actions .eventcrew-textlink { min-height: 36px; white-space: nowrap; }
 .eventcrew-signup .eventcrew-me-actions .eventcrew-inline-form { align-self: center; }
-.eventcrew-signup .eventcrew-admin-scheduled-row { display: flex; flex-wrap: wrap; gap: 0.25em 0.75em; align-items: baseline; }
+.eventcrew-signup .eventcrew-admin-scheduled-group + .eventcrew-admin-scheduled-group { margin-top: .9em; }
+.eventcrew-signup .eventcrew-admin-scheduled-channel {
+    margin: 0 0 .2em; font-size: .75em; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; opacity: .7;
+}
+/* Scheduled messages: name and when | Send now | the switch, the same columns on every row. */
+.eventcrew-signup .eventcrew-admin-scheduled-row {
+    display: grid; grid-template-columns: minmax(0, 1fr) 6.5em 3.5em; gap: 0 .75em; align-items: center;
+    min-height: 44px; padding: .3em 0; border-top: 1px solid var(--eventcrew-line);
+}
+.eventcrew-signup .eventcrew-admin-scheduled-what { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.eventcrew-signup .eventcrew-admin-scheduled-what .eventcrew-muted { font-size: .85em; }
+.eventcrew-signup .eventcrew-admin-scheduled-send { text-align: right; white-space: nowrap; }
+.eventcrew-signup .eventcrew-admin-scheduled-switch { text-align: right; white-space: nowrap; }
+.eventcrew-signup .eventcrew-admin-scheduled-switch label { display: inline-flex; align-items: center; gap: .3em; min-height: 36px; cursor: pointer; }
 /* Give away opened: its form takes the whole width under the links. */
 .eventcrew-signup .eventcrew-me-actions .eventcrew-give[open] { flex-basis: 100%; }
 .eventcrew-signup form { margin: 0; }

@@ -3516,8 +3516,11 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertStringContainsString('<strong>Monthly report</strong>', $card);
         self::assertSame(count(\EventCrew\Support\ScheduledMessages::KEYS), substr_count($card, 'type="checkbox"'));
         // The switched-off reminder offers "on"; the board, on by default, offers "off".
-        self::assertStringContainsString('name="message" value="reminders">' . "\n" . '                            <input type="hidden" name="op" value="on">', $card);
-        self::assertStringContainsString('name="message" value="board">' . "\n" . '                            <input type="hidden" name="op" value="off">', $card);
+        self::assertMatchesRegularExpression('/name="message" value="reminders">\s*<input type="hidden" name="op" value="on">/', $card);
+        self::assertMatchesRegularExpression('/name="message" value="board">\s*<input type="hidden" name="op" value="off">/', $card);
+        // Grouped by where they go, each row in the same three columns.
+        self::assertStringContainsString('<h4 class="eventcrew-admin-scheduled-channel">Email + DM</h4>', $card);
+        self::assertSame(count(\EventCrew\Support\ScheduledMessages::KEYS), substr_count($card, 'class="eventcrew-admin-scheduled-switch"'));
         self::assertStringContainsString(CrewAdminController::SCHEDULED_ACTION, $card);
     }
 
