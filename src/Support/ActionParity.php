@@ -50,6 +50,8 @@ final class ActionParity
         'SignupController::TG_START_ACTION' => 'sign-in with Telegram: the bot is where the code is approved',
         'SignupController::TG_STATUS_ACTION' => 'the sign-in page polling for that approval',
         'SignupController::LOGOUT_ACTION' => 'ends this browser\'s web session; a chat has no session to end',
+        'SignupController::PANEL_ACTION' => 'read only: the page fetching the tabs it did not draw yet; a chat shows each answer as it is asked',
+        'SignupController::STAMP_ACTION' => 'read only: the open page asking whether anything changed; the bot posts changes itself',
         'SignupController::JOIN_ACTION' => 'the newcomer questions of sign-up; the bot asks them in /start',
         'PushController::ACTION' => 'app notifications for this browser or phone (Web Push): a device setting',
         'AppInstallController::ACTION' => 'the "Get the app" pop-in of the browser',

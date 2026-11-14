@@ -434,6 +434,8 @@ final class CrewAdminController
             wp_send_json_success(['notice' => $text]);
         }
 
+        // A form the Crew app's script sent itself: the outcome as JSON.
+        SignupController::answerSavedForm(add_query_arg('eventcrew_notice', $result['notice'], $this->safeRedirect()), $result['notice']);
         wp_safe_redirect(add_query_arg('eventcrew_notice', $result['notice'], $this->safeRedirect()));
 
         exit;

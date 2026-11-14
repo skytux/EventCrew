@@ -190,6 +190,42 @@ final class TaskRepository
     }
 
     /**
+     * forDate() for several dates in one query: date => its tasks, in
+     * forDate()'s order. A date with no tasks is left out.
+     *
+     * @param array<int, string> $dates
+     * @return array<string, array<int, Task>>
+     */
+    public function forDates(array $dates): array
+    {
+        global $wpdb;
+
+        $dates = array_values(array_unique(array_map('strval', $dates)));
+
+        if ([] === $dates) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($dates), '%s'));
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- placeholders only; the table name comes from Schema.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table()} WHERE task_date IN ({$placeholders}) AND deleted_at IS NULL
+                ORDER BY starts_at ASC, id ASC",
+                ...$dates
+            ),
+            ARRAY_A
+        );
+        $byDate = [];
+
+        foreach ($this->hydrate(is_array($rows) ? $rows : []) as $task) {
+            $byDate[$task->taskDate][] = $task;
+        }
+
+        return array_map(static fn (array $tasks): array => TaskOrder::sort($tasks), $byDate);
+    }
+
+    /**
      * One night's tasks, in the role order (TaskOrder).
      *
      * @return array<int, Task>

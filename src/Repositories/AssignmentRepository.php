@@ -483,6 +483,44 @@ final class AssignmentRepository
     }
 
     /**
+     * Several tasks' assignments in one query, by task id, each list in
+     * forTask()'s order. A task with none is left out.
+     *
+     * @param array<int, int> $taskIds
+     * @return array<int, list<Assignment>>
+     */
+    public function forTasks(array $taskIds): array
+    {
+        global $wpdb;
+
+        $taskIds = array_values(array_unique(array_filter(
+            array_map('intval', $taskIds),
+            static fn (int $id): bool => $id > 0
+        )));
+
+        if ([] === $taskIds) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($taskIds), '%d'));
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- placeholders only; the table name comes from Schema.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table()} WHERE task_id IN ({$placeholders}) ORDER BY signed_up_at ASC, id ASC",
+                ...$taskIds
+            ),
+            ARRAY_A
+        );
+        $byTask = [];
+
+        foreach ($this->hydrate(is_array($rows) ? $rows : []) as $assignment) {
+            $byTask[$assignment->taskId][] = $assignment;
+        }
+
+        return $byTask;
+    }
+
+    /**
      * @return array<int, Assignment>
      */
     public function forTask(int $taskId): array

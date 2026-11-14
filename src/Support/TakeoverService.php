@@ -108,6 +108,35 @@ final class TakeoverService
         return $this->request($original, $task, $cover);
     }
 
+    /** @var array<int, list<Assignment>> prime()'s assignments, by task id. */
+    private array $primedAssignments = [];
+
+    /** @var array<int, Person> prime()'s holders, by id. */
+    private array $primedPeople = [];
+
+    /**
+     * Reads the assignments and holders of $taskIds in two queries, for
+     * holdersFor() to use on the board instead of two per row. A task
+     * whose rows are not there is read as before.
+     *
+     * @param array<int, int> $taskIds
+     */
+    public function prime(array $taskIds): void
+    {
+        $this->primedAssignments = $this->assignments->forTasks($taskIds);
+        $ids = [];
+
+        foreach ($this->primedAssignments as $list) {
+            foreach ($list as $assignment) {
+                if ($assignment->isOccupying()) {
+                    $ids[] = $assignment->personId;
+                }
+            }
+        }
+
+        $this->primedPeople = [] === $ids ? [] : $this->people->findMany($ids);
+    }
+
     /**
      * Whose places on a task the cover could ask to take over, for the
      * board's Take someone's task on any task someone is on (Owner
@@ -131,7 +160,7 @@ final class TakeoverService
         $named = BoardVisibility::showsNames($task, $cover);
         $holders = [];
 
-        foreach ($this->assignments->forTask($task->id) as $assignment) {
+        foreach ($this->primedAssignments[$task->id] ?? $this->assignments->forTask($task->id) as $assignment) {
             if (! $assignment->isOccupying()) {
                 continue;
             }
@@ -140,7 +169,7 @@ final class TakeoverService
                 return [];
             }
 
-            $holder = $named ? $this->people->find($assignment->personId) : null;
+            $holder = $named ? ($this->primedPeople[$assignment->personId] ?? $this->people->find($assignment->personId)) : null;
             $name = null === $holder ? '' : BoardRenderer::firstNames([$holder->name()])[0];
 
             $holders[] = [

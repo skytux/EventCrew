@@ -58,8 +58,50 @@ $eventcrew_ajax = admin_url('admin-ajax.php');
 // add_query_arg([], null), which yields an empty URI (so home_url() fell back to
 // the site root) and sent every action to the homepage.
 $eventcrew_here = get_permalink();
+if ('' !== (string) ($view['here'] ?? '')) {
+    // The panel fetch (SignupController::panels()) runs in admin-ajax, where
+    // there is no queried page: the page's own address comes with it.
+    $eventcrew_here = (string) $view['here'];
+}
 if (false === $eventcrew_here) {
     $eventcrew_here = home_url('/');
+}
+
+/*
+ * Which tab panels are drawn (Owner 2026-11-14, faster Crew app): null draws
+ * all; a list draws those and leaves the others as an empty section with a
+ * "Loading…" link, which the page fills from SignupController::PANEL_ACTION
+ * right after it opens. Without JavaScript the link opens that tab instead.
+ * The markers let panels() cut each drawn panel out of the page.
+ */
+/** @var list<string>|null $eventcrew_panels */
+$eventcrew_panels = is_array($view['panels'] ?? null) ? $view['panels'] : null;
+$eventcrew_panel_start = static function (string $key) use ($eventcrew_panels, $eventcrew_here): bool {
+    if (null === $eventcrew_panels) {
+        return true;
+    }
+    if (in_array($key, $eventcrew_panels, true)) {
+        echo '<!--eventcrew-panel:' . esc_attr($key) . '-->';
+
+        return true;
+    }
+    printf(
+        '<p class="eventcrew-panel-loading" data-eventcrew-lazy="%1$s"><a href="%2$s">%3$s</a></p>',
+        esc_attr($key),
+        esc_url(add_query_arg(\EventCrew\Web\SignupController::PANEL_ARG, $key, $eventcrew_here) . '#eventcrew-panel-' . $key),
+        esc_html__('Loading…', 'eventcrew')
+    );
+
+    return false;
+};
+$eventcrew_panel_end = static function (string $key) use ($eventcrew_panels): void {
+    if (null !== $eventcrew_panels) {
+        echo '<!--/eventcrew-panel:' . esc_attr($key) . '-->';
+    }
+};
+if (null !== $eventcrew_panels && null !== $eventcrew_admin && ! in_array('admin', $eventcrew_panels, true)) {
+    // The Roles card's drag and drop, for when the Admin tab arrives.
+    wp_enqueue_script('eventcrew-role-order', EVENTCREW_PLUGIN_URL . 'assets/eventcrew-role-order.js', [], EVENTCREW_VERSION, true);
 }
 
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display of a redirect-carried status.
@@ -85,7 +127,30 @@ if ($eventcrew_link_expired) {
 // meant it was neither cacheable nor versioned - and, because the PWA service
 // worker caches the page HTML, a restyle never reached an installed app.
 ?>
-<div class="eventcrew-signup">
+<?php
+/*
+ * Signed in, the page keeps itself up to date (Owner 2026-11-14): its script
+ * fetches the tabs it did not draw, sends the tabs' forms itself and asks
+ * every few seconds whether anything changed (SignupController::panels(),
+ * stamp()). Signed out (the cached page) none of this is in the page.
+ */
+$eventcrew_live = null === $eventcrew_person ? '' : (string) wp_json_encode([
+    'panel' => \EventCrew\Web\SignupController::PANEL_ACTION,
+    'stamp' => \EventCrew\Web\SignupController::STAMP_ACTION,
+    'now' => \EventCrew\Support\ChangeStamp::current(),
+    'cookie' => \EventCrew\Web\SignupController::PANEL_COOKIE,
+    'json' => \EventCrew\Web\SignupController::JSON_FIELD,
+    // Forms that change more than their tab: sent the ordinary way.
+    'whole' => [
+        \EventCrew\Web\SignupController::LANGUAGE_ACTION,
+        \EventCrew\Web\SignupController::LOGOUT_ACTION,
+        \EventCrew\Web\SignupController::PROFILE_ACTION,
+        \EventCrew\Web\SignupController::REVOKE_ACTION,
+        \EventCrew\Web\SignupController::SALES_ACTION,
+    ],
+]);
+?>
+<div class="eventcrew-signup"<?php echo '' === $eventcrew_live ? '' : ' data-eventcrew-live="' . esc_attr($eventcrew_live) . '"'; ?>>
     <div id="eventcrew-toast" class="eventcrew-toast<?php echo '' !== $eventcrew_notice_text ? ' show' : ''; ?>" role="status" aria-live="polite"><?php echo esc_html($eventcrew_notice_text); ?></div>
 
     <?php if (null !== $eventcrew_person) : ?>
@@ -675,6 +740,7 @@ if ($eventcrew_link_expired) {
         $eventcrew_coming_tickets = count($eventcrew_my_tickets['upcoming']);
         ?>
         <section class="eventcrew-panel" id="eventcrew-panel-board" data-eventcrew-panel="board" aria-labelledby="eventcrew-tab-board">
+            <?php if ($eventcrew_panel_start('board')) : // phpcs:disable Generic.WhiteSpace.ScopeIndent -- the panel keeps its indent (lazy panels). ?>
         <section class="eventcrew-event eventcrew-me-card eventcrew-header-card" id="eventcrew-summary">
             <header class="eventcrew-event-head">
                 <h2 class="eventcrew-event-title"><?php esc_html_e('Summary', 'eventcrew'); ?></h2>
@@ -781,6 +847,8 @@ if ($eventcrew_link_expired) {
             <div id="eventcrew-board" class="eventcrew-board">
                 <?php require EVENTCREW_PLUGIN_DIR . 'templates/public/signup-board.php'; ?>
             </div>
+            <?php $eventcrew_panel_end('board'); ?>
+            <?php endif; // phpcs:enable Generic.WhiteSpace.ScopeIndent ?>
         </section>
 
         <?php
@@ -795,6 +863,7 @@ if ($eventcrew_link_expired) {
          */
         ?>
         <section class="eventcrew-panel" id="eventcrew-panel-tasks" data-eventcrew-panel="tasks" aria-labelledby="eventcrew-tab-tasks">
+            <?php if ($eventcrew_panel_start('tasks')) : // phpcs:disable Generic.WhiteSpace.ScopeIndent -- the panel keeps its indent (lazy panels). ?>
             <h2 class="eventcrew-panel-title"><?php esc_html_e('Tasks', 'eventcrew'); ?></h2>
 
             <section class="eventcrew-event eventcrew-me-card" id="eventcrew-my-tasks">
@@ -894,9 +963,12 @@ if ($eventcrew_link_expired) {
                     ?>
                 <?php endif; ?>
             </section>
+            <?php $eventcrew_panel_end('tasks'); ?>
+            <?php endif; // phpcs:enable Generic.WhiteSpace.ScopeIndent ?>
         </section>
 
         <section class="eventcrew-panel" id="eventcrew-panel-tickets" data-eventcrew-panel="tickets" aria-labelledby="eventcrew-tab-tickets">
+            <?php if ($eventcrew_panel_start('tickets')) : // phpcs:disable Generic.WhiteSpace.ScopeIndent -- the panel keeps its indent (lazy panels). ?>
             <h2 class="eventcrew-panel-title"><?php esc_html_e('Tickets', 'eventcrew'); ?></h2>
 
             <?php
@@ -1047,6 +1119,9 @@ if ($eventcrew_link_expired) {
                 </section>
             <?php endif; ?>
 
+            <?php $eventcrew_panel_end('tickets'); ?>
+
+            <?php endif; // phpcs:enable Generic.WhiteSpace.ScopeIndent ?>
         </section>
 
         <?php if (\EventCrew\Telegram\GroupRelay::visibleTo($eventcrew_person)) : ?>
@@ -1054,6 +1129,7 @@ if ($eventcrew_link_expired) {
         <?php endif; ?>
 
         <section class="eventcrew-panel" id="eventcrew-panel-settings" data-eventcrew-panel="settings" aria-labelledby="eventcrew-tab-settings">
+            <?php if ($eventcrew_panel_start('settings')) : // phpcs:disable Generic.WhiteSpace.ScopeIndent -- the panel keeps its indent (lazy panels). ?>
             <h2 class="eventcrew-panel-title"><?php esc_html_e('Settings', 'eventcrew'); ?></h2>
 
             <?php
@@ -1231,6 +1307,9 @@ if ($eventcrew_link_expired) {
                 </section>
             <?php endif; ?>
 
+            <?php $eventcrew_panel_end('settings'); ?>
+
+            <?php endif; // phpcs:enable Generic.WhiteSpace.ScopeIndent ?>
         </section>
 
         <?php
@@ -1246,6 +1325,7 @@ if ($eventcrew_link_expired) {
         $eventcrew_help_guide = \EventCrew\Support\RoleGuide::emailAction();
         ?>
         <section class="eventcrew-panel eventcrew-help" id="<?php echo esc_attr(\EventCrew\Support\HelpPage::PANEL_ANCHOR); ?>" data-eventcrew-panel="help" aria-labelledby="eventcrew-tab-help">
+            <?php if ($eventcrew_panel_start('help')) : // phpcs:disable Generic.WhiteSpace.ScopeIndent -- the panel keeps its indent (lazy panels). ?>
             <h2 class="eventcrew-panel-title"><?php esc_html_e('Help', 'eventcrew'); ?></h2>
 
             <p class="eventcrew-links eventcrew-help-orglink">
@@ -1315,10 +1395,13 @@ if ($eventcrew_link_expired) {
                     ?>
                 </div>
             <?php endif; ?>
+            <?php $eventcrew_panel_end('help'); ?>
+            <?php endif; // phpcs:enable Generic.WhiteSpace.ScopeIndent ?>
         </section>
 
         <?php if (null !== $eventcrew_admin) : ?>
         <section class="eventcrew-panel eventcrew-admin" id="eventcrew-panel-admin" data-eventcrew-panel="admin" aria-labelledby="eventcrew-tab-admin">
+            <?php if ($eventcrew_panel_start('admin')) : // phpcs:disable Generic.WhiteSpace.ScopeIndent -- the panel keeps its indent (lazy panels). ?>
             <h2 class="eventcrew-panel-title"><?php esc_html_e('Admin', 'eventcrew'); ?></h2>
 
             <?php
@@ -3160,6 +3243,8 @@ if ($eventcrew_link_expired) {
             <?php endif; ?>
 
             </div>
+            <?php $eventcrew_panel_end('admin'); ?>
+            <?php endif; // phpcs:enable Generic.WhiteSpace.ScopeIndent ?>
         </section>
         <?php endif; ?>
         <?php
@@ -3298,7 +3383,23 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         if (window.history && window.history.replaceState) {
             try { window.history.replaceState(null, '', '#eventcrew-panel-' + key); } catch (e) {}
         }
+
+        // The server draws this tab first next time (a reload, a form sent
+        // without the script), and the live script fills it if it is empty.
+        try {
+            document.cookie = 'eventcrew_panel=' + key + '; path=' + window.location.pathname + '; max-age=31536000; samesite=lax';
+        } catch (e) {}
+        shown = key;
+        document.dispatchEvent(new CustomEvent('eventcrew:tab', { detail: { panel: key } }));
     }
+
+    var shown = '';
+    // For the live script below: open a tab, and which one is open.
+    window.eventcrewTabs = {
+        show: function (key) { show(key, false); },
+        current: function () { return shown; },
+        panelFor: panelFor
+    };
 
     tabs.forEach(function (tab, index) {
         tab.addEventListener('click', function (e) {
@@ -3404,6 +3505,297 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
 })();
 
 /*
+ * The live Crew app (Owner 2026-11-14). The server draws only the tab the
+ * page opens on (SignupController::lazyPanels()); right after the page
+ * shows, the other tabs are fetched in one request and put in their places.
+ * A form on a tab is sent from here, and only the cards it changed are
+ * drawn again. Every 5 seconds, while the page is in view, the page asks
+ * whether anything changed (ChangeStamp); when it did, the open tab's
+ * changed cards are drawn again, except one being typed in, and the other
+ * tabs when they are next opened. Without this script every tab is a link
+ * that opens it and every form posts the ordinary way.
+ */
+(function () {
+    var root = document.querySelector('.eventcrew-signup[data-eventcrew-live]');
+    if (!root || !window.fetch || !window.FormData || !window.URL || !window.CustomEvent) { return; }
+
+    var live = {};
+    try { live = JSON.parse(root.getAttribute('data-eventcrew-live')) || {}; } catch (e) { return; }
+    var ajaxUrl = <?php echo wp_json_encode($eventcrew_ajax); ?>;
+    var stamp = String(live.now || '');
+    var stale = {};
+    var tabs = window.eventcrewTabs;
+
+    function panels() {
+        return [].slice.call(root.querySelectorAll('[data-eventcrew-panel]'));
+    }
+
+    function panel(key) {
+        return panels().filter(function (p) { return p.getAttribute('data-eventcrew-panel') === key; })[0] || null;
+    }
+
+    function keyOf(node) {
+        var holder = node && node.closest ? node.closest('[data-eventcrew-panel]') : null;
+        return holder ? holder.getAttribute('data-eventcrew-panel') : '';
+    }
+
+    // The page's address for the server: its query (dates, searches,
+    // pages) without the notice it came back with.
+    function address() {
+        var url = new URL(window.location.href);
+        url.hash = '';
+        url.searchParams.delete('eventcrew_notice');
+        return url.toString();
+    }
+
+    function ask(keys) {
+        var body = new FormData();
+        body.append('action', live.panel);
+        body.append('redirect_to', address());
+        keys.forEach(function (key) { body.append('panels[]', key); });
+        return window.fetch(ajaxUrl, { method: 'POST', body: body, credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+            .then(function (answer) {
+                if (answer && answer.signed_out) {
+                    window.location.reload();
+                    return Promise.reject('signed_out');
+                }
+                if (answer && answer.stamp) { stamp = String(answer.stamp); }
+                return (answer && answer.panels) || {};
+            });
+    }
+
+    // Inline scripts in HTML put in with innerHTML do not run; these do.
+    function runScripts(node) {
+        [].slice.call(node.querySelectorAll('script')).forEach(function (old) {
+            var fresh = document.createElement('script');
+            [].slice.call(old.attributes).forEach(function (a) { fresh.setAttribute(a.name, a.value); });
+            fresh.text = old.textContent;
+            old.parentNode.replaceChild(fresh, old);
+        });
+    }
+
+    function announce(keys) {
+        document.dispatchEvent(new CustomEvent('eventcrew:panel', { detail: { panels: keys } }));
+    }
+
+    // A form being filled in, or the element with focus: drawing its card
+    // again would lose what was typed.
+    function busy(node, allowed) {
+        if (allowed && (node === allowed || node.contains(allowed))) { return false; }
+        var active = document.activeElement;
+        if (active && active !== document.body && node.contains(active)
+            && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) { return true; }
+        return !!(node.matches && node.matches('form[data-eventcrew-dirty]'))
+            || !!node.querySelector('form[data-eventcrew-dirty]');
+    }
+
+    // Keeps open what was open: folded parts, by their place in the card.
+    function keepOpen(from, to) {
+        var was = [].slice.call(from.querySelectorAll('details'));
+        var now = [].slice.call(to.querySelectorAll('details'));
+        if (from.tagName === 'DETAILS') { was.unshift(from); now.unshift(to); }
+        if (was.length !== now.length) { return; }
+        was.forEach(function (d, i) { if (d.open) { now[i].setAttribute('open', ''); } else { now[i].removeAttribute('open'); } });
+    }
+
+    function same(a, b) {
+        return a.tagName === b.tagName && a.id === b.id
+            && a.getAttribute('data-eventcrew-subpanel') === b.getAttribute('data-eventcrew-subpanel');
+    }
+
+    // Draws again only the parts of `old` that differ from `fresh`: a card
+    // (a section) as a whole, a container by its children.
+    function patch(old, fresh, allowed, depth) {
+        var a = [].slice.call(old.children);
+        var b = [].slice.call(fresh.children);
+        var whole = a.length !== b.length || a.some(function (n, i) { return !same(n, b[i]); });
+        if (whole) {
+            if (!busy(old, allowed)) {
+                old.innerHTML = fresh.innerHTML;
+                runScripts(old);
+            }
+            return;
+        }
+        a.forEach(function (n, i) {
+            var f = b[i];
+            if (n.outerHTML === f.outerHTML) { return; }
+            var card = depth > 5 || n.tagName === 'SECTION' || n.tagName === 'FORM' || n.tagName === 'LI'
+                || n.tagName === 'SCRIPT' || n.children.length === 0 || n.children.length !== f.children.length;
+            if (!card) {
+                patch(n, f, allowed, depth + 1);
+                return;
+            }
+            // A script has run already; it is not run again.
+            if (n.tagName === 'SCRIPT' || busy(n, allowed)) { return; }
+            keepOpen(n, f);
+            var copy = document.importNode(f, true);
+            n.parentNode.replaceChild(copy, n);
+            runScripts(copy);
+        });
+    }
+
+    function put(key, html, allowed) {
+        var node = panel(key);
+        if (!node) { return; }
+        if (node.querySelector('[data-eventcrew-lazy]') || !node.classList.contains('is-active')) {
+            node.innerHTML = html;
+            runScripts(node);
+            return;
+        }
+        var fresh = document.createElement('div');
+        fresh.innerHTML = html;
+        // Classes the scripts gave the old copy (an open Admin screen) stay.
+        [].slice.call(node.querySelectorAll('[data-eventcrew-subpanel].is-active')).forEach(function (sub) {
+            var twin = fresh.querySelector('[data-eventcrew-subpanel="' + sub.getAttribute('data-eventcrew-subpanel') + '"]');
+            if (twin) { twin.classList.add('is-active'); }
+        });
+        patch(node, fresh, allowed, 0);
+    }
+
+    // Fetches `keys` and puts them in; the open one changes card by card.
+    function load(keys, allowed) {
+        keys = keys.filter(function (k, i) { return k && keys.indexOf(k) === i && panel(k); });
+        if (!keys.length) { return Promise.resolve(); }
+        return ask(keys).then(function (got) {
+            var done = [];
+            keys.forEach(function (key) {
+                if (typeof got[key] !== 'string') { return; }
+                put(key, got[key], allowed);
+                delete stale[key];
+                done.push(key);
+            });
+            announce(done);
+        });
+    }
+
+    // After a change: the open tab now, the others when they are opened.
+    function refresh(allowed) {
+        var open = tabs ? tabs.current() : '';
+        panels().forEach(function (p) {
+            var key = p.getAttribute('data-eventcrew-panel');
+            if (key !== open && !p.querySelector('[data-eventcrew-lazy]')) { stale[key] = true; }
+        });
+        return load([open], allowed);
+    }
+
+    document.addEventListener('eventcrew:tab', function (e) {
+        var key = e.detail && e.detail.panel;
+        var p = key && panel(key);
+        if (p && (stale[key] || p.querySelector('[data-eventcrew-lazy]'))) { load([key]).catch(function () {}); }
+    });
+
+    // The tabs the server left out, in one request, right away.
+    var missing = [].slice.call(root.querySelectorAll('[data-eventcrew-lazy]')).map(function (n) {
+        return n.getAttribute('data-eventcrew-lazy');
+    });
+    load(missing).then(function () {
+        // A link to a card on a tab that was not there yet: open it now.
+        var hash = typeof eventcrewStartHash === 'string' ? eventcrewStartHash : '';
+        var target = hash && hash.indexOf('eventcrew-panel-') !== 0 ? document.getElementById(hash) : null;
+        var key = keyOf(target);
+        if (target && key && tabs && tabs.current() !== key && missing.indexOf(key) >= 0) {
+            tabs.show(key);
+            target.scrollIntoView();
+        }
+    }).catch(function () {});
+
+    // What is typed but not sent yet.
+    root.addEventListener('input', function (e) {
+        var form = e.target.closest ? e.target.closest('form') : null;
+        if (form && keyOf(form)) { form.setAttribute('data-eventcrew-dirty', '1'); }
+    });
+
+    // The tabs' forms, sent from here: the answer is the notice and the
+    // address to come back to, and the open tab's changed cards are drawn
+    // again. Forms with a script of their own (the board's buttons, the
+    // Roles card), forms that change the whole page (language, sign out,
+    // your name and email) and file downloads go the ordinary way.
+    document.addEventListener('submit', function (e) {
+        var form = e.target;
+        if (e.defaultPrevented || !(form instanceof HTMLFormElement) || !keyOf(form) || !root.contains(form)) { return; }
+        if ((form.getAttribute('method') || 'get').toLowerCase() !== 'post' || form.target
+            || form.classList.contains('eventcrew-action') || form.hasAttribute('data-eventcrew-whole')) { return; }
+        var action = form.querySelector('input[name="action"]');
+        if (!action || (live.whole || []).indexOf(action.value) >= 0) { return; }
+        // getAttribute: the property is the input named "action".
+        var to = new URL(form.getAttribute('action') || '', window.location.href);
+        if (to.pathname.slice(-15) !== '/admin-ajax.php') { return; }
+
+        e.preventDefault();
+        var data = new FormData(form);
+        if (e.submitter && e.submitter.name) { data.append(e.submitter.name, e.submitter.value); }
+        data.append(live.json, '1');
+        var buttons = [].slice.call(form.querySelectorAll('button, input[type="submit"]'));
+        buttons.forEach(function (b) { b.disabled = true; });
+        var done = function () { buttons.forEach(function (b) { b.disabled = false; }); };
+
+        window.fetch(to.href, { method: 'POST', body: data, credentials: 'same-origin' })
+            .then(function (r) {
+                var json = (r.headers.get('content-type') || '').indexOf('json') >= 0;
+                if (r.ok && json) { return r.json(); }
+                // Not an answer this script knows: show what the server sent
+                // the browser to, as the ordinary post would have.
+                window.location.assign(r.redirected ? r.url : address());
+                return null;
+            })
+            .then(function (answer) {
+                if (!answer) { return; }
+                done();
+                var to = new URL(answer.url || address(), window.location.href);
+                if (to.origin !== window.location.origin || to.pathname !== window.location.pathname) {
+                    window.location.assign(to.toString());
+                    return;
+                }
+                to.searchParams.delete('eventcrew_notice');
+                to.hash = window.location.hash;
+                if (to.toString() !== window.location.href) {
+                    try { window.history.replaceState(null, '', to.toString()); } catch (err) {}
+                }
+                form.removeAttribute('data-eventcrew-dirty');
+                if (answer.notice && window.eventcrewToast) { window.eventcrewToast(answer.notice); }
+                return refresh(form.closest('section') || form);
+            })
+            .catch(function () {
+                done();
+                HTMLFormElement.prototype.submit.call(form);
+            });
+    });
+
+    // Asks for the change stamp every 5 seconds while the page is in view;
+    // slower after a failure, up to a minute.
+    var wait = 5000;
+    var timer = null;
+    function tick() {
+        timer = null;
+        if (document.visibilityState === 'hidden') { return; }
+        var body = new FormData();
+        body.append('action', live.stamp);
+        window.fetch(ajaxUrl, { method: 'POST', body: body, credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+            .then(function (answer) {
+                wait = 5000;
+                if (!answer || !answer.signed_in) { return 'stop'; }
+                if (String(answer.stamp) !== stamp) {
+                    stamp = String(answer.stamp);
+                    return refresh(null);
+                }
+            })
+            .then(function (stop) { if (stop !== 'stop') { later(); } })
+            .catch(function () { wait = Math.min(wait * 2, 60000); later(); });
+    }
+    function later() {
+        if (!timer && document.visibilityState !== 'hidden') { timer = window.setTimeout(tick, wait); }
+    }
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState !== 'hidden' && !timer) { tick(); }
+    });
+    later();
+
+    window.eventcrewPanels = { refresh: refresh, load: load };
+})();
+
+/*
  * The menu at the top right ("Hi Name ☰": Settings, Help, Sign out). A
  * disclosure: the button opens and closes the list under it; Esc, a click
  * or tap outside it, or focus leaving it close it again. Without this script
@@ -3453,67 +3845,86 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
  * admin_ notice; without that, giving a credit would land you on Roster.
  */
 (function () {
-    var admin = document.querySelector('.eventcrew-panel.eventcrew-admin');
-    var nav = admin && admin.querySelector('.eventcrew-subtabs');
-    var root = document.querySelector('.eventcrew-signup');
-
-    if (!nav || !root || !root.classList.contains('is-tabbed')) { return; }
-
-    var links = [].slice.call(nav.querySelectorAll('[data-eventcrew-subtab]'));
-    var subs = [].slice.call(admin.querySelectorAll('[data-eventcrew-subpanel]'));
     var store = 'eventcrew-admin-screen';
+    var current = '';
 
-    function has(key) {
-        return subs.some(function (s) { return s.getAttribute('data-eventcrew-subpanel') === key; });
-    }
+    // Set up again whenever the Admin tab is drawn (it may arrive after the
+    // page opened, and its parts are drawn again when they change).
+    function setup() {
+        var admin = document.querySelector('.eventcrew-panel.eventcrew-admin');
+        var nav = admin && admin.querySelector('.eventcrew-subtabs');
+        var root = document.querySelector('.eventcrew-signup');
 
-    // A key or link of a screen that is now part of another (newsletter,
-    // followup and aitexts are in Messages): the screen that holds it.
-    function holder(key) {
-        if (!key || has(key)) { return key; }
-        var node = document.getElementById('eventcrew-admin-' + key);
-        var sub = node && node.closest('[data-eventcrew-subpanel]');
-        return sub ? sub.getAttribute('data-eventcrew-subpanel') : key;
-    }
+        if (!nav || !root || !root.classList.contains('is-tabbed')) { return; }
 
-    function remember(key) {
-        try { window.sessionStorage.setItem(store, key); } catch (e) {}
-    }
+        function links() { return [].slice.call(admin.querySelectorAll('[data-eventcrew-subtab]')); }
+        function subs() { return [].slice.call(admin.querySelectorAll('[data-eventcrew-subpanel]')); }
 
-    function show(key) {
-        if (!has(key)) { key = links[0].getAttribute('data-eventcrew-subtab'); }
-        links.forEach(function (link) {
-            var on = link.getAttribute('data-eventcrew-subtab') === key;
-            link.classList.toggle('is-active', on);
-            link.setAttribute('aria-current', on ? 'true' : 'false');
-        });
-        subs.forEach(function (s) {
-            s.classList.toggle('is-active', s.getAttribute('data-eventcrew-subpanel') === key);
-        });
-    }
+        function has(key) {
+            return subs().some(function (s) { return s.getAttribute('data-eventcrew-subpanel') === key; });
+        }
 
-    links.forEach(function (link) {
-        link.addEventListener('click', function (e) {
+        // A key or link of a screen that is now part of another (newsletter,
+        // followup and aitexts are in Messages): the screen that holds it.
+        function holder(key) {
+            if (!key || has(key)) { return key; }
+            var node = document.getElementById('eventcrew-admin-' + key);
+            var sub = node && node.closest('[data-eventcrew-subpanel]');
+            return sub ? sub.getAttribute('data-eventcrew-subpanel') : key;
+        }
+
+        function remember(key) {
+            try { window.sessionStorage.setItem(store, key); } catch (e) {}
+        }
+
+        function show(key) {
+            var all = links();
+            if (!has(key) && all.length) { key = all[0].getAttribute('data-eventcrew-subtab'); }
+            current = key;
+            all.forEach(function (link) {
+                var on = link.getAttribute('data-eventcrew-subtab') === key;
+                link.classList.toggle('is-active', on);
+                link.setAttribute('aria-current', on ? 'true' : 'false');
+            });
+            subs().forEach(function (s) {
+                s.classList.toggle('is-active', s.getAttribute('data-eventcrew-subpanel') === key);
+            });
+        }
+
+        if (admin.hasAttribute('data-eventcrew-subtabs-ready')) {
+            show(current);
+            return;
+        }
+        admin.setAttribute('data-eventcrew-subtabs-ready', '1');
+
+        // Delegated: the links are drawn again when they change.
+        admin.addEventListener('click', function (e) {
+            var link = e.target.closest ? e.target.closest('[data-eventcrew-subtab]') : null;
+            if (!link || !admin.contains(link)) { return; }
             e.preventDefault();
             var key = link.getAttribute('data-eventcrew-subtab');
             show(key);
             remember(key);
         });
-    });
 
-    subs.forEach(function (s) {
-        s.addEventListener('submit', function () { remember(s.getAttribute('data-eventcrew-subpanel')); });
-    });
+        admin.addEventListener('submit', function (e) {
+            var s = e.target.closest ? e.target.closest('[data-eventcrew-subpanel]') : null;
+            if (s) { remember(s.getAttribute('data-eventcrew-subpanel')); }
+        });
 
-    var key = '';
-    var hash = eventcrewStartHash;
-    if (hash.indexOf('eventcrew-admin-') === 0) { key = hash.replace('eventcrew-admin-', ''); }
-    if (!key && /[?&]eventcrew_notice=admin_/.test(window.location.search)) {
-        try { key = window.sessionStorage.getItem(store) || ''; } catch (e) {}
+        var key = '';
+        var hash = eventcrewStartHash;
+        if (hash.indexOf('eventcrew-admin-') === 0) { key = hash.replace('eventcrew-admin-', ''); }
+        if (!key && /[?&]eventcrew_notice=admin_/.test(window.location.search)) {
+            try { key = window.sessionStorage.getItem(store) || ''; } catch (e) {}
+        }
+
+        admin.classList.add('has-subtabs');
+        show(holder(key));
     }
 
-    admin.classList.add('has-subtabs');
-    show(holder(key));
+    setup();
+    document.addEventListener('eventcrew:panel', setup);
 })();
 
 /*
@@ -3523,11 +3934,17 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
  * only the one shown. The address follows, so Back from a person comes
  * back to the same search. Without this script the Search button works.
  */
-(function () {
-    var form = document.querySelector('[data-eventcrew-people-search]');
+(function setup() {
+    var form = document.querySelector('[data-eventcrew-people-search]:not([data-eventcrew-search-ready])');
     var box = form && form.querySelector('input[name="people_q"]');
     var results = document.getElementById('eventcrew-admin-people-results');
+    if (!setup.listening) {
+        // The Admin tab may arrive after the page opened.
+        setup.listening = true;
+        document.addEventListener('eventcrew:panel', function () { setup(); });
+    }
     if (!form || !box || !results || !window.fetch || !window.DOMParser || !window.URL) { return; }
+    form.setAttribute('data-eventcrew-search-ready', '1');
 
     var timer = null;
     var last = box.value;
@@ -3548,7 +3965,11 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
     function find() {
         var urls = address();
         var mine = ++asked;
-        window.fetch(urls.fetch, { credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
+        // The page drawn with the Admin tab (SignupController::firstPanel()).
+        var fetchUrl = new URL(urls.fetch);
+        fetchUrl.searchParams.set(<?php echo wp_json_encode(\EventCrew\Web\SignupController::PANEL_ARG); ?>, 'admin');
+        results = document.getElementById('eventcrew-admin-people-results') || results;
+        window.fetch(fetchUrl.toString(), { credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
             .then(function (r) { return r.ok ? r.text() : Promise.reject(r.status); })
             .then(function (html) {
                 if (mine !== asked) { return; }
@@ -3587,7 +4008,11 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
     }
 
     function refresh(ids) {
-        return window.fetch(window.location.href, { credentials: 'same-origin' })
+        // The page drawn with the Admin tab (SignupController::firstPanel()).
+        var url = new URL(window.location.href);
+        url.hash = '';
+        url.searchParams.set(<?php echo wp_json_encode(\EventCrew\Web\SignupController::PANEL_ARG); ?>, 'admin');
+        return window.fetch(url.toString(), { credentials: 'same-origin' })
             .then(function (r) { return r.ok ? r.text() : ''; })
             .then(function (html) {
                 if (!html) { return; }
@@ -3638,7 +4063,12 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
             .catch(function () { timer = window.setTimeout(poll, 15000); });
     }
 
-    if (marks().length && window.fetch && window.DOMParser) { timer = window.setTimeout(poll, 3000); }
+    function start() {
+        if (!timer && marks().length && window.fetch && window.DOMParser && window.URL) { timer = window.setTimeout(poll, 3000); }
+    }
+    start();
+    // The Admin tab may arrive after the page opened.
+    document.addEventListener('eventcrew:panel', start);
 })();
 
 /*
@@ -3646,11 +4076,17 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
  * fills in the date and times, and the event name field shows only for
  * "Other". Only a convenience: without it the form still posts every field.
  */
-(function () {
-    var picker = document.querySelector('[data-eventcrew-task-events]');
+(function setup() {
+    var picker = document.querySelector('[data-eventcrew-task-events]:not([data-eventcrew-picker-ready])');
     var otherRow = document.querySelector('[data-eventcrew-task-other]');
 
+    if (!setup.listening) {
+        // The Admin tab may arrive after the page opened.
+        setup.listening = true;
+        document.addEventListener('eventcrew:panel', function () { setup(); });
+    }
     if (!picker) { return; }
+    picker.setAttribute('data-eventcrew-picker-ready', '1');
 
     function apply(overwrite) {
         var option = picker.options[picker.selectedIndex];
@@ -3685,7 +4121,6 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
  */
 (function () {
     var root = document.querySelector('.eventcrew-signup');
-    var board = document.getElementById('eventcrew-board');
     var toast = document.getElementById('eventcrew-toast');
 
     // Pin the toast to the viewport, not the widget: a transformed ancestor
@@ -3704,6 +4139,8 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         if (toastTimer) { clearTimeout(toastTimer); }
         toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 4000);
     }
+    // For the live script's forms.
+    window.eventcrewToast = showToast;
 
     // A server-rendered toast (from a full-page redirect) auto-hides too.
     if (toast && toast.classList.contains('show')) {
@@ -3751,7 +4188,9 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
         try { emailField.value = localStorage.getItem(EMAIL_KEY) || ''; } catch (e) {}
     }
 
-    if (!root || !board || !window.fetch) {
+    // The Board tab may arrive after the page opened (lazyPanels()), so it
+    // is looked up when an answer comes, not here.
+    if (!root || !window.fetch) {
         return;
     }
 
@@ -4173,7 +4612,8 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
                 return;
             }
 
-            if (res && typeof res.board === 'string') {
+            var board = document.getElementById('eventcrew-board');
+            if (res && typeof res.board === 'string' && board) {
                 /*
              * Swapping the board's HTML destroys the button that was just
              * pressed, and with it the focus - dumping a keyboard or screen
@@ -4202,7 +4642,11 @@ var eventcrewStartHash = (window.location.hash || '').slice(1);
              * nothing happened (a typo in the email), so the form stays filled.
              */
             var reloadTo = form.getAttribute('data-eventcrew-reload');
-            if (reloadTo && res && false !== res.changed) {
+            if (reloadTo && res && false !== res.changed && window.eventcrewPanels) {
+                // The live page draws its open tab again instead of reloading.
+                form.removeAttribute('data-eventcrew-dirty');
+                window.eventcrewPanels.refresh(form.closest('section') || form).catch(function () { window.location.reload(); });
+            } else if (reloadTo && res && false !== res.changed) {
                 try { sessionStorage.setItem('eventcrew_toast', res.notice || ''); } catch (err) {}
                 history.replaceState(null, '', window.location.pathname + window.location.search + '#' + reloadTo);
                 window.location.reload();

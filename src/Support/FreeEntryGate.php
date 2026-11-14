@@ -57,20 +57,35 @@ final class FreeEntryGate
         }
 
         if (! isset($this->eventReasons[$date])) {
-            $reason = '';
-
-            foreach ($this->tasks->forDate($date) as $task) {
-                $reason = EventSource::closedReason((int) $task->eventPostId);
-
-                if ('' !== $reason) {
-                    break;
-                }
-            }
-
-            $this->eventReasons[$date] = $reason;
+            $this->knowTasks($date, $this->tasks->forDate($date));
         }
 
         return $this->eventReasons[$date];
+    }
+
+    /**
+     * The date's tasks, read by a caller that had them already (several
+     * dates in one query), so eventReason() does not read them again.
+     *
+     * @param array<int, \EventCrew\Models\Task> $tasks
+     */
+    public function knowTasks(string $date, array $tasks): void
+    {
+        if (isset($this->eventReasons[$date])) {
+            return;
+        }
+
+        $reason = '';
+
+        foreach ($tasks as $task) {
+            $reason = EventSource::closedReason((int) $task->eventPostId);
+
+            if ('' !== $reason) {
+                break;
+            }
+        }
+
+        $this->eventReasons[$date] = $reason;
     }
 
     public function close(string $date): void

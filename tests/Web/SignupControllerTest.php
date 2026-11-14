@@ -3439,4 +3439,157 @@ final class SignupControllerTest extends TestCase
         self::assertSame('You’ve cancelled that task.', SignupController::noticeText('dropped'));
     }
 
+
+    /** A signed-in person (id 7) and an empty board, read in render order. */
+    private function signedInSam(): void
+    {
+        $this->stubPageRender();
+        Functions\when('wp_unslash')->returnArg(1);
+        Functions\when('checked')->justReturn(null);
+        $_COOKIE[WebSession::COOKIE] = WebSession::mint(7);
+
+        $person = [
+            'id' => 7, 'email' => 'sam@example.com', 'display_name' => 'Sam',
+            'email_verified_at' => '2026-07-01 00:00:00',
+        ];
+        $this->wpdb->nextRows[] = $person;               // pageLanguage: currentPerson
+        $this->wpdb->nextRows[] = $person;               // viewModel: currentPerson
+        $this->wpdb->nextResults[] = [$this->taskRow()]; // upcoming
+        $this->wpdb->nextResults[] = [];                 // occupancyFor
+        $this->wpdb->nextResults[] = [];                 // forPerson (occupiedTaskIds)
+        $this->wpdb->nextResults[] = [];                 // standing historyFor
+        $this->wpdb->nextVars[] = 0;                     // standing countFor
+    }
+
+    /**
+     * Faster Crew app (Owner 2026-11-14): signed in, the page draws only the
+     * tab it opens on; every other tab is a link the page's script fills
+     * right away, and the page carries what its script needs to stay live.
+     */
+    public function testALazyPageDrawsOnlyTheTabItOpensOn(): void
+    {
+        $this->signedInSam();
+
+        $html = $this->controller()->lazyPanels()->renderShortcode();
+
+        self::assertStringContainsString('<!--eventcrew-panel:board-->', $html);
+        self::assertStringContainsString('<!--/eventcrew-panel:board-->', $html);
+        self::assertStringNotContainsString('<!--eventcrew-panel:tasks-->', $html);
+
+        foreach (['tasks', 'tickets', 'settings', 'help'] as $key) {
+            self::assertStringContainsString('data-eventcrew-lazy="' . $key . '"', $html);
+            // Without the script the placeholder is a link that opens that tab.
+            self::assertMatchesRegularExpression('~data-eventcrew-lazy="' . $key . '"><a href="[^"]*eventcrew_panel[^"]*#eventcrew-panel-' . $key . '"~', $html);
+        }
+
+        // Not an organizer: no Admin tab at all.
+        self::assertStringNotContainsString('data-eventcrew-lazy="admin"', $html);
+        self::assertStringNotContainsString('data-eventcrew-panel="admin"', $html);
+        self::assertSame(1, preg_match('~data-eventcrew-live="([^"]+)"~', $html, $m));
+        $live = json_decode(html_entity_decode($m[1], ENT_QUOTES), true);
+        self::assertSame(SignupController::PANEL_ACTION, $live['panel']);
+        self::assertSame(SignupController::STAMP_ACTION, $live['stamp']);
+        self::assertSame(SignupController::JSON_FIELD, $live['json']);
+    }
+
+    /** Without lazyPanels() every tab is drawn, as before. */
+    public function testAPageWithoutLazyPanelsDrawsEveryTab(): void
+    {
+        $this->signedInSam();
+
+        $html = $this->controller()->renderShortcode();
+
+        self::assertStringNotContainsString('data-eventcrew-lazy=', $html);
+        self::assertStringNotContainsString('<!--eventcrew-panel:', $html);
+        self::assertStringContainsString('data-eventcrew-panel="tasks"', $html);
+        self::assertStringContainsString('data-eventcrew-panel="help"', $html);
+    }
+
+    /** The panels endpoint's drawing: only the asked, known tabs, cut out of the page. */
+    public function testRenderPanelsCutsOutOnlyTheAskedTabs(): void
+    {
+        $this->signedInSam();
+
+        $panels = $this->controller()->lazyPanels()->renderPanels(['tasks', 'admin', 'nope', 'help'], 'https://site.test/signup/');
+
+        self::assertSame(['tasks', 'help'], array_keys($panels));
+        self::assertStringNotContainsString('eventcrew-panel:', $panels['tasks']);
+        self::assertStringNotContainsString('data-eventcrew-lazy', $panels['tasks']);
+        self::assertStringNotContainsString('<section class="eventcrew-panel', $panels['help']);
+    }
+
+    /** The tab a page opens on: asked, else the notice's tab, else the last one, else the Board. */
+    public function testTheFirstTab(): void
+    {
+        Functions\when('wp_unslash')->returnArg(1);
+        $sam = new Person(7, 'sam@example.com', 'Sam');
+        $boss = new Person(8, 'boss@example.com', 'Boss', null, null, null, true);
+        $controller = $this->controller();
+
+        self::assertSame('board', $controller->firstPanel($sam));
+
+        $_COOKIE[SignupController::PANEL_COOKIE] = 'tickets';
+        self::assertSame('tickets', $controller->firstPanel($sam));
+
+        $_GET['eventcrew_notice'] = 'prefs_saved';
+        self::assertSame('settings', $controller->firstPanel($sam));
+
+        $_GET[SignupController::PANEL_ARG] = 'help';
+        self::assertSame('help', $controller->firstPanel($sam));
+
+        $_GET[SignupController::PANEL_ARG] = 'nonsense';
+        self::assertSame('board', $controller->firstPanel($sam));
+
+        // Admin only for someone with the Admin tab (this controller has none).
+        $_GET[SignupController::PANEL_ARG] = 'admin';
+        self::assertSame('board', $controller->firstPanel($sam));
+        self::assertSame('board', $controller->firstPanel($boss));
+
+        $_GET = [];
+    }
+
+    /** A form the page's script sent itself gets JSON; an ordinary post goes on to its redirect. */
+    public function testASavedFormAnswersWithJsonOnlyWhenTheScriptSentIt(): void
+    {
+        Functions\when('nocache_headers')->justReturn(null);
+        Functions\when('wp_send_json')->alias(static function (mixed $data): never {
+            throw new \RuntimeException((string) json_encode($data));
+        });
+        $_POST = [];
+
+        SignupController::answerSavedForm('https://site.test/signup/?eventcrew_notice=prefs_saved', 'prefs_saved');
+
+        $_POST[SignupController::JSON_FIELD] = '1';
+
+        try {
+            SignupController::answerSavedForm('https://site.test/signup/?eventcrew_notice=prefs_saved', 'prefs_saved');
+            self::fail('Expected JSON.');
+        } catch (\RuntimeException $e) {
+            $answer = json_decode($e->getMessage(), true);
+            self::assertSame('prefs_saved', $answer['code']);
+            self::assertSame('https://site.test/signup/?eventcrew_notice=prefs_saved', $answer['url']);
+            self::assertIsString($answer['notice']);
+        } finally {
+            $_POST = [];
+        }
+    }
+
+    /** The stamp endpoint: the stamp, and whether the page's person is still signed in. */
+    public function testTheStampEndpoint(): void
+    {
+        Functions\when('nocache_headers')->justReturn(null);
+        Functions\when('get_option')->alias(
+            static fn (string $name, mixed $default = false): mixed => \EventCrew\Support\ChangeStamp::OPTION === $name ? '1234' : $default
+        );
+        Functions\when('wp_send_json')->alias(static function (mixed $data): never {
+            throw new \RuntimeException((string) json_encode($data));
+        });
+
+        try {
+            $this->controller()->stamp();
+            self::fail('Expected JSON.');
+        } catch (\RuntimeException $e) {
+            self::assertSame(['stamp' => '1234', 'signed_in' => false], json_decode($e->getMessage(), true));
+        }
+    }
 }

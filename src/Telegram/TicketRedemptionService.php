@@ -723,8 +723,15 @@ final class TicketRedemptionService
         $held = $this->heldCounts($personId);
         $several = SeveralTickets::isOn();
         $nights = [];
+        $dates = $this->tasks->upcomingDates();
+        // Every night's tasks in one read, for the closed check and the name.
+        $known = $this->tasks->forDates($dates);
 
-        foreach ($this->tasks->upcomingDates() as $date) {
+        foreach ($known as $date => $tasks) {
+            $this->freeEntry->knowTasks((string) $date, $tasks);
+        }
+
+        foreach ($dates as $date) {
             $count = $held[$date] ?? 0;
 
             if ($this->freeEntry->isClosed($date) || ($count > 0 && ! $several)) {
@@ -732,7 +739,9 @@ final class TicketRedemptionService
             }
 
             // One lookup for both the name and the DJs (the tests script it).
-            [$eventId, $eventLabel] = $this->eventContext($date);
+            [$eventId, $eventLabel] = isset($known[$date][0])
+                ? [$known[$date][0]->eventPostId, $known[$date][0]->eventName()]
+                : $this->eventContext($date);
             $djs = null === $eventId ? '' : EventName::djLine((int) $eventId);
             $label = $this->shortDate($date) . ('' === $eventLabel ? '' : ' · ' . $eventLabel)
                 . ('' === $djs ? '' : ' · ' . $djs);

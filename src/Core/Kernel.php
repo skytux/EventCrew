@@ -49,6 +49,7 @@ use EventCrew\Support\BoardPush;
 use EventCrew\Support\BuyerImport;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\CampaignVisits;
+use EventCrew\Support\ChangeStamp;
 use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\CronFallbackTrigger;
 use EventCrew\Support\DoorAccess;
@@ -229,6 +230,10 @@ final class Kernel
 
         // The history of actions: from here on, History::record() writes rows.
         $this->container->get(HistoryRecorder::class)->boot();
+
+        // The Crew app's change stamp: every write to a table its tabs show
+        // moves it, so open pages know to fetch their tabs again.
+        ChangeStamp::boot();
 
         // Adds the organize task to nights created before it existed. Runs
         // once per site, on the first request of any kind after the update.
@@ -1143,7 +1148,7 @@ final class Kernel
 
         $this->container->singleton(
             SignupController::class,
-            fn (Container $container) => new SignupController(
+            fn (Container $container) => (new SignupController(
                 $container->get(PersonRepository::class),
                 $container->get(AuthTokenRepository::class),
                 $container->get(TaskRepository::class),
@@ -1161,7 +1166,7 @@ final class Kernel
                 $container->get(TelegramClient::class),
                 $container->get(TicketTransferService::class),
                 $container->get(TakeoverService::class)
-            )
+            ))->lazyPanels()
         );
 
         $this->container->singleton(

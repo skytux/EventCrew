@@ -330,6 +330,12 @@ final class SignupBoardView
             $occupants = $this->tasks->occupantsFor(array_map(static fn (Task $t): int => $t->id, $visible));
         }
 
+        if (null !== $this->takeovers && null !== $person) {
+            // The Take someone's task holders of every taken row, in two reads.
+            $taken = array_filter($tasks, static fn (Task $t): bool => ($occupancy[$t->id] ?? 0) > 0 && ! isset($mine[$t->id]));
+            $this->takeovers->prime(array_map(static fn (Task $t): int => $t->id, $taken));
+        }
+
         foreach ($tasks as $task) {
             // Signed out, the board shows what the Telegram group board shows.
             // Signed in, also the tasks of the person's roles and of the roles

@@ -12,6 +12,7 @@ use EventCrew\Repositories\TaskRepository;
 use EventCrew\Support\AppInstallPrompt;
 use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\CancelNote;
+use EventCrew\Support\ChangeStamp;
 use EventCrew\Support\ChannelChoice;
 use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\DmBody;
@@ -86,6 +87,18 @@ final class SignupController implements WebTaskSignup
     public const CODE_ACTION = 'eventcrew_web_login_code';
     /** The join questions' card, shown to a newcomer after their first sign-in (JoinAnswers). */
     public const JOIN_ACTION = 'eventcrew_web_join';
+    /** The tab panels a page did not draw yet (panels()). */
+    public const PANEL_ACTION = 'eventcrew_web_panel';
+    /** The change stamp an open page asks for every few seconds (stamp()). */
+    public const STAMP_ACTION = 'eventcrew_web_stamp';
+    /** ?eventcrew_panel=tasks: the tab a page draws first. */
+    public const PANEL_ARG = 'eventcrew_panel';
+    /** The tab last open on this device, set by the page's script. */
+    public const PANEL_COOKIE = 'eventcrew_panel';
+    /** Set by the page's script on a form it sends itself: the answer is JSON, not a redirect. */
+    public const JSON_FIELD = 'eventcrew_json';
+    /** The signed-in tabs' panels, in page order. */
+    public const PANELS = ['board', 'tasks', 'tickets', 'settings', 'help', 'admin'];
     /** The join card's Skip: a submit button with this name. */
     public const JOIN_SKIP_FIELD = 'join_skip';
 
@@ -119,6 +132,9 @@ final class SignupController implements WebTaskSignup
      */
     private ?Person $person = null;
     private bool $personRead = false;
+
+    /** Whether the page draws only its first tab (lazyPanels()). */
+    private bool $lazy = false;
 
     public function __construct(
         private readonly PersonRepository $people,
@@ -186,6 +202,197 @@ final class SignupController implements WebTaskSignup
             add_action('wp_ajax_' . $action, [$this, 'dispatch']);
             add_action('wp_ajax_nopriv_' . $action, [$this, 'dispatch']);
         }
+
+        foreach ([self::PANEL_ACTION => 'panels', self::STAMP_ACTION => 'stamp'] as $action => $method) {
+            add_action('wp_ajax_' . $action, [$this, $method]);
+            add_action('wp_ajax_nopriv_' . $action, [$this, $method]);
+        }
+    }
+
+    /**
+     * From now on the signed-in page draws only the tab it opens on, and the
+     * page fetches the others (panels()) right after it shows (Owner
+     * 2026-11-14, faster Crew app). The plugin turns this on; a controller
+     * made without it draws every tab, as before.
+     */
+    public function lazyPanels(bool $on = true): static
+    {
+        $this->lazy = $on;
+
+        return $this;
+    }
+
+    /**
+     * The tab the page opens on, and so draws first: ?eventcrew_panel=, else
+     * the tab of the notice the page came back with (as the page's script
+     * picks it), else the tab last open on this device (its cookie), else
+     * the Board. Admin only for an organizer.
+     */
+    public function firstPanel(Person $person): string
+    {
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only choice of what to draw.
+        $asked = isset($_GET[self::PANEL_ARG]) ? sanitize_key(wp_unslash($_GET[self::PANEL_ARG])) : '';
+        $notice = isset($_GET['eventcrew_notice']) ? sanitize_key(wp_unslash($_GET['eventcrew_notice'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+        $last = isset($_COOKIE[self::PANEL_COOKIE]) ? sanitize_key(wp_unslash((string) $_COOKIE[self::PANEL_COOKIE])) : '';
+
+        if ('' === $asked) {
+            $asked = match (true) {
+                'prefs_saved' === $notice => 'settings',
+                str_starts_with($notice, 'ticket_') => 'tickets',
+                str_starts_with($notice, 'admin_') => 'admin',
+                // Paging the Tasks tab's lists.
+                isset($_GET[SignupBoardView::TASKS_PAGE_ARG]) || isset($_GET[SignupBoardView::PAST_PAGE_ARG]) => 'tasks', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                default => $last,
+            };
+        }
+
+        if ('admin' === $asked && ! $this->showsAdmin($person)) {
+            return 'board';
+        }
+
+        return in_array($asked, self::PANELS, true) ? $asked : 'board';
+    }
+
+    /** Whether $person gets the Admin tab (CrewAdminController::viewFor() is not null). */
+    private function showsAdmin(mixed $person): bool
+    {
+        return null !== $this->admin && $person instanceof Person && $person->isOrganizer;
+    }
+
+    /**
+     * The Admin tab's view for a page drawing $panels (null: all): the full
+     * view when Admin is drawn, a stand-in that only keeps the tab when it is
+     * not, null for someone without the tab.
+     *
+     * @param list<string>|null $panels
+     * @return array<string, mixed>|null
+     */
+    private function adminFor(mixed $person, ?array $panels): ?array
+    {
+        if (null !== $panels && ! in_array('admin', $panels, true)) {
+            return $this->showsAdmin($person) ? ['lazy' => true] : null;
+        }
+
+        return $this->adminView($person);
+    }
+
+    /**
+     * The tab panels a page asks for after it opened (admin-ajax, POST
+     * panels[] and redirect_to, the page's address with its query): each
+     * drawn as the page would, as JSON {panels: {key: html}, stamp}. Read
+     * only, for the signed-in person; never cached.
+     */
+    public function panels(): void
+    {
+        nocache_headers();
+
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- read only, for the session's own person.
+        $asked = isset($_POST['panels']) && is_array($_POST['panels'])
+            ? array_map('sanitize_key', wp_unslash($_POST['panels']))
+            : [];
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+
+        if (null === $this->currentPerson()) {
+            wp_send_json(['signed_out' => true, 'panels' => (object) [], 'stamp' => ChangeStamp::current()]);
+        }
+
+        $page = $this->safeRedirect();
+        $query = (string) wp_parse_url($page, PHP_URL_QUERY);
+
+        if ('' !== $query) {
+            // The page's own query (?roster_date=, ?people_q=, ...): the panels
+            // read it as they do on the page.
+            parse_str($query, $args);
+            $_GET += $args;
+        }
+
+        $here = strtok($page, '?#');
+
+        wp_send_json([
+            'panels' => (object) $this->renderPanels($asked, false === $here ? $page : $here),
+            'stamp' => ChangeStamp::current(),
+        ]);
+    }
+
+    /**
+     * The change stamp (ChangeStamp), for an open page to see whether
+     * anything its tabs show changed. Never cached.
+     */
+    public function stamp(): void
+    {
+        nocache_headers();
+
+        wp_send_json(['stamp' => ChangeStamp::current(), 'signed_in' => null !== $this->currentPerson()]);
+    }
+
+    /**
+     * Draws the page with only $keys' panels and cuts each out of it:
+     * key => the panel's inner HTML. Unknown keys, and Admin for someone
+     * without it, are left out.
+     *
+     * @param list<string> $keys
+     * @return array<string, string>
+     */
+    public function renderPanels(array $keys, string $here): array
+    {
+        $person = $this->currentPerson();
+        $keys = array_values(array_filter(
+            array_intersect(self::PANELS, $keys),
+            fn (string $key): bool => 'admin' !== $key || $this->showsAdmin($person)
+        ));
+
+        if (null === $person || [] === $keys) {
+            return [];
+        }
+
+        $html = Language::run($this->pageLanguage(), function () use ($keys, $here): string {
+            $view = $this->viewModel();
+            $view['panels'] = $keys;
+            $view['admin'] = $this->adminFor($view['person'] ?? null, $keys);
+            $view['here'] = $here;
+
+            ob_start();
+            include EVENTCREW_PLUGIN_DIR . 'templates/public/signup.php';
+
+            return (string) ob_get_clean();
+        });
+
+        $out = [];
+
+        foreach ($keys as $key) {
+            $start = '<!--eventcrew-panel:' . $key . '-->';
+            $end = '<!--/eventcrew-panel:' . $key . '-->';
+            $from = strpos($html, $start);
+            $to = false === $from ? false : strpos($html, $end, $from);
+
+            if (false !== $from && false !== $to) {
+                $out[$key] = substr($html, $from + strlen($start), $to - $from - strlen($start));
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * A form the page's script sent itself (JSON_FIELD) gets its outcome as
+     * JSON instead of the redirect: the notice code, its text, and the
+     * address the redirect would have gone to, so the page can draw its tab
+     * again from there. Returns when the form was posted the ordinary way.
+     */
+    public static function answerSavedForm(string $to, string $notice): void
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- only picks the answer's format.
+        if (empty($_POST[self::JSON_FIELD])) {
+            return;
+        }
+
+        nocache_headers();
+        wp_send_json([
+            'code' => $notice,
+            'notice' => self::noticeText($notice),
+            'url' => wp_validate_redirect($to, home_url('/')),
+        ]);
     }
 
     public function registerBlock(): void
@@ -426,7 +633,10 @@ final class SignupController implements WebTaskSignup
         // In the signed-in person's language, else the website's or the browser's.
         return Language::run($this->pageLanguage(), function (): string {
             $view = $this->viewModel();
-            $view['admin'] = $this->adminView($view['person'] ?? null);
+            $person = $view['person'] ?? null;
+            // Signed in, a lazy page draws only the tab it opens on.
+            $view['panels'] = $this->lazy && $person instanceof Person ? [$this->firstPanel($person)] : null;
+            $view['admin'] = $this->adminFor($person, $view['panels']);
 
             ob_start();
             include EVENTCREW_PLUGIN_DIR . 'templates/public/signup.php';
@@ -1973,6 +2183,7 @@ final class SignupController implements WebTaskSignup
 
     private function redirect(string $url, string $notice): never
     {
+        self::answerSavedForm(add_query_arg('eventcrew_notice', $notice, $url), $notice);
         wp_safe_redirect(add_query_arg('eventcrew_notice', $notice, $url));
 
         exit;

@@ -283,4 +283,8 @@
     } else {
         init();
     }
+
+    // The Crew app draws some tabs after the page opens (and again when they
+    // change): set up the lists that arrive then too.
+    document.addEventListener('eventcrew:panel', init);
 })();
