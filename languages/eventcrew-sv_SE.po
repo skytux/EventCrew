@@ -6428,12 +6428,6 @@ msgstr "Signatur"
 msgid "Signed in. You can go back to the crew app."
 msgstr "Inloggad. Du kan gå tillbaka till crew-appen."
 
-#: src/Web/SignupController.php:1213
-msgid ""
-"Signed out everywhere. Any other browser or phone that was signed in as you will need a fresh link."
-msgstr ""
-"Utloggad överallt. Andra webbläsare eller telefoner som var inloggade som du behöver en ny länk."
-
 #: src/Support/AssignmentStatus.php:104 src/Support/PrivacyExporter.php:194 src/Support/PrivacyExporter.php:274 templates/admin/tasks.php:300
 #: templates/public/signup.php:1619
 msgid "Signed up"
@@ -6450,12 +6444,6 @@ msgstr "Anmäld till en uppgift (Telegram)"
 #: src/Support/MessageTemplates.php:1225
 msgid "Signed up for a task (email)"
 msgstr "Anmäld till en uppgift (e-post)"
-
-#: templates/public/signup.php:611
-msgid ""
-"Signing in leaves this browser signed in for 30 days. If you have used a shared or borrowed device — or you think somebody else has your sign-in link — this signs out every browser and phone at once, including this one. Nothing is lost; you just sign in again."
-msgstr ""
-"När du loggar in förblir den här webbläsaren inloggad i 30 dagar. Om du har använt en delad eller lånad enhet — eller tror att någon annan har din inloggningslänk — loggar detta ut alla webbläsare och telefoner på en gång, även den här. Inget går förlorat; du loggar bara in igen."
 
 #: src/Support/OrganizerGuide.php:214
 msgid ""
