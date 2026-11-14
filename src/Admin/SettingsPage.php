@@ -94,6 +94,9 @@ final class SettingsPage
     /** The language-model helper's Test connection and Remove key links. */
     private const ASSISTANT_NONCE_ACTION = 'eventcrew_assistant';
 
+    /** The Roles tab's ↑ / ↓ links (moveRole()). */
+    private const ROLE_ORDER_NONCE_ACTION = 'eventcrew_role_order';
+
     /** How many published pages the page choice lists. */
     private const ASSISTANT_PAGE_CHOICES = 100;
 
@@ -156,6 +159,7 @@ final class SettingsPage
             'settings',
             [
                 'roles' => Roles::all(),
+                'role_move_urls' => self::roleMoveUrls(),
                 'guide_url' => Roles::guideUrl(),
                 'organize_plus_ones' => Roles::defaultPlusOnes(Roles::ORGANIZE_SLUG),
                 'nonce_action' => self::NONCE_ACTION,
@@ -280,6 +284,60 @@ final class SettingsPage
      *     kinds: array<string, array{label: string, ticked: bool}>
      * }
      */
+    /**
+     * The Roles tab's ↑ / ↓ links, slug => ['up' => url, 'down' => url];
+     * the first role has no up, the last no down.
+     *
+     * @return array<string, array<string, string>>
+     */
+    private static function roleMoveUrls(): array
+    {
+        $roles = Roles::all();
+        $last = count($roles) - 1;
+        $urls = [];
+
+        foreach ($roles as $index => $role) {
+            $urls[$role['slug']] = [];
+
+            foreach (['up' => $index > 0, 'down' => $index < $last] as $where => $shown) {
+                if ($shown) {
+                    $urls[$role['slug']][$where] = wp_nonce_url(
+                        add_query_arg(
+                            ['action' => 'eventcrew_move_role', 'role' => $role['slug'], 'move' => $where],
+                            admin_url('admin-post.php')
+                        ),
+                        self::ROLE_ORDER_NONCE_ACTION
+                    );
+                }
+            }
+        }
+
+        return $urls;
+    }
+
+    /**
+     * A Roles tab ↑ / ↓ link: moves the role one place in the role order,
+     * which is the order every night's tasks are listed in (TaskOrder).
+     */
+    public function moveRole(): void
+    {
+        Admin::assertCanSave(self::ROLE_ORDER_NONCE_ACTION);
+
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- checked in assertCanSave().
+        $slug = isset($_GET['role']) ? sanitize_key(wp_unslash($_GET['role'])) : '';
+        $where = isset($_GET['move']) ? sanitize_key(wp_unslash($_GET['move'])) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+        if (null === Roles::find($slug)) {
+            Admin::redirectTo(self::PAGE_SLUG, __('That role was not found.', 'eventcrew'), 'error');
+        }
+
+        Admin::redirectTo(
+            self::PAGE_SLUG,
+            Roles::move($slug, $where) ? __('Role order saved.', 'eventcrew') : __('The role is already there.', 'eventcrew')
+        );
+    }
+
     public static function hybridView(): array
     {
         $kinds = [];

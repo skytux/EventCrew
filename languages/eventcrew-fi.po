@@ -11819,3 +11819,43 @@ msgstr "Mitään ei tallennettu: tiedote käyttää ehdotettua tekstiä sellaise
 #. sendnow1114
 msgid "\"%s\" is switched off. Switch it on to send it now."
 msgstr "”%s” on pois päältä. Kytke se päälle lähettääksesi sen nyt."
+
+#. roleorder1114
+msgid "/roleorder – the role order, which sets the task order; /roleorder role up|down"
+msgstr "/roleorder – roolien järjestys, jossa tehtävät näytetään; /roleorder rooli up|down"
+
+#. roleorder1114
+msgid "Move a role in the order"
+msgstr "Siirrä roolia järjestyksessä"
+
+#. roleorder1114
+msgid "Move a role in the order: /roleorder role up|down|first|last\nExample: /roleorder Clean first\n/roleorder alone shows the order."
+msgstr "Siirrä roolia järjestyksessä: /roleorder rooli up|down|first|last\nEsimerkki: /roleorder clean first\n/roleorder yksin näyttää järjestyksen."
+
+#. roleorder1114
+msgid "Move down"
+msgstr "Alemmas"
+
+#. roleorder1114
+msgid "Move up"
+msgstr "Ylemmäs"
+
+#. roleorder1114
+msgid "Role order"
+msgstr "Roolijärjestys"
+
+#. roleorder1114
+msgid "Role order saved."
+msgstr "Roolijärjestys tallennettu."
+
+#. roleorder1114
+msgid "Role order: every night's tasks are listed in this order."
+msgstr "Roolijärjestys: joka illan tehtävät näytetään tässä järjestyksessä."
+
+#. roleorder1114
+msgid "Tasks are listed in this order."
+msgstr "Tehtävät näytetään tässä järjestyksessä."
+
+#. roleorder1114
+msgid "The role is already there."
+msgstr "Rooli on jo siinä kohdassa."

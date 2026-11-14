@@ -38,6 +38,10 @@ use EventCrew\Telegram\CommandFlow;
  *   scheduled message switched on or off, or sent once now (Owner
  *   2026-11-14). On and off switch at once, with no Confirm (easy to
  *   undo, nothing is sent); "send" asks, saying how many get it.
+ * - "/roleorder <role> up|down|first|last": Roles::move(), the order every
+ *   night's tasks are listed in (TaskOrder). Done at once, with no Confirm:
+ *   easy to undo and nothing is sent (Owner 2026-11-14). Alone it lists the
+ *   order.
  *
  * Emails are personal data: organizers only, as the Admin tab.
  */
@@ -50,6 +54,7 @@ final class AssistantWebAdmin
     public const OPTOUT = 'optout';
     public const AI_TEXT = 'aitext';
     public const SCHEDULED = 'scheduled';
+    public const ROLE_ORDER = 'roleorder';
 
     /** The commands this class answers, as AssistantWebChanges splits them. */
     public const COMMANDS = [
@@ -60,6 +65,7 @@ final class AssistantWebAdmin
         self::OPTOUT,
         self::AI_TEXT,
         self::SCHEDULED,
+        self::ROLE_ORDER,
     ];
 
     /** /editperson fields => CrewAdminPeople::save() argument. */
@@ -153,6 +159,9 @@ final class AssistantWebAdmin
 
             case self::SCHEDULED:
                 return $this->prepareScheduled($rest);
+
+            case self::ROLE_ORDER:
+                return $this->prepareRoleOrder($rest);
         }
 
         return self::fail(__('That can no longer be done.', 'eventcrew'));
@@ -368,6 +377,50 @@ final class AssistantWebAdmin
     }
 
     /**
+     * The bot's /roleorder alone: the roles in their order, and how to move one.
+     */
+    public static function roleOrderList(): string
+    {
+        return self::clip(
+            __('Role order: every night\'s tasks are listed in this order.', 'eventcrew')
+                . "\n" . Roles::orderText() . "\n\n" . self::usage(self::ROLE_ORDER)
+        );
+    }
+
+    /**
+     * "/roleorder <role> up|down|first|last": moved at once, with no Confirm
+     * (easy to undo, sends nothing), answered with the new order. Alone: the
+     * order.
+     *
+     * @return array{ok: bool, text: string, state: array<string, mixed>, ran?: bool, changed?: bool}
+     */
+    private function prepareRoleOrder(string $rest): array
+    {
+        if ('' === $rest) {
+            return self::fail(self::roleOrderList());
+        }
+
+        $words = (array) preg_split('/\s+/u', $rest);
+        $where = strtolower((string) array_pop($words));
+        $role = self::role(implode(' ', $words));
+
+        if (null === $role || ! in_array($where, Roles::MOVES, true)) {
+            return self::fail(self::usage(self::ROLE_ORDER));
+        }
+
+        $moved = Roles::move((string) $role['slug'], $where);
+
+        return [
+            'ok' => false,
+            'text' => ($moved ? __('Role order saved.', 'eventcrew') : __('The role is already there.', 'eventcrew'))
+                . "\n" . Roles::orderText(),
+            'state' => [],
+            'ran' => true,
+            'changed' => $moved,
+        ];
+    }
+
+    /**
      * The do-not-send list for the bot's /optout: every address, newest
      * first. Organizers only: emails are personal data.
      */
@@ -441,6 +494,7 @@ final class AssistantWebAdmin
             self::EDIT_ROLE => __("Change a role: /editrole role ; field value ; field value\nExample: /editrole Bar ; people 3 ; guestsignup off\nFields: name, emoji, people, plus, description, measured start|end, starts minutes, ends minutes, events text, minroles, timeseach, count role number, and on|off: archived, restricted, everynight, salesdesk, guestdisplay, membersdisplay, guestsignup, anonymous. - empties a text or time.", 'eventcrew'),
             self::OPTOUT => __("Change the list: /optout add address, /optout remove address\nExample: /optout add milla@example.com", 'eventcrew'),
             self::SCHEDULED => __("Switch a scheduled message: /scheduled name on|off\nSend it once now: /scheduled name send\nExample: /scheduled reminders off\n/scheduled alone lists the names.", 'eventcrew'),
+            self::ROLE_ORDER => __("Move a role in the order: /roleorder role up|down|first|last\nExample: /roleorder Clean first\n/roleorder alone shows the order.", 'eventcrew'),
             self::AI_TEXT => __("Change an AI text: /aitext date text-name language ; your text\nUse the AI text again: /aitext date text-name ai\nExample: /aitext 21.11. welcome fi ; Tervetuloa!", 'eventcrew'),
             default => __('That can no longer be done.', 'eventcrew'),
         };

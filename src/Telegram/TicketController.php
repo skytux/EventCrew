@@ -17,6 +17,7 @@ use EventCrew\Support\EmailTemplate;
 use EventCrew\Support\EventName;
 use EventCrew\Support\EventTimes;
 use EventCrew\Support\Organization;
+use EventCrew\Support\TaskOrder;
 use EventCrew\Support\TicketNote;
 use EventCrew\Support\Language;
 use EventCrew\Support\ShortCode;
@@ -626,10 +627,7 @@ final class TicketController
             return null;
         }
 
-        usort(
-            $held,
-            static fn (Task $a, Task $b): int => [(string) $a->startsAt, $a->id] <=> [(string) $b->startsAt, $b->id]
-        );
+        $held = TaskOrder::sort($held);
         $shown = [] === $held ? (null === $fallback ? [] : [$fallback]) : $held;
         $first = $shown[0] ?? $this->tasks->forDate($date)[0] ?? null;
         $rows = array_map(

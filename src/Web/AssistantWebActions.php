@@ -154,7 +154,7 @@ final class AssistantWebActions
 
     /**
      * parityA: the Admin tab's other changes (AssistantWebAdmin), run after
-     * Confirm with text after the command. Alone, /optout, /aitext and /scheduled open
+     * Confirm with text after the command. Alone, /optout, /aitext, /scheduled and /roleorder open
      * their Admin card (VIEWS_PARITY_A); the others need the text.
      */
     private const CHANGES_PARITY_A = [
@@ -165,6 +165,7 @@ final class AssistantWebActions
         '/optout',
         '/aitext',
         '/scheduled',
+        '/roleorder',
     ];
 
     /** parityA: the Admin card each of CHANGES_PARITY_A opens alone. */
@@ -176,6 +177,7 @@ final class AssistantWebActions
         '/optout' => self::ADMIN_OPTOUT,
         '/aitext' => self::ADMIN_AI_TEXTS,
         '/scheduled' => self::ADMIN_SCHEDULED,
+        '/roleorder' => self::ADMIN_ROLES,
     ];
 
     /** "/newcomer" runs here with OK or No; alone it opens the waiting list. */

@@ -81,10 +81,7 @@ final class TicketList
 
         foreach ($nights as $date => $tasks) {
             $date = (string) $date;
-            usort(
-                $tasks,
-                static fn ($a, $b): int => [(string) $a->startsAt, $a->id] <=> [(string) $b->startsAt, $b->id]
-            );
+            $tasks = TaskOrder::sort($tasks);
             $roles = implode(', ', array_map(static fn ($task): string => $task->roleLabel(), $tasks));
             $event = EventName::ofTask($tasks[0], EventName::lang());
             $item = [

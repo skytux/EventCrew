@@ -286,6 +286,25 @@ final class CrewAdminTasks
     }
 
     /**
+     * The Roles card's ↑ / ↓: moves a role in the role order, which is the
+     * order every night's tasks are listed in (TaskOrder). $post['move'] is
+     * "<slug> <up|down|first|last>".
+     *
+     * @param array<string, mixed> $post The request body, unslashed.
+     */
+    public function moveRole(array $post): string
+    {
+        $parts = explode(' ', trim((string) ($post['move'] ?? '')), 2);
+        $slug = sanitize_key($parts[0]);
+
+        if (null === Roles::find($slug)) {
+            return 'admin_role_gone';
+        }
+
+        return Roles::move($slug, sanitize_key($parts[1] ?? '')) ? 'admin_role_order_saved' : 'admin_role_order_same';
+    }
+
+    /**
      * The text for one of this screen's notice codes, or '' when the code is
      * not one of them. The texts are the wp-admin Tasks and Settings pages'
      * own.
@@ -306,6 +325,8 @@ final class CrewAdminTasks
             'admin_open_task_none' => __('Nothing to send: no open tasks, or everyone eligible already has it.', 'eventcrew'),
             'admin_role_saved' => __('Settings saved.', 'eventcrew'),
             'admin_role_gone' => __('That role was not found.', 'eventcrew'),
+            'admin_role_order_saved' => __('Role order saved.', 'eventcrew'),
+            'admin_role_order_same' => __('The role is already there.', 'eventcrew'),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong
 

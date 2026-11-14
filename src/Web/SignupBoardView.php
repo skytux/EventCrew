@@ -21,6 +21,7 @@ use EventCrew\Support\SignedLink;
 use EventCrew\Support\SignupService;
 use EventCrew\Support\StandingCalculator;
 use EventCrew\Support\TakeoverService;
+use EventCrew\Support\TaskOrder;
 use EventCrew\Support\TicketList;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TicketTransferService;
@@ -172,7 +173,7 @@ final class SignupBoardView
             $event = EventName::ofTask($task, EventName::lang());
 
             $rows[] = [
-                'sort' => $task->taskDate . ' ' . ($task->startsAt ?? ''),
+                'sort' => TaskOrder::key($task),
                 'date' => $task->taskDate,
                 'task_id' => $task->id,
                 // The row's parts, drawn as the Tasks tab's entry: the day on

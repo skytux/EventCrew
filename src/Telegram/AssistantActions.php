@@ -8,6 +8,7 @@ use EventCrew\Support\Dates;
 use EventCrew\Support\GuestCommand;
 use EventCrew\Support\FollowupText;
 use EventCrew\Support\NewsletterText;
+use EventCrew\Support\Roles;
 use EventCrew\Support\ScheduledMessages;
 use EventCrew\Support\SiteLanguages;
 
@@ -317,6 +318,11 @@ final class AssistantActions
                 '/scheduled <name> <on|off|send>',
                 'switch a scheduled message on or off at once, or send it once now after Confirm (send only: '
                     . implode(', ', ScheduledMessages::SENDABLE) . '); names: ' . implode(', ', ScheduledMessages::KEYS)
+            ),
+            self::entry('/roleorder', 'show the roles in their order, which is the order every night\'s tasks are listed in'),
+            self::entry(
+                '/roleorder <role> <up|down|first|last>',
+                'move a role in that order at once (no Confirm); the board and every task list follow it'
             ),
         ];
     }
@@ -706,14 +712,14 @@ final class AssistantActions
      */
     private static function validateParityA(string $head, string $rest, array $audience): ?array
     {
-        $commands = ['/oncemore', '/addperson', '/editperson', '/editrole', '/optout', '/scheduled']; // /aitext: validateAiText()
+        $commands = ['/oncemore', '/addperson', '/editperson', '/editrole', '/optout', '/scheduled', '/roleorder']; // /aitext: validateAiText()
 
         if (in_array($head, $commands, true)) {
             if (empty($audience['organizer'])) {
                 return self::refuse(self::ERROR_NOT_PERMITTED);
             }
 
-            $optional = ['/optout', '/scheduled'];
+            $optional = ['/optout', '/scheduled', '/roleorder'];
 
             if ('' === $rest && ! in_array($head, $optional, true)) {
                 return self::refuse(self::ERROR_INVALID);
@@ -743,6 +749,17 @@ final class AssistantActions
                 }
 
                 $rest = implode(' ', $words);
+            }
+
+            if ('/roleorder' === $head && '' !== $rest) {
+                $words = explode(' ', $rest);
+                $where = strtolower((string) array_pop($words));
+
+                if ([] === $words || ! in_array($where, Roles::MOVES, true)) {
+                    return self::refuse(self::ERROR_INVALID);
+                }
+
+                $rest = implode(' ', $words) . ' ' . $where;
             }
 
             $line = trim($head . ' ' . $rest);

@@ -14741,3 +14741,43 @@ msgstr "Inget sparades: utskicket använder den föreslagna texten som den är."
 #. sendnow1114
 msgid "\"%s\" is switched off. Switch it on to send it now."
 msgstr "”%s” är avstängt. Slå på det för att skicka det nu."
+
+#. roleorder1114
+msgid "/roleorder – the role order, which sets the task order; /roleorder role up|down"
+msgstr "/roleorder – rollernas ordning, som styr uppgifternas ordning; /roleorder roll up|down"
+
+#. roleorder1114
+msgid "Move a role in the order"
+msgstr "Flytta en roll i ordningen"
+
+#. roleorder1114
+msgid "Move a role in the order: /roleorder role up|down|first|last\nExample: /roleorder Clean first\n/roleorder alone shows the order."
+msgstr "Flytta en roll i ordningen: /roleorder roll up|down|first|last\nExempel: /roleorder clean first\n/roleorder ensamt visar ordningen."
+
+#. roleorder1114
+msgid "Move down"
+msgstr "Flytta ned"
+
+#. roleorder1114
+msgid "Move up"
+msgstr "Flytta upp"
+
+#. roleorder1114
+msgid "Role order"
+msgstr "Rollordning"
+
+#. roleorder1114
+msgid "Role order saved."
+msgstr "Rollordningen sparad."
+
+#. roleorder1114
+msgid "Role order: every night's tasks are listed in this order."
+msgstr "Rollordning: varje kvälls uppgifter visas i den här ordningen."
+
+#. roleorder1114
+msgid "Tasks are listed in this order."
+msgstr "Uppgifterna visas i den här ordningen."
+
+#. roleorder1114
+msgid "The role is already there."
+msgstr "Rollen är redan där."

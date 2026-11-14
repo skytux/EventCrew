@@ -329,7 +329,8 @@ final class AssistantKnowledge
                     . ' sign-up past the gate for a member at risk), /addperson name ; email, /editperson name ; notes text,'
                     . ' /editrole role ; people 3, /optout (the do-not-send list; /optout add|remove email),'
                     . ' /aitext (the coming events\' AI texts; /aitext date text language ; own text),'
-                    . ' /scheduled (the scheduled messages; /scheduled name on|off, /scheduled name send).',
+                    . ' /scheduled (the scheduled messages; /scheduled name on|off, /scheduled name send),'
+                    . ' /roleorder (the role order, which every night\'s task list follows; /roleorder role up|down).',
                 '- A date first (/mark 14.11. Milla ; late) picks another night. Every change is confirmed'
                     . ' with a button first.',
             ];

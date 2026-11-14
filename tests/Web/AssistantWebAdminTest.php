@@ -234,6 +234,35 @@ final class AssistantWebAdminTest extends TelegramTestCase
         self::assertStringContainsString('reminders', $this->admin()->scheduledList());
     }
 
+    /**
+     * Moving a role is easy to undo and sends nothing: done at once, no
+     * Confirm, and the answer shows the new order.
+     */
+    public function testARoleIsMovedInTheOrderAtOnce(): void
+    {
+        $this->options[Roles::OPTION_NAME] = [
+            ['slug' => 'bar', 'label' => 'Bar'],
+            ['slug' => 'door', 'label' => 'Door'],
+        ];
+
+        $done = $this->admin()->prepare(self::me(), AssistantWebAdmin::ROLE_ORDER, 'door up');
+
+        self::assertFalse($done['ok']);
+        self::assertTrue($done['ran']);
+        self::assertTrue($done['changed']);
+        self::assertSame("Role order saved.\n1. Door (door)\n2. Bar (bar)", $done['text']);
+        self::assertSame(['door', 'bar'], array_column($this->options[Roles::OPTION_NAME], 'slug'));
+
+        $same = $this->admin()->prepare(self::me(), AssistantWebAdmin::ROLE_ORDER, 'door first');
+        self::assertTrue($same['ran']);
+        self::assertFalse($same['changed']);
+
+        $list = $this->admin()->prepare(self::me(), AssistantWebAdmin::ROLE_ORDER, '');
+        self::assertFalse($list['ok']);
+        self::assertStringContainsString('1. Door (door)', $list['text']);
+        self::assertArrayNotHasKey('ran', $this->admin()->prepare(self::me(), AssistantWebAdmin::ROLE_ORDER, 'door sideways'));
+    }
+
     public function testAnAiTextIsFoundByDateAndNameAndAsked(): void
     {
         $this->options = self::aiTextOptions(['reminder'], 42, ['reminder' => ['en' => 'See you!', 'fi' => 'Nähdään!']]);

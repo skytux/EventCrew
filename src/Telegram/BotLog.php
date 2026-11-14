@@ -47,7 +47,7 @@ final class BotLog
         'tell', 'crew', 'name', 'email', 'subscribe', 'appinvite',
         // parityA: AdminChangeCommands.
         'gift', 'role', 'organizer', 'deleteperson', 'oncemore', 'addperson', 'editperson', 'editrole', 'optout',
-        'aitext', 'scheduled',
+        'aitext', 'scheduled', 'roleorder',
         // parityB
         'markall', 'buyers', 'testmail', 'checkmail', 'giveaway', 'notify',
     ];

@@ -1317,12 +1317,7 @@ final class TicketMail
             }
         }
 
-        usort(
-            $tasks,
-            static fn (Task $a, Task $b): int => [(string) $a->startsAt, $a->id] <=> [(string) $b->startsAt, $b->id]
-        );
-
-        return $tasks;
+        return TaskOrder::sort($tasks);
     }
 
     /**

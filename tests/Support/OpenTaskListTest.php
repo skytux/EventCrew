@@ -124,7 +124,8 @@ final class OpenTaskListTest extends TelegramTestCase
 
         $rows = (new OpenTaskList())->forPerson($this->person(), 70, 2);
 
-        self::assertSame([1, 3], array_map(static fn (array $row): int => $row['task']->id, $rows));
+        // Door is before Bar in the role order, so both door tasks come first.
+        self::assertSame([1, 4], array_map(static fn (array $row): int => $row['task']->id, $rows));
     }
 
     public function testNoTasksMeansNoFurtherQueries(): void

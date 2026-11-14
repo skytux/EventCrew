@@ -10,6 +10,7 @@ use EventCrew\Support\AssignmentStatus;
 use EventCrew\Support\BoardVisibility;
 use EventCrew\Support\History;
 use EventCrew\Support\Roles;
+use EventCrew\Support\TaskOrder;
 
 /**
  * All reads and writes of the tasks table, plus the occupancy counts that
@@ -156,6 +157,8 @@ final class TaskRepository
     }
 
     /**
+     * One night's tasks, in the role order (TaskOrder).
+     *
      * @return array<int, Task>
      */
     public function forDate(string $date): array
@@ -171,11 +174,12 @@ final class TaskRepository
             ARRAY_A
         );
 
-        return $this->hydrate($rows);
+        return TaskOrder::sort($this->hydrate($rows));
     }
 
     /**
-     * Every task linked to one event, on any date. Deleted tasks are left out.
+     * Every task linked to one event, on any date, by date and then role order.
+     * Deleted tasks are left out.
      *
      * @return array<int, Task>
      */
@@ -192,7 +196,7 @@ final class TaskRepository
             ARRAY_A
         );
 
-        return $this->hydrate($rows);
+        return TaskOrder::sort($this->hydrate($rows));
     }
 
     /**
@@ -229,7 +233,7 @@ final class TaskRepository
             ARRAY_A
         );
 
-        return $this->hydrate($rows);
+        return TaskOrder::sort($this->hydrate($rows));
     }
 
     /**
@@ -327,6 +331,10 @@ final class TaskRepository
 
         $orderBy = $this->safeOrderBy((string) ($args['orderby'] ?? 'task_date'));
         $order = 'ASC' === strtoupper((string) ($args['order'] ?? 'DESC')) ? 'ASC' : 'DESC';
+        // Sorting by role means the organizers' role order, not the slug's
+        // alphabet; after the chosen column, a night's tasks follow it too.
+        $rank = TaskOrder::sqlRank();
+        $orderBy = 'role_slug' === $orderBy ? $rank : $orderBy;
 
         $perPage = max(1, (int) ($args['per_page'] ?? 50));
         $page = max(1, (int) ($args['page'] ?? 1));
@@ -337,7 +345,7 @@ final class TaskRepository
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT * FROM {$this->table()} WHERE {$where}
-                ORDER BY {$orderBy} {$order}, starts_at ASC, id ASC
+                ORDER BY {$orderBy} {$order}, {$rank} ASC, starts_at ASC, id ASC
                 LIMIT %d OFFSET %d",
                 ...$params
             ),

@@ -900,7 +900,9 @@ final class AssistantService implements WebAssistant
                 . ' gate for a member at risk (/oncemore), adding or changing a person (/addperson, /editperson), a role\'s'
                 . ' settings (/editrole), the post-event email\'s do-not-send list (/optout) and the AI texts of'
                 . ' the coming events (/aitext), and the scheduled messages on or off or sent once now'
-                . ' (/scheduled name on|off|send). A language change is menu:language with the code.';
+                . ' (/scheduled name on|off|send). The role order, which sets the order of every night\'s tasks,'
+                . ' moves at once with no confirm (/roleorder role up|down|first|last; alone it lists the order).'
+                . ' A language change is menu:language with the code.';
         }
 
         if (! $web) {
@@ -1059,8 +1061,9 @@ final class AssistantService implements WebAssistant
                 . ' (/oncemore), adding a person (/addperson), changing a person\'s name, email or notes'
                 . ' (/editperson), changing a role\'s settings (/editrole), the post-event email\'s do-not-send'
                 . ' list (/optout add or remove), an event\'s AI text (/aitext) and a scheduled message switched'
-                . ' on or off or sent once now (/scheduled name on|off|send). /optout, /aitext and /scheduled'
-                . ' alone open their Admin card.';
+                . ' on or off or sent once now (/scheduled name on|off|send). A role moved in the role order'
+                . ' (/roleorder role up|down|first|last) moves at once, with no Confirm. /optout, /aitext,'
+                . ' /scheduled and /roleorder alone open their Admin card.';
         }
 
         return $lines;

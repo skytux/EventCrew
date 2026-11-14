@@ -3542,6 +3542,28 @@ final class CrewAdminControllerTest extends SalesDeskTestCase
         self::assertSame('Board in the group: off.', CrewAdminController::noticeText($result['notice']));
     }
 
+    public function testAnOrganizerMovesARoleInTheOrder(): void
+    {
+        Roles::save(Roles::defaults());
+        $this->signIn($this->organizerRow(1));
+
+        $result = $this->post(CrewAdminController::ROLE_ORDER_ACTION, ['move' => 'clean up']);
+
+        self::assertSame('admin_role_order_saved', $result['notice']);
+        self::assertSame(['decorate', 'clean', 'welcome'], array_column($this->options[Roles::OPTION_NAME], 'slug'));
+        self::assertSame('Role order saved.', CrewAdminController::noticeText($result['notice']));
+        $this->signIn($this->organizerRow(1));
+        self::assertSame(
+            'admin_role_order_same',
+            $this->post(CrewAdminController::ROLE_ORDER_ACTION, ['move' => 'decorate up'])['notice']
+        );
+        $this->signIn($this->organizerRow(1));
+        self::assertSame(
+            'admin_role_gone',
+            $this->post(CrewAdminController::ROLE_ORDER_ACTION, ['move' => 'nobody down'])['notice']
+        );
+    }
+
     public function testAnOrganizerSavesARoleAndTheOtherRolesStayAsTheyWere(): void
     {
         Roles::save(Roles::defaults());

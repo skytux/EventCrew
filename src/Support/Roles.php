@@ -354,6 +354,70 @@ final class Roles
         self::queueNewEveryNight($before);
     }
 
+    /** Ways a role moves in the order (move()). */
+    public const MOVES = ['up', 'down', 'first', 'last'];
+
+    /**
+     * Moves a role one place up or down, or to the top or the bottom, of the
+     * role list. The list's order is the order every night's tasks are
+     * listed in (TaskOrder), so this is what reorders the board, the open
+     * tasks call and every other list of a night's tasks. Archived roles keep
+     * their place too, so restoring one puts it back where it was.
+     *
+     * @return bool Whether the order changed: false for an unknown role or
+     *              way, or a role already at that end.
+     */
+    public static function move(string $slug, string $where): bool
+    {
+        $roles = self::all();
+        $from = null;
+
+        foreach ($roles as $index => $role) {
+            if ($role['slug'] === $slug) {
+                $from = $index;
+            }
+        }
+
+        if (null === $from || ! in_array($where, self::MOVES, true)) {
+            return false;
+        }
+
+        $last = count($roles) - 1;
+        $to = match ($where) {
+            'up' => max(0, $from - 1),
+            'down' => min($last, $from + 1),
+            'first' => 0,
+            default => $last,
+        };
+
+        if ($to === $from) {
+            return false;
+        }
+
+        $moved = array_splice($roles, $from, 1);
+        array_splice($roles, $to, 0, $moved);
+
+        update_option(self::OPTION_NAME, array_map(static fn (array $role): array => self::forStorage($role), $roles));
+
+        return true;
+    }
+
+    /**
+     * The role order as one line per role, for the bot's /roleorder and the
+     * helper: "1. 🎈 Decorate (decorate)", archived ones marked.
+     */
+    public static function orderText(): string
+    {
+        $lines = [];
+
+        foreach (self::all() as $index => $role) {
+            $lines[] = ($index + 1) . '. ' . self::display($role['slug']) . ' (' . $role['slug'] . ')'
+                . ($role['archived'] ? ' · ' . __('Archived', 'eventcrew') : '');
+        }
+
+        return implode("\n", $lines);
+    }
+
     /**
      * Every role's name and description as rows of the wp-admin Translations
      * page (TranslationRegistry).

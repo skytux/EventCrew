@@ -92,6 +92,11 @@ final class Admin
         );
 
         add_action(
+            'admin_post_eventcrew_move_role',
+            [$this->container->get(SettingsPage::class), 'moveRole']
+        );
+
+        add_action(
             'admin_post_eventcrew_refresh_board',
             [$this->container->get(SettingsPage::class), 'refreshBoard']
         );

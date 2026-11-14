@@ -487,6 +487,13 @@ final class ActionParity
                 ['/editrole'],
                 '/editrole Bar ; people 3'
             ),
+            'role_order' => self::change(
+                'Admin > Roles: Role order ↑ / ↓',
+                'CrewAdminController::ROLE_ORDER_ACTION',
+                self::ORGANIZER,
+                ['/roleorder'],
+                '/roleorder Clean first'
+            ),
             'new_board' => self::change(
                 'Admin > Tasks: Post a new board in the group',
                 'CrewAdminController::BOARD_ACTION',

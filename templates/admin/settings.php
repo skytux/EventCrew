@@ -4,6 +4,7 @@
  * Settings admin view.
  *
  * @var array<int, array{slug: string, label: string, emoji: string, capacity: int, archived: bool, anchor: string, start_offset: int|null, end_offset: int|null, description: string, restricted: bool, every_night: bool, sales_desk: bool, on_board: bool, guest_signup: bool, anonymous: bool, title_contains: string, plus_ones: int, conditions: array{counts: array<string, int>, min_roles: int, times_each: int}}> $roles
+ * @var array<string, array<string, string>> $role_move_urls The ↑ / ↓ links per role slug ('up', 'down'), the role order every night's tasks follow.
  * @var int $organize_plus_ones The "+1 allowed" number new Organize tasks copy.
  * @var string $guide_url Link to the crew's full guide, shared by every role.
  * @var string $nonce_action Nonce action for the save form.
@@ -185,6 +186,9 @@ if (! defined('ABSPATH')) {
                         <?php if ($eventcrew_role['restricted']) : ?>
                             <span class="eventcrew-role-tag"><?php esc_html_e('Role holders only', 'eventcrew'); ?></span>
                         <?php endif; ?>
+                        <?php foreach ($role_move_urls[$eventcrew_role['slug']] ?? [] as $eventcrew_move => $eventcrew_move_url) : ?>
+                            <a class="eventcrew-role-move" href="<?php echo esc_url($eventcrew_move_url); ?>" aria-label="<?php echo 'up' === $eventcrew_move ? esc_attr__('Move up', 'eventcrew') : esc_attr__('Move down', 'eventcrew'); ?>"><?php echo 'up' === $eventcrew_move ? '↑' : '↓'; ?></a>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </summary>
 

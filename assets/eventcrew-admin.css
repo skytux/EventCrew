@@ -38,6 +38,7 @@
 .eventcrew-role.is-archived > summary { opacity: .6; }
 .eventcrew-role > .form-table { margin: 0; }
 .eventcrew-role > .form-table th { padding-left: 1em; }
+.eventcrew-role-move { text-decoration: none; padding: 0 .25em; font-size: 16px; }
 .eventcrew-role-tag {
     font-size: 12px; padding: 0 .5em; border-radius: 3px;
     background: #f0f0f1; color: #50575e;

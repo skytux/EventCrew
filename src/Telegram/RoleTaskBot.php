@@ -14,6 +14,7 @@ use EventCrew\Support\ClaimNotifier;
 use EventCrew\Support\Dates;
 use EventCrew\Support\RoleTaskService;
 use EventCrew\Support\SignupService;
+use EventCrew\Support\TaskOrder;
 
 /**
  * The restricted-role tasks (Organize, DJ, VJ, ...) in the bot.
@@ -266,11 +267,7 @@ final class RoleTaskBot
             ];
         }
 
-        usort(
-            $byId,
-            static fn (Task $a, Task $b): int => [$a->taskDate, $a->startsAt, $a->id]
-                <=> [$b->taskDate, $b->startsAt, $b->id]
-        );
+        $byId = TaskOrder::sort($byId);
         $dates = array_values(array_unique(array_map(static fn (Task $t): string => $t->taskDate, $byId)));
         $shown = in_array($date, $dates, true) ? $date : $dates[0];
         $rows = [];

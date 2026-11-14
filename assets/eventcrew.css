@@ -788,6 +788,9 @@
     margin-top: .1em; font-size: .9em;
 }
 .eventcrew-signup .eventcrew-me-actions .eventcrew-textlink { min-height: 36px; white-space: nowrap; }
+.eventcrew-signup .eventcrew-role-order ol { margin: .25em 0 0 1.5em; padding: 0; }
+.eventcrew-signup .eventcrew-role-order li { margin: .15em 0; }
+.eventcrew-signup .eventcrew-role-order .eventcrew-textlink { padding: 0 .4em; min-height: 0; }
 .eventcrew-signup .eventcrew-me-actions .eventcrew-inline-form { align-self: center; }
 .eventcrew-signup .eventcrew-admin-scheduled-group + .eventcrew-admin-scheduled-group { margin-top: .9em; }
 .eventcrew-signup .eventcrew-admin-scheduled-channel {

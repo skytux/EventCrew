@@ -81,6 +81,7 @@ final class CrewAdminController
     public const TEMPLATE_ACTION = 'eventcrew_web_admin_template';
     public const OPEN_TASK_ACTION = 'eventcrew_web_admin_open_task';
     public const ROLE_ACTION = 'eventcrew_web_admin_role';
+    public const ROLE_ORDER_ACTION = 'eventcrew_web_admin_role_order';
     public const NEWSLETTER_TEXT_ACTION = 'eventcrew_web_admin_newsletter_text';
     public const NEWSLETTER_STOP_ACTION = 'eventcrew_web_admin_newsletter_stop';
     public const FOLLOWUP_TEXT_ACTION = 'eventcrew_web_admin_followup_text';
@@ -118,6 +119,7 @@ final class CrewAdminController
         self::TEMPLATE_ACTION,
         self::OPEN_TASK_ACTION,
         self::ROLE_ACTION,
+        self::ROLE_ORDER_ACTION,
         self::NEWSLETTER_TEXT_ACTION,
         self::NEWSLETTER_STOP_ACTION,
         self::FOLLOWUP_TEXT_ACTION,
@@ -214,6 +216,7 @@ final class CrewAdminController
             self::TEMPLATE_ACTION => __('Create an event\'s tasks', 'eventcrew'),
             self::OPEN_TASK_ACTION => __('Send open-task email now', 'eventcrew'),
             self::ROLE_ACTION => __('Edit a role', 'eventcrew'),
+            self::ROLE_ORDER_ACTION => __('Move a role in the order', 'eventcrew'),
             self::NEWSLETTER_TEXT_ACTION => __('Text for the next announcement', 'eventcrew'),
             self::NEWSLETTER_STOP_ACTION => __('Do not send this announcement', 'eventcrew'),
             self::FOLLOWUP_TEXT_ACTION => __('Text for the next post-event email', 'eventcrew'),
@@ -320,6 +323,7 @@ final class CrewAdminController
                 sanitize_key((string) ($post['op'] ?? ''))
             ),
             self::ROLE_ACTION => $this->tasksScreen->saveRole($post),
+            self::ROLE_ORDER_ACTION => $this->tasksScreen->moveRole($post),
             self::NEWSLETTER_TEXT_ACTION => null === $this->newsletterScreen ? '' : $this->newsletterScreen->saveText(
                 $organizer->id,
                 sanitize_key((string) ($post['op'] ?? '')),
@@ -841,6 +845,7 @@ final class CrewAdminController
             'template_action' => self::TEMPLATE_ACTION,
             'open_task_action' => self::OPEN_TASK_ACTION,
             'role_action' => self::ROLE_ACTION,
+            'role_order_action' => self::ROLE_ORDER_ACTION,
             'tasks' => $this->tasksScreen->view(...self::tasksQuery()),
             'text_status_action' => self::TEXT_STATUS_ACTION,
         ] + (null === $this->newsletterScreen ? [] : [
