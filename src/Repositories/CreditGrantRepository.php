@@ -43,6 +43,41 @@ final class CreditGrantRepository
     }
 
     /**
+     * sumFor() for many people in one query, keyed by person id; 0 for
+     * anyone with none.
+     *
+     * @param array<int, int> $personIds
+     * @return array<int, int>
+     */
+    public function sumsFor(array $personIds): array
+    {
+        global $wpdb;
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $personIds))));
+        $sums = array_fill_keys($ids, 0);
+
+        if ([] === $ids) {
+            return $sums;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT person_id, COALESCE(SUM(credits), 0) AS n FROM {$this->table()}
+                WHERE person_id IN ({$placeholders}) GROUP BY person_id",
+                ...$ids
+            ),
+            ARRAY_A
+        );
+
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $sums[(int) $row['person_id']] = (int) $row['n'];
+        }
+
+        return $sums;
+    }
+
+    /**
      * Records a bonus credit (or several) for a person, with an optional note
      * and the organizer's user id for the record.
      */

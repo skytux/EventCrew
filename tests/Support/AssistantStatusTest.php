@@ -356,6 +356,7 @@ final class AssistantStatusTest extends TestCase
             [['eventcrew_assignments', 'person_id'], [
                 ['id' => 3, 'task_id' => 2, 'person_id' => 9, 'status' => 'signed_up'],
             ]],
+            [['eventcrew_tasks', 'WHERE id IN'], [self::taskRow(2, 'bar', 3)]],
         ];
         $this->rows[] = [['eventcrew_tasks', 'WHERE id'], self::taskRow(2, 'bar', 3)];
         Functions\when('add_query_arg')->justReturn('https://site.test/ticket');

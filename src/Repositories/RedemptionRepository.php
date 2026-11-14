@@ -41,6 +41,41 @@ final class RedemptionRepository
     }
 
     /**
+     * countFor() for many people in one query, keyed by person id; 0 for
+     * anyone with none.
+     *
+     * @param array<int, int> $personIds
+     * @return array<int, int>
+     */
+    public function countsFor(array $personIds): array
+    {
+        global $wpdb;
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $personIds))));
+        $counts = array_fill_keys($ids, 0);
+
+        if ([] === $ids) {
+            return $counts;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT person_id, COUNT(*) AS n FROM {$this->table()} WHERE person_id IN ({$placeholders})
+                AND (cancelled_at IS NULL OR transferred_to IS NOT NULL) GROUP BY person_id",
+                ...$ids
+            ),
+            ARRAY_A
+        );
+
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $counts[(int) $row['person_id']] = (int) $row['n'];
+        }
+
+        return $counts;
+    }
+
+    /**
      * Records a credit spent for entry to the event on $date and returns the new
      * row's id (which the self-service ticket signs its link with). The caller
      * re-checks the balance first; this is the write only.

@@ -63,14 +63,16 @@ final class TicketList
         // One working ticket per night, for all the tasks held that night.
         $nights = [];
 
-        foreach ($withTasks ? $this->assignments->forPerson($personId) : [] as $assignment) {
-            // A ticket exists for a slot they hold or held; a cancelled/replaced
-            // slot never became one.
-            if (! in_array($assignment->status, self::TICKETED_STATUSES, true)) {
-                continue;
-            }
+        // A ticket exists for a slot they hold or held; a cancelled/replaced
+        // slot never became one.
+        $assignments = array_filter(
+            $withTasks ? $this->assignments->forPerson($personId) : [],
+            static fn ($assignment): bool => in_array($assignment->status, self::TICKETED_STATUSES, true)
+        );
+        $found = $this->tasks->findMany(array_map(static fn ($assignment): int => $assignment->taskId, $assignments));
 
-            $task = $this->tasks->find($assignment->taskId);
+        foreach ($assignments as $assignment) {
+            $task = $found[$assignment->taskId] ?? null;
 
             if (null === $task) {
                 continue;

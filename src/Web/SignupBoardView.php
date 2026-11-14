@@ -156,12 +156,14 @@ final class SignupBoardView
         $today = (string) current_time('Y-m-d');
         $rows = [];
 
-        foreach ($this->assignments->forPerson($personId) as $assignment) {
-            if (! $assignment->isOccupying()) {
-                continue;
-            }
+        $assignments = array_filter(
+            $this->assignments->forPerson($personId),
+            static fn ($assignment): bool => $assignment->isOccupying()
+        );
+        $tasks = $this->tasks->findMany(array_map(static fn ($assignment): int => $assignment->taskId, $assignments));
 
-            $task = $this->tasks->find($assignment->taskId);
+        foreach ($assignments as $assignment) {
+            $task = $tasks[$assignment->taskId] ?? null;
 
             if (null === $task || $task->taskDate < $today) {
                 continue;
@@ -224,15 +226,19 @@ final class SignupBoardView
         $today = (string) current_time('Y-m-d');
         $history = [];
 
-        foreach ($this->assignments->historyFor($personId) as $entry) {
+        $entries = array_filter(
+            $this->assignments->historyFor($personId),
+            static fn (array $entry): bool => '' !== (string) $entry['task_date'] && (string) $entry['task_date'] < $today
+        );
+        $tasks = $this->tasks->findMany(array_map(
+            static fn (array $entry): int => $entry['assignment']->taskId,
+            $entries
+        ));
+
+        foreach ($entries as $entry) {
             $date = (string) $entry['task_date'];
             $assignment = $entry['assignment'];
-
-            if ('' === $date || $date >= $today) {
-                continue;
-            }
-
-            $task = $this->tasks->find($assignment->taskId);
+            $task = $tasks[$assignment->taskId] ?? null;
             $event = null === $task ? ['name' => '', 'dj' => ''] : EventName::ofTask($task, EventName::lang());
 
             $history[] = [

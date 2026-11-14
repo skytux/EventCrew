@@ -201,12 +201,14 @@ final class DoorList
         $exclude = array_flip($alreadyFree);
         $candidates = [];
 
-        foreach ($this->people->all(['per_page' => self::CANDIDATE_SCAN]) as $person) {
-            if (isset($exclude[$person->id])) {
-                continue;
-            }
+        $people = array_values(array_filter(
+            $this->people->all(['per_page' => self::CANDIDATE_SCAN]),
+            static fn ($person): bool => ! isset($exclude[$person->id])
+        ));
+        $standings = $this->standing->forMany(array_map(static fn ($person): int => $person->id, $people));
 
-            $balance = $this->standing->for($person->id)->creditBalance;
+        foreach ($people as $person) {
+            $balance = ($standings[$person->id] ?? null)?->creditBalance ?? 0;
 
             if ($balance < 1) {
                 continue;

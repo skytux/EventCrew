@@ -44,6 +44,32 @@ final class StandingCalculator
      *
      * @return array{0: Standing, 1: Standing}
      */
+    /**
+     * for() for many people with three queries in all instead of three per
+     * person, keyed by person id. The door list and roster read every
+     * listed person's standing, which made the admin page slow.
+     *
+     * @param array<int, int> $personIds
+     * @return array<int, Standing>
+     */
+    public function forMany(array $personIds): array
+    {
+        $histories = $this->assignments->historyForMany($personIds);
+        $redeemed = $this->redemptions->countsFor($personIds);
+        $granted = $this->grants->sumsFor($personIds);
+        $standings = [];
+
+        foreach ($histories as $personId => $history) {
+            $standings[$personId] = $this->compute(
+                self::counting($history),
+                $redeemed[$personId] ?? 0,
+                $granted[$personId] ?? 0
+            );
+        }
+
+        return $standings;
+    }
+
     public function beforeAndAfter(int $personId, int $assignmentId): array
     {
         $history = $this->history($personId);
@@ -84,8 +110,17 @@ final class StandingCalculator
     {
         // A task someone was put on with "does not count toward free-entry
         // credit" counts for nothing here: not credit, not score, not rating.
+        return self::counting($this->assignments->historyFor($personId));
+    }
+
+    /**
+     * @param array<int, array{assignment: Assignment, task_date: string}> $history
+     * @return array<int, array{assignment: Assignment, task_date: string}>
+     */
+    private static function counting(array $history): array
+    {
         return array_values(array_filter(
-            $this->assignments->historyFor($personId),
+            $history,
             static fn (array $entry): bool => $entry['assignment']->countsCredit
         ));
     }
@@ -94,6 +129,17 @@ final class StandingCalculator
      * @param array<int, array{assignment: \EventCrew\Models\Assignment, task_date: string}> $history
      */
     private function fromHistory(int $personId, array $history): Standing
+    {
+        return $this->compute($history, null, null, $personId);
+    }
+
+    /**
+     * The redemption count and grant sum are read only when not given, and
+     * after the history maths, which is the order the tests script.
+     *
+     * @param array<int, array{assignment: Assignment, task_date: string}> $history
+     */
+    private function compute(array $history, ?int $redeemed, ?int $granted, int $personId = 0): Standing
     {
         $now = (int) strtotime((string) current_time('mysql'));
 
@@ -108,8 +154,8 @@ final class StandingCalculator
 
         $balance = Credits::balance(
             $completed,
-            $this->redemptions->countFor($personId),
-            $this->grants->sumFor($personId),
+            $redeemed ?? $this->redemptions->countFor($personId),
+            $granted ?? $this->grants->sumFor($personId),
             $settings->tasksPerCredit()
         );
 

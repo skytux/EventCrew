@@ -157,4 +157,35 @@ final class StandingCalculatorTest extends TestCase
 
         self::assertSame(Standing::UNRATED, $this->calculator()->for(9)->level);
     }
+
+    /**
+     * forMany() reads every listed person's history, redemptions and grants
+     * in three queries, and gives the same standing for() would.
+     */
+    public function testForManyGivesEachPersonTheirStandingInThreeQueries(): void
+    {
+        $completed = static fn (int $id, int $person): array => [
+            'id' => $id, 'task_id' => $id, 'person_id' => $person,
+            'status' => AssignmentStatus::COMPLETED, 'task_date' => '2026-07-20',
+        ];
+        $this->wpdb->nextResults[] = [$completed(1, 9), $completed(2, 9), $completed(3, 9), $completed(4, 9), $completed(5, 11)];
+        $this->wpdb->nextResults[] = [['person_id' => 9, 'n' => 1]];  // redemption counts
+        $this->wpdb->nextResults[] = [['person_id' => 11, 'n' => 2]]; // grant sums
+
+        $standings = $this->calculator()->forMany([9, 11, 12]);
+
+        self::assertSame([9, 11, 12], array_keys($standings));
+        self::assertSame(1, $standings[9]->creditBalance);   // floor(4/2) - 1
+        self::assertSame(4, $standings[9]->completedCount);
+        self::assertSame(2, $standings[11]->creditBalance);  // floor(1/2) + 2
+        self::assertSame(0, $standings[12]->creditBalance);
+        self::assertCount(3, $this->wpdb->queries);
+        self::assertStringContainsString('IN (9,11,12)', (string) $this->wpdb->queries[0]);
+    }
+
+    public function testForManyOfNobodyRunsNoQuery(): void
+    {
+        self::assertSame([], $this->calculator()->forMany([]));
+        self::assertCount(0, $this->wpdb->queries);
+    }
 }

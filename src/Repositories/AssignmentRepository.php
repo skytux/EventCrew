@@ -554,6 +554,47 @@ final class AssignmentRepository
     }
 
     /**
+     * historyFor() for many people in one query, keyed by person id. Every
+     * id asked for has an entry, empty when the person has no history.
+     *
+     * @param array<int, int> $personIds
+     * @return array<int, array<int, array{assignment: Assignment, task_date: string}>>
+     */
+    public function historyForMany(array $personIds): array
+    {
+        global $wpdb;
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $personIds))));
+        $history = array_fill_keys($ids, []);
+
+        if ([] === $ids) {
+            return $history;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT a.*, s.task_date
+                FROM {$this->table()} a
+                INNER JOIN {$this->tasksTable()} s ON s.id = a.task_id
+                WHERE a.person_id IN ({$placeholders})
+                ORDER BY s.task_date DESC",
+                ...$ids
+            ),
+            ARRAY_A
+        );
+
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $history[(int) $row['person_id']][] = [
+                'assignment' => Assignment::fromRow($row),
+                'task_date' => (string) ($row['task_date'] ?? ''),
+            ];
+        }
+
+        return $history;
+    }
+
+    /**
      * Person ids already holding a slot on a given date. The 48h open-task
      * call excludes these people - nagging someone who has already signed up is
      * the fastest way to lose their consent.

@@ -431,8 +431,10 @@ final class ProfileServiceTest extends TelegramTestCase
             ['id' => 1, 'task_id' => 1, 'person_id' => 7, 'status' => 'signed_up'],
             ['id' => 2, 'task_id' => 2, 'person_id' => 7, 'status' => 'completed'],
         ];
-        $this->wpdb->nextRows[] = ['task_date' => '2026-07-25'] + $this->taskRow(1);
-        $this->wpdb->nextRows[] = ['id' => 2, 'task_date' => '2026-07-18'] + $this->taskRow(2);
+        $this->wpdb->nextResults[] = [
+            ['task_date' => '2026-07-25'] + $this->taskRow(1),
+            ['id' => 2, 'task_date' => '2026-07-18'] + $this->taskRow(2),
+        ];
         $this->wpdb->nextResults[] = []; // no free-entry redemptions
         Functions\when('rest_url')->alias(static fn (string $p = ''): string => 'https://site.test/wp-json/' . $p);
         Functions\when('add_query_arg')->alias(
@@ -470,8 +472,10 @@ final class ProfileServiceTest extends TelegramTestCase
             ['id' => 1, 'task_id' => 1, 'person_id' => 7, 'status' => 'signed_up'],
             ['id' => 2, 'task_id' => 2, 'person_id' => 7, 'status' => 'completed'],
         ];
-        $this->wpdb->nextRows[] = ['task_date' => '2026-07-25'] + $this->taskRow(1);
-        $this->wpdb->nextRows[] = ['id' => 2, 'task_date' => '2026-07-18'] + $this->taskRow(2);
+        $this->wpdb->nextResults[] = [
+            ['task_date' => '2026-07-25'] + $this->taskRow(1),
+            ['id' => 2, 'task_date' => '2026-07-18'] + $this->taskRow(2),
+        ];
         $this->wpdb->nextResults[] = []; // no free-entry redemptions
         $this->wpdb->nextResults[] = [ // checked in at the door on 18 July
             ['event_date' => '2026-07-18', 'kind' => 'crew', 'checked_in_at' => '2026-07-18 21:05:00'],

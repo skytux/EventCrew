@@ -104,6 +104,16 @@ final class MeTabWpdb extends \FakeWpdb
 
     public function get_results(string $sql, string $output = 'OBJECT'): mixed
     {
+        if (1 === preg_match('/eventcrew_tasks WHERE id IN \(([\d, ]+)\)/', $sql, $m)) {
+            $this->queries[] = $sql;
+            $ids = array_map('intval', explode(',', $m[1]));
+
+            return array_values(array_filter(
+                $this->tasks,
+                static fn (array $task): bool => in_array((int) $task['id'], $ids, true)
+            ));
+        }
+
         if (str_contains($sql, 'eventcrew_tasks') && str_contains($sql, 'ORDER BY task_date') && ! str_contains($sql, 'JOIN')) {
             $this->queries[] = $sql;
 

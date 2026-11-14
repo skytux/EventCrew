@@ -149,7 +149,8 @@ final class DoorListTest extends TestCase
             ['id' => 1, 'task_id' => 1, 'person_id' => 13, 'status' => 'completed', 'task_date' => '2026-07-20'],
             ['id' => 2, 'task_id' => 2, 'person_id' => 13, 'status' => 'completed', 'task_date' => '2026-07-20'],
         ];
-        $this->wpdb->nextVars[] = 0;                        // countFor(13)
+        $this->wpdb->nextResults[] = [];                    // redemption counts (none)
+        $this->wpdb->nextResults[] = [];                    // grant sums (none)
 
         $door = $this->doorList()->forDate('2026-08-01');
 

@@ -40,6 +40,39 @@ final class TaskRepository
         return is_array($row) ? Task::fromRow($row) : null;
     }
 
+    /**
+     * find() for many ids in one query, keyed by id; deleted tasks included,
+     * missing ids left out. For lists that would otherwise read one task per
+     * row.
+     *
+     * @param array<int, int> $ids
+     * @return array<int, Task>
+     */
+    public function findMany(array $ids): array
+    {
+        global $wpdb;
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+
+        if ([] === $ids) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        $rows = $wpdb->get_results(
+            $wpdb->prepare("SELECT * FROM {$this->table()} WHERE id IN ({$placeholders})", ...$ids),
+            ARRAY_A
+        );
+        $tasks = [];
+
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $task = Task::fromRow($row);
+            $tasks[$task->id] = $task;
+        }
+
+        return $tasks;
+    }
+
     /** Like find(), but null for a deleted task. */
     public function findLive(int $id): ?Task
     {

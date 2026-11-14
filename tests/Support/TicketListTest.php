@@ -38,9 +38,11 @@ final class TicketListTest extends TestCase
             ['id' => 2, 'task_id' => 6, 'person_id' => 9, 'status' => 'completed'],  // past
             ['id' => 3, 'task_id' => 7, 'person_id' => 9, 'status' => 'cancelled'],  // no ticket
         ];
-        // tasks->find for the two ticketed assignments (the cancelled one is skipped first).
-        $this->wpdb->nextRows[] = ['id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'clean', 'capacity' => 3, 'event_label' => 'Party'];
-        $this->wpdb->nextRows[] = ['id' => 6, 'task_date' => '2026-07-01', 'role_slug' => 'clean', 'capacity' => 3, 'event_label' => 'Old Party'];
+        // tasks->findMany for the two ticketed assignments (the cancelled one is skipped first).
+        $this->wpdb->nextResults[] = [
+            ['id' => 5, 'task_date' => '2026-08-01', 'role_slug' => 'clean', 'capacity' => 3, 'event_label' => 'Party'],
+            ['id' => 6, 'task_date' => '2026-07-01', 'role_slug' => 'clean', 'capacity' => 3, 'event_label' => 'Old Party'],
+        ];
         $this->wpdb->nextResults[] = [ // redemptions->forPerson
             ['id' => 10, 'person_id' => 9, 'redeemed_for' => '2026-08-05', 'redeemed_at' => '2026-07-10 10:00:00'],
         ];
@@ -58,7 +60,7 @@ final class TicketListTest extends TestCase
         $this->wpdb->nextResults[] = [ // assignments->forPerson
             ['id' => 2, 'task_id' => 6, 'person_id' => 9, 'status' => 'completed'],
         ];
-        $this->wpdb->nextRows[] = ['id' => 6, 'task_date' => '2026-07-18', 'role_slug' => 'clean', 'capacity' => 3, 'event_label' => 'Party'];
+        $this->wpdb->nextResults[] = [['id' => 6, 'task_date' => '2026-07-18', 'role_slug' => 'clean', 'capacity' => 3, 'event_label' => 'Party']];
         $this->wpdb->nextResults[] = [ // redemptions->forPerson
             ['id' => 10, 'person_id' => 9, 'redeemed_for' => '2026-08-05', 'redeemed_at' => '2026-07-10 10:00:00'],
         ];
