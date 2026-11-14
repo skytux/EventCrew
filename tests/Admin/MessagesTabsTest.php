@@ -159,6 +159,31 @@ final class MessagesTabsTest extends TestCase
         self::assertNull($data['followup']);
     }
 
+    public function testTheAnnouncementFieldShowsTheSuggestedText(): void
+    {
+        $news = [
+            'enabled' => true, 'days' => 7, 'subscribers' => 0, 'plan' => null, 'last' => null, 'text' => null,
+        ];
+        $base = [
+            'tabs' => MessagesPage::tabs(),
+            'tab' => MessagesPage::TAB_EVENTS,
+            'can_write' => false,
+            'events' => [],
+            'followup' => null,
+        ];
+
+        $html = $this->rendered($base + ['newsletter' => $news + ['suggested' => 'Welcome to dance']]);
+
+        self::assertStringContainsString('id="eventcrew-newsletter-text"', $html);
+        self::assertMatchesRegularExpression('/eventcrew-newsletter-text"[^>]*>Welcome to dance<\/textarea>/', $html);
+        self::assertStringContainsString('Suggested by the language model.', $html);
+
+        $html = $this->rendered($base + ['newsletter' => $news + ['suggested' => '']]);
+
+        self::assertMatchesRegularExpression('/eventcrew-newsletter-text"[^>]*><\/textarea>/', $html);
+        self::assertStringNotContainsString('Suggested by the language model.', $html);
+    }
+
     public function testTheTabsRenderWithTheirForms(): void
     {
         $html = $this->rendered(

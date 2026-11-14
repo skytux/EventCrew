@@ -204,7 +204,7 @@ final class CrewAdminNewsletter
     /** Whether $text is the suggested opening in one of its languages, as it was shown. */
     private function isSuggestion(string $text): bool
     {
-        $suggestion = $this->suggestion($this->newsletter->status()['plan'], null);
+        $suggestion = $this->suggestion($this->newsletter->currentPlan(), null);
         $normal = static fn (string $words): string => trim(str_replace("\r\n", "\n", $words));
 
         foreach ($suggestion ?? [] as $words) {

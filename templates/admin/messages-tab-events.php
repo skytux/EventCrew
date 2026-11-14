@@ -119,6 +119,9 @@ $eventcrew_card_style = 'margin:1em 0;padding:0.5em 1em 1em;background:#fff;bord
             $eventcrew_news_pending = BackgroundJobs::isActive($eventcrew_news_job)
                 ? (string) ($eventcrew_news_job['args']['text'] ?? '')
                 : '';
+            // While there is no organizers' text, the opening the language
+            // model already wrote for the plan (CrewAdminNewsletter::view()).
+            $eventcrew_news_suggested = '' === $eventcrew_news_pending ? (string) ($newsletter['suggested'] ?? '') : '';
             echo BackgroundJobs::badge($eventcrew_news_job); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in badge().
             ?>
             <?php if (! $newsletter['enabled']) : ?>
@@ -152,7 +155,10 @@ $eventcrew_card_style = 'margin:1em 0;padding:0.5em 1em 1em;background:#fff;bord
                 <p>
                     <label for="eventcrew-newsletter-text"><?php esc_html_e('Text for the next announcement', 'eventcrew'); ?></label>
                     <textarea class="large-text" rows="4" name="newsletter_text" id="eventcrew-newsletter-text"
-                        maxlength="<?php echo (int) NewsletterText::MAX_LENGTH; ?>"><?php echo esc_textarea($eventcrew_news_pending); ?></textarea>
+                        maxlength="<?php echo (int) NewsletterText::MAX_LENGTH; ?>"><?php echo esc_textarea('' !== $eventcrew_news_pending ? $eventcrew_news_pending : $eventcrew_news_suggested); ?></textarea>
+                    <?php if ('' !== $eventcrew_news_suggested) : ?>
+                        <span class="description"><?php esc_html_e('Suggested by the language model.', 'eventcrew'); ?></span><br>
+                    <?php endif; ?>
                     <span class="description"><?php esc_html_e('Write it in any language. It is translated into every site language when you save, and removed after the announcement is sent.', 'eventcrew'); // phpcs:ignore Generic.Files.LineLength.TooLong -- single gettext literal; splitting it breaks extraction. ?></span>
                 </p>
                 <p>

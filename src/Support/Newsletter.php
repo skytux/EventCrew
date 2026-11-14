@@ -416,6 +416,17 @@ final class Newsletter
     }
 
     /**
+     * The planned announcement as stored, or null. Reads only the stored
+     * state (no count of subscribers, unlike status()).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function currentPlan(): ?array
+    {
+        return $this->state()['plan'];
+    }
+
+    /**
      * The newsletter's subject and both bodies: one card per event in
      * $events, the organizers' $text above them, and the $later events as
      * short lines under them (NewsletterLayout). The picture, price and ticket
