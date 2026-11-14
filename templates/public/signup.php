@@ -2814,7 +2814,10 @@ if ($eventcrew_link_expired) {
                             aria-label="<?php esc_attr_e('Text for the next announcement', 'eventcrew'); ?>"
                             maxlength="<?php
                             echo (int) \EventCrew\Support\NewsletterText::MAX_LENGTH;
-                            ?>"></textarea>
+                            ?>"><?php echo esc_textarea($eventcrew_news['suggested'] ?? ''); ?></textarea>
+                        <?php if ('' !== ($eventcrew_news['suggested'] ?? '')) : ?>
+                            <span class="eventcrew-admin-hint eventcrew-muted"><?php esc_html_e('Suggested by the language model.', 'eventcrew'); ?></span>
+                        <?php endif; ?>
                         <?php if (null !== $eventcrew_news['text']) : ?>
                             <?php if ('' !== $eventcrew_news['text']['set_by']) : ?>
                                 <span class="eventcrew-admin-hint eventcrew-muted"><?php echo esc_html($eventcrew_news['text']['set_by']); ?></span>

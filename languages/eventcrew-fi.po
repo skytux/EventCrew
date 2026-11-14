@@ -11815,3 +11815,11 @@ msgstr[1] "”%1$s” lähetetty %2$d henkilölle."
 #. sched1114
 msgid "Switch a scheduled message: /scheduled name on|off\nSend it once now: /scheduled name send\nExample: /scheduled reminders off\n/scheduled alone lists the names."
 msgstr "Kytke ajastettu viesti: /scheduled nimi on|off\nLähetä se kerran nyt: /scheduled nimi send\nEsimerkki: /scheduled reminders off\n/scheduled yksin listaa nimet."
+
+#. aitext1114
+msgid "Suggested by the language model."
+msgstr "Kielimallin ehdottama teksti."
+
+#. aitext1114
+msgid "Nothing was saved: the announcement uses the suggested text as it is."
+msgstr "Mitään ei tallennettu: tiedote käyttää ehdotettua tekstiä sellaisenaan."

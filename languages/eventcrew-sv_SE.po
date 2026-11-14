@@ -14737,3 +14737,11 @@ msgstr[1] "”%1$s” skickat till %2$d personer."
 #. sched1114
 msgid "Switch a scheduled message: /scheduled name on|off\nSend it once now: /scheduled name send\nExample: /scheduled reminders off\n/scheduled alone lists the names."
 msgstr "Slå på eller av ett schemalagt meddelande: /scheduled namn on|off\nSkicka det en gång nu: /scheduled namn send\nExempel: /scheduled reminders off\n/scheduled ensamt listar namnen."
+
+#. aitext1114
+msgid "Suggested by the language model."
+msgstr "Föreslagen av språkmodellen."
+
+#. aitext1114
+msgid "Nothing was saved: the announcement uses the suggested text as it is."
+msgstr "Inget sparades: utskicket använder den föreslagna texten som den är."

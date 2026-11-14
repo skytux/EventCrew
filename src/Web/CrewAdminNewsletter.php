@@ -9,6 +9,7 @@ use EventCrew\Support\BackgroundJobs;
 use EventCrew\Support\EventName;
 use EventCrew\Support\Newsletter;
 use EventCrew\Support\NewsletterText;
+use EventCrew\Support\NewsletterWriter;
 use EventCrew\Support\OwnTextNotice;
 use EventCrew\Support\TicketMail;
 use EventCrew\Support\TranslatedText;
@@ -22,6 +23,13 @@ use EventCrew\Support\TranslatedText;
  * As in the bot, the text is only replaced when the organizer ticks "Replace
  * the current text" (which shows who set it and when), the reset button puts
  * the default back, and the other organizers are told (OwnTextNotice).
+ *
+ * While there is no organizers' text, the field shows the opening the
+ * language model already wrote for the planned announcement (the text the
+ * announcement uses in its place), in the viewer's language. Nothing is
+ * written on page load: no plan or no opening yet leaves the field empty.
+ * Saving that suggestion unchanged stores nothing, so the announcement keeps
+ * the model's own text in every language.
  */
 final class CrewAdminNewsletter
 {
@@ -49,6 +57,7 @@ final class CrewAdminNewsletter
      *     }|null,
      *     last: array{at: string, sent: int, failed: int}|null,
      *     text: array{texts: array<string, string>, translated: bool, set_by: string}|null,
+     *     suggested: string,
      *     translating: bool
      * }
      */
@@ -96,6 +105,7 @@ final class CrewAdminNewsletter
             'plan' => $plan,
             'last' => $last,
             'text' => $text,
+            'suggested' => self::inViewerLanguage($this->suggestion($status['plan'], $status['text'])),
             'translating' => $translating,
         ];
     }
@@ -140,6 +150,10 @@ final class CrewAdminNewsletter
             return 'admin_newsletter_exists';
         }
 
+        if (! $had && $this->isSuggestion($text)) {
+            return 'admin_newsletter_suggested';
+        }
+
         if ($notify) {
             $this->notice?->changed(OwnTextNotice::NEWSLETTER, $byPersonId, $text);
         }
@@ -157,6 +171,49 @@ final class CrewAdminNewsletter
         $result = $this->text->set($text, $byPersonId);
 
         return $result['translated'] ? 'admin_newsletter_saved' : 'admin_newsletter_saved_untranslated';
+    }
+
+    /**
+     * The language model's opening for $plan, keyed by language, while there
+     * is no organizers' $text; null when there is none yet.
+     *
+     * @param array<string, mixed>|null $plan
+     * @param array<string, mixed>|null $text
+     * @return array<string, string>|null
+     */
+    private function suggestion(?array $plan, ?array $text): ?array
+    {
+        return null === $plan || null !== $text ? null : NewsletterWriter::opening($plan['written'] ?? null);
+    }
+
+    /**
+     * $texts in the viewer's language, else in the language the model
+     * writes in, else the first one; '' for none.
+     *
+     * @param array<string, string>|null $texts
+     */
+    private static function inViewerLanguage(?array $texts): string
+    {
+        if (null === $texts) {
+            return '';
+        }
+
+        return $texts[EventName::lang()] ?? $texts[NewsletterWriter::WRITES_IN] ?? (string) reset($texts);
+    }
+
+    /** Whether $text is the suggested opening in one of its languages, as it was shown. */
+    private function isSuggestion(string $text): bool
+    {
+        $suggestion = $this->suggestion($this->newsletter->status()['plan'], null);
+        $normal = static fn (string $words): string => trim(str_replace("\r\n", "\n", $words));
+
+        foreach ($suggestion ?? [] as $words) {
+            if ($normal($words) === $normal($text)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Stops the planned newsletter $planId. Returns the notice code. */
@@ -181,6 +238,7 @@ final class CrewAdminNewsletter
             'admin_newsletter_too_late' => __('Too late: the announcement is already being sent.', 'eventcrew'),
             'admin_newsletter_already' => __('This announcement was already stopped or sent.', 'eventcrew'),
             'admin_newsletter_queued' => CrewAdminFollowup::queuedNotice(),
+            'admin_newsletter_suggested' => __('Nothing was saved: the announcement uses the suggested text as it is.', 'eventcrew'),
         ];
         // phpcs:enable Generic.Files.LineLength.TooLong
 
