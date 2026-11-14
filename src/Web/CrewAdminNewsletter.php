@@ -194,7 +194,7 @@ final class CrewAdminNewsletter
      */
     private static function inViewerLanguage(?array $texts): string
     {
-        if (null === $texts) {
+        if (null === $texts || [] === $texts) {
             return '';
         }
 
