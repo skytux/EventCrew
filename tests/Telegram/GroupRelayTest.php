@@ -7,11 +7,15 @@ namespace EventCrew\Tests\Telegram;
 use EventCrew\Models\Person;
 use EventCrew\Repositories\GroupMessageRepository;
 use EventCrew\Repositories\PersonRepository;
+use EventCrew\Repositories\PushSubscriptionRepository;
+use EventCrew\Support\AssistantSettings;
 use EventCrew\Telegram\GroupChat;
 use EventCrew\Telegram\GroupRelay;
+use EventCrew\Telegram\TelegramClient;
 use EventCrew\Web\GroupChatController;
 use EventCrew\Web\SessionPerson;
 use EventCrew\Support\WebSession;
+use Brain\Monkey\Functions;
 
 /**
  * The crew group mirrored on the web: what is stored from the group, what
@@ -236,6 +240,134 @@ final class GroupRelayTest extends TelegramTestCase
         self::assertSame('sticker', $view[1]['type']);
         self::assertTrue($view[1]['edited']);
         self::assertSame(['name' => 'Sam', 'text' => 'Mine'], $view[1]['reply']);
+    }
+
+    /**
+     * A relay that hears the client's DONE_ACTION, as Kernel wires it, and
+     * notifies at once (no devices: only the device lookup shows it tried).
+     *
+     * @return array{0: GroupRelay, 1: TelegramClient}
+     */
+    private function listening(): array
+    {
+        $client = $this->client();
+        $relay = new GroupRelay($this->store, new PersonRepository(), $client, new PushSubscriptionRepository(), false);
+        Functions\when('add_query_arg')->justReturn('https://example.com/crew/');
+
+        Functions\when('do_action')->alias(
+            static function (string $hook, mixed ...$args) use ($relay): void {
+                if (TelegramClient::DONE_ACTION === $hook) {
+                    $relay->observe(...$args);
+                }
+            }
+        );
+
+        return [$relay, $client];
+    }
+
+    private function notifyTries(): int
+    {
+        return count(array_filter(
+            $this->wpdb->queries,
+            static fn (string $sql): bool => str_contains($sql, 'DISTINCT person_id')
+        ));
+    }
+
+    /**
+     * @param array<string, mixed> $fields
+     * @return array<string, mixed>
+     */
+    private function sent(int $messageId, array $fields, int $chatId = self::GROUP): array
+    {
+        return [
+            'message_id' => $messageId,
+            'chat' => ['id' => $chatId, 'type' => $chatId < 0 ? 'supergroup' : 'private'],
+            'from' => ['id' => 555, 'is_bot' => true, 'first_name' => 'CrewBot'],
+        ] + $fields;
+    }
+
+    public function testABotMessageToTheGroupIsStoredOnceAsTheBotsAndNotified(): void
+    {
+        $this->options[AssistantSettings::NAME_OPTION] = 'Helper';
+        [, $client] = $this->listening();
+        $this->telegramResults['sendMessage'] = $this->sent(90, ['text' => "Tonight\n\nBar: 2 open"]);
+
+        $client->sendMessage(self::GROUP, "<b>Tonight</b>\n\nBar: 2 open", null, ['parse_mode' => 'HTML']);
+
+        self::assertCount(1, $this->store->rows);
+        $row = $this->store->rows[1];
+        self::assertSame(90, $row['message_id']);
+        self::assertSame('bot', $row['source']);
+        self::assertSame('Helper', $row['sender_name']);
+        self::assertSame(0, $row['person_id']);
+        self::assertSame("Tonight\n\nBar: 2 open", $row['text']);
+        self::assertSame(1, $this->notifyTries());
+
+        $this->store->rows[1] += ['created_at' => '2026-07-20 09:05:00', 'edited_at' => null, 'reply_name' => '', 'reply_text' => ''];
+        $view = $this->relay()->view($this->person());
+        self::assertSame('Helper', $view[0]['name']);
+        self::assertFalse($view[0]['web']);
+        self::assertFalse($view[0]['mine']);
+    }
+
+    public function testABotPhotoKeepsItsCaptionAndTheTelegramNameIsTheFallback(): void
+    {
+        [, $client] = $this->listening();
+        $this->telegramResults['sendPhoto'] = $this->sent(91, ['photo' => [['file_id' => 'p']], 'caption' => 'Next: Friday']);
+
+        $client->sendPhoto(self::GROUP, 'https://example.com/card.png', '<b>Next:</b> Friday');
+
+        self::assertSame('photo', $this->store->rows[1]['kind']);
+        self::assertSame('Next: Friday', $this->store->rows[1]['text']);
+        self::assertSame('CrewBot', $this->store->rows[1]['sender_name']);
+    }
+
+    public function testABotMessageToAPrivateChatOrWhenOffIsNotStored(): void
+    {
+        [, $client] = $this->listening();
+        $this->telegramResults['sendMessage'] = $this->sent(92, ['text' => 'Your ticket'], 900);
+        $client->sendMessage(900, 'Your ticket');
+
+        $this->options[GroupRelay::ENABLED_OPTION] = '0';
+        $this->telegramResults['sendMessage'] = $this->sent(93, ['text' => 'Board']);
+        $client->sendMessage(self::GROUP, 'Board');
+
+        self::assertSame([], $this->store->rows);
+        self::assertSame(0, $this->notifyTries());
+    }
+
+    public function testAWebPostIsStoredOnceAsTheWritersAndNotifiedOnce(): void
+    {
+        [$relay] = $this->listening();
+        $this->telegramResults['sendMessage'] = $this->sent(94, ['text' => 'Sam (web): hi']);
+
+        self::assertTrue($relay->post($this->person(), 'hi')['ok']);
+
+        self::assertCount(1, $this->store->rows);
+        self::assertSame('web', $this->store->rows[1]['source']);
+        self::assertSame('hi', $this->store->rows[1]['text']);
+        self::assertSame(1, $this->notifyTries());
+    }
+
+    public function testABotEditChangesTheTextWithoutANotificationAndADeleteHidesIt(): void
+    {
+        [, $client] = $this->listening();
+        $this->store->rows[1] = [
+            'id' => 1, 'chat_id' => self::GROUP, 'message_id' => 95, 'person_id' => 0, 'sender_name' => 'CrewBot',
+            'text' => 'Bar: 2 open', 'kind' => '', 'source' => 'bot', 'hidden' => 0,
+        ];
+        $this->telegramResults['editMessageText'] = $this->sent(95, ['text' => 'Bar: 1 open']);
+
+        $client->editMessageText(self::GROUP, 95, 'Bar: 1 open');
+
+        self::assertCount(1, $this->store->rows);
+        self::assertSame('Bar: 1 open', $this->store->rows[1]['text']);
+        self::assertNotEmpty($this->store->rows[1]['edited_at']);
+        self::assertSame(0, $this->notifyTries());
+
+        $client->deleteMessage(self::GROUP, 95);
+
+        self::assertSame(1, $this->store->rows[1]['hidden']);
     }
 
     public function testThePurgeRunsOnceADayAndKeepsThirtyDays(): void

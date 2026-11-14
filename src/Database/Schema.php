@@ -1138,7 +1138,8 @@ final class Schema
             // so a quote of a message older than the stored ones still reads;
             // reply_person_id is the answered sender, so erasing them empties
             // the quote too.
-            // source is 'telegram' or 'web'. hidden is an organizer's hide.
+            // source is 'telegram', 'web', or 'bot' for the bot's own posts
+            // (GroupRelay::observe()). hidden is an organizer's hide.
             // Rows older than GroupRelay::KEEP_DAYS are deleted by the
             // heartbeat.
             "CREATE TABLE {$groupMessages} (

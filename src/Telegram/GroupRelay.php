@@ -8,6 +8,7 @@ use EventCrew\Models\Person;
 use EventCrew\Repositories\GroupMessageRepository;
 use EventCrew\Repositories\PersonRepository;
 use EventCrew\Repositories\PushSubscriptionRepository;
+use EventCrew\Support\AssistantSettings;
 use EventCrew\Support\NotificationPreferences;
 use EventCrew\Support\PushNotifier;
 use EventCrew\Web\PwaController;
@@ -25,6 +26,11 @@ use EventCrew\Web\PwaController;
  * the bot and stores it with the message id Telegram answers. An organizer
  * can hide a message on the web (hide()); a message sent from the web is
  * then deleted in the group as well.
+ *
+ * The bot's own messages to the group (the board, the next event's
+ * picture, open task calls, its answers) never come back as updates, so
+ * observe() stores them from TelegramClient::DONE_ACTION, and follows the
+ * bot's edits and deletes of them.
  *
  * Off until an organizer turns it on in Settings (ENABLED_OPTION): nothing
  * is stored and the Crew app shows no Group chat tab. Messages are kept
@@ -68,6 +74,9 @@ final class GroupRelay
         'photo', 'video', 'animation', 'sticker', 'voice', 'video_note', 'audio',
         'document', 'poll', 'location', 'venue', 'contact', 'dice',
     ];
+
+    /** Set while post() sends, so observe() leaves that message to post(). */
+    private bool $posting = false;
 
     public function __construct(
         private readonly GroupMessageRepository $messages,
@@ -211,12 +220,19 @@ final class GroupRelay
             ];
         }
 
-        $sent = $this->telegram->sendMessage(
-            $chatId,
-            '<b>' . esc_html($person->displayName) . '</b> (web): ' . esc_html($text),
-            null,
-            $extra
-        );
+        $this->posting = true;
+
+        try {
+            $sent = $this->telegram->sendMessage(
+                $chatId,
+                '<b>' . esc_html($person->displayName) . '</b> (web): ' . esc_html($text),
+                null,
+                $extra
+            );
+        } finally {
+            $this->posting = false;
+        }
+
         $messageId = (int) ($sent['message_id'] ?? 0);
 
         if ($messageId <= 0) {
@@ -247,6 +263,98 @@ final class GroupRelay
         $this->notifyLater($row);
 
         return ['ok' => true, 'error' => ''];
+    }
+
+    /**
+     * A Bot API call that succeeded (TelegramClient::DONE_ACTION): a message
+     * the bot sent to the crew's group is stored as the bot's, with the
+     * bot's name and its full text (a board is longer than MAX_LENGTH, which
+     * is for the web's own messages), and notified like any new message. An
+     * edit of a stored one changes its text without a notification; a
+     * delete hides it. A message from the web is left to post().
+     *
+     * @param array<string, mixed> $params
+     * @param array<string, mixed> $result
+     */
+    public function observe(string $method, array $params, array $result): void
+    {
+        $chatId = GroupChat::id();
+
+        if ($this->posting || ! self::isEnabled() || 0 === $chatId || 'sendChatAction' === $method) {
+            return;
+        }
+
+        if ('deleteMessage' === $method) {
+            $row = (int) ($params['chat_id'] ?? 0) === $chatId
+                ? $this->messages->findByMessage($chatId, (int) ($params['message_id'] ?? 0))
+                : null;
+
+            if (null !== $row && empty($row['hidden'])) {
+                $this->messages->hide((int) $row['id']);
+            }
+
+            return;
+        }
+
+        $isEdit = in_array($method, ['editMessageText', 'editMessageCaption', 'editMessageMedia'], true);
+
+        if (! $isEdit && ! str_starts_with($method, 'send') && 'forwardMessage' !== $method) {
+            return;
+        }
+
+        // sendMediaGroup answers with a list of messages.
+        foreach (array_is_list($result) ? $result : [$result] as $message) {
+            if (! is_array($message)) {
+                continue;
+            }
+
+            $messageId = (int) ($message['message_id'] ?? 0);
+            $inChat = (int) ($message['chat']['id'] ?? $params['chat_id'] ?? 0);
+
+            if ($inChat !== $chatId || $messageId <= 0) {
+                continue;
+            }
+
+            [$text, $kind] = self::content($message);
+
+            if ($isEdit) {
+                $this->messages->edit($chatId, $messageId, $text, (string) current_time('mysql'));
+
+                continue;
+            }
+
+            if ('' === $text && '' === $kind) {
+                continue;
+            }
+
+            $row = [
+                'chat_id' => $chatId,
+                'message_id' => $messageId,
+                'person_id' => 0,
+                'sender_name' => self::botName($message),
+                'text' => $text,
+                'kind' => $kind,
+                'source' => 'bot',
+                'created_at' => (string) current_time('mysql'),
+            ] + $this->replyOf($chatId, $message);
+
+            if ($this->messages->add($row) > 0) {
+                $this->notifyLater($row);
+            }
+        }
+    }
+
+    /**
+     * The name the bot's messages go by: the helper's name, else the bot's
+     * own name in Settings, else the name Telegram gives it.
+     *
+     * @param array<string, mixed> $message
+     */
+    private static function botName(array $message): string
+    {
+        $name = AssistantSettings::name();
+
+        return '' !== $name ? $name : trim((string) ($message['from']['first_name'] ?? ''));
     }
 
     /**

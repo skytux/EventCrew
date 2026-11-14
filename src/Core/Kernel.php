@@ -351,6 +351,19 @@ final class Kernel
             2
         );
 
+        // The bot's own messages to the crew's group, for the group chat on
+        // the web: Telegram never sends them back as updates (GroupRelay).
+        add_action(
+            TelegramClient::DONE_ACTION,
+            function (string $method, array $params, array $result): void {
+                if (GroupRelay::isEnabled()) {
+                    $this->container->get(GroupRelay::class)->observe($method, $params, $result);
+                }
+            },
+            10,
+            3
+        );
+
         // Acting as someone (ActingAs): the warning two minutes before the
         // end, and the end itself, are WP-Cron events.
         add_action(

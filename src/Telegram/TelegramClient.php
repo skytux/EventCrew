@@ -27,6 +27,14 @@ final class TelegramClient
     /** Opt-in: resolve api.telegram.org via Cloudflare DoH when the host can't. */
     public const DNS_BYPASS_OPTION = 'eventcrew_telegram_dns_bypass';
 
+    /**
+     * Fired after every successful Bot API call with the method, its
+     * parameters and Telegram's result, so the group chat on the web can
+     * keep the bot's own group messages (GroupRelay::observe()): Telegram
+     * never sends a bot its own messages as updates. The token is not passed.
+     */
+    public const DONE_ACTION = 'eventcrew_telegram_done';
+
     private const API_HOST = 'api.telegram.org';
     private const API_BASE = 'https://api.telegram.org/bot';
 
@@ -208,6 +216,10 @@ final class TelegramClient
 
         $result = is_array($decoded['result'] ?? null) ? $decoded['result'] : [];
         $this->track($method, $params, $result, $record);
+
+        if (function_exists('do_action')) {
+            do_action(self::DONE_ACTION, $method, $params, $result);
+        }
 
         return $result;
     }
