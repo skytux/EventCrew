@@ -48,9 +48,13 @@ final class MessageAiText
     /** Whether kind $id can have an AI text per event. */
     public static function offers(string $id): bool
     {
+        if (! in_array($id, self::KINDS, true)) {
+            return false;
+        }
+
         $template = MessageTemplates::find($id);
 
-        return null !== $template && $template->wired && in_array($id, self::KINDS, true);
+        return null !== $template && $template->wired;
     }
 
     /**

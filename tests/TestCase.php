@@ -27,6 +27,9 @@ abstract class TestCase extends PHPUnitTestCase
         // No history recorder and no acting person left over from a test.
         \EventCrew\Support\History::reset();
 
+        // The message kinds are built afresh for each test.
+        \EventCrew\Support\MessageTemplates::flushCache();
+
         $this->stubCommonFunctions();
 
         // The count of jobs a request queued lives for one request.

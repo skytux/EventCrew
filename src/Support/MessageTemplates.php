@@ -79,12 +79,55 @@ final class MessageTemplates
     }
 
     /**
-     * Every kind, in the order the Messages page lists them. Built on each
-     * call, so the labels and built-in texts are in the current language.
+     * The kinds all() built, by language (memoKey()), for the rest of the
+     * request.
+     *
+     * @var array<string, array<string, MessageTemplate>>
+     */
+    private static array $built = [];
+
+    /**
+     * Every kind, in the order the Messages page lists them, with the labels
+     * and built-in texts in the current language. Built once per language
+     * and request: building them all took up to 0.2 s, and the Messages page
+     * asked for them hundreds of times. What the build reads is only the
+     * language (gettext); options, settings and role names are read by the
+     * closures when a message is made, so the built kinds never go stale.
      *
      * @return array<string, MessageTemplate>
      */
     public static function all(): array
+    {
+        return self::$built[self::memoKey()] ??= self::build();
+    }
+
+    /** Forgets the kinds all() built, so the next call builds them again. */
+    public static function flushCache(): void
+    {
+        self::$built = [];
+    }
+
+    /**
+     * The language the kinds are built in: the one Language::run() is in,
+     * else the locale WordPress translates in.
+     */
+    private static function memoKey(): string
+    {
+        $language = Language::current();
+
+        if (null !== $language) {
+            return $language;
+        }
+
+        return 'locale:' . (function_exists('determine_locale') ? (string) determine_locale() : '');
+    }
+
+    /**
+     * Builds every kind in the current language.
+     *
+     * @return array<string, MessageTemplate>
+     */
+    private static function build(): array
     {
         $list = [];
 

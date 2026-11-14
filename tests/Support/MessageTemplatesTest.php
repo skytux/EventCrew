@@ -72,6 +72,29 @@ final class MessageTemplatesTest extends TestCase
 
     // ---- The model --------------------------------------------------------
 
+    public function testTheKindsAreBuiltOncePerLanguage(): void
+    {
+        $english = MessageTemplates::all();
+
+        self::assertSame($english['reminder'], MessageTemplates::all()['reminder']);
+        self::assertSame($english['reminder'], MessageTemplates::find('reminder'));
+
+        $finnish = Language::run(Language::FINNISH, static fn (): array => MessageTemplates::all());
+
+        self::assertNotSame($english['reminder'], $finnish['reminder']);
+        self::assertNotSame($english['reminder']->label, $finnish['reminder']->label);
+        self::assertSame(
+            $finnish['reminder'],
+            Language::run(Language::FINNISH, static fn (): ?MessageTemplate => MessageTemplates::find('reminder'))
+        );
+        self::assertSame($english['reminder'], MessageTemplates::find('reminder'));
+
+        MessageTemplates::flushCache();
+
+        self::assertNotSame($english['reminder'], MessageTemplates::find('reminder'));
+        self::assertSame($english['reminder']->label, MessageTemplates::find('reminder')?->label);
+    }
+
     public function testEveryKindHasAnIdALabelAChannelAndABuiltInText(): void
     {
         $all = MessageTemplates::all();
